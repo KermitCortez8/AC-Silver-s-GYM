@@ -33,11 +33,12 @@ const InventoryScreen = () => {
   });
 
   useEffect(() => {
-    loadInventory();
+    void loadInventory();
   }, []);
 
-  const loadInventory = () => {
-    setInventory(getInventory());
+  const loadInventory = async () => {
+    const storedInventory = await getInventory();
+    setInventory(storedInventory);
   };
 
   const openModal = (item = null) => {
@@ -75,7 +76,7 @@ const InventoryScreen = () => {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       Alert.alert('Error', 'Por favor ingresa el nombre del artículo');
       return;
@@ -92,14 +93,14 @@ const InventoryScreen = () => {
     };
 
     if (editingItem) {
-      updateInventoryItem(editingItem.id, itemData);
+      await updateInventoryItem(editingItem.id, itemData);
       Alert.alert('Éxito', 'Artículo actualizado correctamente');
     } else {
-      addInventoryItem(itemData);
+      await addInventoryItem(itemData);
       Alert.alert('Éxito', 'Artículo agregado correctamente');
     }
 
-    loadInventory();
+    await loadInventory();
     closeModal();
   };
 
@@ -109,9 +110,9 @@ const InventoryScreen = () => {
       {
         text: 'Eliminar',
         style: 'destructive',
-        onPress: () => {
-          deleteInventoryItem(id);
-          loadInventory();
+        onPress: async () => {
+          await deleteInventoryItem(id);
+          await loadInventory();
           Alert.alert('Éxito', 'Artículo eliminado');
         },
       },

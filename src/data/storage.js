@@ -1,45 +1,113 @@
-// Data storage utilities using AsyncStorage for future backend integration
-import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Simulated storage (in-memory for now, can be replaced with AsyncStorage or backend API)
+const USERS_KEY = 'gym_users';
+const ATTENDANCE_KEY = 'gym_attendance';
+const INVENTORY_KEY = 'gym_inventory';
+
 let users = [];
 let attendance = [];
 let inventory = [];
+let hydrated = false;
+
+const parseStoredArray = (value) => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+export const initializeStorage = async () => {
+  if (hydrated) {
+    return;
+  }
+
+  try {
+    const entries = await AsyncStorage.multiGet([
+      USERS_KEY,
+      ATTENDANCE_KEY,
+      INVENTORY_KEY,
+    ]);
+    const dataMap = new Map(entries);
+
+    users = parseStoredArray(dataMap.get(USERS_KEY));
+    attendance = parseStoredArray(dataMap.get(ATTENDANCE_KEY));
+    inventory = parseStoredArray(dataMap.get(INVENTORY_KEY));
+  } catch (error) {
+    users = [];
+    attendance = [];
+    inventory = [];
+  } finally {
+    hydrated = true;
+  }
+};
+
+const ensureHydrated = async () => {
+  if (!hydrated) {
+    await initializeStorage();
+  }
+};
+
+const persistUsers = async () => {
+  await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
+};
+
+const persistAttendance = async () => {
+  await AsyncStorage.setItem(ATTENDANCE_KEY, JSON.stringify(attendance));
+};
+
+const persistInventory = async () => {
+  await AsyncStorage.setItem(INVENTORY_KEY, JSON.stringify(inventory));
+};
 
 // User Management
-export const addUser = (user) => {
+export const addUser = async (user) => {
+  await ensureHydrated();
   const newUser = {
     id: Date.now().toString(),
     ...user,
     registrationDate: new Date().toISOString(),
   };
-  users.push(newUser);
+  users = [...users, newUser];
+  await persistUsers();
   return newUser;
 };
 
-export const updateUser = (id, updates) => {
-  const index = users.findIndex(u => u.id === id);
+export const updateUser = async (id, updates) => {
+  await ensureHydrated();
+  const index = users.findIndex((user) => user.id === id);
   if (index !== -1) {
     users[index] = { ...users[index], ...updates };
+    await persistUsers();
     return users[index];
   }
   return null;
 };
 
-export const deleteUser = (id) => {
-  users = users.filter(u => u.id !== id);
+export const deleteUser = async (id) => {
+  await ensureHydrated();
+  users = users.filter((user) => user.id !== id);
+  await persistUsers();
 };
 
-export const getUsers = () => {
+export const getUsers = async () => {
+  await ensureHydrated();
   return [...users];
 };
 
-export const getUserById = (id) => {
-  return users.find(u => u.id === id);
+export const getUserById = async (id) => {
+  await ensureHydrated();
+  return users.find((user) => user.id === id);
 };
 
 // Attendance Management
-export const addAttendance = (userId, userName) => {
+export const addAttendance = async (userId, userName) => {
+  await ensureHydrated();
   const newAttendance = {
     id: Date.now().toString(),
     userId,
@@ -47,58 +115,72 @@ export const addAttendance = (userId, userName) => {
     date: new Date().toISOString(),
     checkIn: new Date().toLocaleTimeString(),
   };
-  attendance.push(newAttendance);
+  attendance = [...attendance, newAttendance];
+  await persistAttendance();
   return newAttendance;
 };
 
-export const getAttendance = () => {
+export const getAttendance = async () => {
+  await ensureHydrated();
   return [...attendance].reverse();
 };
 
-export const getAttendanceByDate = (date) => {
-  return attendance.filter(a => a.date.startsWith(date));
+export const getAttendanceByDate = async (date) => {
+  await ensureHydrated();
+  return attendance.filter((record) => record.date.startsWith(date));
 };
 
 // Inventory Management
-export const addInventoryItem = (item) => {
+export const addInventoryItem = async (item) => {
+  await ensureHydrated();
   const newItem = {
     id: Date.now().toString(),
     ...item,
     addedDate: new Date().toISOString(),
   };
-  inventory.push(newItem);
+  inventory = [...inventory, newItem];
+  await persistInventory();
   return newItem;
 };
 
-export const updateInventoryItem = (id, updates) => {
-  const index = inventory.findIndex(i => i.id === id);
+export const updateInventoryItem = async (id, updates) => {
+  await ensureHydrated();
+  const index = inventory.findIndex((item) => item.id === id);
   if (index !== -1) {
     inventory[index] = { ...inventory[index], ...updates };
+    await persistInventory();
     return inventory[index];
   }
   return null;
 };
 
-export const deleteInventoryItem = (id) => {
-  inventory = inventory.filter(i => i.id !== id);
+export const deleteInventoryItem = async (id) => {
+  await ensureHydrated();
+  inventory = inventory.filter((item) => item.id !== id);
+  await persistInventory();
 };
 
-export const getInventory = () => {
+export const getInventory = async () => {
+  await ensureHydrated();
   return [...inventory];
 };
 
-export const getInventoryItemById = (id) => {
-  return inventory.find(i => i.id === id);
+export const getInventoryItemById = async (id) => {
+  await ensureHydrated();
+  return inventory.find((item) => item.id === id);
 };
 
 // Statistics
-export const getStats = () => {
+export const getStats = async () => {
+  await ensureHydrated();
+  const today = new Date().toISOString().split('T')[0];
+
   return {
     totalUsers: users.length,
-    totalAttendanceToday: attendance.filter(a => 
-      a.date.startsWith(new Date().toISOString().split('T')[0])
+    totalAttendanceToday: attendance.filter((record) =>
+      record.date.startsWith(today)
     ).length,
     totalInventoryItems: inventory.length,
-    lowStockItems: inventory.filter(i => i.quantity < 10).length,
+    lowStockItems: inventory.filter((item) => item.quantity < 10).length,
   };
 };

@@ -20,17 +20,21 @@ const AttendanceScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
-  const loadData = () => {
-    setAttendance(getAttendance());
-    setUsers(getUsers());
+  const loadData = async () => {
+    const [attendanceData, usersData] = await Promise.all([
+      getAttendance(),
+      getUsers(),
+    ]);
+    setAttendance(attendanceData);
+    setUsers(usersData);
   };
 
-  const handleCheckIn = (user) => {
-    addAttendance(user.id, user.name);
-    loadData();
+  const handleCheckIn = async (user) => {
+    await addAttendance(user.id, user.name);
+    await loadData();
     setModalVisible(false);
     Alert.alert('Éxito', `${user.name} registrado correctamente`);
   };

@@ -15,10 +15,18 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      setStats(getStats());
+      void refreshStats();
     });
+
+    void refreshStats();
+
     return unsubscribe;
   }, [navigation]);
+
+  const refreshStats = async () => {
+    const nextStats = await getStats();
+    setStats(nextStats);
+  };
 
   const StatCard = ({ icon, title, value, color, onPress }) => (
     <TouchableOpacity 

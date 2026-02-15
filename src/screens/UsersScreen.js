@@ -15,7 +15,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { addUser, updateUser, deleteUser, getUsers } from '../data/storage';
 
-const UsersScreen = () => {
+const UsersScreen = ({ navigation }) => {
   const [users, setUsers] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -27,11 +27,18 @@ const UsersScreen = () => {
   });
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      void loadUsers();
+    });
 
-  const loadUsers = () => {
-    setUsers(getUsers());
+    void loadUsers();
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadUsers = async () => {
+    const storedUsers = await getUsers();
+    setUsers(storedUsers);
   };
 
   const openModal = (user = null) => {
@@ -66,21 +73,21 @@ const UsersScreen = () => {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       Alert.alert('Error', 'Por favor ingresa el nombre');
       return;
     }
 
     if (editingUser) {
-      updateUser(editingUser.id, formData);
+      await updateUser(editingUser.id, formData);
       Alert.alert('Éxito', 'Usuario actualizado correctamente');
     } else {
-      addUser(formData);
+      await addUser(formData);
       Alert.alert('Éxito', 'Usuario registrado correctamente');
     }
 
-    loadUsers();
+    await loadUsers();
     closeModal();
   };
 
@@ -93,9 +100,9 @@ const UsersScreen = () => {
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: () => {
-            deleteUser(id);
-            loadUsers();
+          onPress: async () => {
+            await deleteUser(id);
+            await loadUsers();
             Alert.alert('Éxito', 'Usuario eliminado');
           },
         },
