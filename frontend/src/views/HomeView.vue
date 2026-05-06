@@ -60,6 +60,17 @@
             </div>
           </router-link>
         </div>
+
+        <div class="mt-6 rounded-[1.75rem] border border-white/10 bg-slate-950/50 p-5">
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Casos de uso cubiertos</p>
+          <div class="mt-4 grid gap-3 md:grid-cols-2">
+            <article v-for="item in moduleCoverage" :key="item.title" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p class="font-bold text-white">{{ item.title }}</p>
+              <p class="mt-1 text-sm text-slate-400">{{ item.summary }}</p>
+              <p class="mt-2 text-sm text-cyan-200">{{ item.status }}</p>
+            </article>
+          </div>
+        </div>
       </div>
 
       <div class="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur">
@@ -87,6 +98,17 @@
           <p class="font-semibold">Hay {{ lowStockInventory.length }} artículos con stock bajo.</p>
           <p class="mt-1 text-sm">Revisa inventario para evitar quiebres de stock.</p>
         </div>
+
+        <div v-if="membershipAlerts.length || activePromotions.length" class="mt-4 space-y-3">
+          <div v-if="membershipAlerts.length" class="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-amber-100">
+            <p class="font-semibold">Membresías por vencer: {{ membershipAlerts.length }}</p>
+            <p class="mt-1 text-sm">Hay clientes que necesitan renovación pronto.</p>
+          </div>
+          <div v-if="activePromotions.length" class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-cyan-50">
+            <p class="font-semibold">Promociones activas: {{ activePromotions.length }}</p>
+            <p class="mt-1 text-sm">Puedes aplicarlas al asignar o renovar membresías.</p>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -104,12 +126,37 @@ const gymStore = useGymStore();
 const stats = computed(() => gymStore.stats);
 const recentAttendance = computed(() => gymStore.recentAttendance.slice(0, 5));
 const lowStockInventory = computed(() => gymStore.lowStockInventory);
+const membershipAlerts = computed(() => gymStore.membershipAlerts);
+const activePromotions = computed(() => gymStore.activePromotions);
+
+const moduleCoverage = computed(() => [
+  {
+    title: 'Gestión de clientes',
+    summary: 'Registro, edición de expediente, búsqueda por DNI/código y trazabilidad de cambios.',
+    status: 'Implementado en Usuarios',
+  },
+  {
+    title: 'Membresías y promociones',
+    summary: 'Planes configurables, renovación, descuentos y alertas de vencimiento.',
+    status: 'Soportado por el store y el formulario',
+  },
+  {
+    title: 'Control de asistencia',
+    summary: 'Validación por código o QR, membresía vigente y métricas de afluencia.',
+    status: 'Disponible en Recepción',
+  },
+  {
+    title: 'Control de inventario',
+    summary: 'Recursos, estado operativo y observaciones de mantenimiento.',
+    status: 'Disponible en Inventario',
+  },
+]);
 
 const quickLinks = computed(() => {
   if (isAdmin.value) {
     return [
       { label: 'Usuarios', description: 'Alta, edición y baja de miembros', to: '/admin/users', icon: '👥' },
-      { label: 'Asistencia', description: 'Registrar entradas y salidas', to: '/admin/attendance', icon: '✓' },
+      { label: 'Asistencia', description: 'Validar ingresos por código o QR', to: '/admin/attendance', icon: '✓' },
       { label: 'Inventario', description: 'Control de equipos y productos', to: '/admin/inventory', icon: '📦' },
       { label: 'Horarios', description: 'Consulta de clases y franjas', to: '/user/schedule', icon: '🕐' },
     ];

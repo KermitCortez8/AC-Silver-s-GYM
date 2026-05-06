@@ -3,21 +3,42 @@
     <section class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
       <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Operación</p>
       <h1 class="mt-2 text-3xl font-black text-white">Asistencia</h1>
-      <p class="mt-2 text-slate-300">Registra entradas y salidas, y revisa el historial reciente.</p>
+      <p class="mt-2 text-slate-300">Recibe el código personal del usuario, valida membresías vigentes y consulta la afluencia del local.</p>
+    </section>
+
+    <section class="grid gap-4 md:grid-cols-4">
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur">
+        <p class="text-sm text-slate-400">Hoy</p>
+        <p class="mt-2 text-3xl font-black text-white">{{ attendanceAnalytics.today }}</p>
+      </article>
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur">
+        <p class="text-sm text-slate-400">Semana</p>
+        <p class="mt-2 text-3xl font-black text-white">{{ attendanceAnalytics.week }}</p>
+      </article>
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur">
+        <p class="text-sm text-slate-400">Mes</p>
+        <p class="mt-2 text-3xl font-black text-white">{{ attendanceAnalytics.month }}</p>
+      </article>
+      <article class="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur">
+        <p class="text-sm text-slate-400">Membresías por vencer</p>
+        <p class="mt-2 text-3xl font-black text-white">{{ membershipAlerts.length }}</p>
+      </article>
     </section>
 
     <section class="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
       <form class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="handleSubmit">
         <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Nuevo registro</p>
-        <h2 class="mt-2 text-2xl font-black text-white">Marcar asistencia</h2>
+        <h2 class="mt-2 text-2xl font-black text-white">Validar código personal</h2>
 
         <div class="mt-5 space-y-4">
           <label class="space-y-2 block">
-            <span class="text-sm text-slate-300">Miembro</span>
-            <select v-model="form.memberId" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option value="">Seleccionar miembro</option>
-              <option v-for="member in members" :key="member.id" :value="member.id">{{ member.name }} · {{ member.plan }}</option>
-            </select>
+            <span class="text-sm text-slate-300">Código del usuario</span>
+            <textarea
+              v-model="form.passInput"
+              rows="4"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none"
+              placeholder="Pega el código del usuario"
+            ></textarea>
           </label>
 
           <label class="space-y-2 block">
@@ -35,9 +56,50 @@
         </div>
 
         <button type="submit" class="mt-5 w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">
-          Registrar
+          Validar y registrar
         </button>
+
+        <p v-if="feedbackMessage" class="mt-4 rounded-2xl border px-4 py-3 text-sm" :class="feedbackToneClass">
+          {{ feedbackMessage }}
+        </p>
+
+        <div v-if="validatedRecord" class="mt-4 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-emerald-50">
+          <p class="text-xs uppercase tracking-[0.35em] text-emerald-200">Registro confirmado</p>
+          <p class="mt-2 text-lg font-bold text-white">{{ validatedRecord.memberName }}</p>
+          <p class="text-sm text-emerald-100/90">{{ validatedRecord.date }} · {{ validatedRecord.time }} · {{ validatedRecord.type }}</p>
+        </div>
       </form>
+
+      <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
+        <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Emisión</p>
+        <h2 class="mt-2 text-2xl font-black text-white">Generar código desde recepción</h2>
+        <p class="mt-2 text-slate-300">Selecciona un socio y emite su código de ingreso desde el panel administrativo.</p>
+
+        <div class="mt-5 space-y-4">
+          <label class="space-y-2 block">
+            <span class="text-sm text-slate-300">Socio</span>
+            <select v-model="codeForm.memberId" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
+              <option v-for="member in activeMembers" :key="member.id" :value="member.id">
+                {{ member.name }} · {{ member.internalCode || member.dni || member.email }}
+              </option>
+            </select>
+          </label>
+
+          <button type="button" class="w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300" @click="issueCode">
+            Emitir código
+          </button>
+
+          <div v-if="issuedPass" class="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-cyan-50">
+            <p class="text-xs uppercase tracking-[0.35em] text-cyan-200">Código emitido</p>
+            <p class="mt-2 text-2xl font-black tracking-[0.22em] text-white">{{ issuedPass.code }}</p>
+            <p class="mt-2 text-sm text-cyan-100/90">{{ issuedPass.memberName }} · vence {{ issuedPass.expiresAt }}</p>
+            <button type="button" class="mt-4 w-full rounded-2xl bg-white px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-100" @click="copyIssuedCode">
+              Copiar código
+            </button>
+            <p v-if="issuedFeedback" class="mt-3 text-sm text-cyan-100">{{ issuedFeedback }}</p>
+          </div>
+        </div>
+      </div>
 
       <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
         <div class="flex items-end justify-between gap-4">
@@ -48,6 +110,15 @@
           <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
             <p class="text-xs text-slate-400">Hoy</p>
             <p class="text-xl font-black text-white">{{ stats.attendanceToday }}</p>
+          </div>
+        </div>
+
+        <div v-if="membershipAlerts.length" class="mt-5 rounded-3xl border border-amber-400/20 bg-amber-400/10 p-4 text-amber-50">
+          <p class="text-xs uppercase tracking-[0.35em] text-amber-200">Alertas de vencimiento</p>
+          <div class="mt-3 space-y-2 text-sm">
+            <p v-for="member in membershipAlerts.slice(0, 3)" :key="member.id">
+              {{ member.name }} · vence en {{ member.daysUntilExpiry }} día(s)
+            </p>
           </div>
         </div>
 
@@ -71,27 +142,82 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
-const members = computed(() => gymStore.members);
+const activeMembers = computed(() => gymStore.members.filter((member) => member.status === 'Activa'));
 const recentAttendance = computed(() => gymStore.recentAttendance.slice(0, 12));
 const stats = computed(() => gymStore.stats);
+const attendanceAnalytics = computed(() => gymStore.attendanceAnalytics);
+const membershipAlerts = computed(() => gymStore.membershipAlerts);
+const feedbackMessage = ref('');
+const feedbackTone = ref('info');
+const validatedRecord = ref(null);
+const issuedPass = ref(null);
+const issuedFeedback = ref('');
 
 const form = reactive({
-  memberId: '',
+  passInput: '',
   type: 'Entrada',
   note: '',
 });
 
+const codeForm = reactive({
+  memberId: 'member-1',
+});
+
+const feedbackToneClass = computed(() => {
+  if (feedbackTone.value === 'success') {
+    return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
+  }
+
+  if (feedbackTone.value === 'error') {
+    return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
+  }
+
+  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
+});
+
 const handleSubmit = () => {
-  if (!form.memberId) {
+  if (!form.passInput.trim()) {
+    feedbackTone.value = 'error';
+    feedbackMessage.value = 'Ingresa el código del usuario.';
     return;
   }
 
-  gymStore.recordAttendance(form.memberId, form.type, form.note);
-  form.type = 'Entrada';
-  form.note = '';
+  try {
+    const result = gymStore.redeemAttendancePass(form.passInput, form.type, form.note);
+    validatedRecord.value = result.record;
+    feedbackTone.value = 'success';
+    feedbackMessage.value = `Asistencia validada para ${result.record.memberName}.`;
+    form.passInput = '';
+    form.note = '';
+  } catch (error) {
+    validatedRecord.value = null;
+    feedbackTone.value = 'error';
+    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo validar el código.';
+  }
+};
+
+const issueCode = () => {
+  try {
+    const pass = gymStore.createAttendancePass(codeForm.memberId);
+    issuedPass.value = pass;
+    issuedFeedback.value = 'Código emitido correctamente desde recepción.';
+  } catch (error) {
+    issuedPass.value = null;
+    issuedFeedback.value = error instanceof Error ? error.message : 'No se pudo emitir el código.';
+  }
+};
+
+const copyIssuedCode = async () => {
+  if (!issuedPass.value?.code || typeof navigator === 'undefined' || !navigator.clipboard) {
+    issuedFeedback.value = 'No se pudo copiar automáticamente.';
+    return;
+  }
+
+  await navigator.clipboard.writeText(issuedPass.value.code);
+  issuedFeedback.value = 'Código copiado al portapapeles.';
 };
 </script>

@@ -37,10 +37,6 @@
           </div>
         </div>
 
-        <p class="max-w-2xl text-sm text-slate-400">
-          Si configuras <span class="text-cyan-200">VITE_AUTH_API_BASE_URL</span>, la sesión puede validarse en backend.
-          Si no, el flujo funciona directo en frontend.
-        </p>
       </section>
 
       <section class="rounded-[2rem] border border-white/10 bg-white/8 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8">
