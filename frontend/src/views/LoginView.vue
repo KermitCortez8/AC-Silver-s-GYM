@@ -1,49 +1,48 @@
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-50">
+  <div class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.16),_transparent_32%),linear-gradient(180deg,#020617_0%,#08101f_100%)] text-slate-50">
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-28 right-0 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl"></div>
-      <div class="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-indigo-500/20 blur-3xl"></div>
+      <div class="absolute -top-28 right-0 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-emerald-400/15 blur-3xl"></div>
     </div>
 
     <div class="relative mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-4 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
       <section class="space-y-8">
-        <div class="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-200">
-          Vue web edition
+        <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
+          <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
+          Backend FastAPI conectado
         </div>
 
         <div>
-          <p class="text-sm uppercase tracking-[0.4em] text-cyan-300/80">{{ APP_CONFIG.appName }}</p>
+          <p class="text-[0.65rem] uppercase tracking-[0.5em] text-cyan-300/80">{{ APP_CONFIG.appName }}</p>
           <h1 class="mt-4 max-w-2xl text-5xl font-black leading-[0.95] text-white sm:text-6xl">
-            Sistema web para membresías, asistencia e inventario.
+            Un frontend nuevo para clientes, asistencia, inventario y operación.
           </h1>
           <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            Inicio de sesión con Google, paneles separados por rol y módulos reales para usuarios,
-            asistencia e inventario.
+            La interfaz se sincroniza con el backend real y conserva Google Sign-In, panel de administración y la vista de miembro.
           </p>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-3">
-          <div class="rounded-3xl border border-white/10 bg-white/5 p-5">
+          <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
             <p class="text-sm text-slate-400">Autenticación</p>
-            <p class="mt-2 text-2xl font-bold text-white">Google real</p>
+            <p class="mt-2 text-2xl font-black text-white">Google + backend</p>
           </div>
-          <div class="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <p class="text-sm text-slate-400">Datos</p>
-            <p class="mt-2 text-2xl font-bold text-white">CRUD local</p>
+          <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
+            <p class="text-sm text-slate-400">Flujos</p>
+            <p class="mt-2 text-2xl font-black text-white">Clientes y asistencia</p>
           </div>
-          <div class="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <p class="text-sm text-slate-400">UI</p>
-            <p class="mt-2 text-2xl font-bold text-white">Dashboard</p>
+          <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
+            <p class="text-sm text-slate-400">Operación</p>
+            <p class="mt-2 text-2xl font-black text-white">Inventario y tickets</p>
           </div>
         </div>
-
       </section>
 
-      <section class="rounded-[2rem] border border-white/10 bg-white/8 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8">
+      <section class="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8">
         <div class="mb-8 text-center">
-          <p class="text-sm uppercase tracking-[0.35em] text-cyan-300/80">Acceso</p>
-          <h2 class="mt-3 text-3xl font-black text-white">Bienvenido</h2>
-          <p class="mt-3 text-slate-300">Ingresa con Google o usa una sesión de demo para explorar la app.</p>
+          <p class="text-[0.65rem] uppercase tracking-[0.5em] text-cyan-300/80">Acceso</p>
+          <h2 class="mt-3 text-3xl font-black text-white">Iniciar sesión</h2>
+          <p class="mt-3 text-slate-300">Usa tu cuenta de Google o una sesión demo para explorar el panel nuevo.</p>
         </div>
 
         <div v-if="googleError" class="mb-4 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">
@@ -55,7 +54,7 @@
 
           <button
             v-if="APP_CONFIG.enableDemoLogin"
-            class="w-full rounded-2xl bg-white px-4 py-3 font-semibold text-slate-950 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+            class="w-full rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="processing"
             @click="handleDemoLogin('user')"
           >
@@ -72,8 +71,8 @@
           </button>
         </div>
 
-        <div class="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-sm text-slate-300">
-          Tu información se usa solo para autenticarte y mantener la sesión activa mientras navegas.
+        <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+          El backend responde en <span class="text-white">/auth/google</span> y valida la sesión en <span class="text-white">/auth/me</span>.
         </div>
 
         <div class="mt-4 text-center text-xs text-slate-500">
@@ -85,16 +84,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { APP_CONFIG } from '../config/appConfig';
 import { GOOGLE_CONFIG } from '../config/googleConfig';
-import {
-  authenticateWithGoogleCredential,
-  createDemoCredentials,
-  loadGoogleIdentityScript,
-} from '../services/authService';
+import { authenticateWithGoogleCredential, createDemoCredentials, loadGoogleIdentityScript } from '../services/authService';
 
 const router = useRouter();
 const { signIn, initializeAuth, isAuthenticated, isAdmin } = useAuth();

@@ -1,5 +1,6 @@
 import { APP_CONFIG } from '../config/appConfig';
 import { decodeJWT, formatUserData, isValidUser } from '../utils/authUtils';
+import { apiPost } from './apiClient';
 
 let googleScriptPromise = null;
 
@@ -66,22 +67,11 @@ export const authenticateWithGoogleCredential = async (credential) => {
   const expiresIn = getExpirySeconds(decoded);
 
   if (APP_CONFIG.authApiBaseUrl) {
-    const response = await fetch(`${APP_CONFIG.authApiBaseUrl}/auth/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        credential,
-        profile: user,
-      }),
+    const result = await apiPost('/auth/google', {
+      credential,
+      profile: user,
     });
 
-    if (!response.ok) {
-      throw new Error('No se pudo validar la sesión con el backend');
-    }
-
-    const result = await response.json();
     return {
       user: result.user || user,
       token: result.token || credential,

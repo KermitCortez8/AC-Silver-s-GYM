@@ -2,28 +2,37 @@
   <div class="space-y-8">
     <section class="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
       <div class="rounded-[2rem] border border-white/10 bg-white/5 p-7 shadow-2xl shadow-black/10 backdrop-blur">
-        <p class="text-sm uppercase tracking-[0.35em] text-cyan-300/80">Panel principal</p>
+        <p class="text-[0.65rem] uppercase tracking-[0.5em] text-cyan-300/80">Panel principal</p>
         <h1 class="mt-3 text-4xl font-black text-white sm:text-5xl">Bienvenido, {{ user?.name || 'usuario' }}</h1>
         <p class="mt-4 max-w-3xl text-slate-300">
-          Aquí ves el resumen del gimnasio con métricas en vivo, accesos rápidos y módulos reales de administración.
+          El dashboard refleja métricas del backend, alertas operativas y accesos rápidos hacia cada flujo de trabajo.
         </p>
 
         <div class="mt-6 grid gap-4 sm:grid-cols-3">
-          <StatCard label="Miembros" :value="stats.totalMembers" description="Usuarios registrados en la plataforma" icon="👥" />
-          <StatCard label="Asistencia hoy" :value="stats.attendanceToday" description="Ingresos registrados en la fecha actual" icon="✓" />
-          <StatCard label="Inventario" :value="stats.inventoryItems" description="Productos y equipos registrados" icon="📦" />
+          <div class="rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-5">
+            <p class="text-sm text-slate-400">Clientes</p>
+            <p class="mt-2 text-3xl font-black text-white">{{ stats.totalMembers }}</p>
+          </div>
+          <div class="rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-5">
+            <p class="text-sm text-slate-400">Asistencia hoy</p>
+            <p class="mt-2 text-3xl font-black text-white">{{ stats.attendanceToday }}</p>
+          </div>
+          <div class="rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-5">
+            <p class="text-sm text-slate-400">Inventario</p>
+            <p class="mt-2 text-3xl font-black text-white">{{ stats.inventoryItems }}</p>
+          </div>
         </div>
       </div>
 
-      <div class="rounded-[2rem] border border-white/10 bg-slate-900/80 p-7 backdrop-blur">
-        <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Resumen rápido</p>
+      <div class="rounded-[2rem] border border-white/10 bg-slate-950/70 p-7 backdrop-blur">
+        <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Resumen rápido</p>
         <div class="mt-5 space-y-4">
           <div class="rounded-2xl bg-white/5 p-4">
-            <p class="text-sm text-slate-400">Miembros activos</p>
+            <p class="text-sm text-slate-400">Clientes activos</p>
             <p class="mt-1 text-3xl font-black text-white">{{ stats.activeMembers }}</p>
           </div>
           <div class="rounded-2xl bg-white/5 p-4">
-            <p class="text-sm text-slate-400">Asistencia promedio</p>
+            <p class="text-sm text-slate-400">Tasa de asistencia</p>
             <p class="mt-1 text-3xl font-black text-white">{{ stats.attendanceRate }}%</p>
           </div>
           <div class="rounded-2xl bg-white/5 p-4">
@@ -38,8 +47,8 @@
       <div class="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur">
         <div class="flex items-center justify-between gap-4">
           <div>
-            <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Accesos rápidos</p>
-            <h2 class="mt-2 text-2xl font-black text-white">Módulos principales</h2>
+            <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Accesos rápidos</p>
+            <h2 class="mt-2 text-2xl font-black text-white">Flujos principales</h2>
           </div>
         </div>
 
@@ -48,7 +57,7 @@
             v-for="item in quickLinks"
             :key="item.to"
             :to="item.to"
-            class="group rounded-3xl border border-white/10 bg-slate-900/80 p-5 transition hover:-translate-y-1 hover:border-cyan-400/40 hover:bg-slate-900"
+            class="group rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-5 transition hover:-translate-y-1 hover:border-cyan-400/40 hover:bg-slate-950"
           >
             <div class="flex items-start justify-between gap-4">
               <div>
@@ -62,7 +71,7 @@
         </div>
 
         <div class="mt-6 rounded-[1.75rem] border border-white/10 bg-slate-950/50 p-5">
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Casos de uso cubiertos</p>
+          <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Cobertura del backend</p>
           <div class="mt-4 grid gap-3 md:grid-cols-2">
             <article v-for="item in moduleCoverage" :key="item.title" class="rounded-2xl border border-white/10 bg-white/5 p-4">
               <p class="font-bold text-white">{{ item.title }}</p>
@@ -74,13 +83,9 @@
       </div>
 
       <div class="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur">
-        <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Actividad reciente</p>
+        <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Actividad reciente</p>
         <div class="mt-6 space-y-4">
-          <div
-            v-for="entry in recentAttendance"
-            :key="entry.id"
-            class="rounded-2xl border border-white/10 bg-slate-900/80 p-4"
-          >
+          <div v-for="entry in recentAttendance" :key="entry.id" class="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
             <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="font-semibold text-white">{{ entry.memberName }}</p>
@@ -106,7 +111,7 @@
           </div>
           <div v-if="activePromotions.length" class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-cyan-50">
             <p class="font-semibold">Promociones activas: {{ activePromotions.length }}</p>
-            <p class="mt-1 text-sm">Puedes aplicarlas al asignar o renovar membresías.</p>
+            <p class="mt-1 text-sm">Se muestran si el backend o la sesión tiene campañas cargadas.</p>
           </div>
         </div>
       </div>
@@ -118,7 +123,6 @@
 import { computed } from 'vue';
 import { useAuth } from '../composables/useAuth';
 import { useGymStore } from '../stores/gymStore';
-import StatCard from '../components/StatCard.vue';
 
 const { user, isAdmin } = useAuth();
 const gymStore = useGymStore();
@@ -131,41 +135,41 @@ const activePromotions = computed(() => gymStore.activePromotions);
 
 const moduleCoverage = computed(() => [
   {
-    title: 'Gestión de clientes',
-    summary: 'Registro, edición de expediente, búsqueda por DNI/código y trazabilidad de cambios.',
-    status: 'Implementado en Usuarios',
+    title: 'Clientes y usuarios',
+    summary: 'Expedientes, credenciales, estado, historial de membresía y búsqueda.',
+    status: 'Conectado a /clientes y /usuarios',
   },
   {
-    title: 'Membresías y promociones',
-    summary: 'Planes configurables, renovación, descuentos y alertas de vencimiento.',
-    status: 'Soportado por el store y el formulario',
+    title: 'Membresías',
+    summary: 'Planificación, alta, renovación y rango de vigencia por cliente.',
+    status: 'Conectado a /planes-membresia y /membresias',
   },
   {
-    title: 'Control de asistencia',
-    summary: 'Validación por código o QR, membresía vigente y métricas de afluencia.',
-    status: 'Disponible en Recepción',
+    title: 'Asistencia',
+    summary: 'Check-in por DNI o por código QR local con persistencia del backend.',
+    status: 'Conectado a /asistencia',
   },
   {
-    title: 'Control de inventario',
-    summary: 'Recursos, estado operativo y observaciones de mantenimiento.',
-    status: 'Disponible en Inventario',
+    title: 'Operación',
+    summary: 'Inventario, movimientos, tickets de atención, rutinas y horarios.',
+    status: 'Conectado a /inventario y /gym/*',
   },
 ]);
 
 const quickLinks = computed(() => {
   if (isAdmin.value) {
     return [
-      { label: 'Usuarios', description: 'Alta, edición y baja de miembros', to: '/admin/users', icon: '👥' },
-      { label: 'Asistencia', description: 'Validar ingresos por código o QR', to: '/admin/attendance', icon: '✓' },
-      { label: 'Inventario', description: 'Control de equipos y productos', to: '/admin/inventory', icon: '📦' },
-      { label: 'Horarios', description: 'Consulta de clases y franjas', to: '/user/schedule', icon: '🕐' },
+      { label: 'Usuarios', description: 'Gestiona clientes, cuentas y membresías', to: '/admin/users', icon: '◫' },
+      { label: 'Asistencia', description: 'Valida ingresos por DNI o QR', to: '/admin/attendance', icon: '◌' },
+      { label: 'Inventario', description: 'Control de stock y movimientos', to: '/admin/inventory', icon: '▤' },
+      { label: 'Horarios', description: 'Rutinas y asignaciones por socio', to: '/user/schedule', icon: '▣' },
     ];
   }
 
   return [
-    { label: 'Horarios', description: 'Ver la programación semanal', to: '/user/schedule', icon: '🕐' },
-    { label: 'Mi asistencia', description: 'Revisar tus registros recientes', to: '/user/attendance', icon: '✓' },
-    { label: 'Estado de membresía', description: 'Ver plan y vigencia actual', to: '/user/dashboard', icon: '💳' },
+    { label: 'Horarios', description: 'Consulta la programación semanal', to: '/user/schedule', icon: '▣' },
+    { label: 'Mi asistencia', description: 'Genera y usa tu pase QR', to: '/user/attendance', icon: '◌' },
+    { label: 'Mi estado', description: 'Verifica tu plan y vigencia', to: '/user/dashboard', icon: '◫' },
   ];
 });
 </script>
