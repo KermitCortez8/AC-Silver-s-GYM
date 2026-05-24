@@ -12,6 +12,7 @@ import InventoryView from '../views/InventoryView.vue';
 import ScheduleView from '../views/ScheduleView.vue';
 import UserAttendanceView from '../views/UserAttendanceView.vue';
 import AuthCallbackView from '../views/AuthCallbackView.vue';
+import StatisticsView from '../views/StatisticsView.vue';
 
 const routes = [
   {
@@ -60,6 +61,11 @@ const routes = [
         path: 'inventory',
         name: 'Inventory',
         component: InventoryView,
+      },
+      {
+        path: 'statistics',
+        name: 'Statistics',
+        component: StatisticsView,
       },
     ],
   },
