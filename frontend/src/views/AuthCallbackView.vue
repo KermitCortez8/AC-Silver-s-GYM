@@ -1,11 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+  <div class="flex min-h-screen items-center justify-center bg-slate-950 text-slate-50">
     <div class="text-center">
-      <div class="mb-4">
-        <div class="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
-      </div>
-      <h2 class="text-2xl font-semibold text-gray-900 mb-2">Procesando autenticación...</h2>
-      <p class="text-gray-600">{{ statusMessage }}</p>
+      <div class="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-white/10 border-t-cyan-400"></div>
+      <h2 class="text-2xl font-semibold text-white mb-2">Procesando autenticación...</h2>
+      <p class="text-slate-300">{{ statusMessage }}</p>
     </div>
   </div>
 </template>
@@ -22,7 +20,6 @@ const statusMessage = ref('Por favor espera mientras completamos tu inicio de se
 
 const redirectToLogin = (reason) => {
   statusMessage.value = reason;
-
   window.setTimeout(() => {
     router.replace('/login');
   }, 1200);
@@ -41,16 +38,8 @@ onMounted(async () => {
       return;
     }
 
-    const code = route.query.code;
-    const error = route.query.error;
-
-    if (error) {
+    if (route.query.error) {
       redirectToLogin('Google devolvió un error de autenticación. Volviendo al login.');
-      return;
-    }
-
-    if (code) {
-      redirectToLogin('Este flujo requiere intercambio en backend. Redirigiendo al login seguro.');
       return;
     }
 

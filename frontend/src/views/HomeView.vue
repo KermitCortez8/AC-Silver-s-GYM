@@ -1,135 +1,118 @@
 <template>
-  <div v-if="isAdmin" class="space-y-8">
-    <section class="space-y-6">
-      <div class="rounded-smoother border border-white/10 bg-slate-900/80 p-8 shadow-2xl shadow-black/20">
-        <p class="text-sm uppercase tracking-[0.35em] text-cyan-300/80 font-semibold">Panel de administración</p>
-        <h1 class="mt-3 text-4xl font-black text-white sm:text-5xl">Bienvenido, {{ user?.name || 'Administrador' }}</h1>
-        <p class="mt-4 max-w-3xl text-slate-300 font-medium">
-          Gestiona el gimnasio con métricas en vivo, asistencias y estadísticas detalladas.
+  <div class="space-y-8">
+    <section class="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+      <div class="rounded-[2rem] border border-white/10 bg-white/5 p-7 shadow-2xl shadow-black/10 backdrop-blur">
+        <p class="text-[0.65rem] uppercase tracking-[0.5em] text-cyan-300/80">Panel principal</p>
+        <h1 class="mt-3 text-4xl font-black text-white sm:text-5xl">Bienvenido, {{ user?.name || 'usuario' }}</h1>
+        <p class="mt-4 max-w-3xl text-slate-300">
+          El dashboard refleja métricas del backend, alertas operativas y accesos rápidos hacia cada flujo de trabajo.
         </p>
 
-        <div class="mt-8 grid gap-4 sm:grid-cols-4">
-          <div class="rounded-smooth border border-cyan-400/20 bg-white/5 backdrop-blur p-5 shadow-md hover:shadow-lg transition">
-            <p class="text-xs uppercase tracking-widest text-cyan-300/80 font-semibold">Miembros</p>
-            <p class="mt-2 text-4xl font-bold text-white">{{ stats.totalMembers }}</p>
-            <p class="mt-1 text-xs text-slate-400">Total registrados</p>
+        <div class="mt-6 grid gap-4 sm:grid-cols-3">
+          <div class="rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-5">
+            <p class="text-sm text-slate-400">Clientes</p>
+            <p class="mt-2 text-3xl font-black text-white">{{ stats.totalMembers }}</p>
           </div>
-          <div class="rounded-smooth border border-indigo-400/20 bg-white/5 backdrop-blur p-5 shadow-md hover:shadow-lg transition">
-            <p class="text-xs uppercase tracking-widest text-indigo-300/80 font-semibold">Hoy</p>
-            <p class="mt-2 text-4xl font-bold text-white">{{ stats.attendanceToday }}</p>
-            <p class="mt-1 text-xs text-slate-400">Ingresos hoy</p>
+          <div class="rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-5">
+            <p class="text-sm text-slate-400">Asistencia hoy</p>
+            <p class="mt-2 text-3xl font-black text-white">{{ stats.attendanceToday }}</p>
           </div>
-          <div class="rounded-smooth border border-emerald-400/20 bg-white/5 backdrop-blur p-5 shadow-md hover:shadow-lg transition">
-            <p class="text-xs uppercase tracking-widest text-emerald-300/80 font-semibold">Activos</p>
-            <p class="mt-2 text-4xl font-bold text-white">{{ stats.activeMembers }}</p>
-            <p class="mt-1 text-xs text-slate-400">Este mes</p>
-          </div>
-          <div class="rounded-smooth border border-amber-400/20 bg-white/5 backdrop-blur p-5 shadow-md hover:shadow-lg transition">
-            <p class="text-xs uppercase tracking-widest text-amber-300/80 font-semibold">Inventario</p>
-            <p class="mt-2 text-4xl font-bold text-white">{{ stats.inventoryItems }}</p>
-            <p class="mt-1 text-xs text-slate-400">Productos</p>
+          <div class="rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-5">
+            <p class="text-sm text-slate-400">Inventario</p>
+            <p class="mt-2 text-3xl font-black text-white">{{ stats.inventoryItems }}</p>
           </div>
         </div>
       </div>
 
-      <StatisticsCharts />
-    </section>
-
-    <section class="space-y-6">
-      <div class="flex gap-3 border-b border-white/10 pb-0">
-        <button
-          v-for="tab in adminTabs"
-          :key="tab"
-          @click="activeAdminTab = tab"
-          :class="[
-            'px-5 py-3 font-semibold transition border-b-2 text-base',
-            activeAdminTab === tab
-              ? 'border-cyan-400 text-white'
-              : 'border-transparent text-slate-400 hover:text-white',
-          ]"
-        >
-          {{ tab }}
-        </button>
-      </div>
-
-      <div class="rounded-smoother border border-white/10 bg-slate-900/80 p-6 shadow-2xl shadow-black/20">
-        <div v-if="activeAdminTab === 'Horarios'" class="text-slate-200">
-          <ScheduleView />
-        </div>
-        <div v-else-if="activeAdminTab === 'Asistencias'" class="text-slate-200">
-          <AttendanceView />
+      <div class="rounded-[2rem] border border-white/10 bg-slate-950/70 p-7 backdrop-blur">
+        <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Resumen rápido</p>
+        <div class="mt-5 space-y-4">
+          <div class="rounded-2xl bg-white/5 p-4">
+            <p class="text-sm text-slate-400">Clientes activos</p>
+            <p class="mt-1 text-3xl font-black text-white">{{ stats.activeMembers }}</p>
+          </div>
+          <div class="rounded-2xl bg-white/5 p-4">
+            <p class="text-sm text-slate-400">Tasa de asistencia</p>
+            <p class="mt-1 text-3xl font-black text-white">{{ stats.attendanceRate }}%</p>
+          </div>
+          <div class="rounded-2xl bg-white/5 p-4">
+            <p class="text-sm text-slate-400">Stock bajo</p>
+            <p class="mt-1 text-3xl font-black text-white">{{ stats.lowStockItems }}</p>
+          </div>
         </div>
       </div>
     </section>
-  </div>
 
-  <div v-else class="space-y-8">
-    <!-- VISTA USUARIO/CLIENTE -->
-    <!-- Encabezado con saludo personalizado -->
-    <section class="space-y-6">
-      <div class="rounded-smoother border border-white/10 bg-slate-900/80 p-8 shadow-2xl shadow-black/20">
-        <h1 class="text-4xl font-black text-white sm:text-5xl">
-          ¡Bienvenido{{ user?.name ? `, ${user.name.split(' ')[0]}` : '' }}!
-        </h1>
-        <p class="mt-4 text-slate-300 font-medium">
-          Te alegra vernos. Aquí puedes ver tus horarios, asistencias y comprar en nuestra tienda.
-        </p>
-      </div>
-    </section>
+    <section class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <div class="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Accesos rápidos</p>
+            <h2 class="mt-2 text-2xl font-black text-white">Flujos principales</h2>
+          </div>
+        </div>
 
-    <!-- Pestañas para usuarios -->
-    <section class="space-y-6">
-      <div class="flex gap-3 border-b border-white/10 overflow-x-auto pb-0">
-        <button
-          v-for="tab in userTabs"
-          :key="tab"
-          @click="activeUserTab = tab"
-          :class="[
-            'px-5 py-3 font-semibold transition whitespace-nowrap border-b-2 text-base',
-            activeUserTab === tab
-              ? 'border-cyan-400 text-white'
-              : 'border-transparent text-slate-400 hover:text-white',
-          ]"
-        >
-          {{ tab }}
-        </button>
-      </div>
-
-      <!-- Contenido de las pestañas -->
-      <div class="rounded-smoother border border-white/10 bg-slate-900/80 p-8 shadow-2xl shadow-black/20">
-        <!-- Horarios -->
-        <div v-if="activeUserTab === 'Horarios'" class="space-y-6">
-          <h2 class="text-3xl font-bold text-white">Mis Horarios</h2>
-          <div class="grid gap-5 md:grid-cols-2">
-            <div
-              v-for="schedule in userSchedules"
-              :key="schedule.id"
-              class="rounded-smooth border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition"
-            >
-              <div class="flex items-start justify-between">
-                <div>
-                  <h3 class="font-bold text-lg text-white">{{ schedule.class }}</h3>
-                  <p class="text-sm text-cyan-300 font-semibold">{{ schedule.instructor }}</p>
-                </div>
+        <div class="mt-6 grid gap-4 sm:grid-cols-2">
+          <router-link
+            v-for="item in quickLinks"
+            :key="item.to"
+            :to="item.to"
+            class="group rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-5 transition hover:-translate-y-1 hover:border-cyan-400/40 hover:bg-slate-950"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-2xl">{{ item.icon }}</p>
+                <h3 class="mt-3 text-lg font-bold text-white">{{ item.label }}</h3>
+                <p class="mt-2 text-sm text-slate-400">{{ item.description }}</p>
               </div>
-              <div class="mt-4 space-y-2 text-sm text-slate-300">
-                <p><strong class="text-cyan-300">Hora:</strong> {{ schedule.time }}</p>
-                <p><strong class="text-cyan-300">Lugar:</strong> {{ schedule.location }}</p>
+              <span class="text-slate-500 transition group-hover:text-cyan-300">→</span>
+            </div>
+          </router-link>
+        </div>
+
+        <div class="mt-6 rounded-[1.75rem] border border-white/10 bg-slate-950/50 p-5">
+          <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Cobertura del backend</p>
+          <div class="mt-4 grid gap-3 md:grid-cols-2">
+            <article v-for="item in moduleCoverage" :key="item.title" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p class="font-bold text-white">{{ item.title }}</p>
+              <p class="mt-1 text-sm text-slate-400">{{ item.summary }}</p>
+              <p class="mt-2 text-sm text-cyan-200">{{ item.status }}</p>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-[2rem] border border-white/10 bg-white/5 p-7 backdrop-blur">
+        <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Actividad reciente</p>
+        <div class="mt-6 space-y-4">
+          <div v-for="entry in recentAttendance" :key="entry.id" class="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="font-semibold text-white">{{ entry.memberName }}</p>
+                <p class="text-sm text-slate-400">{{ entry.note || entry.type }}</p>
+              </div>
+              <div class="text-right text-sm text-slate-300">
+                <p>{{ entry.type }}</p>
+                <p>{{ entry.date }} · {{ entry.time }}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Asistencias -->
-        <div v-else-if="activeUserTab === 'Asistencias'" class="space-y-6">
-          <h2 class="text-3xl font-bold text-white">Mi Calendario de Asistencias</h2>
-          <AttendanceCalendar />
+        <div v-if="lowStockInventory.length" class="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-amber-100">
+          <p class="font-semibold">Hay {{ lowStockInventory.length }} artículos con stock bajo.</p>
+          <p class="mt-1 text-sm">Revisa inventario para evitar quiebres de stock.</p>
         </div>
 
-        <!-- Tienda -->
-        <div v-else-if="activeUserTab === 'Tienda'" class="space-y-6">
-          <h2 class="text-3xl font-bold text-white">Tienda</h2>
-          <Store />
+        <div v-if="membershipAlerts.length || activePromotions.length" class="mt-4 space-y-3">
+          <div v-if="membershipAlerts.length" class="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-amber-100">
+            <p class="font-semibold">Membresías por vencer: {{ membershipAlerts.length }}</p>
+            <p class="mt-1 text-sm">Hay clientes que necesitan renovación pronto.</p>
+          </div>
+          <div v-if="activePromotions.length" class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-cyan-50">
+            <p class="font-semibold">Promociones activas: {{ activePromotions.length }}</p>
+            <p class="mt-1 text-sm">Se muestran si el backend o la sesión tiene campañas cargadas.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -137,15 +120,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useAuth } from '../composables/useAuth';
 import { useGymStore } from '../stores/gymStore';
-import StatCard from '../components/StatCard.vue';
-import AttendanceCalendar from '../components/AttendanceCalendar.vue';
-import Store from '../components/Store.vue';
-import StatisticsCharts from '../components/StatisticsCharts.vue';
-import ScheduleView from './ScheduleView.vue';
-import AttendanceView from './AttendanceView.vue';
 
 const { user, isAdmin } = useAuth();
 const gymStore = useGymStore();
@@ -153,36 +130,46 @@ const gymStore = useGymStore();
 const stats = computed(() => gymStore.stats);
 const recentAttendance = computed(() => gymStore.recentAttendance.slice(0, 5));
 const lowStockInventory = computed(() => gymStore.lowStockInventory);
+const membershipAlerts = computed(() => gymStore.membershipAlerts);
+const activePromotions = computed(() => gymStore.activePromotions);
 
-const activeAdminTab = ref('Horarios');
-const activeUserTab = ref('Horarios');
-
-const adminTabs = ['Horarios', 'Asistencias'];
-const userTabs = ['Horarios', 'Asistencias', 'Tienda'];
-
-// Horarios de ejemplo para usuarios
-const userSchedules = ref([
+const moduleCoverage = computed(() => [
   {
-    id: 1,
-    class: 'CrossFit',
-    instructor: 'Carlos',
-    time: 'Lunes y Miércoles 6:00 AM',
-    location: 'Zona A',
+    title: 'Clientes y usuarios',
+    summary: 'Expedientes, credenciales, estado, historial de membresía y búsqueda.',
+    status: 'Conectado a /clientes y /usuarios',
   },
   {
-    id: 2,
-    class: 'Yoga',
-    instructor: 'María',
-    time: 'Martes y Jueves 7:00 PM',
-    location: 'Zona B',
+    title: 'Membresías',
+    summary: 'Planificación, alta, renovación y rango de vigencia por cliente.',
+    status: 'Conectado a /planes-membresia y /membresias',
   },
   {
-    id: 3,
-    class: 'Spinning',
-    instructor: 'Juan',
-    time: 'Lunes, Miércoles y Viernes 5:30 PM',
-    location: 'Zona C',
+    title: 'Asistencia',
+    summary: 'Check-in por DNI o por código QR local con persistencia del backend.',
+    status: 'Conectado a /asistencia',
+  },
+  {
+    title: 'Operación',
+    summary: 'Inventario, movimientos, tickets de atención, rutinas y horarios.',
+    status: 'Conectado a /inventario y /gym/*',
   },
 ]);
-</script>
 
+const quickLinks = computed(() => {
+  if (isAdmin.value) {
+    return [
+      { label: 'Usuarios', description: 'Gestiona clientes, cuentas y membresías', to: '/admin/users', icon: '◫' },
+      { label: 'Asistencia', description: 'Valida ingresos por DNI o QR', to: '/admin/attendance', icon: '◌' },
+      { label: 'Inventario', description: 'Control de stock y movimientos', to: '/admin/inventory', icon: '▤' },
+      { label: 'Horarios', description: 'Rutinas y asignaciones por socio', to: '/user/schedule', icon: '▣' },
+    ];
+  }
+
+  return [
+    { label: 'Horarios', description: 'Consulta la programación semanal', to: '/user/schedule', icon: '▣' },
+    { label: 'Mi asistencia', description: 'Genera y usa tu pase QR', to: '/user/attendance', icon: '◌' },
+    { label: 'Mi estado', description: 'Verifica tu plan y vigencia', to: '/user/dashboard', icon: '◫' },
+  ];
+});
+</script>

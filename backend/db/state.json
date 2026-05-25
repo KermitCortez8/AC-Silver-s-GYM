@@ -1,0 +1,92 @@
+{
+  "inventario": [
+    {
+      "id_item": 1,
+      "nombre_item": "Mancuernas ajustables",
+      "tipo": "Pesas",
+      "cantidad_stock": 12,
+      "stock_minimo": 6,
+      "estado": "Operativo",
+      "n_activo": 1
+    }
+  ],
+  "mov_inv": [],
+  "usuario": [
+    {
+      "id_usuario": 1,
+      "dni": "71928451",
+      "contrasena": "",
+      "rol": "admin",
+      "estado": true,
+      "email": "carlos@urp.edu.pe"
+    }
+  ],
+  "clientes": [
+    {
+      "id_cliente": 2,
+      "nombres": "Sin nombre",
+      "apellidos": "",
+      "dni": "",
+      "telefono": "",
+      "email": "",
+      "fecha_registro": "2026-05-24",
+      "estado": true
+    },
+    {
+      "id_cliente": 1,
+      "nombres": "Sin nombre",
+      "apellidos": "",
+      "dni": "",
+      "telefono": "",
+      "email": "",
+      "fecha_registro": "2026-05-24",
+      "estado": true
+    }
+  ],
+  "tickets_atencion": [],
+  "horario": [],
+  "catalogo_rutina": [
+    {
+      "id_rutina": 1,
+      "nombre_rutina": "Fuerza Inicial",
+      "zonas_musculares": "Piernas, core",
+      "color": "Azul"
+    }
+  ],
+  "asistencia": [
+    {
+      "id_asistencia": 1,
+      "id_cliente": 1,
+      "id_membresia": 1,
+      "fecha": "2026-05-24",
+      "hora": "21:01",
+      "validacion": true
+    }
+  ],
+  "membresia": [
+    {
+      "id_cliente": 2,
+      "id_pm": 1,
+      "fecha_inicio": "2026-05-24",
+      "fecha_fin": "2028-11-24",
+      "estado": "Activa",
+      "id_membresia": 2
+    },
+    {
+      "id_cliente": 1,
+      "id_pm": 1,
+      "fecha_inicio": "2026-05-24",
+      "fecha_fin": "2028-11-24",
+      "estado": "Activa",
+      "id_membresia": 1
+    }
+  ],
+  "planes_membresia": [
+    {
+      "id_pm": 1,
+      "nombre_plan": "Mensual",
+      "duracion": "30 dias",
+      "precio": 80
+    }
+  ]
+}

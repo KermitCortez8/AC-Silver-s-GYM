@@ -1,85 +1,79 @@
 <template>
-  <div class="app-shell min-h-screen bg-slate-950 text-slate-50">
-    <div class="relative mx-auto flex min-h-screen max-w-[1600px] overflow-hidden">
-      <div class="pointer-events-none absolute -top-28 right-0 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl"></div>
-      <div class="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-indigo-500/20 blur-3xl"></div>
-      <!-- Sidebar -->
-      <aside class="hidden xl:flex w-80 flex-col border-r border-white/10 bg-slate-900/80 backdrop-blur-xl shadow-2xl shadow-black/30">
-        <div class="p-6 border-b border-white/10 bg-slate-900/60">
-          <div class="text-xs uppercase tracking-[0.4em] text-cyan-300/80 font-semibold">{{ APP_CONFIG.appName }}</div>
-          <h1 class="mt-3 text-3xl font-black leading-tight text-white">Silver<br />Control</h1>
-          <p class="mt-3 text-sm text-slate-300 font-medium">Gestión completa de tu gimnasio.</p>
+  <div class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_32%),linear-gradient(180deg,#020617_0%,#08101f_100%)] text-slate-50">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-24 right-[-4rem] h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl"></div>
+      <div class="absolute top-48 left-[-5rem] h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl"></div>
+    </div>
+
+    <div class="relative mx-auto flex min-h-screen max-w-[1720px]">
+      <aside class="hidden w-80 flex-col border-r border-white/10 bg-slate-950/70 backdrop-blur-xl xl:flex">
+        <div class="border-b border-white/10 p-6">
+          <p class="text-xs uppercase tracking-[0.45em] text-cyan-300/80">{{ APP_CONFIG.appName }}</p>
+          <h1 class="mt-3 text-3xl font-black leading-none text-white">Gym Operations</h1>
+          <p class="mt-3 text-sm leading-6 text-slate-300">Un solo panel para accesos, clientes, inventario, rutinas y tickets.</p>
         </div>
 
-        <!-- Sesión activa -->
-        <div class="p-6 border-b border-white/10">
-          <div class="rounded-smoother border border-white/10 bg-white/5 p-4 shadow-lg shadow-black/10">
-            <p class="text-xs uppercase tracking-widest text-cyan-300/80 font-semibold">Sesión activa</p>
-            <div class="mt-3 flex items-center gap-3">
-              <div class="flex h-12 w-12 items-center justify-center rounded-smooth bg-gradient-to-br from-cyan-400 to-indigo-500 text-lg font-bold text-white shadow-lg shadow-cyan-500/20">
+        <div class="border-b border-white/10 p-6">
+          <div class="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+            <p class="text-[0.65rem] uppercase tracking-[0.4em] text-slate-400">Sesión activa</p>
+            <div class="mt-4 flex items-center gap-3">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/15 text-lg font-black text-cyan-100">
                 {{ userInitials }}
               </div>
-              <div>
-                <p class="font-semibold text-white">{{ user?.name || 'Invitado' }}</p>
-                <p class="text-sm text-slate-400">{{ user?.email || 'Sin correo' }}</p>
+              <div class="min-w-0">
+                <p class="truncate font-semibold text-white">{{ user?.name || 'Invitado' }}</p>
+                <p class="truncate text-sm text-slate-300">{{ user?.email || 'Sin correo' }}</p>
               </div>
+            </div>
+            <div class="mt-4 flex items-center gap-2 text-xs text-slate-300">
+              <span class="rounded-full bg-emerald-400/15 px-2.5 py-1 text-emerald-100">{{ isAdmin ? 'Administrador' : 'Usuario' }}</span>
+              <span class="rounded-full bg-white/5 px-2.5 py-1">Token activo</span>
             </div>
           </div>
         </div>
 
-        <!-- Navegación -->
         <nav class="flex-1 p-4">
-          <p class="px-3 text-xs uppercase tracking-widest text-slate-400 font-semibold">Navegación</p>
+          <p class="px-3 text-[0.65rem] uppercase tracking-[0.4em] text-slate-500">Navegación</p>
           <div class="mt-4 space-y-2">
             <router-link
               v-for="link in navigationLinks"
               :key="link.to"
               :to="link.to"
-              class="flex items-center gap-3 rounded-smooth border border-transparent px-4 py-3 transition"
+              class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition"
               :class="isActive(link.to)
-                ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white shadow-lg shadow-cyan-500/20'
-                : 'text-slate-300 hover:bg-white/5 hover:text-white hover:border-white/10'"
+                ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20'
+                : 'text-slate-200 hover:bg-white/8 hover:text-white'"
             >
               <span class="text-lg">{{ link.icon }}</span>
-              <span class="font-medium">{{ link.label }}</span>
+              <span>{{ link.label }}</span>
             </router-link>
           </div>
         </nav>
 
-        <!-- Logout -->
-        <div class="p-6 border-t border-white/10 bg-gradient-to-t from-white/5 to-transparent">
-          <button
-            class="w-full rounded-smooth bg-gradient-to-r from-cyan-500 to-indigo-500 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-95"
-            @click="handleLogout"
-          >
+        <div class="border-t border-white/10 p-6">
+          <button class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white transition hover:bg-white/10" @click="handleLogout">
             Cerrar sesión
           </button>
         </div>
       </aside>
 
-      <!-- Contenido principal -->
       <div class="flex min-w-0 flex-1 flex-col">
-        <!-- Header móvil -->
-        <header class="sticky top-0 z-20 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl xl:hidden shadow-sm">
-          <div class="flex items-center justify-between p-4">
+        <header class="sticky top-0 z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl xl:hidden">
+          <div class="flex items-center justify-between gap-4 p-4">
             <div>
-              <p class="text-xs uppercase tracking-widest text-cyan-300/80 font-semibold">{{ APP_CONFIG.appName }}</p>
-              <h1 class="text-xl font-bold text-white">{{ currentSectionTitle }}</h1>
+              <p class="text-[0.65rem] uppercase tracking-[0.4em] text-cyan-300/80">{{ APP_CONFIG.appName }}</p>
+              <h1 class="text-xl font-black text-white">{{ currentSectionTitle }}</h1>
             </div>
-            <button class="rounded-smooth border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white hover:bg-white/10 transition" @click="handleLogout">
-              Salir
-            </button>
+            <button class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white" @click="handleLogout">Salir</button>
           </div>
           <div class="overflow-x-auto px-4 pb-4">
-            <div class="flex gap-2 min-w-max">
+            <div class="flex min-w-max gap-2">
               <router-link
                 v-for="link in navigationLinks"
                 :key="link.to"
                 :to="link.to"
-                class="rounded-smooth px-4 py-2 text-sm font-medium transition"
-                :class="isActive(link.to)
-                  ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white'
-                  : 'bg-white/5 text-slate-300'"
+                class="rounded-full px-4 py-2 text-sm font-medium transition"
+                :class="isActive(link.to) ? 'bg-cyan-400 text-slate-950' : 'bg-white/5 text-slate-200'"
               >
                 {{ link.label }}
               </router-link>
@@ -87,8 +81,7 @@
           </div>
         </header>
 
-        <!-- Main content -->
-        <main class="flex-1 p-4 sm:p-6 xl:p-8 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
+        <main class="flex-1 p-4 sm:p-6 xl:p-8">
           <slot />
         </main>
       </div>
@@ -116,28 +109,24 @@ const { user, signOut, isAdmin } = useAuth();
 const navigationLinks = computed(() => {
   if (props.mode === 'admin' || isAdmin.value) {
     return [
-      { label: 'Panel', to: '/admin/dashboard', icon: '●' },
-      { label: 'Usuarios', to: '/admin/users', icon: '●' },
-      { label: 'Asistencia', to: '/admin/attendance', icon: '●' },
-      { label: 'Inventario', to: '/admin/inventory', icon: '●' },
-      { label: 'Estadísticas', to: '/admin/statistics', icon: '●' },
+      { label: 'Inicio', to: '/admin/dashboard', icon: '▣' },
+      { label: 'Usuarios', to: '/admin/users', icon: '◫' },
+      { label: 'Asistencia', to: '/admin/attendance', icon: '◌' },
+      { label: 'Inventario', to: '/admin/inventory', icon: '▤' },
     ];
   }
 
   return [
-    { label: 'Panel', to: '/user/dashboard', icon: '●' },
-    { label: 'Horarios', to: '/user/schedule', icon: '●' },
-    { label: 'Mi asistencia', to: '/user/attendance', icon: '●' },
+    { label: 'Inicio', to: '/user/dashboard', icon: '▣' },
+    { label: 'Horarios', to: '/user/schedule', icon: '◫' },
+    { label: 'Mi asistencia', to: '/user/attendance', icon: '◌' },
   ];
 });
 
-const currentSectionTitle = computed(() => {
-  const active = navigationLinks.value.find((link) => route.path.startsWith(link.to));
-  return active?.label || 'Panel';
-});
+const currentSectionTitle = computed(() => navigationLinks.value.find((link) => route.path.startsWith(link.to))?.label || 'Panel');
 
 const userInitials = computed(() => {
-  const name = user.value?.name || 'GC';
+  const name = user.value?.name || 'AC';
   return name
     .split(' ')
     .slice(0, 2)

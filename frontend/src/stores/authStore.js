@@ -7,6 +7,23 @@ import {
   formatUserData,
   isValidUser,
 } from '../utils/authUtils';
+import { APP_CONFIG } from '../config/appConfig';
+import { apiGet } from '../services/apiClient';
+
+const normalizeStoredUser = (userData) => {
+  if (!userData) {
+    return null;
+  }
+
+  if (userData.email && userData.name && userData.id) {
+    return {
+      ...userData,
+      role: userData.role || (String(userData.email).endsWith('@urp.edu.pe') ? 'admin' : 'user'),
+    };
+  }
+
+  return formatUserData(userData);
+};
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -27,8 +44,26 @@ export const useAuthStore = defineStore('auth', () => {
       isLoading.value = true;
       const { user: storedUser, token: storedToken } = getAuthSession();
 
+      if (storedToken && APP_CONFIG.authApiBaseUrl) {
+        try {
+          const backendUser = await apiGet('/auth/me', storedToken);
+          const sessionUser = normalizeStoredUser(backendUser);
+
+          if (sessionUser && isValidUser(sessionUser)) {
+            user.value = sessionUser;
+            token.value = storedToken;
+            userRole.value = sessionUser.role || 'user';
+            isSignout.value = false;
+            saveAuthSession(sessionUser, storedToken);
+            return;
+          }
+        } catch (error) {
+          clearAuthStorage();
+        }
+      }
+
       if (storedUser && isValidUser(storedUser)) {
-        user.value = storedUser;
+        user.value = normalizeStoredUser(storedUser);
         token.value = storedToken;
         userRole.value = storedUser.role || 'user';
         isSignout.value = false;
@@ -55,7 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Datos de autenticación incompletos');
       }
 
-      const formattedUser = formatUserData(userData);
+      const formattedUser = normalizeStoredUser(userData);
       if (!isValidUser(formattedUser)) {
         throw new Error('Datos de usuario inválidos');
       }
@@ -84,7 +119,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Datos de registro incompletos');
       }
 
-      const formattedUser = formatUserData(userData);
+      const formattedUser = normalizeStoredUser(userData);
       if (!isValidUser(formattedUser)) {
         throw new Error('Datos de usuario inválidos');
       }

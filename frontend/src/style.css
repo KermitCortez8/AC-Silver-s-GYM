@@ -1,21 +1,5 @@
 @import "tailwindcss";
 
-:root {
-  --primary: #EF816B;
-  --primary-light: #DEDAD9;
-  --primary-dark: #D46A52;
-  --accent: #F4A896;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --error: #EF4444;
-  --gray-50: #F9FAFB;
-  --gray-100: #F3F4F6;
-  --gray-200: #E5E7EB;
-  --gray-600: #4B5563;
-  --gray-800: #1F2937;
-  --gray-900: #111827;
-}
-
 html,
 body,
 #app {
@@ -24,11 +8,12 @@ body,
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--gray-50) 100%);
-  color: var(--gray-800);
+  font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
+  background: #020617;
+  color: #e2e8f0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -43,156 +28,7 @@ select {
   font: inherit;
 }
 
-/* Botones personalizados */
-button {
-  transition: all 0.3s ease;
-}
-
-button:not(:disabled) {
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Botones primarios */
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 16px;
-  border: none;
-  font-weight: 600;
-  box-shadow: 0 4px 15px rgba(239, 129, 107, 0.3);
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(239, 129, 107, 0.4);
-}
-
-/* Botones secundarios */
-.btn-secondary {
-  background: linear-gradient(135deg, var(--primary-light) 0%, #D4B5AD 100%);
-  color: var(--gray-800);
-  padding: 0.75rem 1.5rem;
-  border-radius: 16px;
-  border: 2px solid var(--primary);
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-secondary:hover {
-  background: linear-gradient(135deg, var(--accent) 0%, #E8946D 100%);
-  transform: translateY(-2px);
-}
-
-/* Tarjetas con efecto */
-.card {
-  background: white;
-  border-radius: 20px;
-  border: 2px solid var(--primary-light);
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(239, 129, 107, 0.1);
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 8px 20px rgba(239, 129, 107, 0.2);
-  transform: translateY(-4px);
-}
-
-/* Inputs con estilo */
-input,
-select,
-textarea {
-  border: 2px solid var(--primary-light);
-  border-radius: 12px;
-  padding: 0.75rem;
-  background: white;
-  color: var(--gray-800);
-  transition: all 0.3s ease;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(239, 129, 107, 0.1);
-}
-
-/* Badges de colores */
-.badge {
-  display: inline-block;
-  padding: 0.4rem 0.8rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.badge-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: white;
-}
-
-.badge-secondary {
-  background: var(--primary-light);
-  color: var(--gray-800);
-}
-
-.badge-success {
-  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-  color: white;
-}
-
-.badge-warning {
-  background: linear-gradient(135deg, var(--warning) 0%, #D97706 100%);
-  color: white;
-}
-
-.badge-error {
-  background: linear-gradient(135deg, var(--error) 0%, #DC2626 100%);
-  color: white;
-}
-
-/* Gradientes útiles */
-.gradient-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-}
-
-.gradient-accent {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
-}
-
-/* Authenticated shell overrides to match the login theme */
-.app-shell .bg-white,
-.app-shell .bg-white\/80,
-.app-shell .bg-white\/85,
-.app-shell .bg-white\/90,
-.app-shell .bg-white\/95 {
-  background-color: rgba(15, 23, 42, 0.82) !important;
-  color: #f8fafc !important;
-}
-
-.app-shell .card {
-  background: rgba(15, 23, 42, 0.82) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  color: #f8fafc !important;
-}
-
-.app-shell .text-gray-800,
-.app-shell .text-gray-700,
-.app-shell .text-gray-600,
-.app-shell .text-gray-500 {
-  color: #cbd5e1 !important;
-}
-
-.app-shell .border-primary\/20,
-.app-shell .border-primary\/30 {
-  border-color: rgba(34, 211, 238, 0.18) !important;
+::selection {
+  background: rgba(34, 211, 238, 0.35);
+  color: #fff;
 }

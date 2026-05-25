@@ -1,286 +1,120 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { APP_CONFIG } from '../config/appConfig';
+import { apiDelete, apiGet, apiPost } from '../services/apiClient';
+import { useAuthStore } from './authStore';
 
-const STORAGE_KEY = 'gym_frontend_data_v1';
+const PASS_STORAGE_KEY = 'gym_frontend_attendance_passes_v2';
 const PASS_EXPIRY_MINUTES = 10;
-const MEMBER_ALERT_DAYS = 7;
-const PLAN_DURATION_MONTHS = {
-  'plan-monthly': 1,
-  'plan-quarterly': 3,
-  'plan-annual': 12,
-};
-
-const seedState = () => ({
-  planCatalog: [
-    {
-      id: 'plan-monthly',
-      name: 'Mensual',
-      durationMonths: 1,
-      price: 80,
-      description: 'Acceso estándar por 30 días.',
-      active: true,
-    },
-    {
-      id: 'plan-quarterly',
-      name: 'Trimestral',
-      durationMonths: 3,
-      price: 210,
-      description: 'Ideal para continuidad de corto plazo.',
-      active: true,
-    },
-    {
-      id: 'plan-annual',
-      name: 'Anual',
-      durationMonths: 12,
-      price: 720,
-      description: 'Mejor relación costo/beneficio.',
-      active: true,
-    },
-  ],
-  promotions: [
-    {
-      id: 'promo-welcome',
-      name: 'Bienvenida 10%',
-      discountType: 'percent',
-      discountValue: 10,
-      appliesTo: ['plan-monthly', 'plan-quarterly'],
-      active: true,
-      validUntil: '2026-12-31',
-      note: 'Promoción inicial de captación.',
-    },
-  ],
-  members: [
-    {
-      id: 'member-1',
-      name: 'María Fernández',
-      dni: '74281635',
-      internalCode: 'GYM-0001',
-      email: 'maria@ejemplo.com',
-      phone: '999 111 222',
-      role: 'user',
-      plan: 'Mensual',
-      planId: 'plan-monthly',
-      membershipStart: '2026-01-12',
-      membershipEnd: '2026-06-12',
-      membershipPrice: 80,
-      status: 'Activa',
-      joinedAt: '2026-01-12',
-      attendanceRate: 92,
-      membershipHistory: [
-        {
-          id: 'memhist-1',
-          type: 'Alta',
-          at: '2026-01-12T08:00:00.000Z',
-          planId: 'plan-monthly',
-          startDate: '2026-01-12',
-          endDate: '2026-06-12',
-          price: 80,
-          discount: 0,
-          note: 'Registro inicial del socio.',
-        },
-      ],
-      changeHistory: [
-        {
-          id: 'change-1',
-          at: '2026-01-12T08:00:00.000Z',
-          action: 'Registro inicial',
-          fields: ['name', 'email', 'phone', 'plan', 'status'],
-        },
-      ],
-      schedules: [],
-    },
-    {
-      id: 'member-2',
-      name: 'Carlos Rojas',
-      dni: '71928451',
-      internalCode: 'GYM-0002',
-      email: 'carlos@urp.edu.pe',
-      phone: '988 222 333',
-      role: 'admin',
-      plan: 'Anual',
-      planId: 'plan-annual',
-      membershipStart: '2025-11-03',
-      membershipEnd: '2026-11-03',
-      membershipPrice: 720,
-      status: 'Activa',
-      joinedAt: '2025-11-03',
-      attendanceRate: 88,
-      membershipHistory: [],
-      changeHistory: [],
-      schedules: [],
-    },
-    {
-      id: 'member-3',
-      name: 'Lucía Torres',
-      dni: '78451236',
-      internalCode: 'GYM-0003',
-      email: 'lucia@ejemplo.com',
-      phone: '977 444 555',
-      role: 'user',
-      plan: 'Trimestral',
-      planId: 'plan-quarterly',
-      membershipStart: '2026-03-20',
-      membershipEnd: '2026-06-20',
-      membershipPrice: 210,
-      status: 'Pendiente',
-      joinedAt: '2026-03-20',
-      attendanceRate: 76,
-      membershipHistory: [],
-      changeHistory: [],
-      schedules: [],
-    },
-  ],
-  attendance: [
-    {
-      id: 'attendance-1',
-      memberId: 'member-1',
-      memberName: 'María Fernández',
-      type: 'Entrada',
-      time: '07:10',
-      date: '2026-05-03',
-      note: 'Rutina funcional',
-    },
-    {
-      id: 'attendance-2',
-      memberId: 'member-2',
-      memberName: 'Carlos Rojas',
-      type: 'Entrada',
-      time: '06:45',
-      date: '2026-05-03',
-      note: 'Revisión general',
-    },
-    {
-      id: 'attendance-3',
-      memberId: 'member-3',
-      memberName: 'Lucía Torres',
-      type: 'Salida',
-      time: '19:05',
-      date: '2026-05-02',
-      note: 'Finalizó cardio',
-    },
-  ],
-  attendancePasses: [],
-  inventory: [
-    {
-      id: 'item-1',
-      inventoryCode: 'INV-0001',
-      name: 'Mancuernas ajustables',
-      category: 'Pesas',
-      quantity: 12,
-      minQuantity: 6,
-      location: 'Sala 1',
-      status: 'Operativo',
-      observations: 'En buen estado operativo.',
-    },
-    {
-      id: 'item-2',
-      inventoryCode: 'INV-0002',
-      name: 'Tapetes de yoga',
-      category: 'Accesorios',
-      quantity: 8,
-      minQuantity: 10,
-      location: 'Depósito',
-      status: 'En mantenimiento',
-      observations: 'Requiere revisión por desgaste.',
-    },
-    {
-      id: 'item-3',
-      inventoryCode: 'INV-0003',
-      name: 'Bandas de resistencia',
-      category: 'Accesorios',
-      quantity: 18,
-      minQuantity: 8,
-      location: 'Recepción',
-      status: 'Operativo',
-      observations: 'Reposición reciente.',
-    },
-  ],
-  schedule: [
-    { day: 'Lunes', hours: '06:00 - 22:00', focus: 'Piernas y glúteos' },
-    { day: 'Martes', hours: '06:00 - 22:00', focus: 'Espalda y core' },
-    { day: 'Miércoles', hours: '06:00 - 22:00', focus: 'Pecho y hombros' },
-    { day: 'Jueves', hours: '06:00 - 22:00', focus: 'Cardio y movilidad' },
-    { day: 'Viernes', hours: '06:00 - 22:00', focus: 'Full body' },
-    { day: 'Sábado', hours: '08:00 - 18:00', focus: 'Clases dirigidas' },
-    { day: 'Domingo', hours: '09:00 - 14:00', focus: 'Mantenimiento' },
-  ],
-});
+const ALERT_DAYS = 7;
+const WEEK_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
-const nowTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const nowISO = () => new Date().toISOString();
-const dateFromISO = (value) => new Date(`${value}T00:00:00`);
-const toISODate = (value) => value.toISOString().slice(0, 10);
+const nowTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-const addMonthsISO = (dateISO, months) => {
-  const date = dateFromISO(dateISO);
+const safeNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const addDays = (dateISO, days) => {
+  const date = new Date(`${dateISO}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+const addMonths = (dateISO, months) => {
+  const date = new Date(`${dateISO}T00:00:00`);
   date.setMonth(date.getMonth() + months);
-  return toISODate(date);
+  return date.toISOString().slice(0, 10);
 };
 
-const daysUntilISO = (dateISO) => {
-  const diff = dateFromISO(dateISO).getTime() - dateFromISO(todayISO()).getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+const readPasses = () => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    return JSON.parse(window.localStorage.getItem(PASS_STORAGE_KEY) || '[]');
+  } catch (error) {
+    return [];
+  }
 };
 
-const planDurationById = (planId) => PLAN_DURATION_MONTHS[planId] || 1;
+const savePasses = (passes) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
 
-const planNameById = (planId) =>
-  ({
-    'plan-monthly': 'Mensual',
-    'plan-quarterly': 'Trimestral',
-    'plan-annual': 'Anual',
-  })[planId] || 'Mensual';
+  window.localStorage.setItem(PASS_STORAGE_KEY, JSON.stringify(passes));
+};
 
-const generateInventoryCode = () =>
-  `INV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+const normalizeClient = (client = {}) => ({
+  ...client,
+  id_cliente: safeNumber(client.id_cliente),
+  estado: client.estado !== false,
+  fecha_registro: client.fecha_registro || todayISO(),
+});
 
-const normalizeInventoryItem = (item = {}) => ({
+const normalizeUser = (user = {}) => ({
+  ...user,
+  id_usuario: safeNumber(user.id_usuario),
+  estado: user.estado !== false,
+});
+
+const normalizePlan = (plan = {}) => ({
+  ...plan,
+  id_pm: safeNumber(plan.id_pm),
+  precio: safeNumber(plan.precio),
+});
+
+const normalizeMembership = (membership = {}) => ({
+  ...membership,
+  id_membresia: safeNumber(membership.id_membresia),
+  id_cliente: safeNumber(membership.id_cliente),
+  id_pm: safeNumber(membership.id_pm),
+});
+
+const normalizeInventory = (item = {}) => ({
   ...item,
-  inventoryCode: item.inventoryCode || `INV-${String(item.id || Date.now()).slice(-4).toUpperCase()}`,
+  id_item: safeNumber(item.id_item),
+  cantidad_stock: safeNumber(item.cantidad_stock),
+  stock_minimo: safeNumber(item.stock_minimo),
 });
 
-const normalizeMember = (member = {}) => {
-  const planId = member.planId || (member.plan === 'Anual' ? 'plan-annual' : member.plan === 'Trimestral' ? 'plan-quarterly' : 'plan-monthly');
-  const baseDate = member.membershipStart || member.joinedAt || todayISO();
-
-  return {
-    ...member,
-    dni: member.dni || '',
-    internalCode: member.internalCode || `GYM-${String(member.id || Date.now()).slice(-4).toUpperCase()}`,
-    plan: member.plan || planNameById(planId),
-    planId,
-    membershipStart: baseDate,
-    membershipEnd: member.membershipEnd || addMonthsISO(baseDate, planDurationById(planId)),
-    membershipPrice: Number(member.membershipPrice ?? 0),
-    membershipHistory: Array.isArray(member.membershipHistory) ? member.membershipHistory : [],
-    changeHistory: Array.isArray(member.changeHistory) ? member.changeHistory : [],
-    schedules: Array.isArray(member.schedules) ? member.schedules : [],
-  };
-};
-
-const normalizeState = (state) => ({
-  ...seedState(),
-  ...state,
-  members: Array.isArray(state?.members) ? state.members.map((member) => normalizeMember(member)) : seedState().members,
-  planCatalog: Array.isArray(state?.planCatalog) ? state.planCatalog : seedState().planCatalog,
-  promotions: Array.isArray(state?.promotions) ? state.promotions : seedState().promotions,
-  attendancePasses: Array.isArray(state?.attendancePasses) ? state.attendancePasses : [],
-  inventory: Array.isArray(state?.inventory) ? state.inventory.map((item) => normalizeInventoryItem(item)) : seedState().inventory,
+const normalizeRoutine = (routine = {}) => ({
+  ...routine,
+  id_rutina: safeNumber(routine.id_rutina),
 });
 
-const generatePassCode = () => {
-  const timeSegment = Date.now().toString(36).toUpperCase();
-  const randomSegment = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `${timeSegment}-${randomSegment}`;
-};
+const normalizeSchedule = (schedule = {}) => ({
+  ...schedule,
+  id_horario: safeNumber(schedule.id_horario),
+  id_cliente: safeNumber(schedule.id_cliente),
+  id_rutina: safeNumber(schedule.id_rutina),
+});
 
-const isPassExpired = (pass) => {
-  if (!pass?.expiresAt) return true;
-  return Date.now() > new Date(pass.expiresAt).getTime();
-};
+const normalizeAttendance = (entry = {}) => ({
+  ...entry,
+  id_asistencia: safeNumber(entry.id_asistencia),
+  id_cliente: safeNumber(entry.id_cliente),
+});
 
-const getPassPayload = (pass) =>
+const normalizeTicket = (ticket = {}) => ({
+  ...ticket,
+  id_ticket: safeNumber(ticket.id_ticket),
+  id_cliente: safeNumber(ticket.id_cliente),
+  id_usuario: safeNumber(ticket.id_usuario),
+});
+
+const clientName = (client) => `${client?.nombres || ''} ${client?.apellidos || ''}`.trim() || 'Sin nombre';
+
+const parseMemberId = (value) => safeNumber(String(value || '').replace(/^cliente-/, ''));
+const parsePlanId = (value) => safeNumber(String(value || '').replace(/^pm-/, ''));
+const membershipDurationMonths = (plan) => safeNumber(String(plan?.duracion || '').match(/\d+/)?.[0], 1);
+
+const buildPassPayload = (pass) =>
   JSON.stringify({
     gym: 'AC-Silver-s-GYM',
     passId: pass.id,
@@ -290,371 +124,501 @@ const getPassPayload = (pass) =>
     expiresAt: pass.expiresAt,
   });
 
-const parsePassInput = (input) => {
-  if (!input) return '';
+const buildMemberCard = (client, users, memberships, plans, schedules, attendance) => {
+  const clientId = safeNumber(client.id_cliente);
+  const clientMemberships = memberships
+    .filter((membership) => safeNumber(membership.id_cliente) === clientId)
+    .sort((left, right) => String(right.fecha_inicio || '').localeCompare(String(left.fecha_inicio || '')));
+  const latestMembership = clientMemberships[0] || null;
+  const plan = latestMembership ? plans.find((entry) => safeNumber(entry.id_pm) === safeNumber(latestMembership.id_pm)) || null : null;
+  const linkedUser = users.find(
+    (user) => String(user.dni || '').trim() === String(client.dni || '').trim() || String(user.email || '').toLowerCase() === String(client.email || '').toLowerCase(),
+  );
+  const clientAttendance = attendance.filter((entry) => safeNumber(entry.id_cliente) === clientId);
+  const clientSchedules = schedules.filter((entry) => safeNumber(entry.id_cliente) === clientId);
 
-  const normalized = input.trim();
-  if (!normalized) return '';
-
-  try {
-    const parsed = JSON.parse(normalized);
-    if (parsed?.code) {
-      return String(parsed.code).trim();
-    }
-  } catch (error) {
-    // Keep the raw value if the payload is not JSON.
-  }
-
-  return normalized;
+  return {
+    id: `cliente-${clientId}`,
+    id_cliente: clientId,
+    name: clientName(client),
+    dni: client.dni || '',
+    internalCode: `CL-${String(clientId).padStart(4, '0')}`,
+    email: client.email || '',
+    phone: client.telefono || '',
+    role: linkedUser?.rol || 'user',
+    plan: plan?.nombre_plan || 'Sin plan',
+    planId: plan ? `pm-${plan.id_pm}` : '',
+    membershipStart: latestMembership?.fecha_inicio || client.fecha_registro || todayISO(),
+    membershipEnd: latestMembership?.fecha_fin || '',
+    membershipPrice: plan?.precio || 0,
+    status: client.estado ? 'Activa' : 'Inactiva',
+    joinedAt: client.fecha_registro || '',
+    attendanceRate: clientAttendance.length ? Math.min(100, clientAttendance.length * 10) : 0,
+    membershipHistory: clientMemberships.map((entry) => ({
+      id: `membership-${entry.id_membresia}`,
+      type: entry.estado || 'Activa',
+      at: entry.fecha_inicio || nowISO(),
+      planId: `pm-${entry.id_pm}`,
+      startDate: entry.fecha_inicio || '',
+      endDate: entry.fecha_fin || '',
+      price: plan?.precio || 0,
+      discount: 0,
+      note: entry.estado || 'Membresía',
+    })),
+    changeHistory: [],
+    schedules: clientSchedules.map((entry) => ({
+      id: `schedule-${entry.id_horario}`,
+      day: entry.dia_semana,
+      startTime: entry.hora_inicio,
+      endTime: entry.hora_fin,
+      note: `Rutina ${entry.id_rutina}`,
+    })),
+  };
 };
 
-const loadState = () => {
-  if (typeof window === 'undefined') {
-    return seedState();
-  }
-
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    return seedState();
-  }
-
-  try {
-    const parsed = JSON.parse(stored);
-    return normalizeState(parsed);
-  } catch (error) {
-    return seedState();
-  }
-};
+const staticSchedule = () =>
+  WEEK_DAYS.map((day, index) => ({
+    day,
+    hours: index === 5 ? '08:00 - 18:00' : index === 6 ? '09:00 - 14:00' : '06:00 - 22:00',
+    focus: index === 0 ? 'Piernas y glúteos' : index === 1 ? 'Espalda y core' : index === 2 ? 'Pecho y hombros' : index === 3 ? 'Cardio y movilidad' : index === 4 ? 'Full body' : index === 5 ? 'Clases dirigidas' : 'Mantenimiento',
+  }));
 
 export const useGymStore = defineStore('gym', () => {
-  const initialState = loadState();
-  const planCatalog = ref(initialState.planCatalog);
-  const promotions = ref(initialState.promotions);
-  const members = ref(initialState.members);
-  const attendance = ref(initialState.attendance);
-  const attendancePasses = ref(initialState.attendancePasses || []);
-  const inventory = ref(initialState.inventory);
-  const schedule = ref(initialState.schedule);
+  const loading = ref(false);
+  const error = ref('');
+  const summary = ref({ stats: {}, flujos: {}, alertas: [] });
 
-  const persist = () => {
-    if (typeof window === 'undefined') return;
+  const users = ref([]);
+  const clients = ref([]);
+  const plans = ref([]);
+  const memberships = ref([]);
+  const attendance = ref([]);
+  const inventory = ref([]);
+  const movements = ref([]);
+  const tickets = ref([]);
+  const routines = ref([]);
+  const schedules = ref([]);
+  const promotions = ref([]);
+  const attendancePasses = ref(readPasses());
 
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        members: members.value,
-        attendance: attendance.value,
-        attendancePasses: attendancePasses.value,
-        planCatalog: planCatalog.value,
-        promotions: promotions.value,
-        inventory: inventory.value,
-        schedule: schedule.value,
-      }),
-    );
-  };
+  const auth = useAuthStore();
+  const authToken = computed(() => auth.token || '');
+  const hasBackend = computed(() => Boolean(APP_CONFIG.authApiBaseUrl));
+
+  const persistPasses = () => savePasses(attendancePasses.value);
+  const memberCards = computed(() => clients.value.map((client) => buildMemberCard(client, users.value, memberships.value, plans.value, schedules.value, attendance.value)));
 
   const stats = computed(() => {
-    const today = todayISO();
-    const lowStockItems = inventory.value.filter((item) => item.quantity <= item.minQuantity).length;
-
+    const backendStats = summary.value.stats || {};
     return {
-      totalMembers: members.value.length,
-      activeMembers: members.value.filter((member) => member.status === 'Activa').length,
-      attendanceToday: attendance.value.filter((entry) => entry.date === today).length,
-      inventoryItems: inventory.value.length,
-      lowStockItems,
-      attendanceRate: members.value.length
-        ? Math.round(
-            members.value.reduce((sum, member) => sum + Number(member.attendanceRate || 0), 0) /
-              members.value.length,
-          )
-        : 0,
+      totalMembers: safeNumber(backendStats.totalMembers, clients.value.length),
+      activeMembers: safeNumber(backendStats.activeMembers, clients.value.filter((client) => client.estado).length),
+      attendanceToday: safeNumber(backendStats.attendanceToday, attendance.value.filter((entry) => entry.fecha === todayISO()).length),
+      inventoryItems: safeNumber(backendStats.inventoryItems, inventory.value.length),
+      lowStockItems: safeNumber(backendStats.lowStockItems, inventory.value.filter((item) => safeNumber(item.cantidad_stock) <= safeNumber(item.stock_minimo)).length),
+      attendanceRate: safeNumber(backendStats.attendanceRate, 0),
     };
   });
 
   const recentAttendance = computed(() =>
-    [...attendance.value].sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`)).slice(0, 10),
+    [...attendance.value]
+      .sort((left, right) => `${right.fecha || ''} ${right.hora || ''}`.localeCompare(`${left.fecha || ''} ${left.hora || ''}`))
+      .slice(0, 10)
+      .map((entry) => {
+        const client = clients.value.find((item) => safeNumber(item.id_cliente) === safeNumber(entry.id_cliente));
+        return {
+          id: `attendance-${entry.id_asistencia}`,
+          memberName: client ? clientName(client) : `Cliente #${entry.id_cliente}`,
+          memberCode: `CL-${String(entry.id_cliente).padStart(4, '0')}`,
+          type: entry.validacion === false ? 'Revisión' : 'Entrada',
+          time: entry.hora || '',
+          date: entry.fecha || '',
+          exercise: entry.validacion === false ? 'Validación manual' : 'Acceso registrado',
+          note: entry.validacion === false ? 'Requiere verificación' : 'Asistencia confirmada',
+        };
+      }),
   );
 
   const attendanceAnalytics = computed(() => {
-    const today = todayISO();
-    const weekStart = dateFromISO(today);
-    weekStart.setDate(weekStart.getDate() - 6);
-    const monthStart = dateFromISO(today);
-    monthStart.setDate(1);
-
     const countsByDate = attendance.value.reduce((accumulator, entry) => {
-      accumulator[entry.date] = (accumulator[entry.date] || 0) + 1;
+      const key = entry.fecha || '';
+      accumulator[key] = (accumulator[key] || 0) + 1;
       return accumulator;
     }, {});
 
-    const totalInPeriod = (startDate) =>
-      attendance.value.filter((entry) => dateFromISO(entry.date).getTime() >= startDate.getTime()).length;
-
     return {
-      today: countsByDate[today] || 0,
-      week: totalInPeriod(weekStart),
-      month: totalInPeriod(monthStart),
+      today: countsByDate[todayISO()] || 0,
+      week: attendance.value.filter((entry) => (entry.fecha || '') >= addDays(todayISO(), -6)).length,
+      month: attendance.value.filter((entry) => (entry.fecha || '') >= `${todayISO().slice(0, 8)}01`).length,
       countsByDate,
     };
   });
 
-  const activePlans = computed(() => planCatalog.value.filter((plan) => plan.active));
+  const activePlans = computed(() => plans.value.map((plan) => ({
+    id: `pm-${plan.id_pm}`,
+    name: plan.nombre_plan,
+    durationMonths: membershipDurationMonths(plan),
+    price: safeNumber(plan.precio),
+    description: plan.duracion || '',
+    active: true,
+  })));
 
-  const activePromotions = computed(() =>
-    promotions.value.filter((promotion) => promotion.active && (!promotion.validUntil || promotion.validUntil >= todayISO())),
-  );
-
+  const activePromotions = computed(() => promotions.value);
+  const lowStockInventory = computed(() => inventory.value.filter((item) => safeNumber(item.cantidad_stock) <= safeNumber(item.stock_minimo)));
   const membershipAlerts = computed(() =>
-    members.value
-      .filter((member) => member.status === 'Activa' && member.membershipEnd)
+    memberCards.value
+      .filter((member) => member.membershipEnd && member.status === 'Activa')
       .map((member) => ({
         ...member,
-        daysUntilExpiry: daysUntilISO(member.membershipEnd),
+        daysUntilExpiry: Math.ceil((new Date(`${member.membershipEnd}T00:00:00`).getTime() - new Date(`${todayISO()}T00:00:00`).getTime()) / (1000 * 60 * 60 * 24)),
       }))
-      .filter((member) => member.daysUntilExpiry <= MEMBER_ALERT_DAYS),
+      .filter((member) => member.daysUntilExpiry <= ALERT_DAYS),
   );
 
-  const lowStockInventory = computed(() =>
-    inventory.value.filter((item) => item.quantity <= item.minQuantity),
-  );
-
-  const searchMembers = (query) => {
-    const normalizedQuery = query?.trim().toLowerCase() || '';
-    if (!normalizedQuery) {
-      return members.value;
+  const schedule = computed(() => {
+    if (!schedules.value.length) {
+      return staticSchedule();
     }
 
-    return members.value.filter((member) =>
-      [member.dni, member.internalCode, member.name, member.email, member.phone, member.plan, member.status]
-        .join(' ')
-        .toLowerCase()
-        .includes(normalizedQuery),
+    return WEEK_DAYS.map((day) => {
+      const daySchedule = schedules.value.find((entry) => String(entry.dia_semana || '').toLowerCase() === String(day).toLowerCase());
+      const routine = daySchedule ? routines.value.find((entry) => safeNumber(entry.id_rutina) === safeNumber(daySchedule.id_rutina)) : null;
+
+      return {
+        day,
+        hours: daySchedule ? `${daySchedule.hora_inicio || '--:--'} - ${daySchedule.hora_fin || '--:--'}` : 'Sin horario',
+        focus: routine?.nombre_rutina || (daySchedule ? `Rutina ${daySchedule.id_rutina}` : 'Sin rutina asignada'),
+      };
+    });
+  });
+
+  const loadAll = async () => {
+    if (!hasBackend.value) {
+      return;
+    }
+
+    loading.value = true;
+    error.value = '';
+
+    try {
+      const [summaryData, usersData, clientsData, plansData, membershipsData, attendanceData, inventoryData, movementsData, ticketsData, routinesData, schedulesData] = await Promise.all([
+        apiGet('/gym/summary', authToken.value),
+        apiGet('/usuarios', authToken.value),
+        apiGet('/clientes', authToken.value),
+        apiGet('/planes-membresia', authToken.value),
+        apiGet('/membresias', authToken.value),
+        apiGet('/asistencia', authToken.value),
+        apiGet('/inventario', authToken.value),
+        apiGet('/inventario/movimientos', authToken.value),
+        apiGet('/gym/tickets', authToken.value),
+        apiGet('/gym/rutinas', authToken.value),
+        apiGet('/gym/horarios', authToken.value),
+      ]);
+
+      summary.value = summaryData || { stats: {}, flujos: {}, alertas: [] };
+      users.value = Array.isArray(usersData) ? usersData.map(normalizeUser) : [];
+      clients.value = Array.isArray(clientsData) ? clientsData.map(normalizeClient) : [];
+      plans.value = Array.isArray(plansData) ? plansData.map(normalizePlan) : [];
+      memberships.value = Array.isArray(membershipsData) ? membershipsData.map(normalizeMembership) : [];
+      attendance.value = Array.isArray(attendanceData) ? attendanceData.map(normalizeAttendance) : [];
+      inventory.value = Array.isArray(inventoryData) ? inventoryData.map(normalizeInventory) : [];
+      movements.value = Array.isArray(movementsData) ? movementsData : [];
+      tickets.value = Array.isArray(ticketsData) ? ticketsData.map(normalizeTicket) : [];
+      routines.value = Array.isArray(routinesData) ? routinesData.map(normalizeRoutine) : [];
+      schedules.value = Array.isArray(schedulesData) ? schedulesData.map(normalizeSchedule) : [];
+      persistPasses();
+    } catch (fetchError) {
+      error.value = fetchError instanceof Error ? fetchError.message : 'No se pudo cargar el backend';
+      throw fetchError;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const refresh = async () => {
+    if (!hasBackend.value) {
+      return;
+    }
+
+    await loadAll();
+  };
+
+  const searchMembers = (query) => {
+    const normalizedQuery = String(query || '').trim().toLowerCase();
+    if (!normalizedQuery) {
+      return memberCards.value;
+    }
+
+    return memberCards.value.filter((member) =>
+      [member.name, member.dni, member.email, member.phone, member.internalCode, member.plan, member.status].join(' ').toLowerCase().includes(normalizedQuery),
     );
   };
 
-  const getPlanById = (planId) => planCatalog.value.find((plan) => plan.id === planId) || null;
+  const memberById = (id) => memberCards.value.find((member) => member.id === id || member.id_cliente === parseMemberId(id)) || null;
+  const memberByEmail = (email) => memberCards.value.find((member) => String(member.email || '').toLowerCase() === String(email || '').toLowerCase()) || null;
+  const memberByInternalCode = (code) => memberCards.value.find((member) => String(member.internalCode || '').trim().toUpperCase() === String(code || '').trim().toUpperCase()) || null;
+  const memberSchedules = (memberId) => schedules.value.filter((entry) => safeNumber(entry.id_cliente) === parseMemberId(memberId));
+  const getPlanById = (planId) => plans.value.find((plan) => safeNumber(plan.id_pm) === parsePlanId(planId)) || null;
+  const getPromotionById = (promotionId) => promotions.value.find((promotion) => String(promotion.id) === String(promotionId)) || null;
 
-  const getPromotionById = (promotionId) => promotions.value.find((promotion) => promotion.id === promotionId) || null;
+  const isMembershipActive = (member, referenceDate = todayISO()) => {
+    const card = typeof member === 'string' || typeof member === 'number' ? memberById(member) : member;
+    if (!card) {
+      return false;
+    }
 
-  const isMembershipActive = (member, referenceDate = todayISO()) =>
-    Boolean(member) && member.status === 'Activa' && (!member.membershipEnd || member.membershipEnd >= referenceDate);
+    const clientMembership = memberships.value.find((membership) => safeNumber(membership.id_cliente) === safeNumber(card.id_cliente) && String(membership.estado || '').toLowerCase() === 'activa');
+    if (!clientMembership) {
+      return false;
+    }
 
-  const isMembershipExpiringSoon = (member) => Boolean(member?.membershipEnd) && daysUntilISO(member.membershipEnd) <= MEMBER_ALERT_DAYS;
-
-  const logMemberEvent = (memberId, event) => {
-    const index = members.value.findIndex((entry) => entry.id === memberId);
-    if (index < 0) return null;
-
-    const entry = {
-      id: event.id || `history-${Date.now()}`,
-      at: event.at || nowISO(),
-      ...event,
-    };
-
-    const member = members.value[index];
-    members.value[index] = {
-      ...member,
-      changeHistory: [entry, ...(member.changeHistory || [])].slice(0, 20),
-    };
-
-    persist();
-    return entry;
+    return (!clientMembership.fecha_inicio || clientMembership.fecha_inicio <= referenceDate) && (!clientMembership.fecha_fin || clientMembership.fecha_fin >= referenceDate);
   };
 
-  const calculatePlanCharge = (planId, promotionId = '') => {
+  const isMembershipExpiringSoon = (member) => Boolean(member?.membershipEnd) && member.membershipEnd <= addDays(todayISO(), ALERT_DAYS);
+
+  const calculatePlanCharge = (planId) => {
     const plan = getPlanById(planId);
     if (!plan) {
       throw new Error('Plan no encontrado');
     }
 
-    const promotion = promotionId ? getPromotionById(promotionId) : null;
-    let discountAmount = 0;
-
-    if (
-      promotion &&
-      promotion.active &&
-      (!promotion.validUntil || promotion.validUntil >= todayISO()) &&
-      (!promotion.appliesTo?.length || promotion.appliesTo.includes(planId))
-    ) {
-      discountAmount = promotion.discountType === 'fixed' ? Number(promotion.discountValue || 0) : Math.round((Number(plan.price) * Number(promotion.discountValue || 0)) / 100);
-    }
-
     return {
-      plan,
-      promotion,
-      basePrice: Number(plan.price || 0),
-      discountAmount,
-      finalPrice: Math.max(0, Number(plan.price || 0) - discountAmount),
+      plan: {
+        id: `pm-${plan.id_pm}`,
+        name: plan.nombre_plan,
+        durationMonths: membershipDurationMonths(plan),
+        price: safeNumber(plan.precio),
+      },
+      promotion: null,
+      basePrice: safeNumber(plan.precio),
+      discountAmount: 0,
+      finalPrice: safeNumber(plan.precio),
     };
   };
 
-  const upsertPlan = (payload) => {
-    const plan = {
-      id: payload.id || `plan-${Date.now()}`,
-      name: payload.name?.trim() || 'Sin nombre',
-      durationMonths: Number(payload.durationMonths ?? 1),
-      price: Number(payload.price ?? 0),
-      description: payload.description || '',
-      active: payload.active !== false,
+  const upsertPlan = async (payload) => {
+    const body = {
+      id_pm: payload.id_pm ? safeNumber(payload.id_pm) : undefined,
+      nombre_plan: payload.nombre_plan || payload.name || 'Sin nombre',
+      duracion: payload.duracion || `${safeNumber(payload.durationMonths, 1)} mes(es)`,
+      precio: safeNumber(payload.precio ?? payload.price),
     };
 
-    const index = planCatalog.value.findIndex((entry) => entry.id === plan.id);
-    if (index >= 0) {
-      planCatalog.value[index] = plan;
-    } else {
-      planCatalog.value.unshift(plan);
-    }
-
-    persist();
-    return plan;
+    const saved = await apiPost('/planes-membresia', body, authToken.value);
+    await refresh();
+    return saved;
   };
 
-  const upsertPromotion = (payload) => {
+  const upsertPromotion = async (payload) => {
     const promotion = {
       id: payload.id || `promo-${Date.now()}`,
-      name: payload.name?.trim() || 'Sin nombre',
+      name: payload.name || 'Promoción',
       discountType: payload.discountType || 'percent',
-      discountValue: Number(payload.discountValue ?? 0),
+      discountValue: safeNumber(payload.discountValue),
       appliesTo: Array.isArray(payload.appliesTo) ? payload.appliesTo : [],
       active: payload.active !== false,
       validUntil: payload.validUntil || '',
       note: payload.note || '',
     };
 
-    const index = promotions.value.findIndex((entry) => entry.id === promotion.id);
+    const index = promotions.value.findIndex((item) => item.id === promotion.id);
     if (index >= 0) {
       promotions.value[index] = promotion;
     } else {
       promotions.value.unshift(promotion);
     }
 
-    persist();
     return promotion;
   };
 
-  const assignPlanToMember = (memberId, planId, promotionId = '', note = 'Asignación de membresía') => {
-    const index = members.value.findIndex((entry) => entry.id === memberId);
-    if (index < 0) {
-      throw new Error('Miembro no encontrado');
-    }
-
-    const member = members.value[index];
-    const { plan, promotion, basePrice, discountAmount, finalPrice } = calculatePlanCharge(planId, promotionId);
-    const startDate = member.membershipEnd && member.membershipEnd > todayISO() ? member.membershipEnd : todayISO();
-    const endDate = addMonthsISO(startDate, plan.durationMonths || planDurationById(planId));
-    const eventType = member.planId && member.membershipHistory?.length ? 'Renovación' : 'Asignación';
-    const historyEntry = {
-      id: `membership-${Date.now()}`,
-      type: eventType,
-      at: nowISO(),
-      planId: plan.id,
-      planName: plan.name,
-      startDate,
-      endDate,
-      price: basePrice,
-      discount: discountAmount,
-      finalPrice,
-      promotionId: promotion?.id || '',
-      note,
-    };
-
-    members.value[index] = {
-      ...member,
-      plan: plan.name,
-      planId: plan.id,
-      membershipStart: startDate,
-      membershipEnd: endDate,
-      membershipPrice: finalPrice,
-      status: member.status === 'Bloqueada' ? member.status : 'Activa',
-      membershipHistory: [historyEntry, ...(member.membershipHistory || [])].slice(0, 20),
-    };
-
-    logMemberEvent(memberId, {
-      action: eventType,
-      fields: ['plan', 'planId', 'membershipStart', 'membershipEnd', 'membershipPrice', 'status'],
-      note,
-    });
-
-    persist();
-    return members.value[index];
+  const upsertUsuario = async (payload) => {
+    const saved = await apiPost('/usuarios', payload, authToken.value);
+    await refresh();
+    return saved;
   };
 
-  const renewMembership = (memberId, planId = '', promotionId = '', note = 'Renovación de membresía') => {
+  const deleteUsuario = async (idUsuario) => {
+    await apiDelete(`/usuarios/${idUsuario}`, authToken.value);
+    await refresh();
+  };
+
+  const upsertCliente = async (payload) => {
+    const body = {
+      id_cliente: payload.id_cliente ? safeNumber(payload.id_cliente) : undefined,
+      nombres: payload.nombres || payload.name?.split(' ')[0] || 'Sin nombre',
+      apellidos: payload.apellidos || payload.name?.split(' ').slice(1).join(' ') || '',
+      dni: payload.dni || '',
+      telefono: payload.telefono || payload.phone || '',
+      email: payload.email || '',
+      fecha_registro: payload.fecha_registro || payload.joinedAt || todayISO(),
+      estado: payload.estado !== false,
+    };
+
+    const saved = await apiPost('/clientes', body, authToken.value);
+    await refresh();
+    return saved;
+  };
+
+  const deleteCliente = async (idCliente) => {
+    await apiDelete(`/clientes/${idCliente}`, authToken.value);
+    await refresh();
+  };
+
+  const registerClienteMembresia = async (payload) => {
+    const saved = await apiPost('/registro-cliente-membresia', payload, authToken.value);
+    await refresh();
+    return saved;
+  };
+
+  const upsertMembership = async (payload) => {
+    const saved = await apiPost('/membresias', payload, authToken.value);
+    await refresh();
+    return saved;
+  };
+
+  const assignPlanToMember = async (memberId, planId, promotionId = '', note = 'Asignación de membresía') => {
+    const member = memberById(memberId);
+    const plan = getPlanById(planId);
+
+    if (!member || !plan) {
+      throw new Error('No se pudo asignar la membresía');
+    }
+
+    const startDate = member.membershipEnd && member.membershipEnd > todayISO() ? member.membershipEnd : todayISO();
+    const endDate = addMonths(startDate, membershipDurationMonths(plan));
+
+    return registerClienteMembresia({
+      cliente: {
+        id_cliente: member.id_cliente,
+        nombres: member.name.split(' ')[0] || member.name,
+        apellidos: member.name.split(' ').slice(1).join(' '),
+        dni: member.dni,
+        telefono: member.phone,
+        email: member.email,
+        fecha_registro: member.joinedAt || todayISO(),
+        estado: member.status !== 'Inactiva',
+      },
+      id_pm: plan.id_pm,
+      fecha_inicio: startDate,
+      fecha_fin: endDate,
+      note,
+      promotionId,
+    });
+  };
+
+  const renewMembership = async (memberId, planId = '', promotionId = '', note = 'Renovación de membresía') => {
     const member = memberById(memberId);
     if (!member) {
       throw new Error('Miembro no encontrado');
     }
 
-    return assignPlanToMember(memberId, planId || member.planId || 'plan-monthly', promotionId, note);
+    return assignPlanToMember(member.id, planId || member.planId || 'pm-1', promotionId, note);
   };
 
   const attendanceByMemberRange = (memberId, fromDate = '', toDate = '') =>
     attendance.value.filter((entry) => {
-      const matchesMember = entry.memberId === memberId;
-      const afterStart = !fromDate || entry.date >= fromDate;
-      const beforeEnd = !toDate || entry.date <= toDate;
+      const matchesMember = safeNumber(entry.id_cliente) === parseMemberId(memberId);
+      const afterStart = !fromDate || entry.fecha >= fromDate;
+      const beforeEnd = !toDate || entry.fecha <= toDate;
       return matchesMember && afterStart && beforeEnd;
     });
 
-  const memberSchedules = (memberId) => memberById(memberId)?.schedules || [];
+  const checkinById = async (idCliente) => {
+    const saved = await apiPost('/asistencia/checkin', { id_cliente: safeNumber(idCliente) }, authToken.value);
+    await refresh();
+    return saved;
+  };
 
-  const assignMemberSchedule = (memberId, payload) => {
-    const index = members.value.findIndex((entry) => entry.id === memberId);
-    if (index < 0) {
+  const checkinByDni = async (dni) => {
+    const saved = await apiPost('/asistencia/checkin-dni', { dni }, authToken.value);
+    await refresh();
+    return saved;
+  };
+
+  const recordAttendanceByCode = async (internalCode, exercise = '', type = 'Entrada', note = '') => {
+    const member = memberByInternalCode(internalCode);
+    if (!member) {
+      throw new Error('Código no encontrado');
+    }
+
+    const record = await checkinById(member.id_cliente);
+    return {
+      id: `attendance-${Date.now()}`,
+      memberId: member.id,
+      memberName: member.name,
+      memberCode: member.internalCode,
+      type,
+      exercise: exercise || '',
+      time: record?.hora || nowTime(),
+      date: record?.fecha || todayISO(),
+      note,
+    };
+  };
+
+  const recordAttendance = async (memberId, type = 'Entrada', note = '') => {
+    const member = memberById(memberId);
+    if (!member) {
       throw new Error('Miembro no encontrado');
     }
 
-    const slot = {
-      id: `schedule-${Date.now()}`,
-      day: payload.day || 'Lunes',
-      startTime: payload.startTime || '06:00',
-      endTime: payload.endTime || '07:00',
-      note: payload.note || '',
-      assignedAt: nowISO(),
-    };
-
-    const member = members.value[index];
-    members.value[index] = {
-      ...member,
-      schedules: [slot, ...(member.schedules || [])].slice(0, 20),
-    };
-
-    logMemberEvent(memberId, {
-      action: 'Horario asignado',
-      fields: ['schedules'],
-      note: `${slot.day} ${slot.startTime}-${slot.endTime}`,
-    });
-
-    persist();
-    return slot;
-  };
-
-  const userAttendance = (email) => {
-    const member = members.value.find((entry) => entry.email === email);
-    if (!member) return [];
-
-    return attendance.value.filter((entry) => entry.memberId === member.id).slice(0, 10);
-  };
-
-  const memberByEmail = (email) => members.value.find((member) => member.email === email) || null;
-
-  const memberById = (id) => members.value.find((member) => member.id === id) || null;
-
-  const activeAttendancePass = (memberId) => {
-    const pass =
-      [...attendancePasses.value]
-        .filter((entry) => entry.memberId === memberId && entry.status === 'active' && !isPassExpired(entry))
-        .sort((a, b) => new Date(b.issuedAt) - new Date(a.issuedAt))[0] || null;
-
-    if (!pass) {
-      return null;
-    }
-
+    const record = await checkinById(member.id_cliente);
     return {
-      ...pass,
-      qrPayload: getPassPayload(pass),
+      id: `attendance-${Date.now()}`,
+      memberId: member.id,
+      memberName: member.name,
+      memberCode: member.internalCode,
+      type,
+      exercise: note || 'Sin ejercicio',
+      time: record?.hora || nowTime(),
+      date: record?.fecha || todayISO(),
+      note,
     };
+  };
+
+  const upsertInventoryItem = async (payload) => {
+    const body = {
+      id_item: payload.id_item ? safeNumber(payload.id_item) : undefined,
+      nombre_item: payload.nombre_item || payload.name || 'Sin nombre',
+      tipo: payload.tipo || payload.category || 'General',
+      cantidad_stock: safeNumber(payload.cantidad_stock ?? payload.quantity),
+      stock_minimo: safeNumber(payload.stock_minimo ?? payload.minQuantity),
+      estado: payload.estado || payload.status || 'Operativo',
+      n_activo: payload.n_activo ?? 1,
+    };
+
+    const saved = await apiPost('/inventario', body, authToken.value);
+    await refresh();
+    return saved;
+  };
+
+  const deleteInventoryItem = async (idItem) => {
+    await apiDelete(`/inventario/${idItem}`, authToken.value);
+    await refresh();
+  };
+
+  const registrarMovimientoToServer = async (payload) => {
+    const saved = await apiPost('/inventario/movimientos', payload, authToken.value);
+    await refresh();
+    return saved;
+  };
+
+  const upsertTicket = async (payload) => {
+    const saved = await apiPost('/gym/tickets', payload, authToken.value);
+    await refresh();
+    return saved;
+  };
+
+  const upsertRutina = async (payload) => {
+    const saved = await apiPost('/gym/rutinas', payload, authToken.value);
+    await refresh();
+    return saved;
+  };
+
+  const upsertHorario = async (payload) => {
+    const saved = await apiPost('/gym/horarios', payload, authToken.value);
+    await refresh();
+    return saved;
   };
 
   const createAttendancePass = (memberId, expiresInMinutes = PASS_EXPIRY_MINUTES) => {
@@ -664,16 +628,16 @@ export const useGymStore = defineStore('gym', () => {
     }
 
     if (!isMembershipActive(member)) {
-      throw new Error('El socio no tiene una membresía vigente');
+      throw new Error('El socio no tiene una membresía activa');
     }
 
     const issuedAt = nowISO();
     const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000).toISOString();
     const pass = {
       id: `pass-${Date.now()}`,
-      memberId,
+      memberId: member.id,
       memberName: member.name,
-      code: generatePassCode(),
+      code: `${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
       issuedAt,
       expiresAt,
       status: 'active',
@@ -681,26 +645,25 @@ export const useGymStore = defineStore('gym', () => {
       redeemedAttendanceId: null,
     };
 
-    attendancePasses.value = attendancePasses.value.map((entry) => {
-      if (entry.memberId === memberId && entry.status === 'active' && !isPassExpired(entry)) {
-        return { ...entry, status: 'expired' };
-      }
-
-      return entry;
-    });
-
+    attendancePasses.value = attendancePasses.value.map((entry) => (entry.memberId === member.id && entry.status === 'active' ? { ...entry, status: 'expired' } : entry));
     attendancePasses.value = [pass, ...attendancePasses.value];
-    persist();
-    return {
-      ...pass,
-      qrPayload: getPassPayload(pass),
-    };
+    persistPasses();
+
+    return { ...pass, qrPayload: buildPassPayload(pass) };
   };
 
-  const redeemAttendancePass = (input, type = 'Entrada', note = '') => {
-    const code = parsePassInput(input);
-    if (!code) {
+  const redeemAttendancePass = async (input, type = 'Entrada', note = '') => {
+    const raw = String(input || '').trim();
+    if (!raw) {
       throw new Error('Ingresa un código o QR válido');
+    }
+
+    let code = raw;
+    try {
+      const parsed = JSON.parse(raw);
+      code = String(parsed.code || '').trim() || code;
+    } catch (error) {
+      // Mantener el valor crudo.
     }
 
     const pass = attendancePasses.value.find((entry) => entry.code === code);
@@ -712,154 +675,158 @@ export const useGymStore = defineStore('gym', () => {
       throw new Error('El código ya fue utilizado');
     }
 
-    if (isPassExpired(pass)) {
+    if (new Date().getTime() > new Date(pass.expiresAt).getTime()) {
       pass.status = 'expired';
-      persist();
+      persistPasses();
       throw new Error('El código expiró');
     }
 
-    const record = recordAttendance(pass.memberId, type, note);
+    const record = await checkinById(parseMemberId(pass.memberId));
     pass.status = 'redeemed';
     pass.redeemedAt = nowISO();
-    pass.redeemedAttendanceId = record.id;
-    persist();
+    pass.redeemedAttendanceId = record?.id_asistencia || null;
+    persistPasses();
 
-    return {
-      record,
-      pass: {
-        ...pass,
-        qrPayload: getPassPayload(pass),
-      },
-    };
+    return { record, pass: { ...pass, qrPayload: buildPassPayload(pass) } };
   };
 
-  const upsertMember = (payload) => {
-    const existingMember = members.value.find((entry) => entry.id === payload.id);
-    const baseMembershipStart = payload.membershipStart || existingMember?.membershipStart || payload.joinedAt || todayISO();
-    const resolvedPlanId = payload.planId || existingMember?.planId || 'plan-monthly';
-
-    const member = {
-      id: payload.id || `member-${Date.now()}`,
-      name: payload.name?.trim() || existingMember?.name || 'Sin nombre',
-      dni: payload.dni?.trim() || existingMember?.dni || '',
-      internalCode: payload.internalCode?.trim() || existingMember?.internalCode || `GYM-${String(payload.id || Date.now()).slice(-4).toUpperCase()}`,
-      email: payload.email?.trim() || existingMember?.email || '',
-      phone: payload.phone?.trim() || existingMember?.phone || '',
-      role: payload.role || existingMember?.role || 'user',
-      plan: payload.plan || existingMember?.plan || 'Mensual',
-      planId: resolvedPlanId,
-      membershipStart: baseMembershipStart,
-      membershipEnd:
-        payload.membershipEnd ||
-        existingMember?.membershipEnd ||
-        addMonthsISO(baseMembershipStart, planDurationById(resolvedPlanId)),
-      membershipPrice: Number(payload.membershipPrice ?? existingMember?.membershipPrice ?? 0),
-      status: payload.status || existingMember?.status || 'Activa',
-      joinedAt: payload.joinedAt || existingMember?.joinedAt || todayISO(),
-      attendanceRate: Number(payload.attendanceRate ?? existingMember?.attendanceRate ?? 0),
-      membershipHistory: Array.isArray(payload.membershipHistory) ? payload.membershipHistory : existingMember?.membershipHistory || [],
-      changeHistory: Array.isArray(payload.changeHistory) ? payload.changeHistory : existingMember?.changeHistory || [],
-      schedules: Array.isArray(payload.schedules) ? payload.schedules : existingMember?.schedules || [],
-    };
-
-    const index = members.value.findIndex((entry) => entry.id === member.id);
-    if (index >= 0) {
-      members.value[index] = member;
-    } else {
-      members.value.unshift(member);
-    }
-    persist();
-    return member;
-  };
-
-  const deleteMember = (id) => {
-    members.value = members.value.filter((member) => member.id !== id);
-    attendance.value = attendance.value.filter((entry) => entry.memberId !== id);
-    attendancePasses.value = attendancePasses.value.filter((pass) => pass.memberId !== id);
-    persist();
-  };
-
-  const recordAttendance = (memberId, type = 'Entrada', note = '') => {
-    const member = members.value.find((entry) => entry.id === memberId);
+  const activeAttendancePass = (memberId) => {
+    const member = memberById(memberId);
     if (!member) {
-      throw new Error('Miembro no encontrado');
+      return null;
     }
 
-    if (!isMembershipActive(member)) {
-      throw new Error('El socio no tiene una membresía vigente');
+    const pass = [...attendancePasses.value]
+      .filter((entry) => entry.memberId === member.id && entry.status === 'active' && new Date(entry.expiresAt).getTime() > Date.now())
+      .sort((left, right) => new Date(right.issuedAt).getTime() - new Date(left.issuedAt).getTime())[0] || null;
+
+    if (!pass) {
+      return null;
     }
 
-    const record = {
-      id: `attendance-${Date.now()}`,
-      memberId,
+    return { ...pass, qrPayload: buildPassPayload(pass) };
+  };
+
+  const userAttendance = (email) => {
+    const member = memberByEmail(email);
+    if (!member) {
+      return [];
+    }
+
+    return attendanceByMemberRange(member.id).slice(0, 10).map((entry) => ({
+      id: `attendance-${entry.id_asistencia}`,
+      memberId: member.id,
       memberName: member.name,
-      type,
-      time: nowTime(),
-      date: todayISO(),
-      note,
+      memberCode: member.internalCode,
+      type: entry.validacion === false ? 'Revisión' : 'Entrada',
+      time: entry.hora || '',
+      date: entry.fecha || '',
+      exercise: entry.validacion === false ? 'Validación manual' : 'Acceso registrado',
+      note: entry.validacion === false ? 'Requiere verificación' : 'Asistencia confirmada',
+    }));
+  };
+
+  const upsertMember = async (payload) => {
+    const clientPayload = {
+      id_cliente: payload.id_cliente ? safeNumber(payload.id_cliente) : undefined,
+      nombres: payload.nombres || payload.name?.split(' ')[0] || 'Sin nombre',
+      apellidos: payload.apellidos || payload.name?.split(' ').slice(1).join(' ') || '',
+      dni: payload.dni || '',
+      telefono: payload.telefono || payload.phone || '',
+      email: payload.email || '',
+      fecha_registro: payload.fecha_registro || payload.joinedAt || todayISO(),
+      estado: payload.estado !== false,
     };
 
-    attendance.value.unshift(record);
-    persist();
-    return record;
-  };
+    const savedClient = await upsertCliente(clientPayload);
 
-  const pruneExpiredAttendancePasses = () => {
-    let changed = false;
-
-    attendancePasses.value = attendancePasses.value.map((pass) => {
-      if (pass.status === 'active' && isPassExpired(pass)) {
-        changed = true;
-        return { ...pass, status: 'expired' };
-      }
-
-      return pass;
-    });
-
-    if (changed) {
-      persist();
+    if (payload.planId || payload.id_pm || payload.fecha_inicio || payload.fecha_fin) {
+      const idCliente = safeNumber(savedClient.id_cliente || clientPayload.id_cliente);
+      await registerClienteMembresia({
+        cliente: {
+          id_cliente: idCliente,
+          nombres: clientPayload.nombres,
+          apellidos: clientPayload.apellidos,
+          dni: clientPayload.dni,
+          telefono: clientPayload.telefono,
+          email: clientPayload.email,
+          fecha_registro: clientPayload.fecha_registro,
+          estado: clientPayload.estado,
+        },
+        id_pm: safeNumber(payload.id_pm || parsePlanId(payload.planId)),
+        fecha_inicio: payload.fecha_inicio || todayISO(),
+        fecha_fin: payload.fecha_fin || addMonths(payload.fecha_inicio || todayISO(), membershipDurationMonths(getPlanById(payload.planId) || plans.value[0] || {})),
+      });
     }
+
+    return savedClient;
   };
 
-  pruneExpiredAttendancePasses();
+  const deleteMember = async (id) => {
+    await deleteCliente(parseMemberId(id));
+  };
 
-  const upsertInventoryItem = (payload) => {
-    const existingItem = inventory.value.find((entry) => entry.id === payload.id);
-    const item = {
-      id: payload.id || `item-${Date.now()}`,
-      inventoryCode: payload.inventoryCode?.trim() || existingItem?.inventoryCode || generateInventoryCode(),
-      name: payload.name?.trim() || 'Sin nombre',
-      category: payload.category || 'General',
-      quantity: Number(payload.quantity ?? 0),
-      minQuantity: Number(payload.minQuantity ?? 0),
-      location: payload.location || 'Sin ubicación',
-      status: payload.status || 'Disponible',
-      observations: payload.observations || '',
-    };
-
-    const index = inventory.value.findIndex((entry) => entry.id === item.id);
-    if (index >= 0) {
-      inventory.value[index] = item;
-    } else {
-      inventory.value.unshift(item);
+  const fetchFromBackend = async () => {
+    if (!hasBackend.value) {
+      return;
     }
-    persist();
-    return item;
-  };
 
-  const deleteInventoryItem = (id) => {
-    inventory.value = inventory.value.filter((item) => item.id !== id);
-    persist();
+    loading.value = true;
+    error.value = '';
+
+    try {
+      const [summaryData, usersData, clientsData, plansData, membershipsData, attendanceData, inventoryData, movementsData, ticketsData, routinesData, schedulesData] = await Promise.all([
+        apiGet('/gym/summary', authToken.value),
+        apiGet('/usuarios', authToken.value),
+        apiGet('/clientes', authToken.value),
+        apiGet('/planes-membresia', authToken.value),
+        apiGet('/membresias', authToken.value),
+        apiGet('/asistencia', authToken.value),
+        apiGet('/inventario', authToken.value),
+        apiGet('/inventario/movimientos', authToken.value),
+        apiGet('/gym/tickets', authToken.value),
+        apiGet('/gym/rutinas', authToken.value),
+        apiGet('/gym/horarios', authToken.value),
+      ]);
+
+      summary.value = summaryData || { stats: {}, flujos: {}, alertas: [] };
+      users.value = Array.isArray(usersData) ? usersData.map(normalizeUser) : [];
+      clients.value = Array.isArray(clientsData) ? clientsData.map(normalizeClient) : [];
+      plans.value = Array.isArray(plansData) ? plansData.map(normalizePlan) : [];
+      memberships.value = Array.isArray(membershipsData) ? membershipsData.map(normalizeMembership) : [];
+      attendance.value = Array.isArray(attendanceData) ? attendanceData.map(normalizeAttendance) : [];
+      inventory.value = Array.isArray(inventoryData) ? inventoryData.map(normalizeInventory) : [];
+      movements.value = Array.isArray(movementsData) ? movementsData : [];
+      tickets.value = Array.isArray(ticketsData) ? ticketsData.map(normalizeTicket) : [];
+      routines.value = Array.isArray(routinesData) ? routinesData.map(normalizeRoutine) : [];
+      schedules.value = Array.isArray(schedulesData) ? schedulesData.map(normalizeSchedule) : [];
+      persistPasses();
+    } catch (fetchError) {
+      error.value = fetchError instanceof Error ? fetchError.message : 'No se pudo cargar el backend';
+      throw fetchError;
+    } finally {
+      loading.value = false;
+    }
   };
 
   return {
-    members,
+    loading,
+    error,
+    summary,
+    users,
+    clients,
+    plans,
+    memberships,
     attendance,
-    attendancePasses,
-    planCatalog,
-    promotions,
     inventory,
-    schedule,
+    movements,
+    tickets,
+    routines,
+    schedules,
+    promotions,
+    attendancePasses,
+    members: memberCards,
+    memberCards,
     stats,
     recentAttendance,
     attendanceAnalytics,
@@ -867,6 +834,7 @@ export const useGymStore = defineStore('gym', () => {
     activePromotions,
     membershipAlerts,
     lowStockInventory,
+    schedule,
     searchMembers,
     getPlanById,
     getPromotionById,
@@ -875,12 +843,21 @@ export const useGymStore = defineStore('gym', () => {
     calculatePlanCharge,
     upsertPlan,
     upsertPromotion,
+    upsertUsuario,
+    deleteUsuario,
+    upsertCliente,
+    deleteCliente,
+    upsertMembership,
+    registerClienteMembresia,
     assignPlanToMember,
     renewMembership,
     attendanceByMemberRange,
+    checkinById,
+    checkinByDni,
+    recordAttendanceByCode,
+    recordAttendance,
+    memberByInternalCode,
     memberSchedules,
-    assignMemberSchedule,
-    userAttendance,
     memberByEmail,
     memberById,
     activeAttendancePass,
@@ -888,8 +865,17 @@ export const useGymStore = defineStore('gym', () => {
     redeemAttendancePass,
     upsertMember,
     deleteMember,
-    recordAttendance,
     upsertInventoryItem,
     deleteInventoryItem,
+    upsertInventory: upsertInventoryItem,
+    deleteInventory: deleteInventoryItem,
+    registrarMovimientoToServer,
+    upsertTicket,
+    upsertRutina,
+    upsertHorario,
+    userAttendance,
+    loadAll: fetchFromBackend,
+    fetchFromBackend,
+    refresh,
   };
 });
