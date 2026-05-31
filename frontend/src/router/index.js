@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import LoginView from '../views/LoginView.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
 import UserDashboard from '../views/UserDashboard.vue';
+import LandingView from '../views/LandingView.vue';
 import HomeView from '../views/HomeView.vue';
 import UsersView from '../views/UsersView.vue';
 import AttendanceView from '../views/AttendanceView.vue';
@@ -29,8 +30,8 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: HomeView,
-    meta: { requiresAuth: true },
+    component: LandingView,
+    meta: { requiresAuth: false },
   },
   {
     path: '/admin',
@@ -103,6 +104,10 @@ router.beforeEach(async (to) => {
   // Inicializar autenticación si no está hecho
   if (!authStore.isInitialized) {
     await authStore.initializeAuth();
+  }
+
+  if (to.path === '/' && authStore.isAuthenticated) {
+    return authStore.isAdmin ? '/admin/dashboard' : '/user/dashboard';
   }
 
   // Verificar si la ruta requiere autenticación

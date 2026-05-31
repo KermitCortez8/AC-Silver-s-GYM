@@ -1,237 +1,202 @@
 <template>
   <div class="space-y-6">
     <section class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Administración</p>
-      <h1 class="mt-2 text-3xl font-black text-white">Clientes, usuarios, planes y tickets</h1>
-      <p class="mt-2 max-w-4xl text-slate-300">Esta vista agrupa los recursos que el backend expone por separado para que la operación diaria no salte entre pantallas.</p>
-    </section>
-
-    <section class="grid gap-4 md:grid-cols-5">
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Clientes</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ memberCards.length }}</p>
-      </article>
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Usuarios</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ users.length }}</p>
-      </article>
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Planes</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ plans.length }}</p>
-      </article>
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Membresías</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ memberships.length }}</p>
-      </article>
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Tickets</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ tickets.length }}</p>
-      </article>
-    </section>
-
-    <section class="flex flex-wrap gap-2">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="rounded-full px-4 py-2 text-sm font-medium transition"
-        :class="activeTab === tab.key ? 'bg-cyan-400 text-slate-950' : 'bg-white/5 text-slate-200'"
-        @click="activeTab = tab.key"
-      >
-        {{ tab.label }}
-      </button>
-    </section>
-
-    <section class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-      <form class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="handleSubmit">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">{{ activeTitle }}</p>
-            <h2 class="mt-2 text-2xl font-black text-white">{{ formTitle }}</h2>
-          </div>
-          <button v-if="editingKey" type="button" class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white" @click="resetForms">Cancelar</button>
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Administración</p>
+          <h1 class="mt-2 text-3xl font-black text-white">Clientes y expedientes</h1>
+          <p class="mt-2 text-slate-300">Gestiona clientes, busca por DNI o código interno, y deja trazabilidad de sus cambios.</p>
         </div>
 
-        <div v-if="activeTab === 'clientes'" class="mt-5 grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm text-slate-300">Nombres</span>
-            <input v-model="clientForm.nombres" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="María" />
-          </label>
+        <div class="grid gap-3 sm:grid-cols-4">
+          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+            <p class="text-slate-400">Total</p>
+            <p class="text-xl font-black text-white">{{ members.length }}</p>
+          </div>
+          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+            <p class="text-slate-400">Activos</p>
+            <p class="text-xl font-black text-white">{{ activeMembers }}</p>
+          </div>
+          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+            <p class="text-slate-400">Admins</p>
+            <p class="text-xl font-black text-white">{{ adminMembers }}</p>
+          </div>
+          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+            <p class="text-slate-400">Vence pronto</p>
+            <p class="text-xl font-black text-white">{{ expiringMembers }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <form class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="handleSubmit">
+        <div class="mb-5 flex items-center justify-between">
+          <div>
+            <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Formulario</p>
+            <h2 class="text-2xl font-black text-white">{{ editingId ? 'Editar miembro' : 'Nuevo miembro' }}</h2>
+          </div>
+          <button v-if="editingId" type="button" class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm" @click="resetForm">
+            Cancelar
+          </button>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2">
-            <span class="text-sm text-slate-300">Apellidos</span>
-            <input v-model="clientForm.apellidos" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Fernández" />
+            <span class="text-sm text-slate-300">Nombre</span>
+            <input v-model="form.name" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none placeholder:text-slate-500" placeholder="Nombre completo" />
           </label>
           <label class="space-y-2">
             <span class="text-sm text-slate-300">DNI</span>
-            <input v-model="clientForm.dni" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="74281635" />
+            <input v-model="form.dni" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none placeholder:text-slate-500" placeholder="74281635" />
+          </label>
+          <label class="space-y-2">
+            <span class="text-sm text-slate-300">Código interno</span>
+            <input v-model="form.internalCode" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none placeholder:text-slate-500" placeholder="GYM-0004" />
+          </label>
+          <label class="space-y-2">
+            <span class="text-sm text-slate-300">Correo</span>
+            <input v-model="form.email" type="email" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none placeholder:text-slate-500" placeholder="correo@ejemplo.com" />
           </label>
           <label class="space-y-2">
             <span class="text-sm text-slate-300">Teléfono</span>
-            <input v-model="clientForm.telefono" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="999 111 222" />
+            <input v-model="form.phone" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none placeholder:text-slate-500" placeholder="999 888 777" />
           </label>
           <label class="space-y-2">
-            <span class="text-sm text-slate-300">Correo</span>
-            <input v-model="clientForm.email" type="email" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="correo@ejemplo.com" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Registro</span>
-            <input v-model="clientForm.fecha_registro" type="date" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Estado</span>
-            <select v-model="clientForm.estado" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option :value="true">Activa</option>
-              <option :value="false">Inactiva</option>
-            </select>
-          </label>
-          <label class="sm:col-span-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
-            <input v-model="clientForm.assignMembership" type="checkbox" class="h-4 w-4 accent-cyan-300" />
-            <span class="text-sm text-slate-300">Asignar membresía al guardar</span>
-          </label>
-          <label v-if="clientForm.assignMembership" class="space-y-2 sm:col-span-2">
             <span class="text-sm text-slate-300">Plan</span>
-            <select v-model.number="clientForm.id_pm" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option v-for="plan in plans" :key="plan.id_pm" :value="plan.id_pm">{{ plan.nombre_plan }} · S/ {{ plan.precio }}</option>
+            <select v-model="form.plan" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
+              <option>Mensual</option>
+              <option>Trimestral</option>
+              <option>Anual</option>
+              <option>Acceso total</option>
             </select>
-          </label>
-        </div>
-
-        <div v-if="activeTab === 'usuarios'" class="mt-5 grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">DNI</span>
-            <input v-model="userForm.dni" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="71928451" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Correo</span>
-            <input v-model="userForm.email" type="email" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="admin@urp.edu.pe" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Contraseña</span>
-            <input v-model="userForm.contrasena" type="password" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Opcional" />
           </label>
           <label class="space-y-2">
             <span class="text-sm text-slate-300">Rol</span>
-            <select v-model="userForm.rol" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option value="admin">admin</option>
-              <option value="user">user</option>
-              <option value="trainer">trainer</option>
-              <option value="staff">staff</option>
+            <select v-model="form.role" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
+              <option value="user">Miembro</option>
+              <option value="admin">Administrador</option>
             </select>
           </label>
           <label class="space-y-2">
             <span class="text-sm text-slate-300">Estado</span>
-            <select v-model="userForm.estado" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option :value="true">Activo</option>
-              <option :value="false">Inactivo</option>
+            <select v-model="form.status" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
+              <option>Activa</option>
+              <option>Pendiente</option>
+              <option>Bloqueada</option>
             </select>
           </label>
-        </div>
-
-        <div v-if="activeTab === 'planes'" class="mt-5 grid gap-4 sm:grid-cols-2">
+          <label class="space-y-2">
+            <span class="text-sm text-slate-300">Plan de membresía</span>
+            <select v-model="form.planId" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
+              <option v-for="plan in activePlans" :key="plan.id" :value="plan.id">{{ plan.name }} · {{ plan.durationMonths }} mes(es)</option>
+            </select>
+          </label>
+          <label class="space-y-2">
+            <span class="text-sm text-slate-300">Promoción</span>
+            <select v-model="form.promotionId" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
+              <option value="">Sin promoción</option>
+              <option v-for="promotion in activePromotions" :key="promotion.id" :value="promotion.id">{{ promotion.name }}</option>
+            </select>
+          </label>
           <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm text-slate-300">Nombre del plan</span>
-            <input v-model="planForm.nombre_plan" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Mensual" />
+            <span class="text-sm text-slate-300">Nota de membresía</span>
+            <input v-model="form.membershipNote" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none placeholder:text-slate-500" placeholder="Alta, renovación o descuento aplicado" />
           </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Duración</span>
-            <input v-model="planForm.duracion" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="30 días" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Precio</span>
-            <input v-model.number="planForm.precio" type="number" min="0" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
+          <label class="flex items-center gap-3 sm:col-span-2">
+            <input v-model="form.assignMembership" type="checkbox" class="h-4 w-4 accent-cyan-300" />
+            <span class="text-sm text-slate-300">Asignar o renovar membresía al guardar</span>
           </label>
         </div>
 
-        <div v-if="activeTab === 'tickets'" class="mt-5 grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Cliente</span>
-            <select v-model.number="ticketForm.id_cliente" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option v-for="member in memberCards" :key="member.id_cliente" :value="member.id_cliente">{{ member.name }}</option>
-            </select>
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Usuario responsable</span>
-            <select v-model.number="ticketForm.id_usuario" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option v-for="userItem in users" :key="userItem.id_usuario" :value="userItem.id_usuario">{{ userItem.email || `Usuario #${userItem.id_usuario}` }}</option>
-            </select>
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Tipo</span>
-            <input v-model="ticketForm.tipo_ticket" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Consulta" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Estado</span>
-            <select v-model="ticketForm.estado_ticket" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option>Abierto</option>
-              <option>En proceso</option>
-              <option>Cerrado</option>
-            </select>
-          </label>
-          <label class="sm:col-span-2 space-y-2">
-            <span class="text-sm text-slate-300">Descripción</span>
-            <textarea v-model="ticketForm.descripcion" rows="4" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Detalle del ticket"></textarea>
-          </label>
-        </div>
-
-        <button type="submit" class="mt-6 w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">
-          {{ submitLabel }}
+        <button type="submit" class="mt-5 w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">
+          {{ editingId ? 'Guardar expediente' : 'Registrar cliente' }}
         </button>
       </form>
 
       <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">{{ activeTitle }}</p>
-            <h2 class="mt-2 text-2xl font-black text-white">{{ listTitle }}</h2>
+            <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Lista</p>
+            <h2 class="text-2xl font-black text-white">Clientes registrados</h2>
           </div>
-          <input v-model="search" class="w-full max-w-xs rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm text-white outline-none" placeholder="Buscar..." />
+          <input v-model="search" class="rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm text-white outline-none" placeholder="Buscar por DNI, nombre o código..." />
         </div>
 
         <div class="mt-5 space-y-3">
-          <article v-if="activeTab === 'clientes'" v-for="member in filteredMembers" :key="member.id" class="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <article
+            v-for="member in filteredMembers"
+            :key="member.id"
+            class="rounded-3xl border border-white/10 bg-slate-900/80 p-5"
+          >
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p class="font-semibold text-white">{{ member.name }}</p>
+                <p class="text-lg font-bold text-white">{{ member.name }}</p>
                 <p class="text-sm text-slate-400">{{ member.email }} · {{ member.phone }}</p>
-                <p class="text-sm text-slate-400">DNI: {{ member.dni || 'N/D' }} · Código: {{ member.internalCode }}</p>
-                <p class="mt-1 text-sm text-cyan-200">{{ member.plan }} · {{ member.status }}</p>
+                <p class="text-sm text-slate-400">DNI: {{ member.dni || 'Sin DNI' }} · Código: {{ member.internalCode || 'Sin código' }}</p>
+                <p class="mt-2 text-sm text-slate-300">Plan: {{ member.plan }} · Estado: {{ member.status }} · Rol: {{ member.role }}</p>
+                <p class="mt-1 text-sm text-cyan-200">Vence: {{ member.membershipEnd || 'Sin vencimiento' }}</p>
               </div>
+
               <div class="flex gap-2">
-                <button class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium" @click="editMember(member)">Editar</button>
-                <button class="rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white" @click="deleteMember(member.id)">Eliminar</button>
+                <button class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium" @click="editMember(member)">
+                  Editar
+                </button>
+                <button class="rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white" @click="deleteMember(member.id)">
+                  Eliminar
+                </button>
               </div>
             </div>
           </article>
+        </div>
 
-          <article v-if="activeTab === 'usuarios'" v-for="item in users" :key="item.id_usuario" class="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
-            <div class="flex items-center justify-between gap-4">
-              <div>
-                <p class="font-semibold text-white">{{ item.email || `Usuario #${item.id_usuario}` }}</p>
-                <p class="text-sm text-slate-400">DNI: {{ item.dni }} · Rol: {{ item.rol }}</p>
-              </div>
-              <button class="rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white" @click="deleteUsuario(item.id_usuario)">Eliminar</button>
+        <div v-if="selectedMember" class="mt-6 rounded-[1.5rem] border border-white/10 bg-slate-950/50 p-5">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Expediente</p>
+              <h3 class="mt-1 text-xl font-black text-white">{{ selectedMember.name }}</h3>
             </div>
-          </article>
-
-          <article v-if="activeTab === 'planes'" v-for="plan in plans" :key="plan.id_pm" class="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
-            <div class="flex items-center justify-between gap-4">
-              <div>
-                <p class="font-semibold text-white">{{ plan.nombre_plan }}</p>
-                <p class="text-sm text-slate-400">{{ plan.duracion }}</p>
-              </div>
-              <p class="text-cyan-200">S/ {{ plan.precio }}</p>
+            <div class="rounded-2xl bg-white/5 px-4 py-2 text-sm text-slate-200">
+              {{ selectedMember.internalCode }}
             </div>
-          </article>
+          </div>
 
-          <article v-if="activeTab === 'membresias'" v-for="membership in memberships" :key="membership.id_membresia" class="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
-            <p class="font-semibold text-white">Cliente #{{ membership.id_cliente }} · Plan #{{ membership.id_pm }}</p>
-            <p class="text-sm text-slate-400">{{ membership.fecha_inicio }} → {{ membership.fecha_fin }} · {{ membership.estado }}</p>
-          </article>
+          <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-2xl bg-white/5 p-4">
+              <p class="text-xs text-slate-400">Membresía</p>
+              <p class="mt-1 font-bold text-white">{{ selectedMember.plan }}</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 p-4">
+              <p class="text-xs text-slate-400">Inicio</p>
+              <p class="mt-1 font-bold text-white">{{ selectedMember.membershipStart || 'N/D' }}</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 p-4">
+              <p class="text-xs text-slate-400">Fin</p>
+              <p class="mt-1 font-bold text-white">{{ selectedMember.membershipEnd || 'N/D' }}</p>
+            </div>
+          </div>
 
-          <article v-if="activeTab === 'tickets'" v-for="ticket in tickets" :key="ticket.id_ticket" class="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
-            <p class="font-semibold text-white">{{ ticket.tipo_ticket }} · {{ ticket.estado_ticket }}</p>
-            <p class="text-sm text-slate-400">Cliente #{{ ticket.id_cliente }} · Usuario #{{ ticket.id_usuario }}</p>
-            <p class="mt-1 text-sm text-slate-300">{{ ticket.descripcion }}</p>
-          </article>
+          <div class="mt-4">
+            <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial de cambios</p>
+            <div class="mt-3 space-y-2">
+              <div v-for="item in selectedMember.changeHistory || []" :key="item.id" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                <p class="font-semibold text-white">{{ item.action }}</p>
+                <p class="text-slate-400">{{ item.at }} · {{ item.note || 'Sin nota' }}</p>
+              </div>
+              <p v-if="!(selectedMember.changeHistory || []).length" class="text-sm text-slate-400">Todavía no hay cambios registrados para este expediente.</p>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial de membresía</p>
+            <div class="mt-3 space-y-2">
+              <div v-for="item in selectedMember.membershipHistory || []" :key="item.id" class="rounded-2xl border border-cyan-400/10 bg-cyan-400/5 px-4 py-3 text-sm text-slate-200">
+                <p class="font-semibold text-white">{{ item.type }} · {{ item.planName }}</p>
+                <p class="text-slate-400">{{ item.startDate }} → {{ item.endDate }} · Descuento: {{ item.discount }} · Precio final: {{ item.finalPrice }}</p>
+              </div>
+              <p v-if="!(selectedMember.membershipHistory || []).length" class="text-sm text-slate-400">No hay asignaciones o renovaciones registradas.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -240,174 +205,83 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue';
-import { useAuth } from '../composables/useAuth';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
-const { user } = useAuth();
-
-const activeTab = ref('clientes');
+const members = computed(() => gymStore.members);
+const activePlans = computed(() => gymStore.activePlans);
+const activePromotions = computed(() => gymStore.activePromotions);
 const search = ref('');
-const editingKey = ref('');
+const editingId = ref('');
 
-const memberCards = computed(() => gymStore.members);
-const users = computed(() => gymStore.users);
-const plans = computed(() => gymStore.plans);
-const memberships = computed(() => gymStore.memberships);
-const tickets = computed(() => gymStore.tickets);
-
-const tabs = [
-  { key: 'clientes', label: 'Clientes' },
-  { key: 'usuarios', label: 'Usuarios' },
-  { key: 'planes', label: 'Planes' },
-  { key: 'membresias', label: 'Membresías' },
-  { key: 'tickets', label: 'Tickets' },
-];
-
-const clientForm = reactive({
-  id_cliente: '',
-  nombres: '',
-  apellidos: '',
+const form = reactive({
+  name: '',
   dni: '',
-  telefono: '',
+  internalCode: '',
   email: '',
-  fecha_registro: new Date().toISOString().slice(0, 10),
-  estado: true,
+  phone: '',
+  plan: 'Mensual',
+  planId: 'plan-monthly',
+  promotionId: '',
+  membershipNote: '',
   assignMembership: true,
-  id_pm: plans.value[0]?.id_pm || 1,
-});
-
-const userForm = reactive({
-  id_usuario: '',
-  dni: '',
-  contrasena: '',
-  rol: 'user',
-  estado: true,
-  email: '',
-});
-
-const planForm = reactive({
-  id_pm: '',
-  nombre_plan: '',
-  duracion: '',
-  precio: 0,
-});
-
-const ticketForm = reactive({
-  id_ticket: '',
-  id_cliente: memberCards.value[0]?.id_cliente || 0,
-  id_usuario: users.value.find((item) => item.email === user.value?.email)?.id_usuario || users.value[0]?.id_usuario || 0,
-  tipo_ticket: 'Consulta',
-  descripcion: '',
-  estado_ticket: 'Abierto',
+  role: 'user',
+  status: 'Activa',
 });
 
 const filteredMembers = computed(() => {
-  const normalized = search.value.trim().toLowerCase();
-  if (!normalized) {
-    return memberCards.value;
-  }
-
-  return memberCards.value.filter((member) => [member.name, member.dni, member.email, member.internalCode, member.plan].join(' ').toLowerCase().includes(normalized));
+  return gymStore.searchMembers(search.value);
 });
 
-const activeTitle = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.label || 'Clientes');
-const listTitle = computed(() => {
-  if (activeTab.value === 'clientes') return 'Expedientes de clientes';
-  if (activeTab.value === 'usuarios') return 'Cuentas del sistema';
-  if (activeTab.value === 'planes') return 'Planes de membresía';
-  if (activeTab.value === 'membresias') return 'Historial de membresías';
-  return 'Tickets de atención';
-});
+const activeMembers = computed(() => members.value.filter((member) => member.status === 'Activa').length);
+const adminMembers = computed(() => members.value.filter((member) => member.role === 'admin').length);
+const expiringMembers = computed(() => gymStore.membershipAlerts.length);
+const selectedMember = computed(() => (editingId.value ? gymStore.memberById(editingId.value) : null));
 
-const formTitle = computed(() => {
-  if (activeTab.value === 'clientes') return editingKey.value ? 'Editar cliente' : 'Nuevo cliente';
-  if (activeTab.value === 'usuarios') return editingKey.value ? 'Editar usuario' : 'Nuevo usuario';
-  if (activeTab.value === 'planes') return editingKey.value ? 'Editar plan' : 'Nuevo plan';
-  return 'Nuevo ticket';
-});
-
-const submitLabel = computed(() => {
-  if (activeTab.value === 'clientes') return 'Guardar cliente';
-  if (activeTab.value === 'usuarios') return 'Guardar usuario';
-  if (activeTab.value === 'planes') return 'Guardar plan';
-  return 'Crear ticket';
-});
-
-const resetForms = () => {
-  editingKey.value = '';
-  clientForm.id_cliente = '';
-  clientForm.nombres = '';
-  clientForm.apellidos = '';
-  clientForm.dni = '';
-  clientForm.telefono = '';
-  clientForm.email = '';
-  clientForm.fecha_registro = new Date().toISOString().slice(0, 10);
-  clientForm.estado = true;
-  clientForm.assignMembership = true;
-  clientForm.id_pm = plans.value[0]?.id_pm || 1;
-  userForm.id_usuario = '';
-  userForm.dni = '';
-  userForm.contrasena = '';
-  userForm.rol = 'user';
-  userForm.estado = true;
-  userForm.email = '';
-  planForm.id_pm = '';
-  planForm.nombre_plan = '';
-  planForm.duracion = '';
-  planForm.precio = 0;
-  ticketForm.descripcion = '';
+const resetForm = () => {
+  editingId.value = '';
+  form.name = '';
+  form.dni = '';
+  form.internalCode = '';
+  form.email = '';
+  form.phone = '';
+  form.plan = 'Mensual';
+  form.planId = 'plan-monthly';
+  form.promotionId = '';
+  form.membershipNote = '';
+  form.assignMembership = true;
+  form.role = 'user';
+  form.status = 'Activa';
 };
 
 const editMember = (member) => {
-  activeTab.value = 'clientes';
-  editingKey.value = member.id;
-  clientForm.id_cliente = member.id_cliente;
-  clientForm.nombres = member.name.split(' ')[0] || member.name;
-  clientForm.apellidos = member.name.split(' ').slice(1).join(' ');
-  clientForm.dni = member.dni;
-  clientForm.telefono = member.phone;
-  clientForm.email = member.email;
-  clientForm.fecha_registro = member.joinedAt || new Date().toISOString().slice(0, 10);
-  clientForm.estado = member.status !== 'Inactiva';
-  clientForm.assignMembership = Boolean(member.planId);
-  clientForm.id_pm = Number(String(member.planId || '').replace(/^pm-/, '')) || plans.value[0]?.id_pm || 1;
-};
-
-const deleteMember = async (id) => {
-  await gymStore.deleteMember(id);
-};
-
-const deleteUsuario = async (idUsuario) => {
-  await gymStore.deleteUsuario(idUsuario);
+  editingId.value = member.id;
+  form.name = member.name;
+  form.dni = member.dni || '';
+  form.internalCode = member.internalCode || '';
+  form.email = member.email;
+  form.phone = member.phone;
+  form.plan = member.plan;
+  form.planId = member.planId || 'plan-monthly';
+  form.promotionId = '';
+  form.membershipNote = '';
+  form.assignMembership = false;
+  form.role = member.role;
+  form.status = member.status;
 };
 
 const handleSubmit = async () => {
-  if (activeTab.value === 'clientes') {
-    await gymStore.upsertMember({
-      ...clientForm,
-      planId: clientForm.assignMembership ? `pm-${clientForm.id_pm}` : '',
-      fecha_inicio: clientForm.fecha_registro,
-    });
-    resetForms();
-    return;
-  }
+  try {
+    const member = await gymStore.upsertMember({ id: editingId.value || undefined, ...form });
 
-  if (activeTab.value === 'usuarios') {
-    await gymStore.upsertUsuario(userForm);
-    resetForms();
-    return;
-  }
+    if (form.assignMembership) {
+      await gymStore.assignPlanToMember(member.id, form.planId, form.promotionId, form.membershipNote || 'Asignación/renovación desde expediente');
+    }
 
-  if (activeTab.value === 'planes') {
-    await gymStore.upsertPlan(planForm);
-    resetForms();
-    return;
-  }
-
-  if (activeTab.value === 'tickets') {
-    await gymStore.upsertTicket(ticketForm);
-    ticketForm.descripcion = '';
+    resetForm();
+  } catch (error) {
+    console.error('Error al guardar miembro:', error);
+    // Aquí puedes mostrar un toast/alerta
   }
 };
 </script>
