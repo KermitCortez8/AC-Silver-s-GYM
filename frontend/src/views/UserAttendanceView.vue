@@ -81,16 +81,15 @@
         <div v-if="visibleRecords.length" class="mt-5 rounded-[1.75rem] border border-emerald-400/20 bg-emerald-400/10 p-4 text-emerald-50">
           <p class="text-[0.65rem] uppercase tracking-[0.5em] text-emerald-200">Último acceso</p>
           <p class="mt-2 text-lg font-bold text-white">{{ visibleRecords[0].date }} · {{ visibleRecords[0].time }}</p>
-          <p class="text-sm text-emerald-100/90">{{ visibleRecords[0].type }} · {{ visibleRecords[0].exercise }} · {{ visibleRecords[0].note || 'Sin observaciones' }}</p>
+          <p class="text-sm text-emerald-100/90">{{ visibleRecords[0].service || 'fitness' }}</p>
         </div>
 
         <div class="mt-5 space-y-3">
           <article v-for="entry in visibleRecords" :key="entry.id" class="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p class="font-semibold text-white">{{ entry.type }}</p>
-                <p class="text-sm text-slate-400">{{ entry.memberCode }} · {{ entry.exercise || 'Sin ejercicio' }}</p>
-                <p class="text-sm text-slate-400">{{ entry.note || 'Sin observaciones' }}</p>
+                <p class="font-semibold text-white">{{ entry.service || 'fitness' }}</p>
+                <p class="text-sm text-slate-400">{{ entry.memberCode }}</p>
               </div>
               <div class="text-sm text-slate-300 sm:text-right">
                 <p class="font-semibold text-cyan-200">{{ entry.date }}</p>

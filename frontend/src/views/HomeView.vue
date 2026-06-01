@@ -89,10 +89,9 @@
             <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="font-semibold text-white">{{ entry.memberName }}</p>
-                <p class="text-sm text-slate-400">{{ entry.note || entry.type }}</p>
+                <p class="text-sm text-slate-400">{{ entry.service || 'fitness' }}</p>
               </div>
               <div class="text-right text-sm text-slate-300">
-                <p>{{ entry.type }}</p>
                 <p>{{ entry.date }} · {{ entry.time }}</p>
               </div>
             </div>
