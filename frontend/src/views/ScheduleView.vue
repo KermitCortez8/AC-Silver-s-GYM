@@ -102,8 +102,8 @@ import { useGymStore } from '../stores/gymStore';
 
 const { user } = useAuth();
 const gymStore = useGymStore();
-const schedule = computed(() => gymStore.schedule);
-const routines = computed(() => gymStore.routines);
+const schedule = computed(() => Array.isArray(gymStore.schedule) ? gymStore.schedule : []);
+const routines = computed(() => Array.isArray(gymStore.routines) ? gymStore.routines : []);
 const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const member = computed(() => gymStore.memberByEmail(user.value?.email));
 const memberSchedules = computed(() => (member.value ? gymStore.memberSchedules(member.value.id) : []));

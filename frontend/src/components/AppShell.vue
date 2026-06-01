@@ -23,6 +23,7 @@
               <div class="min-w-0">
                 <p class="truncate font-semibold text-white">{{ user?.name || 'Invitado' }}</p>
                 <p class="truncate text-sm text-slate-300">{{ user?.email || 'Sin correo' }}</p>
+                <p v-if="user?.id_usuario" class="truncate text-xs uppercase tracking-[0.3em] text-cyan-200/80">{{ user.id_usuario }}</p>
               </div>
             </div>
             <div class="mt-4 flex items-center gap-2 text-xs text-slate-300">
@@ -110,6 +111,7 @@ const navigationLinks = computed(() => {
   if (props.mode === 'admin' || isAdmin.value) {
     return [
       { label: 'Inicio', to: '/admin/dashboard', icon: '▣' },
+      { label: 'Clientes', to: '/admin/clients', icon: '◫' },
       { label: 'Usuarios', to: '/admin/users', icon: '◫' },
       { label: 'Asistencia', to: '/admin/attendance', icon: '◌' },
       { label: 'Inventario', to: '/admin/inventory', icon: '▤' },

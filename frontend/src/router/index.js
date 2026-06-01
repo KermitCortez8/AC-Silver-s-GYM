@@ -7,6 +7,7 @@ import AdminDashboard from '../views/AdminDashboard.vue';
 import UserDashboard from '../views/UserDashboard.vue';
 import LandingView from '../views/LandingView.vue';
 import HomeView from '../views/HomeView.vue';
+import ClientsView from '../views/ClientsView.vue';
 import UsersView from '../views/UsersView.vue';
 import AttendanceView from '../views/AttendanceView.vue';
 import InventoryView from '../views/InventoryView.vue';
@@ -51,6 +52,11 @@ const routes = [
         path: 'users',
         name: 'Users',
         component: UsersView,
+      },
+      {
+        path: 'clients',
+        name: 'Clients',
+        component: ClientsView,
       },
       {
         path: 'attendance',

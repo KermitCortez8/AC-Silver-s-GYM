@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -48,24 +49,26 @@ class GymService:
             "mov_inv": [],
             "usuario": [
                 {
-                    "id_usuario": 1,
-                    "dni": "71928451",
-                    "contrasena": "",
+                    "id_usuario": "SGUS001",
+                    "nombre": "Carlos Pérez",
+                    "correo": "carlos@urp.edu.pe",
+                    "telefono": "999111222",
+                    "dni": "",
                     "rol": "admin",
-                    "estado": True,
-                    "email": "carlos@urp.edu.pe",
+                    "estado": "Activo",
                 }
             ],
             "clientes": [
                 {
                     "id_cliente": 1,
-                    "nombres": "Maria",
-                    "apellidos": "Fernandez",
-                    "dni": "74281635",
+                    "id_usuario": "cliente-1",
+                    "nombre": "Maria Fernandez",
+                    "correo": "maria@ejemplo.com",
                     "telefono": "999111222",
-                    "email": "maria@ejemplo.com",
-                    "fecha_registro": today,
-                    "estado": True,
+                    "dni": "74281635",
+                    "plan": "MENSUAL",
+                    "promocion": "SIN PROMOCION",
+                    "estado": "ACTIVO",
                 }
             ],
             "tickets_atencion": [],
@@ -92,7 +95,7 @@ class GymService:
             "planes_membresia": [
                 {
                     "id_pm": 1,
-                    "nombre_plan": "Mensual",
+                    "nombre_plan": "MENSUAL",
                     "duracion": "30 dias",
                     "precio": 80,
                 }
@@ -105,7 +108,60 @@ class GymService:
         for key, value in seed.items():
             if not isinstance(merged.get(key), list):
                 merged[key] = value
+        merged["usuario"] = [self._normalize_usuario_record(row) for row in merged.get("usuario", []) if isinstance(row, dict)]
+        merged["clientes"] = [self._normalize_cliente_record(row, index) for index, row in enumerate(merged.get("clientes", []), start=1) if isinstance(row, dict)]
         return merged
+
+    def _user_role_prefix(self, rol: str) -> str:
+        rol_value = str(rol or "").strip().lower()
+        return {
+            "admin": "ADM",
+            "trainer": "TRA",
+            "staff": "STA",
+        }.get(rol_value, "USR")
+
+    def _normalize_usuario_id(self, value: Any) -> str | None:
+        if value is None:
+            return None
+
+        raw = str(value).strip().upper()
+        if not raw:
+            return None
+
+        match = re.match(r"^(?:SGUS|USSG)?(\d+)$", raw)
+        if match:
+            return f"SGUS{int(match.group(1)):03d}"
+
+        return raw
+
+    def _next_usuario_code(self, state: dict[str, Any]) -> str:
+        numbers: list[int] = []
+        for row in state.get("usuario", []):
+            usuario_id = str(row.get("id_usuario") or "").strip().upper()
+            match = re.match(r"^SG[A-Z]{3}(\d+)$", usuario_id)
+            if match:
+                numbers.append(int(match.group(1)))
+
+        return max(numbers, default=0) + 1
+
+    def _normalize_usuario_record(self, row: dict[str, Any]) -> dict[str, Any]:
+        nombre = str(row.get("nombre") or ((str(row.get("nombres") or "") + " " + str(row.get("apellidos") or "")).strip()) or "").strip()
+        correo = str(row.get("correo") or row.get("email") or "").strip()
+        rol = str(row.get("rol") or "staff").strip().lower()
+        prefix = self._user_role_prefix(rol)
+        raw_id = str(row.get("id_usuario") or "").strip().upper()
+        number_match = re.search(r"(\d+)$", raw_id)
+        number = int(number_match.group(1)) if number_match else self._next_usuario_code({"usuario": [row]})
+        raw_id = f"SG{prefix}{int(number):03d}"
+        return {
+            "id_usuario": raw_id,
+            "nombre": nombre,
+            "correo": correo,
+            "telefono": str(row.get("telefono") or "").strip(),
+            "dni": str(row.get("dni") or "").strip(),
+            "rol": rol if rol in {"admin", "trainer", "staff"} else "staff",
+            "estado": "ACTIVO",
+        }
 
     def _load(self) -> dict[str, Any]:
         if not self.db_file.exists():
@@ -114,7 +170,27 @@ class GymService:
             self.db_file.write_text(json.dumps(seed, ensure_ascii=False, indent=2), encoding="utf-8")
             return seed
         data = json.loads(self.db_file.read_text(encoding="utf-8"))
-        return self._normalize(data)
+        normalized = self._normalize(data)
+        # Backfill simple nombre when missing: use email local-part (cleaned) if available
+        for u in normalized.get("usuario", []):
+            try:
+                if not str(u.get("nombre") or "").strip():
+                    email = str(u.get("correo") or u.get("email") or "").strip()
+                    if email and "@" in email:
+                        local = email.split("@", 1)[0]
+                        # replace dots/underscores with space and title-case
+                        derived = " ".join([part.capitalize() for part in re.sub(r"[._]+", " ", local).split()])
+                        u["nombre"] = derived
+            except Exception:
+                # ignore any error during best-effort backfill
+                pass
+        # Persist normalized state back to disk to migrate older records (fill `nombre`, normalize ids, etc.)
+        try:
+            self.db_file.write_text(json.dumps(normalized, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:
+            # If persistence fails, continue using normalized in-memory state
+            pass
+        return normalized
 
     def _save(self) -> None:
         self.db_file.write_text(json.dumps(self.state, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -144,23 +220,73 @@ class GymService:
                 return memb
         return None
 
-    def get_usuario(self, id_usuario: int) -> dict[str, Any] | None:
-        return next((u for u in self.state["usuario"] if int(u.get("id_usuario", 0)) == int(id_usuario)), None)
+    def get_usuario(self, id_usuario: Any) -> dict[str, Any] | None:
+        usuario_id = self._normalize_usuario_id(id_usuario)
+        if not usuario_id:
+            return None
+
+        return next((u for u in self.state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) == usuario_id), None)
 
     def get_usuario_by_email(self, email: str) -> dict[str, Any] | None:
-        return next((u for u in self.state["usuario"] if str(u.get("email", "")).lower() == email.lower()), None)
+        normalized_email = str(email or "").strip().lower()
+        return next(
+            (
+                u
+                for u in self.state["usuario"]
+                if str(u.get("email") or u.get("correo") or "").strip().lower() == normalized_email
+            ),
+            None,
+        )
 
     def usuarios(self) -> list[dict[str, Any]]:
         return self.state["usuario"]
 
+    def usuarios_normalized(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "id_usuario": row["id_usuario"],
+                "nombre": row["nombre"],
+                "correo": row["correo"],
+                "telefono": row["telefono"],
+                "dni": row["dni"],
+                "rol": row["rol"],
+            }
+            for row in self.state.get("usuario", [])
+        ]
+
     def upsert_usuario(self, payload: dict[str, Any]) -> dict[str, Any]:
         def _fn(state: dict[str, Any]):
-            item = {**payload}
-            item_id = item.get("id_usuario")
-            if item_id is None:
-                item_id = self._next_int_id("usuario", "id_usuario")
-            item["id_usuario"] = int(item_id)
-            idx = next((i for i, row in enumerate(state["usuario"]) if int(row.get("id_usuario", 0)) == int(item_id)), -1)
+            rol = str(payload.get("rol") or "").strip().lower()
+            if rol not in {"admin", "trainer", "staff"}:
+                raise ValueError("Rol inválido")
+
+            prefix = self._user_role_prefix(rol)
+            raw_id = self._normalize_usuario_id(payload.get("id_usuario"))
+            if raw_id and re.match(r"^SG[A-Z]{3}\d{3}$", raw_id):
+                item_id = raw_id
+            else:
+                numbers: list[int] = []
+                for row in state.get("usuario", []):
+                    current_id = str(row.get("id_usuario") or "").strip().upper()
+                    if current_id.startswith(f"SG{prefix}"):
+                        match = re.match(rf"^SG{prefix}(\d+)$", current_id)
+                        if match:
+                            numbers.append(int(match.group(1)))
+                item_id = f"SG{prefix}{(max(numbers, default=0) + 1):03d}"
+
+            nombre = str(payload.get("nombre") or "").strip()
+            correo = str(payload.get("correo") or "").strip()
+            item = {
+                "id_usuario": item_id,
+                "nombre": nombre,
+                "correo": correo,
+                "telefono": str(payload.get("telefono") or "").strip(),
+                "dni": str(payload.get("dni") or "").strip(),
+                "rol": rol,
+                "estado": "Activo",
+            }
+
+            idx = next((i for i, row in enumerate(state["usuario"]) if self._normalize_usuario_id(row.get("id_usuario")) == item_id), -1)
             if idx >= 0:
                 state["usuario"][idx] = item
             else:
@@ -169,14 +295,119 @@ class GymService:
 
         return self._mutate(_fn)
 
-    def delete_usuario(self, id_usuario: int) -> None:
+    def delete_usuario(self, id_usuario: Any) -> None:
+        usuario_id = self._normalize_usuario_id(id_usuario)
+
         def _fn(state: dict[str, Any]):
-            state["usuario"] = [u for u in state["usuario"] if int(u.get("id_usuario", 0)) != int(id_usuario)]
+            state["usuario"] = [u for u in state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) != usuario_id]
 
         self._mutate(_fn)
 
     def clientes(self) -> list[dict[str, Any]]:
         return self.state["clientes"]
+
+    def _normalize_cliente_record(self, row: dict[str, Any], fallback_index: int) -> dict[str, Any]:
+        id_cliente = row.get("id_cliente")
+        if id_cliente is None:
+            id_cliente = fallback_index
+
+        nombre = str(row.get("nombre") or ((str(row.get("nombres") or "") + " " + str(row.get("apellidos") or "")).strip()) or "").strip()
+        correo = str(row.get("correo") or row.get("email") or "").strip()
+        telefono = str(row.get("telefono") or "").strip()
+        dni = str(row.get("dni") or "").strip()
+        plan = str(row.get("plan") or "").strip()
+        promocion = str(row.get("promocion") or "").strip()
+        raw_estado = row.get("estado")
+        if isinstance(raw_estado, bool):
+            estado = "Activo" if raw_estado else "Inactivo"
+        else:
+            estado_text = str(raw_estado or "").strip().lower()
+            if estado_text in {"true", "activo", "activa", "1", "si", "sí"}:
+                estado = "Activo"
+            elif estado_text in {"false", "inactivo", "inactiva", "0", "no"}:
+                estado = "Inactivo"
+            else:
+                estado = str(raw_estado or "").strip() or "Activo"
+
+        return {
+            "id_cliente": int(id_cliente),
+            "id_usuario": str(row.get("id_usuario") or f"SGCLI{int(id_cliente):03d}").strip().upper(),
+            "nombre": nombre,
+            "correo": correo,
+            "telefono": telefono,
+            "dni": dni,
+            "plan": plan,
+            "promocion": promocion,
+            "estado": estado.upper() if estado else "ACTIVO",
+        }
+
+    def clientes_normalized(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "id_usuario": row["id_usuario"],
+                "nombre": row["nombre"],
+                "correo": row["correo"],
+                "telefono": row["telefono"],
+                "dni": row["dni"],
+                "plan": row["plan"],
+                "promocion": row["promocion"],
+                "estado": row["estado"],
+            }
+            for row in self.state.get("clientes", [])
+        ]
+
+    def upsert_cliente(self, payload: dict[str, Any]) -> dict[str, Any]:
+        def _fn(state: dict[str, Any]):
+            raw_id = payload.get("id_usuario") or payload.get("id_cliente")
+            id_usuario = str(raw_id).strip() if raw_id not in [None, ""] else ""
+
+            item_id = None
+            if id_usuario.startswith("cliente-"):
+                try:
+                    item_id = int(id_usuario.split("-", 1)[1])
+                except Exception:
+                    item_id = None
+            elif str(raw_id or "").isdigit():
+                item_id = int(str(raw_id))
+
+            if item_id is None:
+                item_id = self._next_int_id("clientes", "id_cliente")
+
+            if not id_usuario or id_usuario.isdigit():
+                id_usuario = f"SGCLI{int(item_id):03d}"
+
+            raw_estado = payload.get("estado")
+            if isinstance(raw_estado, bool):
+                estado = "ACTIVO" if raw_estado else "INACTIVO"
+            else:
+                estado_text = str(raw_estado or "").strip().lower()
+                if estado_text in {"true", "activo", "activa", "1", "si", "sí"}:
+                    estado = "ACTIVO"
+                elif estado_text in {"false", "inactivo", "inactiva", "0", "no"}:
+                    estado = "INACTIVO"
+                else:
+                    estado = str(raw_estado or "ACTIVO").strip().upper() or "ACTIVO"
+
+            item = {
+                "id_cliente": int(item_id),
+                "id_usuario": id_usuario,
+                "nombre": str(payload.get("nombre") or "").strip(),
+                "correo": str(payload.get("correo") or payload.get("email") or "").strip(),
+                "telefono": str(payload.get("telefono") or "").strip(),
+                "dni": str(payload.get("dni") or "").strip(),
+                "plan": str(payload.get("plan") or "MENSUAL").strip() or "MENSUAL",
+                "promocion": str(payload.get("promocion") or "SIN PROMOCION").strip() or "SIN PROMOCION",
+                "estado": estado,
+            }
+
+            idx = next((i for i, row in enumerate(state["clientes"]) if int(row.get("id_cliente", 0)) == int(item_id)), -1)
+            if idx >= 0:
+                state["clientes"][idx] = item
+            else:
+                state["clientes"].insert(0, item)
+            return item
+
+        return self._mutate(_fn)
 
     def get_cliente(self, id_cliente: int) -> dict[str, Any] | None:
         return next((c for c in self.state["clientes"] if int(c.get("id_cliente", 0)) == int(id_cliente)), None)
@@ -186,23 +417,6 @@ class GymService:
 
     def get_cliente_by_email(self, email: str) -> dict[str, Any] | None:
         return next((c for c in self.state["clientes"] if str(c.get("email", "")).lower() == email.lower()), None)
-
-    def upsert_cliente(self, payload: dict[str, Any]) -> dict[str, Any]:
-        def _fn(state: dict[str, Any]):
-            item = {**payload}
-            item_id = item.get("id_cliente")
-            if item_id is None:
-                item_id = self._next_int_id("clientes", "id_cliente")
-            item["id_cliente"] = int(item_id)
-            item["fecha_registro"] = _safe_date(item.get("fecha_registro", ""))
-            idx = next((i for i, row in enumerate(state["clientes"]) if int(row.get("id_cliente", 0)) == int(item_id)), -1)
-            if idx >= 0:
-                state["clientes"][idx] = item
-            else:
-                state["clientes"].insert(0, item)
-            return item
-
-        return self._mutate(_fn)
 
     def delete_cliente(self, id_cliente: int) -> None:
         def _fn(state: dict[str, Any]):
@@ -215,23 +429,22 @@ class GymService:
         self._mutate(_fn)
 
     def planes_membresia(self) -> list[dict[str, Any]]:
-        return self.state["planes_membresia"]
+        return [self.state["planes_membresia"][0]] if self.state.get("planes_membresia") else []
 
     def get_plan_membresia(self, id_pm: int) -> dict[str, Any] | None:
-        return next((p for p in self.state["planes_membresia"] if int(p.get("id_pm", 0)) == int(id_pm)), None)
+        if int(id_pm) != 1:
+            return None
+        return self.state["planes_membresia"][0] if self.state.get("planes_membresia") else None
 
     def upsert_plan_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         def _fn(state: dict[str, Any]):
-            item = {**payload}
-            item_id = item.get("id_pm")
-            if item_id is None:
-                item_id = self._next_int_id("planes_membresia", "id_pm")
-            item["id_pm"] = int(item_id)
-            idx = next((i for i, row in enumerate(state["planes_membresia"]) if int(row.get("id_pm", 0)) == int(item_id)), -1)
-            if idx >= 0:
-                state["planes_membresia"][idx] = item
-            else:
-                state["planes_membresia"].insert(0, item)
+            item = {
+                "id_pm": 1,
+                "nombre_plan": "MENSUAL",
+                "duracion": "30 dias",
+                "precio": 80,
+            }
+            state["planes_membresia"] = [item]
             return item
 
         return self._mutate(_fn)
@@ -313,11 +526,55 @@ class GymService:
 
         return self._mutate(_fn)
 
+    def registrar_asistencia_detallada(self, payload: dict[str, Any]) -> dict[str, Any]:
+        # payload expected keys: id_cliente, id_usuario (admin who registers, optional), fecha (optional), hora (optional), servicio
+        id_cliente = int(payload.get("id_cliente", 0))
+        if not self.get_cliente(id_cliente):
+            raise ValueError("Cliente no encontrado")
+
+        servicio = str(payload.get("servicio") or "").strip().lower()
+        allowed = {"fitness", "musculacion", "cardio", "baile"}
+        if servicio not in allowed:
+            raise ValueError(f"Servicio inválido: {servicio}")
+
+        fecha = str(payload.get("fecha") or "").strip() or _today_iso()
+        hora = str(payload.get("hora") or "").strip() or _now_time()
+        id_usuario_registra = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
+
+        def _fn(state: dict[str, Any]):
+            membresia = self._active_membership_for_cliente(state, id_cliente)
+            validacion = bool(membresia)
+            if not validacion:
+                raise ValueError("Cliente sin membresía activa")
+            item = {
+                "id_asistencia": self._next_int_id("asistencia", "id_asistencia"),
+                "id_cliente": int(id_cliente),
+                "id_membresia": int(membresia["id_membresia"]),
+                "fecha": fecha,
+                "hora": hora,
+                "servicio": servicio,
+                "registrado_por": id_usuario_registra,
+                "validacion": True,
+            }
+            state["asistencia"].insert(0, item)
+            return item
+
+        return self._mutate(_fn)
+
     def registrar_asistencia_por_dni(self, dni: str) -> dict[str, Any]:
-        cliente = self.get_cliente_by_dni(dni)
+        # Support payload dict (dni plus optional fields) or simple dni string
+        if isinstance(dni, dict):
+            payload = dni
+            dni_val = str(payload.get("dni") or "").strip()
+        else:
+            payload = {"dni": str(dni)}
+            dni_val = str(dni)
+
+        cliente = self.get_cliente_by_dni(dni_val)
         if not cliente:
             raise ValueError("DNI no registrado")
-        return self.registrar_asistencia(int(cliente["id_cliente"]))
+        payload["id_cliente"] = int(cliente["id_cliente"])
+        return self.registrar_asistencia_detallada(payload)
 
     def inventario(self) -> list[dict[str, Any]]:
         return self.state["inventario"]
@@ -353,7 +610,7 @@ class GymService:
 
     def registrar_movimiento_inventario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_item = int(payload.get("id_item", 0))
-        id_usuario = int(payload.get("id_usuario", 0))
+        id_usuario = self._normalize_usuario_id(payload.get("id_usuario"))
         cantidad = max(1, int(payload.get("cantidad", 1)))
         tipo = str(payload.get("tipo_movimiento", "")).lower()
 
@@ -398,7 +655,7 @@ class GymService:
 
     def upsert_ticket(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(payload.get("id_cliente", 0))
-        id_usuario = int(payload.get("id_usuario", 0))
+        id_usuario = self._normalize_usuario_id(payload.get("id_usuario"))
         if not self.get_cliente(id_cliente):
             raise ValueError("Cliente no encontrado")
         if not self.get_usuario(id_usuario):
@@ -410,6 +667,7 @@ class GymService:
             if item_id is None:
                 item_id = self._next_int_id("tickets_atencion", "id_ticket")
             item["id_ticket"] = int(item_id)
+            item["id_usuario"] = id_usuario
             item["fecha_emitido"] = _safe_date(item.get("fecha_emitido", ""))
             idx = next((i for i, row in enumerate(state["tickets_atencion"]) if int(row.get("id_ticket", 0)) == int(item_id)), -1)
             if idx >= 0:

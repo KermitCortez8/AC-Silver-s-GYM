@@ -16,6 +16,11 @@ class AuthService:
 
         usuario = self.gym_service.get_usuario_by_email(profile["email"])
         if usuario:
+            profile["id"] = str(usuario.get("id_usuario") or profile["id"])
+            profile["id_usuario"] = str(usuario.get("id_usuario") or profile["id"])
+            profile["correo"] = str(usuario.get("correo") or usuario.get("email") or profile["email"])
+            profile["email"] = profile["correo"]
+            profile["telefono"] = str(usuario.get("telefono") or "")
             profile["role"] = usuario.get("rol", profile["role"])
         else:
             profile["role"] = get_user_role(profile["email"])
@@ -30,5 +35,10 @@ class AuthService:
         profile = normalize_profile(payload, "")
         usuario = self.gym_service.get_usuario_by_email(profile["email"])
         if usuario:
+            profile["id"] = str(usuario.get("id_usuario") or profile["id"])
+            profile["id_usuario"] = str(usuario.get("id_usuario") or profile["id"])
+            profile["correo"] = str(usuario.get("correo") or usuario.get("email") or profile["email"])
+            profile["email"] = profile["correo"]
+            profile["telefono"] = str(usuario.get("telefono") or "")
             profile["role"] = usuario.get("rol", profile["role"])
         return UserProfile(**profile)

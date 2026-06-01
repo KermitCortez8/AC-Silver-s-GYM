@@ -1,46 +1,183 @@
 {
-  "inventario": [
-    {
-      "id_item": 1,
-      "nombre_item": "Mancuernas ajustables",
-      "tipo": "Pesas",
-      "cantidad_stock": 12,
-      "stock_minimo": 6,
-      "estado": "Operativo",
-      "n_activo": 1
-    }
-  ],
+  "inventario": [],
   "mov_inv": [],
   "usuario": [
     {
-      "id_usuario": 1,
-      "dni": "71928451",
-      "contrasena": "",
+      "id_usuario": "SGTRA002",
+      "nombre": "Josue",
+      "correo": "1212@g.com",
+      "telefono": "93902",
+      "dni": "12345678",
+      "rol": "trainer",
+      "estado": "Activo"
+    },
+    {
+      "id_usuario": "SGADM001",
+      "nombre": "Rene",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "73045451",
       "rol": "admin",
-      "estado": true,
-      "email": "carlos@urp.edu.pe"
+      "estado": "Activo"
+    },
+    {
+      "id_usuario": "SGTRA001",
+      "nombre": "Ana",
+      "correo": "ana@example.com",
+      "telefono": "555",
+      "dni": "12345678",
+      "rol": "trainer",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA001",
+      "nombre": "Jose",
+      "correo": "20212@gmail.com",
+      "telefono": "12",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA013",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA012",
+      "nombre": "A",
+      "correo": "a@gmail",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA011",
+      "nombre": "",
+      "correo": "",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA010",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA009",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA008",
+      "nombre": "",
+      "correo": "",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA007",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA006",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA005",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA004",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA003",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA002",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGSTA001",
+      "nombre": "Renatocortex1516",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "",
+      "dni": "",
+      "rol": "staff",
+      "estado": "ACTIVO"
     }
   ],
   "clientes": [
     {
-      "id_cliente": 2,
-      "nombres": "Sin nombre",
-      "apellidos": "",
-      "dni": "",
-      "telefono": "",
-      "email": "",
-      "fecha_registro": "2026-05-24",
-      "estado": true
+      "id_cliente": 101,
+      "id_usuario": "SGCLI101",
+      "nombre": "Jose perez",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "73045451",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
     },
     {
-      "id_cliente": 1,
-      "nombres": "Sin nombre",
-      "apellidos": "",
+      "id_cliente": 100,
+      "id_usuario": "SGCLI099",
+      "nombre": "Jose",
+      "correo": "20212@gmail.com",
+      "telefono": "12",
       "dni": "",
-      "telefono": "",
-      "email": "",
-      "fecha_registro": "2026-05-24",
-      "estado": true
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
     }
   ],
   "tickets_atencion": [],
@@ -53,34 +190,8 @@
       "color": "Azul"
     }
   ],
-  "asistencia": [
-    {
-      "id_asistencia": 1,
-      "id_cliente": 1,
-      "id_membresia": 1,
-      "fecha": "2026-05-24",
-      "hora": "21:01",
-      "validacion": true
-    }
-  ],
-  "membresia": [
-    {
-      "id_cliente": 2,
-      "id_pm": 1,
-      "fecha_inicio": "2026-05-24",
-      "fecha_fin": "2028-11-24",
-      "estado": "Activa",
-      "id_membresia": 2
-    },
-    {
-      "id_cliente": 1,
-      "id_pm": 1,
-      "fecha_inicio": "2026-05-24",
-      "fecha_fin": "2028-11-24",
-      "estado": "Activa",
-      "id_membresia": 1
-    }
-  ],
+  "asistencia": [],
+  "membresia": [],
   "planes_membresia": [
     {
       "id_pm": 1,

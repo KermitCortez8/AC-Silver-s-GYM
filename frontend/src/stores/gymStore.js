@@ -13,205 +13,15 @@ const PLAN_DURATION_MONTHS = {
 };
 
 const seedState = () => ({
-  planCatalog: [
-    {
-      id: 'plan-monthly',
-      name: 'Mensual',
-      durationMonths: 1,
-      price: 80,
-      description: 'Acceso estándar por 30 días.',
-      active: true,
-    },
-    {
-      id: 'plan-quarterly',
-      name: 'Trimestral',
-      durationMonths: 3,
-      price: 210,
-      description: 'Ideal para continuidad de corto plazo.',
-      active: true,
-    },
-    {
-      id: 'plan-annual',
-      name: 'Anual',
-      durationMonths: 12,
-      price: 720,
-      description: 'Mejor relación costo/beneficio.',
-      active: true,
-    },
-  ],
-  promotions: [
-    {
-      id: 'promo-welcome',
-      name: 'Bienvenida 10%',
-      discountType: 'percent',
-      discountValue: 10,
-      appliesTo: ['plan-monthly', 'plan-quarterly'],
-      active: true,
-      validUntil: '2026-12-31',
-      note: 'Promoción inicial de captación.',
-    },
-  ],
-  members: [
-    {
-      id: 'member-1',
-      name: 'María Fernández',
-      dni: '74281635',
-      internalCode: 'GYM-0001',
-      email: 'maria@ejemplo.com',
-      phone: '999 111 222',
-      role: 'user',
-      plan: 'Mensual',
-      planId: 'plan-monthly',
-      membershipStart: '2026-01-12',
-      membershipEnd: '2026-06-12',
-      membershipPrice: 80,
-      status: 'Activa',
-      joinedAt: '2026-01-12',
-      attendanceRate: 92,
-      membershipHistory: [
-        {
-          id: 'memhist-1',
-          type: 'Alta',
-          at: '2026-01-12T08:00:00.000Z',
-          planId: 'plan-monthly',
-          startDate: '2026-01-12',
-          endDate: '2026-06-12',
-          price: 80,
-          discount: 0,
-          note: 'Registro inicial del socio.',
-        },
-      ],
-      changeHistory: [
-        {
-          id: 'change-1',
-          at: '2026-01-12T08:00:00.000Z',
-          action: 'Registro inicial',
-          fields: ['name', 'email', 'phone', 'plan', 'status'],
-        },
-      ],
-      schedules: [],
-    },
-    {
-      id: 'member-2',
-      name: 'Carlos Rojas',
-      dni: '71928451',
-      internalCode: 'GYM-0002',
-      email: 'carlos@urp.edu.pe',
-      phone: '988 222 333',
-      role: 'admin',
-      plan: 'Anual',
-      planId: 'plan-annual',
-      membershipStart: '2025-11-03',
-      membershipEnd: '2026-11-03',
-      membershipPrice: 720,
-      status: 'Activa',
-      joinedAt: '2025-11-03',
-      attendanceRate: 88,
-      membershipHistory: [],
-      changeHistory: [],
-      schedules: [],
-    },
-    {
-      id: 'member-3',
-      name: 'Lucía Torres',
-      dni: '78451236',
-      internalCode: 'GYM-0003',
-      email: 'lucia@ejemplo.com',
-      phone: '977 444 555',
-      role: 'user',
-      plan: 'Trimestral',
-      planId: 'plan-quarterly',
-      membershipStart: '2026-03-20',
-      membershipEnd: '2026-06-20',
-      membershipPrice: 210,
-      status: 'Pendiente',
-      joinedAt: '2026-03-20',
-      attendanceRate: 76,
-      membershipHistory: [],
-      changeHistory: [],
-      schedules: [],
-    },
-  ],
-  attendance: [
-    {
-      id: 'attendance-1',
-      memberId: 'member-1',
-      memberName: 'María Fernández',
-      memberCode: 'GYM-0001',
-      type: 'Entrada',
-      time: '07:10',
-      date: '2026-05-03',
-      exercise: 'Rutina funcional',
-      note: 'Pierna y glúteo',
-    },
-    {
-      id: 'attendance-2',
-      memberId: 'member-2',
-      memberName: 'Carlos Rojas',
-      memberCode: 'GYM-0002',
-      type: 'Entrada',
-      time: '06:45',
-      date: '2026-05-03',
-      exercise: 'Revisión general',
-      note: 'Espalda y core',
-    },
-    {
-      id: 'attendance-3',
-      memberId: 'member-3',
-      memberName: 'Lucía Torres',
-      memberCode: 'GYM-0003',
-      type: 'Salida',
-      time: '19:05',
-      date: '2026-05-02',
-      exercise: 'Cardio',
-      note: 'Finalizó rutina',
-    },
-  ],
+  planCatalog: [],
+  promotions: [],
+  members: [],
+  users: [],
+  attendance: [],
   attendancePasses: [],
-  inventory: [
-    {
-      id: 'item-1',
-      inventoryCode: 'INV-0001',
-      name: 'Mancuernas ajustables',
-      category: 'Pesas',
-      quantity: 12,
-      minQuantity: 6,
-      location: 'Sala 1',
-      status: 'Operativo',
-      observations: 'En buen estado operativo.',
-    },
-    {
-      id: 'item-2',
-      inventoryCode: 'INV-0002',
-      name: 'Tapetes de yoga',
-      category: 'Accesorios',
-      quantity: 8,
-      minQuantity: 10,
-      location: 'Depósito',
-      status: 'En mantenimiento',
-      observations: 'Requiere revisión por desgaste.',
-    },
-    {
-      id: 'item-3',
-      inventoryCode: 'INV-0003',
-      name: 'Bandas de resistencia',
-      category: 'Accesorios',
-      quantity: 18,
-      minQuantity: 8,
-      location: 'Recepción',
-      status: 'Operativo',
-      observations: 'Reposición reciente.',
-    },
-  ],
-  schedule: [
-    { day: 'Lunes', hours: '06:00 - 22:00', focus: 'Piernas y glúteos' },
-    { day: 'Martes', hours: '06:00 - 22:00', focus: 'Espalda y core' },
-    { day: 'Miércoles', hours: '06:00 - 22:00', focus: 'Pecho y hombros' },
-    { day: 'Jueves', hours: '06:00 - 22:00', focus: 'Cardio y movilidad' },
-    { day: 'Viernes', hours: '06:00 - 22:00', focus: 'Full body' },
-    { day: 'Sábado', hours: '08:00 - 18:00', focus: 'Clases dirigidas' },
-    { day: 'Domingo', hours: '09:00 - 14:00', focus: 'Mantenimiento' },
-  ],
+  inventory: [],
+  routines: [],
+  schedule: [],
 });
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -248,14 +58,32 @@ const normalizeInventoryItem = (item = {}) => ({
   inventoryCode: item.inventoryCode || `INV-${String(item.id || Date.now()).slice(-4).toUpperCase()}`,
 });
 
+const normalizeUser = (user = {}) => {
+  const email = String(user.correo || user.email || '').trim();
+  const rawId = String(user.id_usuario || user.id || '').trim().toUpperCase();
+  const nombre = String(user.nombre || '').trim();
+
+  return {
+    ...user,
+    id_usuario: rawId.replace(/^USSG(\d+)$/, 'SGUS$1'),
+    nombre,
+    correo: email,
+    email,
+    telefono: String(user.telefono || '').trim(),
+    dni: String(user.dni || '').trim(),
+    rol: user.rol || 'staff',
+  };
+};
+
 const normalizeMember = (member = {}) => {
   const planId = member.planId || (member.plan === 'Anual' ? 'plan-annual' : member.plan === 'Trimestral' ? 'plan-quarterly' : 'plan-monthly');
   const baseDate = member.membershipStart || member.joinedAt || todayISO();
+  const memberCode = member.id_cliente ? String(member.id_cliente) : String(member.internalCode || '').trim();
 
   return {
     ...member,
     dni: member.dni || '',
-    internalCode: member.internalCode || `GYM-${String(member.id || Date.now()).slice(-4).toUpperCase()}`,
+    internalCode: memberCode || String(member.id || Date.now()),
     plan: member.plan || planNameById(planId),
     planId,
     membershipStart: baseDate,
@@ -278,8 +106,10 @@ const normalizeState = (state) => ({
   ...seedState(),
   ...state,
   members: Array.isArray(state?.members) ? state.members.map((member) => normalizeMember(member)) : seedState().members,
+  users: Array.isArray(state?.users) ? state.users.map((user) => normalizeUser(user)) : seedState().users,
   planCatalog: Array.isArray(state?.planCatalog) ? state.planCatalog : seedState().planCatalog,
   promotions: Array.isArray(state?.promotions) ? state.promotions : seedState().promotions,
+  routines: Array.isArray(state?.routines) ? state.routines : seedState().routines,
   attendancePasses: Array.isArray(state?.attendancePasses) ? state.attendancePasses : [],
   attendance: Array.isArray(state?.attendance) ? state.attendance.map((entry) => normalizeAttendanceRecord(entry)) : seedState().attendance,
   inventory: Array.isArray(state?.inventory) ? state.inventory.map((item) => normalizeInventoryItem(item)) : seedState().inventory,
@@ -336,7 +166,11 @@ const loadState = () => {
 
   try {
     const parsed = JSON.parse(stored);
-    return normalizeState(parsed);
+    const normalized = normalizeState(parsed);
+    if (APP_CONFIG.authApiBaseUrl) {
+      normalized.users = [];
+    }
+    return normalized;
   } catch (error) {
     return seedState();
   }
@@ -347,9 +181,11 @@ export const useGymStore = defineStore('gym', () => {
   const planCatalog = ref(initialState.planCatalog);
   const promotions = ref(initialState.promotions);
   const members = ref(initialState.members);
+  const users = ref(initialState.users);
   const attendance = ref(initialState.attendance);
   const attendancePasses = ref(initialState.attendancePasses || []);
   const inventory = ref(initialState.inventory);
+  const routines = ref(initialState.routines);
   const schedule = ref(initialState.schedule);
 
   const persist = () => {
@@ -359,10 +195,12 @@ export const useGymStore = defineStore('gym', () => {
       STORAGE_KEY,
       JSON.stringify({
         members: members.value,
+        users: users.value,
         attendance: attendance.value,
         attendancePasses: attendancePasses.value,
         planCatalog: planCatalog.value,
         promotions: promotions.value,
+        routines: routines.value,
         inventory: inventory.value,
         schedule: schedule.value,
       }),
@@ -442,7 +280,10 @@ export const useGymStore = defineStore('gym', () => {
     }
 
     return (
-      members.value.find((member) => String(member.internalCode || '').trim().toUpperCase() === normalizedCode) || null
+      members.value.find((member) => {
+        const memberCode = String(member.id_cliente || member.internalCode || member.id || '').trim().toUpperCase();
+        return memberCode === normalizedCode;
+      }) || null
     );
   };
 
@@ -560,6 +401,130 @@ export const useGymStore = defineStore('gym', () => {
     return promotion;
   };
 
+  const upsertRutina = async (payload) => {
+    const rutina = {
+      id_rutina: payload.id_rutina || payload.id || null,
+      nombre_rutina: payload.nombre_rutina?.trim() || 'Sin nombre',
+      zonas_musculares: payload.zonas_musculares || '',
+      color: payload.color || 'Azul',
+    };
+
+    if (apiBase) {
+      const response = await fetch(`${apiBase}/gym/rutinas`, {
+        method: 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify(rutina),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar rutina en backend');
+      }
+
+      const saved = await response.json();
+      const normalized = {
+        id_rutina: saved.id_rutina,
+        nombre_rutina: saved.nombre_rutina || rutina.nombre_rutina,
+        zonas_musculares: saved.zonas_musculares || rutina.zonas_musculares,
+        color: saved.color || rutina.color,
+      };
+
+      const index = routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
+      if (index >= 0) {
+        routines.value[index] = normalized;
+      } else {
+        routines.value.unshift(normalized);
+      }
+
+      persist();
+      return normalized;
+    }
+
+    const nextId = rutina.id_rutina || (routines.value.length ? Math.max(...routines.value.map((entry) => Number(entry.id_rutina) || 0)) + 1 : 1);
+    const normalized = { ...rutina, id_rutina: nextId };
+    const index = routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
+    if (index >= 0) {
+      routines.value[index] = normalized;
+    } else {
+      routines.value.unshift(normalized);
+    }
+
+    persist();
+    return normalized;
+  };
+
+  const upsertHorario = async (payload) => {
+    const scheduleItem = {
+      id_horario: payload.id_horario || payload.id || null,
+      id_cliente: Number(payload.id_cliente),
+      id_rutina: Number(payload.id_rutina),
+      dia_semana: payload.dia_semana || 'Lunes',
+      hora_inicio: payload.hora_inicio || '06:00',
+      hora_fin: payload.hora_fin || '07:00',
+    };
+
+    if (apiBase) {
+      const response = await fetch(`${apiBase}/gym/horarios`, {
+        method: 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify(scheduleItem),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar horario en backend');
+      }
+
+      const saved = await response.json();
+      const normalized = {
+        id_horario: saved.id_horario,
+        id_cliente: saved.id_cliente,
+        id_rutina: saved.id_rutina,
+        dia_semana: saved.dia_semana || scheduleItem.dia_semana,
+        hora_inicio: saved.hora_inicio || scheduleItem.hora_inicio,
+        hora_fin: saved.hora_fin || scheduleItem.hora_fin,
+      };
+
+      const index = schedule.value.findIndex((entry) => Number(entry.id_horario) === Number(normalized.id_horario));
+      if (index >= 0) {
+        schedule.value[index] = normalized;
+      } else {
+        schedule.value.unshift(normalized);
+      }
+
+      const memberIndex = members.value.findIndex((member) => Number(member.id_cliente) === Number(normalized.id_cliente));
+      if (memberIndex >= 0) {
+        const member = members.value[memberIndex];
+        members.value[memberIndex] = {
+          ...member,
+          schedules: [
+            {
+              id_horario: normalized.id_horario,
+              id_rutina: normalized.id_rutina,
+              dia_semana: normalized.dia_semana,
+              hora_inicio: normalized.hora_inicio,
+              hora_fin: normalized.hora_fin,
+            },
+            ...(member.schedules || []),
+          ].slice(0, 20),
+        };
+      }
+
+      persist();
+      return normalized;
+    }
+
+    const nextId = scheduleItem.id_horario || (schedule.value.length ? Math.max(...schedule.value.map((entry) => Number(entry.id_horario) || 0)) + 1 : 1);
+    const normalized = { ...scheduleItem, id_horario: nextId };
+    const index = schedule.value.findIndex((entry) => Number(entry.id_horario) === Number(normalized.id_horario));
+    if (index >= 0) {
+      schedule.value[index] = normalized;
+    } else {
+      schedule.value.unshift(normalized);
+    }
+
+    persist();
+    return normalized;
+  };
+
   const assignPlanToMember = (memberId, planId, promotionId = '', note = 'Asignación de membresía') => {
     // Si hay backend configurado, intentar delegar la creación/renovación al servidor
     const index = members.value.findIndex((entry) => entry.id === memberId);
@@ -568,9 +533,9 @@ export const useGymStore = defineStore('gym', () => {
     }
 
     const member = members.value[index];
-    // Intentar extraer id_cliente si el id viene del backend (cliente-<id>)
-    if (apiBase && /^cliente-\d+$/.test(memberId)) {
-      const id_cliente = Number(memberId.split('-')[1]);
+    // Intentar extraer id_cliente si el id viene del backend (cliente-<id> o SGCLI<id>)
+    if (apiBase && /^(?:cliente-|SGCLI)\d+$/i.test(memberId)) {
+      const id_cliente = Number(String(memberId).replace(/^(?:cliente-|SGCLI)/i, ''));
       // Obtener id_pm numérico desde planId (soporta pm-<id> y 'pm-...')
       const getNumericPm = (pid) => {
         if (!pid) return null;
@@ -665,24 +630,46 @@ export const useGymStore = defineStore('gym', () => {
       throw new Error('Código no encontrado');
     }
 
-    if (apiBase && member.dni) {
-      // Delegar registro de asistencia al backend por DNI
-      return checkinByDniServer(member.dni).then((res) => {
-        const record = {
-          id: `attendance-${Date.now()}`,
-          memberId: member.id,
-          memberName: member.name,
-          memberCode: member.internalCode,
-          type: res.validacion ? 'Entrada' : 'Entrada',
-          exercise: exercise || '',
-          time: res.hora || nowTime(),
-          date: res.fecha || todayISO(),
-          note: note || '',
-        };
-        attendance.value.unshift(record);
-        persist();
-        return record;
-      });
+    if (apiBase) {
+      const backendMemberId = String(member.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i);
+      if (backendMemberId) {
+        return checkinByIdServer(Number(backendMemberId[1])).then((res) => {
+          const record = {
+            id: `attendance-${Date.now()}`,
+            memberId: member.id,
+            memberName: member.name,
+            memberCode: member.internalCode,
+            type: res.validacion ? 'Entrada' : 'Entrada',
+            exercise: exercise || '',
+            time: res.hora || nowTime(),
+            date: res.fecha || todayISO(),
+            note: note || '',
+          };
+          attendance.value.unshift(record);
+          persist();
+          return record;
+        });
+      }
+
+      if (member.dni) {
+        // Delegar registro de asistencia al backend por DNI como respaldo.
+        return checkinByDniServer(member.dni).then((res) => {
+          const record = {
+            id: `attendance-${Date.now()}`,
+            memberId: member.id,
+            memberName: member.name,
+            memberCode: member.internalCode,
+            type: res.validacion ? 'Entrada' : 'Entrada',
+            exercise: exercise || '',
+            time: res.hora || nowTime(),
+            date: res.fecha || todayISO(),
+            note: note || '',
+          };
+          attendance.value.unshift(record);
+          persist();
+          return record;
+        });
+      }
     }
 
     if (!isMembershipActive(member)) {
@@ -706,7 +693,19 @@ export const useGymStore = defineStore('gym', () => {
     return record;
   };
 
-  const memberSchedules = (memberId) => memberById(memberId)?.schedules || [];
+  const memberSchedules = (memberId) => {
+    const member = memberById(memberId);
+    if (!member) return [];
+
+    if (apiBase && schedule.value.length) {
+      const backendId = Number(member.id_cliente || String(member.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i)?.[1] || 0);
+      if (backendId) {
+        return schedule.value.filter((entry) => Number(entry.id_cliente) === backendId);
+      }
+    }
+
+    return member.schedules || [];
+  };
 
   const assignMemberSchedule = (memberId, payload) => {
     const index = members.value.findIndex((entry) => entry.id === memberId);
@@ -851,7 +850,7 @@ export const useGymStore = defineStore('gym', () => {
       id: payload.id || `member-${Date.now()}`,
       name: payload.name?.trim() || existingMember?.name || 'Sin nombre',
       dni: payload.dni?.trim() || existingMember?.dni || '',
-      internalCode: payload.internalCode?.trim() || existingMember?.internalCode || `GYM-${String(payload.id || Date.now()).slice(-4).toUpperCase()}`,
+      internalCode: String(existingMember?.id_cliente || payload.id_cliente || existingMember?.internalCode || '').trim(),
       email: payload.email?.trim() || existingMember?.email || '',
       phone: payload.phone?.trim() || existingMember?.phone || '',
       role: payload.role || existingMember?.role || 'user',
@@ -873,14 +872,17 @@ export const useGymStore = defineStore('gym', () => {
 
     // Si hay backend configurado, enviar al servidor
     if (apiBase) {
+      const backendId = Number(existingMember?.id_cliente || String(payload.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i)?.[1] || payload.id_cliente || 0) || null;
       const body = {
-        nombres: member.name.split(' ')[0] || member.name,
-        apellidos: member.name.split(' ').slice(1).join(' ') || '',
-        dni: member.dni || '',
+        ...(backendId ? { id_cliente: backendId } : {}),
+        id_usuario: member.id || undefined,
+        nombre: member.name || '',
+        correo: member.email || '',
         telefono: member.phone || '',
-        email: member.email || '',
-        fecha_registro: member.joinedAt || todayISO(),
-        estado: member.status === 'Activa',
+        dni: member.dni || '',
+        plan: member.plan || 'MENSUAL',
+        promocion: member.promocion || 'SIN PROMOCION',
+        estado: String(member.status || 'ACTIVO').toUpperCase(),
       };
 
       return fetch(`${apiBase}/clientes`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(body) })
@@ -889,9 +891,9 @@ export const useGymStore = defineStore('gym', () => {
           return r.json();
         })
         .then((created) => {
-          const id_cliente = created.id_cliente || created.id || Date.now();
-          const localId = `cliente-${id_cliente}`;
-          const localMember = { ...member, id: localId, joinedAt: created.fecha_registro || member.joinedAt };
+          const id_cliente = Number(String(created.id_usuario || created.id || '').replace(/^SGCLI/i, '')) || backendId || Date.now();
+          const localId = created.id_usuario || `SGCLI${String(id_cliente).padStart(3, '0')}`;
+          const localMember = { ...member, id: localId, id_cliente, internalCode: String(localId), joinedAt: created.fecha_registro || member.joinedAt };
           const idx = members.value.findIndex((m) => m.id === localMember.id || m.dni === localMember.dni);
           if (idx >= 0) members.value[idx] = localMember; else members.value.unshift(localMember);
           persist();
@@ -921,8 +923,8 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const deleteMember = (id) => {
-    if (apiBase && /^cliente-\d+$/.test(id)) {
-      const id_cliente = Number(id.split('-')[1]);
+    if (apiBase && /^(?:cliente-|SGCLI)\d+$/i.test(id)) {
+      const id_cliente = Number(String(id).replace(/^(?:cliente-|SGCLI)/i, ''));
       fetch(`${apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => {});
     }
     members.value = members.value.filter((member) => member.id !== id);
@@ -931,30 +933,54 @@ export const useGymStore = defineStore('gym', () => {
     persist();
   };
 
+  const deleteClient = (id) => deleteMember(id);
+
   const recordAttendance = (memberId, type = 'Entrada', note = '') => {
     const member = members.value.find((entry) => entry.id === memberId);
     if (!member) {
       throw new Error('Miembro no encontrado');
     }
 
-    // Si hay backend y el miembro tiene DNI, delegar en backend
-    if (apiBase && member.dni) {
-      return checkinByDniServer(member.dni).then((res) => {
-        const record = {
-          id: `attendance-${Date.now()}`,
-          memberId,
-          memberName: member.name,
-          memberCode: member.internalCode,
-          type: res.validacion ? 'Entrada' : 'Entrada',
-          exercise: note || '',
-          time: res.hora || nowTime(),
-          date: res.fecha || todayISO(),
-          note,
-        };
-        attendance.value.unshift(record);
-        persist();
-        return record;
-      });
+    // Si hay backend, primero intentar con id_cliente y luego con DNI.
+    if (apiBase) {
+      const backendMemberId = String(member.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i);
+      if (backendMemberId) {
+        return checkinByIdServer(Number(backendMemberId[1])).then((res) => {
+          const record = {
+            id: `attendance-${Date.now()}`,
+            memberId,
+            memberName: member.name,
+            memberCode: String(member.id_cliente || member.internalCode || member.id).trim(),
+            type: res.validacion ? 'Entrada' : 'Entrada',
+            exercise: note || '',
+            time: res.hora || nowTime(),
+            date: res.fecha || todayISO(),
+            note,
+          };
+          attendance.value.unshift(record);
+          persist();
+          return record;
+        });
+      }
+
+      if (member.dni) {
+        return checkinByDniServer(member.dni).then((res) => {
+          const record = {
+            id: `attendance-${Date.now()}`,
+            memberId,
+            memberName: member.name,
+            memberCode: String(member.id_cliente || member.internalCode || member.id).trim(),
+            type: res.validacion ? 'Entrada' : 'Entrada',
+            exercise: note || '',
+            time: res.hora || nowTime(),
+            date: res.fecha || todayISO(),
+            note,
+          };
+          attendance.value.unshift(record);
+          persist();
+          return record;
+        });
+      }
     }
 
     if (!isMembershipActive(member)) {
@@ -965,7 +991,7 @@ export const useGymStore = defineStore('gym', () => {
       id: `attendance-${Date.now()}`,
       memberId,
       memberName: member.name,
-      memberCode: member.internalCode,
+      memberCode: String(member.id_cliente || member.internalCode || member.id).trim(),
       type,
       exercise: note || 'Sin ejercicio',
       time: nowTime(),
@@ -1051,6 +1077,60 @@ export const useGymStore = defineStore('gym', () => {
     return item;
   };
 
+  const upsertUser = async (payload) => {
+    const existingUser = users.value.find((entry) => String(entry.id_usuario) === String(payload.id_usuario || '').trim());
+    const userPayload = {
+      ...(existingUser?.id_usuario ? { id_usuario: existingUser.id_usuario } : {}),
+      nombre: String(payload.nombre || existingUser?.nombre || '').trim(),
+      correo: String(payload.correo || payload.email || existingUser?.correo || '').trim(),
+      telefono: String(payload.telefono || existingUser?.telefono || '').trim(),
+      dni: String(payload.dni || existingUser?.dni || '').trim(),
+      rol: payload.rol || existingUser?.rol || 'staff',
+    };
+
+    if (apiBase) {
+      if (payload.id_usuario) {
+        userPayload.id_usuario = String(payload.id_usuario).trim();
+      }
+
+      const saved = await upsertUserToServer(userPayload);
+      const normalized = normalizeUser(saved);
+      const index = users.value.findIndex((entry) => String(entry.id_usuario) === String(normalized.id_usuario));
+      if (index >= 0) {
+        users.value[index] = normalized;
+      } else {
+        users.value.unshift(normalized);
+      }
+      persist();
+      return normalized;
+    }
+
+    const nextId = userPayload.id_usuario || `SGUS${String(users.value.length + 1).padStart(3, '0')}`;
+    const normalized = normalizeUser({ ...userPayload, id_usuario: nextId });
+    const index = users.value.findIndex((entry) => String(entry.id_usuario) === String(normalized.id_usuario));
+    if (index >= 0) {
+      users.value[index] = normalized;
+    } else {
+      users.value.unshift(normalized);
+    }
+    persist();
+    return normalized;
+  };
+
+  const deleteUser = async (idUsuario) => {
+    const normalizedId = String(idUsuario || '').trim();
+    if (!normalizedId) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (apiBase) {
+      await deleteUserFromServer(normalizedId);
+    }
+
+    users.value = users.value.filter((user) => String(user.id_usuario) !== normalizedId);
+    persist();
+  };
+
   const deleteInventoryItem = (id) => {
     if (apiBase && /^item-\d+$/.test(id)) {
       const id_item = Number(id.split('-')[1]);
@@ -1082,25 +1162,34 @@ export const useGymStore = defineStore('gym', () => {
     if (resClientes.ok) {
       const list = await resClientes.json();
       members.value = list.map((c) => ({
-        id: `cliente-${c.id_cliente}`,
-        name: `${c.nombres} ${c.apellidos}`.trim(),
-        dni: c.dni,
-        internalCode: `C-${String(c.id_cliente).padStart(4, '0')}`,
-        email: c.email || '',
-        phone: c.telefono || '',
+        id: c.id_usuario || `cliente-${c.id_cliente || Date.now()}`,
+        id_cliente:
+          c.id_cliente || Number(String(c.id_usuario || '').match(/(?:SGCLI|cliente-)(\d+)/)?.[1] || 0) || null,
+        name: c.nombre || `${c.nombres || ''} ${c.apellidos || ''}`.trim(),
+        dni: c.dni || '',
+        internalCode: String(c.id_usuario || c.id_cliente || '').trim(),
+        email: c.correo || c.email || '',
+        phone: c.telefono || c.phone || '',
         role: 'user',
-        plan: '',
+        plan: c.plan || '',
+        promocion: c.promocion || '',
         planId: '',
-        membershipStart: c.fecha_registro || '',
+        membershipStart: c.fecha_registro || c.joinedAt || '',
         membershipEnd: '',
         membershipPrice: 0,
-        status: c.estado ? 'Activa' : 'Inactiva',
-        joinedAt: c.fecha_registro || '',
+        status: String(c.estado || (c.estado === false ? 'INACTIVO' : 'ACTIVO')).toUpperCase(),
+        joinedAt: c.fecha_registro || c.joinedAt || '',
         attendanceRate: 0,
         membershipHistory: [],
         changeHistory: [],
         schedules: [],
       }));
+    }
+
+    const resUsuarios = await fetch(`${apiBase}/usuarios`, { headers: _authHeaders() });
+    if (resUsuarios.ok) {
+      const list = await resUsuarios.json();
+      users.value = list.map((user) => normalizeUser(user));
     }
 
     // Inventario
@@ -1134,6 +1223,30 @@ export const useGymStore = defineStore('gym', () => {
       }));
     }
 
+    const resHorarios = await fetch(`${apiBase}/gym/horarios`, { headers: _authHeaders() });
+    if (resHorarios.ok) {
+      const list = await resHorarios.json();
+      schedule.value = list.map((h) => ({
+        id_horario: h.id_horario,
+        id_cliente: h.id_cliente,
+        id_rutina: h.id_rutina,
+        dia_semana: h.dia_semana,
+        hora_inicio: h.hora_inicio,
+        hora_fin: h.hora_fin,
+      }));
+    }
+
+    const resRutinas = await fetch(`${apiBase}/gym/rutinas`, { headers: _authHeaders() });
+    if (resRutinas.ok) {
+      const list = await resRutinas.json();
+      routines.value = list.map((r) => ({
+        id_rutina: r.id_rutina,
+        nombre_rutina: r.nombre_rutina,
+        zonas_musculares: r.zonas_musculares || '',
+        color: r.color || 'Azul',
+      }));
+    }
+
     // Asistencias
     const resAsis = await fetch(`${apiBase}/asistencia`, { headers: _authHeaders() });
     if (resAsis.ok) {
@@ -1141,8 +1254,8 @@ export const useGymStore = defineStore('gym', () => {
       attendance.value = list.map((a) => ({
         id: `asistencia-${a.id_asistencia}`,
         memberId: `cliente-${a.id_cliente}`,
-        memberName: '',
-        memberCode: '',
+        memberName: members.value.find((m) => Number(m.id_cliente) === Number(a.id_cliente))?.name || '',
+        memberCode: String(a.id_cliente),
         type: a.validacion ? 'Entrada' : 'Entrada',
         time: a.hora || '',
         date: a.fecha || '',
@@ -1161,6 +1274,87 @@ export const useGymStore = defineStore('gym', () => {
     return res.json();
   };
 
+  const upsertClient = async (payload) => {
+    const existingClient = members.value.find((entry) => String(entry.id) === String(payload.id_usuario || '').trim());
+    const clientPayload = {
+      ...(payload.id_usuario ? { id_usuario: String(payload.id_usuario).trim() } : {}),
+      nombre: String(payload.nombre || existingClient?.name || '').trim(),
+      correo: String(payload.correo || payload.email || existingClient?.email || '').trim(),
+      telefono: String(payload.telefono || existingClient?.phone || '').trim(),
+      dni: String(payload.dni || existingClient?.dni || '').trim(),
+      plan: String(payload.plan || existingClient?.plan || 'MENSUAL').trim() || 'MENSUAL',
+      promocion: String(payload.promocion || existingClient?.promocion || 'SIN PROMOCION').trim() || 'SIN PROMOCION',
+      estado: String(payload.estado || existingClient?.status || 'ACTIVO').trim().toUpperCase() || 'ACTIVO',
+    };
+
+    if (apiBase) {
+      const saved = await upsertClienteToServer(clientPayload);
+      const numericId = Number(String(saved.id_usuario || '').replace(/^SGCLI/i, '')) || Number(existingClient?.id_cliente || 0) || Date.now();
+      const normalized = {
+        id: saved.id_usuario || `SGCLI${String(numericId).padStart(3, '0')}`,
+        id_cliente: numericId,
+        name: saved.nombre || clientPayload.nombre,
+        dni: saved.dni || clientPayload.dni,
+        internalCode: String(saved.id_usuario || `SGCLI${String(numericId).padStart(3, '0')}`),
+        email: saved.correo || clientPayload.correo,
+        phone: saved.telefono || clientPayload.telefono,
+        role: 'user',
+        plan: saved.plan || clientPayload.plan,
+        planId: '',
+        membershipStart: existingClient?.membershipStart || '',
+        membershipEnd: existingClient?.membershipEnd || '',
+        membershipPrice: Number(existingClient?.membershipPrice ?? 0),
+        status: saved.estado || clientPayload.estado,
+        joinedAt: existingClient?.joinedAt || '',
+        attendanceRate: Number(existingClient?.attendanceRate ?? 0),
+        membershipHistory: Array.isArray(existingClient?.membershipHistory) ? existingClient.membershipHistory : [],
+        changeHistory: Array.isArray(existingClient?.changeHistory) ? existingClient.changeHistory : [],
+        schedules: Array.isArray(existingClient?.schedules) ? existingClient.schedules : [],
+      };
+
+      const index = members.value.findIndex((entry) => String(entry.id) === String(normalized.id));
+      if (index >= 0) {
+        members.value[index] = normalized;
+      } else {
+        members.value.unshift(normalized);
+      }
+      persist();
+      return normalized;
+    }
+
+    const fallbackId = clientPayload.id_usuario || `SGCLI${String(members.value.length + 1).padStart(3, '0')}`;
+    const normalized = {
+      id: fallbackId,
+      id_cliente: Number(String(fallbackId).replace(/^SGCLI/i, '')) || members.value.length + 1,
+      name: clientPayload.nombre,
+      dni: clientPayload.dni,
+      internalCode: fallbackId,
+      email: clientPayload.correo,
+      phone: clientPayload.telefono,
+      role: 'user',
+      plan: clientPayload.plan,
+      planId: '',
+      membershipStart: '',
+      membershipEnd: '',
+      membershipPrice: 0,
+      status: clientPayload.estado,
+      joinedAt: todayISO(),
+      attendanceRate: 0,
+      membershipHistory: [],
+      changeHistory: [],
+      schedules: [],
+    };
+
+    const index = members.value.findIndex((entry) => String(entry.id) === String(normalized.id));
+    if (index >= 0) {
+      members.value[index] = normalized;
+    } else {
+      members.value.unshift(normalized);
+    }
+    persist();
+    return normalized;
+  };
+
   const registerClienteMembresiaToServer = async (payload) => {
     if (!apiBase) throw new Error('No hay backend configurado');
     const res = await fetch(`${apiBase}/registro-cliente-membresia`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(payload) });
@@ -1175,11 +1369,32 @@ export const useGymStore = defineStore('gym', () => {
     return res.json();
   };
 
+  const checkinByIdServer = async (id_cliente) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const res = await fetch(`${apiBase}/asistencia/checkin`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify({ id_cliente }) });
+    if (!res.ok) throw new Error('Error en checkin por cliente');
+    return res.json();
+  };
+
   const upsertInventoryToServer = async (payload) => {
     if (!apiBase) throw new Error('No hay backend configurado');
     const res = await fetch(`${apiBase}/inventario`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(payload) });
     if (!res.ok) throw new Error('Error al guardar inventario');
     return res.json();
+  };
+
+  const upsertUserToServer = async (payload) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const res = await fetch(`${apiBase}/usuarios`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error('Error al guardar usuario');
+    return res.json();
+  };
+
+  const deleteUserFromServer = async (idUsuario) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const res = await fetch(`${apiBase}/usuarios/${encodeURIComponent(idUsuario)}`, { method: 'DELETE', headers: _authHeaders() });
+    if (!res.ok && res.status !== 204) throw new Error('Error al eliminar usuario');
+    return true;
   };
 
   const registrarMovimientoToServer = async (payload) => {
@@ -1191,10 +1406,12 @@ export const useGymStore = defineStore('gym', () => {
 
   return {
     members,
+    users,
     attendance,
     attendancePasses,
     planCatalog,
     promotions,
+    routines,
     inventory,
     schedule,
     stats,
@@ -1212,6 +1429,7 @@ export const useGymStore = defineStore('gym', () => {
     calculatePlanCharge,
     upsertPlan,
     upsertPromotion,
+    upsertRutina,
     assignPlanToMember,
     renewMembership,
     attendanceByMemberRange,
@@ -1227,15 +1445,24 @@ export const useGymStore = defineStore('gym', () => {
     redeemAttendancePass,
     upsertMember,
     deleteMember,
+    upsertClient,
+    deleteClient,
     recordAttendance,
     upsertInventoryItem,
     deleteInventoryItem,
+    upsertUser,
+    deleteUser,
+    upsertClient,
+    deleteClient,
     // Backend sync
     fetchFromBackend,
     upsertClienteToServer,
     registerClienteMembresiaToServer,
     checkinByDniServer,
+    checkinByIdServer,
     upsertInventoryToServer,
+    upsertUserToServer,
+    deleteUserFromServer,
     registrarMovimientoToServer,
   };
 });

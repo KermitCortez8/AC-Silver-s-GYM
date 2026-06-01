@@ -54,13 +54,20 @@ def run():
             errors.append(("/usuarios", r.status_code, r.text))
 
         print("-> POST /usuarios")
-        user_payload = {"dni": "99999999", "contrasena": "pass123", "rol": "user", "email": "testuser@example.com"}
+        user_payload = {
+            "correo": "testuser@example.com",
+            "numero_membresia": "MES S/.100",
+            "promocion": "",
+            "estado": "Activo",
+        }
         r = client.post("/usuarios", json=user_payload)
         print(r.status_code, r.text)
         if r.status_code not in (200, 201):
             errors.append(("POST /usuarios", r.status_code, r.text))
         else:
             new_user = r.json()
+            if not str(new_user.get("id_usuario", "")).startswith("SGUS"):
+                errors.append(("POST /usuarios id format", 200, str(new_user)))
 
         print("-> GET /clientes")
         r = client.get("/clientes")
@@ -139,7 +146,7 @@ def run():
             item = r.json()
 
         print("-> POST /inventario/movimientos (entrada)")
-        mov_payload = {"id_item": 1, "id_usuario": 1, "tipo_movimiento": "entrada", "cantidad": 2}
+        mov_payload = {"id_item": 1, "id_usuario": new_user["id_usuario"] if "new_user" in locals() else "SGUS001", "tipo_movimiento": "entrada", "cantidad": 2}
         r = client.post("/inventario/movimientos", json=mov_payload)
         print(r.status_code, r.text)
         if r.status_code not in (200, 201):
