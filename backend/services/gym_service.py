@@ -431,11 +431,34 @@ class GymService:
 
     def delete_cliente(self, id_cliente: int) -> None:
         def _fn(state: dict[str, Any]):
-            state["clientes"] = [c for c in state["clientes"] if int(c.get("id_cliente", 0)) != int(id_cliente)]
-            state["membresia"] = [m for m in state["membresia"] if int(m.get("id_cliente", 0)) != int(id_cliente)]
-            state["asistencia"] = [a for a in state["asistencia"] if int(a.get("id_cliente", 0)) != int(id_cliente)]
-            state["horario"] = [h for h in state["horario"] if int(h.get("id_cliente", 0)) != int(id_cliente)]
-            state["tickets_atencion"] = [t for t in state["tickets_atencion"] if int(t.get("id_cliente", 0)) != int(id_cliente)]
+            def matches_id(value):
+                try:
+                    if value is None:
+                        return False
+                    # numeric comparison
+                    if isinstance(value, (int, float)) or (isinstance(value, str) and str(value).isdigit()):
+                        return int(value) == int(id_cliente)
+                    # string uid comparison (SGCLI### or cliente-#)
+                    s = str(value).strip().upper()
+                    if s.startswith("SGCLI"):
+                        try:
+                            return int(s.replace("SGCLI", "")) == int(id_cliente)
+                        except Exception:
+                            return False
+                    if s.startswith("CLIENTE-"):
+                        try:
+                            return int(s.split("-", 1)[1]) == int(id_cliente)
+                        except Exception:
+                            return False
+                    return False
+                except Exception:
+                    return False
+
+            state["clientes"] = [c for c in state["clientes"] if not matches_id(c.get("id_cliente"))]
+            state["membresia"] = [m for m in state["membresia"] if not matches_id(m.get("id_cliente"))]
+            state["asistencia"] = [a for a in state["asistencia"] if not matches_id(a.get("id_cliente") or a.get("id_cliente_uid") or a.get("id_cliente"))]
+            state["horario"] = [h for h in state["horario"] if not matches_id(h.get("id_cliente"))]
+            state["tickets_atencion"] = [t for t in state["tickets_atencion"] if not matches_id(t.get("id_cliente"))]
 
         self._mutate(_fn)
 
@@ -524,13 +547,14 @@ class GymService:
             validacion = bool(membresia)
             if not validacion:
                 raise ValueError("Cliente sin membresía activa")
+            # Store minimal attendance fields as requested: id_cliente (UID when available), fecha, hora, servicio
+            client_record = self.get_cliente(id_cliente) or {}
+            full_uid = str(client_record.get("id_usuario") or f"cliente-{id_cliente}")
             item = {
-                "id_asistencia": self._next_int_id("asistencia", "id_asistencia"),
-                "id_cliente": int(id_cliente),
-                "id_membresia": int(membresia["id_membresia"]),
+                "id_cliente": full_uid,
                 "fecha": _today_iso(),
                 "hora": _now_time(),
-                "validacion": True,
+                "servicio": "fitness",
             }
             state["asistencia"].insert(0, item)
             return item
@@ -539,7 +563,22 @@ class GymService:
 
     def registrar_asistencia_detallada(self, payload: dict[str, Any]) -> dict[str, Any]:
         # payload expected keys: id_cliente, id_usuario (admin who registers, optional), fecha (optional), hora (optional), servicio
-        id_cliente = int(payload.get("id_cliente", 0))
+        raw_id_cliente = payload.get("id_cliente", 0)
+        # Allow id_cliente to be numeric or full uid (e.g., 'SGCLI103' or 'cliente-103')
+        id_cliente = 0
+        try:
+            if isinstance(raw_id_cliente, str):
+                s = raw_id_cliente.strip()
+                m = re.match(r"^(?:SGCLI|cliente-)?(\d+)$", s, re.IGNORECASE)
+                if m:
+                    id_cliente = int(m.group(1))
+                elif s.isdigit():
+                    id_cliente = int(s)
+            else:
+                id_cliente = int(raw_id_cliente)
+        except Exception:
+            id_cliente = 0
+
         if not self.get_cliente(id_cliente):
             raise ValueError("Cliente no encontrado")
 
@@ -557,15 +596,22 @@ class GymService:
             validacion = bool(membresia)
             if not validacion:
                 raise ValueError("Cliente sin membresía activa")
+            # Preserve the full client UID when available (from payload or client record)
+            client_record = self.get_cliente(id_cliente) or {}
+            full_uid = None
+            if isinstance(raw_id_cliente, str) and raw_id_cliente.strip():
+                full_uid = raw_id_cliente.strip()
+            elif client_record:
+                full_uid = str(client_record.get("id_usuario") or "").strip()
+
+            # Store minimal attendance fields as requested: id_cliente (UID when available), fecha, hora, servicio
+            client_record = self.get_cliente(id_cliente) or {}
+            uid_value = full_uid or str(client_record.get("id_usuario") or f"cliente-{id_cliente}")
             item = {
-                "id_asistencia": self._next_int_id("asistencia", "id_asistencia"),
-                "id_cliente": int(id_cliente),
-                "id_membresia": int(membresia["id_membresia"]),
+                "id_cliente": uid_value,
                 "fecha": fecha,
                 "hora": hora,
                 "servicio": servicio,
-                "registrado_por": id_usuario_registra,
-                "validacion": True,
             }
             state["asistencia"].insert(0, item)
             return item

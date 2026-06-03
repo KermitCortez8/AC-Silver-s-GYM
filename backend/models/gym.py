@@ -107,13 +107,13 @@ class HorarioInput(BaseModel):
 
 class AsistenciaInput(BaseModel):
     id_asistencia: int | None = None
-    id_cliente: int
+    id_cliente: str | int
     fecha: str = ""
     hora: str = ""
 
 
 class CheckinAsistenciaInput(BaseModel):
-    id_cliente: int
+    id_cliente: str | int
     id_usuario: str | int | None = None
     fecha: str = ""
     hora: str = ""

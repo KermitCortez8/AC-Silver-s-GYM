@@ -48,7 +48,11 @@
           </label>
           <label class="space-y-2">
             <span class="text-sm text-slate-300">Rol</span>
-            <div class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white">{{ form.rol }}</div>
+            <select v-model="form.rol" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
+              <option value="admin">admin</option>
+              <option value="trainer">trainer</option>
+              <option value="staff">staff</option>
+            </select>
           </label>
           <label class="space-y-2">
             <span class="text-sm text-slate-300">DNI</span>

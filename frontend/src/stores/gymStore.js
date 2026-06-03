@@ -65,6 +65,10 @@ const normalizeUser = (user = {}) => {
   const rawId = String(user.id_usuario || user.id || '').trim().toUpperCase();
   const nombre = String(user.nombre || '').trim();
 
+  if (apiBase) {
+    fetchFromBackend().catch((err) => console.warn('No se pudo cargar datos desde backend:', err));
+  }
+
   return {
     ...user,
     id_usuario: rawId.replace(/^USSG(\d+)$/, 'SGUS$1'),
@@ -97,12 +101,20 @@ const normalizeMember = (member = {}) => {
   };
 };
 
-const normalizeAttendanceRecord = (entry = {}) => ({
-  ...entry,
-  memberCode: entry.memberCode || '',
-  exercise: entry.exercise || entry.note || '',
-  note: entry.note || '',
-});
+const normalizeAttendanceRecord = (entry = {}) => {
+  const rawId = entry.id_cliente || entry.id_cliente_uid || entry.memberId || entry.memberCode || '';
+  const idStr = rawId === null || rawId === undefined ? '' : String(rawId);
+  return {
+    ...entry,
+    memberId: entry.memberId || idStr,
+    memberCode: entry.memberCode || idStr,
+    service: entry.service || entry.servicio || entry.servicio || '',
+    registeredBy: entry.registeredBy || entry.registrado_por || '',
+    idMembresia: entry.idMembresia || entry.id_membresia || entry.id_membresia || null,
+    date: entry.date || entry.fecha || '',
+    time: entry.time || entry.hora || '',
+  };
+};
 
 const normalizeState = (state) => ({
   ...seedState(),
@@ -118,6 +130,30 @@ const normalizeState = (state) => ({
   productos_tienda: Array.isArray(state?.productos_tienda) ? state.productos_tienda : seedState().productos_tienda,
   cart: Array.isArray(state?.cart) ? state.cart : seedState().cart,
 });
+
+const buildAttendanceRecord = (member, response = {}, fallback = {}) =>
+  normalizeAttendanceRecord({
+    id: `attendance-${Date.now()}`,
+    memberId: member.id,
+    memberName: member.name,
+    memberCode: member.internalCode,
+    service: response.service || response.servicio || fallback.service || '',
+    registeredBy: response.registeredBy || response.registrado_por || fallback.registeredBy || '',
+    idMembresia: response.idMembresia || response.id_membresia || fallback.idMembresia || null,
+    time: response.time || response.hora || fallback.time || nowTime(),
+    date: response.date || response.fecha || fallback.date || todayISO(),
+  });
+
+const getCurrentRegistrarId = (authStore) => authStore.user?.id_usuario || authStore.user?.id || authStore.user?.email || null;
+
+const getClientIdForBackend = (member) => {
+  // Return the full client UID when available (e.g., 'SGCLI103'), fallback to numeric id
+  if (!member) return '';
+  if (member.id) return String(member.id);
+  if (member.internalCode) return String(member.internalCode);
+  if (member.id_cliente) return String(member.id_cliente);
+  return '';
+};
 
 const generatePassCode = () => {
   const timeSegment = Date.now().toString(36).toUpperCase();
@@ -182,6 +218,7 @@ const loadState = () => {
 
 export const useGymStore = defineStore('gym', () => {
   const initialState = loadState();
+  const authStore = useAuthStore();
   const planCatalog = ref(initialState.planCatalog);
   const promotions = ref(initialState.promotions);
   const members = ref(initialState.members);
@@ -632,27 +669,26 @@ export const useGymStore = defineStore('gym', () => {
       return matchesMember && afterStart && beforeEnd;
     });
 
-  const recordAttendanceByCode = (internalCode, exercise = '', type = 'Entrada', note = '') => {
+  const recordAttendanceByCode = (internalCode, service = 'fitness') => {
     const member = memberByInternalCode(internalCode);
     if (!member) {
       throw new Error('Código no encontrado');
     }
 
     if (apiBase) {
-      const backendMemberId = String(member.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i);
+      const backendMemberId = getClientIdForBackend(member);
+      const registrarId = getCurrentRegistrarId(authStore);
       if (backendMemberId) {
-        return checkinByIdServer(Number(backendMemberId[1])).then((res) => {
-          const record = {
-            id: `attendance-${Date.now()}`,
-            memberId: member.id,
-            memberName: member.name,
-            memberCode: member.internalCode,
-            type: res.validacion ? 'Entrada' : 'Entrada',
-            exercise: exercise || '',
-            time: res.hora || nowTime(),
-            date: res.fecha || todayISO(),
-            note: note || '',
-          };
+        return checkinByIdServer({
+          id_cliente: backendMemberId,
+          id_usuario: registrarId,
+          servicio: service || 'fitness',
+          fecha: todayISO(),
+          hora: nowTime(),
+        }).then((res) => {
+          const record = buildAttendanceRecord(member, res, {
+            service: service || 'fitness',
+          });
           attendance.value.unshift(record);
           persist();
           return record;
@@ -660,19 +696,16 @@ export const useGymStore = defineStore('gym', () => {
       }
 
       if (member.dni) {
-        // Delegar registro de asistencia al backend por DNI como respaldo.
-        return checkinByDniServer(member.dni).then((res) => {
-          const record = {
-            id: `attendance-${Date.now()}`,
-            memberId: member.id,
-            memberName: member.name,
-            memberCode: member.internalCode,
-            type: res.validacion ? 'Entrada' : 'Entrada',
-            exercise: exercise || '',
-            time: res.hora || nowTime(),
-            date: res.fecha || todayISO(),
-            note: note || '',
-          };
+        return checkinByDniServer({
+          dni: member.dni,
+          id_usuario: registrarId,
+          servicio: service || 'fitness',
+          fecha: todayISO(),
+          hora: nowTime(),
+        }).then((res) => {
+          const record = buildAttendanceRecord(member, res, {
+            service: service || 'fitness',
+          });
           attendance.value.unshift(record);
           persist();
           return record;
@@ -684,17 +717,11 @@ export const useGymStore = defineStore('gym', () => {
       throw new Error('El socio no tiene una membresía vigente');
     }
 
-    const record = {
-      id: `attendance-${Date.now()}`,
-      memberId: member.id,
-      memberName: member.name,
-      memberCode: member.internalCode,
-      type,
-      exercise: exercise.trim() || 'Sin ejercicio',
+    const record = buildAttendanceRecord(member, {}, {
+      service: service || 'fitness',
       time: nowTime(),
       date: todayISO(),
-      note: note.trim() || '',
-    };
+    });
 
     attendance.value.unshift(record);
     persist();
@@ -943,7 +970,7 @@ export const useGymStore = defineStore('gym', () => {
 
   const deleteClient = (id) => deleteMember(id);
 
-  const recordAttendance = (memberId, type = 'Entrada', note = '') => {
+  const recordAttendance = (memberId, service = 'fitness') => {
     const member = members.value.find((entry) => entry.id === memberId);
     if (!member) {
       throw new Error('Miembro no encontrado');
@@ -951,20 +978,19 @@ export const useGymStore = defineStore('gym', () => {
 
     // Si hay backend, primero intentar con id_cliente y luego con DNI.
     if (apiBase) {
-      const backendMemberId = String(member.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i);
+      const backendMemberId = getClientIdForBackend(member);
+      const registrarId = getCurrentRegistrarId(authStore);
       if (backendMemberId) {
-        return checkinByIdServer(Number(backendMemberId[1])).then((res) => {
-          const record = {
-            id: `attendance-${Date.now()}`,
-            memberId,
-            memberName: member.name,
-            memberCode: String(member.id_cliente || member.internalCode || member.id).trim(),
-            type: res.validacion ? 'Entrada' : 'Entrada',
-            exercise: note || '',
-            time: res.hora || nowTime(),
-            date: res.fecha || todayISO(),
-            note,
-          };
+        return checkinByIdServer({
+          id_cliente: backendMemberId,
+          id_usuario: registrarId,
+          servicio: service || 'fitness',
+          fecha: todayISO(),
+          hora: nowTime(),
+        }).then((res) => {
+          const record = buildAttendanceRecord(member, res, {
+            service: service || 'fitness',
+          });
           attendance.value.unshift(record);
           persist();
           return record;
@@ -972,18 +998,16 @@ export const useGymStore = defineStore('gym', () => {
       }
 
       if (member.dni) {
-        return checkinByDniServer(member.dni).then((res) => {
-          const record = {
-            id: `attendance-${Date.now()}`,
-            memberId,
-            memberName: member.name,
-            memberCode: String(member.id_cliente || member.internalCode || member.id).trim(),
-            type: res.validacion ? 'Entrada' : 'Entrada',
-            exercise: note || '',
-            time: res.hora || nowTime(),
-            date: res.fecha || todayISO(),
-            note,
-          };
+        return checkinByDniServer({
+          dni: member.dni,
+          id_usuario: registrarId,
+          servicio: service || 'fitness',
+          fecha: todayISO(),
+          hora: nowTime(),
+        }).then((res) => {
+          const record = buildAttendanceRecord(member, res, {
+            service: service || 'fitness',
+          });
           attendance.value.unshift(record);
           persist();
           return record;
@@ -995,17 +1019,11 @@ export const useGymStore = defineStore('gym', () => {
       throw new Error('El socio no tiene una membresía vigente');
     }
 
-    const record = {
-      id: `attendance-${Date.now()}`,
-      memberId,
-      memberName: member.name,
-      memberCode: String(member.id_cliente || member.internalCode || member.id).trim(),
-      type,
-      exercise: note || 'Sin ejercicio',
+    const record = buildAttendanceRecord(member, {}, {
+      service: service || 'fitness',
       time: nowTime(),
       date: todayISO(),
-      note,
-    };
+    });
 
     attendance.value.unshift(record);
     persist();
@@ -1406,20 +1424,20 @@ export const useGymStore = defineStore('gym', () => {
     const resAsis = await fetch(`${apiBase}/asistencia`, { headers: _authHeaders() });
     if (resAsis.ok) {
       const list = await resAsis.json();
-      attendance.value = list.map((a) => ({
-        id: `asistencia-${a.id_asistencia}`,
-        memberId: `cliente-${a.id_cliente}`,
-        memberName: members.value.find((m) => Number(m.id_cliente) === Number(a.id_cliente))?.name || '',
-        memberCode: String(a.id_cliente),
-        type: a.validacion ? 'Entrada' : 'Entrada',
-        time: a.hora || '',
-        date: a.fecha || '',
-        exercise: '',
-        note: '',
-      }));
+      attendance.value = list.map((a) =>
+        normalizeAttendanceRecord({
+          id: `asistencia-${a.id_asistencia}`,
+          memberId: `cliente-${a.id_cliente}`,
+          memberName: members.value.find((m) => Number(m.id_cliente) === Number(a.id_cliente))?.name || '',
+          memberCode: String(a.id_cliente),
+          time: a.hora || '',
+          date: a.fecha || '',
+          service: a.servicio || '',
+          registeredBy: a.registrado_por || '',
+          idMembresia: a.id_membresia || null,
+        }),
+      );
     }
-
-    persist();
   };
 
   const upsertClienteToServer = async (clientePayload) => {
@@ -1517,16 +1535,16 @@ export const useGymStore = defineStore('gym', () => {
     return res.json();
   };
 
-  const checkinByDniServer = async (dni) => {
+  const checkinByDniServer = async (payload) => {
     if (!apiBase) throw new Error('No hay backend configurado');
-    const res = await fetch(`${apiBase}/asistencia/checkin-dni`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify({ dni }) });
+    const res = await fetch(`${apiBase}/asistencia/checkin-dni`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(payload) });
     if (!res.ok) throw new Error('Error en checkin por DNI');
     return res.json();
   };
 
-  const checkinByIdServer = async (id_cliente) => {
+  const checkinByIdServer = async (payload) => {
     if (!apiBase) throw new Error('No hay backend configurado');
-    const res = await fetch(`${apiBase}/asistencia/checkin`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify({ id_cliente }) });
+    const res = await fetch(`${apiBase}/asistencia/checkin`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(payload) });
     if (!res.ok) throw new Error('Error en checkin por cliente');
     return res.json();
   };
@@ -1616,8 +1634,6 @@ export const useGymStore = defineStore('gym', () => {
     clearCart,
     upsertUser,
     deleteUser,
-    upsertClient,
-    deleteClient,
     // Backend sync
     fetchFromBackend,
     upsertClienteToServer,
