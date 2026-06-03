@@ -35,10 +35,7 @@
             <p class="text-sm text-slate-400">Tasa de asistencia</p>
             <p class="mt-1 text-3xl font-black text-white">{{ stats.attendanceRate }}%</p>
           </div>
-          <div class="rounded-2xl bg-white/5 p-4">
-            <p class="text-sm text-slate-400">Stock bajo</p>
-            <p class="mt-1 text-3xl font-black text-white">{{ stats.lowStockItems }}</p>
-          </div>
+
         </div>
       </div>
     </section>
@@ -97,11 +94,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <div v-if="lowStockInventory.length" class="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-amber-100">
-          <p class="font-semibold">Hay {{ lowStockInventory.length }} artículos con stock bajo.</p>
-          <p class="mt-1 text-sm">Revisa inventario para evitar quiebres de stock.</p>
         </div>
 
         <div v-if="membershipAlerts.length || activePromotions.length" class="mt-4 space-y-3">

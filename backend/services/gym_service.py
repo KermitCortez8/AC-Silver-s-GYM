@@ -41,12 +41,23 @@ class GymService:
                     "nombre_item": "Mancuernas ajustables",
                     "tipo": "Pesas",
                     "cantidad_stock": 12,
-                    "stock_minimo": 6,
                     "estado": "Operativo",
                     "n_activo": 1,
                 }
             ],
             "mov_inv": [],
+            "productos_tienda": [
+                {
+                    "id_producto": 1,
+                    "nombre_producto": "Proteína Whey",
+                    "descripcion": "Proteína de suero de alta calidad",
+                    "categoria": "Suplementos",
+                    "precio_venta": 89.99,
+                    "cantidad_stock": 50,
+                    "stock_minimo": 10,
+                    "estado": "Disponible",
+                }
+            ],
             "usuario": [
                 {
                     "id_usuario": "SGUS001",
@@ -767,3 +778,36 @@ class GymService:
             },
             "alertas": items_stock_bajo,
         }
+
+    def productos_tienda(self) -> list[dict[str, Any]]:
+        return self.state.get("productos_tienda", [])
+
+    def get_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
+        return next((p for p in self.state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)), None)
+
+    def upsert_producto_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
+        def _fn(state: dict[str, Any]):
+            if "productos_tienda" not in state:
+                state["productos_tienda"] = []
+            
+            producto = {**payload}
+            producto_id = producto.get("id_producto")
+            if producto_id is None:
+                producto_id = self._next_int_id("productos_tienda", "id_producto")
+            producto["id_producto"] = int(producto_id)
+            
+            idx = next((i for i, row in enumerate(state["productos_tienda"]) if int(row.get("id_producto", 0)) == int(producto_id)), -1)
+            if idx >= 0:
+                state["productos_tienda"][idx] = producto
+            else:
+                state["productos_tienda"].insert(0, producto)
+            return producto
+
+        return self._mutate(_fn)
+
+    def delete_producto_tienda(self, id_producto: int) -> None:
+        def _fn(state: dict[str, Any]):
+            if "productos_tienda" in state:
+                state["productos_tienda"] = [p for p in state["productos_tienda"] if int(p.get("id_producto", 0)) != int(id_producto)]
+
+        self._mutate(_fn)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal,Optional
 
 from pydantic import BaseModel, Field
 
@@ -53,9 +53,19 @@ class InventarioInput(BaseModel):
     nombre_item: str
     tipo: str
     cantidad_stock: int
-    stock_minimo: int
     estado: str = "Operativo"
     n_activo: int = 1
+
+
+class ProductoTiendaInput(BaseModel):
+    id_producto: Optional[int] = None
+    nombre_producto: str
+    descripcion: Optional[str] = ""
+    categoria: Optional[str] = "General"
+    precio_venta: float
+    cantidad_stock: int
+    stock_minimo: Optional[int] = 5
+    estado: Optional[str] = "Disponible"
 
 
 class MovimientoInventarioInput(BaseModel):
