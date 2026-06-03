@@ -1,46 +1,72 @@
 {
-  "inventario": [
-    {
-      "id_item": 1,
-      "nombre_item": "Mancuernas ajustables",
-      "tipo": "Pesas",
-      "cantidad_stock": 12,
-      "stock_minimo": 6,
-      "estado": "Operativo",
-      "n_activo": 1
-    }
-  ],
+  "inventario": [],
   "mov_inv": [],
   "usuario": [
     {
-      "id_usuario": 1,
-      "dni": "71928451",
-      "contrasena": "",
-      "rol": "admin",
-      "estado": true,
-      "email": "carlos@urp.edu.pe"
+      "id_usuario": "SGTRA001",
+      "nombre": "Jaime",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "73045451",
+      "rol": "trainer",
+      "estado": "ACTIVO"
     }
   ],
   "clientes": [
     {
-      "id_cliente": 2,
-      "nombres": "Sin nombre",
-      "apellidos": "",
-      "dni": "",
-      "telefono": "",
-      "email": "",
-      "fecha_registro": "2026-05-24",
-      "estado": true
+      "id_cliente": 104,
+      "id_usuario": "SGCLI104",
+      "nombre": "E2E UID",
+      "correo": "e2euid@example.com",
+      "telefono": "999000111",
+      "dni": "11122233",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
     },
     {
-      "id_cliente": 1,
-      "nombres": "Sin nombre",
-      "apellidos": "",
+      "id_cliente": 103,
+      "id_usuario": "SGCLI103",
+      "nombre": "Prueba E2E2",
+      "correo": "e2e2@example.com",
+      "telefono": "999111333",
+      "dni": "99988877",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_cliente": 102,
+      "id_usuario": "SGCLI102",
+      "nombre": "Prueba E2E",
+      "correo": "e2e@example.com",
+      "telefono": "999111222",
+      "dni": "74281635",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_cliente": 101,
+      "id_usuario": "SGCLI101",
+      "nombre": "Mensul",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "73045451",
+      "plan": "3 MESES",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_cliente": 100,
+      "id_usuario": "SGCLI099",
+      "nombre": "Jose",
+      "correo": "20212@gmail.com",
+      "telefono": "12",
       "dni": "",
-      "telefono": "",
-      "email": "",
-      "fecha_registro": "2026-05-24",
-      "estado": true
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
     }
   ],
   "tickets_atencion": [],
@@ -55,28 +81,107 @@
   ],
   "asistencia": [
     {
-      "id_asistencia": 1,
-      "id_cliente": 1,
+      "id_cliente": "SGCLI103",
+      "fecha": "2026-06-01",
+      "hora": "11:27 p. m.",
+      "servicio": "fitness"
+    },
+    {
+      "id_cliente": "SGCLI104",
+      "fecha": "2026-06-01",
+      "hora": "04:24",
+      "servicio": "cardio"
+    },
+    {
+      "id_asistencia": 7,
+      "id_cliente": 104,
+      "id_cliente_uid": "SGCLI104",
+      "id_membresia": 2,
+      "fecha": "2026-06-01",
+      "hora": "03:58",
+      "servicio": "musculacion",
+      "registrado_por": "SGADM001",
+      "validacion": true
+    },
+    {
+      "id_asistencia": 6,
+      "id_cliente": 103,
+      "id_cliente_uid": "SGCLI103",
       "id_membresia": 1,
-      "fecha": "2026-05-24",
-      "hora": "21:01",
+      "fecha": "2026-06-01",
+      "hora": "10:57 p. m.",
+      "servicio": "fitness",
+      "registrado_por": "DEMO-ADMIN-001",
+      "validacion": true
+    },
+    {
+      "id_asistencia": 5,
+      "id_cliente": 104,
+      "id_cliente_uid": "SGCLI104",
+      "id_membresia": 2,
+      "fecha": "2026-06-01",
+      "hora": "03:57",
+      "servicio": "fitness",
+      "registrado_por": "SGADM001",
+      "validacion": true
+    },
+    {
+      "id_asistencia": 4,
+      "id_cliente": 103,
+      "id_cliente_uid": "SGCLI103",
+      "id_membresia": 1,
+      "fecha": "2026-06-01",
+      "hora": "10:52 p. m.",
+      "servicio": "cardio",
+      "registrado_por": "DEMO-ADMIN-001",
+      "validacion": true
+    },
+    {
+      "id_asistencia": 3,
+      "id_cliente": 103,
+      "id_cliente_uid": "SGCLI103",
+      "id_membresia": 1,
+      "fecha": "2026-06-01",
+      "hora": "03:44",
+      "servicio": "fitness",
+      "registrado_por": "SGADM001",
+      "validacion": true
+    },
+    {
+      "id_asistencia": 2,
+      "id_cliente": 103,
+      "id_membresia": 1,
+      "fecha": "2026-06-01",
+      "hora": "10:25 p. m.",
+      "servicio": "fitness",
+      "registrado_por": "DEMO-ADMIN-001",
+      "validacion": true
+    },
+    {
+      "id_asistencia": 1,
+      "id_cliente": 103,
+      "id_membresia": 1,
+      "fecha": "2026-06-01",
+      "hora": "03:23",
+      "servicio": "fitness",
+      "registrado_por": "SGADM001",
       "validacion": true
     }
   ],
   "membresia": [
     {
-      "id_cliente": 2,
+      "id_cliente": 104,
       "id_pm": 1,
-      "fecha_inicio": "2026-05-24",
-      "fecha_fin": "2028-11-24",
+      "fecha_inicio": "2026-01-01",
+      "fecha_fin": "2026-12-31",
       "estado": "Activa",
       "id_membresia": 2
     },
     {
-      "id_cliente": 1,
+      "id_cliente": 103,
       "id_pm": 1,
-      "fecha_inicio": "2026-05-24",
-      "fecha_fin": "2028-11-24",
+      "fecha_inicio": "2026-01-01",
+      "fecha_fin": "2026-12-31",
       "estado": "Activa",
       "id_membresia": 1
     }

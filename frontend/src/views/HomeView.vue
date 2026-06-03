@@ -89,10 +89,9 @@
             <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="font-semibold text-white">{{ entry.memberName }}</p>
-                <p class="text-sm text-slate-400">{{ entry.note || entry.type }}</p>
+                <p class="text-sm text-slate-400">{{ entry.service || 'fitness' }}</p>
               </div>
               <div class="text-right text-sm text-slate-300">
-                <p>{{ entry.type }}</p>
                 <p>{{ entry.date }} · {{ entry.time }}</p>
               </div>
             </div>
@@ -135,14 +134,19 @@ const activePromotions = computed(() => gymStore.activePromotions);
 
 const moduleCoverage = computed(() => [
   {
-    title: 'Clientes y usuarios',
-    summary: 'Expedientes, credenciales, estado, historial de membresía y búsqueda.',
-    status: 'Conectado a /clientes y /usuarios',
+    title: 'Clientes',
+    summary: 'Expedientes, datos de contacto y membresía fija.',
+    status: 'Conectado a /clientes',
+  },
+  {
+    title: 'Usuarios',
+    summary: 'Cuentas internas con rol, acceso y credenciales.',
+    status: 'Conectado a /usuarios',
   },
   {
     title: 'Membresías',
     summary: 'Planificación, alta, renovación y rango de vigencia por cliente.',
-    status: 'Conectado a /planes-membresia y /membresias',
+    status: 'Conectado a /membresias',
   },
   {
     title: 'Asistencia',
@@ -159,7 +163,8 @@ const moduleCoverage = computed(() => [
 const quickLinks = computed(() => {
   if (isAdmin.value) {
     return [
-      { label: 'Usuarios', description: 'Gestiona clientes, cuentas y membresías', to: '/admin/users', icon: '◫' },
+      { label: 'Clientes', description: 'Gestiona expedientes y membresías', to: '/admin/clients', icon: '◫' },
+      { label: 'Usuarios', description: 'Gestiona cuentas internas y roles', to: '/admin/users', icon: '◫' },
       { label: 'Asistencia', description: 'Valida ingresos por DNI o QR', to: '/admin/attendance', icon: '◌' },
       { label: 'Inventario', description: 'Control de stock y movimientos', to: '/admin/inventory', icon: '▤' },
       { label: 'Horarios', description: 'Rutinas y asignaciones por socio', to: '/user/schedule', icon: '▣' },

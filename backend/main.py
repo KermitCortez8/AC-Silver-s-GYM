@@ -8,7 +8,9 @@ from routes.attendance_routes import router as attendance_router
 from routes.auth_routes import router as auth_router
 from routes.gym_routes import router as gym_router
 from routes.inventory_routes import router as inventory_router
-from routes.members_routes import router as members_router
+from routes.clients_routes import router as clients_router
+from routes.memberships_routes import router as membership_router
+from routes.users_routes import router as users_router
 
 settings = get_settings()
 
@@ -43,6 +45,8 @@ def health() -> dict[str, str]:
 
 app.include_router(auth_router)
 app.include_router(gym_router)
-app.include_router(members_router)
+app.include_router(users_router)
+app.include_router(clients_router)
+app.include_router(membership_router)
 app.include_router(attendance_router)
 app.include_router(inventory_router)

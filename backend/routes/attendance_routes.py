@@ -19,7 +19,7 @@ def list_asistencia(gym_service: GymService = Depends(get_gym_service)):
 @router.post("/checkin")
 def checkin(payload: CheckinAsistenciaInput, gym_service: GymService = Depends(get_gym_service)):
     try:
-        return gym_service.registrar_asistencia(payload.id_cliente)
+        return gym_service.registrar_asistencia_detallada(payload.dict())
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
@@ -28,6 +28,6 @@ def checkin(payload: CheckinAsistenciaInput, gym_service: GymService = Depends(g
 @router.post("/checkin-dni")
 def checkin_dni(payload: CheckinAsistenciaDniInput, gym_service: GymService = Depends(get_gym_service)):
     try:
-        return gym_service.registrar_asistencia_por_dni(payload.dni)
+        return gym_service.registrar_asistencia_por_dni(payload.dict())
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error

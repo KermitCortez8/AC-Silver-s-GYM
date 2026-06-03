@@ -25,7 +25,7 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python -m app.main
 ```
 
 Swagger UI:
@@ -78,11 +78,10 @@ VITE_AUTH_API_BASE_URL=http://localhost:8000
 |---|---:|---|
 | `/auth/google` | POST | Valida la credencial y crea la sesión del usuario. |
 | `/auth/me` | GET | Devuelve el usuario autenticado según el token. |
-| `/usuarios` | GET/POST | Lista y crea/actualiza usuarios del sistema. |
-| `/usuarios/{id_usuario}` | DELETE | Elimina un usuario. |
+| `/usuarios` | GET/POST | Lista y crea/actualiza usuarios del sistema. El ID se genera como `SGUS###`. |
+| `/usuarios/{id_usuario}` | DELETE | Elimina un usuario. Acepta el formato `SGUS###`. |
 | `/clientes` | GET/POST | Lista y crea/actualiza clientes. |
 | `/clientes/{id_cliente}` | DELETE | Elimina un cliente. |
-| `/planes-membresia` | GET/POST | Lista y administra planes de membresía. |
 | `/membresias` | GET/POST | Lista y registra membresías. |
 | `/registro-cliente-membresia` | POST | Registra cliente y membresía en una sola acción. |
 | `/clientes/{id_cliente}/membresias` | GET | Muestra el historial de membresías del cliente. |

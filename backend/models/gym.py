@@ -6,23 +6,23 @@ from pydantic import BaseModel, Field
 
 
 class UsuarioInput(BaseModel):
-    id_usuario: int | None = None
-    dni: str
-    contrasena: str = ""
-    rol: Literal["admin", "user", "trainer", "staff"] = "user"
-    estado: bool = True
-    email: str = ""
+    id_usuario: str | int | None = None
+    nombre: str = ""
+    correo: str = ""
+    telefono: str = ""
+    dni: str = ""
+    rol: Literal["admin", "trainer", "staff"]
 
 
 class ClienteInput(BaseModel):
-    id_cliente: int | None = None
-    nombres: str
-    apellidos: str
-    dni: str
+    id_usuario: str | int | None = None
+    nombre: str = ""
+    correo: str = ""
     telefono: str = ""
-    email: str = ""
-    fecha_registro: str = ""
-    estado: bool = True
+    dni: str = ""
+    plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
+    promocion: str = "SIN PROMOCION"
+    estado: str = "ACTIVO"
 
 
 class PlanMembresiaInput(BaseModel):
@@ -61,7 +61,7 @@ class InventarioInput(BaseModel):
 class MovimientoInventarioInput(BaseModel):
     id_mov: int | None = None
     id_item: int
-    id_usuario: int
+    id_usuario: str | int
     tipo_movimiento: Literal["entrada", "salida", "ajuste"]
     fecha_movimiento: str = ""
     descripcion: str = ""
@@ -71,7 +71,7 @@ class MovimientoInventarioInput(BaseModel):
 class TicketAtencionInput(BaseModel):
     id_ticket: int | None = None
     id_cliente: int
-    id_usuario: int
+    id_usuario: str | int
     tipo_ticket: str
     descripcion: str
     estado_ticket: str = "Abierto"
@@ -97,17 +97,25 @@ class HorarioInput(BaseModel):
 
 class AsistenciaInput(BaseModel):
     id_asistencia: int | None = None
-    id_cliente: int
+    id_cliente: str | int
     fecha: str = ""
     hora: str = ""
 
 
 class CheckinAsistenciaInput(BaseModel):
-    id_cliente: int
+    id_cliente: str | int
+    id_usuario: str | int | None = None
+    fecha: str = ""
+    hora: str = ""
+    servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
 
 
 class CheckinAsistenciaDniInput(BaseModel):
     dni: str
+    id_usuario: str | int | None = None
+    fecha: str = ""
+    hora: str = ""
+    servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
 
 
 class SummaryResponse(BaseModel):

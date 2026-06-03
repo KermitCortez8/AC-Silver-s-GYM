@@ -15,10 +15,13 @@ const normalizeStoredUser = (userData) => {
     return null;
   }
 
-  if (userData.email && userData.name && userData.id) {
+  if (userData.email && userData.name && (userData.id || userData.id_usuario)) {
     return {
       ...userData,
+      id: userData.id_usuario || userData.id,
+      id_usuario: userData.id_usuario || userData.id,
       role: userData.role || (String(userData.email).endsWith('@urp.edu.pe') ? 'admin' : 'user'),
+      telefono: userData.telefono || '',
     };
   }
 

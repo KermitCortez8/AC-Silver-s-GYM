@@ -7,7 +7,9 @@ from pydantic import BaseModel
 
 class UserProfile(BaseModel):
     id: str
+    id_usuario: str = ""
     email: str
+    telefono: str = ""
     name: str
     picture: str = ""
     givenName: str = ""
