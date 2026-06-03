@@ -30,10 +30,6 @@
             <input v-model.number="form.quantity" type="number" min="0" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
           </label>
           <label class="space-y-2">
-            <span class="text-sm text-slate-300">Mínimo</span>
-            <input v-model.number="form.minQuantity" type="number" min="0" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
-          </label>
-          <label class="space-y-2">
             <span class="text-sm text-slate-300">Ubicación</span>
             <input v-model="form.location" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Sala 1" />
           </label>
@@ -87,7 +83,7 @@
                 <p class="text-xs uppercase tracking-[0.35em] text-cyan-200">{{ item.inventoryCode }}</p>
                 <p class="mt-1 font-semibold text-white">{{ item.name }}</p>
                 <p class="text-sm text-slate-400">{{ item.category }} · {{ item.location }}</p>
-                <p class="mt-1 text-sm text-slate-300">Cantidad: {{ item.quantity }} · Mínimo: {{ item.minQuantity }}</p>
+                <p class="mt-1 text-sm text-slate-300">Cantidad: {{ item.quantity }}</p>
                 <p class="mt-1 text-sm text-cyan-200">Estado: {{ item.status }}</p>
                 <p class="mt-1 text-sm text-slate-400">{{ item.observations || 'Sin observaciones' }}</p>
               </div>
@@ -129,7 +125,6 @@ const form = reactive({
   name: '',
   category: 'General',
   quantity: 0,
-  minQuantity: 0,
   location: 'Recepción',
   status: 'Operativo',
   observations: '',
@@ -140,7 +135,6 @@ const resetForm = () => {
   form.name = '';
   form.category = 'General';
   form.quantity = 0;
-  form.minQuantity = 0;
   form.location = 'Recepción';
   form.status = 'Operativo';
   form.observations = '';
@@ -151,7 +145,6 @@ const editItem = (item) => {
   form.name = item.name;
   form.category = item.category;
   form.quantity = item.quantity;
-  form.minQuantity = item.minQuantity;
   form.location = item.location;
   form.status = item.status;
   form.observations = item.observations || '';

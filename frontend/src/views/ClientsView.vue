@@ -19,9 +19,28 @@
           </div>
         </div>
       </div>
+
+      <!-- Pestañas -->
+      <div class="mt-4 flex gap-2 border-b border-white/10">
+        <button
+          class="px-4 py-2 text-sm font-medium transition"
+          :class="activeTab === 'clientes' ? 'border-b-2 border-cyan-400 text-cyan-300' : 'text-slate-400 hover:text-slate-200'"
+          @click="activeTab = 'clientes'"
+        >
+          Gestión de Clientes
+        </button>
+        <button
+          class="px-4 py-2 text-sm font-medium transition"
+          :class="activeTab === 'tienda' ? 'border-b-2 border-cyan-400 text-cyan-300' : 'text-slate-400 hover:text-slate-200'"
+          @click="activeTab = 'tienda'"
+        >
+          Tienda para Clientes
+        </button>
+      </div>
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <!-- Tab: Gestión de Clientes -->
+    <section v-if="activeTab === 'clientes'" class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <form class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="handleSubmit">
         <div class="mb-5 flex items-center justify-between">
           <div>
@@ -121,6 +140,38 @@
         </p>
       </div>
     </section>
+
+    <!-- Tab: Tienda para Clientes -->
+    <section v-if="activeTab === 'tienda'" class="space-y-6">
+      <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
+        <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Catálogo</p>
+        <h2 class="mt-2 text-2xl font-black text-white">Productos disponibles</h2>
+        <p class="mt-1 text-slate-400 text-sm">Estos son los productos que los clientes pueden comprar en la tienda.</p>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div v-for="producto in productos" :key="producto.id_producto" class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+          <div class="aspect-square rounded-xl bg-gradient-to-br from-cyan-400/10 to-emerald-400/10 mb-3 flex items-center justify-center">
+            <span class="text-5xl">📦</span>
+          </div>
+          <p class="text-xs font-bold text-cyan-200 uppercase">{{ producto.categoria }}</p>
+          <p class="mt-1 font-semibold text-white truncate">{{ producto.nombre }}</p>
+          <p class="mt-1 text-xs text-slate-400 line-clamp-2">{{ producto.descripcion }}</p>
+          <p class="mt-3 text-lg font-black text-green-400">S/. {{ producto.precio.toFixed(2) }}</p>
+          <p class="text-xs text-slate-400 mt-1">Stock: {{ producto.cantidad }}</p>
+          
+          <div class="mt-3 rounded-lg" :class="producto.estado === 'Disponible' && producto.cantidad > 0 ? 'bg-cyan-400/20' : 'bg-slate-700/30'">
+            <p class="text-xs text-center py-2" :class="producto.estado === 'Disponible' && producto.cantidad > 0 ? 'text-cyan-200' : 'text-slate-400'">
+              {{ producto.estado === 'Disponible' && producto.cantidad > 0 ? 'Disponible' : 'No disponible' }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="!productos.length" class="col-span-full rounded-2xl border border-slate-700/50 bg-slate-900/30 py-12 text-center">
+          <p class="text-slate-400">No hay productos en la tienda aún.</p>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -130,7 +181,9 @@ import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
 const clients = computed(() => gymStore.members);
+const productos = computed(() => gymStore.productos_tienda);
 const search = ref('');
+const activeTab = ref('clientes');
 const editingId = ref('');
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');

@@ -115,11 +115,13 @@ const navigationLinks = computed(() => {
       { label: 'Usuarios', to: '/admin/users', icon: '◫' },
       { label: 'Asistencia', to: '/admin/attendance', icon: '◌' },
       { label: 'Inventario', to: '/admin/inventory', icon: '▤' },
+      { label: 'Tienda', to: '/admin/store', icon: '▥' },
     ];
   }
 
   return [
     { label: 'Inicio', to: '/user/dashboard', icon: '▣' },
+    { label: 'Tienda', to: '/user/store', icon: '▥' },
     { label: 'Horarios', to: '/user/schedule', icon: '◫' },
     { label: 'Mi asistencia', to: '/user/attendance', icon: '◌' },
   ];

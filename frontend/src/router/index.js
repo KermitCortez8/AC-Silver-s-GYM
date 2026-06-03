@@ -11,6 +11,7 @@ import ClientsView from '../views/ClientsView.vue';
 import UsersView from '../views/UsersView.vue';
 import AttendanceView from '../views/AttendanceView.vue';
 import InventoryView from '../views/InventoryView.vue';
+import StoreView from '../views/StoreView.vue';
 import ScheduleView from '../views/ScheduleView.vue';
 import UserAttendanceView from '../views/UserAttendanceView.vue';
 import AuthCallbackView from '../views/AuthCallbackView.vue';
@@ -68,6 +69,11 @@ const routes = [
         name: 'Inventory',
         component: InventoryView,
       },
+      {
+        path: 'store',
+        name: 'Store',
+        component: StoreView,
+      },
     ],
   },
   {
@@ -83,6 +89,11 @@ const routes = [
         path: 'dashboard',
         name: 'UserHome',
         component: HomeView,
+      },
+      {
+        path: 'store',
+        name: 'UserStore',
+        component: StoreView,
       },
       {
         path: 'schedule',

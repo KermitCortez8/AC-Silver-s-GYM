@@ -1,9 +1,75 @@
 {
-  "inventario": [],
+  "inventario": [
+    {
+      "id_item": 2,
+      "nombre_item": "Hola",
+      "tipo": "General",
+      "cantidad_stock": 2,
+      "estado": "Operativo",
+      "n_activo": 1
+    },
+    {
+      "id_item": 1,
+      "nombre_item": "Prueba1",
+      "tipo": "Maquina",
+      "cantidad_stock": 5,
+      "estado": "Operativo",
+      "n_activo": 1
+    }
+  ],
   "mov_inv": [],
+  "productos_tienda": [
+    {
+      "id_producto": 2,
+      "nombre_producto": "Bebida energetica",
+      "descripcion": "aaa",
+      "categoria": "General",
+      "precio_venta": 5.0,
+      "cantidad_stock": 15,
+      "stock_minimo": 5,
+      "estado": "Disponible"
+    },
+    {
+      "id_producto": 1,
+      "nombre_producto": "Prueba1",
+      "descripcion": "aaa",
+      "categoria": "General",
+      "precio_venta": 1.2,
+      "cantidad_stock": 10,
+      "stock_minimo": 5,
+      "estado": "Disponible"
+    }
+  ],
   "usuario": [
     {
+      "id_usuario": "SGTRA002",
+      "nombre": "Josue",
+      "correo": "1212@g.com",
+      "telefono": "93902",
+      "dni": "12345678",
+      "rol": "trainer",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGADM001",
+      "nombre": "Rene",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "73045451",
+      "rol": "admin",
+      "estado": "ACTIVO"
+    },
+    {
       "id_usuario": "SGTRA001",
+      "nombre": "Ana",
+      "correo": "ana@example.com",
+      "telefono": "555",
+      "dni": "12345678",
+      "rol": "trainer",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_usuario": "SGTRA003",
       "nombre": "Jaime",
       "correo": "renatocortex1516@gmail.com",
       "telefono": "939027001",

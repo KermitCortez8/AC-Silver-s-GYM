@@ -20,6 +20,8 @@ const seedState = () => ({
   attendance: [],
   attendancePasses: [],
   inventory: [],
+  productos_tienda: [],
+  cart: [],
   routines: [],
   schedule: [],
 });
@@ -125,6 +127,8 @@ const normalizeState = (state) => ({
   attendancePasses: Array.isArray(state?.attendancePasses) ? state.attendancePasses : [],
   attendance: Array.isArray(state?.attendance) ? state.attendance.map((entry) => normalizeAttendanceRecord(entry)) : seedState().attendance,
   inventory: Array.isArray(state?.inventory) ? state.inventory.map((item) => normalizeInventoryItem(item)) : seedState().inventory,
+  productos_tienda: Array.isArray(state?.productos_tienda) ? state.productos_tienda : seedState().productos_tienda,
+  cart: Array.isArray(state?.cart) ? state.cart : seedState().cart,
 });
 
 const buildAttendanceRecord = (member, response = {}, fallback = {}) =>
@@ -222,6 +226,8 @@ export const useGymStore = defineStore('gym', () => {
   const attendance = ref(initialState.attendance);
   const attendancePasses = ref(initialState.attendancePasses || []);
   const inventory = ref(initialState.inventory);
+  const productos_tienda = ref([]);
+  const cart = ref([]);
   const routines = ref(initialState.routines);
   const schedule = ref(initialState.schedule);
 
@@ -239,6 +245,8 @@ export const useGymStore = defineStore('gym', () => {
         promotions: promotions.value,
         routines: routines.value,
         inventory: inventory.value,
+        productos_tienda: productos_tienda.value,
+        cart: cart.value,
         schedule: schedule.value,
       }),
     );
@@ -1049,8 +1057,8 @@ export const useGymStore = defineStore('gym', () => {
         nombre_item: payload.name,
         tipo: payload.category,
         cantidad_stock: Number(payload.quantity ?? 0),
-        stock_minimo: Number(payload.minQuantity ?? 0),
         estado: payload.status || 'Operativo',
+        n_activo: 1,
       };
       return upsertInventoryToServer(body).then((res) => {
         const id_item = res.id_item || (res.id && Number(res.id)) || (body.id_item || Date.now());
@@ -1060,7 +1068,6 @@ export const useGymStore = defineStore('gym', () => {
           name: res.nombre_item || payload.name,
           category: res.tipo || payload.category,
           quantity: res.cantidad_stock || Number(payload.quantity ?? 0),
-          minQuantity: res.stock_minimo || Number(payload.minQuantity ?? 0),
           location: payload.location || '',
           status: res.estado || payload.status || 'Operativo',
           observations: payload.observations || '',
@@ -1079,7 +1086,6 @@ export const useGymStore = defineStore('gym', () => {
       name: payload.name?.trim() || 'Sin nombre',
       category: payload.category || 'General',
       quantity: Number(payload.quantity ?? 0),
-      minQuantity: Number(payload.minQuantity ?? 0),
       location: payload.location || 'Sin ubicación',
       status: payload.status || 'Disponible',
       observations: payload.observations || '',
@@ -1158,6 +1164,140 @@ export const useGymStore = defineStore('gym', () => {
     persist();
   };
 
+  // Funciones para productos de tienda
+  const upsertProductoTienda = async (payload) => {
+    const producto = {
+      id_producto: payload.id_producto || null,
+      nombre_producto: payload.nombre?.trim() || 'Sin nombre',
+      descripcion: payload.descripcion || '',
+      categoria: payload.categoria || 'General',
+      precio_venta: Number(payload.precio ?? 0),
+      cantidad_stock: Number(payload.cantidad ?? 0),
+      stock_minimo: Number(payload.minimo ?? 5),
+      estado: payload.estado || 'Disponible',
+    };
+
+    if (apiBase) {
+      const body = {
+        ...producto,
+        id_producto: producto.id_producto || undefined,
+      };
+      
+      const res = await fetch(`${apiBase}/tienda`, {
+        method: 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error('Error al guardar producto en backend');
+      const saved = await res.json();
+      
+      const id_producto = saved.id_producto || payload.id_producto || Date.now();
+      const normalized = {
+        id: `producto-${id_producto}`,
+        id_producto,
+        nombre: saved.nombre_producto || producto.nombre_producto,
+        descripcion: saved.descripcion || producto.descripcion,
+        categoria: saved.categoria || producto.categoria,
+        precio: Number(saved.precio_venta || producto.precio_venta),
+        cantidad: saved.cantidad_stock || producto.cantidad_stock,
+        minimo: Number(saved.stock_minimo || producto.stock_minimo),
+        estado: saved.estado || producto.estado,
+      };
+
+      const index = productos_tienda.value.findIndex((p) => p.id_producto === id_producto);
+      if (index >= 0) {
+        productos_tienda.value[index] = normalized;
+      } else {
+        productos_tienda.value.unshift(normalized);
+      }
+      
+      persist();
+      return normalized;
+    }
+
+    const id_producto = payload.id_producto || Date.now();
+    const normalized = {
+      id: `producto-${id_producto}`,
+      id_producto,
+      nombre: producto.nombre_producto,
+      descripcion: producto.descripcion,
+      categoria: producto.categoria,
+      precio: Number(producto.precio_venta),
+      cantidad: Number(producto.cantidad_stock),
+      estado: producto.estado,
+    };
+
+    const index = productos_tienda.value.findIndex((p) => p.id_producto === id_producto);
+    if (index >= 0) {
+      productos_tienda.value[index] = normalized;
+    } else {
+      productos_tienda.value.unshift(normalized);
+    }
+    
+    persist();
+    return normalized;
+  };
+
+  const deleteProductoTienda = async (id_producto) => {
+    if (apiBase) {
+      try {
+        await fetch(`${apiBase}/tienda/${id_producto}`, {
+          method: 'DELETE',
+          headers: _authHeaders(),
+        });
+      } catch (error) {
+        console.error('Error al eliminar producto en backend:', error);
+      }
+    }
+    
+    productos_tienda.value = productos_tienda.value.filter((p) => p.id_producto !== id_producto);
+    persist();
+  };
+
+  // Funciones del carrito
+  const addToCart = (producto, cantidad = 1) => {
+    const existingItem = cart.value.find((item) => item.id_producto === producto.id_producto);
+    
+    if (existingItem) {
+      existingItem.cantidad += cantidad;
+    } else {
+      cart.value.push({
+        id_producto: producto.id_producto,
+        nombre: producto.nombre,
+        precio: producto.precio,
+        cantidad: Math.max(1, cantidad),
+      });
+    }
+    
+    persist();
+  };
+
+  const removeFromCart = (id_producto) => {
+    cart.value = cart.value.filter((item) => item.id_producto !== id_producto);
+    persist();
+  };
+
+  const updateCartQuantity = (id_producto, cantidad) => {
+    const item = cart.value.find((item) => item.id_producto === id_producto);
+    if (item) {
+      item.cantidad = Math.max(1, cantidad);
+      persist();
+    }
+  };
+
+  const clearCart = () => {
+    cart.value = [];
+    persist();
+  };
+
+ const cartTotal = computed(() => {
+    const subtotal = cart.value.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    const igv = subtotal * 0.18;
+    const total = subtotal + igv;
+    return { subtotal, igv, total };
+  });
+
   /* ----------------- Integración con backend ----------------- */
   const apiBase = APP_CONFIG.authApiBaseUrl || '';
 
@@ -1220,10 +1360,25 @@ export const useGymStore = defineStore('gym', () => {
         name: i.nombre_item,
         category: i.tipo,
         quantity: i.cantidad_stock,
-        minQuantity: i.stock_minimo,
         location: i.ubicacion || '',
         status: i.estado || '',
         observations: i.observaciones || '',
+      }));
+    }
+
+    // Productos de tienda
+    const resTienda = await fetch(`${apiBase}/tienda`, { headers: _authHeaders() });
+    if (resTienda.ok) {
+      const list = await resTienda.json();
+      productos_tienda.value = list.map((p) => ({
+        id: `producto-${p.id_producto}`,
+        id_producto: p.id_producto,
+        nombre: p.nombre_producto,
+        descripcion: p.descripcion || '',
+        categoria: p.categoria || 'General',
+        precio: Number(p.precio_venta || 0),
+        cantidad: p.cantidad_stock,
+        estado: p.estado || 'Disponible',
       }));
     }
 
@@ -1431,6 +1586,8 @@ export const useGymStore = defineStore('gym', () => {
     promotions,
     routines,
     inventory,
+    productos_tienda,
+    cart,
     schedule,
     stats,
     recentAttendance,
@@ -1439,6 +1596,7 @@ export const useGymStore = defineStore('gym', () => {
     activePromotions,
     membershipAlerts,
     lowStockInventory,
+    cartTotal,
     searchMembers,
     getPlanById,
     getPromotionById,
@@ -1468,6 +1626,12 @@ export const useGymStore = defineStore('gym', () => {
     recordAttendance,
     upsertInventoryItem,
     deleteInventoryItem,
+    upsertProductoTienda,
+    deleteProductoTienda,
+    addToCart,
+    removeFromCart,
+    updateCartQuantity,
+    clearCart,
     upsertUser,
     deleteUser,
     // Backend sync
