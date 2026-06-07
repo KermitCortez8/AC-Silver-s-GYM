@@ -57,7 +57,11 @@ const generateInventoryCode = () =>
 
 const normalizeInventoryItem = (item = {}) => ({
   ...item,
-  inventoryCode: item.inventoryCode || `INV-${String(item.id || Date.now()).slice(-4).toUpperCase()}`,
+  inventoryCode: item.inventoryCode || (item.n_activo ? `ACT-${String(item.n_activo).padStart(4, '0')}` : `INV-${String(item.id || Date.now()).slice(-4).toUpperCase()}`),
+  n_activo: item.n_activo || item.assetNumber || '',
+  unidad_venta: item.unidad_venta || item.unit || 'unidad',
+  precio_venta: Number(item.precio_venta ?? item.salePrice ?? 0),
+  minQuantity: Number(item.minQuantity ?? item.stock_minimo ?? 1),
 });
 
 const normalizeUser = (user = {}) => {
@@ -65,9 +69,6 @@ const normalizeUser = (user = {}) => {
   const rawId = String(user.id_usuario || user.id || '').trim().toUpperCase();
   const nombre = String(user.nombre || '').trim();
 
-  if (apiBase) {
-    fetchFromBackend().catch((err) => console.warn('No se pudo cargar datos desde backend:', err));
-  }
 
   return {
     ...user,
@@ -505,6 +506,7 @@ export const useGymStore = defineStore('gym', () => {
       dia_semana: payload.dia_semana || 'Lunes',
       hora_inicio: payload.hora_inicio || '06:00',
       hora_fin: payload.hora_fin || '07:00',
+      capacidad_maxima: Number(payload.capacidad_maxima ?? payload.capacity ?? 1),
     };
 
     if (apiBase) {
@@ -526,6 +528,8 @@ export const useGymStore = defineStore('gym', () => {
         dia_semana: saved.dia_semana || scheduleItem.dia_semana,
         hora_inicio: saved.hora_inicio || scheduleItem.hora_inicio,
         hora_fin: saved.hora_fin || scheduleItem.hora_fin,
+        capacidad_maxima: Number(saved.capacidad_maxima ?? scheduleItem.capacidad_maxima ?? 1),
+        cupos_usados: Number(saved.cupos_usados ?? 1),
       };
 
       const index = schedule.value.findIndex((entry) => Number(entry.id_horario) === Number(normalized.id_horario));
@@ -1058,19 +1062,28 @@ export const useGymStore = defineStore('gym', () => {
         tipo: payload.category,
         cantidad_stock: Number(payload.quantity ?? 0),
         estado: payload.status || 'Operativo',
-        n_activo: 1,
+        n_activo: payload.n_activo || undefined,
+        unidad_venta: payload.unidad_venta || payload.unit || 'unidad',
+        precio_venta: Number(payload.precio_venta ?? payload.salePrice ?? 0),
+        stock_minimo: Number(payload.minQuantity ?? payload.stock_minimo ?? 1),
+        ubicacion: payload.location || 'Almacén',
+        observaciones: payload.observations || '',
       };
       return upsertInventoryToServer(body).then((res) => {
         const id_item = res.id_item || (res.id && Number(res.id)) || (body.id_item || Date.now());
         const item = {
           id: `item-${id_item}`,
-          inventoryCode: payload.inventoryCode || `INV-${String(id_item).padStart(4, '0')}`,
+          inventoryCode: `ACT-${String(res.n_activo || id_item).padStart(4, '0')}`,
+          n_activo: res.n_activo || id_item,
           name: res.nombre_item || payload.name,
           category: res.tipo || payload.category,
-          quantity: res.cantidad_stock || Number(payload.quantity ?? 0),
-          location: payload.location || '',
+          quantity: res.cantidad_stock ?? Number(payload.quantity ?? 0),
+          minQuantity: Number(res.stock_minimo ?? payload.minQuantity ?? 1),
+          unidad_venta: res.unidad_venta || payload.unidad_venta || 'unidad',
+          precio_venta: Number(res.precio_venta ?? payload.precio_venta ?? 0),
+          location: res.ubicacion || payload.location || 'Almacén',
           status: res.estado || payload.status || 'Operativo',
-          observations: payload.observations || '',
+          observations: res.observaciones || payload.observations || '',
         };
         const index = inventory.value.findIndex((entry) => entry.id === item.id);
         if (index >= 0) inventory.value[index] = item; else inventory.value.unshift(item);
@@ -1083,9 +1096,13 @@ export const useGymStore = defineStore('gym', () => {
     const item = {
       id: payload.id || `item-${Date.now()}`,
       inventoryCode: payload.inventoryCode?.trim() || existingItem?.inventoryCode || generateInventoryCode(),
+      n_activo: payload.n_activo || existingItem?.n_activo || '',
       name: payload.name?.trim() || 'Sin nombre',
       category: payload.category || 'General',
       quantity: Number(payload.quantity ?? 0),
+      minQuantity: Number(payload.minQuantity ?? existingItem?.minQuantity ?? 1),
+      unidad_venta: payload.unidad_venta || existingItem?.unidad_venta || 'unidad',
+      precio_venta: Number(payload.precio_venta ?? existingItem?.precio_venta ?? 0),
       location: payload.location || 'Sin ubicación',
       status: payload.status || 'Disponible',
       observations: payload.observations || '',
@@ -1171,6 +1188,8 @@ export const useGymStore = defineStore('gym', () => {
       nombre_producto: payload.nombre?.trim() || 'Sin nombre',
       descripcion: payload.descripcion || '',
       categoria: payload.categoria || 'General',
+      id_item: payload.id_item ? Number(payload.id_item) : null,
+      unidad_venta: payload.unidad_venta || 'unidad',
       precio_venta: Number(payload.precio ?? 0),
       cantidad_stock: Number(payload.cantidad ?? 0),
       stock_minimo: Number(payload.minimo ?? 5),
@@ -1199,8 +1218,10 @@ export const useGymStore = defineStore('gym', () => {
         nombre: saved.nombre_producto || producto.nombre_producto,
         descripcion: saved.descripcion || producto.descripcion,
         categoria: saved.categoria || producto.categoria,
+        id_item: saved.id_item || producto.id_item || null,
+        unidad_venta: saved.unidad_venta || producto.unidad_venta || 'unidad',
         precio: Number(saved.precio_venta || producto.precio_venta),
-        cantidad: saved.cantidad_stock || producto.cantidad_stock,
+        cantidad: saved.cantidad_stock ?? producto.cantidad_stock,
         minimo: Number(saved.stock_minimo || producto.stock_minimo),
         estado: saved.estado || producto.estado,
       };
@@ -1223,6 +1244,8 @@ export const useGymStore = defineStore('gym', () => {
       nombre: producto.nombre_producto,
       descripcion: producto.descripcion,
       categoria: producto.categoria,
+      id_item: producto.id_item || null,
+      unidad_venta: producto.unidad_venta || 'unidad',
       precio: Number(producto.precio_venta),
       cantidad: Number(producto.cantidad_stock),
       estado: producto.estado,
@@ -1356,11 +1379,15 @@ export const useGymStore = defineStore('gym', () => {
       const list = await resInv.json();
       inventory.value = list.map((i) => ({
         id: `item-${i.id_item}`,
-        inventoryCode: `INV-${String(i.id_item).padStart(4, '0')}`,
+        inventoryCode: `ACT-${String(i.n_activo || i.id_item).padStart(4, '0')}`,
+        n_activo: i.n_activo || i.id_item,
         name: i.nombre_item,
         category: i.tipo,
         quantity: i.cantidad_stock,
-        location: i.ubicacion || '',
+        minQuantity: Number(i.stock_minimo ?? 1),
+        unidad_venta: i.unidad_venta || 'unidad',
+        precio_venta: Number(i.precio_venta ?? 0),
+        location: i.ubicacion || 'Almacén',
         status: i.estado || '',
         observations: i.observaciones || '',
       }));
@@ -1373,9 +1400,11 @@ export const useGymStore = defineStore('gym', () => {
       productos_tienda.value = list.map((p) => ({
         id: `producto-${p.id_producto}`,
         id_producto: p.id_producto,
+        id_item: p.id_item || null,
         nombre: p.nombre_producto,
         descripcion: p.descripcion || '',
         categoria: p.categoria || 'General',
+        unidad_venta: p.unidad_venta || 'unidad',
         precio: Number(p.precio_venta || 0),
         cantidad: p.cantidad_stock,
         estado: p.estado || 'Disponible',
@@ -1406,6 +1435,8 @@ export const useGymStore = defineStore('gym', () => {
         dia_semana: h.dia_semana,
         hora_inicio: h.hora_inicio,
         hora_fin: h.hora_fin,
+        capacidad_maxima: Number(h.capacidad_maxima ?? 1),
+        cupos_usados: Number(h.cupos_usados ?? 1),
       }));
     }
 
@@ -1426,10 +1457,11 @@ export const useGymStore = defineStore('gym', () => {
       const list = await resAsis.json();
       attendance.value = list.map((a) =>
         normalizeAttendanceRecord({
-          id: `asistencia-${a.id_asistencia}`,
-          memberId: `cliente-${a.id_cliente}`,
-          memberName: members.value.find((m) => Number(m.id_cliente) === Number(a.id_cliente))?.name || '',
-          memberCode: String(a.id_cliente),
+          id: `asistencia-${a.id_asistencia || Date.now()}`,
+          id_asistencia: a.id_asistencia,
+          memberId: String(a.id_cliente || a.id_cliente_num || ''),
+          memberName: members.value.find((m) => Number(m.id_cliente) === Number(a.id_cliente_num || String(a.id_cliente || '').match(/(\d+)/)?.[1]))?.name || '',
+          memberCode: String(a.id_cliente || a.id_cliente_num || ''),
           time: a.hora || '',
           date: a.fecha || '',
           service: a.servicio || '',

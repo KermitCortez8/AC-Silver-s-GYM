@@ -10,6 +10,7 @@ from routes.clients_routes import router as clients_router
 from routes.gym_routes import router as gym_router
 from routes.inventory_routes import router as inventory_router
 from routes.memberships_routes import router as membership_router
+from routes.store_routes import router as store_router
 from routes.users_routes import router as users_router
 
 settings = get_settings()
@@ -43,13 +44,14 @@ def health() -> dict[str, str]:
     return {"status": "healthy"}
 
 
-app.include_router(auth_router)
-app.include_router(gym_router)
-app.include_router(users_router)
-app.include_router(clients_router)
-app.include_router(membership_router)
-app.include_router(attendance_router)
-app.include_router(inventory_router)
+app.include_router(auth_router, prefix="/api")
+app.include_router(gym_router, prefix="/api")
+app.include_router(users_router, prefix="/api")
+app.include_router(clients_router, prefix="/api")
+app.include_router(membership_router, prefix="/api")
+app.include_router(attendance_router, prefix="/api")
+app.include_router(inventory_router, prefix="/api")
+app.include_router(store_router, prefix="/api")
 
 
 def main() -> None:

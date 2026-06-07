@@ -6,7 +6,12 @@
       "tipo": "General",
       "cantidad_stock": 2,
       "estado": "Operativo",
-      "n_activo": 1
+      "n_activo": 1,
+      "unidad_venta": "unidad",
+      "precio_venta": 0,
+      "stock_minimo": 1,
+      "ubicacion": "Almacén",
+      "observaciones": ""
     },
     {
       "id_item": 1,
@@ -14,7 +19,12 @@
       "tipo": "Maquina",
       "cantidad_stock": 5,
       "estado": "Operativo",
-      "n_activo": 1
+      "n_activo": 2,
+      "unidad_venta": "unidad",
+      "precio_venta": 0,
+      "stock_minimo": 1,
+      "ubicacion": "Almacén",
+      "observaciones": ""
     }
   ],
   "mov_inv": [],
@@ -27,7 +37,9 @@
       "precio_venta": 5.0,
       "cantidad_stock": 15,
       "stock_minimo": 5,
-      "estado": "Disponible"
+      "estado": "Disponible",
+      "id_item": null,
+      "unidad_venta": "unidad"
     },
     {
       "id_producto": 1,
@@ -37,7 +49,9 @@
       "precio_venta": 1.2,
       "cantidad_stock": 10,
       "stock_minimo": 5,
-      "estado": "Disponible"
+      "estado": "Disponible",
+      "id_item": null,
+      "unidad_venta": "unidad"
     }
   ],
   "usuario": [
@@ -57,7 +71,7 @@
       "telefono": "939027001",
       "dni": "73045451",
       "rol": "admin",
-      "estado": "ACTIVO"
+      "estado": "Activo"
     },
     {
       "id_usuario": "SGTRA001",
@@ -79,6 +93,28 @@
     }
   ],
   "clientes": [
+    {
+      "id_cliente": 106,
+      "id_usuario": "SGCLI104",
+      "nombre": "Prueba Asistencia",
+      "correo": "e2euid@gmail.com",
+      "telefono": "999000111",
+      "dni": "11122233",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
+    },
+    {
+      "id_cliente": 105,
+      "id_usuario": "SGCLI104",
+      "nombre": "E2E UID",
+      "correo": "e2euid@example.com",
+      "telefono": "999000111",
+      "dni": "11122233",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO"
+    },
     {
       "id_cliente": 104,
       "id_usuario": "SGCLI104",
@@ -150,13 +186,15 @@
       "id_cliente": "SGCLI103",
       "fecha": "2026-06-01",
       "hora": "11:27 p. m.",
-      "servicio": "fitness"
+      "servicio": "fitness",
+      "id_asistencia": 1
     },
     {
       "id_cliente": "SGCLI104",
       "fecha": "2026-06-01",
       "hora": "04:24",
-      "servicio": "cardio"
+      "servicio": "cardio",
+      "id_asistencia": 2
     },
     {
       "id_asistencia": 7,
@@ -259,5 +297,9 @@
       "duracion": "30 dias",
       "precio": 80
     }
-  ]
+  ],
+  "configuracion_gimnasio": {
+    "capacidad_total": 30,
+    "capacidad_por_hora": 10
+  }
 }

@@ -43,6 +43,11 @@ class GymService:
                     "cantidad_stock": 12,
                     "estado": "Operativo",
                     "n_activo": 1,
+                    "unidad_venta": "unidad",
+                    "precio_venta": 0,
+                    "stock_minimo": 1,
+                    "ubicacion": "Almacén",
+                    "observaciones": "",
                 }
             ],
             "mov_inv": [],
@@ -52,6 +57,8 @@ class GymService:
                     "nombre_producto": "Proteína Whey",
                     "descripcion": "Proteína de suero de alta calidad",
                     "categoria": "Suplementos",
+                    "id_item": None,
+                    "unidad_venta": "unidad",
                     "precio_venta": 89.99,
                     "cantidad_stock": 50,
                     "stock_minimo": 10,
@@ -109,18 +116,59 @@ class GymService:
                     "nombre_plan": "MENSUAL",
                     "duracion": "30 dias",
                     "precio": 80,
+                    "activo": True,
                 }
             ],
+            "configuracion_gimnasio": {
+                "capacidad_total": 30,
+                "capacidad_por_hora": 10,
+            },
         }
 
     def _normalize(self, state: dict[str, Any]) -> dict[str, Any]:
         seed = self._seed()
         merged = {**seed, **(state or {})}
+
+        # Garantiza las estructuras esperadas sin romper objetos tipo configuración.
         for key, value in seed.items():
-            if not isinstance(merged.get(key), list):
+            if isinstance(value, list) and not isinstance(merged.get(key), list):
                 merged[key] = value
+            elif isinstance(value, dict) and not isinstance(merged.get(key), dict):
+                merged[key] = value
+
         merged["usuario"] = [self._normalize_usuario_record(row) for row in merged.get("usuario", []) if isinstance(row, dict)]
         merged["clientes"] = [self._normalize_cliente_record(row, index) for index, row in enumerate(merged.get("clientes", []), start=1) if isinstance(row, dict)]
+
+        # Migración de inventario: cada item debe tener número de activo único y datos comerciales.
+        used_assets: set[int] = set()
+        for index, item in enumerate(merged.get("inventario", []), start=1):
+            try:
+                current = int(item.get("n_activo") or 0)
+            except Exception:
+                current = 0
+            if current <= 0 or current in used_assets:
+                current = max(used_assets, default=0) + 1
+            item["n_activo"] = current
+            used_assets.add(current)
+            item.setdefault("unidad_venta", "unidad")
+            item.setdefault("precio_venta", 0)
+            item.setdefault("stock_minimo", 1)
+            item.setdefault("ubicacion", "Almacén")
+            item.setdefault("observaciones", "")
+
+        for index, asistencia in enumerate(merged.get("asistencia", []), start=1):
+            asistencia.setdefault("id_asistencia", index)
+            asistencia.setdefault("servicio", "fitness")
+
+        for producto in merged.get("productos_tienda", []):
+            producto.setdefault("id_item", None)
+            producto.setdefault("unidad_venta", "unidad")
+
+        cfg = {**seed["configuracion_gimnasio"], **merged.get("configuracion_gimnasio", {})}
+        cfg["capacidad_total"] = max(1, int(cfg.get("capacidad_total") or 30))
+        cfg["capacidad_por_hora"] = max(1, int(cfg.get("capacidad_por_hora") or 10))
+        merged["configuracion_gimnasio"] = cfg
+
         return merged
 
     def _user_role_prefix(self, rol: str) -> str:
@@ -463,25 +511,39 @@ class GymService:
         self._mutate(_fn)
 
     def planes_membresia(self) -> list[dict[str, Any]]:
-        return [self.state["planes_membresia"][0]] if self.state.get("planes_membresia") else []
+        return self.state.get("planes_membresia", [])
 
     def get_plan_membresia(self, id_pm: int) -> dict[str, Any] | None:
-        if int(id_pm) != 1:
-            return None
-        return self.state["planes_membresia"][0] if self.state.get("planes_membresia") else None
+        return next((p for p in self.state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == int(id_pm)), None)
 
     def upsert_plan_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         def _fn(state: dict[str, Any]):
-            item = {
-                "id_pm": 1,
-                "nombre_plan": "MENSUAL",
-                "duracion": "30 dias",
-                "precio": 80,
-            }
-            state["planes_membresia"] = [item]
+            state.setdefault("planes_membresia", [])
+            item = {**payload}
+            item_id = item.get("id_pm")
+            if item_id is None:
+                item_id = self._next_int_id("planes_membresia", "id_pm")
+            item["id_pm"] = int(item_id)
+            item["nombre_plan"] = str(item.get("nombre_plan") or "MENSUAL").strip().upper()
+            item["duracion"] = str(item.get("duracion") or "30 dias").strip()
+            item["precio"] = int(item.get("precio") or 0)
+            item["activo"] = bool(item.get("activo", True))
+            idx = next((i for i, row in enumerate(state["planes_membresia"]) if int(row.get("id_pm", 0)) == int(item_id)), -1)
+            if idx >= 0:
+                state["planes_membresia"][idx] = item
+            else:
+                state["planes_membresia"].insert(0, item)
             return item
 
         return self._mutate(_fn)
+
+    def delete_plan_membresia(self, id_pm: int) -> None:
+        def _fn(state: dict[str, Any]):
+            if any(int(m.get("id_pm", 0)) == int(id_pm) for m in state.get("membresia", [])):
+                raise ValueError("No se puede eliminar un plan usado por membresías")
+            state["planes_membresia"] = [p for p in state.get("planes_membresia", []) if int(p.get("id_pm", 0)) != int(id_pm)]
+
+        self._mutate(_fn)
 
     def membresias(self) -> list[dict[str, Any]]:
         return self.state["membresia"]
@@ -539,50 +601,40 @@ class GymService:
         return self.state["asistencia"]
 
     def registrar_asistencia(self, id_cliente: int) -> dict[str, Any]:
-        if not self.get_cliente(id_cliente):
-            raise ValueError("Cliente no encontrado")
+        return self.registrar_asistencia_detallada({"id_cliente": id_cliente})
 
-        def _fn(state: dict[str, Any]):
-            membresia = self._active_membership_for_cliente(state, id_cliente)
-            validacion = bool(membresia)
-            if not validacion:
-                raise ValueError("Cliente sin membresía activa")
-            # Store minimal attendance fields as requested: id_cliente (UID when available), fecha, hora, servicio
-            client_record = self.get_cliente(id_cliente) or {}
-            full_uid = str(client_record.get("id_usuario") or f"cliente-{id_cliente}")
-            item = {
-                "id_cliente": full_uid,
-                "fecha": _today_iso(),
-                "hora": _now_time(),
-                "servicio": "fitness",
-            }
-            state["asistencia"].insert(0, item)
-            return item
-
-        return self._mutate(_fn)
-
-    def registrar_asistencia_detallada(self, payload: dict[str, Any]) -> dict[str, Any]:
-        # payload expected keys: id_cliente, id_usuario (admin who registers, optional), fecha (optional), hora (optional), servicio
-        raw_id_cliente = payload.get("id_cliente", 0)
-        # Allow id_cliente to be numeric or full uid (e.g., 'SGCLI103' or 'cliente-103')
-        id_cliente = 0
+    def _parse_cliente_id(self, raw_id_cliente: Any) -> int:
         try:
             if isinstance(raw_id_cliente, str):
                 s = raw_id_cliente.strip()
                 m = re.match(r"^(?:SGCLI|cliente-)?(\d+)$", s, re.IGNORECASE)
                 if m:
-                    id_cliente = int(m.group(1))
-                elif s.isdigit():
-                    id_cliente = int(s)
-            else:
-                id_cliente = int(raw_id_cliente)
+                    return int(m.group(1))
+                if s.isdigit():
+                    return int(s)
+            return int(raw_id_cliente)
         except Exception:
-            id_cliente = 0
+            return 0
 
+    def _validate_attendance_capacity(self, state: dict[str, Any], fecha: str, hora: str, exclude_id: int | None = None) -> None:
+        cfg = state.get("configuracion_gimnasio", {}) or {}
+        capacidad_total = max(1, int(cfg.get("capacidad_total") or 30))
+        capacidad_por_hora = max(1, int(cfg.get("capacidad_por_hora") or 10))
+        same_day = [a for a in state.get("asistencia", []) if str(a.get("fecha", "")) == fecha and int(a.get("id_asistencia", 0) or 0) != int(exclude_id or 0)]
+        if len(same_day) >= capacidad_total:
+            raise ValueError("El gimnasio alcanzó su capacidad total del día")
+        hour_key = self._attendance_hour_key(hora)
+        same_hour = [a for a in same_day if self._attendance_hour_key(str(a.get("hora", ""))) == hour_key]
+        if len(same_hour) >= capacidad_por_hora:
+            raise ValueError("El cupo de asistencias para esta hora está lleno")
+
+    def registrar_asistencia_detallada(self, payload: dict[str, Any]) -> dict[str, Any]:
+        raw_id_cliente = payload.get("id_cliente", 0)
+        id_cliente = self._parse_cliente_id(raw_id_cliente)
         if not self.get_cliente(id_cliente):
             raise ValueError("Cliente no encontrado")
 
-        servicio = str(payload.get("servicio") or "").strip().lower()
+        servicio = str(payload.get("servicio") or "fitness").strip().lower()
         allowed = {"fitness", "musculacion", "cardio", "baile"}
         if servicio not in allowed:
             raise ValueError(f"Servicio inválido: {servicio}")
@@ -593,33 +645,66 @@ class GymService:
 
         def _fn(state: dict[str, Any]):
             membresia = self._active_membership_for_cliente(state, id_cliente)
-            validacion = bool(membresia)
-            if not validacion:
+            if not membresia:
                 raise ValueError("Cliente sin membresía activa")
-            # Preserve the full client UID when available (from payload or client record)
+            self._validate_attendance_capacity(state, fecha, hora)
             client_record = self.get_cliente(id_cliente) or {}
-            full_uid = None
-            if isinstance(raw_id_cliente, str) and raw_id_cliente.strip():
-                full_uid = raw_id_cliente.strip()
-            elif client_record:
-                full_uid = str(client_record.get("id_usuario") or "").strip()
-
-            # Store minimal attendance fields as requested: id_cliente (UID when available), fecha, hora, servicio
-            client_record = self.get_cliente(id_cliente) or {}
-            uid_value = full_uid or str(client_record.get("id_usuario") or f"cliente-{id_cliente}")
+            uid_value = str(client_record.get("id_usuario") or f"cliente-{id_cliente}")
             item = {
+                "id_asistencia": self._next_int_id("asistencia", "id_asistencia"),
                 "id_cliente": uid_value,
+                "id_cliente_num": id_cliente,
                 "fecha": fecha,
                 "hora": hora,
                 "servicio": servicio,
+                "id_usuario_registra": id_usuario_registra,
+                "id_membresia": membresia.get("id_membresia"),
             }
             state["asistencia"].insert(0, item)
             return item
 
         return self._mutate(_fn)
 
+    def actualizar_asistencia(self, id_asistencia: int, payload: dict[str, Any]) -> dict[str, Any]:
+        def _fn(state: dict[str, Any]):
+            idx = next((i for i, row in enumerate(state["asistencia"]) if int(row.get("id_asistencia", 0) or 0) == int(id_asistencia)), -1)
+            if idx < 0:
+                raise ValueError("Asistencia no encontrada")
+            current = {**state["asistencia"][idx]}
+            if payload.get("id_cliente") is not None:
+                id_cliente = self._parse_cliente_id(payload.get("id_cliente"))
+                if not self.get_cliente(id_cliente):
+                    raise ValueError("Cliente no encontrado")
+                cliente = self.get_cliente(id_cliente) or {}
+                current["id_cliente"] = str(cliente.get("id_usuario") or f"cliente-{id_cliente}")
+                current["id_cliente_num"] = id_cliente
+            if payload.get("fecha"):
+                current["fecha"] = str(payload.get("fecha")).strip()
+            if payload.get("hora"):
+                current["hora"] = str(payload.get("hora")).strip()
+            if payload.get("servicio"):
+                servicio = str(payload.get("servicio")).strip().lower()
+                if servicio not in {"fitness", "musculacion", "cardio", "baile"}:
+                    raise ValueError(f"Servicio inválido: {servicio}")
+                current["servicio"] = servicio
+            if payload.get("id_usuario"):
+                current["id_usuario_registra"] = self._normalize_usuario_id(payload.get("id_usuario"))
+            self._validate_attendance_capacity(state, current.get("fecha", _today_iso()), current.get("hora", _now_time()), exclude_id=id_asistencia)
+            state["asistencia"][idx] = current
+            return current
+
+        return self._mutate(_fn)
+
+    def eliminar_asistencia(self, id_asistencia: int) -> None:
+        def _fn(state: dict[str, Any]):
+            original = len(state["asistencia"])
+            state["asistencia"] = [a for a in state["asistencia"] if int(a.get("id_asistencia", 0) or 0) != int(id_asistencia)]
+            if len(state["asistencia"]) == original:
+                raise ValueError("Asistencia no encontrada")
+
+        self._mutate(_fn)
+
     def registrar_asistencia_por_dni(self, dni: str) -> dict[str, Any]:
-        # Support payload dict (dni plus optional fields) or simple dni string
         if isinstance(dni, dict):
             payload = dni
             dni_val = str(payload.get("dni") or "").strip()
@@ -646,10 +731,18 @@ class GymService:
             if item_id is None:
                 item_id = self._next_int_id("inventario", "id_item")
             item["id_item"] = int(item_id)
+            item["cantidad_stock"] = max(0, int(item.get("cantidad_stock") or 0))
+            item["stock_minimo"] = max(0, int(item.get("stock_minimo") or 1))
+            item["unidad_venta"] = str(item.get("unidad_venta") or "unidad")
+            item["precio_venta"] = float(item.get("precio_venta") or 0)
+            item["ubicacion"] = str(item.get("ubicacion") or "Almacén")
+            item["observaciones"] = str(item.get("observaciones") or "")
             idx = next((i for i, row in enumerate(state["inventario"]) if int(row.get("id_item", 0)) == int(item_id)), -1)
             if idx >= 0:
+                item["n_activo"] = int(item.get("n_activo") or state["inventario"][idx].get("n_activo") or self._next_n_activo(state))
                 state["inventario"][idx] = item
             else:
+                item["n_activo"] = int(item.get("n_activo") or self._next_n_activo(state))
                 state["inventario"].insert(0, item)
             return item
 
@@ -659,6 +752,9 @@ class GymService:
         def _fn(state: dict[str, Any]):
             state["inventario"] = [i for i in state["inventario"] if int(i.get("id_item", 0)) != int(id_item)]
             state["mov_inv"] = [m for m in state["mov_inv"] if int(m.get("id_item", 0)) != int(id_item)]
+            for producto in state.get("productos_tienda", []):
+                if int(producto.get("id_item") or 0) == int(id_item):
+                    producto["id_item"] = None
 
         self._mutate(_fn)
 
@@ -765,20 +861,56 @@ class GymService:
         if not next((r for r in self.state["catalogo_rutina"] if int(r.get("id_rutina", 0)) == id_rutina), None):
             raise ValueError("Rutina no encontrada")
 
+        dia = str(payload.get("dia_semana") or "Lunes").strip()
+        hora_inicio = str(payload.get("hora_inicio") or "06:00").strip()
+        hora_fin = str(payload.get("hora_fin") or "07:00").strip()
+        capacidad_maxima = max(1, int(payload.get("capacidad_maxima") or 1))
+
         def _fn(state: dict[str, Any]):
             item = {**payload}
             item_id = item.get("id_horario")
             if item_id is None:
                 item_id = self._next_int_id("horario", "id_horario")
-            item["id_horario"] = int(item_id)
+            item_id = int(item_id)
+
+            same_slot = [
+                row for row in state["horario"]
+                if int(row.get("id_horario", 0) or 0) != item_id
+                and str(row.get("dia_semana", "")).strip().lower() == dia.lower()
+                and str(row.get("hora_inicio", "")).strip() == hora_inicio
+                and str(row.get("hora_fin", "")).strip() == hora_fin
+            ]
+            if any(int(row.get("id_cliente", 0) or 0) == id_cliente for row in same_slot):
+                raise ValueError("El cliente ya tiene asignado ese horario")
+            if len(same_slot) >= capacidad_maxima:
+                raise ValueError("El horario seleccionado ya está lleno")
+
+            item["id_horario"] = item_id
             item["id_cliente"] = id_cliente
             item["id_rutina"] = id_rutina
-            idx = next((i for i, row in enumerate(state["horario"]) if int(row.get("id_horario", 0)) == int(item_id)), -1)
+            item["dia_semana"] = dia
+            item["hora_inicio"] = hora_inicio
+            item["hora_fin"] = hora_fin
+            item["capacidad_maxima"] = capacidad_maxima
+            item["cupos_usados"] = len(same_slot) + 1
+            idx = next((i for i, row in enumerate(state["horario"]) if int(row.get("id_horario", 0)) == item_id), -1)
             if idx >= 0:
                 state["horario"][idx] = item
             else:
                 state["horario"].insert(0, item)
             return item
+
+        return self._mutate(_fn)
+
+    def configuracion_gimnasio(self) -> dict[str, Any]:
+        return self.state.get("configuracion_gimnasio", {"capacidad_total": 30, "capacidad_por_hora": 10})
+
+    def actualizar_configuracion_gimnasio(self, payload: dict[str, Any]) -> dict[str, Any]:
+        def _fn(state: dict[str, Any]):
+            cfg = state.setdefault("configuracion_gimnasio", {})
+            cfg["capacidad_total"] = max(1, int(payload.get("capacidad_total", cfg.get("capacidad_total", 30))))
+            cfg["capacidad_por_hora"] = max(1, int(payload.get("capacidad_por_hora", cfg.get("capacidad_por_hora", 10))))
+            return cfg
 
         return self._mutate(_fn)
 
@@ -833,15 +965,30 @@ class GymService:
 
     def upsert_producto_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
         def _fn(state: dict[str, Any]):
-            if "productos_tienda" not in state:
-                state["productos_tienda"] = []
-            
+            state.setdefault("productos_tienda", [])
             producto = {**payload}
             producto_id = producto.get("id_producto")
             if producto_id is None:
                 producto_id = self._next_int_id("productos_tienda", "id_producto")
             producto["id_producto"] = int(producto_id)
-            
+            producto["id_item"] = int(producto["id_item"]) if producto.get("id_item") else None
+            producto["unidad_venta"] = str(producto.get("unidad_venta") or "unidad")
+            producto["precio_venta"] = float(producto.get("precio_venta") or 0)
+            producto["cantidad_stock"] = max(0, int(producto.get("cantidad_stock") or 0))
+            producto["stock_minimo"] = max(0, int(producto.get("stock_minimo") or 0))
+
+            if producto["id_item"]:
+                item = next((i for i in state.get("inventario", []) if int(i.get("id_item", 0)) == producto["id_item"]), None)
+                if not item:
+                    raise ValueError("Item de almacén no encontrado")
+                # Almacén -> precio de venta y unidad de venta para tienda.
+                item["unidad_venta"] = producto["unidad_venta"]
+                item["precio_venta"] = producto["precio_venta"]
+                if not producto.get("nombre_producto"):
+                    producto["nombre_producto"] = item.get("nombre_item", "Sin nombre")
+                if producto["cantidad_stock"] == 0:
+                    producto["cantidad_stock"] = int(item.get("cantidad_stock", 0) or 0)
+
             idx = next((i for i, row in enumerate(state["productos_tienda"]) if int(row.get("id_producto", 0)) == int(producto_id)), -1)
             if idx >= 0:
                 state["productos_tienda"][idx] = producto

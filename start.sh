@@ -29,7 +29,7 @@ source .venv/bin/activate
 pip install -q -r requirements.txt 2>/dev/null
 
 # Iniciar servidor
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000 &
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 echo -e "${GREEN}✓ Backend iniciado (PID: $BACKEND_PID)${NC}"
 

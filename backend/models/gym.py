@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal,Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -30,6 +30,7 @@ class PlanMembresiaInput(BaseModel):
     nombre_plan: str
     duracion: str
     precio: int
+    activo: bool = True
 
 
 class MembresiaInput(BaseModel):
@@ -54,16 +55,23 @@ class InventarioInput(BaseModel):
     tipo: str
     cantidad_stock: int
     estado: str = "Operativo"
-    n_activo: int = 1
+    n_activo: int | None = None
+    unidad_venta: str = "unidad"
+    precio_venta: float | None = None
+    stock_minimo: int = 1
+    ubicacion: str = "Almacén"
+    observaciones: str = ""
 
 
 class ProductoTiendaInput(BaseModel):
     id_producto: Optional[int] = None
+    id_item: Optional[int] = None
     nombre_producto: str
     descripcion: Optional[str] = ""
     categoria: Optional[str] = "General"
+    unidad_venta: str = "unidad"
     precio_venta: float
-    cantidad_stock: int
+    cantidad_stock: int = 0
     stock_minimo: Optional[int] = 5
     estado: Optional[str] = "Disponible"
 
@@ -103,6 +111,7 @@ class HorarioInput(BaseModel):
     dia_semana: str
     hora_inicio: str
     hora_fin: str
+    capacidad_maxima: int = 1
 
 
 class AsistenciaInput(BaseModel):
@@ -110,6 +119,8 @@ class AsistenciaInput(BaseModel):
     id_cliente: str | int
     fecha: str = ""
     hora: str = ""
+    servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
+    id_usuario: str | int | None = None
 
 
 class CheckinAsistenciaInput(BaseModel):
@@ -126,6 +137,11 @@ class CheckinAsistenciaDniInput(BaseModel):
     fecha: str = ""
     hora: str = ""
     servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
+
+
+class ConfiguracionGimnasioInput(BaseModel):
+    capacidad_total: int = Field(default=30, ge=1)
+    capacidad_por_hora: int = Field(default=10, ge=1)
 
 
 class SummaryResponse(BaseModel):

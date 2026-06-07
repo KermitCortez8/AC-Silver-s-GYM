@@ -96,3 +96,17 @@ VITE_AUTH_API_BASE_URL=http://localhost:8000
 | `/gym/rutinas` | GET/POST | Lista y administra el catálogo de rutinas. |
 | `/gym/horarios` | GET/POST | Lista y administra horarios. |
 
+
+## Cambios aplicados para feature inventario/tienda/asistencia/horarios
+
+- Se dejó como entrypoint único `backend/app/main.py` y `start.sh` ahora levanta `app.main:app`.
+- Se eliminó el `backend/main.py` duplicado, carpetas `__pycache__`, entorno virtual `backend/source` y `package-lock.json` raíz.
+- Se registró `store_router` bajo `/api/tienda`.
+- Inventario ahora genera y conserva `n_activo` automáticamente para cada item.
+- Inventario incluye `unidad_venta`, `precio_venta`, `stock_minimo`, `ubicacion` y `observaciones`.
+- Tienda puede vincular productos con items de almacén mediante `id_item` y actualizar unidad/precio de venta.
+- Asistencia ahora guarda `id_asistencia` y permite editar/eliminar registros.
+- Se agregó configuración de capacidad del gimnasio: `GET/POST /api/gym/configuracion`.
+- Check-in valida capacidad total y capacidad por hora.
+- Horarios por cliente validan cupos mediante `capacidad_maxima`.
+- Planes de membresía ahora tienen CRUD básico en `/api/planes-membresia`.

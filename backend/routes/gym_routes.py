@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies import get_gym_service
-from models.gym import CatalogoRutinaInput, HorarioInput, SummaryResponse, TicketAtencionInput
+from models.gym import CatalogoRutinaInput, ConfiguracionGimnasioInput, HorarioInput, SummaryResponse, TicketAtencionInput
 from services.gym_service import GymService
 
 router = APIRouter(prefix="/gym", tags=["gym-operaciones"])
@@ -14,6 +14,17 @@ router = APIRouter(prefix="/gym", tags=["gym-operaciones"])
 def summary(gym_service: GymService = Depends(get_gym_service)):
     return gym_service.summary()
 
+
+
+
+@router.get("/configuracion")
+def get_configuracion(gym_service: GymService = Depends(get_gym_service)):
+    return gym_service.configuracion_gimnasio()
+
+
+@router.post("/configuracion")
+def update_configuracion(payload: ConfiguracionGimnasioInput, gym_service: GymService = Depends(get_gym_service)):
+    return gym_service.actualizar_configuracion_gimnasio(payload.model_dump())
 
 # GET /gym/tickets: lista los tickets de atención registrados.
 @router.get("/tickets")

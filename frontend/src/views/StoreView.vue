@@ -36,6 +36,19 @@
             <input v-model="form.categoria" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Suplementos, Bebidas..." />
           </label>
           <label class="space-y-2">
+            <span class="text-sm text-slate-300">Item de almacén</span>
+            <select v-model.number="form.id_item" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
+              <option :value="null">Sin vincular</option>
+              <option v-for="item in inventario" :key="item.id" :value="Number(String(item.id).replace('item-', ''))">
+                {{ item.inventoryCode }} - {{ item.name }}
+              </option>
+            </select>
+          </label>
+          <label class="space-y-2">
+            <span class="text-sm text-slate-300">Unidad de venta</span>
+            <input v-model="form.unidad_venta" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="unidad, botella, paquete..." />
+          </label>
+          <label class="space-y-2">
             <span class="text-sm text-slate-300">Precio (S/.)</span>
             <input v-model.number="form.precio" type="number" min="0" step="0.01" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
           </label>
@@ -83,7 +96,8 @@
                 <p class="text-sm text-slate-400">{{ producto.categoria }}</p>
                 <p class="mt-1 text-sm text-slate-300">{{ producto.descripcion }}</p>
                 <p class="mt-2 text-sm font-bold text-green-400">S/. {{ producto.precio.toFixed(2) }}</p>
-                <p class="text-sm text-slate-300">Stock: {{ producto.cantidad }} · Mínimo: {{ producto.minimo }}</p>
+                <p class="text-sm text-slate-300">Stock: {{ producto.cantidad }} · Mínimo: {{ producto.minimo }} · Unidad: {{ producto.unidad_venta }}</p>
+                <p v-if="producto.id_item" class="text-xs text-cyan-200">Vinculado a almacén: #{{ producto.id_item }}</p>
                 <p class="mt-1 text-xs" :class="producto.estado === 'Disponible' ? 'text-green-400' : 'text-amber-400'">
                   Estado: {{ producto.estado }}
                 </p>
@@ -244,6 +258,7 @@ const gymStore = useGymStore();
 
 const isAdmin = computed(() => route.path.startsWith('/admin/store'));
 const productos = computed(() => gymStore.productos_tienda);
+const inventario = computed(() => gymStore.inventory);
 const cart = computed(() => gymStore.cart);
 const cartTotal = computed(() => gymStore.cartTotal);
 
@@ -263,6 +278,8 @@ const form = reactive({
   nombre: '',
   descripcion: '',
   categoria: 'General',
+  id_item: null,
+  unidad_venta: 'unidad',
   precio: 0,
   cantidad: 0,
   minimo: 5,
@@ -274,6 +291,8 @@ const resetForm = () => {
   form.nombre = '';
   form.descripcion = '';
   form.categoria = 'General';
+  form.id_item = null;
+  form.unidad_venta = 'unidad';
   form.precio = 0;
   form.cantidad = 0;
   form.minimo = 5;
@@ -285,6 +304,8 @@ const editProducto = (producto) => {
   form.nombre = producto.nombre;
   form.descripcion = producto.descripcion || '';
   form.categoria = producto.categoria;
+  form.id_item = producto.id_item || null;
+  form.unidad_venta = producto.unidad_venta || 'unidad';
   form.precio = producto.precio;
   form.cantidad = producto.cantidad;
   form.minimo = producto.minimo || 5;
@@ -298,6 +319,8 @@ const handleSubmit = async () => {
       nombre: form.nombre,
       descripcion: form.descripcion,
       categoria: form.categoria,
+      id_item: form.id_item || null,
+      unidad_venta: form.unidad_venta,
       precio: form.precio,
       cantidad: form.cantidad,
       minimo: form.minimo,
