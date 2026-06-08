@@ -6,10 +6,14 @@ import LoginView from '../views/LoginView.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
 import UserDashboard from '../views/UserDashboard.vue';
 import LandingView from '../views/LandingView.vue';
+import RegisterView from '../views/RegisterView.vue';
+import PaymentView from '../views/PaymentView.vue';
 import HomeView from '../views/HomeView.vue';
 import ClientsView from '../views/ClientsView.vue';
 import UsersView from '../views/UsersView.vue';
 import AttendanceView from '../views/AttendanceView.vue';
+import ServiceSchedulesView from '../views/ServiceSchedulesView.vue';
+import EnrollmentView from '../views/EnrollmentView.vue';
 import InventoryView from '../views/InventoryView.vue';
 import StoreView from '../views/StoreView.vue';
 import ScheduleView from '../views/ScheduleView.vue';
@@ -33,6 +37,18 @@ const routes = [
     path: '/',
     name: 'Home',
     component: LandingView,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/registro',
+    name: 'Register',
+    component: RegisterView,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/registro/pago/:idCliente',
+    name: 'Payment',
+    component: PaymentView,
     meta: { requiresAuth: false },
   },
   {
@@ -63,6 +79,16 @@ const routes = [
         path: 'attendance',
         name: 'Attendance',
         component: AttendanceView,
+      },
+      {
+        path: 'service-schedules',
+        name: 'ServiceSchedules',
+        component: ServiceSchedulesView,
+      },
+      {
+        path: 'enrollment',
+        name: 'AdminEnrollment',
+        component: EnrollmentView,
       },
       {
         path: 'inventory',
@@ -99,6 +125,11 @@ const routes = [
         path: 'schedule',
         name: 'Schedule',
         component: ScheduleView,
+      },
+      {
+        path: 'enrollment',
+        name: 'UserEnrollment',
+        component: EnrollmentView,
       },
       {
         path: 'attendance',

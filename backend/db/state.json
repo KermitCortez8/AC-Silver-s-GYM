@@ -56,13 +56,44 @@
   ],
   "usuario": [
     {
+      "id_usuario": "SGADM002",
+      "nombre": "Josue Cortez",
+      "correo": "urpedu@urp.edu.pe",
+      "telefono": "",
+      "dni": "73144441",
+      "rol": "admin",
+      "estado": "ACTIVO",
+      "password_hash": "pbkdf2_sha256$39bd00edd169929c6e423e6e4b93906e$05a8062e16866acf47f67a19e8aa3fc61553952705b73b8f17db5c3e1e8244c1"
+    },
+    {
+      "id_usuario": "SGTRA004",
+      "nombre": "",
+      "correo": "",
+      "telefono": "",
+      "dni": "",
+      "rol": "trainer",
+      "estado": "ACTIVO",
+      "password_hash": ""
+    },
+    {
+      "id_usuario": "SGSTA001",
+      "nombre": "Renato cortez",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "1234567",
+      "rol": "staff",
+      "estado": "ACTIVO",
+      "password_hash": ""
+    },
+    {
       "id_usuario": "SGTRA002",
       "nombre": "Josue",
       "correo": "1212@g.com",
       "telefono": "93902",
       "dni": "12345678",
       "rol": "trainer",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_usuario": "SGADM001",
@@ -71,7 +102,8 @@
       "telefono": "939027001",
       "dni": "73045451",
       "rol": "admin",
-      "estado": "Activo"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_usuario": "SGTRA001",
@@ -80,7 +112,8 @@
       "telefono": "555",
       "dni": "12345678",
       "rol": "trainer",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_usuario": "SGTRA003",
@@ -89,10 +122,95 @@
       "telefono": "939027001",
       "dni": "73045451",
       "rol": "trainer",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     }
   ],
   "clientes": [
+    {
+      "id_cliente": 113,
+      "id_usuario": "SGCLI113",
+      "nombre": "Jose Perez",
+      "correo": "2103@urp.edu.pe",
+      "telefono": "939027001",
+      "dni": "12345688",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO",
+      "password_hash": "pbkdf2_sha256$ba98e82d4db3fa42f3b6e65fa0a8cd1f$f16956bd5146e9e9023227206b8660d736355aa6c3a8e6c05ed43b144b23ca30"
+    },
+    {
+      "id_cliente": 112,
+      "id_usuario": "SGCLI112",
+      "nombre": "Jose perez",
+      "correo": "mistersex@gmail.com",
+      "telefono": "937027001",
+      "dni": "73045459",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO",
+      "password_hash": ""
+    },
+    {
+      "id_cliente": 111,
+      "id_usuario": "SGCLI111",
+      "nombre": "Joseoh",
+      "correo": "renatocortex6@gmail.com",
+      "telefono": "939027001",
+      "dni": "73045453",
+      "plan": "3 MESES",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO",
+      "password_hash": ""
+    },
+    {
+      "id_cliente": 110,
+      "id_usuario": "SGCLI110",
+      "nombre": "Prueba 2",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "73043432",
+      "plan": "3 MESES",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO",
+      "password_hash": ""
+    },
+    {
+      "id_cliente": 109,
+      "id_usuario": "SGCLI109",
+      "nombre": "Perez",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "73044442",
+      "plan": "ANUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO",
+      "password_hash": ""
+    },
+    {
+      "id_cliente": 108,
+      "id_usuario": "SGCLI108",
+      "nombre": "Rene",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "73044441",
+      "plan": "3 MESES",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO",
+      "password_hash": ""
+    },
+    {
+      "id_cliente": 107,
+      "id_usuario": "SGCLI107",
+      "nombre": "Jose Perez",
+      "correo": "renatocortex1516@gmail.com",
+      "telefono": "939027001",
+      "dni": "12345678",
+      "plan": "ANUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO",
+      "password_hash": ""
+    },
     {
       "id_cliente": 106,
       "id_usuario": "SGCLI104",
@@ -102,7 +220,8 @@
       "dni": "11122233",
       "plan": "MENSUAL",
       "promocion": "SIN PROMOCION",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_cliente": 105,
@@ -113,7 +232,8 @@
       "dni": "11122233",
       "plan": "MENSUAL",
       "promocion": "SIN PROMOCION",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_cliente": 104,
@@ -124,7 +244,8 @@
       "dni": "11122233",
       "plan": "MENSUAL",
       "promocion": "SIN PROMOCION",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_cliente": 103,
@@ -135,7 +256,8 @@
       "dni": "99988877",
       "plan": "MENSUAL",
       "promocion": "SIN PROMOCION",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_cliente": 102,
@@ -146,7 +268,8 @@
       "dni": "74281635",
       "plan": "MENSUAL",
       "promocion": "SIN PROMOCION",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_cliente": 101,
@@ -157,7 +280,8 @@
       "dni": "73045451",
       "plan": "3 MESES",
       "promocion": "SIN PROMOCION",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     },
     {
       "id_cliente": 100,
@@ -168,11 +292,381 @@
       "dni": "",
       "plan": "MENSUAL",
       "promocion": "SIN PROMOCION",
-      "estado": "ACTIVO"
+      "estado": "ACTIVO",
+      "password_hash": ""
     }
   ],
   "tickets_atencion": [],
   "horario": [],
+  "horarios_servicio": [
+    {
+      "id_horario_servicio": 7,
+      "servicio": "fitness",
+      "codigo_dia": "DOM",
+      "dia": "domingo",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 20,
+      "cupos_usados": 1,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 3,
+      "servicio": "fitness",
+      "codigo_dia": "JUE",
+      "dia": "jueves",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 1,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 11,
+      "servicio": "musculacion",
+      "codigo_dia": "JUE",
+      "dia": "jueves",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 1,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 17,
+      "servicio": "cardio",
+      "codigo_dia": "JUE",
+      "dia": "jueves",
+      "hora_inicio": "07:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 1,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 6,
+      "servicio": "fitness",
+      "codigo_dia": "LUN",
+      "dia": "lunes",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 1,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 8,
+      "servicio": "musculacion",
+      "codigo_dia": "LUN",
+      "dia": "lunes",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 14,
+      "servicio": "cardio",
+      "codigo_dia": "LUN",
+      "dia": "lunes",
+      "hora_inicio": "07:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 20,
+      "servicio": "baile",
+      "codigo_dia": "LUN",
+      "dia": "lunes",
+      "hora_inicio": "18:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 1,
+      "servicio": "fitness",
+      "codigo_dia": "MAR",
+      "dia": "martes",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 9,
+      "servicio": "musculacion",
+      "codigo_dia": "MAR",
+      "dia": "martes",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 15,
+      "servicio": "cardio",
+      "codigo_dia": "MAR",
+      "dia": "martes",
+      "hora_inicio": "07:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 2,
+      "servicio": "fitness",
+      "codigo_dia": "MIE",
+      "dia": "miercoles",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 10,
+      "servicio": "musculacion",
+      "codigo_dia": "MIE",
+      "dia": "miercoles",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 16,
+      "servicio": "cardio",
+      "codigo_dia": "MIE",
+      "dia": "miercoles",
+      "hora_inicio": "07:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 21,
+      "servicio": "baile",
+      "codigo_dia": "MIE",
+      "dia": "miercoles",
+      "hora_inicio": "18:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 5,
+      "servicio": "fitness",
+      "codigo_dia": "SAB",
+      "dia": "sabado",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 13,
+      "servicio": "musculacion",
+      "codigo_dia": "SAB",
+      "dia": "sabado",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 19,
+      "servicio": "cardio",
+      "codigo_dia": "SAB",
+      "dia": "sabado",
+      "hora_inicio": "07:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 4,
+      "servicio": "fitness",
+      "codigo_dia": "VIE",
+      "dia": "viernes",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 12,
+      "servicio": "musculacion",
+      "codigo_dia": "VIE",
+      "dia": "viernes",
+      "hora_inicio": "06:00",
+      "hora_fin": "22:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 18,
+      "servicio": "cardio",
+      "codigo_dia": "VIE",
+      "dia": "viernes",
+      "hora_inicio": "07:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 22,
+      "servicio": "baile",
+      "codigo_dia": "VIE",
+      "dia": "viernes",
+      "hora_inicio": "18:00",
+      "hora_fin": "21:00",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    },
+    {
+      "id_horario_servicio": 23,
+      "servicio": "fitness",
+      "hora_inicio": "06:00",
+      "hora_fin": "07:00",
+      "codigo_dia": "LUN",
+      "dia": "lunes",
+      "cupos": 10,
+      "cupos_usados": 0,
+      "activo": true
+    }
+  ],
+  "matriculas_horario": [
+    {
+      "id_matricula": 16,
+      "id_cliente": 113,
+      "id_horario_servicio": 6,
+      "fecha_matricula": "2026-06-08",
+      "estado": "ACTIVA"
+    },
+    {
+      "id_matricula": 15,
+      "id_cliente": 113,
+      "id_horario_servicio": 17,
+      "fecha_matricula": "2026-06-08",
+      "estado": "ACTIVA"
+    },
+    {
+      "id_matricula": 14,
+      "id_cliente": 113,
+      "id_horario_servicio": 11,
+      "fecha_matricula": "2026-06-08",
+      "estado": "ACTIVA"
+    },
+    {
+      "id_matricula": 13,
+      "id_cliente": 113,
+      "id_horario_servicio": 3,
+      "fecha_matricula": "2026-06-08",
+      "estado": "ACTIVA"
+    },
+    {
+      "id_matricula": 12,
+      "id_cliente": 113,
+      "id_horario_servicio": 7,
+      "fecha_matricula": "2026-06-08",
+      "estado": "ACTIVA"
+    },
+    {
+      "id_matricula": 11,
+      "id_cliente": 113,
+      "id_horario_servicio": 19,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 10,
+      "id_cliente": 113,
+      "id_horario_servicio": 13,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 9,
+      "id_cliente": 113,
+      "id_horario_servicio": 4,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 8,
+      "id_cliente": 113,
+      "id_horario_servicio": 12,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 7,
+      "id_cliente": 113,
+      "id_horario_servicio": 22,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 6,
+      "id_cliente": 113,
+      "id_horario_servicio": 18,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 5,
+      "id_cliente": 113,
+      "id_horario_servicio": 11,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 4,
+      "id_cliente": 113,
+      "id_horario_servicio": 3,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 3,
+      "id_cliente": 113,
+      "id_horario_servicio": 7,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 2,
+      "id_cliente": 113,
+      "id_horario_servicio": 6,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    },
+    {
+      "id_matricula": 1,
+      "id_cliente": 113,
+      "id_horario_servicio": 6,
+      "fecha_matricula": "2026-06-08",
+      "estado": "CANCELADA"
+    }
+  ],
   "catalogo_rutina": [
     {
       "id_rutina": 1,
@@ -183,11 +677,108 @@
   ],
   "asistencia": [
     {
-      "id_cliente": "SGCLI103",
-      "fecha": "2026-06-01",
-      "hora": "11:27 p. m.",
+      "id_asistencia": 15,
+      "id_cliente": "SGCLI113",
+      "id_cliente_num": 113,
+      "fecha": "2026-06-08",
+      "hora": "11:30",
+      "hora_entrada": "11:30",
+      "hora_salida": "11:30",
       "servicio": "fitness",
-      "id_asistencia": 1
+      "id_usuario_registra": null,
+      "id_membresia": 14,
+      "id_matricula": 16,
+      "id_horario_servicio": 6
+    },
+    {
+      "id_asistencia": 14,
+      "id_cliente": "SGCLI113",
+      "id_cliente_num": 113,
+      "fecha": "2026-06-08",
+      "hora": "11:30",
+      "hora_entrada": "11:30",
+      "hora_salida": "11:30",
+      "servicio": "cardio",
+      "id_usuario_registra": null,
+      "id_membresia": 14,
+      "id_matricula": 15,
+      "id_horario_servicio": 17
+    },
+    {
+      "id_asistencia": 13,
+      "id_cliente": "SGCLI113",
+      "id_cliente_num": 113,
+      "fecha": "2026-06-08",
+      "hora": "11:30",
+      "hora_entrada": "11:30",
+      "hora_salida": "11:30",
+      "servicio": "fitness",
+      "id_usuario_registra": null,
+      "id_membresia": 14,
+      "id_matricula": 13,
+      "id_horario_servicio": 3
+    },
+    {
+      "id_asistencia": 12,
+      "id_cliente": "SGCLI113",
+      "id_cliente_num": 113,
+      "fecha": "2026-06-08",
+      "hora": "10:53",
+      "hora_entrada": "10:53",
+      "hora_salida": "10:53",
+      "servicio": "fitness",
+      "id_usuario_registra": null,
+      "id_membresia": 14,
+      "id_matricula": 4,
+      "id_horario_servicio": 3
+    },
+    {
+      "id_asistencia": 11,
+      "id_cliente": "SGCLI113",
+      "id_cliente_num": 113,
+      "fecha": "2026-06-08",
+      "hora": "10:53",
+      "hora_entrada": "10:53",
+      "hora_salida": "10:53",
+      "servicio": "musculacion",
+      "id_usuario_registra": null,
+      "id_membresia": 14,
+      "id_matricula": 5,
+      "id_horario_servicio": 11
+    },
+    {
+      "id_asistencia": 10,
+      "id_cliente": "SGCLI113",
+      "id_cliente_num": 113,
+      "fecha": "2026-06-08",
+      "hora": "10:53",
+      "hora_entrada": "10:53",
+      "hora_salida": "10:53",
+      "servicio": "fitness",
+      "id_usuario_registra": null,
+      "id_membresia": 14,
+      "id_matricula": 3,
+      "id_horario_servicio": 7
+    },
+    {
+      "id_asistencia": 9,
+      "id_cliente": "SGCLI110",
+      "id_cliente_num": 110,
+      "fecha": "2026-06-08",
+      "hora": "19:34",
+      "servicio": "fitness",
+      "id_usuario_registra": "DEMO-ADMIN-001",
+      "id_membresia": 11
+    },
+    {
+      "id_asistencia": 8,
+      "id_cliente": "SGCLI110",
+      "id_cliente_num": 110,
+      "fecha": "2026-06-08",
+      "hora": "19:34",
+      "servicio": "fitness",
+      "id_usuario_registra": "DEMO-ADMIN-001",
+      "id_membresia": 11
     },
     {
       "id_cliente": "SGCLI104",
@@ -260,19 +851,114 @@
       "servicio": "fitness",
       "registrado_por": "DEMO-ADMIN-001",
       "validacion": true
-    },
-    {
-      "id_asistencia": 1,
-      "id_cliente": 103,
-      "id_membresia": 1,
-      "fecha": "2026-06-01",
-      "hora": "03:23",
-      "servicio": "fitness",
-      "registrado_por": "SGADM001",
-      "validacion": true
     }
   ],
   "membresia": [
+    {
+      "id_membresia": 14,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-07-08",
+      "estado": "Activa",
+      "id_cliente": 113,
+      "id_pm": 1,
+      "estado_pago": "PAGADO",
+      "metodo_pago": "pasarela",
+      "referencia_pago": "codigo"
+    },
+    {
+      "id_membresia": 13,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-07-08",
+      "estado": "Activa",
+      "id_cliente": 112,
+      "id_pm": 1,
+      "estado_pago": "PAGADO",
+      "metodo_pago": "pasarela",
+      "referencia_pago": "Codigo"
+    },
+    {
+      "id_membresia": 12,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-09-06",
+      "estado": "Activa",
+      "id_cliente": 111,
+      "id_pm": 2,
+      "estado_pago": "PAGADO",
+      "metodo_pago": "pasarela",
+      "referencia_pago": "Operacion"
+    },
+    {
+      "id_membresia": 11,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-09-06",
+      "estado": "Activa",
+      "id_cliente": 110,
+      "id_pm": 2
+    },
+    {
+      "id_membresia": 10,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2027-06-08",
+      "estado": "Activa",
+      "id_cliente": 109,
+      "id_pm": 3
+    },
+    {
+      "id_membresia": 9,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-07-08",
+      "estado": "Activa",
+      "id_cliente": 100,
+      "id_pm": 1
+    },
+    {
+      "id_membresia": 8,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-09-06",
+      "estado": "Activa",
+      "id_cliente": 101,
+      "id_pm": 2
+    },
+    {
+      "id_membresia": 7,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-07-08",
+      "estado": "Activa",
+      "id_cliente": 102,
+      "id_pm": 1
+    },
+    {
+      "id_membresia": 6,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-07-08",
+      "estado": "Activa",
+      "id_cliente": 105,
+      "id_pm": 1
+    },
+    {
+      "id_membresia": 5,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-07-08",
+      "estado": "Activa",
+      "id_cliente": 106,
+      "id_pm": 1
+    },
+    {
+      "id_membresia": 4,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2027-06-08",
+      "estado": "Activa",
+      "id_cliente": 107,
+      "id_pm": 3
+    },
+    {
+      "id_membresia": 3,
+      "fecha_inicio": "2026-06-08",
+      "fecha_fin": "2026-09-06",
+      "estado": "Activa",
+      "id_cliente": 108,
+      "id_pm": 2
+    },
     {
       "id_cliente": 104,
       "id_pm": 1,
@@ -292,10 +978,25 @@
   ],
   "planes_membresia": [
     {
+      "id_pm": 3,
+      "nombre_plan": "ANUAL",
+      "duracion": "365 dias",
+      "precio": 0,
+      "activo": true
+    },
+    {
+      "id_pm": 2,
+      "nombre_plan": "3 MESES",
+      "duracion": "90 dias",
+      "precio": 0,
+      "activo": true
+    },
+    {
       "id_pm": 1,
       "nombre_plan": "Mensual",
       "duracion": "30 dias",
-      "precio": 80
+      "precio": 80,
+      "activo": true
     }
   ],
   "configuracion_gimnasio": {

@@ -88,6 +88,20 @@ export const authenticateWithGoogleCredential = async (credential) => {
   };
 };
 
+export const authenticateWithPassword = async ({ correo, password }) => {
+  const result = await apiPost('/auth/password', {
+    correo,
+    password,
+  });
+
+  return {
+    user: result.user,
+    token: result.token,
+    expiresIn: result.expiresIn || 60 * 60,
+    source: 'backend',
+  };
+};
+
 export const createDemoCredentials = (role = 'user') => {
   const normalizedRole = role === 'admin' ? 'admin' : 'user';
   const domain = normalizedRole === 'admin' ? '@urp.edu.pe' : '@ejemplo.com';

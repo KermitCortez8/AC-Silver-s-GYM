@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 
 from dependencies import get_gym_service
-from models.auth import AuthGoogleRequest, AuthResponse, UserProfile
+from models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, UserProfile
 from services.auth_service import AuthService
 from services.gym_service import GymService
 from utils.security import decode_token_payload
@@ -19,6 +19,15 @@ def google_auth(payload: AuthGoogleRequest, gym_service: GymService = Depends(ge
         return auth_service.google_auth(payload)
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+
+@router.post("/password", response_model=AuthResponse)
+def password_auth(payload: AuthPasswordRequest, gym_service: GymService = Depends(get_gym_service)):
+    auth_service = AuthService(gym_service)
+    try:
+        return auth_service.password_auth(payload)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(error)) from error
 
 
 # GET /auth/me: devuelve los datos del usuario autenticado a partir del token.

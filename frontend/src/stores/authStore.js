@@ -39,7 +39,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Getters
   const isAuthenticated = computed(() => !!user.value);
-  const isAdmin = computed(() => userRole.value === 'admin');
+  const isAdmin = computed(() => ['admin', 'trainer', 'staff'].includes(userRole.value));
 
   // Actions
   const initializeAuth = async () => {

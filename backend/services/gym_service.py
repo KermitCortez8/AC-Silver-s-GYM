@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import re
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+
+from utils.security import hash_password, verify_password
 
 
 def _today_iso() -> str:
@@ -91,6 +93,13 @@ class GymService:
             ],
             "tickets_atencion": [],
             "horario": [],
+            "horarios_servicio": [
+                {"id_horario_servicio": 1, "servicio": "fitness", "codigo_dia": "LUN", "dia": "lunes", "hora_inicio": "06:00", "hora_fin": "08:00", "cupos": 12, "cupos_usados": 0, "activo": True},
+                {"id_horario_servicio": 2, "servicio": "musculacion", "codigo_dia": "MAR", "dia": "martes", "hora_inicio": "18:00", "hora_fin": "20:00", "cupos": 10, "cupos_usados": 0, "activo": True},
+                {"id_horario_servicio": 3, "servicio": "cardio", "codigo_dia": "MIE", "dia": "miercoles", "hora_inicio": "07:00", "hora_fin": "09:00", "cupos": 10, "cupos_usados": 0, "activo": True},
+                {"id_horario_servicio": 4, "servicio": "baile", "codigo_dia": "VIE", "dia": "viernes", "hora_inicio": "18:00", "hora_fin": "20:00", "cupos": 14, "cupos_usados": 0, "activo": True},
+            ],
+            "matriculas_horario": [],
             "catalogo_rutina": [
                 {
                     "id_rutina": 1,
@@ -117,7 +126,21 @@ class GymService:
                     "duracion": "30 dias",
                     "precio": 80,
                     "activo": True,
-                }
+                },
+                {
+                    "id_pm": 2,
+                    "nombre_plan": "3 MESES",
+                    "duracion": "90 dias",
+                    "precio": 220,
+                    "activo": True,
+                },
+                {
+                    "id_pm": 3,
+                    "nombre_plan": "ANUAL",
+                    "duracion": "365 dias",
+                    "precio": 780,
+                    "activo": True,
+                },
             ],
             "configuracion_gimnasio": {
                 "capacidad_total": 30,
@@ -164,10 +187,22 @@ class GymService:
             producto.setdefault("id_item", None)
             producto.setdefault("unidad_venta", "unidad")
 
+        merged["horarios_servicio"] = self._normalize_horarios_servicio(merged.get("horarios_servicio", seed["horarios_servicio"]))
+        merged["matriculas_horario"] = [
+            self._normalize_matricula_horario(row, index)
+            for index, row in enumerate(merged.get("matriculas_horario", []), start=1)
+            if isinstance(row, dict)
+        ]
+        self._recount_schedule_cupos(merged)
+        self._ensure_default_membership_plans(merged)
+
         cfg = {**seed["configuracion_gimnasio"], **merged.get("configuracion_gimnasio", {})}
         cfg["capacidad_total"] = max(1, int(cfg.get("capacidad_total") or 30))
         cfg["capacidad_por_hora"] = max(1, int(cfg.get("capacidad_por_hora") or 10))
         merged["configuracion_gimnasio"] = cfg
+
+        for cliente in merged.get("clientes", []):
+            self._ensure_membership_for_active_client(merged, cliente)
 
         return merged
 
@@ -212,6 +247,9 @@ class GymService:
         number_match = re.search(r"(\d+)$", raw_id)
         number = int(number_match.group(1)) if number_match else self._next_usuario_code({"usuario": [row]})
         raw_id = f"SG{prefix}{int(number):03d}"
+        password_hash = str(row.get("password_hash") or "").strip()
+        if not password_hash and row.get("password"):
+            password_hash = hash_password(str(row.get("password") or ""))
         return {
             "id_usuario": raw_id,
             "nombre": nombre,
@@ -220,6 +258,7 @@ class GymService:
             "dni": str(row.get("dni") or "").strip(),
             "rol": rol if rol in {"admin", "trainer", "staff"} else "staff",
             "estado": "ACTIVO",
+            "password_hash": password_hash,
         }
 
     def _load(self) -> dict[str, Any]:
@@ -279,6 +318,14 @@ class GymService:
                 return memb
         return None
 
+    def _latest_membership_for_cliente(self, state: dict[str, Any], id_cliente: int) -> dict[str, Any] | None:
+        memberships = [
+            membership
+            for membership in state.get("membresia", [])
+            if int(membership.get("id_cliente", 0) or 0) == int(id_cliente)
+        ]
+        return sorted(memberships, key=lambda row: int(row.get("id_membresia", 0) or 0), reverse=True)[0] if memberships else None
+
     def get_usuario(self, id_usuario: Any) -> dict[str, Any] | None:
         usuario_id = self._normalize_usuario_id(id_usuario)
         if not usuario_id:
@@ -309,6 +356,7 @@ class GymService:
                 "telefono": row["telefono"],
                 "dni": row["dni"],
                 "rol": row["rol"],
+                "has_password": bool(row.get("password_hash")),
             }
             for row in self.state.get("usuario", [])
         ]
@@ -335,6 +383,13 @@ class GymService:
 
             nombre = str(payload.get("nombre") or "").strip()
             correo = str(payload.get("correo") or "").strip()
+            password = str(payload.get("password") or payload.get("contrasena") or "").strip()
+            idx = next((i for i, row in enumerate(state["usuario"]) if self._normalize_usuario_id(row.get("id_usuario")) == item_id), -1)
+            existing = state["usuario"][idx] if idx >= 0 else {}
+            if idx < 0 and not password:
+                raise ValueError("Ingresa una contraseña para el usuario")
+            if password and len(password) < 6:
+                raise ValueError("La contraseña debe tener al menos 6 caracteres")
             item = {
                 "id_usuario": item_id,
                 "nombre": nombre,
@@ -343,9 +398,9 @@ class GymService:
                 "dni": str(payload.get("dni") or "").strip(),
                 "rol": rol,
                 "estado": "Activo",
+                "password_hash": hash_password(password) if password else str(existing.get("password_hash") or ""),
             }
 
-            idx = next((i for i, row in enumerate(state["usuario"]) if self._normalize_usuario_id(row.get("id_usuario")) == item_id), -1)
             if idx >= 0:
                 state["usuario"][idx] = item
             else:
@@ -376,6 +431,9 @@ class GymService:
         dni = str(row.get("dni") or "").strip()
         plan = str(row.get("plan") or "").strip()
         promocion = str(row.get("promocion") or "").strip()
+        password_hash = str(row.get("password_hash") or "").strip()
+        if not password_hash and row.get("password"):
+            password_hash = hash_password(str(row.get("password") or ""))
         raw_estado = row.get("estado")
         if isinstance(raw_estado, bool):
             estado = "Activo" if raw_estado else "Inactivo"
@@ -398,22 +456,137 @@ class GymService:
             "plan": plan,
             "promocion": promocion,
             "estado": estado.upper() if estado else "ACTIVO",
+            "password_hash": password_hash,
         }
 
-    def clientes_normalized(self) -> list[dict[str, Any]]:
-        return [
-            {
-                "id_usuario": row["id_usuario"],
-                "nombre": row["nombre"],
-                "correo": row["correo"],
-                "telefono": row["telefono"],
-                "dni": row["dni"],
-                "plan": row["plan"],
-                "promocion": row["promocion"],
-                "estado": row["estado"],
-            }
-            for row in self.state.get("clientes", [])
+    def _plan_duration_days(self, plan_name: str) -> int:
+        normalized = str(plan_name or "").strip().upper()
+        match = re.search(r"(\d+)", normalized)
+        amount = int(match.group(1)) if match else 1
+
+        if "ANUAL" in normalized or "AÑO" in normalized:
+            return 365 * amount
+        if "MES" in normalized:
+            return 30 * amount
+        return 30
+
+    def _next_int_id_in_state(self, state: dict[str, Any], table: str, key: str) -> int:
+        rows = state.setdefault(table, [])
+        if not rows:
+            return 1
+        return max(int(row.get(key, 0) or 0) for row in rows) + 1
+
+    def _ensure_default_membership_plans(self, state: dict[str, Any]) -> None:
+        defaults = [
+            {"nombre_plan": "MENSUAL", "duracion": "30 dias", "precio": 80},
+            {"nombre_plan": "3 MESES", "duracion": "90 dias", "precio": 220},
+            {"nombre_plan": "ANUAL", "duracion": "365 dias", "precio": 780},
         ]
+        state.setdefault("planes_membresia", [])
+
+        for default in defaults:
+            normalized_name = default["nombre_plan"].upper()
+            existing = next(
+                (
+                    plan
+                    for plan in state["planes_membresia"]
+                    if str(plan.get("nombre_plan") or "").strip().upper() == normalized_name
+                ),
+                None,
+            )
+            if existing:
+                existing.setdefault("duracion", default["duracion"])
+                existing.setdefault("precio", default["precio"])
+                existing.setdefault("activo", True)
+                continue
+
+            state["planes_membresia"].append(
+                {
+                    "id_pm": self._next_int_id_in_state(state, "planes_membresia", "id_pm"),
+                    "nombre_plan": default["nombre_plan"],
+                    "duracion": default["duracion"],
+                    "precio": default["precio"],
+                    "activo": True,
+                }
+            )
+
+    def _ensure_plan_for_client(self, state: dict[str, Any], plan_name: str) -> dict[str, Any]:
+        state.setdefault("planes_membresia", [])
+        normalized = str(plan_name or "MENSUAL").strip().upper() or "MENSUAL"
+        existing = next(
+            (
+                plan
+                for plan in state["planes_membresia"]
+                if str(plan.get("nombre_plan") or "").strip().upper() == normalized
+            ),
+            None,
+        )
+        if existing:
+            return existing
+
+        days = self._plan_duration_days(normalized)
+        plan = {
+            "id_pm": self._next_int_id_in_state(state, "planes_membresia", "id_pm"),
+            "nombre_plan": normalized,
+            "duracion": f"{days} dias",
+            "precio": 0,
+            "activo": True,
+        }
+        state["planes_membresia"].insert(0, plan)
+        return plan
+
+    def _ensure_membership_for_active_client(self, state: dict[str, Any], cliente: dict[str, Any]) -> dict[str, Any] | None:
+        id_cliente = int(cliente.get("id_cliente", 0) or 0)
+        if not id_cliente:
+            return None
+
+        estado = str(cliente.get("estado") or "").strip().upper()
+        if estado not in {"ACTIVO", "ACTIVA"}:
+            return None
+
+        current = self._active_membership_for_cliente(state, id_cliente)
+        if current:
+            return current
+
+        plan = self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
+        start = _today_iso()
+        end = (datetime.fromisoformat(start) + timedelta(days=self._plan_duration_days(plan.get("nombre_plan", "MENSUAL")))).date().isoformat()
+        membership = {
+            "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),
+            "fecha_inicio": start,
+            "fecha_fin": end,
+            "estado": "Activa",
+            "id_cliente": id_cliente,
+            "id_pm": int(plan.get("id_pm")),
+        }
+        state.setdefault("membresia", []).insert(0, membership)
+        return membership
+
+    def clientes_normalized(self) -> list[dict[str, Any]]:
+        result = []
+        for row in self.state.get("clientes", []):
+            membership = self._latest_membership_for_cliente(self.state, int(row.get("id_cliente", 0) or 0)) or {}
+            result.append(
+                {
+                    "id_cliente": row["id_cliente"],
+                    "id_usuario": row["id_usuario"],
+                    "nombre": row["nombre"],
+                    "correo": row["correo"],
+                    "telefono": row["telefono"],
+                    "dni": row["dni"],
+                    "plan": row["plan"],
+                    "promocion": row["promocion"],
+                    "estado": row["estado"],
+                    "id_membresia": membership.get("id_membresia"),
+                    "membership_status": membership.get("estado") or row["estado"],
+                    "membership_start": membership.get("fecha_inicio", ""),
+                    "membership_end": membership.get("fecha_fin", ""),
+                    "payment_status": membership.get("estado_pago", ""),
+                    "payment_reference": membership.get("referencia_pago", ""),
+                    "has_password": bool(row.get("password_hash")),
+                }
+            )
+        return result
 
     def upsert_cliente(self, payload: dict[str, Any]) -> dict[str, Any]:
         def _fn(state: dict[str, Any]):
@@ -460,10 +633,18 @@ class GymService:
             }
 
             idx = next((i for i, row in enumerate(state["clientes"]) if int(row.get("id_cliente", 0)) == int(item_id)), -1)
+            existing = state["clientes"][idx] if idx >= 0 else {}
+            password = str(payload.get("password") or payload.get("contrasena") or "").strip()
+            if idx < 0 and not password:
+                raise ValueError("Ingresa una contraseña para el cliente")
+            if password and len(password) < 6:
+                raise ValueError("La contraseña debe tener al menos 6 caracteres")
+            item["password_hash"] = hash_password(password) if password else str(existing.get("password_hash") or "")
             if idx >= 0:
                 state["clientes"][idx] = item
             else:
                 state["clientes"].insert(0, item)
+            self._ensure_membership_for_active_client(state, item)
             return item
 
         return self._mutate(_fn)
@@ -475,7 +656,27 @@ class GymService:
         return next((c for c in self.state["clientes"] if str(c.get("dni", "")) == str(dni)), None)
 
     def get_cliente_by_email(self, email: str) -> dict[str, Any] | None:
-        return next((c for c in self.state["clientes"] if str(c.get("email", "")).lower() == email.lower()), None)
+        normalized = str(email or "").strip().lower()
+        return next(
+            (
+                c
+                for c in self.state["clientes"]
+                if str(c.get("correo") or c.get("email") or "").strip().lower() == normalized
+            ),
+            None,
+        )
+
+    def authenticate_usuario_password(self, correo: str, password: str) -> dict[str, Any] | None:
+        usuario = self.get_usuario_by_email(correo)
+        if not usuario or not verify_password(password, str(usuario.get("password_hash") or "")):
+            return None
+        return usuario
+
+    def authenticate_cliente_password(self, correo: str, password: str) -> dict[str, Any] | None:
+        cliente = self.get_cliente_by_email(correo)
+        if not cliente or not verify_password(password, str(cliente.get("password_hash") or "")):
+            return None
+        return cliente
 
     def delete_cliente(self, id_cliente: int) -> None:
         def _fn(state: dict[str, Any]):
@@ -504,7 +705,7 @@ class GymService:
 
             state["clientes"] = [c for c in state["clientes"] if not matches_id(c.get("id_cliente"))]
             state["membresia"] = [m for m in state["membresia"] if not matches_id(m.get("id_cliente"))]
-            state["asistencia"] = [a for a in state["asistencia"] if not matches_id(a.get("id_cliente") or a.get("id_cliente_uid") or a.get("id_cliente"))]
+            state["asistencia"] = [a for a in state["asistencia"] if not matches_id(a.get("id_cliente_num") or a.get("id_cliente") or a.get("id_cliente_uid"))]
             state["horario"] = [h for h in state["horario"] if not matches_id(h.get("id_cliente"))]
             state["tickets_atencion"] = [t for t in state["tickets_atencion"] if not matches_id(t.get("id_cliente"))]
 
@@ -597,6 +798,110 @@ class GymService:
         )
         return {"cliente": cliente, "membresia": membresia}
 
+    def registrar_cliente_publico(self, payload: dict[str, Any]) -> dict[str, Any]:
+        nombre = str(payload.get("nombre") or payload.get("google_name") or "").strip()
+        correo = str(payload.get("correo") or payload.get("google_email") or "").strip().lower()
+        telefono = str(payload.get("telefono") or "").strip()
+        dni = str(payload.get("dni") or "").strip()
+        password = str(payload.get("password") or payload.get("contrasena") or "").strip()
+        plan_name = str(payload.get("plan") or "MENSUAL").strip().upper()
+
+        if not nombre:
+            raise ValueError("Ingresa tu nombre")
+        if not correo or "@" not in correo:
+            raise ValueError("Ingresa un correo valido")
+        if not dni:
+            raise ValueError("Ingresa tu DNI")
+        if len(password) < 6:
+            raise ValueError("La contraseña debe tener al menos 6 caracteres")
+        if self.get_cliente_by_dni(dni):
+            raise ValueError("Ya existe un cliente registrado con ese DNI")
+        if self.get_cliente_by_email(correo):
+            raise ValueError("Ya existe un cliente registrado con ese correo")
+
+        def _fn(state: dict[str, Any]):
+            plan = self._ensure_plan_for_client(state, plan_name)
+            id_cliente = self._next_int_id_in_state(state, "clientes", "id_cliente")
+            cliente = {
+                "id_cliente": id_cliente,
+                "id_usuario": f"SGCLI{id_cliente:03d}",
+                "nombre": nombre,
+                "correo": correo,
+                "telefono": telefono,
+                "dni": dni,
+                "plan": plan_name,
+                "promocion": str(payload.get("promocion") or "SIN PROMOCION").strip() or "SIN PROMOCION",
+                "estado": "PENDIENTE_PAGO",
+                "password_hash": hash_password(password),
+            }
+            membresia = {
+                "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),
+                "fecha_inicio": "",
+                "fecha_fin": "",
+                "estado": "PENDIENTE_PAGO",
+                "id_cliente": id_cliente,
+                "id_pm": int(plan.get("id_pm")),
+                "estado_pago": "PENDIENTE",
+                "metodo_pago": str(payload.get("metodo_pago") or "pasarela"),
+                "referencia_pago": str(payload.get("referencia_pago") or f"PAY-{id_cliente:03d}"),
+            }
+            state["clientes"].insert(0, cliente)
+            state["membresia"].insert(0, membresia)
+            return {"cliente": cliente, "membresia": membresia, "plan": plan}
+
+        return self._mutate(_fn)
+
+    def confirmar_pago_cliente_publico(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
+        id_cliente = int(id_cliente)
+
+        def _fn(state: dict[str, Any]):
+            cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            membresia = self._latest_membership_for_cliente(state, id_cliente)
+            if not membresia:
+                raise ValueError("Membresia no encontrada")
+            cliente["estado"] = "EN_TRAMITE"
+            membresia["estado"] = "EN_TRAMITE"
+            membresia["estado_pago"] = "PAGADO"
+            membresia["metodo_pago"] = str(payload.get("metodo_pago") or membresia.get("metodo_pago") or "pasarela")
+            membresia["referencia_pago"] = str(payload.get("referencia_pago") or membresia.get("referencia_pago") or f"PAY-{id_cliente:03d}")
+            membresia["fecha_pago"] = _today_iso()
+            return {"cliente": cliente, "membresia": membresia}
+
+        return self._mutate(_fn)
+
+    def activar_membresia_cliente(self, id_cliente: int) -> dict[str, Any]:
+        id_cliente = int(id_cliente)
+
+        def _fn(state: dict[str, Any]):
+            cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+
+            membresia = self._latest_membership_for_cliente(state, id_cliente)
+            if not membresia:
+                plan = self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
+                membresia = {
+                    "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),
+                    "id_cliente": id_cliente,
+                    "id_pm": int(plan.get("id_pm")),
+                }
+                state["membresia"].insert(0, membresia)
+            else:
+                plan = self.get_plan_membresia(int(membresia.get("id_pm", 0) or 0)) or self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
+
+            start = _today_iso()
+            end = (datetime.fromisoformat(start) + timedelta(days=self._plan_duration_days(plan.get("nombre_plan", cliente.get("plan", "MENSUAL"))))).date().isoformat()
+            cliente["estado"] = "ACTIVO"
+            membresia["estado"] = "Activa"
+            membresia["fecha_inicio"] = start
+            membresia["fecha_fin"] = end
+            membresia["estado_pago"] = membresia.get("estado_pago") or "PAGADO"
+            return {"cliente": cliente, "membresia": membresia}
+
+        return self._mutate(_fn)
+
     def asistencia(self) -> list[dict[str, Any]]:
         return self.state["asistencia"]
 
@@ -615,6 +920,171 @@ class GymService:
             return int(raw_id_cliente)
         except Exception:
             return 0
+
+    def _attendance_hour_key(self, hora: str) -> str:
+        value = str(hora or "").strip().lower()
+        if not value:
+            return "00"
+
+        value = value.replace("a. m.", "am").replace("p. m.", "pm")
+        value = value.replace("a.m.", "am").replace("p.m.", "pm")
+        value = value.replace("a. m", "am").replace("p. m", "pm")
+        match = re.search(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", value)
+        if not match:
+            return value[:2]
+
+        hour = int(match.group(1))
+        suffix = match.group(3)
+        if suffix == "pm" and hour < 12:
+            hour += 12
+        elif suffix == "am" and hour == 12:
+            hour = 0
+
+        return f"{hour % 24:02d}"
+
+    def _time_to_minutes(self, hora: str) -> int:
+        value = str(hora or "").strip().lower()
+        value = value.replace("a. m.", "am").replace("p. m.", "pm")
+        value = value.replace("a.m.", "am").replace("p.m.", "pm")
+        value = value.replace("a. m", "am").replace("p. m", "pm")
+        match = re.search(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", value)
+        if not match:
+            raise ValueError("Hora invalida")
+
+        hour = int(match.group(1))
+        minute = int(match.group(2) or 0)
+        suffix = match.group(3)
+        if suffix == "pm" and hour < 12:
+            hour += 12
+        elif suffix == "am" and hour == 12:
+            hour = 0
+        if hour > 23 or minute > 59:
+            raise ValueError("Hora invalida")
+        return hour * 60 + minute
+
+    def _date_day_name(self, fecha: str) -> str:
+        names = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+        try:
+            return names[datetime.fromisoformat(str(fecha)).weekday()]
+        except Exception:
+            return ""
+
+    def _normalize_day(self, value: Any) -> str:
+        normalized = str(value or "").strip().lower()
+        return (
+            normalized.replace("miércoles", "miercoles")
+            .replace("sábado", "sabado")
+            .replace("á", "a")
+            .replace("é", "e")
+            .replace("í", "i")
+            .replace("ó", "o")
+            .replace("ú", "u")
+        )
+
+    def _day_code(self, day: str) -> str:
+        return {
+            "lunes": "LUN",
+            "martes": "MAR",
+            "miercoles": "MIE",
+            "jueves": "JUE",
+            "viernes": "VIE",
+            "sabado": "SAB",
+            "domingo": "DOM",
+        }.get(self._normalize_day(day), str(day or "DIA")[:3].upper())
+
+    def _normalize_horarios_servicio(self, rows: Any) -> list[dict[str, Any]]:
+        allowed = {"fitness", "musculacion", "cardio", "baile"}
+        normalized: list[dict[str, Any]] = []
+        used_ids: set[int] = set()
+
+        def next_id() -> int:
+            current = 1
+            while current in used_ids:
+                current += 1
+            used_ids.add(current)
+            return current
+
+        for row in rows if isinstance(rows, list) else []:
+            if not isinstance(row, dict):
+                continue
+            servicio = str(row.get("servicio") or "").strip().lower()
+            if servicio not in allowed:
+                continue
+
+            raw_id = int(row.get("id_horario_servicio", 0) or 0)
+            if raw_id <= 0 or raw_id in used_ids:
+                raw_id = next_id()
+            else:
+                used_ids.add(raw_id)
+
+            days = [self._normalize_day(day) for day in row.get("dias", []) if self._normalize_day(day)]
+            if not days:
+                days = [self._normalize_day(row.get("dia")) or "lunes"]
+
+            for index, day in enumerate(days):
+                item_id = raw_id if index == 0 else next_id()
+                cupos = max(1, int(row.get("cupos") or row.get("capacidad") or row.get("capacidad_maxima") or 10))
+                normalized.append(
+                    {
+                        "id_horario_servicio": item_id,
+                        "servicio": servicio,
+                        "codigo_dia": str(row.get("codigo_dia") or self._day_code(day)).strip().upper(),
+                        "dia": day,
+                        "hora_inicio": str(row.get("hora_inicio") or "06:00").strip(),
+                        "hora_fin": str(row.get("hora_fin") or "22:00").strip(),
+                        "cupos": cupos,
+                        "cupos_usados": max(0, int(row.get("cupos_usados") or 0)),
+                        "activo": bool(row.get("activo", True)),
+                    }
+                )
+
+        if not normalized:
+            normalized = [dict(row) for row in self._seed()["horarios_servicio"]]
+
+        return sorted(normalized, key=lambda row: (str(row.get("dia")), str(row.get("hora_inicio")), str(row.get("servicio"))))
+
+    def _normalize_matricula_horario(self, row: dict[str, Any], fallback_index: int) -> dict[str, Any]:
+        return {
+            "id_matricula": int(row.get("id_matricula", 0) or fallback_index),
+            "id_cliente": int(row.get("id_cliente", 0) or 0),
+            "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
+            "fecha_matricula": str(row.get("fecha_matricula") or _today_iso()),
+            "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
+        }
+
+    def _recount_schedule_cupos(self, state: dict[str, Any]) -> None:
+        counts: dict[int, int] = {}
+        for enrollment in state.get("matriculas_horario", []):
+            if str(enrollment.get("estado") or "").upper() != "ACTIVA":
+                continue
+            schedule_id = int(enrollment.get("id_horario_servicio", 0) or 0)
+            counts[schedule_id] = counts.get(schedule_id, 0) + 1
+
+        for schedule in state.get("horarios_servicio", []):
+            schedule_id = int(schedule.get("id_horario_servicio", 0) or 0)
+            schedule["cupos_usados"] = counts.get(schedule_id, 0)
+
+    def _validate_service_schedule(self, state: dict[str, Any], servicio: str, fecha: str, hora: str) -> None:
+        servicio = str(servicio or "fitness").strip().lower()
+        schedules = [row for row in state.get("horarios_servicio", []) if row.get("servicio") == servicio and bool(row.get("activo", True))]
+        if not schedules:
+            return
+
+        day_name = self._date_day_name(fecha)
+        day_schedules = [row for row in schedules if self._normalize_day(row.get("dia")) == day_name]
+        if day_name and not day_schedules:
+            raise ValueError(f"El servicio {servicio} no permite registros los {day_name}")
+
+        current = self._time_to_minutes(hora)
+        for schedule in day_schedules or schedules:
+            start = self._time_to_minutes(schedule.get("hora_inicio", "00:00"))
+            end = self._time_to_minutes(schedule.get("hora_fin", "23:59"))
+            in_range = start <= current <= end if start <= end else current >= start or current <= end
+            if in_range:
+                return
+
+        ranges = ", ".join(f"{row.get('hora_inicio')}-{row.get('hora_fin')}" for row in day_schedules or schedules)
+        raise ValueError(f"El servicio {servicio} solo registra en estos horarios: {ranges}")
 
     def _validate_attendance_capacity(self, state: dict[str, Any], fecha: str, hora: str, exclude_id: int | None = None) -> None:
         cfg = state.get("configuracion_gimnasio", {}) or {}
@@ -647,6 +1117,7 @@ class GymService:
             membresia = self._active_membership_for_cliente(state, id_cliente)
             if not membresia:
                 raise ValueError("Cliente sin membresía activa")
+            self._validate_service_schedule(state, servicio, fecha, hora)
             self._validate_attendance_capacity(state, fecha, hora)
             client_record = self.get_cliente(id_cliente) or {}
             uid_value = str(client_record.get("id_usuario") or f"cliente-{id_cliente}")
@@ -662,6 +1133,111 @@ class GymService:
             }
             state["asistencia"].insert(0, item)
             return item
+
+        return self._mutate(_fn)
+
+    def _resolve_cliente_for_attendance(self, payload: dict[str, Any]) -> int:
+        if payload.get("dni"):
+            cliente = self.get_cliente_by_dni(str(payload.get("dni")).strip())
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            return int(cliente["id_cliente"])
+        return self._parse_cliente_id(payload.get("id_cliente"))
+
+    def registrar_entrada_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
+        id_matricula = int(payload.get("id_matricula", 0) or 0)
+        id_horario = int(payload.get("id_horario_servicio", 0) or 0)
+        id_cliente = self._resolve_cliente_for_attendance(payload) if not id_matricula else 0
+        fecha = str(payload.get("fecha") or "").strip() or _today_iso()
+        hora_entrada = str(payload.get("hora_entrada") or "").strip() or _now_time()
+        id_usuario_registra = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
+
+        def _fn(state: dict[str, Any]):
+            enrollment = None
+            if id_matricula:
+                enrollment = next(
+                    (
+                        row
+                        for row in state.get("matriculas_horario", [])
+                        if int(row.get("id_matricula", 0) or 0) == id_matricula and str(row.get("estado") or "").upper() == "ACTIVA"
+                    ),
+                    None,
+                )
+            else:
+                enrollment = next(
+                    (
+                        row
+                        for row in state.get("matriculas_horario", [])
+                        if int(row.get("id_cliente", 0) or 0) == id_cliente
+                        and int(row.get("id_horario_servicio", 0) or 0) == id_horario
+                        and str(row.get("estado") or "").upper() == "ACTIVA"
+                    ),
+                    None,
+                )
+            if not enrollment:
+                raise ValueError("El cliente no tiene matricula activa en ese horario")
+
+            resolved_cliente = int(enrollment.get("id_cliente", 0) or 0)
+            membresia = self._active_membership_for_cliente(state, resolved_cliente)
+            if not membresia:
+                raise ValueError("Cliente sin membresia activa")
+
+            schedule = next(
+                (
+                    row
+                    for row in state.get("horarios_servicio", [])
+                    if int(row.get("id_horario_servicio", 0) or 0) == int(enrollment.get("id_horario_servicio", 0) or 0)
+                ),
+                None,
+            )
+            if not schedule:
+                raise ValueError("Horario no encontrado")
+            existing = next(
+                (
+                    row
+                    for row in state.get("asistencia", [])
+                    if int(row.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
+                    and str(row.get("fecha") or "") == fecha
+                ),
+                None,
+            )
+            if existing:
+                existing["hora_entrada"] = existing.get("hora_entrada") or hora_entrada
+                existing["hora"] = existing.get("hora") or existing["hora_entrada"]
+                return existing
+
+            cliente = self.get_cliente(resolved_cliente) or {}
+            item = {
+                "id_asistencia": self._next_int_id("asistencia", "id_asistencia"),
+                "id_cliente": str(cliente.get("id_usuario") or f"cliente-{resolved_cliente}"),
+                "id_cliente_num": resolved_cliente,
+                "fecha": fecha,
+                "hora": hora_entrada,
+                "hora_entrada": hora_entrada,
+                "hora_salida": "",
+                "servicio": str(schedule.get("servicio") or "fitness"),
+                "id_usuario_registra": id_usuario_registra,
+                "id_membresia": membresia.get("id_membresia"),
+                "id_matricula": int(enrollment.get("id_matricula")),
+                "id_horario_servicio": int(schedule.get("id_horario_servicio")),
+            }
+            state["asistencia"].insert(0, item)
+            return item
+
+        return self._mutate(_fn)
+
+    def registrar_salida_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
+        id_asistencia = int(payload.get("id_asistencia", 0) or 0)
+        hora_salida = str(payload.get("hora_salida") or "").strip() or _now_time()
+
+        def _fn(state: dict[str, Any]):
+            asistencia = next((row for row in state.get("asistencia", []) if int(row.get("id_asistencia", 0) or 0) == id_asistencia), None)
+            if not asistencia:
+                raise ValueError("Asistencia no encontrada")
+            if not asistencia.get("hora_entrada"):
+                asistencia["hora_entrada"] = asistencia.get("hora") or _now_time()
+            asistencia["hora_salida"] = hora_salida
+            return asistencia
 
         return self._mutate(_fn)
 
@@ -689,6 +1265,7 @@ class GymService:
                 current["servicio"] = servicio
             if payload.get("id_usuario"):
                 current["id_usuario_registra"] = self._normalize_usuario_id(payload.get("id_usuario"))
+            self._validate_service_schedule(state, current.get("servicio", "fitness"), current.get("fecha", _today_iso()), current.get("hora", _now_time()))
             self._validate_attendance_capacity(state, current.get("fecha", _today_iso()), current.get("hora", _now_time()), exclude_id=id_asistencia)
             state["asistencia"][idx] = current
             return current
@@ -913,6 +1490,191 @@ class GymService:
             return cfg
 
         return self._mutate(_fn)
+
+    def horarios_servicio(self) -> list[dict[str, Any]]:
+        return self.state.get("horarios_servicio", [])
+
+    def get_horario_servicio(self, id_horario_servicio: int) -> dict[str, Any] | None:
+        return next(
+            (
+                schedule
+                for schedule in self.state.get("horarios_servicio", [])
+                if int(schedule.get("id_horario_servicio", 0) or 0) == int(id_horario_servicio)
+            ),
+            None,
+        )
+
+    def upsert_horario_servicio(self, payload: dict[str, Any]) -> dict[str, Any]:
+        servicio = str(payload.get("servicio") or "").strip().lower()
+        if servicio not in {"fitness", "musculacion", "cardio", "baile"}:
+            raise ValueError("Servicio invalido")
+
+        hora_inicio = str(payload.get("hora_inicio") or "").strip()
+        hora_fin = str(payload.get("hora_fin") or "").strip()
+        self._time_to_minutes(hora_inicio)
+        self._time_to_minutes(hora_fin)
+        dia = self._normalize_day(payload.get("dia") or (payload.get("dias") or [""])[0])
+        if not dia:
+            raise ValueError("Selecciona un dia")
+
+        item = {
+            "id_horario_servicio": int(payload.get("id_horario_servicio", 0) or 0),
+            "servicio": servicio,
+            "hora_inicio": hora_inicio,
+            "hora_fin": hora_fin,
+            "codigo_dia": str(payload.get("codigo_dia") or self._day_code(dia)).strip().upper(),
+            "dia": dia,
+            "cupos": max(1, int(payload.get("cupos") or 10)),
+            "cupos_usados": 0,
+            "activo": bool(payload.get("activo", True)),
+        }
+
+        def _fn(state: dict[str, Any]):
+            state["horarios_servicio"] = self._normalize_horarios_servicio(state.get("horarios_servicio", []))
+            if item["id_horario_servicio"] <= 0:
+                item["id_horario_servicio"] = self._next_int_id_in_state(state, "horarios_servicio", "id_horario_servicio")
+            idx = next(
+                (
+                    i
+                    for i, row in enumerate(state["horarios_servicio"])
+                    if int(row.get("id_horario_servicio", 0) or 0) == int(item["id_horario_servicio"])
+                ),
+                -1,
+            )
+            current_used = int(state["horarios_servicio"][idx].get("cupos_usados", 0) or 0) if idx >= 0 else 0
+            if current_used > item["cupos"]:
+                raise ValueError("No puedes reducir cupos por debajo de los matriculados")
+            item["cupos_usados"] = current_used
+            if idx >= 0:
+                state["horarios_servicio"][idx] = item
+            else:
+                state["horarios_servicio"].append(item)
+            self._recount_schedule_cupos(state)
+            return item
+
+        return self._mutate(_fn)
+
+    def delete_horario_servicio(self, id_horario_servicio: int) -> None:
+        def _fn(state: dict[str, Any]):
+            schedule_id = int(id_horario_servicio)
+            if any(
+                int(row.get("id_horario_servicio", 0) or 0) == schedule_id and str(row.get("estado") or "").upper() == "ACTIVA"
+                for row in state.get("matriculas_horario", [])
+            ):
+                raise ValueError("No puedes eliminar un horario con matriculas activas")
+            original = len(state.get("horarios_servicio", []))
+            state["horarios_servicio"] = [
+                row for row in state.get("horarios_servicio", []) if int(row.get("id_horario_servicio", 0) or 0) != schedule_id
+            ]
+            if len(state["horarios_servicio"]) == original:
+                raise ValueError("Horario no encontrado")
+
+        self._mutate(_fn)
+
+    def matriculas_horario(self, id_cliente: int | None = None, dni: str | None = None) -> list[dict[str, Any]]:
+        resolved_id = int(id_cliente or 0)
+        if dni:
+            cliente = self.get_cliente_by_dni(str(dni).strip())
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            resolved_id = int(cliente.get("id_cliente"))
+
+        result = []
+        for enrollment in self.state.get("matriculas_horario", []):
+            if resolved_id and int(enrollment.get("id_cliente", 0) or 0) != resolved_id:
+                continue
+            schedule = self.get_horario_servicio(int(enrollment.get("id_horario_servicio", 0) or 0)) or {}
+            cliente = self.get_cliente(int(enrollment.get("id_cliente", 0) or 0)) or {}
+            result.append(
+                {
+                    **enrollment,
+                    "cliente_nombre": cliente.get("nombre", ""),
+                    "cliente_dni": cliente.get("dni", ""),
+                    "cliente_codigo": cliente.get("id_usuario", ""),
+                    "servicio": schedule.get("servicio", ""),
+                    "codigo_dia": schedule.get("codigo_dia", ""),
+                    "dia": schedule.get("dia", ""),
+                    "hora_inicio": schedule.get("hora_inicio", ""),
+                    "hora_fin": schedule.get("hora_fin", ""),
+                    "asistencias": [
+                        asistencia
+                        for asistencia in self.state.get("asistencia", [])
+                        if int(asistencia.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
+                    ],
+                }
+            )
+        return sorted(result, key=lambda row: (str(row.get("dia")), str(row.get("hora_inicio"))))
+
+    def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if payload.get("dni"):
+            cliente = self.get_cliente_by_dni(str(payload.get("dni")).strip())
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            id_cliente = int(cliente["id_cliente"])
+        else:
+            id_cliente = self._parse_cliente_id(payload.get("id_cliente"))
+
+        id_horario = int(payload.get("id_horario_servicio", 0) or 0)
+
+        def _fn(state: dict[str, Any]):
+            cliente = self.get_cliente(id_cliente)
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            if not self._active_membership_for_cliente(state, id_cliente):
+                raise ValueError("Cliente sin membresia activa")
+            schedule = next(
+                (
+                    row
+                    for row in state.get("horarios_servicio", [])
+                    if int(row.get("id_horario_servicio", 0) or 0) == id_horario
+                ),
+                None,
+            )
+            if not schedule or not bool(schedule.get("activo", True)):
+                raise ValueError("Horario no disponible")
+            duplicate = next(
+                (
+                    row
+                    for row in state.get("matriculas_horario", [])
+                    if int(row.get("id_cliente", 0) or 0) == id_cliente
+                    and int(row.get("id_horario_servicio", 0) or 0) == id_horario
+                    and str(row.get("estado") or "").upper() == "ACTIVA"
+                ),
+                None,
+            )
+            if duplicate:
+                raise ValueError("El cliente ya esta matriculado en este horario")
+            used = len(
+                [
+                    row
+                    for row in state.get("matriculas_horario", [])
+                    if int(row.get("id_horario_servicio", 0) or 0) == id_horario and str(row.get("estado") or "").upper() == "ACTIVA"
+                ]
+            )
+            if used >= int(schedule.get("cupos", 1) or 1):
+                raise ValueError("Horario sin cupos disponibles")
+            enrollment = {
+                "id_matricula": self._next_int_id_in_state(state, "matriculas_horario", "id_matricula"),
+                "id_cliente": id_cliente,
+                "id_horario_servicio": id_horario,
+                "fecha_matricula": _today_iso(),
+                "estado": "ACTIVA",
+            }
+            state.setdefault("matriculas_horario", []).insert(0, enrollment)
+            self._recount_schedule_cupos(state)
+            return self.matriculas_horario(id_cliente=id_cliente)[0]
+
+        return self._mutate(_fn)
+
+    def cancelar_matricula_horario(self, id_matricula: int) -> None:
+        def _fn(state: dict[str, Any]):
+            idx = next((i for i, row in enumerate(state.get("matriculas_horario", [])) if int(row.get("id_matricula", 0) or 0) == int(id_matricula)), -1)
+            if idx < 0:
+                raise ValueError("Matricula no encontrada")
+            state["matriculas_horario"][idx]["estado"] = "CANCELADA"
+            self._recount_schedule_cupos(state)
+
+        self._mutate(_fn)
 
     def summary(self) -> dict[str, Any]:
         total_clientes = len(self.state["clientes"])

@@ -15,7 +15,16 @@ class UsersService:
         return self.gym.usuarios_normalized()
 
     def upsert_user(self, payload: dict[str, Any]) -> dict[str, Any]:
-        return self.gym.upsert_usuario(payload)
+        saved = self.gym.upsert_usuario(payload)
+        return {
+            "id_usuario": saved.get("id_usuario"),
+            "nombre": saved.get("nombre", ""),
+            "correo": saved.get("correo", ""),
+            "telefono": saved.get("telefono", ""),
+            "dni": saved.get("dni", ""),
+            "rol": saved.get("rol", "staff"),
+            "has_password": bool(saved.get("password_hash")),
+        }
 
     def delete_user(self, id_usuario: str) -> None:
         self.gym.delete_usuario(id_usuario)

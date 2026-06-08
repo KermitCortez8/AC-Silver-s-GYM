@@ -11,6 +11,8 @@ class UsuarioInput(BaseModel):
     correo: str = ""
     telefono: str = ""
     dni: str = ""
+    password: str = ""
+    contrasena: str = ""
     rol: Literal["admin", "trainer", "staff"]
 
 
@@ -20,6 +22,8 @@ class ClienteInput(BaseModel):
     correo: str = ""
     telefono: str = ""
     dni: str = ""
+    password: str = ""
+    contrasena: str = ""
     plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
     promocion: str = "SIN PROMOCION"
     estado: str = "ACTIVO"
@@ -47,6 +51,26 @@ class RegistrarClienteMembresiaInput(BaseModel):
     id_pm: int
     fecha_inicio: str
     fecha_fin: str
+
+
+class RegistroPublicoClienteInput(BaseModel):
+    nombre: str = ""
+    correo: str = ""
+    telefono: str = ""
+    dni: str = ""
+    password: str = ""
+    contrasena: str = ""
+    plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
+    promocion: str = "SIN PROMOCION"
+    metodo_pago: str = "pasarela"
+    referencia_pago: str = ""
+    google_email: str = ""
+    google_name: str = ""
+
+
+class PagoPublicoClienteInput(BaseModel):
+    metodo_pago: str = "pasarela"
+    referencia_pago: str = ""
 
 
 class InventarioInput(BaseModel):
@@ -114,12 +138,38 @@ class HorarioInput(BaseModel):
     capacidad_maxima: int = 1
 
 
+class HorarioServicioInput(BaseModel):
+    id_horario_servicio: int | None = None
+    servicio: Literal["fitness", "musculacion", "cardio", "baile"]
+    hora_inicio: str = "06:00"
+    hora_fin: str = "22:00"
+    codigo_dia: str = "LUN"
+    dia: str = "lunes"
+    dias: list[str] = Field(default_factory=list)
+    cupos: int = 10
+    activo: bool = True
+
+
+class MatriculaHorarioInput(BaseModel):
+    id_cliente: str | int | None = None
+    dni: str = ""
+    id_horario_servicio: int
+
+
 class AsistenciaInput(BaseModel):
     id_asistencia: int | None = None
     id_cliente: str | int
     fecha: str = ""
     hora: str = ""
     servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
+    id_usuario: str | int | None = None
+
+
+class AsistenciaUpdateInput(BaseModel):
+    id_cliente: str | int | None = None
+    fecha: str | None = None
+    hora: str | None = None
+    servicio: Literal["fitness", "musculacion", "cardio", "baile"] | None = None
     id_usuario: str | int | None = None
 
 
@@ -137,6 +187,22 @@ class CheckinAsistenciaDniInput(BaseModel):
     fecha: str = ""
     hora: str = ""
     servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
+
+
+class AsistenciaEntradaInput(BaseModel):
+    id_cliente: str | int | None = None
+    dni: str = ""
+    id_matricula: int | None = None
+    id_horario_servicio: int | None = None
+    fecha: str | None = None
+    hora_entrada: str | None = None
+    id_usuario: str | int | None = None
+
+
+class AsistenciaSalidaInput(BaseModel):
+    id_asistencia: int
+    hora_salida: str | None = None
+    id_usuario: str | int | None = None
 
 
 class ConfiguracionGimnasioInput(BaseModel):

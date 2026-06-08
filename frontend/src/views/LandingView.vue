@@ -53,10 +53,10 @@
 
               <div class="mt-8 flex flex-wrap gap-4">
                 <router-link
-                  to="/login"
+                  to="/registro"
                   class="rounded-sm bg-white px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-[#d94b57] transition hover:translate-y-[-1px]"
                 >
-                  Reservar ahora
+                  Registrarme
                 </router-link>
                 <a
                   href="#servicios"
@@ -173,7 +173,7 @@
             </div>
 
             <div class="mt-6 grid gap-4">
-              <div v-for="plan in plans" :key="plan.name" class="rounded-[1.5rem] border border-slate-100 bg-[#faf7f2] p-5">
+              <router-link v-for="plan in plans" :key="plan.name" :to="{ path: '/registro', query: { plan: plan.id } }" class="rounded-[1.5rem] border border-slate-100 bg-[#faf7f2] p-5 transition hover:border-[#d94b57]/40">
                 <div class="flex items-start justify-between gap-4">
                   <div>
                     <p class="text-lg font-bold text-slate-950">{{ plan.name }}</p>
@@ -184,7 +184,7 @@
                 <div class="mt-4 flex flex-wrap gap-2">
                   <span v-for="tag in plan.tags" :key="tag" class="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{{ tag }}</span>
                 </div>
-              </div>
+              </router-link>
             </div>
 
             <div class="mt-6 grid gap-4 sm:grid-cols-3">
@@ -336,22 +336,25 @@ const features = [
 
 const plans = [
   {
+    id: 'MENSUAL',
     name: 'Mensual',
     summary: 'Ideal para entrenar de forma constante.',
-    price: 'S/ 89',
+    price: 'S/ 80',
     tags: ['Acceso completo', 'Sin complicaciones'],
   },
   {
-    name: 'Trimestral',
+    id: '3 MESES',
+    name: '3 meses',
     summary: 'Mejor equilibrio entre compromiso y ahorro.',
-    price: 'S/ 229',
+    price: 'S/ 220',
     tags: ['Ahorro', 'Seguimiento'],
   },
   {
-    name: 'Promoción de ingreso',
-    summary: 'Consulta matrícula y bono de bienvenida.',
-    price: 'S/ 0',
-    tags: ['Nuevo cliente', 'Reserva hoy'],
+    id: 'ANUAL',
+    name: 'Anual',
+    summary: 'Entrena todo el año con el mejor precio.',
+    price: 'S/ 780',
+    tags: ['Completo', 'Mejor valor'],
   },
 ];
 </script>

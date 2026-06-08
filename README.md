@@ -19,8 +19,10 @@ npm run dev
 cd backend
 
 # Instala dependencias
-```
-python -m venv .venv
-source .venv/bin/activate
+
+python -m venv .venv / py -m venv .venv
+source .venv/bin/activate  /  .venv/bin/activate
 pip install -r requirements.txt
 python -m app.main
+```
+

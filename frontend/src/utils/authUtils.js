@@ -48,14 +48,16 @@ export const formatUserData = (googleUserData) => {
   return {
     id: normalizedId,
     id_usuario: googleUserData.id_usuario || normalizedId,
+    id_cliente: googleUserData.id_cliente || null,
     email: normalizedEmail,
     correo: normalizedEmail,
     telefono: googleUserData.telefono || '',
+    dni: googleUserData.dni || '',
     name: googleUserData.name || '',
     picture: googleUserData.picture || '',
     givenName: googleUserData.given_name || '',
     familyName: googleUserData.family_name || '',
-    role: getUserRole(normalizedEmail),
+    role: googleUserData.role || getUserRole(normalizedEmail),
     loginTime: new Date().toISOString(),
   };
 };

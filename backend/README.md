@@ -65,6 +65,8 @@ VITE_AUTH_API_BASE_URL=http://localhost:8000
 - `GET /asistencia`
 - `POST /asistencia/checkin`
 - `POST /asistencia/checkin-dni`
+- `PUT /asistencia/{id_asistencia}`
+- `DELETE /asistencia/{id_asistencia}`
 
 4. Soporte operacional:
 - `GET /gym/tickets`, `POST /gym/tickets`
@@ -88,10 +90,12 @@ VITE_AUTH_API_BASE_URL=http://localhost:8000
 | `/asistencia` | GET | Lista la asistencia registrada. |
 | `/asistencia/checkin` | POST | Marca asistencia usando el id del cliente. |
 | `/asistencia/checkin-dni` | POST | Marca asistencia usando el DNI del cliente. |
+| `/asistencia/{id_asistencia}` | PUT/DELETE | Edita o elimina un registro de asistencia. |
 | `/inventario` | GET/POST | Lista y administra el inventario. |
 | `/inventario/{id_item}` | DELETE | Elimina un ítem del inventario. |
 | `/inventario/movimientos` | GET/POST | Lista y registra movimientos de stock. |
 | `/gym/summary` | GET | Resume métricas, flujos y alertas del gimnasio. |
+| `/gym/horarios-servicio` | GET/POST | Lista y actualiza los horarios permitidos por servicio para asistencia. |
 | `/gym/tickets` | GET/POST | Lista y registra tickets de atención. |
 | `/gym/rutinas` | GET/POST | Lista y administra el catálogo de rutinas. |
 | `/gym/horarios` | GET/POST | Lista y administra horarios. |
@@ -107,6 +111,8 @@ VITE_AUTH_API_BASE_URL=http://localhost:8000
 - Tienda puede vincular productos con items de almacén mediante `id_item` y actualizar unidad/precio de venta.
 - Asistencia ahora guarda `id_asistencia` y permite editar/eliminar registros.
 - Se agregó configuración de capacidad del gimnasio: `GET/POST /api/gym/configuracion`.
+- Se agregó tabla de horarios por servicio: `GET/POST /api/gym/horarios-servicio`.
 - Check-in valida capacidad total y capacidad por hora.
+- Check-in valida que el servicio esté dentro de su horario configurado.
 - Horarios por cliente validan cupos mediante `capacidad_maxima`.
 - Planes de membresía ahora tienen CRUD básico en `/api/planes-membresia`.

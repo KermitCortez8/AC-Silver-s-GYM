@@ -5,8 +5,8 @@
       <div class="absolute top-48 left-[-5rem] h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl"></div>
     </div>
 
-    <div class="relative mx-auto flex min-h-screen max-w-[1720px]">
-      <aside class="hidden w-80 flex-col border-r border-white/10 bg-slate-950/70 backdrop-blur-xl xl:flex">
+    <div class="relative flex min-h-screen w-full">
+      <aside class="hidden w-72 flex-col border-r border-white/10 bg-slate-950/70 backdrop-blur-xl 2xl:w-80 xl:flex">
         <div class="border-b border-white/10 p-6">
           <p class="text-xs uppercase tracking-[0.45em] text-cyan-300/80">{{ APP_CONFIG.appName }}</p>
           <h1 class="mt-3 text-3xl font-black leading-none text-white">Gym Operations</h1>
@@ -82,7 +82,7 @@
           </div>
         </header>
 
-        <main class="flex-1 p-4 sm:p-6 xl:p-8">
+        <main class="flex-1 px-4 py-5 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
           <slot />
         </main>
       </div>
@@ -113,6 +113,8 @@ const navigationLinks = computed(() => {
       { label: 'Inicio', to: '/admin/dashboard', icon: '▣' },
       { label: 'Clientes', to: '/admin/clients', icon: '◫' },
       { label: 'Usuarios', to: '/admin/users', icon: '◫' },
+      { label: 'Horarios', to: '/admin/service-schedules', icon: '▣' },
+      { label: 'Matricula', to: '/admin/enrollment', icon: '◫' },
       { label: 'Asistencia', to: '/admin/attendance', icon: '◌' },
       { label: 'Inventario', to: '/admin/inventory', icon: '▤' },
       { label: 'Tienda', to: '/admin/store', icon: '▥' },
@@ -123,6 +125,7 @@ const navigationLinks = computed(() => {
     { label: 'Inicio', to: '/user/dashboard', icon: '▣' },
     { label: 'Tienda', to: '/user/store', icon: '▥' },
     { label: 'Horarios', to: '/user/schedule', icon: '◫' },
+    { label: 'Matricula', to: '/user/enrollment', icon: '▣' },
     { label: 'Mi asistencia', to: '/user/attendance', icon: '◌' },
   ];
 });

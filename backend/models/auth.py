@@ -8,8 +8,10 @@ from pydantic import BaseModel
 class UserProfile(BaseModel):
     id: str
     id_usuario: str = ""
+    id_cliente: int | None = None
     email: str
     telefono: str = ""
+    dni: str = ""
     name: str
     picture: str = ""
     givenName: str = ""
@@ -20,6 +22,11 @@ class UserProfile(BaseModel):
 class AuthGoogleRequest(BaseModel):
     credential: str
     profile: dict[str, Any] | None = None
+
+
+class AuthPasswordRequest(BaseModel):
+    correo: str = ""
+    password: str = ""
 
 
 class AuthResponse(BaseModel):

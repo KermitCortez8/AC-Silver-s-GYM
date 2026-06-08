@@ -5,7 +5,7 @@
       <div class="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-emerald-400/15 blur-3xl"></div>
     </div>
 
-    <div class="relative mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-4 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+    <div class="relative grid min-h-screen w-full items-center gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[1fr_520px] lg:px-12 2xl:px-16">
       <section class="space-y-8">
         <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
           <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
@@ -49,6 +49,44 @@
           {{ googleError }}
         </div>
 
+        <form class="space-y-4" @submit.prevent="handlePasswordLogin">
+          <label class="block space-y-2 text-left">
+            <span class="text-sm font-semibold text-slate-300">Correo</span>
+            <input
+              v-model="passwordForm.correo"
+              type="email"
+              autocomplete="email"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+              placeholder="cliente@correo.com"
+            />
+          </label>
+
+          <label class="block space-y-2 text-left">
+            <span class="text-sm font-semibold text-slate-300">Contrasena</span>
+            <input
+              v-model="passwordForm.password"
+              type="password"
+              autocomplete="current-password"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-300"
+              placeholder="Tu contrasena"
+            />
+          </label>
+
+          <button
+            type="submit"
+            class="w-full rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="processing"
+          >
+            {{ processing ? 'Validando...' : 'Entrar con correo' }}
+          </button>
+        </form>
+
+        <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-slate-500">
+          <span class="h-px flex-1 bg-white/10"></span>
+          Google
+          <span class="h-px flex-1 bg-white/10"></span>
+        </div>
+
         <div class="space-y-4">
           <div ref="googleButtonRef" class="flex min-h-[48px] items-center justify-center"></div>
 
@@ -72,7 +110,11 @@
         </div>
 
         <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-          El backend responde en <span class="text-white">/auth/google</span> y valida la sesión en <span class="text-white">/auth/me</span>.
+          El backend responde en <span class="text-white">/auth/password</span>, <span class="text-white">/auth/google</span> y valida la sesion en <span class="text-white">/auth/me</span>.
+        </div>
+
+        <div class="mt-4 text-center text-sm text-slate-400">
+          <router-link to="/registro" class="font-semibold text-cyan-200 hover:text-cyan-100">Crear cuenta de cliente</router-link>
         </div>
 
         <div class="mt-4 text-center text-xs text-slate-500">
@@ -84,21 +126,25 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { APP_CONFIG } from '../config/appConfig';
 import { GOOGLE_CONFIG } from '../config/googleConfig';
-import { authenticateWithGoogleCredential, createDemoCredentials, loadGoogleIdentityScript } from '../services/authService';
+import { authenticateWithGoogleCredential, authenticateWithPassword, createDemoCredentials, loadGoogleIdentityScript } from '../services/authService';
 
 const router = useRouter();
 const { signIn, initializeAuth, isAuthenticated, isAdmin } = useAuth();
 const googleButtonRef = ref(null);
 const googleError = ref('');
 const processing = ref(false);
+const passwordForm = reactive({
+  correo: '',
+  password: '',
+});
 
 const navigateByRole = (role) => {
-  router.push(role === 'admin' ? '/admin' : '/user');
+  router.push(role === 'user' ? '/user' : '/admin');
 };
 
 const completeLogin = async (credential) => {
@@ -114,6 +160,25 @@ const completeLogin = async (credential) => {
     navigateByRole(result.user.role);
   } catch (error) {
     googleError.value = error?.message || 'No se pudo completar el inicio de sesión';
+  } finally {
+    processing.value = false;
+  }
+};
+
+const handlePasswordLogin = async () => {
+  processing.value = true;
+  googleError.value = '';
+  try {
+    const result = await authenticateWithPassword(passwordForm);
+    await signIn(result.token, {
+      ...result.user,
+      expiresIn: result.expiresIn,
+      role: result.user.role,
+      authSource: result.source,
+    });
+    navigateByRole(result.user.role);
+  } catch (error) {
+    googleError.value = error?.message || 'Correo o contrasena incorrectos';
   } finally {
     processing.value = false;
   }
