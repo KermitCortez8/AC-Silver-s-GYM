@@ -9,8 +9,8 @@ body,
 body {
   margin: 0;
   font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
-  background: #020617;
-  color: #e2e8f0;
+  background: #fff7ed;
+  color: #1f2937;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -29,6 +29,33 @@ select {
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.35);
-  color: #fff;
+  background: rgba(245, 158, 11, 0.35);
+  color: #1f2937;
+}
+
+[class*="bg-cyan-400"] {
+  background-color: #f59e0b !important;
+}
+
+[class*="hover:bg-cyan-300"]:hover {
+  background-color: #fbbf24 !important;
+}
+
+[class*="text-cyan-"],
+[class*="hover:text-cyan-"]:hover {
+  color: #fb923c !important;
+}
+
+[class*="border-cyan-"],
+[class*="focus:border-cyan-"]:focus,
+[class*="hover:border-cyan-"]:hover {
+  border-color: #f97316 !important;
+}
+
+[class*="shadow-cyan-"] {
+  --tw-shadow-color: rgba(249, 115, 22, 0.28) !important;
+}
+
+[class*="accent-cyan-"] {
+  accent-color: #f59e0b;
 }

@@ -23,7 +23,19 @@ class AuthService:
             profile["telefono"] = str(usuario.get("telefono") or "")
             profile["role"] = usuario.get("rol", profile["role"])
         else:
-            profile["role"] = get_user_role(profile["email"])
+            cliente = self.gym_service.get_cliente_by_email(profile["email"])
+            if cliente:
+                profile["id"] = str(cliente.get("id_usuario") or f"SGCLI{int(cliente.get('id_cliente', 0)):03d}")
+                profile["id_usuario"] = str(cliente.get("id_usuario") or profile["id"])
+                profile["id_cliente"] = int(cliente.get("id_cliente", 0) or 0)
+                profile["correo"] = str(cliente.get("correo") or cliente.get("email") or profile["email"])
+                profile["email"] = profile["correo"]
+                profile["telefono"] = str(cliente.get("telefono") or "")
+                profile["dni"] = str(cliente.get("dni") or "")
+                profile["name"] = str(cliente.get("nombre") or profile["name"])
+                profile["role"] = "user"
+            else:
+                profile["role"] = get_user_role(profile["email"])
 
         return AuthResponse(
             user=UserProfile(**profile),

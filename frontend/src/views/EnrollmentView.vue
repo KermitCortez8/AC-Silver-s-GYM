@@ -96,6 +96,7 @@ import { computed, onMounted, ref } from 'vue';
 import ExcelScheduleGrid from '../components/ExcelScheduleGrid.vue';
 import { useAuth } from '../composables/useAuth';
 import { useGymStore } from '../stores/gymStore';
+import { buildClientIdentityFromUser, findClientForUser, resolveClientIdForUser } from '../utils/clientIdentity';
 
 const { user, isAdmin } = useAuth();
 const gymStore = useGymStore();
@@ -109,25 +110,12 @@ const readMaybeRef = (value) => value?.value ?? value;
 const isAdminUser = computed(() => Boolean(readMaybeRef(isAdmin)));
 const authUser = computed(() => readMaybeRef(user) || {});
 const normalizeDni = (value) => String(value || '').replace(/\D/g, '');
-const normalizeCode = (value) => String(value || '').trim().toUpperCase();
-
-const findClientForAuthUser = () => {
-  const currentUser = authUser.value;
-  const idCliente = Number(currentUser.id_cliente || 0);
-  const idUsuario = normalizeCode(currentUser.id_usuario || currentUser.id);
-  const email = String(currentUser.email || currentUser.correo || '').trim().toLowerCase();
-
-  return (
-    gymStore.members.find((member) => Number(member.id_cliente || 0) === idCliente && idCliente > 0) ||
-    gymStore.members.find((member) => [member.id, member.internalCode].map(normalizeCode).includes(idUsuario) && idUsuario) ||
-    gymStore.memberByEmail(email) ||
-    null
-  );
-};
-
-const currentClient = computed(() => (isAdminUser.value ? selectedClient.value : findClientForAuthUser()));
+const authClient = computed(() => findClientForUser(authUser.value, gymStore.members));
+const authClientId = computed(() => Number(authClient.value?.id_cliente || resolveClientIdForUser(authUser.value, gymStore.members) || 0));
+const currentClient = computed(() => (isAdminUser.value ? selectedClient.value : authClient.value || buildClientIdentityFromUser(authUser.value, gymStore.members)));
+const currentClientId = computed(() => Number(currentClient.value?.id_cliente || (isAdminUser.value ? 0 : authClientId.value) || 0));
 const visibleEnrollments = computed(() => {
-  const idCliente = Number(currentClient.value?.id_cliente || 0);
+  const idCliente = currentClientId.value;
   if (!idCliente) return [];
   return gymStore.enrollments.filter((item) => Number(item.id_cliente) === idCliente && item.estado !== 'CANCELADA');
 });
@@ -155,6 +143,9 @@ const refreshAll = async () => {
     await gymStore.refreshServiceSchedulesFromBackend?.();
     await gymStore.refreshEnrollmentsFromBackend?.();
   });
+  if (!isAdminUser.value && authClientId.value) {
+    await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: authClientId.value }).catch(() => {});
+  }
 };
 
 const loadAdminClient = async () => {
@@ -171,17 +162,17 @@ const loadAdminClient = async () => {
 };
 
 const enroll = async (schedule) => {
-  if (!currentClient.value?.id_cliente) {
+  if (!currentClientId.value) {
     feedbackTone.value = 'error';
     feedback.value = isAdminUser.value ? 'Busca primero un cliente por DNI.' : 'No se encontro tu cliente.';
     return;
   }
   try {
     await gymStore.enrollSchedule({
-      id_cliente: currentClient.value.id_cliente,
+      id_cliente: currentClientId.value,
       id_horario_servicio: schedule.id_horario_servicio,
     });
-    await gymStore.refreshEnrollmentsFromBackend({ id_cliente: currentClient.value.id_cliente });
+    await gymStore.refreshEnrollmentsFromBackend({ id_cliente: currentClientId.value });
     feedbackTone.value = 'success';
     feedback.value = 'Matricula registrada.';
   } catch (error) {

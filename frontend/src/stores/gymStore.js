@@ -433,8 +433,10 @@ export const useGymStore = defineStore('gym', () => {
 
   const getPromotionById = (promotionId) => promotions.value.find((promotion) => promotion.id === promotionId) || null;
 
-  const isMembershipActive = (member, referenceDate = todayISO()) =>
-    Boolean(member) && member.status === 'Activa' && (!member.membershipEnd || member.membershipEnd >= referenceDate);
+  const isMembershipActive = (member, referenceDate = todayISO()) => {
+    const status = String(member?.membershipStatus || member?.status || '').trim().toUpperCase();
+    return Boolean(member) && ['ACTIVO', 'ACTIVA'].includes(status) && (!member.membershipEnd || member.membershipEnd >= referenceDate);
+  };
 
   const isMembershipExpiringSoon = (member) => Boolean(member?.membershipEnd) && daysUntilISO(member.membershipEnd) <= MEMBER_ALERT_DAYS;
 
@@ -890,14 +892,26 @@ export const useGymStore = defineStore('gym', () => {
     return slot;
   };
 
+  const normalizeLookupEmail = (value) => String(value || '').trim().toLowerCase();
+
   const userAttendance = (email) => {
-    const member = members.value.find((entry) => entry.email === email);
+    const normalizedEmail = normalizeLookupEmail(email);
+    const member = members.value.find((entry) => normalizeLookupEmail(entry.email || entry.correo) === normalizedEmail);
     if (!member) return [];
 
-    return attendance.value.filter((entry) => entry.memberId === member.id).slice(0, 10);
+    return attendance.value
+      .filter((entry) => {
+        const entryCodes = [entry.memberId, entry.memberCode, entry.id_cliente].map((value) => String(value || '').trim().toUpperCase());
+        const memberCodes = [member.id, member.internalCode, member.memberCode, member.id_cliente].map((value) => String(value || '').trim().toUpperCase());
+        return entryCodes.some((code) => memberCodes.includes(code));
+      })
+      .slice(0, 10);
   };
 
-  const memberByEmail = (email) => members.value.find((member) => member.email === email) || null;
+  const memberByEmail = (email) => {
+    const normalizedEmail = normalizeLookupEmail(email);
+    return members.value.find((member) => normalizeLookupEmail(member.email || member.correo) === normalizedEmail) || null;
+  };
 
   const memberById = (id) => members.value.find((member) => member.id === id) || null;
 
@@ -1552,12 +1566,19 @@ export const useGymStore = defineStore('gym', () => {
     if (!response.ok) {
       throw new Error(await readBackendError(response, 'Error al cargar matriculas'));
     }
-    const list = await response.json();
+    const list = (await response.json()).map((entry) => ({
+      ...entry,
+      estado: String(entry.estado || 'ACTIVA').toUpperCase(),
+    }));
     if (filters.id_cliente || filters.dni) {
       const incomingIds = new Set(list.map((entry) => Number(entry.id_matricula)));
+      const filteredClientId = Number(filters.id_cliente || list[0]?.id_cliente || 0);
       enrollments.value = [
         ...list,
-        ...enrollments.value.filter((entry) => !incomingIds.has(Number(entry.id_matricula))),
+        ...enrollments.value.filter((entry) => {
+          if (filteredClientId && Number(entry.id_cliente) === filteredClientId) return false;
+          return !incomingIds.has(Number(entry.id_matricula));
+        }),
       ];
     } else {
       enrollments.value = list;
@@ -1576,7 +1597,11 @@ export const useGymStore = defineStore('gym', () => {
     if (!response.ok) {
       throw new Error(await readBackendError(response, 'No se pudo matricular en el horario'));
     }
-    const saved = await response.json();
+    const savedResponse = await response.json();
+    const saved = {
+      ...savedResponse,
+      estado: String(savedResponse.estado || 'ACTIVA').toUpperCase(),
+    };
     const index = enrollments.value.findIndex((entry) => Number(entry.id_matricula) === Number(saved.id_matricula));
     if (index >= 0) {
       enrollments.value[index] = saved;

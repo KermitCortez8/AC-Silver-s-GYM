@@ -1,3 +1,4 @@
+import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../stores/authStore';
 
 /**
@@ -6,16 +7,26 @@ import { useAuthStore } from '../stores/authStore';
  */
 export const useAuth = () => {
   const authStore = useAuthStore();
+  const {
+    user,
+    token,
+    isLoading,
+    userRole,
+    isSignout,
+    isInitialized,
+    isAuthenticated,
+    isAdmin,
+  } = storeToRefs(authStore);
 
   return {
-    user: authStore.user,
-    token: authStore.token,
-    isLoading: authStore.isLoading,
-    userRole: authStore.userRole,
-    isSignout: authStore.isSignout,
-    isInitialized: authStore.isInitialized,
-    isAuthenticated: authStore.isAuthenticated,
-    isAdmin: authStore.isAdmin,
+    user,
+    token,
+    isLoading,
+    userRole,
+    isSignout,
+    isInitialized,
+    isAuthenticated,
+    isAdmin,
     initializeAuth: authStore.initializeAuth,
     signIn: authStore.signIn,
     signUp: authStore.signUp,

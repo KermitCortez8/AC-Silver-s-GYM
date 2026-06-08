@@ -122,6 +122,7 @@ import { computed, onMounted } from 'vue';
 import ExcelScheduleGrid from '../components/ExcelScheduleGrid.vue';
 import { useAuth } from '../composables/useAuth';
 import { useGymStore } from '../stores/gymStore';
+import { attendanceBelongsToClient, buildClientIdentityFromUser, findClientForUser, resolveClientIdForUser, weekdayFromISO } from '../utils/clientIdentity';
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Filler, Legend, LinearScale, LineElement, PointElement, Tooltip);
 
@@ -129,8 +130,6 @@ const { user, isAdmin } = useAuth();
 const gymStore = useGymStore();
 
 const normalizeStatus = (value) => String(value || '').trim().toUpperCase();
-const normalizeCode = (value) => String(value || '').trim().toUpperCase();
-const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const dateKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const todayKey = () => dateKey(new Date());
@@ -142,34 +141,39 @@ const attendance = computed(() => gymStore.attendance || []);
 const inventory = computed(() => gymStore.inventory || []);
 
 const currentClient = computed(() => {
-  const currentUser = user.value || {};
-  const idCliente = Number(currentUser.id_cliente || 0);
-  const idUsuario = normalizeCode(currentUser.id_usuario || currentUser.id);
-  const email = normalizeEmail(currentUser.email || currentUser.correo);
-
-  return (
-    members.value.find((member) => Number(member.id_cliente || 0) === idCliente && idCliente > 0) ||
-    members.value.find((member) => [member.id, member.internalCode].map(normalizeCode).includes(idUsuario) && idUsuario) ||
-    gymStore.memberByEmail?.(email) ||
-    null
-  );
+  return findClientForUser(user.value, members.value);
 });
 
+const currentClientId = computed(() => Number(currentClient.value?.id_cliente || resolveClientIdForUser(user.value, members.value) || 0));
+const currentClientIdentity = computed(() => currentClient.value || buildClientIdentityFromUser(user.value, members.value));
+
 const clientEnrollments = computed(() => {
-  const idCliente = Number(currentClient.value?.id_cliente || 0);
+  const idCliente = currentClientId.value;
   if (!idCliente) return [];
   return enrollments.value.filter((item) => Number(item.id_cliente) === idCliente);
 });
 
-const attendanceFor = (item) => attendance.value.find((entry) => Number(entry.idMatricula) === Number(item.id_matricula));
+const attendanceFor = (item) =>
+  attendance.value.find((entry) => {
+    const byEnrollment = Number(entry.idMatricula || 0) === Number(item.id_matricula || 0) && Number(item.id_matricula || 0) > 0;
+    const bySchedule = Number(entry.idHorarioServicio || 0) === Number(item.id_horario_servicio || 0) && Number(item.id_horario_servicio || 0) > 0;
+    const byClientSchedule =
+      attendanceBelongsToClient(entry, currentClientIdentity.value) &&
+      String(entry.service || '').toLowerCase() === String(item.servicio || '').toLowerCase() &&
+      weekdayFromISO(entry.date) === String(item.dia || '').toLowerCase();
+
+    return byEnrollment || bySchedule || byClientSchedule;
+  });
 
 const clientScheduleItems = computed(() =>
   clientEnrollments.value.map((item) => {
     const saved = attendanceFor(item);
     return {
       ...item,
-      cliente_nombre: saved ? 'Guardado' : 'Pendiente',
-      checkLabel: saved ? 'Check guardado' : 'Sin asistencia',
+      cliente_nombre: saved ? 'OK Guardado' : 'Pendiente',
+      checkLabel: saved
+        ? `OK Entrada ${saved.entryTime || saved.time || '--:--'} / Salida ${saved.exitTime || 'pendiente'}`
+        : 'Sin asistencia',
       entryTime: saved?.entryTime || '',
       exitTime: saved?.exitTime || '',
     };
@@ -222,7 +226,7 @@ const serviceCapacityData = computed(() => ({
     {
       label: 'Cupos usados',
       data: services.map((service) => schedules.value.filter((item) => item.servicio === service).reduce((sum, item) => sum + Number(item.cupos_usados || 0), 0)),
-      backgroundColor: '#22d3ee',
+      backgroundColor: '#f97316',
       borderRadius: 8,
     },
     {
@@ -232,7 +236,7 @@ const serviceCapacityData = computed(() => ({
           .filter((item) => item.servicio === service)
           .reduce((sum, item) => sum + Math.max(0, Number(item.cupos || 0) - Number(item.cupos_usados || 0)), 0),
       ),
-      backgroundColor: '#334155',
+      backgroundColor: '#fde68a',
       borderRadius: 8,
     },
   ],
@@ -252,9 +256,9 @@ const attendanceTrendData = computed(() => ({
     {
       label: 'Asistencias',
       data: lastSevenDays.value.map((day) => attendance.value.filter((entry) => String(entry.date || '').slice(0, 10) === day).length),
-      borderColor: '#22d3ee',
-      backgroundColor: 'rgba(34, 211, 238, 0.18)',
-      pointBackgroundColor: '#67e8f9',
+      borderColor: '#f97316',
+      backgroundColor: 'rgba(249, 115, 22, 0.18)',
+      pointBackgroundColor: '#fbbf24',
       tension: 0.35,
       fill: true,
     },
@@ -310,21 +314,28 @@ const operationalAlerts = computed(() => [
 
 const clientAttendanceCount = computed(() => {
   const ids = new Set(clientEnrollments.value.map((item) => Number(item.id_matricula)));
-  return attendance.value.filter((entry) => ids.has(Number(entry.idMatricula))).length;
+  return attendance.value.filter((entry) => ids.has(Number(entry.idMatricula)) || attendanceBelongsToClient(entry, currentClientIdentity.value)).length;
 });
 
 const clientCards = computed(() => {
-  const client = currentClient.value || {};
-  const status = normalizeStatus(client.membershipStatus || client.status || 'SIN DATOS');
+  const client = currentClient.value || currentClientIdentity.value || {};
+  const status = normalizeStatus(client.membershipStatus || client.status || user.value?.membershipStatus || user.value?.estado || 'SIN DATOS');
   return [
     { label: 'Membresia', value: status, detail: client.membershipEnd ? `vence ${client.membershipEnd}` : 'vigencia pendiente', tone: status.startsWith('ACT') ? 'text-emerald-300' : 'text-amber-300' },
-    { label: 'Plan', value: client.plan || 'Sin plan', detail: client.promocion || 'sin promocion', tone: 'text-cyan-300' },
+    { label: 'Plan', value: client.plan || user.value?.plan || 'Sin plan', detail: client.promocion || 'sin promocion', tone: 'text-cyan-300' },
     { label: 'Horarios', value: clientEnrollments.value.length, detail: 'matriculas activas', tone: 'text-sky-300' },
     { label: 'Asistencias', value: clientAttendanceCount.value, detail: 'checks guardados', tone: 'text-fuchsia-300' },
   ];
 });
 
-const refreshDashboard = () => gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar dashboard:', error));
+const refreshDashboard = async () => {
+  await gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar dashboard:', error));
+
+  if (!isAdmin.value && currentClientId.value) {
+    await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value }).catch(() => {});
+    await gymStore.refreshAttendanceFromBackend?.().catch(() => {});
+  }
+};
 
 onMounted(refreshDashboard);
 </script>
