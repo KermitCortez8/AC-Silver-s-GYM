@@ -16,6 +16,8 @@ import ServiceSchedulesView from '../views/ServiceSchedulesView.vue';
 import EnrollmentView from '../views/EnrollmentView.vue';
 import InventoryView from '../views/InventoryView.vue';
 import StoreView from '../views/StoreView.vue';
+import StorePaymentView from '../views/StorePaymentView.vue';
+import OrdersView from '../views/OrdersView.vue';
 import ScheduleView from '../views/ScheduleView.vue';
 import UserAttendanceView from '../views/UserAttendanceView.vue';
 import AuthCallbackView from '../views/AuthCallbackView.vue';
@@ -100,6 +102,11 @@ const routes = [
         name: 'Store',
         component: StoreView,
       },
+      {
+        path: 'orders',
+        name: 'Orders',
+        component: OrdersView,
+      },
     ],
   },
   {
@@ -120,6 +127,11 @@ const routes = [
         path: 'store',
         name: 'UserStore',
         component: StoreView,
+      },
+      {
+        path: 'store/payment',
+        name: 'UserStorePayment',
+        component: StorePaymentView,
       },
       {
         path: 'schedule',

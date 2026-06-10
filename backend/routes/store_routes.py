@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies import get_gym_service
-from models.gym import ProductoTiendaInput
+from models.gym import PedidoTiendaInput, ProductoTiendaInput
 from services.gym_service import GymService
 
 router = APIRouter(prefix="/tienda", tags=["tienda"])
@@ -12,6 +12,19 @@ router = APIRouter(prefix="/tienda", tags=["tienda"])
 @router.get("")
 def list_productos(gym_service: GymService = Depends(get_gym_service)):
     return gym_service.productos_tienda()
+
+
+@router.get("/pedidos")
+def list_pedidos(gym_service: GymService = Depends(get_gym_service)):
+    return gym_service.pedidos_tienda()
+
+
+@router.post("/pedidos", status_code=status.HTTP_201_CREATED)
+def create_pedido(payload: PedidoTiendaInput, gym_service: GymService = Depends(get_gym_service)):
+    try:
+        return gym_service.crear_pedido_tienda(payload.model_dump())
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
 
 @router.post("")

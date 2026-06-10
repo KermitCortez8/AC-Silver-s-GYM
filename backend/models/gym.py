@@ -100,6 +100,21 @@ class ProductoTiendaInput(BaseModel):
     estado: Optional[str] = "Disponible"
 
 
+class PedidoTiendaItemInput(BaseModel):
+    id_producto: int
+    cantidad: int = Field(default=1, ge=1)
+
+
+class PedidoTiendaInput(BaseModel):
+    id_cliente: int | None = None
+    cliente_nombre: str = ""
+    cliente_correo: str = ""
+    cliente_dni: str = ""
+    metodo_pago: str = "tarjeta"
+    referencia_pago: str = ""
+    items: list[PedidoTiendaItemInput] = Field(default_factory=list)
+
+
 class MovimientoInventarioInput(BaseModel):
     id_mov: int | None = None
     id_item: int
@@ -142,7 +157,7 @@ class HorarioServicioInput(BaseModel):
     id_horario_servicio: int | None = None
     servicio: Literal["fitness", "musculacion", "cardio", "baile"]
     hora_inicio: str = "06:00"
-    hora_fin: str = "22:00"
+    hora_fin: str = "07:00"
     codigo_dia: str = "LUN"
     dia: str = "lunes"
     dias: list[str] = Field(default_factory=list)

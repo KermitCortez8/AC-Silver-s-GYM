@@ -67,6 +67,7 @@ class GymService:
                     "estado": "Disponible",
                 }
             ],
+            "pedidos_tienda": [],
             "usuario": [
                 {
                     "id_usuario": "SGUS001",
@@ -186,6 +187,12 @@ class GymService:
         for producto in merged.get("productos_tienda", []):
             producto.setdefault("id_item", None)
             producto.setdefault("unidad_venta", "unidad")
+
+        merged["pedidos_tienda"] = [
+            self._normalize_pedido_tienda(row, index)
+            for index, row in enumerate(merged.get("pedidos_tienda", []), start=1)
+            if isinstance(row, dict)
+        ]
 
         merged["horarios_servicio"] = self._normalize_horarios_servicio(merged.get("horarios_servicio", seed["horarios_servicio"]))
         merged["matriculas_horario"] = [
@@ -475,6 +482,45 @@ class GymService:
         if not rows:
             return 1
         return max(int(row.get(key, 0) or 0) for row in rows) + 1
+
+    def _normalize_pedido_tienda(self, row: dict[str, Any], fallback_id: int) -> dict[str, Any]:
+        items: list[dict[str, Any]] = []
+        for item in row.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            cantidad = max(1, int(item.get("cantidad") or 1))
+            precio = float(item.get("precio_unitario") or item.get("precio") or 0)
+            subtotal = float(item.get("subtotal") or precio * cantidad)
+            items.append(
+                {
+                    "id_producto": int(item.get("id_producto") or 0),
+                    "nombre_producto": str(item.get("nombre_producto") or item.get("nombre") or "Producto"),
+                    "cantidad": cantidad,
+                    "precio_unitario": precio,
+                    "subtotal": subtotal,
+                }
+            )
+
+        subtotal = float(row.get("subtotal") or sum(float(item.get("subtotal") or 0) for item in items))
+        igv = float(row.get("igv") or round(subtotal * 0.18, 2))
+        total = float(row.get("total") or round(subtotal + igv, 2))
+
+        return {
+            "id_pedido": int(row.get("id_pedido") or fallback_id),
+            "id_cliente": int(row.get("id_cliente") or 0) or None,
+            "cliente_nombre": str(row.get("cliente_nombre") or row.get("nombre_cliente") or "Cliente"),
+            "cliente_correo": str(row.get("cliente_correo") or row.get("correo") or ""),
+            "cliente_dni": str(row.get("cliente_dni") or row.get("dni") or ""),
+            "fecha_pedido": str(row.get("fecha_pedido") or _now_iso()),
+            "metodo_pago": str(row.get("metodo_pago") or "tarjeta"),
+            "referencia_pago": str(row.get("referencia_pago") or ""),
+            "estado_pago": str(row.get("estado_pago") or "PAGADO"),
+            "estado_pedido": str(row.get("estado_pedido") or "PENDIENTE"),
+            "subtotal": round(subtotal, 2),
+            "igv": round(igv, 2),
+            "total": round(total, 2),
+            "items": items,
+        }
 
     def _ensure_default_membership_plans(self, state: dict[str, Any]) -> None:
         defaults = [
@@ -992,6 +1038,28 @@ class GymService:
             "domingo": "DOM",
         }.get(self._normalize_day(day), str(day or "DIA")[:3].upper())
 
+    def _validate_short_service_schedule_range(self, hora_inicio: str, hora_fin: str) -> tuple[int, int]:
+        start = self._time_to_minutes(hora_inicio)
+        end = self._time_to_minutes(hora_fin)
+        duration = end - start
+        if duration not in {60, 120}:
+            raise ValueError("Los horarios disponibles deben durar 1 o 2 horas")
+        return start, end
+
+    def _minutes_to_time(self, value: int) -> str:
+        safe_value = max(0, min(23 * 60 + 59, int(value)))
+        return f"{safe_value // 60:02d}:{safe_value % 60:02d}"
+
+    def _short_service_schedule_range(self, hora_inicio: Any, hora_fin: Any) -> tuple[str, str]:
+        start_value = str(hora_inicio or "06:00").strip()
+        end_value = str(hora_fin or "07:00").strip()
+        try:
+            self._validate_short_service_schedule_range(start_value, end_value)
+            return start_value, end_value
+        except ValueError:
+            start = self._time_to_minutes(start_value)
+            return start_value, self._minutes_to_time(start + 120)
+
     def _normalize_horarios_servicio(self, rows: Any) -> list[dict[str, Any]]:
         allowed = {"fitness", "musculacion", "cardio", "baile"}
         normalized: list[dict[str, Any]] = []
@@ -1024,14 +1092,15 @@ class GymService:
             for index, day in enumerate(days):
                 item_id = raw_id if index == 0 else next_id()
                 cupos = max(1, int(row.get("cupos") or row.get("capacidad") or row.get("capacidad_maxima") or 10))
+                hora_inicio, hora_fin = self._short_service_schedule_range(row.get("hora_inicio"), row.get("hora_fin"))
                 normalized.append(
                     {
                         "id_horario_servicio": item_id,
                         "servicio": servicio,
                         "codigo_dia": str(row.get("codigo_dia") or self._day_code(day)).strip().upper(),
                         "dia": day,
-                        "hora_inicio": str(row.get("hora_inicio") or "06:00").strip(),
-                        "hora_fin": str(row.get("hora_fin") or "22:00").strip(),
+                        "hora_inicio": hora_inicio,
+                        "hora_fin": hora_fin,
                         "cupos": cupos,
                         "cupos_usados": max(0, int(row.get("cupos_usados") or 0)),
                         "activo": bool(row.get("activo", True)),
@@ -1511,8 +1580,7 @@ class GymService:
 
         hora_inicio = str(payload.get("hora_inicio") or "").strip()
         hora_fin = str(payload.get("hora_fin") or "").strip()
-        self._time_to_minutes(hora_inicio)
-        self._time_to_minutes(hora_fin)
+        self._validate_short_service_schedule_range(hora_inicio, hora_fin)
         dia = self._normalize_day(payload.get("dia") or (payload.get("dias") or [""])[0])
         if not dia:
             raise ValueError("Selecciona un dia")
@@ -1766,3 +1834,90 @@ class GymService:
                 state["productos_tienda"] = [p for p in state["productos_tienda"] if int(p.get("id_producto", 0)) != int(id_producto)]
 
         self._mutate(_fn)
+
+    def pedidos_tienda(self) -> list[dict[str, Any]]:
+        return self.state.get("pedidos_tienda", [])
+
+    def crear_pedido_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
+        raw_items = payload.get("items") or []
+        if not raw_items:
+            raise ValueError("El pedido no tiene productos")
+
+        def _fn(state: dict[str, Any]):
+            state.setdefault("pedidos_tienda", [])
+            state.setdefault("productos_tienda", [])
+
+            items: list[dict[str, Any]] = []
+            subtotal = 0.0
+
+            for raw_item in raw_items:
+                id_producto = int(raw_item.get("id_producto") or 0)
+                cantidad = max(1, int(raw_item.get("cantidad") or 1))
+                producto = next(
+                    (
+                        row
+                        for row in state.get("productos_tienda", [])
+                        if int(row.get("id_producto", 0) or 0) == id_producto
+                    ),
+                    None,
+                )
+
+                if not producto:
+                    raise ValueError(f"Producto no encontrado: {id_producto}")
+                if str(producto.get("estado") or "Disponible") != "Disponible":
+                    raise ValueError(f"Producto no disponible: {producto.get('nombre_producto', id_producto)}")
+
+                stock = int(producto.get("cantidad_stock") or 0)
+                if stock < cantidad:
+                    raise ValueError(f"Stock insuficiente para {producto.get('nombre_producto', 'producto')}")
+
+                precio = float(producto.get("precio_venta") or 0)
+                item_subtotal = round(precio * cantidad, 2)
+                subtotal += item_subtotal
+
+                producto["cantidad_stock"] = stock - cantidad
+                if producto.get("id_item"):
+                    linked_item = next(
+                        (
+                            row
+                            for row in state.get("inventario", [])
+                            if int(row.get("id_item", 0) or 0) == int(producto.get("id_item") or 0)
+                        ),
+                        None,
+                    )
+                    if linked_item:
+                        linked_item["cantidad_stock"] = max(0, int(linked_item.get("cantidad_stock") or 0) - cantidad)
+
+                items.append(
+                    {
+                        "id_producto": id_producto,
+                        "nombre_producto": str(producto.get("nombre_producto") or "Producto"),
+                        "cantidad": cantidad,
+                        "precio_unitario": precio,
+                        "subtotal": item_subtotal,
+                    }
+                )
+
+            subtotal = round(subtotal, 2)
+            igv = round(subtotal * 0.18, 2)
+            total = round(subtotal + igv, 2)
+            pedido = {
+                "id_pedido": self._next_int_id_in_state(state, "pedidos_tienda", "id_pedido"),
+                "id_cliente": int(payload.get("id_cliente") or 0) or None,
+                "cliente_nombre": str(payload.get("cliente_nombre") or "Cliente"),
+                "cliente_correo": str(payload.get("cliente_correo") or ""),
+                "cliente_dni": str(payload.get("cliente_dni") or ""),
+                "fecha_pedido": _now_iso(),
+                "metodo_pago": str(payload.get("metodo_pago") or "tarjeta"),
+                "referencia_pago": str(payload.get("referencia_pago") or f"PED-{datetime.now().strftime('%Y%m%d%H%M%S')}"),
+                "estado_pago": "PAGADO",
+                "estado_pedido": "PENDIENTE",
+                "subtotal": subtotal,
+                "igv": igv,
+                "total": total,
+                "items": items,
+            }
+            state["pedidos_tienda"].insert(0, pedido)
+            return pedido
+
+        return self._mutate(_fn)

@@ -317,10 +317,12 @@ const exportExcel = () => {
   position: relative;
   overflow-x: auto;
   padding: 0 6px 6px;
+  scrollbar-width: thin;
 }
 
 :deep(.fc) {
-  min-width: 960px;
+  width: max(760px, 100%);
+  min-width: 760px;
   font-family: Arial, sans-serif;
   font-size: 13px;
 }
@@ -405,6 +407,7 @@ const exportExcel = () => {
   position: absolute;
   left: 72px;
   top: 82px;
+  max-width: min(420px, calc(100% - 96px));
   margin: 0;
   border: 1px dashed #cbd5e1;
   border-radius: 6px;
@@ -416,17 +419,77 @@ const exportExcel = () => {
 }
 
 @media (max-width: 720px) {
+  .excel-shell {
+    border-radius: 8px;
+  }
+
   .excel-header {
     flex-direction: column;
+    gap: 10px;
+    padding: 14px;
     text-align: left;
   }
 
+  .excel-header h2 {
+    font-size: 18px;
+  }
+
   .excel-header p {
-    font-size: 15px;
+    margin-left: 0;
+    font-size: 14px;
   }
 
   .excel-export {
     width: 100%;
+  }
+
+  .excel-calendar {
+    padding: 0 4px 4px;
+  }
+
+  :deep(.fc) {
+    width: max(660px, 100%);
+    min-width: 660px;
+    font-size: 12px;
+  }
+
+  :deep(.fc-timegrid-slot-label) {
+    font-size: 12px;
+  }
+
+  :deep(.fc-timegrid-slot) {
+    height: 16px;
+  }
+
+  .excel-empty {
+    left: 58px;
+    top: 72px;
+    max-width: 320px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .excel-header {
+    padding: 12px;
+  }
+
+  :deep(.fc) {
+    width: 620px;
+    min-width: 620px;
+  }
+
+  :deep(.excel-event-code),
+  :deep(.excel-event-service) {
+    font-size: 9px;
+  }
+
+  :deep(.excel-event-meta) {
+    font-size: 8px;
+  }
+
+  .excel-empty {
+    max-width: 260px;
   }
 }
 </style>

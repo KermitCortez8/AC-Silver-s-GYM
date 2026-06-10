@@ -62,11 +62,23 @@
       "telefono": "939027001",
       "dni": "73045451",
       "rol": "admin",
-      "estado": "Activo",
+      "estado": "ACTIVO",
       "password_hash": "pbkdf2_sha256$dcd489b7aee75eb6f7083399483d22f9$19dcc337d96d20460dc16732fcb0fe474d4931c0da7ea81f43a02e082d39656a"
     }
   ],
   "clientes": [
+    {
+      "id_cliente": 117,
+      "id_usuario": "SGCLI117",
+      "nombre": "Prueba",
+      "correo": "cliente12@gmail.com",
+      "telefono": "939027001",
+      "dni": "73445452",
+      "plan": "MENSUAL",
+      "promocion": "SIN PROMOCION",
+      "estado": "ACTIVO",
+      "password_hash": "pbkdf2_sha256$a764598f50d255d6aaabc1d6bc687563$add38e16cbc4fe6c87a9a07e899c0ec9f08eba4758a5f9c802486c29b7cf2c96"
+    },
     {
       "id_cliente": 116,
       "id_usuario": "SGCLI113",
@@ -137,7 +149,7 @@
       "codigo_dia": "DOM",
       "dia": "domingo",
       "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_fin": "08:00",
       "cupos": 20,
       "cupos_usados": 4,
       "activo": true
@@ -145,11 +157,11 @@
     {
       "id_horario_servicio": 3,
       "servicio": "fitness",
+      "hora_inicio": "06:00",
+      "hora_fin": "08:00",
       "codigo_dia": "JUE",
       "dia": "jueves",
-      "hora_inicio": "06:00",
-      "hora_fin": "22:00",
-      "cupos": 10,
+      "cupos": 3,
       "cupos_usados": 3,
       "activo": true
     },
@@ -158,8 +170,8 @@
       "servicio": "musculacion",
       "codigo_dia": "JUE",
       "dia": "jueves",
-      "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_inicio": "08:00",
+      "hora_fin": "10:00",
       "cupos": 10,
       "cupos_usados": 1,
       "activo": true
@@ -169,8 +181,8 @@
       "servicio": "cardio",
       "codigo_dia": "JUE",
       "dia": "jueves",
-      "hora_inicio": "07:00",
-      "hora_fin": "21:00",
+      "hora_inicio": "10:00",
+      "hora_fin": "12:00",
       "cupos": 10,
       "cupos_usados": 1,
       "activo": true
@@ -181,7 +193,7 @@
       "codigo_dia": "LUN",
       "dia": "lunes",
       "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_fin": "08:00",
       "cupos": 10,
       "cupos_usados": 1,
       "activo": true
@@ -202,8 +214,8 @@
       "servicio": "musculacion",
       "codigo_dia": "LUN",
       "dia": "lunes",
-      "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_inicio": "08:00",
+      "hora_fin": "10:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -213,10 +225,10 @@
       "servicio": "cardio",
       "codigo_dia": "LUN",
       "dia": "lunes",
-      "hora_inicio": "07:00",
-      "hora_fin": "21:00",
+      "hora_inicio": "10:00",
+      "hora_fin": "12:00",
       "cupos": 10,
-      "cupos_usados": 0,
+      "cupos_usados": 1,
       "activo": true
     },
     {
@@ -225,7 +237,7 @@
       "codigo_dia": "LUN",
       "dia": "lunes",
       "hora_inicio": "18:00",
-      "hora_fin": "21:00",
+      "hora_fin": "20:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -236,7 +248,7 @@
       "codigo_dia": "MAR",
       "dia": "martes",
       "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_fin": "08:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -246,8 +258,8 @@
       "servicio": "musculacion",
       "codigo_dia": "MAR",
       "dia": "martes",
-      "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_inicio": "08:00",
+      "hora_fin": "10:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -257,8 +269,8 @@
       "servicio": "cardio",
       "codigo_dia": "MAR",
       "dia": "martes",
-      "hora_inicio": "07:00",
-      "hora_fin": "21:00",
+      "hora_inicio": "10:00",
+      "hora_fin": "12:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -269,7 +281,7 @@
       "codigo_dia": "MIE",
       "dia": "miercoles",
       "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_fin": "08:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -279,8 +291,8 @@
       "servicio": "musculacion",
       "codigo_dia": "MIE",
       "dia": "miercoles",
-      "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_inicio": "08:00",
+      "hora_fin": "10:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -290,8 +302,8 @@
       "servicio": "cardio",
       "codigo_dia": "MIE",
       "dia": "miercoles",
-      "hora_inicio": "07:00",
-      "hora_fin": "21:00",
+      "hora_inicio": "10:00",
+      "hora_fin": "12:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -302,9 +314,9 @@
       "codigo_dia": "MIE",
       "dia": "miercoles",
       "hora_inicio": "18:00",
-      "hora_fin": "21:00",
+      "hora_fin": "20:00",
       "cupos": 10,
-      "cupos_usados": 0,
+      "cupos_usados": 1,
       "activo": true
     },
     {
@@ -313,7 +325,7 @@
       "codigo_dia": "SAB",
       "dia": "sabado",
       "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_fin": "08:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -323,8 +335,8 @@
       "servicio": "musculacion",
       "codigo_dia": "SAB",
       "dia": "sabado",
-      "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_inicio": "08:00",
+      "hora_fin": "10:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -334,8 +346,8 @@
       "servicio": "cardio",
       "codigo_dia": "SAB",
       "dia": "sabado",
-      "hora_inicio": "07:00",
-      "hora_fin": "21:00",
+      "hora_inicio": "10:00",
+      "hora_fin": "12:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -346,7 +358,7 @@
       "codigo_dia": "VIE",
       "dia": "viernes",
       "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_fin": "08:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -356,8 +368,8 @@
       "servicio": "musculacion",
       "codigo_dia": "VIE",
       "dia": "viernes",
-      "hora_inicio": "06:00",
-      "hora_fin": "22:00",
+      "hora_inicio": "08:00",
+      "hora_fin": "10:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -367,8 +379,8 @@
       "servicio": "cardio",
       "codigo_dia": "VIE",
       "dia": "viernes",
-      "hora_inicio": "07:00",
-      "hora_fin": "21:00",
+      "hora_inicio": "10:00",
+      "hora_fin": "12:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
@@ -379,13 +391,27 @@
       "codigo_dia": "VIE",
       "dia": "viernes",
       "hora_inicio": "18:00",
-      "hora_fin": "21:00",
+      "hora_fin": "20:00",
       "cupos": 10,
       "cupos_usados": 0,
       "activo": true
     }
   ],
   "matriculas_horario": [
+    {
+      "id_matricula": 27,
+      "id_cliente": 117,
+      "id_horario_servicio": 21,
+      "fecha_matricula": "2026-06-10",
+      "estado": "ACTIVA"
+    },
+    {
+      "id_matricula": 26,
+      "id_cliente": 117,
+      "id_horario_servicio": 14,
+      "fecha_matricula": "2026-06-10",
+      "estado": "ACTIVA"
+    },
     {
       "id_matricula": 25,
       "id_cliente": 116,
@@ -572,6 +598,20 @@
   ],
   "asistencia": [
     {
+      "id_asistencia": 3,
+      "id_cliente": "SGCLI117",
+      "id_cliente_num": 117,
+      "fecha": "2026-06-10",
+      "hora": "18:01",
+      "hora_entrada": "18:01",
+      "hora_salida": "18:02",
+      "servicio": "cardio",
+      "id_usuario_registra": null,
+      "id_membresia": 18,
+      "id_matricula": 26,
+      "id_horario_servicio": 14
+    },
+    {
       "id_asistencia": 2,
       "id_cliente": "SGCLI113",
       "id_cliente_num": 116,
@@ -601,6 +641,18 @@
     }
   ],
   "membresia": [
+    {
+      "id_membresia": 18,
+      "fecha_inicio": "2026-06-10",
+      "fecha_fin": "2026-07-10",
+      "estado": "Activa",
+      "id_cliente": 117,
+      "id_pm": 1,
+      "estado_pago": "PAGADO",
+      "metodo_pago": "yape",
+      "referencia_pago": "Operacion",
+      "fecha_pago": "2026-06-10"
+    },
     {
       "id_membresia": 17,
       "fecha_inicio": "2026-06-08",

@@ -28,19 +28,50 @@
 
     <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-        <div class="flex items-center justify-between gap-4">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Disponibles</p>
-            <h2 class="mt-2 text-2xl font-black text-white">Horarios de servicios</h2>
+            <h2 class="mt-2 text-2xl font-black text-white">Servicios disponibles</h2>
+            <p class="mt-1 text-sm text-slate-400">Selecciona un servicio para ver sus grupos y horarios.</p>
           </div>
           <button class="rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm font-bold text-white" @click="refreshAll">Actualizar</button>
         </div>
 
-        <div class="mt-5 space-y-3">
-          <article v-for="schedule in schedules" :key="schedule.id_horario_servicio" class="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
+        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            v-for="service in serviceOptions"
+            :key="service.value"
+            type="button"
+            class="rounded-2xl border p-4 text-left transition hover:-translate-y-0.5"
+            :class="selectedService === service.value ? service.activeClass : 'border-white/10 bg-slate-900/80 hover:bg-white/5'"
+            @click="selectService(service.value)"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-lg font-black text-white">{{ service.label }}</p>
+                <p class="mt-1 text-sm text-slate-300">{{ service.description }}</p>
+              </div>
+              <span class="rounded-full bg-slate-950/70 px-3 py-1 text-sm font-black text-white">
+                {{ serviceCounts[service.value] || 0 }}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <div v-if="selectedService" class="mt-6 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Grupos</p>
+              <h3 class="mt-1 text-xl font-black text-white">{{ serviceLabel(selectedService) }}</h3>
+            </div>
+            <p class="text-sm text-slate-400">{{ filteredSchedules.length }} horarios disponibles</p>
+          </div>
+
+          <div class="mt-4 space-y-3">
+            <article v-for="(schedule, index) in filteredSchedules" :key="schedule.id_horario_servicio" class="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p class="text-lg font-bold text-white">{{ serviceLabel(schedule.servicio) }}</p>
+                <p class="text-lg font-bold text-white">Grupo {{ index + 1 }}</p>
                 <p class="text-sm text-slate-400">{{ dayLabel(schedule.dia) }} {{ schedule.codigo_dia }} - {{ schedule.hora_inicio }} a {{ schedule.hora_fin }}</p>
                 <p class="mt-1 text-sm text-slate-300">Cupos: {{ schedule.cupos_usados || 0 }} / {{ schedule.cupos }}</p>
               </div>
@@ -52,7 +83,12 @@
                 {{ buttonLabel(schedule) }}
               </button>
             </div>
-          </article>
+            </article>
+          </div>
+
+          <p v-if="!filteredSchedules.length" class="mt-4 rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">
+            No hay grupos activos para este servicio.
+          </p>
         </div>
 
         <p v-if="!schedules.length" class="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-400">
@@ -92,7 +128,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import ExcelScheduleGrid from '../components/ExcelScheduleGrid.vue';
 import { useAuth } from '../composables/useAuth';
 import { useGymStore } from '../stores/gymStore';
@@ -104,8 +140,61 @@ const dniSearch = ref('');
 const selectedClient = ref(null);
 const feedback = ref('');
 const feedbackTone = ref('success');
+const selectedService = ref('fitness');
 
-const schedules = computed(() => gymStore.serviceSchedules.filter((schedule) => schedule.activo !== false));
+const serviceOrder = ['fitness', 'musculacion', 'cardio', 'baile'];
+const dayOrder = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+const serviceOptions = [
+  {
+    value: 'fitness',
+    label: 'Fitness',
+    description: 'Entrenamiento general y acondicionamiento.',
+    activeClass: 'border-amber-300/60 bg-amber-400/15 shadow-lg shadow-amber-500/10',
+  },
+  {
+    value: 'musculacion',
+    label: 'Musculacion',
+    description: 'Rutinas de fuerza y trabajo con peso.',
+    activeClass: 'border-emerald-300/60 bg-emerald-400/15 shadow-lg shadow-emerald-500/10',
+  },
+  {
+    value: 'cardio',
+    label: 'Cardio',
+    description: 'Bloques enfocados en resistencia.',
+    activeClass: 'border-sky-300/60 bg-sky-400/15 shadow-lg shadow-sky-500/10',
+  },
+  {
+    value: 'baile',
+    label: 'Baile',
+    description: 'Clases grupales por ritmo y energia.',
+    activeClass: 'border-rose-300/60 bg-rose-400/15 shadow-lg shadow-rose-500/10',
+  },
+];
+
+const normalizeDay = (day) => String(day || '').trim().toLowerCase();
+const normalizeTime = (value) => String(value || '00:00').slice(0, 5);
+
+const schedules = computed(() =>
+  gymStore.serviceSchedules
+    .filter((schedule) => schedule.activo !== false)
+    .slice()
+    .sort((left, right) => {
+      const serviceDiff = serviceOrder.indexOf(left.servicio) - serviceOrder.indexOf(right.servicio);
+      if (serviceDiff) return serviceDiff;
+      const dayDiff = dayOrder.indexOf(normalizeDay(left.dia)) - dayOrder.indexOf(normalizeDay(right.dia));
+      if (dayDiff) return dayDiff;
+      return normalizeTime(left.hora_inicio).localeCompare(normalizeTime(right.hora_inicio));
+    }),
+);
+
+const serviceCounts = computed(() =>
+  schedules.value.reduce((counts, schedule) => {
+    counts[schedule.servicio] = (counts[schedule.servicio] || 0) + 1;
+    return counts;
+  }, {}),
+);
+
+const filteredSchedules = computed(() => schedules.value.filter((schedule) => schedule.servicio === selectedService.value));
 const readMaybeRef = (value) => value?.value ?? value;
 const isAdminUser = computed(() => Boolean(readMaybeRef(isAdmin)));
 const authUser = computed(() => readMaybeRef(user) || {});
@@ -126,6 +215,20 @@ const calendarSubtitle = computed(() => {
 
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
 const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Miercoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sabado', domingo: 'Domingo' })[day] || day;
+
+const selectService = (service) => {
+  selectedService.value = service;
+  feedback.value = '';
+};
+
+watch(
+  schedules,
+  (items) => {
+    if (!items.length || filteredSchedules.value.length) return;
+    selectedService.value = serviceOrder.find((service) => items.some((schedule) => schedule.servicio === service)) || selectedService.value;
+  },
+  { immediate: true },
+);
 
 const alreadyEnrolled = (schedule) =>
   visibleEnrollments.value.some((item) => Number(item.id_horario_servicio) === Number(schedule.id_horario_servicio));

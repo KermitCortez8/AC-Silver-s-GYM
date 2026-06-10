@@ -1,221 +1,168 @@
 <template>
   <div class="space-y-6">
-    <section class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Catálogo</p>
-      <h1 class="mt-2 text-3xl font-black text-white">{{ isAdmin ? 'Tienda - Administración' : 'Tienda' }}</h1>
-      <p class="mt-2 text-slate-300">{{ isAdmin ? 'Administra el catálogo de productos disponibles.' : 'Explora y compra los productos disponibles.' }}</p>
-    </section>
-
-    <!-- Sección Admin: Agregar/Editar Productos -->
-    <section v-if="isAdmin" class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-      <form class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="handleSubmit">
-        <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Producto</p>
-        <h2 class="mt-2 text-2xl font-black text-white">{{ editingId ? 'Editar producto' : 'Nuevo producto' }}</h2>
-
-        <div class="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-50">
-          <p class="text-xs uppercase tracking-[0.35em] text-cyan-200">Identificador único</p>
-          <p class="mt-1 font-semibold text-white">{{ currentProductCode }}</p>
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+      <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Catalogo</p>
+          <h1 class="mt-2 text-3xl font-black text-white">{{ isAdmin ? 'Tienda - Administracion' : 'Tienda' }}</h1>
+          <p class="mt-2 text-slate-300">
+            {{ isAdmin ? 'Administra el catalogo de productos disponibles.' : 'Explora articulos, agrega al carrito y prepara tu compra.' }}
+          </p>
         </div>
 
-        <div class="mt-5 grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm text-slate-300">Nombre del producto</span>
-            <input v-model="form.nombre" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Proteína Whey, Bebida Energética, etc." />
-          </label>
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm text-slate-300">Descripción</span>
-            <textarea
-              v-model="form.descripcion"
-              rows="2"
-              class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none"
-              placeholder="Descripción breve del producto..."
-            ></textarea>
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Categoría</span>
-            <input v-model="form.categoria" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Suplementos, Bebidas..." />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Item de almacén</span>
-            <select v-model.number="form.id_item" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option :value="null">Sin vincular</option>
-              <option v-for="item in inventario" :key="item.id" :value="Number(String(item.id).replace('item-', ''))">
-                {{ item.inventoryCode }} - {{ item.name }}
-              </option>
-            </select>
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Unidad de venta</span>
-            <input v-model="form.unidad_venta" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="unidad, botella, paquete..." />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Precio (S/.)</span>
-            <input v-model.number="form.precio" type="number" min="0" step="0.01" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Cantidad en stock</span>
-            <input v-model.number="form.cantidad" type="number" min="0" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Stock Mínimo</span>
-            <input v-model.number="form.minimo" type="number" min="0" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm text-slate-300">Estado</span>
-            <select v-model="form.estado" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-              <option>Disponible</option>
-              <option>Agotado</option>
-              <option>Descatalogado</option>
-            </select>
-          </label>
-        </div>
-
-        <button type="submit" class="mt-5 w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">
-          {{ editingId ? 'Guardar cambios' : 'Agregar producto' }}
+        <button
+          v-if="isAdmin"
+          class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300"
+          @click="openNewProducto"
+        >
+          Ingresar Nuevo Articulo
         </button>
-      </form>
-
-      <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Catálogo</p>
-            <h2 class="mt-2 text-2xl font-black text-white">Listado de productos</h2>
-          </div>
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
-            <p class="text-xs text-slate-400">Total productos</p>
-            <p class="text-xl font-black text-white">{{ productos.length }}</p>
-          </div>
-        </div>
-
-        <div class="mt-5 space-y-3">
-          <article v-for="producto in productos" :key="producto.id_producto" class="rounded-3xl border border-white/10 bg-slate-900/80 p-4">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div class="flex-1">
-                <p class="text-xs uppercase tracking-[0.35em] text-cyan-200">{{ productCode(producto.id_producto) }}</p>
-                <p class="mt-1 font-semibold text-white">{{ producto.nombre }}</p>
-                <p class="text-sm text-slate-400">{{ producto.categoria }}</p>
-                <p class="mt-1 text-sm text-slate-300">{{ producto.descripcion }}</p>
-                <p class="mt-2 text-sm font-bold text-green-400">S/. {{ producto.precio.toFixed(2) }}</p>
-                <p class="text-sm text-slate-300">Stock: {{ producto.cantidad }} · Mínimo: {{ producto.minimo }} · Unidad: {{ producto.unidad_venta }}</p>
-                <p v-if="producto.id_item" class="text-xs text-cyan-200">Vinculado a almacén: #{{ producto.id_item }}</p>
-                <p class="mt-1 text-xs" :class="producto.estado === 'Disponible' ? 'text-green-400' : 'text-amber-400'">
-                  Estado: {{ producto.estado }}
-                </p>
-              </div>
-
-              <div class="flex gap-2">
-                <button class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium" @click="editProducto(producto)">
-                  Editar
-                </button>
-                <button class="rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white" @click="deleteProducto(producto.id_producto)">
-                  Eliminar
-                </button>
-              </div>
-            </div>
-          </article>
-
-          <div v-if="!productos.length" class="rounded-2xl border border-slate-700/50 bg-slate-900/30 py-8 text-center">
-            <p class="text-slate-400">No hay productos aún. Comienza agregando un nuevo producto.</p>
-          </div>
-        </div>
       </div>
     </section>
 
-    <!-- Sección Cliente: Catálogo de Compra -->
-    <section v-else class="space-y-6">
-      <div class="grid gap-6 lg:grid-cols-[1fr_350px]">
-        <!-- Catálogo -->
+    <section v-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            <div v-for="producto in productos" :key="producto.id_producto" class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
-              <div class="aspect-square rounded-xl bg-gradient-to-br from-cyan-400/10 to-emerald-400/10 mb-3 flex items-center justify-center">
-                <span class="text-5xl">📦</span>
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Catalogo</p>
+          <h2 class="mt-2 text-2xl font-black text-white">Listado de productos</h2>
+        </div>
+        <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
+          <p class="text-xs text-slate-400">Total productos</p>
+          <p class="text-xl font-black text-white">{{ productos.length }}</p>
+        </div>
+      </div>
+
+      <p v-if="feedbackMessage" class="mt-4 rounded-2xl border px-4 py-3 text-sm" :class="feedbackToneClass">
+        {{ feedbackMessage }}
+      </p>
+
+      <div class="mt-5 grid gap-4 xl:grid-cols-2">
+        <article v-for="producto in productos" :key="producto.id_producto" class="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="text-lg font-bold text-white">{{ producto.nombre }}</p>
+                <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-amber-100">{{ productCode(producto.id_producto) }}</span>
               </div>
-              <p class="text-sm font-bold text-cyan-200">{{ producto.categoria }}</p>
-              <p class="mt-1 font-semibold text-white">{{ producto.nombre }}</p>
-              <p class="mt-1 text-sm text-slate-400">{{ producto.descripcion }}</p>
-              <p class="mt-3 text-lg font-black text-green-400">S/. {{ producto.precio.toFixed(2) }}</p>
-              <p class="text-xs text-slate-400 mt-1">Stock: {{ producto.cantidad }}</p>
-              
-              <div v-if="producto.estado === 'Disponible' && producto.cantidad > 0" class="mt-4 flex gap-2">
+              <p class="mt-2 text-sm text-slate-400">{{ producto.categoria }}</p>
+              <p class="mt-1 text-sm text-slate-300">{{ producto.descripcion || 'Sin descripcion' }}</p>
+              <p class="mt-2 text-sm font-bold text-emerald-300">S/. {{ Number(producto.precio || 0).toFixed(2) }}</p>
+              <p class="text-sm text-slate-300">Stock: {{ producto.cantidad }} | Minimo: {{ producto.minimo || 0 }} | Unidad: {{ producto.unidad_venta }}</p>
+              <p v-if="producto.id_item" class="text-xs text-amber-200">Vinculado a almacen: #{{ producto.id_item }}</p>
+              <p class="mt-1 text-xs" :class="producto.estado === 'Disponible' ? 'text-emerald-300' : 'text-amber-300'">
+                Estado: {{ producto.estado }}
+              </p>
+            </div>
+
+            <div class="flex shrink-0 gap-2">
+              <button class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5" @click="editProducto(producto)">
+                Editar
+              </button>
+              <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 hover:bg-rose-400/10" @click="deleteProducto(producto.id_producto)">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <p v-if="!productos.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">
+        No hay productos aun. Usa "Ingresar Nuevo Articulo" para crear el primero.
+      </p>
+    </section>
+
+    <section v-else class="space-y-6">
+      <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div class="space-y-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Ecommerce</p>
+              <h2 class="mt-2 text-2xl font-black text-white">Articulos disponibles</h2>
+            </div>
+            <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
+              <p class="text-xs text-slate-400">Productos</p>
+              <p class="text-xl font-black text-white">{{ visibleProducts.length }}</p>
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <article v-for="producto in visibleProducts" :key="producto.id_producto" class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+              <div class="mb-3 flex aspect-square items-center justify-center rounded-xl border border-amber-200/20 bg-amber-300/10">
+                <div class="text-center">
+                  <p class="text-xs uppercase tracking-[0.25em] text-amber-200">{{ producto.categoria }}</p>
+                  <p class="mt-2 text-3xl font-black text-white">{{ productCode(producto.id_producto).slice(-4) }}</p>
+                </div>
+              </div>
+              <p class="font-semibold text-white">{{ producto.nombre }}</p>
+              <p class="mt-1 line-clamp-2 text-sm text-slate-400">{{ producto.descripcion || 'Producto disponible en tienda.' }}</p>
+              <p class="mt-3 text-lg font-black text-emerald-300">S/. {{ Number(producto.precio || 0).toFixed(2) }}</p>
+              <p class="mt-1 text-xs text-slate-400">Stock: {{ producto.cantidad }}</p>
+
+              <div v-if="producto.estado === 'Disponible' && Number(producto.cantidad || 0) > 0" class="mt-4 flex gap-2">
                 <input
                   v-model.number="cantidadInput[producto.id_producto]"
                   type="number"
                   min="1"
                   :max="producto.cantidad"
-                  class="flex-1 rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1 text-white text-sm outline-none"
+                  class="field-input flex-1 px-3 py-2 text-sm"
                 />
-                <button
-                  class="flex-1 rounded-lg bg-cyan-400 px-3 py-1 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
-                  @click="agregarAlCarrito(producto)"
-                >
+                <button class="flex-1 rounded-xl bg-amber-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-amber-300" @click="agregarAlCarrito(producto)">
                   Agregar
                 </button>
               </div>
-              <div v-else class="mt-4 rounded-lg bg-slate-950/60 px-3 py-2 text-center text-sm text-slate-400">
+              <div v-else class="mt-4 rounded-xl bg-slate-950/60 px-3 py-2 text-center text-sm text-slate-400">
                 {{ producto.estado !== 'Disponible' ? producto.estado : 'Agotado' }}
               </div>
-            </div>
+            </article>
           </div>
 
-          <div v-if="!productos.length" class="rounded-2xl border border-slate-700/50 bg-slate-900/30 py-12 text-center">
-            <p class="text-slate-400">No hay productos disponibles en la tienda.</p>
-          </div>
+          <p v-if="!visibleProducts.length" class="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-slate-400">
+            No hay productos disponibles en la tienda.
+          </p>
         </div>
 
-        <!-- Carrito -->
-        <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur h-fit sticky top-4">
+        <aside class="h-fit rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur lg:sticky lg:top-4">
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Carrito</p>
           <h2 class="mt-2 text-2xl font-black text-white">Mi compra</h2>
 
-          <div class="mt-5 space-y-3 max-h-96 overflow-y-auto">
-            <div v-for="item in cart" :key="item.id_producto" class="rounded-2xl border border-white/10 bg-slate-950/80 p-3">
+          <div class="mt-5 max-h-96 space-y-3 overflow-y-auto">
+            <article v-for="item in cart" :key="item.id_producto" class="rounded-2xl border border-white/10 bg-slate-950/80 p-3">
               <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                  <p class="font-semibold text-white truncate">{{ item.nombre }}</p>
-                  <p class="mt-1 text-sm text-green-400">S/. {{ item.precio.toFixed(2) }}</p>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate font-semibold text-white">{{ item.nombre }}</p>
+                  <p class="mt-1 text-sm text-emerald-300">S/. {{ Number(item.precio || 0).toFixed(2) }}</p>
                 </div>
-                <button
-                  class="rounded-full bg-rose-500/20 p-1 text-rose-300 hover:bg-rose-500 hover:text-white transition"
-                  @click="() => gymStore.removeFromCart(item.id_producto)"
-                >
-                  ✕
+                <button class="rounded-full bg-rose-500/20 px-2 py-1 text-sm font-bold text-rose-200 hover:bg-rose-500 hover:text-white" @click="() => gymStore.removeFromCart(item.id_producto)">
+                  x
                 </button>
               </div>
 
               <div class="mt-3 flex items-center gap-2">
-                <button
-                  class="rounded px-2 py-1 bg-slate-800 text-sm text-white hover:bg-slate-700"
-                  @click="() => gymStore.updateCartQuantity(item.id_producto, Math.max(1, item.cantidad - 1))"
-                >
-                  −
+                <button class="rounded bg-slate-800 px-2 py-1 text-sm text-white hover:bg-slate-700" @click="() => gymStore.updateCartQuantity(item.id_producto, Math.max(1, item.cantidad - 1))">
+                  -
                 </button>
                 <input
                   :value="item.cantidad"
                   type="number"
                   min="1"
-                  class="flex-1 text-center rounded px-2 py-1 bg-slate-800 text-white text-sm outline-none"
-                  @change="(e) => gymStore.updateCartQuantity(item.id_producto, Math.max(1, Number(e.target.value)))"
+                  class="w-full rounded bg-slate-800 px-2 py-1 text-center text-sm text-white outline-none"
+                  @change="(event) => gymStore.updateCartQuantity(item.id_producto, Math.max(1, Number(event.target.value)))"
                 />
-                <button
-                  class="rounded px-2 py-1 bg-slate-800 text-sm text-white hover:bg-slate-700"
-                  @click="() => gymStore.updateCartQuantity(item.id_producto, item.cantidad + 1)"
-                >
+                <button class="rounded bg-slate-800 px-2 py-1 text-sm text-white hover:bg-slate-700" @click="() => gymStore.updateCartQuantity(item.id_producto, item.cantidad + 1)">
                   +
                 </button>
               </div>
 
               <p class="mt-2 text-right text-sm text-slate-300">
-                Subtotal: S/. {{ (item.precio * item.cantidad).toFixed(2) }}
+                Subtotal: S/. {{ (Number(item.precio || 0) * Number(item.cantidad || 0)).toFixed(2) }}
               </p>
-            </div>
+            </article>
 
-            <div v-if="!cart.length" class="rounded-2xl border border-slate-700/50 bg-slate-900/30 py-6 text-center">
-              <p class="text-slate-400 text-sm">Tu carrito está vacío</p>
-            </div>
+            <p v-if="!cart.length" class="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">
+              Tu carrito esta vacio.
+            </p>
           </div>
 
-          <!-- Total -->
           <div v-if="cart.length" class="mt-6 space-y-3 border-t border-white/10 pt-4">
             <div class="flex justify-between text-sm">
               <p class="text-slate-300">Subtotal:</p>
@@ -223,56 +170,120 @@
             </div>
             <div class="flex justify-between text-sm">
               <p class="text-slate-300">IGV (18%):</p>
-              <p class="font-semibold text-green-400">S/. {{ cartTotal.igv.toFixed(2) }}</p>
+              <p class="font-semibold text-emerald-300">S/. {{ cartTotal.igv.toFixed(2) }}</p>
             </div>
             <div class="flex justify-between border-t border-white/10 pt-3">
               <p class="font-black text-white">Total:</p>
-              <p class="text-xl font-black text-cyan-400">S/. {{ cartTotal.total.toFixed(2) }}</p>
+              <p class="text-xl font-black text-amber-300">S/. {{ cartTotal.total.toFixed(2) }}</p>
             </div>
 
-            <button class="mt-4 w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">
+            <button class="mt-4 w-full rounded-2xl bg-amber-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-amber-300" @click="goToCheckout">
               Procesar compra
             </button>
-            <button
-              class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-white transition hover:bg-white/10"
-              @click="() => gymStore.clearCart()"
-            >
+            <button class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-white transition hover:bg-white/10" @click="() => gymStore.clearCart()">
               Limpiar carrito
             </button>
           </div>
-        </div>
+        </aside>
       </div>
     </section>
+
+    <Teleport to="body">
+      <div v-if="isAdmin && isProductEditorOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+        <form class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl" @submit.prevent="handleSubmit">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Producto</p>
+              <h2 class="mt-2 text-2xl font-black text-white">{{ editingId ? 'Editar producto' : 'Nuevo producto' }}</h2>
+            </div>
+            <button type="button" class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5" @click="closeProductEditor">
+              Cerrar
+            </button>
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
+            <p class="text-xs uppercase tracking-[0.35em] text-amber-200">Identificador unico</p>
+            <p class="mt-1 font-semibold text-white">{{ currentProductCode }}</p>
+          </div>
+
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <label class="space-y-2 sm:col-span-2">
+              <span class="text-sm text-slate-300">Nombre del producto</span>
+              <input v-model="form.nombre" class="field-input" placeholder="Proteina Whey, Bebida Energetica, etc." />
+            </label>
+            <label class="space-y-2 sm:col-span-2">
+              <span class="text-sm text-slate-300">Descripcion</span>
+              <textarea v-model="form.descripcion" rows="2" class="field-input" placeholder="Descripcion breve del producto..."></textarea>
+            </label>
+            <label class="space-y-2">
+              <span class="text-sm text-slate-300">Categoria</span>
+              <input v-model="form.categoria" class="field-input" placeholder="Suplementos, Bebidas..." />
+            </label>
+            <label class="space-y-2">
+              <span class="text-sm text-slate-300">Item de almacen</span>
+              <select v-model.number="form.id_item" class="field-input">
+                <option :value="null">Sin vincular</option>
+                <option v-for="item in inventario" :key="item.id" :value="Number(String(item.id).replace('item-', ''))">
+                  {{ item.inventoryCode }} - {{ item.name }}
+                </option>
+              </select>
+            </label>
+            <label class="space-y-2">
+              <span class="text-sm text-slate-300">Unidad de venta</span>
+              <input v-model="form.unidad_venta" class="field-input" placeholder="unidad, botella, paquete..." />
+            </label>
+            <label class="space-y-2">
+              <span class="text-sm text-slate-300">Precio (S/.)</span>
+              <input v-model.number="form.precio" type="number" min="0" step="0.01" class="field-input" />
+            </label>
+            <label class="space-y-2">
+              <span class="text-sm text-slate-300">Cantidad en stock</span>
+              <input v-model.number="form.cantidad" type="number" min="0" class="field-input" />
+            </label>
+            <label class="space-y-2">
+              <span class="text-sm text-slate-300">Stock minimo</span>
+              <input v-model.number="form.minimo" type="number" min="0" class="field-input" />
+            </label>
+            <label class="space-y-2 sm:col-span-2">
+              <span class="text-sm text-slate-300">Estado</span>
+              <select v-model="form.estado" class="field-input">
+                <option>Disponible</option>
+                <option>Agotado</option>
+                <option>Descatalogado</option>
+              </select>
+            </label>
+          </div>
+
+          <button type="submit" class="mt-6 w-full rounded-2xl bg-amber-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-amber-300">
+            {{ editingId ? 'Guardar cambios' : 'Agregar producto' }}
+          </button>
+        </form>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { useRoute } from 'vue-router';
-import { useAuthStore } from '../stores/authStore';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useGymStore } from '../stores/gymStore';
 
 const route = useRoute();
-const authStore = useAuthStore();
+const router = useRouter();
 const gymStore = useGymStore();
 
 const isAdmin = computed(() => route.path.startsWith('/admin/store'));
 const productos = computed(() => gymStore.productos_tienda);
+const visibleProducts = computed(() => productos.value.filter((producto) => producto.estado !== 'Descatalogado'));
 const inventario = computed(() => gymStore.inventory);
 const cart = computed(() => gymStore.cart);
 const cartTotal = computed(() => gymStore.cartTotal);
 
 const editingId = ref('');
+const isProductEditorOpen = ref(false);
 const cantidadInput = ref({});
-
-const currentProductCode = computed(() => {
-  if (editingId.value) {
-    return productos.value.find((p) => p.id_producto === editingId.value)?.id_producto || 'Se generará automáticamente';
-  }
-  return 'Se generará automáticamente';
-});
-
-const productCode = (id) => `PROD-${String(id).padStart(4, '0')}`;
+const feedbackMessage = ref('');
+const feedbackTone = ref('info');
 
 const form = reactive({
   nombre: '',
@@ -285,6 +296,21 @@ const form = reactive({
   minimo: 5,
   estado: 'Disponible',
 });
+
+const feedbackToneClass = computed(() => {
+  if (feedbackTone.value === 'success') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
+  if (feedbackTone.value === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
+  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
+});
+
+const currentProductCode = computed(() => {
+  if (editingId.value) {
+    return productCode(editingId.value);
+  }
+  return 'Se generara automaticamente';
+});
+
+const productCode = (id) => `PROD-${String(id || 0).padStart(4, '0')}`;
 
 const resetForm = () => {
   editingId.value = '';
@@ -299,17 +325,30 @@ const resetForm = () => {
   form.estado = 'Disponible';
 };
 
+const openNewProducto = () => {
+  resetForm();
+  feedbackMessage.value = '';
+  isProductEditorOpen.value = true;
+};
+
+const closeProductEditor = () => {
+  isProductEditorOpen.value = false;
+  resetForm();
+};
+
 const editProducto = (producto) => {
   editingId.value = producto.id_producto;
   form.nombre = producto.nombre;
   form.descripcion = producto.descripcion || '';
-  form.categoria = producto.categoria;
+  form.categoria = producto.categoria || 'General';
   form.id_item = producto.id_item || null;
   form.unidad_venta = producto.unidad_venta || 'unidad';
-  form.precio = producto.precio;
-  form.cantidad = producto.cantidad;
-  form.minimo = producto.minimo || 5;
-  form.estado = producto.estado;
+  form.precio = Number(producto.precio || 0);
+  form.cantidad = Number(producto.cantidad || 0);
+  form.minimo = Number(producto.minimo || 5);
+  form.estado = producto.estado || 'Disponible';
+  feedbackMessage.value = '';
+  isProductEditorOpen.value = true;
 };
 
 const handleSubmit = async () => {
@@ -326,22 +365,58 @@ const handleSubmit = async () => {
       minimo: form.minimo,
       estado: form.estado,
     });
-    resetForm();
+    const savedLabel = editingId.value ? 'Producto actualizado.' : 'Producto registrado.';
+    closeProductEditor();
+    feedbackTone.value = 'success';
+    feedbackMessage.value = savedLabel;
   } catch (error) {
-    console.error('Error al guardar producto:', error);
+    feedbackTone.value = 'error';
+    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo guardar el producto.';
   }
 };
 
-const deleteProducto = (id_producto) => {
-  if (confirm('¿Estás seguro que deseas eliminar este producto?')) {
-    gymStore.deleteProductoTienda(id_producto);
+const deleteProducto = async (idProducto) => {
+  if (!window.confirm('Eliminar este producto?')) return;
+  try {
+    await gymStore.deleteProductoTienda(idProducto);
+    feedbackTone.value = 'success';
+    feedbackMessage.value = 'Producto eliminado.';
+  } catch (error) {
+    feedbackTone.value = 'error';
+    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo eliminar el producto.';
   }
 };
 
 const agregarAlCarrito = (producto) => {
-  const cantidad = cantidadInput.value[producto.id_producto] || 1;
+  const requested = Number(cantidadInput.value[producto.id_producto] || 1);
+  const stock = Number(producto.cantidad || 1);
+  const cantidad = Math.max(1, Math.min(requested, stock));
   gymStore.addToCart(producto, cantidad);
   cantidadInput.value[producto.id_producto] = 1;
 };
+
+const goToCheckout = () => {
+  if (!cart.value.length) return;
+  router.push('/user/store/payment');
+};
+
+onMounted(() => {
+  gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar tienda:', error));
+});
 </script>
 
+<style scoped>
+.field-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(2, 6, 23, 0.72);
+  padding: 0.75rem 1rem;
+  color: white;
+  outline: none;
+}
+
+.field-input::placeholder {
+  color: #64748b;
+}
+</style>
