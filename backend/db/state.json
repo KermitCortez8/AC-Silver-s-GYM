@@ -54,6 +54,7 @@
       "unidad_venta": "unidad"
     }
   ],
+  "pedidos_tienda": [],
   "usuario": [
     {
       "id_usuario": "SGADM001",
@@ -157,10 +158,10 @@
     {
       "id_horario_servicio": 3,
       "servicio": "fitness",
-      "hora_inicio": "06:00",
-      "hora_fin": "08:00",
       "codigo_dia": "JUE",
       "dia": "jueves",
+      "hora_inicio": "06:00",
+      "hora_fin": "08:00",
       "cupos": 3,
       "cupos_usados": 3,
       "activo": true
