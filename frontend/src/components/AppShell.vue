@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(220,38,38,0.16),_transparent_30%),linear-gradient(180deg,#050505_0%,#111111_100%)] text-slate-50">
+  <div class="app-shell min-h-screen text-slate-50">
     <div class="relative flex min-h-screen w-full">
-      <aside class="hidden w-64 flex-col border-r border-red-500/20 bg-[#080808]/95 backdrop-blur-xl lg:flex 2xl:w-72">
+      <aside class="app-sidebar hidden w-64 flex-col border-r backdrop-blur-xl lg:flex 2xl:w-72">
         <div class="border-b border-red-500/20 p-5 2xl:p-6">
           <p class="text-xs uppercase tracking-[0.38em] text-red-400">{{ APP_CONFIG.appName }}</p>
           <h1 class="mt-3 text-2xl font-black leading-none text-white 2xl:text-3xl">Plataforma digital</h1>
@@ -46,7 +46,22 @@
           </div>
         </nav>
 
-        <div class="border-t border-red-500/20 p-5 2xl:p-6">
+        <div class="space-y-3 border-t border-red-500/20 p-5 2xl:p-6">
+          <button
+            type="button"
+            class="theme-switch w-full"
+            :aria-label="isDarkTheme ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
+            :aria-pressed="isDarkTheme"
+            @click="toggleTheme"
+          >
+            <span>
+              <span class="block text-left text-xs uppercase tracking-[0.2em] text-slate-400">Apariencia</span>
+              <span class="mt-1 block text-left font-semibold">{{ isDarkTheme ? 'Tema oscuro' : 'Tema claro' }}</span>
+            </span>
+            <span class="theme-switch-track" aria-hidden="true">
+              <span class="theme-switch-thumb"></span>
+            </span>
+          </button>
           <button class="w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 font-semibold text-white transition hover:border-red-500/40 hover:bg-red-500/10" @click="handleLogout">
             Cerrar sesion
           </button>
@@ -54,7 +69,7 @@
       </aside>
 
       <div class="flex min-w-0 flex-1 flex-col">
-        <header class="sticky top-0 z-20 border-b border-red-500/20 bg-[#080808]/95 backdrop-blur-xl lg:hidden">
+        <header class="app-mobile-header sticky top-0 z-20 border-b backdrop-blur-xl lg:hidden">
           <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
             <div class="min-w-0">
               <p class="text-xs uppercase tracking-[0.32em] text-red-400">{{ APP_CONFIG.appName }}</p>
@@ -65,18 +80,26 @@
                 <p class="truncate text-sm font-semibold text-white">{{ user?.name || 'Invitado' }}</p>
                 <p class="truncate text-xs text-slate-400">{{ user?.id_usuario || user?.email || 'Sesion activa' }}</p>
               </div>
+              <button
+                type="button"
+                class="theme-compact-button"
+                :aria-label="isDarkTheme ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
+                @click="toggleTheme"
+              >
+                {{ isDarkTheme ? 'Claro' : 'Oscuro' }}
+              </button>
               <button class="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-white" @click="handleLogout">Salir</button>
             </div>
           </div>
         </header>
 
-        <main class="flex-1 bg-[#111111]/94 px-3 py-4 pb-24 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm sm:px-5 sm:py-5 lg:px-6 lg:pb-8 xl:px-8 2xl:px-10">
+        <main class="app-main flex-1 px-3 py-4 pb-24 backdrop-blur-sm sm:px-5 sm:py-5 lg:px-6 lg:pb-8 xl:px-8 2xl:px-10">
           <div class="mx-auto w-full max-w-[1800px]">
             <slot />
           </div>
         </main>
 
-        <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-red-500/20 bg-[#080808]/95 px-2 py-2 backdrop-blur-xl lg:hidden">
+        <nav class="app-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t px-2 py-2 backdrop-blur-xl lg:hidden">
           <div class="mx-auto grid max-w-2xl auto-cols-fr grid-flow-col gap-1 overflow-x-auto">
             <router-link
               v-for="link in navigationLinks"
@@ -99,6 +122,7 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
+import { useTheme } from '../composables/useTheme';
 import { APP_CONFIG } from '../config/appConfig';
 
 const props = defineProps({
@@ -111,6 +135,7 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 const { user, signOut, isAdmin } = useAuth();
+const { isDarkTheme, toggleTheme } = useTheme();
 
 const navigationLinks = computed(() => {
   if (props.mode === 'admin' || isAdmin.value) {

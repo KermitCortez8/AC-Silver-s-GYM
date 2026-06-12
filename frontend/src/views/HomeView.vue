@@ -121,12 +121,14 @@ import { Bar, Doughnut, Line } from 'vue-chartjs';
 import { computed, onMounted } from 'vue';
 import ExcelScheduleGrid from '../components/ExcelScheduleGrid.vue';
 import { useAuth } from '../composables/useAuth';
+import { useTheme } from '../composables/useTheme';
 import { useGymStore } from '../stores/gymStore';
 import { attendanceBelongsToClient, buildClientIdentityFromUser, findClientForUser, resolveClientIdForUser, weekdayFromISO } from '../utils/clientIdentity';
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Filler, Legend, LinearScale, LineElement, PointElement, Tooltip);
 
 const { user, isAdmin } = useAuth();
+const { isDarkTheme } = useTheme();
 const gymStore = useGymStore();
 
 const normalizeStatus = (value) => String(value || '').trim().toUpperCase();
@@ -210,8 +212,8 @@ const membershipChartData = computed(() => ({
   datasets: [
     {
       data: Object.values(statusBuckets.value),
-      backgroundColor: ['#dc2626', '#f87171', '#737373'],
-      borderColor: '#050505',
+      backgroundColor: ['#22c55e', '#fbbf24', '#737373'],
+      borderColor: isDarkTheme.value ? '#171717' : '#f5f5f5',
       borderWidth: 2,
     },
   ],
@@ -219,6 +221,8 @@ const membershipChartData = computed(() => ({
 
 const services = ['fitness', 'musculacion', 'cardio', 'baile'];
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+const serviceUsedColors = ['#84cc16', '#38bdf8', '#f59e0b', '#fb7185'];
+const serviceFreeColors = ['#d9f99d', '#bfdbfe', '#fde68a', '#fecdd3'];
 
 const serviceCapacityData = computed(() => ({
   labels: services.map(serviceLabel),
@@ -226,7 +230,9 @@ const serviceCapacityData = computed(() => ({
     {
       label: 'Cupos usados',
       data: services.map((service) => schedules.value.filter((item) => item.servicio === service).reduce((sum, item) => sum + Number(item.cupos_usados || 0), 0)),
-      backgroundColor: '#dc2626',
+      backgroundColor: serviceUsedColors,
+      borderColor: serviceUsedColors,
+      borderWidth: 1,
       borderRadius: 8,
     },
     {
@@ -236,7 +242,9 @@ const serviceCapacityData = computed(() => ({
           .filter((item) => item.servicio === service)
           .reduce((sum, item) => sum + Math.max(0, Number(item.cupos || 0) - Number(item.cupos_usados || 0)), 0),
       ),
-      backgroundColor: '#d4d4d4',
+      backgroundColor: serviceFreeColors,
+      borderColor: serviceUsedColors,
+      borderWidth: 1,
       borderRadius: 8,
     },
   ],
@@ -256,55 +264,55 @@ const attendanceTrendData = computed(() => ({
     {
       label: 'Asistencias',
       data: lastSevenDays.value.map((day) => attendance.value.filter((entry) => String(entry.date || '').slice(0, 10) === day).length),
-      borderColor: '#ef4444',
-      backgroundColor: 'rgba(220, 38, 38, 0.18)',
+      borderColor: '#0ea5e9',
+      backgroundColor: 'rgba(14, 165, 233, 0.18)',
       pointBackgroundColor: '#ffffff',
+      pointBorderColor: '#0284c7',
       tension: 0.35,
       fill: true,
     },
   ],
 }));
 
-const chartTextColor = '#cbd5e1';
-const gridColor = 'rgba(148, 163, 184, 0.18)';
+const chartTextColor = computed(() => (isDarkTheme.value ? '#d4d4d4' : '#404040'));
+const gridColor = computed(() => (isDarkTheme.value ? 'rgba(163, 163, 163, 0.18)' : 'rgba(64, 64, 64, 0.16)'));
+const baseScale = computed(() => ({
+  ticks: { color: chartTextColor.value },
+  grid: { color: gridColor.value },
+}));
 
-const baseScale = {
-  ticks: { color: chartTextColor },
-  grid: { color: gridColor },
-};
-
-const barOptions = {
+const barOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: { labels: { color: chartTextColor, boxWidth: 12 } },
+    legend: { labels: { color: chartTextColor.value, boxWidth: 12 } },
     tooltip: { mode: 'index', intersect: false },
   },
   scales: {
-    x: { stacked: true, ...baseScale },
-    y: { stacked: true, beginAtZero: true, ...baseScale },
+    x: { stacked: true, ...baseScale.value },
+    y: { stacked: true, beginAtZero: true, ...baseScale.value },
   },
-};
+}));
 
-const lineOptions = {
+const lineOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: { labels: { color: chartTextColor, boxWidth: 12 } },
+    legend: { labels: { color: chartTextColor.value, boxWidth: 12 } },
   },
   scales: {
-    x: baseScale,
-    y: { beginAtZero: true, ...baseScale },
+    x: baseScale.value,
+    y: { beginAtZero: true, ...baseScale.value },
   },
-};
+}));
 
-const doughnutOptions = {
+const doughnutOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: { position: 'bottom', labels: { color: chartTextColor, boxWidth: 12 } },
+    legend: { position: 'bottom', labels: { color: chartTextColor.value, boxWidth: 12 } },
   },
-};
+}));
 
 const operationalAlerts = computed(() => [
   { label: 'Membresias por activar', value: pendingMembers.value, detail: 'Clientes con estado en tramite.', color: 'text-amber-300' },
@@ -342,15 +350,16 @@ onMounted(refreshDashboard);
 
 <style scoped>
 .dashboard-panel {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--app-border);
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--app-surface-soft);
   padding: 1.5rem;
   backdrop-filter: blur(16px);
+  box-shadow: 0 18px 40px var(--app-shadow);
 }
 
 .panel-heading p {
-  color: #94a3b8;
+  color: var(--app-text-muted);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.28em;
@@ -359,7 +368,7 @@ onMounted(refreshDashboard);
 
 .panel-heading h2 {
   margin-top: 0.5rem;
-  color: white;
+  color: var(--app-text);
   font-size: 1.5rem;
   font-weight: 900;
 }
