@@ -1,104 +1,110 @@
 <template>
-  <div class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.16),_transparent_32%),linear-gradient(180deg,#020617_0%,#08101f_100%)] text-slate-50">
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-28 right-0 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl"></div>
-      <div class="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-emerald-400/15 blur-3xl"></div>
-    </div>
+  <div class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.45),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.28),_transparent_36%),linear-gradient(180deg,#fff7ed_0%,#ffedd5_100%)] text-slate-950">
+    <header class="border-b border-orange-200 bg-white/90 backdrop-blur">
+      <div class="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <router-link to="/" class="text-xl font-black italic text-orange-600">Silver Gym Surco</router-link>
+        <router-link to="/registro" class="rounded-full bg-orange-500 px-4 py-2 text-sm font-black text-white transition hover:bg-orange-600">
+          Registrarse
+        </router-link>
+      </div>
+    </header>
 
-    <div class="relative mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-4 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
-      <section class="space-y-8">
-        <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
-          <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
-          Backend FastAPI conectado
-        </div>
-
-        <div>
-          <p class="text-[0.65rem] uppercase tracking-[0.5em] text-cyan-300/80">{{ APP_CONFIG.appName }}</p>
-          <h1 class="mt-4 max-w-2xl text-5xl font-black leading-[0.95] text-white sm:text-6xl">
-            Un frontend nuevo para clientes, asistencia, inventario y operación.
-          </h1>
-          <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            La interfaz se sincroniza con el backend real y conserva Google Sign-In, panel de administración y la vista de miembro.
-          </p>
-        </div>
-
-        <div class="grid gap-4 sm:grid-cols-3">
-          <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-            <p class="text-sm text-slate-400">Autenticación</p>
-            <p class="mt-2 text-2xl font-black text-white">Google + backend</p>
-          </div>
-          <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-            <p class="text-sm text-slate-400">Flujos</p>
-            <p class="mt-2 text-2xl font-black text-white">Clientes y asistencia</p>
-          </div>
-          <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-            <p class="text-sm text-slate-400">Operación</p>
-            <p class="mt-2 text-2xl font-black text-white">Inventario y tickets</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8">
+    <main class="mx-auto flex min-h-[calc(100vh-73px)] max-w-[1200px] items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
+      <section class="w-full max-w-xl rounded-[2rem] border border-orange-100 bg-white p-6 shadow-2xl shadow-orange-900/10 sm:p-8">
         <div class="mb-8 text-center">
-          <p class="text-[0.65rem] uppercase tracking-[0.5em] text-cyan-300/80">Acceso</p>
-          <h2 class="mt-3 text-3xl font-black text-white">Iniciar sesión</h2>
-          <p class="mt-3 text-slate-300">Usa tu cuenta de Google o una sesión demo para explorar el panel nuevo.</p>
+          <p class="text-xs font-black uppercase tracking-[0.32em] text-orange-500">Acceso</p>
+          <h1 class="mt-3 text-4xl font-black text-slate-950">Ingreso Plataforma digital</h1>
         </div>
 
-        <div v-if="googleError" class="mb-4 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">
+        <div v-if="googleError" class="mb-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
           {{ googleError }}
         </div>
 
-        <div class="space-y-4">
-          <div ref="googleButtonRef" class="flex min-h-[48px] items-center justify-center"></div>
+        <form class="space-y-4" @submit.prevent="handlePasswordLogin">
+          <label class="block space-y-2 text-left">
+            <span class="text-sm font-semibold text-slate-700">Correo</span>
+            <input
+              v-model="passwordForm.correo"
+              type="email"
+              autocomplete="email"
+              class="w-full rounded-2xl border border-orange-100 bg-[#fff7ed] px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+              placeholder="cliente@correo.com"
+            />
+          </label>
+
+          <label class="block space-y-2 text-left">
+            <span class="text-sm font-semibold text-slate-700">Contrasena</span>
+            <input
+              v-model="passwordForm.password"
+              type="password"
+              autocomplete="current-password"
+              class="w-full rounded-2xl border border-orange-100 bg-[#fff7ed] px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+              placeholder="Tu contrasena"
+            />
+          </label>
 
           <button
-            v-if="APP_CONFIG.enableDemoLogin"
-            class="w-full rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            type="submit"
+            class="w-full rounded-2xl bg-orange-500 px-4 py-3 font-black text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="processing"
+          >
+            {{ processing ? 'Validando...' : 'Entrar con correo' }}
+          </button>
+        </form>
+
+        <div v-if="googleReady" class="my-6 flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-slate-400">
+          <span class="h-px flex-1 bg-orange-100"></span>
+          Google
+          <span class="h-px flex-1 bg-orange-100"></span>
+        </div>
+
+        <div v-if="googleReady" class="space-y-4">
+          <div ref="googleButtonRef" class="flex min-h-[48px] items-center justify-center"></div>
+        </div>
+
+        <div v-if="APP_CONFIG.enableDemoLogin" class="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            class="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 font-bold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="processing"
             @click="handleDemoLogin('user')"
           >
-            {{ processing ? 'Cargando...' : 'Entrar como miembro de prueba' }}
+            Miembro de prueba
           </button>
 
           <button
-            v-if="APP_CONFIG.enableDemoLogin"
-            class="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            class="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 font-bold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="processing"
             @click="handleDemoLogin('admin')"
           >
-            Entrar como admin de prueba
+            Admin de prueba
           </button>
         </div>
-
-        <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-          El backend responde en <span class="text-white">/auth/google</span> y valida la sesión en <span class="text-white">/auth/me</span>.
-        </div>
-
-        <div class="mt-4 text-center text-xs text-slate-500">
-          Soporte: {{ APP_CONFIG.supportEmail }}
-        </div>
       </section>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { APP_CONFIG } from '../config/appConfig';
 import { GOOGLE_CONFIG } from '../config/googleConfig';
-import { authenticateWithGoogleCredential, createDemoCredentials, loadGoogleIdentityScript } from '../services/authService';
+import { authenticateWithGoogleCredential, authenticateWithPassword, createDemoCredentials, loadGoogleIdentityScript } from '../services/authService';
 
 const router = useRouter();
 const { signIn, initializeAuth, isAuthenticated, isAdmin } = useAuth();
 const googleButtonRef = ref(null);
 const googleError = ref('');
+const googleReady = ref(Boolean(GOOGLE_CONFIG.webClientId));
 const processing = ref(false);
+const passwordForm = reactive({
+  correo: '',
+  password: '',
+});
 
 const navigateByRole = (role) => {
-  router.push(role === 'admin' ? '/admin' : '/user');
+  router.push(role === 'user' ? '/user' : '/admin');
 };
 
 const completeLogin = async (credential) => {
@@ -113,7 +119,26 @@ const completeLogin = async (credential) => {
     });
     navigateByRole(result.user.role);
   } catch (error) {
-    googleError.value = error?.message || 'No se pudo completar el inicio de sesión';
+    googleError.value = error?.message || 'No se pudo completar el inicio de sesion';
+  } finally {
+    processing.value = false;
+  }
+};
+
+const handlePasswordLogin = async () => {
+  processing.value = true;
+  googleError.value = '';
+  try {
+    const result = await authenticateWithPassword(passwordForm);
+    await signIn(result.token, {
+      ...result.user,
+      expiresIn: result.expiresIn,
+      role: result.user.role,
+      authSource: result.source,
+    });
+    navigateByRole(result.user.role);
+  } catch (error) {
+    googleError.value = error?.message || 'Correo o contrasena incorrectos';
   } finally {
     processing.value = false;
   }
@@ -121,7 +146,7 @@ const completeLogin = async (credential) => {
 
 const renderGoogleButton = async () => {
   if (!GOOGLE_CONFIG.webClientId) {
-    googleError.value = 'Configura VITE_GOOGLE_CLIENT_ID para habilitar Google real.';
+    googleReady.value = false;
     return;
   }
 
@@ -129,7 +154,7 @@ const renderGoogleButton = async () => {
     await loadGoogleIdentityScript();
 
     if (!window.google?.accounts?.id || !googleButtonRef.value) {
-      throw new Error('Google Identity Services no está disponible');
+      throw new Error('Google no esta disponible');
     }
 
     window.google.accounts.id.initialize({
@@ -151,7 +176,7 @@ const renderGoogleButton = async () => {
       width: 320,
     });
   } catch (error) {
-    googleError.value = error?.message || 'No se pudo cargar el botón de Google';
+    googleError.value = error?.message || 'No se pudo cargar Google';
   }
 };
 
@@ -166,7 +191,7 @@ const handleDemoLogin = async (role) => {
     });
     navigateByRole(role);
   } catch (error) {
-    googleError.value = error?.message || 'No se pudo iniciar la sesión de demo';
+    googleError.value = error?.message || 'No se pudo iniciar la sesion de prueba';
   } finally {
     processing.value = false;
   }

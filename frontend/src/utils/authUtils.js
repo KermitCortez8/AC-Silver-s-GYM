@@ -43,14 +43,21 @@ export const getUserRole = (email) => {
  * Formatear datos del usuario
  */
 export const formatUserData = (googleUserData) => {
+  const normalizedEmail = googleUserData.email || googleUserData.correo || '';
+  const normalizedId = googleUserData.id_usuario || googleUserData.id || googleUserData.sub || normalizedEmail;
   return {
-    id: googleUserData.sub || googleUserData.id,
-    email: googleUserData.email || '',
+    id: normalizedId,
+    id_usuario: googleUserData.id_usuario || normalizedId,
+    id_cliente: googleUserData.id_cliente || null,
+    email: normalizedEmail,
+    correo: normalizedEmail,
+    telefono: googleUserData.telefono || '',
+    dni: googleUserData.dni || '',
     name: googleUserData.name || '',
     picture: googleUserData.picture || '',
     givenName: googleUserData.given_name || '',
     familyName: googleUserData.family_name || '',
-    role: getUserRole(googleUserData.email),
+    role: googleUserData.role || getUserRole(normalizedEmail),
     loginTime: new Date().toISOString(),
   };
 };
@@ -59,12 +66,13 @@ export const formatUserData = (googleUserData) => {
  * Validar estructura del usuario
  */
 export const isValidUser = (user) => {
+  const userEmail = user?.email || user?.correo;
   return (
     user &&
     typeof user === 'object' &&
-    user.id &&
-    user.email &&
-    isValidEmail(user.email)
+    (user.id || user.id_usuario) &&
+    userEmail &&
+    isValidEmail(userEmail)
   );
 };
 

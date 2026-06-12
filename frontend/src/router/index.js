@@ -5,10 +5,19 @@ import { useAuthStore } from '../stores/authStore';
 import LoginView from '../views/LoginView.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
 import UserDashboard from '../views/UserDashboard.vue';
+import LandingView from '../views/LandingView.vue';
+import RegisterView from '../views/RegisterView.vue';
+import PaymentView from '../views/PaymentView.vue';
 import HomeView from '../views/HomeView.vue';
+import ClientsView from '../views/ClientsView.vue';
 import UsersView from '../views/UsersView.vue';
 import AttendanceView from '../views/AttendanceView.vue';
+import ServiceSchedulesView from '../views/ServiceSchedulesView.vue';
+import EnrollmentView from '../views/EnrollmentView.vue';
 import InventoryView from '../views/InventoryView.vue';
+import StoreView from '../views/StoreView.vue';
+import StorePaymentView from '../views/StorePaymentView.vue';
+import OrdersView from '../views/OrdersView.vue';
 import ScheduleView from '../views/ScheduleView.vue';
 import UserAttendanceView from '../views/UserAttendanceView.vue';
 import AuthCallbackView from '../views/AuthCallbackView.vue';
@@ -29,8 +38,20 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: HomeView,
-    meta: { requiresAuth: true },
+    component: LandingView,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/registro',
+    name: 'Register',
+    component: RegisterView,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/registro/pago/:idCliente',
+    name: 'Payment',
+    component: PaymentView,
+    meta: { requiresAuth: false },
   },
   {
     path: '/admin',
@@ -52,14 +73,39 @@ const routes = [
         component: UsersView,
       },
       {
+        path: 'clients',
+        name: 'Clients',
+        component: ClientsView,
+      },
+      {
         path: 'attendance',
         name: 'Attendance',
         component: AttendanceView,
       },
       {
+        path: 'service-schedules',
+        name: 'ServiceSchedules',
+        component: ServiceSchedulesView,
+      },
+      {
+        path: 'enrollment',
+        name: 'AdminEnrollment',
+        component: EnrollmentView,
+      },
+      {
         path: 'inventory',
         name: 'Inventory',
         component: InventoryView,
+      },
+      {
+        path: 'store',
+        name: 'Store',
+        component: StoreView,
+      },
+      {
+        path: 'orders',
+        name: 'Orders',
+        component: OrdersView,
       },
     ],
   },
@@ -78,9 +124,24 @@ const routes = [
         component: HomeView,
       },
       {
+        path: 'store',
+        name: 'UserStore',
+        component: StoreView,
+      },
+      {
+        path: 'store/payment',
+        name: 'UserStorePayment',
+        component: StorePaymentView,
+      },
+      {
         path: 'schedule',
         name: 'Schedule',
         component: ScheduleView,
+      },
+      {
+        path: 'enrollment',
+        name: 'UserEnrollment',
+        component: EnrollmentView,
       },
       {
         path: 'attendance',
@@ -103,6 +164,10 @@ router.beforeEach(async (to) => {
   // Inicializar autenticación si no está hecho
   if (!authStore.isInitialized) {
     await authStore.initializeAuth();
+  }
+
+  if (to.path === '/' && authStore.isAuthenticated) {
+    return authStore.isAdmin ? '/admin/dashboard' : '/user/dashboard';
   }
 
   // Verificar si la ruta requiere autenticación

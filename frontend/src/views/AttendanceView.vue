@@ -1,186 +1,156 @@
 <template>
   <div class="space-y-6">
-    <section class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Operación</p>
-      <h1 class="mt-2 text-3xl font-black text-white">Asistencia</h1>
-      <p class="mt-2 max-w-3xl text-slate-300">Valida ingresos por DNI o código, consulta métricas de afluencia y revisa el historial en tiempo real.</p>
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+      <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Asistencia</p>
+      <h1 class="mt-2 text-3xl font-black text-white">Control de entrada y salida</h1>
+      <p class="mt-2 text-slate-300">Busca al cliente, revisa su horario matriculado y registra entrada/salida.</p>
     </section>
 
-    <section class="grid gap-4 md:grid-cols-4">
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Hoy</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ attendanceAnalytics.today }}</p>
-      </article>
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Semana</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ attendanceAnalytics.week }}</p>
-      </article>
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Mes</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ attendanceAnalytics.month }}</p>
-      </article>
-      <article class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 backdrop-blur">
-        <p class="text-sm text-slate-400">Alertas de membresía</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ membershipAlerts.length }}</p>
-      </article>
-    </section>
+    <section class="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+        <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Buscar cliente</p>
+        <h2 class="mt-2 text-2xl font-black text-white">DNI o codigo</h2>
 
-    <section class="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-      <form class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="handleSubmit">
-        <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Nuevo registro</p>
-        <h2 class="mt-2 text-2xl font-black text-white">Check-in por DNI o código</h2>
-
-        <div class="mt-5 space-y-4">
-          <label class="block space-y-2">
-            <span class="text-sm text-slate-300">DNI o código interno</span>
-            <input
-              v-model="form.identity"
-              class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none placeholder:text-slate-500"
-              placeholder="74281635 o CL-0001"
-            />
-          </label>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <label class="block space-y-2">
-              <span class="text-sm text-slate-300">Tipo</span>
-              <select v-model="form.type" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-                <option>Entrada</option>
-                <option>Salida</option>
-              </select>
-            </label>
-
-            <label class="block space-y-2">
-              <span class="text-sm text-slate-300">Modo</span>
-              <select v-model="form.mode" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none">
-                <option value="dni">DNI</option>
-                <option value="code">Código interno</option>
-              </select>
-            </label>
+        <form class="mt-5 space-y-4" @submit.prevent="lookupClient">
+          <div class="grid grid-cols-2 rounded-2xl border border-white/10 bg-slate-950/60 p-1">
+            <button type="button" class="rounded-xl px-3 py-2 text-sm font-bold" :class="mode === 'dni' ? 'bg-cyan-400 text-slate-950' : 'text-slate-300'" @click="mode = 'dni'">DNI</button>
+            <button type="button" class="rounded-xl px-3 py-2 text-sm font-bold" :class="mode === 'code' ? 'bg-cyan-400 text-slate-950' : 'text-slate-300'" @click="mode = 'code'">Codigo</button>
           </div>
 
-          <label class="block space-y-2">
-            <span class="text-sm text-slate-300">Observación</span>
-            <textarea v-model="form.note" rows="3" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" placeholder="Opcional"></textarea>
-          </label>
+          <input v-model="lookup" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" :placeholder="mode === 'dni' ? 'Ej. 74281635' : 'Ej. SGCLI104'" />
+          <button class="w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950">Mostrar horario</button>
+        </form>
+
+        <div v-if="selectedClient" class="mt-5 rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+          <p class="font-bold text-white">{{ selectedClient.name }}</p>
+          <p class="text-sm text-slate-400">{{ selectedClient.internalCode }} - DNI {{ selectedClient.dni }}</p>
+          <p class="mt-2 text-sm text-slate-300">Membresia: {{ selectedClient.membershipStatus || selectedClient.status }}</p>
         </div>
 
-        <button type="submit" class="mt-5 w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">
-          Validar y registrar
-        </button>
-
-        <p v-if="feedbackMessage" class="mt-4 rounded-2xl border px-4 py-3 text-sm" :class="feedbackToneClass">
-          {{ feedbackMessage }}
+        <p v-if="feedback" class="mt-4 rounded-2xl border px-4 py-3 text-sm" :class="feedbackTone === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50'">
+          {{ feedback }}
         </p>
+      </div>
 
-        <div v-if="validatedRecord" class="mt-4 rounded-[1.75rem] border border-emerald-400/20 bg-emerald-400/10 p-4 text-emerald-50">
-          <p class="text-[0.65rem] uppercase tracking-[0.5em] text-emerald-200">Registro confirmado</p>
-          <p class="mt-2 text-lg font-bold text-white">{{ validatedRecord.memberName }}</p>
-          <p class="text-sm text-emerald-100/90">{{ validatedRecord.memberCode }} · {{ validatedRecord.date }} · {{ validatedRecord.time }}</p>
-        </div>
-      </form>
-
-      <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
-        <div class="flex items-end justify-between gap-4">
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+        <div class="flex items-center justify-between gap-4">
           <div>
-            <p class="text-[0.65rem] uppercase tracking-[0.5em] text-slate-400">Historial</p>
-            <h2 class="mt-2 text-2xl font-black text-white">Últimos registros</h2>
+            <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Horario realizado</p>
+            <h2 class="mt-2 text-2xl font-black text-white">Matriculas del cliente</h2>
           </div>
-          <div class="rounded-2xl bg-slate-950/70 px-4 py-3 text-right">
+          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
             <p class="text-xs text-slate-400">Hoy</p>
-            <p class="text-xl font-black text-white">{{ stats.attendanceToday }}</p>
-          </div>
-        </div>
-
-        <div v-if="membershipAlerts.length" class="mt-5 rounded-[1.75rem] border border-amber-400/20 bg-amber-400/10 p-4 text-amber-50">
-          <p class="text-[0.65rem] uppercase tracking-[0.5em] text-amber-200">Alertas de vencimiento</p>
-          <div class="mt-3 space-y-2 text-sm">
-            <p v-for="member in membershipAlerts.slice(0, 3)" :key="member.id">
-              {{ member.name }} · vence en {{ member.daysUntilExpiry }} día(s)
-            </p>
+            <p class="text-xl font-black text-white">{{ attendanceAnalytics.today }}</p>
           </div>
         </div>
 
         <div class="mt-5 space-y-3">
-          <article v-for="entry in recentAttendance" :key="entry.id" class="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <article v-for="item in clientEnrollments" :key="item.id_matricula" class="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p class="font-semibold text-white">{{ entry.memberName }}</p>
-                <p class="text-sm text-slate-400">{{ entry.memberCode }} · {{ entry.exercise }}</p>
-                <p class="text-sm text-slate-400">{{ entry.note }}</p>
+                <p class="text-lg font-bold text-white">{{ serviceLabel(item.servicio) }}</p>
+                <p class="text-sm text-slate-400">{{ dayLabel(item.dia) }} {{ item.codigo_dia }} - {{ item.hora_inicio }} a {{ item.hora_fin }}</p>
+                <p class="mt-2 text-sm text-slate-300">Entrada: {{ attendanceFor(item)?.entryTime || '-' }} · Salida: {{ attendanceFor(item)?.exitTime || '-' }}</p>
               </div>
-              <div class="text-sm text-slate-300 sm:text-right">
-                <p class="font-semibold text-cyan-200">{{ entry.type }}</p>
-                <p>{{ entry.date }} · {{ entry.time }}</p>
+              <div class="flex flex-wrap gap-2 lg:justify-end">
+                <button
+                  class="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+                  :disabled="Boolean(attendanceFor(item)?.entryTime)"
+                  @click="registerEntry(item)"
+                >
+                  Entrada
+                </button>
+                <button
+                  class="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+                  :disabled="!attendanceFor(item)?.id_asistencia || Boolean(attendanceFor(item)?.exitTime)"
+                  @click="registerExit(item)"
+                >
+                  Salida
+                </button>
               </div>
             </div>
           </article>
         </div>
+
+        <p v-if="selectedClient && !clientEnrollments.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-6 text-center text-slate-400">
+          Este cliente no tiene horarios matriculados.
+        </p>
+        <p v-if="!selectedClient" class="mt-6 rounded-2xl border border-dashed border-white/10 p-6 text-center text-slate-400">
+          Busca un cliente para ver su horario.
+        </p>
       </div>
     </section>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
-const recentAttendance = computed(() => gymStore.recentAttendance.slice(0, 12));
-const stats = computed(() => gymStore.stats);
+const mode = ref('dni');
+const lookup = ref('');
+const selectedClient = ref(null);
+const feedback = ref('');
+const feedbackTone = ref('success');
+
 const attendanceAnalytics = computed(() => gymStore.attendanceAnalytics);
-const membershipAlerts = computed(() => gymStore.membershipAlerts);
-const feedbackMessage = ref('');
-const feedbackTone = ref('info');
-const validatedRecord = ref(null);
-
-const form = reactive({
-  identity: '',
-  type: 'Entrada',
-  note: '',
-  mode: 'dni',
+const clientEnrollments = computed(() => {
+  const idCliente = Number(selectedClient.value?.id_cliente || 0);
+  if (!idCliente) return [];
+  return gymStore.enrollments.filter((item) => Number(item.id_cliente) === idCliente && item.estado !== 'CANCELADA');
 });
 
-const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success') {
-    return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
-  }
+const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Miercoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sabado', domingo: 'Domingo' })[day] || day;
+const attendanceFor = (item) => gymStore.attendance.find((entry) => Number(entry.idMatricula) === Number(item.id_matricula));
 
-  if (feedbackTone.value === 'error') {
-    return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
-  }
+const lookupClient = async () => {
+  await gymStore.fetchFromBackend?.().catch(() => {});
+  const query = lookup.value.trim().toUpperCase();
+  selectedClient.value =
+    mode.value === 'dni'
+      ? gymStore.members.find((member) => String(member.dni) === lookup.value.trim()) || null
+      : gymStore.members.find((member) => [member.id, member.internalCode].map((value) => String(value || '').toUpperCase()).includes(query)) || null;
 
-  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
-});
-
-const handleSubmit = async () => {
-  if (!form.identity.trim()) {
+  if (!selectedClient.value) {
     feedbackTone.value = 'error';
-    feedbackMessage.value = 'Ingresa un DNI o código válido.';
+    feedback.value = 'Cliente no encontrado.';
     return;
   }
 
-  try {
-    const record = form.mode === 'code'
-      ? await gymStore.recordAttendanceByCode(form.identity, '', form.type, form.note)
-      : await gymStore.checkinByDni(form.identity);
+  await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: selectedClient.value.id_cliente }).catch(() => {});
+  feedback.value = '';
+};
 
-    validatedRecord.value = {
-      memberName: record?.memberName || `Cliente ${form.identity}`,
-      memberCode: record?.memberCode || form.identity,
-      date: record?.fecha || record?.date || todayISO(),
-      time: record?.hora || record?.time || '',
-      type: record?.type || form.type,
-    };
+const registerEntry = async (item) => {
+  try {
+    await gymStore.registerAttendanceEntry({
+      id_matricula: item.id_matricula,
+      fecha: new Date().toISOString().slice(0, 10),
+      hora_entrada: new Date().toTimeString().slice(0, 5),
+    });
     feedbackTone.value = 'success';
-    feedbackMessage.value = 'Asistencia registrada correctamente.';
-    form.identity = '';
-    form.note = '';
+    feedback.value = 'Entrada registrada.';
   } catch (error) {
-    validatedRecord.value = null;
     feedbackTone.value = 'error';
-    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo validar el acceso.';
+    feedback.value = error instanceof Error ? error.message : 'No se pudo registrar entrada.';
   }
 };
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const registerExit = async (item) => {
+  const current = attendanceFor(item);
+  if (!current?.id_asistencia) return;
+  try {
+    await gymStore.registerAttendanceExit({
+      id_asistencia: current.id_asistencia,
+      hora_salida: new Date().toTimeString().slice(0, 5),
+    });
+    feedbackTone.value = 'success';
+    feedback.value = 'Salida registrada.';
+  } catch (error) {
+    feedbackTone.value = 'error';
+    feedback.value = error instanceof Error ? error.message : 'No se pudo registrar salida.';
+  }
+};
 </script>
