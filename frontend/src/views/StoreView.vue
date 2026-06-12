@@ -36,34 +36,66 @@
         {{ feedbackMessage }}
       </p>
 
-      <div class="mt-5 grid gap-4 xl:grid-cols-2">
-        <article v-for="producto in productos" :key="producto.id_producto" class="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <p class="text-lg font-bold text-white">{{ producto.nombre }}</p>
-                <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-amber-100">{{ productCode(producto.id_producto) }}</span>
-              </div>
-              <p class="mt-2 text-sm text-slate-400">{{ producto.categoria }}</p>
-              <p class="mt-1 text-sm text-slate-300">{{ producto.descripcion || 'Sin descripcion' }}</p>
-              <p class="mt-2 text-sm font-bold text-emerald-300">S/. {{ Number(producto.precio || 0).toFixed(2) }}</p>
-              <p class="text-sm text-slate-300">Stock: {{ producto.cantidad }} | Minimo: {{ producto.minimo || 0 }} | Unidad: {{ producto.unidad_venta }}</p>
-              <p v-if="producto.id_item" class="text-xs text-amber-200">Vinculado a almacen: #{{ producto.id_item }}</p>
-              <p class="mt-1 text-xs" :class="producto.estado === 'Disponible' ? 'text-emerald-300' : 'text-amber-300'">
-                Estado: {{ producto.estado }}
-              </p>
-            </div>
-
-            <div class="flex shrink-0 gap-2">
-              <button class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5" @click="editProducto(producto)">
-                Editar
-              </button>
-              <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 hover:bg-rose-400/10" @click="deleteProducto(producto.id_producto)">
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </article>
+      <div v-if="productos.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[1080px] text-left text-sm">
+            <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
+              <tr>
+                <th class="px-5 py-4 font-bold">Producto</th>
+                <th class="px-4 py-4 font-bold">Categoria</th>
+                <th class="px-4 py-4 font-bold">Precio</th>
+                <th class="px-4 py-4 font-bold">Stock</th>
+                <th class="px-4 py-4 font-bold">Estado</th>
+                <th class="px-4 py-4 font-bold">Almacen</th>
+                <th class="px-5 py-4 text-right font-bold">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10">
+              <tr v-for="producto in productos" :key="producto.id_producto" class="transition hover:bg-white/[0.04]">
+                <td class="max-w-sm px-5 py-4 align-top">
+                  <div class="flex items-start gap-3">
+                    <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-black text-amber-200">
+                      {{ productCode(producto.id_producto) }}
+                    </span>
+                    <div class="min-w-0">
+                      <p class="font-bold text-white">{{ producto.nombre }}</p>
+                      <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{{ producto.descripcion || 'Sin descripcion' }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-4 align-top text-slate-300">{{ producto.categoria || 'General' }}</td>
+                <td class="whitespace-nowrap px-4 py-4 align-top font-black text-emerald-300">
+                  S/. {{ Number(producto.precio || 0).toFixed(2) }}
+                </td>
+                <td class="px-4 py-4 align-top">
+                  <p class="font-bold" :class="isProductLowStock(producto) ? 'text-rose-300' : 'text-white'">
+                    {{ producto.cantidad }} {{ producto.unidad_venta || 'unidad' }}
+                  </p>
+                  <p class="mt-1 text-xs text-slate-400">Minimo: {{ producto.minimo || 0 }}</p>
+                </td>
+                <td class="px-4 py-4 align-top">
+                  <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold" :class="productStatusClass(producto.estado)">
+                    {{ producto.estado }}
+                  </span>
+                </td>
+                <td class="px-4 py-4 align-top">
+                  <span v-if="producto.id_item" class="font-semibold text-amber-200">Item #{{ producto.id_item }}</span>
+                  <span v-else class="text-slate-500">Sin vincular</span>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <div class="flex justify-end gap-2">
+                    <button class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5" @click="editProducto(producto)">
+                      Editar
+                    </button>
+                    <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 transition hover:bg-rose-400/10" @click="deleteProducto(producto.id_producto)">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <p v-if="!productos.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">
@@ -311,6 +343,14 @@ const currentProductCode = computed(() => {
 });
 
 const productCode = (id) => `PROD-${String(id || 0).padStart(4, '0')}`;
+
+const isProductLowStock = (producto) => Number(producto.cantidad || 0) <= Number(producto.minimo || 0);
+
+const productStatusClass = (status) => {
+  if (status === 'Disponible') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300';
+  if (status === 'Agotado') return 'border-rose-400/20 bg-rose-400/10 text-rose-300';
+  return 'border-amber-400/20 bg-amber-400/10 text-amber-300';
+};
 
 const resetForm = () => {
   editingId.value = '';

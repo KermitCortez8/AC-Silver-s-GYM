@@ -40,31 +40,64 @@
         {{ feedbackMessage }}
       </p>
 
-      <div class="mt-5 grid gap-4 xl:grid-cols-2">
-        <article v-for="item in inventory" :key="item.id" class="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <p class="text-lg font-bold text-white">{{ item.name }}</p>
-                <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-amber-100">{{ item.inventoryCode }}</span>
-              </div>
-              <p class="mt-2 text-sm text-slate-400">{{ item.category }} | {{ item.location }}</p>
-              <p class="mt-1 text-sm text-slate-300">Cantidad: {{ item.quantity }} | Stock min.: {{ item.minQuantity }}</p>
-              <p class="mt-1 text-sm text-slate-300">Unidad venta: {{ item.unidad_venta }} | Precio venta: S/. {{ Number(item.precio_venta || 0).toFixed(2) }}</p>
-              <p class="mt-1 text-sm text-amber-200">N. Activo: {{ item.n_activo || 'Auto' }} | Estado: {{ item.status }}</p>
-              <p class="mt-1 text-sm text-slate-400">{{ item.observations || 'Sin observaciones' }}</p>
-            </div>
-
-            <div class="flex shrink-0 gap-2">
-              <button class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5" @click="editItem(item)">
-                Editar
-              </button>
-              <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 hover:bg-rose-400/10" @click="deleteItem(item.id)">
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </article>
+      <div v-if="inventory.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[1120px] text-left text-sm">
+            <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
+              <tr>
+                <th class="px-5 py-4 font-bold">Articulo</th>
+                <th class="px-4 py-4 font-bold">Categoria</th>
+                <th class="px-4 py-4 font-bold">Ubicacion</th>
+                <th class="px-4 py-4 font-bold">Stock</th>
+                <th class="px-4 py-4 font-bold">Precio venta</th>
+                <th class="px-4 py-4 font-bold">Estado</th>
+                <th class="px-5 py-4 text-right font-bold">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10">
+              <tr v-for="item in inventory" :key="item.id" class="transition hover:bg-white/[0.04]">
+                <td class="max-w-sm px-5 py-4 align-top">
+                  <div class="flex items-start gap-3">
+                    <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-black text-amber-200">
+                      {{ item.inventoryCode }}
+                    </span>
+                    <div class="min-w-0">
+                      <p class="font-bold text-white">{{ item.name }}</p>
+                      <p class="mt-1 text-xs text-amber-100/80">N. Activo: {{ item.n_activo || 'Auto' }}</p>
+                      <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{{ item.observations || 'Sin observaciones' }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-4 align-top text-slate-300">{{ item.category || 'General' }}</td>
+                <td class="px-4 py-4 align-top text-slate-300">{{ item.location || 'Sin ubicacion' }}</td>
+                <td class="px-4 py-4 align-top">
+                  <p class="font-bold" :class="isLowStock(item) ? 'text-rose-300' : 'text-white'">
+                    {{ item.quantity }} {{ item.unidad_venta || 'unidad' }}
+                  </p>
+                  <p class="mt-1 text-xs text-slate-400">Minimo: {{ item.minQuantity || 0 }}</p>
+                </td>
+                <td class="whitespace-nowrap px-4 py-4 align-top font-black text-emerald-300">
+                  S/. {{ Number(item.precio_venta || 0).toFixed(2) }}
+                </td>
+                <td class="px-4 py-4 align-top">
+                  <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold" :class="inventoryStatusClass(item.status)">
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <div class="flex justify-end gap-2">
+                    <button class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5" @click="editItem(item)">
+                      Editar
+                    </button>
+                    <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 transition hover:bg-rose-400/10" @click="deleteItem(item.id)">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <p v-if="!inventory.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">
@@ -175,6 +208,15 @@ const feedbackToneClass = computed(() => {
   if (feedbackTone.value === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
   return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
 });
+
+const isLowStock = (item) => Number(item.quantity || 0) <= Number(item.minQuantity || 0);
+
+const inventoryStatusClass = (status) => {
+  if (status === 'Operativo') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300';
+  if (status === 'En mantenimiento') return 'border-amber-400/20 bg-amber-400/10 text-amber-300';
+  if (status === 'Stock bajo') return 'border-orange-400/20 bg-orange-400/10 text-orange-300';
+  return 'border-rose-400/20 bg-rose-400/10 text-rose-300';
+};
 
 const currentInventoryCode = computed(() => {
   if (editingId.value) {

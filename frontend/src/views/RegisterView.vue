@@ -1,15 +1,15 @@
 <template>
-  <div class="min-h-screen bg-[#fff7ed] text-slate-950">
+  <div class="min-h-screen bg-[#f5f5f5] text-slate-950">
     <header class="border-b border-orange-200 bg-white/85 backdrop-blur">
       <div class="mx-auto flex max-w-[1560px] items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <router-link to="/" class="text-lg font-black italic text-[#f97316]">Silver Gym Surco</router-link>
-        <router-link to="/login" class="rounded-sm border border-[#f97316]/25 px-4 py-2 text-sm font-bold text-[#f97316]">Acceso</router-link>
+        <router-link to="/" class="text-lg font-black italic text-[#dc2626]">Silver Gym Surco</router-link>
+        <router-link to="/login" class="rounded-sm border border-[#dc2626]/25 px-4 py-2 text-sm font-bold text-[#dc2626]">Acceso</router-link>
       </div>
     </header>
 
     <main class="mx-auto grid max-w-[1560px] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
       <section class="rounded-2xl border border-orange-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-        <p class="text-xs font-bold uppercase tracking-[0.35em] text-[#f97316]">Registro</p>
+        <p class="text-xs font-bold uppercase tracking-[0.35em] text-[#dc2626]">Registro</p>
         <h1 class="mt-3 text-3xl font-black">Crea tu preinscripcion</h1>
 
         <div v-if="googleError" class="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
@@ -20,38 +20,38 @@
         <form class="mt-6 space-y-4" @submit.prevent="submitRegistration">
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Nombre completo</span>
-            <input v-model="form.nombre" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#f97316]" placeholder="Jose Perez" />
+            <input v-model="form.nombre" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Jose Perez" />
           </label>
 
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Correo</span>
-            <input v-model="form.correo" type="email" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#f97316]" placeholder="cliente@correo.com" />
+            <input v-model="form.correo" type="email" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="cliente@correo.com" />
           </label>
 
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Contrasena</span>
-            <input v-model="form.password" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#f97316]" placeholder="Minimo 6 caracteres" />
+            <input v-model="form.password" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Minimo 6 caracteres" />
           </label>
 
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="block space-y-2">
               <span class="text-sm font-semibold text-slate-700">DNI</span>
-              <input v-model="form.dni" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#f97316]" placeholder="12345678" />
+              <input v-model="form.dni" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="12345678" />
             </label>
             <label class="block space-y-2">
               <span class="text-sm font-semibold text-slate-700">Telefono</span>
-              <input v-model="form.telefono" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#f97316]" placeholder="999111222" />
+              <input v-model="form.telefono" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="999111222" />
             </label>
           </div>
 
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Referencia de pago</span>
-            <input v-model="form.referencia_pago" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#f97316]" placeholder="Operacion, voucher o codigo" />
+            <input v-model="form.referencia_pago" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Operacion, voucher o codigo" />
           </label>
 
           <button
             type="submit"
-            class="w-full rounded-xl bg-[#f97316] px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#ea580c] disabled:cursor-not-allowed disabled:opacity-60"
+            class="w-full rounded-xl bg-[#dc2626] px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="isSubmitting"
           >
             {{ isSubmitting ? 'Procesando...' : 'Continuar a pago' }}
@@ -64,7 +64,7 @@
       </section>
 
       <section class="space-y-4">
-        <div class="rounded-2xl bg-[#f97316] p-6 text-white">
+        <div class="rounded-2xl bg-[#dc2626] p-6 text-white">
           <p class="text-xs font-bold uppercase tracking-[0.35em] text-white/70">Membresia</p>
           <h2 class="mt-2 text-3xl font-black">Elige tu plan</h2>
         </div>
@@ -73,7 +73,7 @@
           v-for="plan in planOptions"
           :key="plan.id"
           class="cursor-pointer rounded-2xl border bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition"
-          :class="form.plan === plan.id ? 'border-[#f97316] ring-2 ring-[#f97316]/20' : 'border-orange-100 hover:border-[#f97316]/40'"
+          :class="form.plan === plan.id ? 'border-[#dc2626] ring-2 ring-[#dc2626]/20' : 'border-orange-100 hover:border-[#dc2626]/40'"
           @click="form.plan = plan.id"
         >
           <div class="flex items-start justify-between gap-4">
@@ -81,10 +81,10 @@
               <p class="text-xl font-black">{{ plan.label }}</p>
               <p class="mt-1 text-sm leading-6 text-slate-600">{{ plan.detail }}</p>
             </div>
-            <p class="text-3xl font-black text-[#f97316]">S/ {{ plan.price }}</p>
+            <p class="text-3xl font-black text-[#dc2626]">S/ {{ plan.price }}</p>
           </div>
           <div class="mt-4 flex flex-wrap gap-2">
-            <span v-for="tag in plan.tags" :key="tag" class="rounded-full bg-[#ffedd5] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-slate-600">{{ tag }}</span>
+            <span v-for="tag in plan.tags" :key="tag" class="rounded-full bg-[#fee2e2] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-slate-600">{{ tag }}</span>
           </div>
         </article>
 

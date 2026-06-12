@@ -124,10 +124,15 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-white/10">
-              <tr v-for="schedule in filteredSchedules" :key="schedule.id_horario_servicio" class="group bg-slate-900/45 transition hover:bg-slate-800/80">
+              <tr
+                v-for="schedule in filteredSchedules"
+                :key="schedule.id_horario_servicio"
+                class="group bg-slate-900/45 transition hover:bg-slate-800/80"
+                :style="serviceStyle(schedule.servicio)"
+              >
                 <td class="px-5 py-4">
                   <div class="flex items-center gap-3">
-                    <span class="h-10 w-1.5 rounded-full" :class="serviceAccent(schedule.servicio)"></span>
+                    <span class="schedule-service-accent h-10 w-1.5 rounded-full"></span>
                     <div class="min-w-0">
                       <p class="truncate font-black text-white">{{ serviceLabel(schedule.servicio) }}</p>
                       <p class="mt-1 text-xs text-slate-500">Horario #{{ schedule.id_horario_servicio }}</p>
@@ -136,7 +141,7 @@
                 </td>
                 <td class="px-5 py-4">
                   <p class="font-bold text-slate-200">{{ dayLabel(schedule.dia) }}</p>
-                  <span class="mt-1 inline-flex rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-xs font-black text-amber-200">
+                  <span class="schedule-service-badge mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-black">
                     {{ schedule.codigo_dia }}
                   </span>
                 </td>
@@ -151,7 +156,7 @@
                       <span class="text-slate-500">{{ availableSlots(schedule) }} libres</span>
                     </div>
                     <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
-                      <div class="h-full rounded-full bg-gradient-to-r from-amber-300 to-orange-400" :style="{ width: `${slotsPercent(schedule)}%` }"></div>
+                      <div class="schedule-service-progress h-full rounded-full" :style="{ width: `${slotsPercent(schedule)}%` }"></div>
                     </div>
                   </div>
                 </td>
@@ -172,13 +177,21 @@
         </div>
 
         <div class="grid gap-3 p-3 lg:hidden">
-          <article v-for="schedule in filteredSchedules" :key="`mobile-${schedule.id_horario_servicio}`" class="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+          <article
+            v-for="schedule in filteredSchedules"
+            :key="`mobile-${schedule.id_horario_servicio}`"
+            class="rounded-2xl border border-white/10 bg-slate-900/70 p-4"
+            :style="serviceStyle(schedule.servicio)"
+          >
             <div class="flex items-start justify-between gap-3">
               <div class="flex min-w-0 items-center gap-3">
-                <span class="h-11 w-1.5 rounded-full" :class="serviceAccent(schedule.servicio)"></span>
+                <span class="schedule-service-accent h-11 w-1.5 rounded-full"></span>
                 <div class="min-w-0">
                   <p class="truncate text-base font-black text-white">{{ serviceLabel(schedule.servicio) }}</p>
-                  <p class="mt-1 text-xs text-slate-500">{{ dayLabel(schedule.dia) }} - {{ schedule.codigo_dia }}</p>
+                  <p class="mt-1 text-xs text-slate-500">
+                    {{ dayLabel(schedule.dia) }}
+                    <span class="schedule-service-badge ml-1 inline-flex rounded-full px-2 py-0.5 font-black">{{ schedule.codigo_dia }}</span>
+                  </p>
                 </div>
               </div>
               <span class="shrink-0 rounded-full px-3 py-1 text-xs font-black" :class="statusClass(schedule)">
@@ -200,7 +213,7 @@
             </div>
 
             <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
-              <div class="h-full rounded-full bg-gradient-to-r from-amber-300 to-orange-400" :style="{ width: `${slotsPercent(schedule)}%` }"></div>
+              <div class="schedule-service-progress h-full rounded-full" :style="{ width: `${slotsPercent(schedule)}%` }"></div>
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-2">
@@ -352,7 +365,8 @@ const defaultForm = () => ({
 
 const form = reactive(defaultForm());
 
-const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+const normalizeService = (service) => String(service || '').trim().toLowerCase();
+const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[normalizeService(service)] || service;
 const dayLabel = (day) => days.find((entry) => entry.value === day)?.label || day;
 const dayOrder = (day) => days.findIndex((entry) => entry.value === day);
 const serviceOrder = (service) => Math.max(0, serviceFilters.findIndex((entry) => entry.value === service) - 1);
@@ -383,13 +397,20 @@ const slotsPercent = (schedule) => {
   return Math.round((used / total) * 100);
 };
 
-const serviceAccent = (service) =>
-  ({
-    fitness: 'bg-amber-300',
-    musculacion: 'bg-orange-400',
-    cardio: 'bg-cyan-300',
-    baile: 'bg-fuchsia-300',
-  })[service] || 'bg-slate-300';
+const servicePalette = {
+  fitness: { background: '#d9f99d', border: '#84cc16' },
+  musculacion: { background: '#bfdbfe', border: '#38bdf8' },
+  cardio: { background: '#fde68a', border: '#f59e0b' },
+  baile: { background: '#fecdd3', border: '#fb7185' },
+};
+
+const serviceStyle = (service) => {
+  const colors = servicePalette[normalizeService(service)] || { background: '#e2e8f0', border: '#94a3b8' };
+  return {
+    '--schedule-service-bg': colors.background,
+    '--schedule-service-border': colors.border,
+  };
+};
 
 const statusClass = (schedule) =>
   isScheduleActive(schedule)
@@ -570,5 +591,20 @@ onMounted(refresh);
 
 .field-input::placeholder {
   color: #64748b;
+}
+
+.schedule-service-accent,
+.schedule-service-progress {
+  background: var(--schedule-service-border);
+}
+
+.schedule-service-progress {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--schedule-service-border) 45%, transparent);
+}
+
+.schedule-service-badge {
+  border: 1px solid var(--schedule-service-border);
+  background: var(--schedule-service-bg);
+  color: #17324d;
 }
 </style>

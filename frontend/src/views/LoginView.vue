@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.45),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.28),_transparent_36%),linear-gradient(180deg,#fff7ed_0%,#ffedd5_100%)] text-slate-950">
+  <div class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(220,38,38,0.20),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(127,29,29,0.16),_transparent_36%),linear-gradient(180deg,#fafafa_0%,#e5e5e5_100%)] text-slate-950">
     <header class="border-b border-orange-200 bg-white/90 backdrop-blur">
       <div class="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <router-link to="/" class="text-xl font-black italic text-orange-600">Silver Gym Surco</router-link>
@@ -27,7 +27,7 @@
               v-model="passwordForm.correo"
               type="email"
               autocomplete="email"
-              class="w-full rounded-2xl border border-orange-100 bg-[#fff7ed] px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+              class="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
               placeholder="cliente@correo.com"
             />
           </label>
@@ -38,7 +38,7 @@
               v-model="passwordForm.password"
               type="password"
               autocomplete="current-password"
-              class="w-full rounded-2xl border border-orange-100 bg-[#fff7ed] px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+              class="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
               placeholder="Tu contrasena"
             />
           </label>
