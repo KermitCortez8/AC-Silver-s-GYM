@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#fff7ed] text-slate-950">
+  <div class="min-h-screen bg-[#f5f5f5] text-slate-950">
     <header class="sticky top-0 z-40 border-b border-orange-200 bg-white/90 backdrop-blur">
       <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <router-link to="/" class="text-xl font-black italic tracking-tight text-orange-600">
@@ -25,7 +25,7 @@
 
     <main>
       <section class="relative overflow-hidden">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.50),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.30),_transparent_36%)]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(220,38,38,0.20),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(127,29,29,0.14),_transparent_36%)]"></div>
         <div class="relative mx-auto grid max-w-[1600px] gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-20">
           <div class="flex items-center">
             <div class="max-w-2xl">
@@ -59,7 +59,7 @@
 
           <div class="rounded-[2rem] border border-orange-100 bg-white p-5 shadow-2xl shadow-orange-900/10">
             <div class="grid min-h-[34rem] gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-              <div class="relative overflow-hidden rounded-[1.5rem] bg-[linear-gradient(160deg,#fb923c_0%,#f97316_42%,#7c2d12_100%)] p-6 text-white">
+              <div class="relative overflow-hidden rounded-[1.5rem] bg-[linear-gradient(160deg,#ef4444_0%,#dc2626_42%,#450a0a_100%)] p-6 text-white">
                 <div class="absolute inset-x-6 bottom-6 rounded-3xl bg-white/15 p-5 backdrop-blur">
                   <p class="text-xs font-bold uppercase tracking-[0.22em] text-white/70">Rutina del dia</p>
                   <h2 class="mt-2 text-3xl font-black">Fuerza + cardio</h2>
@@ -68,7 +68,7 @@
               </div>
 
               <div class="grid gap-4">
-                <article v-for="service in featuredServices" :key="service.title" class="rounded-[1.5rem] border border-orange-100 bg-[#fff7ed] p-5">
+                <article v-for="service in featuredServices" :key="service.title" class="rounded-[1.5rem] border border-orange-100 bg-[#f5f5f5] p-5">
                   <p class="text-xs font-black uppercase tracking-[0.2em] text-orange-500">{{ service.tag }}</p>
                   <h3 class="mt-2 text-2xl font-black text-slate-950">{{ service.title }}</h3>
                   <p class="mt-2 text-sm leading-6 text-slate-600">{{ service.description }}</p>
@@ -91,7 +91,7 @@
         </div>
 
         <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <article v-for="service in services" :key="service.title" class="rounded-2xl border border-orange-100 bg-white p-6 shadow-[0_18px_40px_rgba(124,45,18,0.08)]">
+          <article v-for="service in services" :key="service.title" class="rounded-2xl border border-orange-100 bg-white p-6 shadow-[0_18px_40px_rgba(127,29,29,0.10)]">
             <p class="text-sm font-black uppercase tracking-[0.22em] text-orange-500">{{ service.tag }}</p>
             <h3 class="mt-4 text-2xl font-black text-slate-950">{{ service.title }}</h3>
             <p class="mt-3 text-sm leading-6 text-slate-600">{{ service.description }}</p>
@@ -101,7 +101,7 @@
 
       <section id="membresias" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-[1600px]">
-          <div class="rounded-[2rem] bg-[linear-gradient(135deg,#ffedd5_0%,#fef3c7_50%,#ffffff_100%)] p-6 shadow-xl shadow-orange-900/10 lg:p-8">
+          <div class="rounded-[2rem] bg-[linear-gradient(135deg,#fee2e2_0%,#f5f5f5_50%,#ffffff_100%)] p-6 shadow-xl shadow-orange-900/10 lg:p-8">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p class="text-xs font-black uppercase tracking-[0.28em] text-orange-600">Membresias</p>
@@ -123,7 +123,7 @@
         </div>
       </section>
 
-      <section id="contacto" class="bg-[#241307] px-4 py-14 text-white sm:px-6 lg:px-8">
+      <section id="contacto" class="bg-[#080808] px-4 py-14 text-white sm:px-6 lg:px-8">
         <div class="mx-auto grid max-w-[1600px] gap-6 lg:grid-cols-[1fr_0.8fr] lg:items-center">
           <div>
             <p class="text-xs font-black uppercase tracking-[0.28em] text-amber-300">Contacto</p>

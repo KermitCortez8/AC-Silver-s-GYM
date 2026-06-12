@@ -210,8 +210,8 @@ const membershipChartData = computed(() => ({
   datasets: [
     {
       data: Object.values(statusBuckets.value),
-      backgroundColor: ['#34d399', '#fbbf24', '#64748b'],
-      borderColor: '#0f172a',
+      backgroundColor: ['#dc2626', '#f87171', '#737373'],
+      borderColor: '#050505',
       borderWidth: 2,
     },
   ],
@@ -226,7 +226,7 @@ const serviceCapacityData = computed(() => ({
     {
       label: 'Cupos usados',
       data: services.map((service) => schedules.value.filter((item) => item.servicio === service).reduce((sum, item) => sum + Number(item.cupos_usados || 0), 0)),
-      backgroundColor: '#f97316',
+      backgroundColor: '#dc2626',
       borderRadius: 8,
     },
     {
@@ -236,7 +236,7 @@ const serviceCapacityData = computed(() => ({
           .filter((item) => item.servicio === service)
           .reduce((sum, item) => sum + Math.max(0, Number(item.cupos || 0) - Number(item.cupos_usados || 0)), 0),
       ),
-      backgroundColor: '#fde68a',
+      backgroundColor: '#d4d4d4',
       borderRadius: 8,
     },
   ],
@@ -256,9 +256,9 @@ const attendanceTrendData = computed(() => ({
     {
       label: 'Asistencias',
       data: lastSevenDays.value.map((day) => attendance.value.filter((entry) => String(entry.date || '').slice(0, 10) === day).length),
-      borderColor: '#f97316',
-      backgroundColor: 'rgba(249, 115, 22, 0.18)',
-      pointBackgroundColor: '#fbbf24',
+      borderColor: '#ef4444',
+      backgroundColor: 'rgba(220, 38, 38, 0.18)',
+      pointBackgroundColor: '#ffffff',
       tension: 0.35,
       fill: true,
     },

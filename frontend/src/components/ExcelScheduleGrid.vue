@@ -106,19 +106,19 @@ const serviceLabel = (service) =>
 
 const eventColor = (service) =>
   ({
-    fitness: '#d9f99d',
-    musculacion: '#bfdbfe',
-    cardio: '#fde68a',
-    baile: '#fecdd3',
-  })[service] || '#e2e8f0';
+    fitness: '#fee2e2',
+    musculacion: '#fecaca',
+    cardio: '#fca5a5',
+    baile: '#e5e5e5',
+  })[service] || '#f5f5f5';
 
 const eventBorderColor = (service) =>
   ({
-    fitness: '#84cc16',
-    musculacion: '#38bdf8',
-    cardio: '#f59e0b',
-    baile: '#fb7185',
-  })[service] || '#94a3b8';
+    fitness: '#ef4444',
+    musculacion: '#dc2626',
+    cardio: '#991b1b',
+    baile: '#737373',
+  })[service] || '#a3a3a3';
 
 const visibleTimeRange = computed(() => {
   const validItems = props.items.filter((item) => item.hora_inicio && item.hora_fin);
@@ -176,7 +176,7 @@ const calendarEvents = computed(() =>
         end: `${date}T${endTime}`,
         backgroundColor: item.color || eventColor(item.servicio),
         borderColor: eventBorderColor(item.servicio),
-        textColor: '#17324d',
+        textColor: '#171717',
         extendedProps: item,
       };
     })
