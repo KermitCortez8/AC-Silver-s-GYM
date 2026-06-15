@@ -102,7 +102,7 @@ const serviceLabel = (service) =>
     musculacion: 'Musculacion',
     cardio: 'Cardio',
     baile: 'Baile',
-  })[service] || service || 'Servicio';
+  })[String(service || '').trim().toLowerCase()] || service || 'Servicio';
 
 const eventColor = (service) =>
   ({
@@ -110,7 +110,7 @@ const eventColor = (service) =>
     musculacion: '#bfdbfe',
     cardio: '#fde68a',
     baile: '#fecdd3',
-  })[service] || '#e2e8f0';
+  })[String(service || '').trim().toLowerCase()] || '#e2e8f0';
 
 const eventBorderColor = (service) =>
   ({
@@ -118,7 +118,7 @@ const eventBorderColor = (service) =>
     musculacion: '#38bdf8',
     cardio: '#f59e0b',
     baile: '#fb7185',
-  })[service] || '#94a3b8';
+  })[String(service || '').trim().toLowerCase()] || '#94a3b8';
 
 const visibleTimeRange = computed(() => {
   const validItems = props.items.filter((item) => item.hora_inicio && item.hora_fin);
@@ -174,7 +174,7 @@ const calendarEvents = computed(() =>
         title: titleLines.join('\n'),
         start: `${date}T${startTime}`,
         end: `${date}T${endTime}`,
-        backgroundColor: item.color || eventColor(item.servicio),
+        backgroundColor: eventColor(item.servicio),
         borderColor: eventBorderColor(item.servicio),
         textColor: '#17324d',
         extendedProps: item,

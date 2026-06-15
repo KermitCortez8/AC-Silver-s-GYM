@@ -4,8 +4,11 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import { APP_CONFIG } from './config/appConfig'
+import { initializeTheme } from './composables/useTheme'
 import { useAuthStore } from './stores/authStore'
 import { useGymStore } from './stores/gymStore'
+
+initializeTheme()
 
 const app = createApp(App)
 
@@ -27,4 +30,3 @@ auth.initializeAuth().then(() => {
 })
 
 app.mount('#app')
-
