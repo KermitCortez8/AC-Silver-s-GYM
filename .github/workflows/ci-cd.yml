@@ -61,7 +61,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           # Apunta a tu package-lock.json existente
           cache-dependency-path: ./frontend/package-lock.json
