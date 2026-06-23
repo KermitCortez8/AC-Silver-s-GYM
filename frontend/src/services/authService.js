@@ -1,6 +1,7 @@
 import { APP_CONFIG } from '../config/appConfig';
 import { decodeJWT, formatUserData, isValidUser } from '../utils/authUtils';
 import { apiPost } from './apiClient';
+import { supabase, useSupabaseAuth } from './supabaseClient';
 
 let googleScriptPromise = null;
 
@@ -89,6 +90,19 @@ export const authenticateWithGoogleCredential = async (credential) => {
 };
 
 export const authenticateWithPassword = async ({ correo, password }) => {
+  if (useSupabaseAuth) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: String(correo || '').trim(),
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Correo o contrasena incorrectos');
+    }
+
+    return createSupabaseAuthResult(data.session, data.user);
+  }
+
   const result = await apiPost('/auth/password', {
     correo,
     password,
@@ -100,6 +114,84 @@ export const authenticateWithPassword = async ({ correo, password }) => {
     expiresIn: result.expiresIn || 60 * 60,
     source: 'backend',
   };
+};
+
+export const createSupabaseAuthResult = (session, authUser) => {
+  const supabaseUser = authUser || session?.user;
+
+  if (!session?.access_token || !supabaseUser?.email) {
+    throw new Error('Supabase no devolvio una sesion valida');
+  }
+
+  const metadata = supabaseUser.user_metadata || {};
+  const user = formatUserData({
+    id: supabaseUser.id,
+    sub: supabaseUser.id,
+    email: supabaseUser.email,
+    name: metadata.name || metadata.nombre || supabaseUser.email,
+    telefono: metadata.telefono || '',
+    dni: metadata.dni || '',
+    role: metadata.role || undefined,
+    picture: metadata.avatar_url || '',
+  });
+
+  return {
+    user,
+    token: session.access_token,
+    expiresIn: session.expires_in || 60 * 60,
+    source: 'supabase',
+  };
+};
+
+export const getSupabaseSessionCredentials = async () => {
+  if (!useSupabaseAuth) {
+    return null;
+  }
+
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error || !data?.session) {
+    return null;
+  }
+
+  return createSupabaseAuthResult(data.session);
+};
+
+export const registerWithSupabase = async ({ correo, password, nombre, telefono, dni }) => {
+  if (!useSupabaseAuth) {
+    return null;
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email: String(correo || '').trim(),
+    password,
+    options: {
+      data: {
+        name: nombre,
+        nombre,
+        telefono,
+        dni,
+        role: 'user',
+      },
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message || 'No se pudo crear la cuenta en Supabase');
+  }
+
+  return {
+    needsEmailConfirmation: Boolean(data.user && !data.session),
+    credentials: data.session ? createSupabaseAuthResult(data.session, data.user) : null,
+  };
+};
+
+export const signOutFromSupabase = async () => {
+  if (!useSupabaseAuth) {
+    return;
+  }
+
+  await supabase.auth.signOut();
 };
 
 export const createDemoCredentials = (role = 'user') => {

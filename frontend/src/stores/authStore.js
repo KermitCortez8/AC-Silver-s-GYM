@@ -9,6 +9,7 @@ import {
 } from '../utils/authUtils';
 import { APP_CONFIG } from '../config/appConfig';
 import { apiGet } from '../services/apiClient';
+import { getSupabaseSessionCredentials, signOutFromSupabase } from '../services/authService';
 
 const normalizeStoredUser = (userData) => {
   if (!userData) {
@@ -45,6 +46,17 @@ export const useAuthStore = defineStore('auth', () => {
   const initializeAuth = async () => {
     try {
       isLoading.value = true;
+      const supabaseCredentials = await getSupabaseSessionCredentials();
+
+      if (supabaseCredentials?.user && supabaseCredentials?.token) {
+        user.value = supabaseCredentials.user;
+        token.value = supabaseCredentials.token;
+        userRole.value = supabaseCredentials.user.role || 'user';
+        isSignout.value = false;
+        saveAuthSession(supabaseCredentials.user, supabaseCredentials.token, supabaseCredentials.expiresIn);
+        return;
+      }
+
       const { user: storedUser, token: storedToken } = getAuthSession();
 
       if (storedToken && APP_CONFIG.authApiBaseUrl) {
@@ -145,6 +157,7 @@ export const useAuthStore = defineStore('auth', () => {
   const signOut = async () => {
     try {
       isLoading.value = true;
+      await signOutFromSupabase();
       clearAuthStorage();
       user.value = null;
       token.value = null;
