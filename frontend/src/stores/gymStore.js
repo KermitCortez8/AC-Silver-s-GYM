@@ -2,6 +2,22 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { APP_CONFIG } from '../config/appConfig';
 import { useAuthStore } from './authStore';
+import { useSupabaseData } from '../services/supabaseClient';
+import {
+  createSupabaseAttendance,
+  createSupabaseSale,
+  deleteSupabaseAttendance,
+  deleteSupabaseInventoryItem,
+  deleteSupabaseStoreProduct,
+  fetchSupabaseGymData,
+  saveSupabaseClientWithMembership,
+  saveSupabaseInventoryItem,
+  saveSupabaseStoreProduct,
+  saveSupabaseUser,
+  updateSupabaseAttendance,
+  updateSupabaseMembershipStatus,
+  deleteSupabaseUser,
+} from '../services/supabaseDataService';
 
 const STORAGE_KEY = 'gym_frontend_data_v1';
 const PASS_EXPIRY_MINUTES = 10;
@@ -1080,7 +1096,44 @@ export const useGymStore = defineStore('gym', () => {
       schedules: Array.isArray(payload.schedules) ? payload.schedules : existingMember?.schedules || [],
     };
 
+    if (useSupabaseData) {
+      return saveSupabaseClientWithMembership({
+        id_cliente: existingMember?.id_cliente || payload.id_cliente,
+        nombre: member.name,
+        correo: member.email,
+        telefono: member.phone,
+        dni: member.dni,
+        plan: member.plan,
+        estado: member.status,
+        membershipStart: member.membershipStart,
+        membershipEnd: member.membershipEnd,
+        membershipStatus: member.status,
+      }, { forceMembership: !existingMember?.id_membresia }).then((saved) => {
+        const localMember = { ...member, ...saved.normalized };
+        const idx = members.value.findIndex((m) => m.id === localMember.id || Number(m.id_cliente) === Number(localMember.id_cliente));
+        if (idx >= 0) members.value[idx] = localMember; else members.value.unshift(localMember);
+        persist();
+        return localMember;
+      });
+    }
+
     // Si hay backend configurado, enviar al servidor
+    if (useSupabaseData) {
+      if (payload.id_usuario) {
+        userPayload.id_usuario = payload.id_usuario;
+      }
+
+      const normalized = await saveSupabaseUser(userPayload);
+      const index = users.value.findIndex((entry) => String(entry.id_usuario) === String(normalized.id_usuario));
+      if (index >= 0) {
+        users.value[index] = normalized;
+      } else {
+        users.value.unshift(normalized);
+      }
+      persist();
+      return normalized;
+    }
+
     if (apiBase) {
       const backendId = Number(existingMember?.id_cliente || String(payload.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i)?.[1] || payload.id_cliente || 0) || null;
       const body = {
@@ -1134,7 +1187,9 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const deleteMember = (id) => {
-    if (apiBase && /^(?:cliente-|SGCLI)\d+$/i.test(id)) {
+    if (useSupabaseData) {
+      console.warn('El borrado de clientes en Supabase no esta habilitado desde la app para evitar eliminar historial.');
+    } else if (apiBase && /^(?:cliente-|SGCLI)\d+$/i.test(id)) {
       const id_cliente = Number(String(id).replace(/^(?:cliente-|SGCLI)/i, ''));
       fetch(`${apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => {});
     }
@@ -1150,6 +1205,16 @@ export const useGymStore = defineStore('gym', () => {
     const member = members.value.find((entry) => entry.id === memberId);
     if (!member) {
       throw new Error('Miembro no encontrado');
+    }
+
+    if (useSupabaseData) {
+      return registerAttendanceEntry({
+        id_cliente: member.id_cliente || member.internalCode || member.id,
+        id_membresia: member.id_membresia || null,
+        servicio: service || 'fitness',
+        fecha: options.fecha || options.date || todayISO(),
+        hora: options.hora || options.time || nowTime(),
+      });
     }
 
     // Si hay backend, primero intentar con id_cliente y luego con DNI.
@@ -1220,6 +1285,15 @@ export const useGymStore = defineStore('gym', () => {
   pruneExpiredAttendancePasses();
 
   const upsertInventoryItem = (payload) => {
+    if (useSupabaseData) {
+      return saveSupabaseInventoryItem(payload).then((item) => {
+        const index = inventory.value.findIndex((entry) => entry.id === item.id);
+        if (index >= 0) inventory.value[index] = item; else inventory.value.unshift(item);
+        persist();
+        return item;
+      });
+    }
+
     if (apiBase) {
       // map frontend payload to backend InventarioInput
       const body = {
@@ -1331,7 +1405,9 @@ export const useGymStore = defineStore('gym', () => {
       throw new Error('Usuario no encontrado');
     }
 
-    if (apiBase) {
+    if (useSupabaseData) {
+      await deleteSupabaseUser(normalizedId);
+    } else if (apiBase) {
       await deleteUserFromServer(normalizedId);
     }
 
@@ -1340,6 +1416,9 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const deleteInventoryItem = (id) => {
+    if (useSupabaseData) {
+      deleteSupabaseInventoryItem(id).catch((error) => console.error('Error al eliminar inventario en Supabase:', error));
+    } else
     if (apiBase && /^item-\d+$/.test(id)) {
       const id_item = Number(id.split('-')[1]);
       fetch(`${apiBase}/inventario/${id_item}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => {});
@@ -1362,6 +1441,18 @@ export const useGymStore = defineStore('gym', () => {
       stock_minimo: Number(payload.minimo ?? 5),
       estado: payload.estado || 'Disponible',
     };
+
+    if (useSupabaseData) {
+      const normalized = await saveSupabaseStoreProduct(payload);
+      const index = productos_tienda.value.findIndex((p) => p.id_producto === normalized.id_producto);
+      if (index >= 0) {
+        productos_tienda.value[index] = normalized;
+      } else {
+        productos_tienda.value.unshift(normalized);
+      }
+      persist();
+      return normalized;
+    }
 
     if (apiBase) {
       const body = {
@@ -1430,7 +1521,9 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const deleteProductoTienda = async (id_producto) => {
-    if (apiBase) {
+    if (useSupabaseData) {
+      await deleteSupabaseStoreProduct(id_producto);
+    } else if (apiBase) {
       try {
         await fetch(`${apiBase}/tienda/${id_producto}`, {
           method: 'DELETE',
@@ -1524,6 +1617,13 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const refreshStoreProductsFromBackend = async () => {
+    if (useSupabaseData) {
+      const state = await fetchSupabaseGymData();
+      productos_tienda.value = state.productos_tienda;
+      persist();
+      return productos_tienda.value;
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado');
 
     const response = await fetch(`${apiBase}/tienda`, { headers: _authHeaders() });
@@ -1538,6 +1638,13 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const refreshStoreOrdersFromBackend = async () => {
+    if (useSupabaseData) {
+      const state = await fetchSupabaseGymData();
+      storeOrders.value = state.storeOrders;
+      persist();
+      return storeOrders.value;
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado');
 
     const response = await fetch(`${apiBase}/tienda/pedidos`, { headers: _authHeaders() });
@@ -1569,6 +1676,15 @@ export const useGymStore = defineStore('gym', () => {
         cantidad: Math.max(1, Number(item.cantidad || 1)),
       })),
     };
+
+    if (useSupabaseData) {
+      const saved = mergeStoreOrder(await createSupabaseSale(body));
+      clearCart();
+      const state = await fetchSupabaseGymData().catch(() => null);
+      if (state?.productos_tienda) productos_tienda.value = state.productos_tienda;
+      persist();
+      return saved;
+    }
 
     if (apiBase) {
       const response = await fetch(`${apiBase}/tienda/pedidos`, {
@@ -1623,6 +1739,13 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const refreshAttendanceFromBackend = async () => {
+    if (useSupabaseData) {
+      const state = await fetchSupabaseGymData();
+      attendance.value = state.attendance.map((entry) => normalizeAttendanceRecord(entry));
+      persist();
+      return attendance.value;
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado');
 
     const response = await fetch(`${apiBase}/asistencia`, { headers: _authHeaders() });
@@ -1786,6 +1909,23 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const fetchFromBackend = async () => {
+    if (useSupabaseData) {
+      const state = await fetchSupabaseGymData();
+      members.value = state.members;
+      users.value = state.users;
+      inventory.value = state.inventory;
+      productos_tienda.value = state.productos_tienda;
+      storeOrders.value = state.storeOrders;
+      planCatalog.value = state.planCatalog;
+      routines.value = state.routines;
+      schedule.value = state.schedule;
+      attendance.value = state.attendance.map((entry) => normalizeAttendanceRecord(entry));
+      serviceSchedules.value = state.serviceSchedules;
+      enrollments.value = state.enrollments;
+      persist();
+      return state;
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado en APP_CONFIG.authApiBaseUrl');
 
     // Clientes -> members
@@ -1928,6 +2068,25 @@ export const useGymStore = defineStore('gym', () => {
       estado: String(payload.estado || existingClient?.status || 'ACTIVO').trim().toUpperCase() || 'ACTIVO',
     };
 
+    if (useSupabaseData) {
+      const saved = await saveSupabaseClientWithMembership({
+        ...clientPayload,
+        id_cliente: existingClient?.id_cliente,
+        membershipStart: payload.membershipStart || existingClient?.membershipStart,
+        membershipEnd: payload.membershipEnd || existingClient?.membershipEnd,
+        membershipStatus: payload.membershipStatus || existingClient?.membershipStatus || clientPayload.estado,
+      }, { forceMembership: !existingClient?.id_membresia });
+      const normalized = saved.normalized;
+      const index = members.value.findIndex((entry) => String(entry.id) === String(normalized.id) || Number(entry.id_cliente) === Number(normalized.id_cliente));
+      if (index >= 0) {
+        members.value[index] = { ...members.value[index], ...normalized };
+      } else {
+        members.value.unshift(normalized);
+      }
+      persist();
+      return normalized;
+    }
+
     if (apiBase) {
       const saved = await upsertClienteToServer(clientPayload);
       const numericId = Number(saved.id_cliente || 0) || Number(String(saved.id_usuario || '').replace(/^SGCLI/i, '')) || Number(existingClient?.id_cliente || 0) || Date.now();
@@ -2057,6 +2216,19 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const registerPublicClient = async (payload) => {
+    if (useSupabaseData) {
+      const saved = await saveSupabaseClientWithMembership(payload, {
+        clientStatus: 'PENDIENTE_PAGO',
+        membershipStatus: 'PENDIENTE_PAGO',
+        forceMembership: true,
+      });
+      const client = saved.normalized;
+      const index = members.value.findIndex((entry) => Number(entry.id_cliente) === Number(client.id_cliente));
+      if (index >= 0) members.value[index] = client; else members.value.unshift(client);
+      persist();
+      return client;
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado');
     const res = await fetch(`${apiBase}/registro-publico`, {
       method: 'POST',
@@ -2079,6 +2251,19 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const confirmPublicPayment = async (idCliente, payload = {}) => {
+    if (useSupabaseData) {
+      const saved = await updateSupabaseMembershipStatus(idCliente, 'ACTIVA');
+      const client = saved.normalized;
+      const index = members.value.findIndex((entry) => Number(entry.id_cliente) === Number(client.id_cliente));
+      if (index >= 0) {
+        members.value[index] = { ...members.value[index], ...client, paymentStatus: 'PAGADO', paymentReference: payload.referencia_pago || '' };
+      } else {
+        members.value.unshift({ ...client, paymentStatus: 'PAGADO', paymentReference: payload.referencia_pago || '' });
+      }
+      persist();
+      return members.value.find((entry) => Number(entry.id_cliente) === Number(client.id_cliente));
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado');
     const res = await fetch(`${apiBase}/registro-publico/${idCliente}/pago`, {
       method: 'POST',
@@ -2104,6 +2289,15 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const activateClientMembership = async (idCliente) => {
+    if (useSupabaseData) {
+      const saved = await updateSupabaseMembershipStatus(idCliente, 'ACTIVA');
+      const client = saved.normalized;
+      const index = members.value.findIndex((entry) => Number(entry.id_cliente) === Number(client.id_cliente));
+      if (index >= 0) members.value[index] = { ...members.value[index], ...client }; else members.value.unshift(client);
+      persist();
+      return client;
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado');
     const res = await fetch(`${apiBase}/clientes/${idCliente}/activar-membresia`, {
       method: 'POST',
@@ -2139,6 +2333,11 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const registerAttendanceEntry = async (payload) => {
+    if (useSupabaseData) {
+      const saved = await createSupabaseAttendance(payload);
+      return mergeAttendanceRecord(normalizeAttendanceRecord(saved));
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado');
     const res = await fetch(`${apiBase}/asistencia/entrada`, {
       method: 'POST',
@@ -2151,6 +2350,14 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   const registerAttendanceExit = async (payload) => {
+    if (useSupabaseData) {
+      const saved = await createSupabaseAttendance({
+        ...payload,
+        hora: payload.hora_salida || payload.exitTime || payload.hora || nowTime(),
+      });
+      return mergeAttendanceRecord(normalizeAttendanceRecord(saved));
+    }
+
     if (!apiBase) throw new Error('No hay backend configurado');
     const res = await fetch(`${apiBase}/asistencia/salida`, {
       method: 'POST',
@@ -2175,6 +2382,11 @@ export const useGymStore = defineStore('gym', () => {
       servicio: payload.servicio || payload.service || current.service || 'fitness',
       id_usuario: payload.id_usuario || getCurrentRegistrarId(authStore) || undefined,
     };
+
+    if (useSupabaseData && current.id_asistencia) {
+      const saved = await updateSupabaseAttendance(current.id_asistencia, body);
+      return mergeAttendanceRecord(normalizeAttendanceRecord(saved));
+    }
 
     if (apiBase && current.id_asistencia) {
       const res = await fetch(`${apiBase}/asistencia/${current.id_asistencia}`, {
@@ -2204,7 +2416,9 @@ export const useGymStore = defineStore('gym', () => {
       throw new Error('Asistencia no encontrada');
     }
 
-    if (apiBase && current.id_asistencia) {
+    if (useSupabaseData && current.id_asistencia) {
+      await deleteSupabaseAttendance(current.id_asistencia);
+    } else if (apiBase && current.id_asistencia) {
       const res = await fetch(`${apiBase}/asistencia/${current.id_asistencia}`, {
         method: 'DELETE',
         headers: _authHeaders(),
