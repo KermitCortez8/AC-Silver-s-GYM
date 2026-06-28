@@ -103,15 +103,13 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { GOOGLE_CONFIG } from '../config/googleConfig';
-import { loadGoogleIdentityScript, registerWithSupabase } from '../services/authService';
+import { loadGoogleIdentityScript } from '../services/authService';
 import { decodeJWT } from '../utils/authUtils';
 import { useGymStore } from '../stores/gymStore';
-import { useAuth } from '../composables/useAuth';
 
 const route = useRoute();
 const router = useRouter();
 const gymStore = useGymStore();
-const { signUp } = useAuth();
 const googleButtonRef = ref(null);
 const googleError = ref('');
 const feedback = ref('');
@@ -177,27 +175,14 @@ const submitRegistration = async () => {
   registeredClient.value = null;
 
   try {
-    const supabaseRegistration = await registerWithSupabase(form);
-
-    if (supabaseRegistration?.credentials) {
-      await signUp(supabaseRegistration.credentials.token, {
-        ...supabaseRegistration.credentials.user,
-        expiresIn: supabaseRegistration.credentials.expiresIn,
-        authSource: supabaseRegistration.credentials.source,
-      });
-    }
-
     const client = await gymStore.registerPublicClient({
       ...form,
       metodo_pago: 'pasarela',
       referencia_pago: form.referencia_pago || `WEB-${Date.now()}`,
     });
     registeredClient.value = client;
-    window.sessionStorage.setItem('pending_public_registration', JSON.stringify(client));
     feedbackTone.value = 'success';
-    feedback.value = supabaseRegistration?.needsEmailConfirmation
-      ? 'Cuenta creada. Revisa tu correo para confirmar el acceso; ahora te llevamos a la pasarela de pago.'
-      : 'Cuenta creada. Te llevamos a la pasarela de pago.';
+    feedback.value = 'Cuenta creada. Te llevamos a la pasarela de pago.';
     router.push({ name: 'Payment', params: { idCliente: client.id_cliente }, query: { ref: client.paymentReference || `WEB-${Date.now()}` } });
   } catch (error) {
     feedbackTone.value = 'error';

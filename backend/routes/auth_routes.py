@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from dependencies import get_gym_service
 from models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, UserProfile
 from services.auth_service import AuthService
-from services.gym_service import GymService
+from services.gym_domain_service import GymDomainService
 from utils.security import decode_token_payload
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 # POST /auth/google: valida la credencial y crea la sesión del usuario.
 @router.post("/google", response_model=AuthResponse)
-def google_auth(payload: AuthGoogleRequest, gym_service: GymService = Depends(get_gym_service)):
+def google_auth(payload: AuthGoogleRequest, gym_service: GymDomainService = Depends(get_gym_service)):
     auth_service = AuthService(gym_service)
     try:
         return auth_service.google_auth(payload)
@@ -22,7 +22,7 @@ def google_auth(payload: AuthGoogleRequest, gym_service: GymService = Depends(ge
 
 
 @router.post("/password", response_model=AuthResponse)
-def password_auth(payload: AuthPasswordRequest, gym_service: GymService = Depends(get_gym_service)):
+def password_auth(payload: AuthPasswordRequest, gym_service: GymDomainService = Depends(get_gym_service)):
     auth_service = AuthService(gym_service)
     try:
         return auth_service.password_auth(payload)
@@ -34,7 +34,7 @@ def password_auth(payload: AuthPasswordRequest, gym_service: GymService = Depend
 @router.get("/me", response_model=UserProfile)
 def auth_me(
     authorization: str | None = Header(default=None),
-    gym_service: GymService = Depends(get_gym_service),
+    gym_service: GymDomainService = Depends(get_gym_service),
 ):
     if not authorization:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Falta token")

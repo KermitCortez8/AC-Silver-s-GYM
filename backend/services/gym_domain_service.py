@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import json
 import re
 import threading
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Any
 
 from utils.security import hash_password, verify_password
@@ -28,11 +26,9 @@ def _safe_date(value: str) -> str:
     return _today_iso()
 
 
-class GymService:
-    def __init__(self, db_file: Path) -> None:
-        self.db_file = db_file
-        self.lock = threading.Lock()
-        self.state = self._load()
+class GymDomainService:
+    def __init__(self, db_file: Any | None = None) -> None:
+        raise RuntimeError("GymDomainService solo contiene reglas de negocio. Usa SupabaseGymService para persistencia.")
 
     def _seed(self) -> dict[str, Any]:
         today = _today_iso()
@@ -269,36 +265,10 @@ class GymService:
         }
 
     def _load(self) -> dict[str, Any]:
-        if not self.db_file.exists():
-            self.db_file.parent.mkdir(parents=True, exist_ok=True)
-            seed = self._seed()
-            self.db_file.write_text(json.dumps(seed, ensure_ascii=False, indent=2), encoding="utf-8")
-            return seed
-        data = json.loads(self.db_file.read_text(encoding="utf-8"))
-        normalized = self._normalize(data)
-        # Backfill simple nombre when missing: use email local-part (cleaned) if available
-        for u in normalized.get("usuario", []):
-            try:
-                if not str(u.get("nombre") or "").strip():
-                    email = str(u.get("correo") or u.get("email") or "").strip()
-                    if email and "@" in email:
-                        local = email.split("@", 1)[0]
-                        # replace dots/underscores with space and title-case
-                        derived = " ".join([part.capitalize() for part in re.sub(r"[._]+", " ", local).split()])
-                        u["nombre"] = derived
-            except Exception:
-                # ignore any error during best-effort backfill
-                pass
-        # Persist normalized state back to disk to migrate older records (fill `nombre`, normalize ids, etc.)
-        try:
-            self.db_file.write_text(json.dumps(normalized, ensure_ascii=False, indent=2), encoding="utf-8")
-        except Exception:
-            # If persistence fails, continue using normalized in-memory state
-            pass
-        return normalized
+        raise RuntimeError("GymDomainService no lee archivos locales. Usa SupabaseGymService.")
 
     def _save(self) -> None:
-        self.db_file.write_text(json.dumps(self.state, ensure_ascii=False, indent=2), encoding="utf-8")
+        raise RuntimeError("GymDomainService no guarda archivos locales. Usa SupabaseGymService.")
 
     def _mutate(self, fn):
         with self.lock:
