@@ -31,114 +31,21 @@ class GymDomainService:
         raise RuntimeError("GymDomainService solo contiene reglas de negocio. Usa SupabaseGymService para persistencia.")
 
     def _seed(self) -> dict[str, Any]:
-        today = _today_iso()
         return {
-            "inventario": [
-                {
-                    "id_item": 1,
-                    "nombre_item": "Mancuernas ajustables",
-                    "tipo": "Pesas",
-                    "cantidad_stock": 12,
-                    "estado": "Operativo",
-                    "n_activo": 1,
-                    "unidad_venta": "unidad",
-                    "precio_venta": 0,
-                    "stock_minimo": 1,
-                    "ubicacion": "Almacén",
-                    "observaciones": "",
-                }
-            ],
+            "inventario": [],
             "mov_inv": [],
-            "productos_tienda": [
-                {
-                    "id_producto": 1,
-                    "nombre_producto": "Proteína Whey",
-                    "descripcion": "Proteína de suero de alta calidad",
-                    "categoria": "Suplementos",
-                    "id_item": None,
-                    "unidad_venta": "unidad",
-                    "precio_venta": 89.99,
-                    "cantidad_stock": 50,
-                    "stock_minimo": 10,
-                    "estado": "Disponible",
-                }
-            ],
+            "productos_tienda": [],
             "pedidos_tienda": [],
-            "usuario": [
-                {
-                    "id_usuario": "SGUS001",
-                    "nombre": "Carlos Pérez",
-                    "correo": "carlos@urp.edu.pe",
-                    "telefono": "999111222",
-                    "dni": "",
-                    "rol": "admin",
-                    "estado": "Activo",
-                }
-            ],
-            "clientes": [
-                {
-                    "id_cliente": 1,
-                    "id_usuario": "cliente-1",
-                    "nombre": "Maria Fernandez",
-                    "correo": "maria@ejemplo.com",
-                    "telefono": "999111222",
-                    "dni": "74281635",
-                    "plan": "MENSUAL",
-                    "promocion": "SIN PROMOCION",
-                    "estado": "ACTIVO",
-                }
-            ],
+            "usuario": [],
+            "clientes": [],
             "tickets_atencion": [],
             "horario": [],
-            "horarios_servicio": [
-                {"id_horario_servicio": 1, "servicio": "fitness", "codigo_dia": "LUN", "dia": "lunes", "hora_inicio": "06:00", "hora_fin": "08:00", "cupos": 12, "cupos_usados": 0, "activo": True},
-                {"id_horario_servicio": 2, "servicio": "musculacion", "codigo_dia": "MAR", "dia": "martes", "hora_inicio": "18:00", "hora_fin": "20:00", "cupos": 10, "cupos_usados": 0, "activo": True},
-                {"id_horario_servicio": 3, "servicio": "cardio", "codigo_dia": "MIE", "dia": "miercoles", "hora_inicio": "07:00", "hora_fin": "09:00", "cupos": 10, "cupos_usados": 0, "activo": True},
-                {"id_horario_servicio": 4, "servicio": "baile", "codigo_dia": "VIE", "dia": "viernes", "hora_inicio": "18:00", "hora_fin": "20:00", "cupos": 14, "cupos_usados": 0, "activo": True},
-            ],
+            "horarios_servicio": [],
             "matriculas_horario": [],
-            "catalogo_rutina": [
-                {
-                    "id_rutina": 1,
-                    "nombre_rutina": "Fuerza Inicial",
-                    "zonas_musculares": "Piernas, core",
-                    "color": "Azul",
-                }
-            ],
+            "catalogo_rutina": [],
             "asistencia": [],
-            "membresia": [
-                {
-                    "id_membresia": 1,
-                    "fecha_inicio": today,
-                    "fecha_fin": "2026-12-31",
-                    "estado": "Activa",
-                    "id_cliente": 1,
-                    "id_pm": 1,
-                }
-            ],
-            "planes_membresia": [
-                {
-                    "id_pm": 1,
-                    "nombre_plan": "MENSUAL",
-                    "duracion": "30 dias",
-                    "precio": 80,
-                    "activo": True,
-                },
-                {
-                    "id_pm": 2,
-                    "nombre_plan": "3 MESES",
-                    "duracion": "90 dias",
-                    "precio": 220,
-                    "activo": True,
-                },
-                {
-                    "id_pm": 3,
-                    "nombre_plan": "ANUAL",
-                    "duracion": "365 dias",
-                    "precio": 780,
-                    "activo": True,
-                },
-            ],
+            "membresia": [],
+            "planes_membresia": [],
             "configuracion_gimnasio": {
                 "capacidad_total": 30,
                 "capacidad_por_hora": 10,
@@ -197,7 +104,6 @@ class GymDomainService:
             if isinstance(row, dict)
         ]
         self._recount_schedule_cupos(merged)
-        self._ensure_default_membership_plans(merged)
 
         cfg = {**seed["configuracion_gimnasio"], **merged.get("configuracion_gimnasio", {})}
         cfg["capacidad_total"] = max(1, int(cfg.get("capacidad_total") or 30))
@@ -492,40 +398,6 @@ class GymDomainService:
             "items": items,
         }
 
-    def _ensure_default_membership_plans(self, state: dict[str, Any]) -> None:
-        defaults = [
-            {"nombre_plan": "MENSUAL", "duracion": "30 dias", "precio": 80},
-            {"nombre_plan": "3 MESES", "duracion": "90 dias", "precio": 220},
-            {"nombre_plan": "ANUAL", "duracion": "365 dias", "precio": 780},
-        ]
-        state.setdefault("planes_membresia", [])
-
-        for default in defaults:
-            normalized_name = default["nombre_plan"].upper()
-            existing = next(
-                (
-                    plan
-                    for plan in state["planes_membresia"]
-                    if str(plan.get("nombre_plan") or "").strip().upper() == normalized_name
-                ),
-                None,
-            )
-            if existing:
-                existing.setdefault("duracion", default["duracion"])
-                existing.setdefault("precio", default["precio"])
-                existing.setdefault("activo", True)
-                continue
-
-            state["planes_membresia"].append(
-                {
-                    "id_pm": self._next_int_id_in_state(state, "planes_membresia", "id_pm"),
-                    "nombre_plan": default["nombre_plan"],
-                    "duracion": default["duracion"],
-                    "precio": default["precio"],
-                    "activo": True,
-                }
-            )
-
     def _ensure_plan_for_client(self, state: dict[str, Any], plan_name: str) -> dict[str, Any]:
         state.setdefault("planes_membresia", [])
         normalized = str(plan_name or "MENSUAL").strip().upper() or "MENSUAL"
@@ -540,16 +412,7 @@ class GymDomainService:
         if existing:
             return existing
 
-        days = self._plan_duration_days(normalized)
-        plan = {
-            "id_pm": self._next_int_id_in_state(state, "planes_membresia", "id_pm"),
-            "nombre_plan": normalized,
-            "duracion": f"{days} dias",
-            "precio": 0,
-            "activo": True,
-        }
-        state["planes_membresia"].insert(0, plan)
-        return plan
+        raise ValueError(f"Plan de membresia no configurado en Supabase: {normalized}")
 
     def _ensure_membership_for_active_client(self, state: dict[str, Any], cliente: dict[str, Any]) -> dict[str, Any] | None:
         id_cliente = int(cliente.get("id_cliente", 0) or 0)
@@ -1076,9 +939,6 @@ class GymDomainService:
                         "activo": bool(row.get("activo", True)),
                     }
                 )
-
-        if not normalized:
-            normalized = [dict(row) for row in self._seed()["horarios_servicio"]]
 
         return sorted(normalized, key=lambda row: (str(row.get("dia")), str(row.get("hora_inicio")), str(row.get("servicio"))))
 

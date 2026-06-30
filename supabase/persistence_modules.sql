@@ -73,14 +73,6 @@ insert into public."CONFIGURACION_GIMNASIO" (id_config, capacidad_total, capacid
 values (1, 30, 10)
 on conflict (id_config) do nothing;
 
-insert into public."HORARIOS_SERVICIO" (id_horario_servicio, servicio, codigo_dia, dia, hora_inicio, hora_fin, cupos, activo)
-values
-  (1, 'fitness', 'LUN', 'lunes', '06:00', '08:00', 12, true),
-  (2, 'musculacion', 'MAR', 'martes', '18:00', '20:00', 10, true),
-  (3, 'cardio', 'MIE', 'miercoles', '07:00', '09:00', 10, true),
-  (4, 'baile', 'VIE', 'viernes', '18:00', '20:00', 14, true)
-on conflict (id_horario_servicio) do nothing;
-
 do $$
 declare
   table_name text;

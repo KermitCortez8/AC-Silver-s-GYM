@@ -212,21 +212,9 @@ on conflict ("Nombre_Plan") do update set
   "Duración" = excluded."Duración",
   "Activo" = excluded."Activo";
 
-insert into public."CATALOGO_RUTINA" ("Nombre_rutina", "Zonas_musculares", "Color")
-values ('Fuerza Inicial', 'Piernas, core', 'Azul')
-on conflict do nothing;
-
 insert into public."CONFIGURACION_GIMNASIO" (id_config, capacidad_total, capacidad_por_hora)
 values (1, 30, 10)
 on conflict (id_config) do nothing;
-
-insert into public."HORARIOS_SERVICIO" (id_horario_servicio, servicio, codigo_dia, dia, hora_inicio, hora_fin, cupos, activo)
-values
-  (1, 'fitness', 'LUN', 'lunes', '06:00', '08:00', 12, true),
-  (2, 'musculacion', 'MAR', 'martes', '18:00', '20:00', 10, true),
-  (3, 'cardio', 'MIE', 'miercoles', '07:00', '09:00', 10, true),
-  (4, 'baile', 'VIE', 'viernes', '18:00', '20:00', 14, true)
-on conflict (id_horario_servicio) do nothing;
 
 -- Development RLS policies. Replace these before production if anonymous
 -- writes should not be allowed.
