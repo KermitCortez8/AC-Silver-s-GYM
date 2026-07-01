@@ -109,6 +109,35 @@ const normalizeStoreProductFromBackend = (product = {}) => ({
   imagen_url: product.imagen_url || product.imageUrl || '',
 });
 
+const normalizeBackendClientToMember = (client = {}) => ({
+  id: client.id_usuario || `cliente-${client.id_cliente || Date.now()}`,
+  id_cliente:
+    client.id_cliente || Number(String(client.id_usuario || '').match(/(?:SGCLI|cliente-)(\d+)/)?.[1] || 0) || null,
+  name: client.nombre || `${client.nombres || ''} ${client.apellidos || ''}`.trim(),
+  dni: client.dni || '',
+  internalCode: String(client.id_usuario || client.id_cliente || '').trim(),
+  email: client.correo || client.email || '',
+  phone: client.telefono || client.phone || '',
+  role: 'user',
+  plan: client.plan || '',
+  promocion: client.promocion || '',
+  planId: '',
+  id_membresia: client.id_membresia || null,
+  membershipStatus: client.membership_status || client.estado || '',
+  membershipStart: client.membership_start || client.fecha_registro || client.joinedAt || '',
+  membershipEnd: client.membership_end || '',
+  paymentStatus: client.payment_status || '',
+  paymentReference: client.payment_reference || '',
+  hasPassword: Boolean(client.has_password ?? client.hasPassword),
+  membershipPrice: 0,
+  status: String(client.estado || (client.estado === false ? 'INACTIVO' : 'ACTIVO')).toUpperCase(),
+  joinedAt: client.fecha_registro || client.joinedAt || '',
+  attendanceRate: 0,
+  membershipHistory: [],
+  changeHistory: [],
+  schedules: [],
+});
+
 const normalizeUser = (user = {}) => {
   const email = String(user.correo || user.email || '').trim();
   const rawId = String(user.id_usuario || user.id || '').trim().toUpperCase();
@@ -1381,6 +1410,7 @@ export const useGymStore = defineStore('gym', () => {
       unidad_venta: producto.unidad_venta || 'unidad',
       precio: Number(producto.precio_venta),
       cantidad: Number(producto.cantidad_stock),
+      minimo: Number(producto.stock_minimo || 0),
       estado: producto.estado,
       imagen_url: producto.imagen_url || '',
     };
@@ -1872,34 +1902,22 @@ export const useGymStore = defineStore('gym', () => {
     const resClientes = await fetch(`${apiBase}/clientes`, { headers: _authHeaders() });
     if (resClientes.ok) {
       const list = await resClientes.json();
-      members.value = list.map((c) => ({
-        id: c.id_usuario || `cliente-${c.id_cliente || Date.now()}`,
-        id_cliente:
-          c.id_cliente || Number(String(c.id_usuario || '').match(/(?:SGCLI|cliente-)(\d+)/)?.[1] || 0) || null,
-        name: c.nombre || `${c.nombres || ''} ${c.apellidos || ''}`.trim(),
-        dni: c.dni || '',
-        internalCode: String(c.id_usuario || c.id_cliente || '').trim(),
-        email: c.correo || c.email || '',
-        phone: c.telefono || c.phone || '',
-        role: 'user',
-        plan: c.plan || '',
-        promocion: c.promocion || '',
-        planId: '',
-        id_membresia: c.id_membresia || null,
-        membershipStatus: c.membership_status || c.estado || '',
-        membershipStart: c.membership_start || c.fecha_registro || c.joinedAt || '',
-        membershipEnd: c.membership_end || '',
-        paymentStatus: c.payment_status || '',
-        paymentReference: c.payment_reference || '',
-        hasPassword: Boolean(c.has_password ?? c.hasPassword),
-        membershipPrice: 0,
-        status: String(c.estado || (c.estado === false ? 'INACTIVO' : 'ACTIVO')).toUpperCase(),
-        joinedAt: c.fecha_registro || c.joinedAt || '',
-        attendanceRate: 0,
-        membershipHistory: [],
-        changeHistory: [],
-        schedules: [],
-      }));
+      members.value = list.map((client) => normalizeBackendClientToMember(client));
+    } else if (resClientes.status === 401 || resClientes.status === 403) {
+      const resMiCliente = await fetch(`${apiBase}/clientes/me`, { headers: _authHeaders() });
+      if (resMiCliente.ok) {
+        const client = normalizeBackendClientToMember(await resMiCliente.json());
+        const index = members.value.findIndex(
+          (entry) =>
+            Number(entry.id_cliente || 0) === Number(client.id_cliente || 0) ||
+            String(entry.email || '').toLowerCase() === String(client.email || '').toLowerCase(),
+        );
+        if (index >= 0) {
+          members.value[index] = { ...members.value[index], ...client };
+        } else {
+          members.value.unshift(client);
+        }
+      }
     }
 
     const resUsuarios = await fetch(`${apiBase}/usuarios`, { headers: _authHeaders() });

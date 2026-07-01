@@ -221,6 +221,13 @@ const membershipChartData = computed(() => ({
 
 const services = ['fitness', 'musculacion', 'cardio', 'baile'];
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+const readableStatus = (status) => {
+  const normalized = normalizeStatus(status);
+  if (normalized.startsWith('ACT')) return 'Activa';
+  if (normalized.includes('TRAMITE') || normalized.includes('PENDIENTE')) return 'Pendiente';
+  if (normalized.startsWith('INACT')) return 'Inactiva';
+  return normalized || 'Sin datos';
+};
 const serviceUsedColors = ['#84cc16', '#38bdf8', '#f59e0b', '#fb7185'];
 const serviceFreeColors = ['#d9f99d', '#bfdbfe', '#fde68a', '#fecdd3'];
 
@@ -328,8 +335,9 @@ const clientAttendanceCount = computed(() => {
 const clientCards = computed(() => {
   const client = currentClient.value || currentClientIdentity.value || {};
   const status = normalizeStatus(client.membershipStatus || client.status || user.value?.membershipStatus || user.value?.estado || 'SIN DATOS');
+  const displayStatus = readableStatus(status);
   return [
-    { label: 'Membresia', value: status, detail: client.membershipEnd ? `vence ${client.membershipEnd}` : 'vigencia pendiente', tone: status.startsWith('ACT') ? 'text-emerald-300' : 'text-amber-300' },
+    { label: 'Membresia', value: displayStatus, detail: client.membershipEnd ? `vence ${client.membershipEnd}` : 'vigencia pendiente', tone: status.startsWith('ACT') ? 'text-emerald-300' : 'text-amber-300' },
     { label: 'Plan', value: client.plan || user.value?.plan || 'Sin plan', detail: client.promocion || 'sin promocion', tone: 'text-cyan-300' },
     { label: 'Horarios', value: clientEnrollments.value.length, detail: 'matriculas activas', tone: 'text-sky-300' },
     { label: 'Asistencias', value: clientAttendanceCount.value, detail: 'checks guardados', tone: 'text-fuchsia-300' },

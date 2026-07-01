@@ -33,6 +33,7 @@ class Settings(BaseModel):
     ]
     supabase_url: str = ""
     supabase_key: str = ""
+    store_images_dir: str = ""
 
     @property
     def has_supabase_credentials(self) -> bool:
@@ -64,4 +65,5 @@ def get_settings() -> Settings:
         cors_origins=cors_origins,
         supabase_url=(os.getenv("SUPABASE_URL") or "").strip().rstrip("/"),
         supabase_key=supabase_key.strip(),
+        store_images_dir=(os.getenv("STORE_IMAGES_DIR") or str(backend_dir / "db" / "store-images")).strip(),
     )

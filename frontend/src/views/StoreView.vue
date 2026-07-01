@@ -314,15 +314,6 @@
                   <div v-else class="px-4 text-center text-xs text-slate-500">Sin imagen seleccionada</div>
                 </div>
                 <div class="space-y-3">
-                  <label class="space-y-2">
-                    <span class="text-xs uppercase tracking-[0.22em] text-slate-500">Elegir del bucket</span>
-                    <select v-model="selectedBucketImage" class="field-input" @change="applyBucketImage">
-                      <option value="">Selecciona una imagen guardada</option>
-                      <option v-for="image in bucketImages" :key="image.path" :value="image.url">
-                        {{ image.name }}
-                      </option>
-                    </select>
-                  </label>
                   <label class="block space-y-2">
                     <span class="text-xs uppercase tracking-[0.22em] text-slate-500">Subir desde local</span>
                     <input type="file" accept="image/*" class="field-input" :disabled="isUploadingImage" @change="handleLocalImageUpload" />
@@ -353,7 +344,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGymStore } from '../stores/gymStore';
-import { listStoreImages, uploadStoreImage } from '../services/storeImageService';
+import { uploadStoreImage } from '../services/storeImageService';
 
 const route = useRoute();
 const router = useRouter();
@@ -371,8 +362,6 @@ const isProductEditorOpen = ref(false);
 const cantidadInput = ref({});
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
-const bucketImages = ref([]);
-const selectedBucketImage = ref('');
 const imageFeedback = ref('');
 const imageFeedbackTone = ref('success');
 const isUploadingImage = ref(false);
@@ -425,7 +414,6 @@ const resetForm = () => {
   form.minimo = 5;
   form.estado = 'Disponible';
   form.imagen_url = '';
-  selectedBucketImage.value = '';
   imageFeedback.value = '';
 };
 
@@ -452,28 +440,9 @@ const editProducto = (producto) => {
   form.minimo = Number(producto.minimo || 5);
   form.estado = producto.estado || 'Disponible';
   form.imagen_url = producto.imagen_url || '';
-  selectedBucketImage.value = producto.imagen_url || '';
   feedbackMessage.value = '';
   imageFeedback.value = '';
   isProductEditorOpen.value = true;
-};
-
-
-const refreshBucketImages = async () => {
-  try {
-    bucketImages.value = await listStoreImages();
-  } catch (error) {
-    imageFeedbackTone.value = 'error';
-    imageFeedback.value = error instanceof Error ? error.message : 'No se pudieron cargar imagenes del bucket.';
-  }
-};
-
-const applyBucketImage = () => {
-  form.imagen_url = selectedBucketImage.value || '';
-  if (form.imagen_url) {
-    imageFeedbackTone.value = 'success';
-    imageFeedback.value = 'Imagen seleccionada desde Supabase.';
-  }
 };
 
 const handleLocalImageUpload = async (event) => {
@@ -485,10 +454,8 @@ const handleLocalImageUpload = async (event) => {
   try {
     const uploaded = await uploadStoreImage(file);
     form.imagen_url = uploaded.url;
-    selectedBucketImage.value = uploaded.url;
     imageFeedbackTone.value = 'success';
-    imageFeedback.value = 'Imagen subida y seleccionada.';
-    await refreshBucketImages();
+    imageFeedback.value = 'Imagen subida desde tu ordenador.';
   } catch (error) {
     imageFeedbackTone.value = 'error';
     imageFeedback.value = error instanceof Error ? error.message : 'No se pudo subir la imagen.';
@@ -551,9 +518,6 @@ const goToCheckout = () => {
 
 onMounted(() => {
   gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar tienda:', error));
-  if (isAdmin.value) {
-    refreshBucketImages();
-  }
 });
 </script>
 

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from config import get_settings
 from routes.attendance_routes import router as attendance_router
@@ -15,6 +18,8 @@ from routes.trainer_routes import router as trainer_router
 from routes.users_routes import router as users_router
 
 settings = get_settings()
+store_images_dir = Path(settings.store_images_dir)
+store_images_dir.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(
     title=settings.app_name,
@@ -28,6 +33,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.mount(
+    "/api/uploads/store-images",
+    StaticFiles(directory=str(store_images_dir)),
+    name="store-images",
 )
 
 

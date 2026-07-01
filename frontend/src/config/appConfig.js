@@ -1,7 +1,5 @@
 const env = import.meta.env;
 
-export const DEFAULT_SUPABASE_STORE_IMAGES_BUCKET = 'imagenestienda';
-
 const normalizeBaseUrl = (value) => {
   const base = String(value || '').trim().replace(/\/$/, '');
 
@@ -23,7 +21,4 @@ export const APP_CONFIG = {
   supabaseAnonKey:
     env.VITE_SUPABASE_ANON_KEY ||
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnYWtvZ2JkeHl3eXpzaGRldHpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0OTg2NzksImV4cCI6MjA5MzA3NDY3OX0.nVX3Y8RUCDtKSNfOqEOjxZaIsFvQXof1KyG-7tB4gxM',
-  supabaseStoreImagesBucket:
-    String(env.VITE_SUPABASE_STORE_IMAGES_BUCKET || DEFAULT_SUPABASE_STORE_IMAGES_BUCKET).trim() ||
-    DEFAULT_SUPABASE_STORE_IMAGES_BUCKET,
 };

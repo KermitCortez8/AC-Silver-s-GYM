@@ -503,6 +503,7 @@ class SupabaseGymService(GymDomainService):
             "cantidad_stock": stock,
             "stock_minimo": int(row.get("stock_minimo", 5) or 5),
             "estado": "Disponible" if stock > 0 else "Sin stock",
+            "imagen_url": str(row.get("imagen_url") or ""),
         }
 
     def _product_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
@@ -513,6 +514,7 @@ class SupabaseGymService(GymDomainService):
             "precio_Venta": float(row.get("precio_venta") or 0),
             "cantidad_stock": int(row.get("cantidad_stock", 0) or 0),
             "stock_minimo": int(row.get("stock_minimo", 5) or 5),
+            "imagen_url": str(row.get("imagen_url") or ""),
         }
 
     def _map_sale_detail(self, row: dict[str, Any], product_names: dict[int, str]) -> dict[str, Any]:

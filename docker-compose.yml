@@ -37,7 +37,6 @@ services:
         VITE_SUPABASE_LANDING_BUCKET: "${VITE_SUPABASE_LANDING_BUCKET:-imageneslandingpage}"
         VITE_SUPABASE_LANDING_FOLDER: "${VITE_SUPABASE_LANDING_FOLDER:-landingpage}"
         VITE_SUPABASE_ANON_KEY: "${VITE_SUPABASE_ANON_KEY:-}"
-        VITE_SUPABASE_STORE_IMAGES_BUCKET: "${VITE_SUPABASE_STORE_IMAGES_BUCKET:-imagenestienda}"
     container_name: ac-silvers-gym-frontend
     restart: unless-stopped
     depends_on:

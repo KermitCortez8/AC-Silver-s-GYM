@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import get_clients_service, require_admin_or_staff
+from dependencies import get_clients_service, get_current_user, require_admin_or_staff
 from models.gym import ClienteInput, PagoPublicoClienteInput, RegistroPublicoClienteInput
+from models.auth import UserProfile
 from services.clients_service import ClientsService
 
 router = APIRouter(tags=["clientes"])
@@ -15,6 +16,17 @@ def list_clientes(
     _current_user=Depends(require_admin_or_staff),
 ):
     return clients_service.list_clients()
+
+
+@router.get("/clientes/me")
+def get_mi_cliente(
+    clients_service: ClientsService = Depends(get_clients_service),
+    current_user: UserProfile = Depends(get_current_user),
+):
+    try:
+        return clients_service.get_client_for_user(current_user)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
 @router.post("/clientes")
