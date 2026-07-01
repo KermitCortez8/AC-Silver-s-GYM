@@ -5,10 +5,10 @@
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Horarios</p>
           <h1 class="mt-2 text-3xl font-black text-white">Horarios por servicio</h1>
-          <p class="mt-2 text-slate-300">Define dia, rango horario y cupos desde una vista superpuesta.</p>
+          <p class="mt-2 text-slate-300">Define dia, rutina, rango horario y cupos desde una vista superpuesta.</p>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row">
-          <button class="rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm font-bold text-white" @click="refresh">
+          <button class="rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm font-bold text-white" @click="refreshAll">
             Actualizar
           </button>
           <button class="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-slate-950" @click="openNewSchedule">
@@ -43,7 +43,7 @@
       <div class="mt-5 grid gap-3 lg:grid-cols-[1.2fr_0.9fr_0.9fr_1fr]">
         <label class="space-y-2">
           <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Buscar</span>
-          <input v-model="filters.search" class="field-input" placeholder="Servicio, codigo u hora" />
+          <input v-model="filters.search" class="field-input" placeholder="Servicio, rutina, codigo u hora" />
         </label>
 
         <label class="space-y-2">
@@ -112,10 +112,11 @@
 
       <div v-if="filteredSchedules.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/45 shadow-xl shadow-black/10">
         <div class="hidden overflow-x-auto lg:block">
-          <table class="w-full min-w-[980px] text-left text-sm">
+          <table class="w-full min-w-[1120px] text-left text-sm">
             <thead class="sticky top-0 z-10 bg-slate-950/95 text-[11px] uppercase tracking-[0.22em] text-slate-400">
               <tr>
                 <th class="px-5 py-4">Servicio</th>
+                <th class="px-5 py-4">Rutina</th>
                 <th class="px-5 py-4">Dia</th>
                 <th class="px-5 py-4">Horario</th>
                 <th class="px-5 py-4">Cupos</th>
@@ -138,6 +139,10 @@
                       <p class="mt-1 text-xs text-slate-500">Horario #{{ schedule.id_horario_servicio }}</p>
                     </div>
                   </div>
+                </td>
+                <td class="px-5 py-4">
+                  <p class="font-bold text-cyan-100">{{ routineName(schedule.id_rutina) }}</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ routineZones(schedule.id_rutina) }}</p>
                 </td>
                 <td class="px-5 py-4">
                   <p class="font-bold text-slate-200">{{ dayLabel(schedule.dia) }}</p>
@@ -206,6 +211,11 @@
                 <p class="text-xs text-slate-500">{{ durationLabel(schedule) }}</p>
               </div>
               <div>
+                <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Rutina</p>
+                <p class="mt-1 font-black text-white">{{ routineName(schedule.id_rutina) }}</p>
+                <p class="text-xs text-slate-500">{{ routineZones(schedule.id_rutina) }}</p>
+              </div>
+              <div>
                 <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Cupos</p>
                 <p class="mt-1 font-black text-white">{{ schedule.cupos_usados || 0 }} / {{ schedule.cupos }}</p>
                 <p class="text-xs text-slate-500">{{ availableSlots(schedule) }} libres</p>
@@ -250,6 +260,16 @@
                 <option value="musculacion">Musculacion</option>
                 <option value="cardio">Cardio</option>
                 <option value="baile">Baile</option>
+              </select>
+            </label>
+
+            <label class="space-y-2 sm:col-span-2">
+              <span class="text-sm text-slate-300">Rutina especifica</span>
+              <select v-model.number="form.id_rutina" class="field-input">
+                <option :value="0">Selecciona una rutina</option>
+                <option v-for="routine in routinesForSelectedService" :key="routine.id_rutina" :value="routine.id_rutina">
+                  {{ routine.nombre_rutina }} - {{ routine.zonas_musculares || 'Sin zonas' }}
+                </option>
               </select>
             </label>
 
@@ -306,6 +326,7 @@ import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
 const schedules = computed(() => gymStore.serviceSchedules);
+const routines = computed(() => gymStore.routines || []);
 const isSaving = ref(false);
 const isEditorOpen = ref(false);
 const feedback = ref('');
@@ -355,6 +376,7 @@ const sortOptions = [
 const defaultForm = () => ({
   id_horario_servicio: null,
   servicio: 'fitness',
+  id_rutina: 0,
   dia: 'lunes',
   codigo_dia: 'LUN',
   hora_inicio: '06:00',
@@ -370,6 +392,17 @@ const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculaci
 const dayLabel = (day) => days.find((entry) => entry.value === day)?.label || day;
 const dayOrder = (day) => days.findIndex((entry) => entry.value === day);
 const serviceOrder = (service) => Math.max(0, serviceFilters.findIndex((entry) => entry.value === service) - 1);
+const routineById = computed(() =>
+  routines.value.reduce((result, routine) => {
+    result[Number(routine.id_rutina)] = routine;
+    return result;
+  }, {}),
+);
+const routineName = (idRutina) => routineById.value[Number(idRutina)]?.nombre_rutina || 'Sin rutina';
+const routineZones = (idRutina) => routineById.value[Number(idRutina)]?.zonas_musculares || 'Rutina pendiente';
+const routinesForSelectedService = computed(() =>
+  routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(form.servicio || '').toLowerCase()),
+);
 const isScheduleActive = (schedule) => schedule.activo !== false;
 const activeSchedules = computed(() => schedules.value.filter((item) => item.activo !== false).length);
 const totalSlots = computed(() => schedules.value.reduce((sum, item) => sum + Number(item.cupos || 0), 0));
@@ -427,6 +460,8 @@ const searchableScheduleText = (schedule) =>
   normalizeText(
     [
       serviceLabel(schedule.servicio),
+      routineName(schedule.id_rutina),
+      routineZones(schedule.id_rutina),
       dayLabel(schedule.dia),
       schedule.codigo_dia,
       schedule.hora_inicio,
@@ -485,7 +520,12 @@ const filteredSchedules = computed(() => {
       }
 
       return compareBase(a, b);
-    });
+    })
+    .map((schedule) => ({
+      ...schedule,
+      rutina_nombre: routineName(schedule.id_rutina),
+      zonas_musculares: routineZones(schedule.id_rutina),
+    }));
 });
 
 const hasValidShortDuration = () => {
@@ -498,6 +538,15 @@ watch(
   (day) => {
     if (!form.id_horario_servicio) {
       form.codigo_dia = days.find((entry) => entry.value === day)?.code || form.codigo_dia;
+    }
+  },
+);
+
+watch(
+  () => form.servicio,
+  () => {
+    if (!routinesForSelectedService.value.some((routine) => Number(routine.id_rutina) === Number(form.id_rutina))) {
+      form.id_rutina = 0;
     }
   },
 );
@@ -531,6 +580,7 @@ const editSchedule = (schedule) => {
   Object.assign(form, {
     id_horario_servicio: schedule.id_horario_servicio,
     servicio: schedule.servicio || 'fitness',
+    id_rutina: Number(schedule.id_rutina || 0),
     dia: schedule.dia || 'lunes',
     codigo_dia: schedule.codigo_dia || 'LUN',
     hora_inicio: String(schedule.hora_inicio || '06:00').slice(0, 5),
@@ -543,6 +593,12 @@ const editSchedule = (schedule) => {
 };
 
 const refresh = () => gymStore.refreshServiceSchedulesFromBackend?.().catch(() => {});
+const refreshAll = async () => {
+  await Promise.all([
+    gymStore.refreshRoutinesFromBackend?.().catch(() => {}),
+    gymStore.refreshServiceSchedulesFromBackend?.().catch(() => {}),
+  ]);
+};
 
 const saveSchedule = async () => {
   isSaving.value = true;
@@ -550,6 +606,9 @@ const saveSchedule = async () => {
   try {
     if (!hasValidShortDuration()) {
       throw new Error('El horario debe durar exactamente 1 o 2 horas.');
+    }
+    if (!Number(form.id_rutina || 0)) {
+      throw new Error('Selecciona una rutina para este servicio.');
     }
     await gymStore.upsertServiceSchedule(form);
     feedbackTone.value = 'success';
@@ -575,7 +634,7 @@ const removeSchedule = async (schedule) => {
   }
 };
 
-onMounted(refresh);
+onMounted(refreshAll);
 </script>
 
 <style scoped>

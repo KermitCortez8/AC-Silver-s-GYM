@@ -11,6 +11,7 @@ from routes.gym_routes import router as gym_router
 from routes.inventory_routes import router as inventory_router
 from routes.memberships_routes import router as membership_router
 from routes.store_routes import router as store_router
+from routes.trainer_routes import router as trainer_router
 from routes.users_routes import router as users_router
 
 settings = get_settings()
@@ -52,6 +53,7 @@ app.include_router(membership_router, prefix="/api")
 app.include_router(attendance_router, prefix="/api")
 app.include_router(inventory_router, prefix="/api")
 app.include_router(store_router, prefix="/api")
+app.include_router(trainer_router, prefix="/api")
 
 
 def main() -> None:

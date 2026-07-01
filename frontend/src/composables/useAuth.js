@@ -16,6 +16,8 @@ export const useAuth = () => {
     isInitialized,
     isAuthenticated,
     isAdmin,
+    isTrainer,
+    dashboardPath,
   } = storeToRefs(authStore);
 
   return {
@@ -27,6 +29,8 @@ export const useAuth = () => {
     isInitialized,
     isAuthenticated,
     isAdmin,
+    isTrainer,
+    dashboardPath,
     initializeAuth: authStore.initializeAuth,
     signIn: authStore.signIn,
     signUp: authStore.signUp,

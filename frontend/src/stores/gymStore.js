@@ -26,6 +26,7 @@ const seedState = () => ({
   schedule: [],
   serviceSchedules: [],
   enrollments: [],
+  trainerOverview: null,
 });
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -313,6 +314,7 @@ export const useGymStore = defineStore('gym', () => {
   const schedule = ref(initialState.schedule);
   const serviceSchedules = ref(initialState.serviceSchedules);
   const enrollments = ref(initialState.enrollments);
+  const trainerOverview = ref(initialState.trainerOverview);
 
   const persist = () => {
     // Business data is persisted only through the backend, which writes to Supabase.
@@ -539,6 +541,7 @@ export const useGymStore = defineStore('gym', () => {
   const upsertRutina = async (payload) => {
     const rutina = {
       id_rutina: payload.id_rutina || payload.id || null,
+      servicio: payload.servicio || 'fitness',
       nombre_rutina: payload.nombre_rutina?.trim() || 'Sin nombre',
       zonas_musculares: payload.zonas_musculares || '',
       color: payload.color || 'Azul',
@@ -558,6 +561,7 @@ export const useGymStore = defineStore('gym', () => {
       const saved = await response.json();
       const normalized = {
         id_rutina: saved.id_rutina,
+        servicio: saved.servicio || rutina.servicio,
         nombre_rutina: saved.nombre_rutina || rutina.nombre_rutina,
         zonas_musculares: saved.zonas_musculares || rutina.zonas_musculares,
         color: saved.color || rutina.color,
@@ -1613,10 +1617,31 @@ export const useGymStore = defineStore('gym', () => {
     return serviceSchedules.value;
   };
 
+  const refreshRoutinesFromBackend = async () => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+
+    const response = await fetch(`${apiBase}/gym/rutinas`, { headers: _authHeaders() });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'Error al cargar rutinas'));
+    }
+
+    const list = await response.json();
+    routines.value = list.map((r) => ({
+      id_rutina: r.id_rutina,
+      servicio: r.servicio || 'fitness',
+      nombre_rutina: r.nombre_rutina,
+      zonas_musculares: r.zonas_musculares || '',
+      color: r.color || 'Azul',
+    }));
+    persist();
+    return routines.value;
+  };
+
   const upsertServiceSchedule = async (payload) => {
     const body = {
       id_horario_servicio: payload.id_horario_servicio || null,
       servicio: payload.servicio,
+      id_rutina: Number(payload.id_rutina || 0),
       hora_inicio: payload.hora_inicio || '06:00',
       hora_fin: payload.hora_fin || '07:00',
       codigo_dia: payload.codigo_dia || '',
@@ -1624,6 +1649,9 @@ export const useGymStore = defineStore('gym', () => {
       cupos: Number(payload.cupos || 10),
       activo: payload.activo !== false,
     };
+    if (!body.id_rutina) {
+      throw new Error('Selecciona una rutina para el servicio');
+    }
 
     if (apiBase) {
       const response = await fetch(`${apiBase}/gym/horarios-servicio`, {
@@ -1704,6 +1732,94 @@ export const useGymStore = defineStore('gym', () => {
     }
     persist();
     return list;
+  };
+
+  const fetchTrainerOverview = async () => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const response = await fetch(`${apiBase}/trainer/overview`, { headers: _authHeaders() });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'Error al cargar supervision del trainer'));
+    }
+    trainerOverview.value = await response.json();
+    return trainerOverview.value;
+  };
+
+  const upsertTrainerRoutine = async (payload) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const body = {
+      id_rutina: payload.id_rutina || null,
+      servicio: payload.servicio || 'fitness',
+      nombre_rutina: String(payload.nombre_rutina || '').trim(),
+      zonas_musculares: String(payload.zonas_musculares || '').trim(),
+      color: payload.color || 'Azul',
+    };
+    const response = await fetch(`${apiBase}/trainer/rutinas`, {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'No se pudo guardar la rutina'));
+    }
+    const saved = await response.json();
+    const normalized = {
+      id_rutina: saved.id_rutina,
+      servicio: saved.servicio || body.servicio,
+      nombre_rutina: saved.nombre_rutina || body.nombre_rutina,
+      zonas_musculares: saved.zonas_musculares || body.zonas_musculares,
+      color: saved.color || body.color,
+    };
+    const index = routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
+    if (index >= 0) routines.value[index] = normalized; else routines.value.unshift(normalized);
+    await fetchTrainerOverview().catch(() => {});
+    persist();
+    return normalized;
+  };
+
+  const assignTrainerRoutine = async (idMatricula, idRutina) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const response = await fetch(`${apiBase}/trainer/matriculas/${idMatricula}/rutina`, {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({ id_rutina: Number(idRutina) }),
+    });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'No se pudo asignar la rutina'));
+    }
+    const saved = await response.json();
+    const index = enrollments.value.findIndex((entry) => Number(entry.id_matricula) === Number(saved.id_matricula));
+    if (index >= 0) enrollments.value[index] = { ...enrollments.value[index], ...saved };
+    else enrollments.value.unshift(saved);
+    await fetchTrainerOverview().catch(() => {});
+    persist();
+    return saved;
+  };
+
+  const fetchTrainerClientRoutines = async (dni) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const params = new URLSearchParams({ dni: String(dni || '').trim() });
+    const response = await fetch(`${apiBase}/trainer/clientes-rutinas?${params.toString()}`, { headers: _authHeaders() });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'No se pudo cargar el cliente'));
+    }
+    return response.json();
+  };
+
+  const markTrainerRoutineProgress = async (idMatricula, payload = {}) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const response = await fetch(`${apiBase}/trainer/matriculas/${idMatricula}/progreso`, {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({
+        fecha: payload.fecha || todayISO(),
+        observacion: payload.observacion || '',
+        id_usuario: getCurrentRegistrarId(authStore) || undefined,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'No se pudo registrar el progreso'));
+    }
+    return response.json();
   };
 
   const enrollSchedule = async (payload) => {
@@ -1857,16 +1973,7 @@ export const useGymStore = defineStore('gym', () => {
     await refreshServiceSchedulesFromBackend();
     await refreshEnrollmentsFromBackend();
 
-    const resRutinas = await fetch(`${apiBase}/gym/rutinas`, { headers: _authHeaders() });
-    if (resRutinas.ok) {
-      const list = await resRutinas.json();
-      routines.value = list.map((r) => ({
-        id_rutina: r.id_rutina,
-        nombre_rutina: r.nombre_rutina,
-        zonas_musculares: r.zonas_musculares || '',
-        color: r.color || 'Azul',
-      }));
-    }
+    await refreshRoutinesFromBackend().catch(() => {});
 
     await refreshAttendanceFromBackend();
   };
@@ -2229,6 +2336,7 @@ export const useGymStore = defineStore('gym', () => {
     schedule,
     serviceSchedules,
     enrollments,
+    trainerOverview,
     stats,
     recentAttendance,
     attendanceAnalytics,
@@ -2282,9 +2390,15 @@ export const useGymStore = defineStore('gym', () => {
     refreshStoreOrdersFromBackend,
     refreshAttendanceFromBackend,
     refreshServiceSchedulesFromBackend,
+    refreshRoutinesFromBackend,
     upsertServiceSchedule,
     deleteServiceSchedule,
     refreshEnrollmentsFromBackend,
+    fetchTrainerOverview,
+    upsertTrainerRoutine,
+    assignTrainerRoutine,
+    fetchTrainerClientRoutines,
+    markTrainerRoutineProgress,
     enrollSchedule,
     deleteEnrollment,
     upsertClienteToServer,

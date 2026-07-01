@@ -73,6 +73,8 @@
               <div>
                 <p class="text-lg font-bold text-white">Grupo {{ index + 1 }}</p>
                 <p class="text-sm text-slate-400">{{ dayLabel(schedule.dia) }} {{ schedule.codigo_dia }} - {{ schedule.hora_inicio }} a {{ schedule.hora_fin }}</p>
+                <p class="mt-1 text-sm text-cyan-100">Rutina: {{ schedule.rutina_nombre || 'Pendiente' }}</p>
+                <p v-if="schedule.zonas_musculares" class="text-xs text-slate-400">{{ schedule.zonas_musculares }}</p>
                 <p class="mt-1 text-sm text-slate-300">Cupos: {{ schedule.cupos_usados || 0 }} / {{ schedule.cupos }}</p>
               </div>
               <button
@@ -106,6 +108,7 @@
               <div>
                 <p class="font-bold text-white">{{ serviceLabel(item.servicio) }}</p>
                 <p class="text-sm text-slate-400">{{ dayLabel(item.dia) }} - {{ item.hora_inicio }} a {{ item.hora_fin }}</p>
+                <p class="text-sm text-cyan-100">Rutina: {{ item.rutina_nombre || 'Pendiente' }}</p>
                 <p class="text-xs text-slate-500">Matricula #{{ item.id_matricula }}</p>
               </div>
               <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 hover:bg-rose-400/10" @click="cancel(item)">

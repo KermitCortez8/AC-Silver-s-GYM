@@ -139,6 +139,7 @@ class TicketAtencionInput(BaseModel):
 
 class CatalogoRutinaInput(BaseModel):
     id_rutina: int | None = None
+    servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
     nombre_rutina: str
     zonas_musculares: str
     color: str = "Azul"
@@ -157,6 +158,7 @@ class HorarioInput(BaseModel):
 class HorarioServicioInput(BaseModel):
     id_horario_servicio: int | None = None
     servicio: Literal["fitness", "musculacion", "cardio", "baile"]
+    id_rutina: int
     hora_inicio: str = "06:00"
     hora_fin: str = "07:00"
     codigo_dia: str = "LUN"
@@ -170,6 +172,16 @@ class MatriculaHorarioInput(BaseModel):
     id_cliente: str | int | None = None
     dni: str = ""
     id_horario_servicio: int
+
+
+class MatriculaRutinaInput(BaseModel):
+    id_rutina: int
+
+
+class RutinaProgresoInput(BaseModel):
+    fecha: str = ""
+    observacion: str = ""
+    id_usuario: str | int | None = None
 
 
 class AsistenciaInput(BaseModel):

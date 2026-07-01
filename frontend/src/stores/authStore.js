@@ -39,7 +39,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Getters
   const isAuthenticated = computed(() => !!user.value);
-  const isAdmin = computed(() => ['admin', 'trainer', 'staff'].includes(userRole.value));
+  const isAdmin = computed(() => ['admin', 'staff'].includes(userRole.value));
+  const isTrainer = computed(() => userRole.value === 'trainer');
+  const dashboardPath = computed(() => {
+    if (isAdmin.value) return '/admin/dashboard';
+    if (isTrainer.value) return '/trainer/dashboard';
+    return '/user/dashboard';
+  });
 
   // Actions
   const initializeAuth = async () => {
@@ -168,6 +174,8 @@ export const useAuthStore = defineStore('auth', () => {
     // Getters
     isAuthenticated,
     isAdmin,
+    isTrainer,
+    dashboardPath,
     // Actions
     initializeAuth,
     signIn,

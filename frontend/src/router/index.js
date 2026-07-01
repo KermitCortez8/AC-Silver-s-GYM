@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 // Vistas
 import LoginView from '../views/LoginView.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
+import TrainerDashboard from '../views/TrainerDashboard.vue';
 import UserDashboard from '../views/UserDashboard.vue';
 import LandingView from '../views/LandingView.vue';
 import RegisterView from '../views/RegisterView.vue';
@@ -20,6 +21,9 @@ import StorePaymentView from '../views/StorePaymentView.vue';
 import OrdersView from '../views/OrdersView.vue';
 import ScheduleView from '../views/ScheduleView.vue';
 import UserAttendanceView from '../views/UserAttendanceView.vue';
+import TrainerOverviewView from '../views/TrainerOverviewView.vue';
+import TrainerRoutinesView from '../views/TrainerRoutinesView.vue';
+import TrainerRoutineMonitorView from '../views/TrainerRoutineMonitorView.vue';
 import AuthCallbackView from '../views/AuthCallbackView.vue';
 
 const routes = [
@@ -110,6 +114,32 @@ const routes = [
     ],
   },
   {
+    path: '/trainer',
+    component: TrainerDashboard,
+    meta: { requiresAuth: true, requiresTrainer: true },
+    children: [
+      {
+        path: '',
+        redirect: '/trainer/dashboard',
+      },
+      {
+        path: 'dashboard',
+        name: 'TrainerHome',
+        component: TrainerOverviewView,
+      },
+      {
+        path: 'routines',
+        name: 'TrainerRoutines',
+        component: TrainerRoutinesView,
+      },
+      {
+        path: 'routine-monitor',
+        name: 'TrainerRoutineMonitor',
+        component: TrainerRoutineMonitorView,
+      },
+    ],
+  },
+  {
     path: '/user',
     component: UserDashboard,
     meta: { requiresAuth: true },
@@ -167,7 +197,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.path === '/' && authStore.isAuthenticated) {
-    return authStore.isAdmin ? '/admin/dashboard' : '/user/dashboard';
+    return authStore.dashboardPath;
   }
 
   // Verificar si la ruta requiere autenticación
@@ -180,9 +210,13 @@ router.beforeEach(async (to) => {
     return '/';
   }
 
+  if (to.meta.requiresTrainer && !authStore.isTrainer) {
+    return '/';
+  }
+
   // Si está autenticado y va a login, redirigir al dashboard
   if (authStore.isAuthenticated && to.path === '/login') {
-    return authStore.isAdmin ? '/admin' : '/user';
+    return authStore.dashboardPath;
   }
 
   return true;

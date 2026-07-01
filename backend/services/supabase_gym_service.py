@@ -88,6 +88,7 @@ class SupabaseGymService(GymDomainService):
         "horario": ("HORARIO", "id_horario", "id_horario"),
         "horarios_servicio": ("HORARIOS_SERVICIO", "id_horario_servicio", "id_horario_servicio"),
         "matriculas_horario": ("MATRICULAS_HORARIO", "id_matricula", "id_matricula"),
+        "rutina_progreso": ("RUTINA_PROGRESO", "id_progreso", "id_progreso"),
         "mov_inv": ("MOV_INV", "id_mov", "id_mov"),
         "tickets_atencion": ("TICKETS_ATENCION", "id_ticket", "id_ticket"),
         "asistencia": ("ASISTENCIA", "id_asistencia", "id_asistencia"),
@@ -126,6 +127,7 @@ class SupabaseGymService(GymDomainService):
         schedules = self.supabase.select("HORARIO", order="id_horario.asc")
         service_schedules = self._select_optional("HORARIOS_SERVICIO", order="id_horario_servicio.asc")
         enrollments = self._select_optional("MATRICULAS_HORARIO", order="id_matricula.desc")
+        routine_progress = self._select_optional("RUTINA_PROGRESO", order="fecha.desc")
         tickets = self._select_optional("TICKETS_ATENCION", order="id_ticket.desc")
         config_rows = self._select_optional("CONFIGURACION_GIMNASIO", order="id_config.asc")
         attendance = self.supabase.select("ASISTENCIA", order="Fecha.desc")
@@ -151,6 +153,7 @@ class SupabaseGymService(GymDomainService):
         remote_state["horario"] = [self._map_schedule(row) for row in schedules]
         remote_state["horarios_servicio"] = [self._map_service_schedule(row) for row in service_schedules]
         remote_state["matriculas_horario"] = [self._map_schedule_enrollment(row) for row in enrollments]
+        remote_state["rutina_progreso"] = [self._map_routine_progress(row) for row in routine_progress]
         remote_state["tickets_atencion"] = [self._map_ticket(row) for row in tickets]
         remote_state["configuracion_gimnasio"] = self._map_config(config_rows[0] if config_rows else {})
         remote_state["asistencia"] = [self._map_attendance(row) for row in attendance]
@@ -265,6 +268,7 @@ class SupabaseGymService(GymDomainService):
             "horario": self._schedule_to_remote,
             "horarios_servicio": self._service_schedule_to_remote,
             "matriculas_horario": self._schedule_enrollment_to_remote,
+            "rutina_progreso": self._routine_progress_to_remote,
             "tickets_atencion": self._ticket_to_remote,
             "asistencia": self._attendance_to_remote,
         }[state_key](row)
@@ -562,6 +566,7 @@ class SupabaseGymService(GymDomainService):
     def _map_routine(self, row: dict[str, Any]) -> dict[str, Any]:
         return {
             "id_rutina": int(row.get("id_rutina", 0) or 0),
+            "servicio": str(row.get("servicio") or "fitness").strip().lower(),
             "nombre_rutina": str(row.get("Nombre_rutina") or ""),
             "zonas_musculares": str(row.get("Zonas_musculares") or ""),
             "color": str(row.get("Color") or "Azul"),
@@ -570,6 +575,7 @@ class SupabaseGymService(GymDomainService):
     def _routine_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
         return {
             "id_rutina": int(row.get("id_rutina", 0) or 0),
+            "servicio": str(row.get("servicio") or "fitness").strip().lower(),
             "Nombre_rutina": str(row.get("nombre_rutina") or ""),
             "Zonas_musculares": str(row.get("zonas_musculares") or ""),
             "Color": str(row.get("color") or "Azul"),
@@ -601,6 +607,7 @@ class SupabaseGymService(GymDomainService):
         return {
             "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
             "servicio": str(row.get("servicio") or "fitness"),
+            "id_rutina": int(row.get("id_rutina", 0) or 0),
             "codigo_dia": str(row.get("codigo_dia") or "LUN"),
             "dia": str(row.get("dia") or "lunes"),
             "hora_inicio": str(row.get("hora_inicio") or "06:00"),
@@ -614,6 +621,7 @@ class SupabaseGymService(GymDomainService):
         return {
             "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
             "servicio": str(row.get("servicio") or "fitness").strip().lower(),
+            "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
             "codigo_dia": str(row.get("codigo_dia") or self._day_code(row.get("dia"))).strip().upper(),
             "dia": self._normalize_day(row.get("dia")) or "lunes",
             "hora_inicio": str(row.get("hora_inicio") or "06:00"),
@@ -627,6 +635,7 @@ class SupabaseGymService(GymDomainService):
             "id_matricula": int(row.get("id_matricula", 0) or 0),
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
+            "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
             "fecha_matricula": str(row.get("fecha_matricula") or ""),
             "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
         }
@@ -636,8 +645,31 @@ class SupabaseGymService(GymDomainService):
             "id_matricula": int(row.get("id_matricula", 0) or 0),
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
+            "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
             "fecha_matricula": self._date_or_today(row.get("fecha_matricula")),
             "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
+        }
+
+    def _map_routine_progress(self, row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "id_progreso": int(row.get("id_progreso", 0) or 0),
+            "id_matricula": int(row.get("id_matricula", 0) or 0),
+            "id_rutina": int(row.get("id_rutina", 0) or 0),
+            "fecha": str(row.get("fecha") or ""),
+            "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
+            "observacion": str(row.get("observacion") or ""),
+            "id_usuario": row.get("id_usuario"),
+        }
+
+    def _routine_progress_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "id_progreso": int(row.get("id_progreso", 0) or 0),
+            "id_matricula": int(row.get("id_matricula", 0) or 0),
+            "id_rutina": int(row.get("id_rutina", 0) or 0),
+            "fecha": self._date_or_today(row.get("fecha")),
+            "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
+            "observacion": str(row.get("observacion") or ""),
+            "id_usuario": self._remote_user_id_or_none(row.get("id_usuario")),
         }
 
     def _map_ticket(self, row: dict[str, Any]) -> dict[str, Any]:

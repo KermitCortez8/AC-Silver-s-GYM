@@ -54,4 +54,7 @@ venv/
 *.pyc
 backend/db/state.json
 
+# Local Supabase SQL files
+supabase/*.sql
+
 .vscode/

@@ -42,6 +42,7 @@ class GymDomainService:
             "horario": [],
             "horarios_servicio": [],
             "matriculas_horario": [],
+            "rutina_progreso": [],
             "catalogo_rutina": [],
             "asistencia": [],
             "membresia": [],
@@ -101,6 +102,11 @@ class GymDomainService:
         merged["matriculas_horario"] = [
             self._normalize_matricula_horario(row, index)
             for index, row in enumerate(merged.get("matriculas_horario", []), start=1)
+            if isinstance(row, dict)
+        ]
+        merged["rutina_progreso"] = [
+            self._normalize_rutina_progreso(row, index)
+            for index, row in enumerate(merged.get("rutina_progreso", []), start=1)
             if isinstance(row, dict)
         ]
         self._recount_schedule_cupos(merged)
@@ -930,6 +936,7 @@ class GymDomainService:
                     {
                         "id_horario_servicio": item_id,
                         "servicio": servicio,
+                        "id_rutina": int(row.get("id_rutina", 0) or 0),
                         "codigo_dia": str(row.get("codigo_dia") or self._day_code(day)).strip().upper(),
                         "dia": day,
                         "hora_inicio": hora_inicio,
@@ -947,8 +954,20 @@ class GymDomainService:
             "id_matricula": int(row.get("id_matricula", 0) or fallback_index),
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
+            "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
             "fecha_matricula": str(row.get("fecha_matricula") or _today_iso()),
             "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
+        }
+
+    def _normalize_rutina_progreso(self, row: dict[str, Any], fallback_index: int) -> dict[str, Any]:
+        return {
+            "id_progreso": int(row.get("id_progreso", 0) or fallback_index),
+            "id_matricula": int(row.get("id_matricula", 0) or 0),
+            "id_rutina": int(row.get("id_rutina", 0) or 0),
+            "fecha": str(row.get("fecha") or _today_iso())[:10],
+            "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
+            "observacion": str(row.get("observacion") or "").strip(),
+            "id_usuario": self._normalize_usuario_id(row.get("id_usuario")) if row.get("id_usuario") else None,
         }
 
     def _recount_schedule_cupos(self, state: dict[str, Any]) -> None:
@@ -1311,12 +1330,20 @@ class GymDomainService:
         return self.state["catalogo_rutina"]
 
     def upsert_rutina(self, payload: dict[str, Any]) -> dict[str, Any]:
+        servicio = str(payload.get("servicio") or "fitness").strip().lower()
+        if servicio not in {"fitness", "musculacion", "cardio", "baile"}:
+            raise ValueError("Servicio invalido para rutina")
+
         def _fn(state: dict[str, Any]):
             item = {**payload}
             item_id = item.get("id_rutina")
             if item_id is None:
                 item_id = self._next_int_id("catalogo_rutina", "id_rutina")
             item["id_rutina"] = int(item_id)
+            item["servicio"] = servicio
+            item["nombre_rutina"] = str(item.get("nombre_rutina") or "").strip()
+            item["zonas_musculares"] = str(item.get("zonas_musculares") or "").strip()
+            item["color"] = str(item.get("color") or "Azul").strip() or "Azul"
             idx = next((i for i, row in enumerate(state["catalogo_rutina"]) if int(row.get("id_rutina", 0)) == int(item_id)), -1)
             if idx >= 0:
                 state["catalogo_rutina"][idx] = item
@@ -1391,7 +1418,22 @@ class GymDomainService:
         return self._mutate(_fn)
 
     def horarios_servicio(self) -> list[dict[str, Any]]:
-        return self.state.get("horarios_servicio", [])
+        routines_by_id = {
+            int(routine.get("id_rutina", 0) or 0): routine
+            for routine in self.state.get("catalogo_rutina", [])
+        }
+        result = []
+        for schedule in self.state.get("horarios_servicio", []):
+            routine = routines_by_id.get(int(schedule.get("id_rutina", 0) or 0), {})
+            result.append(
+                {
+                    **schedule,
+                    "rutina_nombre": routine.get("nombre_rutina", ""),
+                    "zonas_musculares": routine.get("zonas_musculares", ""),
+                    "rutina_color": routine.get("color", "Azul"),
+                }
+            )
+        return result
 
     def get_horario_servicio(self, id_horario_servicio: int) -> dict[str, Any] | None:
         return next(
@@ -1414,10 +1456,18 @@ class GymDomainService:
         dia = self._normalize_day(payload.get("dia") or (payload.get("dias") or [""])[0])
         if not dia:
             raise ValueError("Selecciona un dia")
+        id_rutina = int(payload.get("id_rutina", 0) or 0)
+        routine = next((r for r in self.state["catalogo_rutina"] if int(r.get("id_rutina", 0) or 0) == id_rutina), None)
+        if not routine:
+            raise ValueError("Selecciona una rutina valida para el servicio")
+        routine_service = str(routine.get("servicio") or servicio).strip().lower()
+        if routine_service != servicio:
+            raise ValueError("La rutina seleccionada no corresponde al servicio")
 
         item = {
             "id_horario_servicio": int(payload.get("id_horario_servicio", 0) or 0),
             "servicio": servicio,
+            "id_rutina": id_rutina,
             "hora_inicio": hora_inicio,
             "hora_fin": hora_fin,
             "codigo_dia": str(payload.get("codigo_dia") or self._day_code(dia)).strip().upper(),
@@ -1482,6 +1532,15 @@ class GymDomainService:
             if resolved_id and int(enrollment.get("id_cliente", 0) or 0) != resolved_id:
                 continue
             schedule = self.get_horario_servicio(int(enrollment.get("id_horario_servicio", 0) or 0)) or {}
+            effective_routine_id = int(enrollment.get("id_rutina", 0) or 0) or int(schedule.get("id_rutina", 0) or 0)
+            routine = next(
+                (
+                    r
+                    for r in self.state.get("catalogo_rutina", [])
+                    if int(r.get("id_rutina", 0) or 0) == effective_routine_id
+                ),
+                {},
+            )
             cliente = self.get_cliente(int(enrollment.get("id_cliente", 0) or 0)) or {}
             result.append(
                 {
@@ -1490,6 +1549,11 @@ class GymDomainService:
                     "cliente_dni": cliente.get("dni", ""),
                     "cliente_codigo": cliente.get("id_usuario", ""),
                     "servicio": schedule.get("servicio", ""),
+                    "id_rutina": effective_routine_id or None,
+                    "rutina_origen": "cliente" if int(enrollment.get("id_rutina", 0) or 0) else "servicio",
+                    "rutina_nombre": routine.get("nombre_rutina", ""),
+                    "zonas_musculares": routine.get("zonas_musculares", ""),
+                    "rutina_color": routine.get("color", "Azul"),
                     "codigo_dia": schedule.get("codigo_dia", ""),
                     "dia": schedule.get("dia", ""),
                     "hora_inicio": schedule.get("hora_inicio", ""),
@@ -1502,6 +1566,210 @@ class GymDomainService:
                 }
             )
         return sorted(result, key=lambda row: (str(row.get("dia")), str(row.get("hora_inicio"))))
+
+    def asignar_rutina_matricula(self, id_matricula: int, id_rutina: int) -> dict[str, Any]:
+        def _fn(state: dict[str, Any]):
+            idx = next(
+                (
+                    i
+                    for i, row in enumerate(state.get("matriculas_horario", []))
+                    if int(row.get("id_matricula", 0) or 0) == int(id_matricula)
+                ),
+                -1,
+            )
+            if idx < 0:
+                raise ValueError("Matricula no encontrada")
+
+            enrollment = state["matriculas_horario"][idx]
+            schedule = next(
+                (
+                    row
+                    for row in state.get("horarios_servicio", [])
+                    if int(row.get("id_horario_servicio", 0) or 0) == int(enrollment.get("id_horario_servicio", 0) or 0)
+                ),
+                None,
+            )
+            if not schedule:
+                raise ValueError("Horario no encontrado")
+
+            routine = next(
+                (
+                    row
+                    for row in state.get("catalogo_rutina", [])
+                    if int(row.get("id_rutina", 0) or 0) == int(id_rutina)
+                ),
+                None,
+            )
+            if not routine:
+                raise ValueError("Rutina no encontrada")
+            if str(routine.get("servicio") or "").strip().lower() != str(schedule.get("servicio") or "").strip().lower():
+                raise ValueError("La rutina no corresponde al servicio del cliente")
+
+            state["matriculas_horario"][idx]["id_rutina"] = int(id_rutina)
+            updated = next(
+                (
+                    row
+                    for row in self.matriculas_horario(id_cliente=int(enrollment.get("id_cliente", 0) or 0))
+                    if int(row.get("id_matricula", 0) or 0) == int(id_matricula)
+                ),
+                None,
+            )
+            return updated or state["matriculas_horario"][idx]
+
+        return self._mutate(_fn)
+
+    def trainer_rutinas_cliente(self, dni: str) -> dict[str, Any]:
+        cliente = self.get_cliente_by_dni(str(dni or "").strip())
+        if not cliente:
+            raise ValueError("Cliente no encontrado")
+        enrollments = [
+            row
+            for row in self.matriculas_horario(id_cliente=int(cliente.get("id_cliente", 0) or 0))
+            if str(row.get("estado") or "").upper() != "CANCELADA"
+        ]
+        progress_by_enrollment: dict[int, list[dict[str, Any]]] = {}
+        for row in self.state.get("rutina_progreso", []):
+            progress_by_enrollment.setdefault(int(row.get("id_matricula", 0) or 0), []).append(row)
+
+        return {
+            "cliente": {
+                "id_cliente": cliente.get("id_cliente"),
+                "id_usuario": cliente.get("id_usuario"),
+                "nombre": cliente.get("nombre"),
+                "dni": cliente.get("dni"),
+            },
+            "matriculas": [
+                {
+                    **row,
+                    "progreso": sorted(
+                        progress_by_enrollment.get(int(row.get("id_matricula", 0) or 0), []),
+                        key=lambda item: str(item.get("fecha") or ""),
+                        reverse=True,
+                    )[:10],
+                }
+                for row in enrollments
+            ],
+        }
+
+    def registrar_progreso_rutina(self, id_matricula: int, payload: dict[str, Any]) -> dict[str, Any]:
+        fecha = str(payload.get("fecha") or _today_iso())[:10]
+        observacion = str(payload.get("observacion") or "").strip()
+        id_usuario = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
+
+        def _fn(state: dict[str, Any]):
+            enrollment = next(
+                (
+                    row
+                    for row in state.get("matriculas_horario", [])
+                    if int(row.get("id_matricula", 0) or 0) == int(id_matricula)
+                ),
+                None,
+            )
+            if not enrollment:
+                raise ValueError("Matricula no encontrada")
+            detail = next(
+                (
+                    row
+                    for row in self.matriculas_horario(id_cliente=int(enrollment.get("id_cliente", 0) or 0))
+                    if int(row.get("id_matricula", 0) or 0) == int(id_matricula)
+                ),
+                {},
+            )
+            id_rutina = int(detail.get("id_rutina", 0) or 0)
+            if not id_rutina:
+                raise ValueError("La matricula no tiene rutina asignada")
+
+            existing_idx = next(
+                (
+                    i
+                    for i, row in enumerate(state.setdefault("rutina_progreso", []))
+                    if int(row.get("id_matricula", 0) or 0) == int(id_matricula)
+                    and str(row.get("fecha") or "")[:10] == fecha
+                ),
+                -1,
+            )
+            item = {
+                "id_progreso": int(state["rutina_progreso"][existing_idx].get("id_progreso", 0) or 0) if existing_idx >= 0 else self._next_int_id_in_state(state, "rutina_progreso", "id_progreso"),
+                "id_matricula": int(id_matricula),
+                "id_rutina": id_rutina,
+                "fecha": fecha,
+                "estado": "REALIZADO",
+                "observacion": observacion,
+                "id_usuario": id_usuario,
+            }
+            if existing_idx >= 0:
+                state["rutina_progreso"][existing_idx] = item
+            else:
+                state["rutina_progreso"].insert(0, item)
+            return item
+
+        return self._mutate(_fn)
+
+    def trainer_overview(self) -> dict[str, Any]:
+        active_enrollments = [
+            row
+            for row in self.matriculas_horario()
+            if str(row.get("estado") or "").upper() != "CANCELADA"
+        ]
+        routines_by_id = {
+            int(routine.get("id_rutina", 0) or 0): routine
+            for routine in self.state.get("catalogo_rutina", [])
+        }
+
+        routine_supervision = []
+        for enrollment in active_enrollments:
+            routine = routines_by_id.get(int(enrollment.get("id_rutina", 0) or 0), {})
+            attendance_rows = [
+                item
+                for item in self.state.get("asistencia", [])
+                if int(item.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
+                or (
+                    int(item.get("id_cliente_num") or item.get("id_cliente") or 0) == int(enrollment.get("id_cliente", 0) or 0)
+                    and str(item.get("servicio") or "").strip().lower() == str(enrollment.get("servicio") or "").strip().lower()
+                )
+            ]
+            routine_supervision.append(
+                {
+                    **enrollment,
+                    "rutina_nombre": routine.get("nombre_rutina", ""),
+                    "zonas_musculares": routine.get("zonas_musculares", ""),
+                    "color": routine.get("color", "Azul"),
+                    "asistencias": attendance_rows[:10],
+                }
+            )
+
+        routines_summary = []
+        for routine in self.state.get("catalogo_rutina", []):
+            routine_id = int(routine.get("id_rutina", 0) or 0)
+            assigned = [
+                row
+                for row in self.state.get("horarios_servicio", [])
+                if int(row.get("id_rutina", 0) or 0) == routine_id
+            ]
+            routine_enrollments = [
+                row
+                for row in active_enrollments
+                if int(row.get("id_rutina", 0) or 0) == routine_id
+            ]
+            routines_summary.append(
+                {
+                    **routine,
+                    "clientes_asignados": len({int(row.get("id_cliente", 0) or 0) for row in routine_enrollments if int(row.get("id_cliente", 0) or 0)}),
+                    "horarios_asignados": len(assigned),
+                }
+            )
+
+        return {
+            "stats": {
+                "clientes_en_horario": len({int(row.get("id_cliente", 0) or 0) for row in active_enrollments if int(row.get("id_cliente", 0) or 0)}),
+                "matriculas_activas": len(active_enrollments),
+                "rutinas": len(self.state.get("catalogo_rutina", [])),
+                "rutinas_asignadas": len([row for row in self.state.get("horarios_servicio", []) if int(row.get("id_rutina", 0) or 0)]),
+            },
+            "schedule_monitor": active_enrollments,
+            "routine_supervision": routine_supervision,
+            "routines": routines_summary,
+        }
 
     def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get("dni"):
