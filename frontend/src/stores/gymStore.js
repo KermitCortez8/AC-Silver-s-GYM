@@ -86,6 +86,7 @@ const normalizeStoreOrder = (order = {}) => ({
     ? order.items.map((item) => ({
         id_producto: Number(item.id_producto || 0),
         nombre_producto: item.nombre_producto || item.nombre || 'Producto',
+        imagen_url: item.imagen_url || item.imageUrl || '',
         cantidad: Number(item.cantidad || 1),
         precio_unitario: Number(item.precio_unitario || item.precio || 0),
         subtotal: Number(item.subtotal || Number(item.precio_unitario || item.precio || 0) * Number(item.cantidad || 1)),
@@ -105,6 +106,7 @@ const normalizeStoreProductFromBackend = (product = {}) => ({
   cantidad: Number(product.cantidad_stock || 0),
   minimo: Number(product.stock_minimo || 0),
   estado: product.estado || 'Disponible',
+  imagen_url: product.imagen_url || product.imageUrl || '',
 });
 
 const normalizeUser = (user = {}) => {
@@ -1361,6 +1363,7 @@ export const useGymStore = defineStore('gym', () => {
       cantidad_stock: Number(payload.cantidad ?? 0),
       stock_minimo: Number(payload.minimo ?? 5),
       estado: payload.estado || 'Disponible',
+      imagen_url: payload.imagen_url || payload.imageUrl || '',
     };
 
     if (apiBase) {
@@ -1391,6 +1394,7 @@ export const useGymStore = defineStore('gym', () => {
         cantidad: saved.cantidad_stock ?? producto.cantidad_stock,
         minimo: Number(saved.stock_minimo || producto.stock_minimo),
         estado: saved.estado || producto.estado,
+        imagen_url: saved.imagen_url || producto.imagen_url || '',
       };
 
       const index = productos_tienda.value.findIndex((p) => p.id_producto === id_producto);
@@ -1416,6 +1420,7 @@ export const useGymStore = defineStore('gym', () => {
       precio: Number(producto.precio_venta),
       cantidad: Number(producto.cantidad_stock),
       estado: producto.estado,
+      imagen_url: producto.imagen_url || '',
     };
 
     const index = productos_tienda.value.findIndex((p) => p.id_producto === id_producto);
@@ -1455,6 +1460,7 @@ export const useGymStore = defineStore('gym', () => {
       cart.value.push({
         id_producto: producto.id_producto,
         nombre: producto.nombre,
+        imagen_url: producto.imagen_url || '',
         precio: producto.precio,
         cantidad: Math.max(1, cantidad),
       });
