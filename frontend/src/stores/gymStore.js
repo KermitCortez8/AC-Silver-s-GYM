@@ -3,7 +3,6 @@ import { computed, ref } from 'vue';
 import { APP_CONFIG } from '../config/appConfig';
 import { useAuthStore } from './authStore';
 
-const STORAGE_KEY = 'gym_frontend_data_v1';
 const PASS_EXPIRY_MINUTES = 10;
 const MEMBER_ALERT_DAYS = 7;
 const PLAN_DURATION_MONTHS = {
@@ -293,27 +292,7 @@ const parsePassInput = (input) => {
   return normalized;
 };
 
-const loadState = () => {
-  if (typeof window === 'undefined') {
-    return seedState();
-  }
-
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    return seedState();
-  }
-
-  try {
-    const parsed = JSON.parse(stored);
-    const normalized = normalizeState(parsed);
-    if (APP_CONFIG.authApiBaseUrl) {
-      normalized.users = [];
-    }
-    return normalized;
-  } catch (error) {
-    return seedState();
-  }
-};
+const loadState = () => seedState();
 
 export const useGymStore = defineStore('gym', () => {
   const initialState = loadState();
@@ -334,27 +313,7 @@ export const useGymStore = defineStore('gym', () => {
   const enrollments = ref(initialState.enrollments);
 
   const persist = () => {
-    if (typeof window === 'undefined') return;
-
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        members: members.value,
-        users: users.value,
-        attendance: attendance.value,
-        attendancePasses: attendancePasses.value,
-        planCatalog: planCatalog.value,
-        promotions: promotions.value,
-        routines: routines.value,
-        inventory: inventory.value,
-        productos_tienda: productos_tienda.value,
-        storeOrders: storeOrders.value,
-        cart: cart.value,
-        schedule: schedule.value,
-        serviceSchedules: serviceSchedules.value,
-        enrollments: enrollments.value,
-      }),
-    );
+    // Business data is persisted only through the backend, which writes to Supabase.
   };
 
   const mergeAttendanceRecord = (record) => {
@@ -1080,7 +1039,6 @@ export const useGymStore = defineStore('gym', () => {
       schedules: Array.isArray(payload.schedules) ? payload.schedules : existingMember?.schedules || [],
     };
 
-    // Si hay backend configurado, enviar al servidor
     if (apiBase) {
       const backendId = Number(existingMember?.id_cliente || String(payload.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i)?.[1] || payload.id_cliente || 0) || null;
       const body = {
@@ -1489,7 +1447,7 @@ export const useGymStore = defineStore('gym', () => {
   });
 
   /* ----------------- Integración con backend ----------------- */
-  const apiBase = APP_CONFIG.authApiBaseUrl || '';
+  const apiBase = APP_CONFIG.authApiBaseUrl || '/api';
 
   const _authHeaders = () => {
     try {

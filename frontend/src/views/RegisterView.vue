@@ -52,7 +52,7 @@
           <button
             type="submit"
             class="w-full rounded-xl bg-[#dc2626] px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="isSubmitting"
+            :disabled="isSubmitting || !planOptions.length"
           >
             {{ isSubmitting ? 'Procesando...' : 'Continuar a pago' }}
           </button>
@@ -68,6 +68,10 @@
           <p class="text-xs font-bold uppercase tracking-[0.35em] text-white/70">Membresia</p>
           <h2 class="mt-2 text-3xl font-black">Elige tu plan</h2>
         </div>
+
+        <p v-if="!planOptions.length" class="rounded-2xl border border-orange-100 bg-white p-5 text-sm font-bold text-slate-600">
+          Planes pendientes de configuracion.
+        </p>
 
         <article
           v-for="plan in planOptions"
@@ -100,10 +104,11 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { GOOGLE_CONFIG } from '../config/googleConfig';
 import { loadGoogleIdentityScript } from '../services/authService';
+import { apiGet } from '../services/apiClient';
 import { decodeJWT } from '../utils/authUtils';
 import { useGymStore } from '../stores/gymStore';
 
@@ -116,12 +121,41 @@ const feedback = ref('');
 const feedbackTone = ref('success');
 const isSubmitting = ref(false);
 const registeredClient = ref(null);
+const backendPlans = ref([]);
 
-const planOptions = [
-  { id: 'MENSUAL', label: 'Mensual', price: 80, detail: 'Acceso por 30 dias.', tags: ['30 dias', 'Basico'] },
-  { id: '3 MESES', label: '3 meses', price: 220, detail: 'Compromiso medio con mejor precio.', tags: ['90 dias', 'Ahorro'] },
-  { id: 'ANUAL', label: 'Anual', price: 780, detail: 'Plan completo para entrenar todo el año.', tags: ['365 dias', 'Completo'] },
-];
+const normalizePlanName = (value) => String(value || '').trim().toUpperCase();
+const formatPlanLabel = (value) =>
+  normalizePlanName(value)
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const planOptions = computed(() =>
+  backendPlans.value
+    .filter((plan) => plan.activo ?? plan.active ?? true)
+    .map((plan) => {
+      const name = normalizePlanName(plan.nombre_plan || plan.name);
+      const duration = String(plan.duracion || plan.description || '').trim();
+      return {
+        id: name,
+        label: formatPlanLabel(name),
+        price: Number(plan.precio ?? plan.price ?? 0),
+        detail: duration ? `Acceso por ${duration}.` : 'Plan disponible para registro.',
+        tags: duration ? [duration] : [],
+      };
+    })
+    .filter((plan) => plan.id),
+);
+
+const syncSelectedPlan = () => {
+  if (!planOptions.value.length) {
+    form.plan = '';
+    return;
+  }
+
+  if (!planOptions.value.some((plan) => plan.id === form.plan)) {
+    form.plan = planOptions.value[0].id;
+  }
+};
 
 const form = reactive({
   nombre: '',
@@ -129,13 +163,22 @@ const form = reactive({
   telefono: '',
   dni: '',
   password: '',
-  plan: ['MENSUAL', '3 MESES', 'ANUAL'].includes(String(route.query.plan || '').toUpperCase())
-    ? String(route.query.plan).toUpperCase()
-    : 'MENSUAL',
+  plan: normalizePlanName(route.query.plan),
   referencia_pago: '',
   google_email: '',
   google_name: '',
 });
+
+const loadPlans = async () => {
+  try {
+    const list = await apiGet('/planes-membresia');
+    backendPlans.value = Array.isArray(list) ? list : [];
+  } catch {
+    backendPlans.value = [];
+  } finally {
+    syncSelectedPlan();
+  }
+};
 
 const renderGoogleButton = async () => {
   if (!GOOGLE_CONFIG.webClientId || !googleButtonRef.value) return;
@@ -175,15 +218,18 @@ const submitRegistration = async () => {
   registeredClient.value = null;
 
   try {
+    if (!form.plan) {
+      throw new Error('No hay planes configurados para registrar clientes.');
+    }
+
     const client = await gymStore.registerPublicClient({
       ...form,
       metodo_pago: 'pasarela',
       referencia_pago: form.referencia_pago || `WEB-${Date.now()}`,
     });
     registeredClient.value = client;
-    window.sessionStorage.setItem('pending_public_registration', JSON.stringify(client));
     feedbackTone.value = 'success';
-    feedback.value = 'Solicitud creada. Te llevamos a la pasarela de pago.';
+    feedback.value = 'Cuenta creada. Te llevamos a la pasarela de pago.';
     router.push({ name: 'Payment', params: { idCliente: client.id_cliente }, query: { ref: client.paymentReference || `WEB-${Date.now()}` } });
   } catch (error) {
     feedbackTone.value = 'error';
@@ -194,6 +240,7 @@ const submitRegistration = async () => {
 };
 
 onMounted(() => {
+  loadPlans();
   renderGoogleButton();
 });
 </script>

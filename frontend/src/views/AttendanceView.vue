@@ -17,7 +17,7 @@
             <button type="button" class="rounded-xl px-3 py-2 text-sm font-bold" :class="mode === 'code' ? 'bg-cyan-400 text-slate-950' : 'text-slate-300'" @click="mode = 'code'">Codigo</button>
           </div>
 
-          <input v-model="lookup" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" :placeholder="mode === 'dni' ? 'Ej. 74281635' : 'Ej. SGCLI104'" />
+          <input v-model="lookup" class="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" :placeholder="mode === 'dni' ? 'Ej. 12345678' : 'Ej. SGCLI001'" />
           <button class="w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950">Mostrar horario</button>
         </form>
 

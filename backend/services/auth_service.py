@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, UserProfile
-from services.gym_service import GymService
+from services.gym_domain_service import GymDomainService
 from utils.security import create_local_token, get_expiry_seconds, get_user_role, normalize_profile
 
 
 class AuthService:
-    def __init__(self, gym_service: GymService) -> None:
+    def __init__(self, gym_service: GymDomainService) -> None:
         self.gym_service = gym_service
 
     def google_auth(self, payload: AuthGoogleRequest) -> AuthResponse:

@@ -31,7 +31,12 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
+
+!backend/.env
+!frontend/.env
 /.env
 
 # typescript
@@ -47,5 +52,6 @@ backend/.venv/
 venv/
 **/__pycache__/
 *.pyc
+backend/db/state.json
 
 .vscode/

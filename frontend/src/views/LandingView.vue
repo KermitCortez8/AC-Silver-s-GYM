@@ -9,6 +9,7 @@
         <nav class="hidden items-center gap-6 text-sm font-bold uppercase tracking-[0.12em] text-slate-700 lg:flex">
           <a href="#servicios" class="transition hover:text-orange-600">Servicios</a>
           <a href="#membresias" class="transition hover:text-orange-600">Membresias</a>
+          <a href="#ubicacion" class="transition hover:text-orange-600">Ubicacion</a>
           <a href="#contacto" class="transition hover:text-orange-600">Contacto</a>
         </nav>
 
@@ -24,9 +25,18 @@
     </header>
 
     <main>
-      <section class="relative overflow-hidden">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(220,38,38,0.20),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(127,29,29,0.14),_transparent_36%)]"></div>
-        <div class="relative mx-auto grid max-w-[1600px] gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-20">
+      <section class="relative overflow-hidden bg-white">
+        <div class="absolute inset-0">
+          <img
+            :src="landingImages.fitness"
+            alt=""
+            class="h-full w-full object-cover"
+            @error="handleImageError"
+          />
+          <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.86)_42%,rgba(255,255,255,0.28)_100%)]"></div>
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.24),_transparent_34%)]"></div>
+        </div>
+        <div class="relative mx-auto grid max-w-[1600px] gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-20">
           <div class="flex items-center">
             <div class="max-w-2xl">
               <p class="inline-flex rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-orange-600 shadow-sm">
@@ -57,10 +67,16 @@
             </div>
           </div>
 
-          <div class="rounded-[2rem] border border-orange-100 bg-white p-5 shadow-2xl shadow-orange-900/10">
-            <div class="grid min-h-[34rem] gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-              <div class="relative overflow-hidden rounded-[1.5rem] bg-[linear-gradient(160deg,#ef4444_0%,#dc2626_42%,#450a0a_100%)] p-6 text-white">
-                <div class="absolute inset-x-6 bottom-6 rounded-3xl bg-white/15 p-5 backdrop-blur">
+          <div class="grid min-h-[34rem] gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <div class="relative overflow-hidden rounded-[1.5rem] bg-orange-950 text-white shadow-2xl shadow-orange-900/20">
+                <img
+                  :src="landingImages.musculacion"
+                  alt=""
+                  class="h-full min-h-[34rem] w-full object-cover"
+                  @error="handleImageError"
+                />
+                <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.72)_100%)]"></div>
+                <div class="absolute inset-x-6 bottom-6 rounded-3xl bg-black/35 p-5 backdrop-blur">
                   <p class="text-xs font-bold uppercase tracking-[0.22em] text-white/70">Rutina del dia</p>
                   <h2 class="mt-2 text-3xl font-black">Fuerza + cardio</h2>
                   <p class="mt-2 text-sm leading-6 text-white/85">Sesiones guiadas para avanzar con orden, constancia y energia.</p>
@@ -68,14 +84,22 @@
               </div>
 
               <div class="grid gap-4">
-                <article v-for="service in featuredServices" :key="service.title" class="rounded-[1.5rem] border border-orange-100 bg-[#f5f5f5] p-5">
-                  <p class="text-xs font-black uppercase tracking-[0.2em] text-orange-500">{{ service.tag }}</p>
-                  <h3 class="mt-2 text-2xl font-black text-slate-950">{{ service.title }}</h3>
-                  <p class="mt-2 text-sm leading-6 text-slate-600">{{ service.description }}</p>
+                <article v-for="service in featuredServices" :key="service.title" class="relative min-h-[10rem] overflow-hidden rounded-[1.5rem] bg-slate-950 text-white shadow-xl shadow-slate-900/10">
+                  <img
+                    :src="service.image"
+                    alt=""
+                    class="absolute inset-0 h-full w-full object-cover"
+                    @error="handleImageError"
+                  />
+                  <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.74)_0%,rgba(0,0,0,0.26)_100%)]"></div>
+                  <div class="relative flex h-full min-h-[10rem] flex-col justify-end p-5">
+                    <p class="text-xs font-black uppercase tracking-[0.2em] text-orange-200">{{ service.tag }}</p>
+                    <h3 class="mt-2 text-2xl font-black">{{ service.title }}</h3>
+                    <p class="mt-2 text-sm leading-6 text-white/82">{{ service.description }}</p>
+                  </div>
                 </article>
               </div>
             </div>
-          </div>
         </div>
       </section>
 
@@ -91,10 +115,21 @@
         </div>
 
         <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <article v-for="service in services" :key="service.title" class="rounded-2xl border border-orange-100 bg-white p-6 shadow-[0_18px_40px_rgba(127,29,29,0.10)]">
-            <p class="text-sm font-black uppercase tracking-[0.22em] text-orange-500">{{ service.tag }}</p>
-            <h3 class="mt-4 text-2xl font-black text-slate-950">{{ service.title }}</h3>
-            <p class="mt-3 text-sm leading-6 text-slate-600">{{ service.description }}</p>
+          <article v-for="service in services" :key="service.title" class="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_18px_40px_rgba(127,29,29,0.10)]">
+            <div class="h-44 overflow-hidden bg-orange-50 sm:h-52 xl:h-48 2xl:h-56">
+              <img
+                :src="service.image"
+                alt=""
+                :class="['h-full w-full', service.imageClass]"
+                loading="lazy"
+                @error="handleImageError"
+              />
+            </div>
+            <div class="p-6">
+              <p class="text-sm font-black uppercase tracking-[0.22em] text-orange-500">{{ service.tag }}</p>
+              <h3 class="mt-4 text-2xl font-black text-slate-950">{{ service.title }}</h3>
+              <p class="mt-3 text-sm leading-6 text-slate-600">{{ service.description }}</p>
+            </div>
           </article>
         </div>
       </section>
@@ -119,6 +154,30 @@
                 <p class="mt-3 text-sm leading-6 text-slate-600">{{ plan.description }}</p>
               </router-link>
             </div>
+            <p v-if="!plans.length" class="mt-8 rounded-2xl border border-orange-100 bg-white p-5 text-sm font-bold text-slate-600">
+              Planes pendientes de configuracion.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="ubicacion" class="bg-[#c90024] px-4 py-14 text-white sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-[1440px]">
+          <h2 class="text-center text-3xl font-black uppercase tracking-[0.04em] sm:text-4xl">
+            Ubicacion del Gym
+          </h2>
+          <p class="mx-auto mt-8 max-w-[1180px] bg-white/20 px-4 py-3 text-center text-base font-bold leading-7 text-white shadow-lg shadow-red-950/10 sm:text-xl">
+            {{ gymAddress }}
+          </p>
+          <div class="mx-auto mt-0 max-w-[1124px] overflow-hidden bg-white shadow-2xl shadow-red-950/30">
+            <iframe
+              :src="mapEmbedUrl"
+              title="Mapa de ubicacion de Silver Gym Surco"
+              class="h-[22rem] w-full border-0 sm:h-[32rem] lg:h-[44rem]"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen
+            ></iframe>
           </div>
         </div>
       </section>
@@ -147,6 +206,55 @@
 </template>
 
 <script setup>
+import { computed, onMounted, ref } from 'vue';
+import { landingImageUrl } from '../config/publicStorage';
+import { apiGet } from '../services/apiClient';
+
+const landingImages = {
+  fitness: landingImageUrl('fitness.jpg'),
+  musculacion: landingImageUrl('musculacion.jpg'),
+  cardio: landingImageUrl('cardio.png'),
+  baile: landingImageUrl('baile.jpg'),
+};
+
+const handleImageError = (event) => {
+  event.currentTarget.style.display = 'none';
+};
+
+const gymAddress = 'Jirón Vista Alegre 606, Lima 15056';
+const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(gymAddress)}&output=embed`;
+const backendPlans = ref([]);
+
+const normalizePlanName = (value) => String(value || '').trim().toUpperCase();
+const formatPlanLabel = (value) =>
+  normalizePlanName(value)
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const plans = computed(() =>
+  backendPlans.value
+    .filter((plan) => plan.activo ?? plan.active ?? true)
+    .map((plan) => {
+      const name = normalizePlanName(plan.nombre_plan || plan.name);
+      return {
+        id: name,
+        label: formatPlanLabel(name),
+        price: Number(plan.precio ?? plan.price ?? 0),
+        description: plan.duracion || plan.description || 'Plan disponible para registro.',
+      };
+    })
+    .filter((plan) => plan.id),
+);
+
+const loadPlans = async () => {
+  try {
+    const list = await apiGet('/planes-membresia');
+    backendPlans.value = Array.isArray(list) ? list : [];
+  } catch {
+    backendPlans.value = [];
+  }
+};
+
 const stats = [
   { label: 'Horario', value: 'Lun a sab' },
   { label: 'Servicios', value: '4 areas' },
@@ -154,21 +262,17 @@ const stats = [
 ];
 
 const featuredServices = [
-  { tag: 'Fitness', title: 'Entrena con energia', description: 'Rutinas para mejorar resistencia, movilidad y condicion fisica.' },
-  { tag: 'Musculacion', title: 'Fuerza progresiva', description: 'Espacios y horarios para trabajar tren superior, inferior y core.' },
-  { tag: 'Cardio', title: 'Activa tu ritmo', description: 'Sesiones para quemar calorias y mejorar capacidad cardiovascular.' },
+  { tag: 'Fitness', title: 'Entrena con energia', description: 'Rutinas para mejorar resistencia, movilidad y condicion fisica.', image: landingImages.fitness },
+  { tag: 'Musculacion', title: 'Fuerza progresiva', description: 'Espacios y horarios para trabajar tren superior, inferior y core.', image: landingImages.musculacion },
+  { tag: 'Cardio', title: 'Activa tu ritmo', description: 'Sesiones para quemar calorias y mejorar capacidad cardiovascular.', image: landingImages.cardio },
 ];
 
 const services = [
-  { tag: '01', title: 'Fitness', description: 'Entrenamiento general para mantenerte activo y construir habitos saludables.' },
-  { tag: '02', title: 'Musculacion', description: 'Trabajo de fuerza con horarios definidos y control de cupos.' },
-  { tag: '03', title: 'Cardio', description: 'Bloques de entrenamiento para resistencia, energia y salud.' },
-  { tag: '04', title: 'Baile', description: 'Clases grupales dinamicas para entrenar con movimiento y motivacion.' },
+  { tag: '01', title: 'Fitness', description: 'Entrenamiento general para mantenerte activo y construir habitos saludables.', image: landingImages.fitness, imageClass: 'object-cover object-center' },
+  { tag: '02', title: 'Musculacion', description: 'Trabajo de fuerza con horarios definidos y control de cupos.', image: landingImages.musculacion, imageClass: 'object-contain object-center p-2' },
+  { tag: '03', title: 'Cardio', description: 'Bloques de entrenamiento para resistencia, energia y salud.', image: landingImages.cardio, imageClass: 'object-contain object-center p-2' },
+  { tag: '04', title: 'Baile', description: 'Clases grupales dinamicas para entrenar con movimiento y motivacion.', image: landingImages.baile, imageClass: 'object-cover object-center' },
 ];
 
-const plans = [
-  { id: 'MENSUAL', label: 'Mensual', price: 80, description: 'Ideal para empezar y probar tu rutina semanal.' },
-  { id: '3 MESES', label: '3 meses', price: 220, description: 'Mejor equilibrio entre constancia y ahorro.' },
-  { id: 'ANUAL', label: 'Anual', price: 780, description: 'Plan completo para entrenar todo el ano.' },
-];
+onMounted(loadPlans);
 </script>
