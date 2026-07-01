@@ -69,6 +69,8 @@ VITE_SUPPORT_EMAIL=soporte@acsilversgym.com
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_LANDING_BUCKET=imageneslandingpage
 VITE_SUPABASE_LANDING_FOLDER=landingpage
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+VITE_SUPABASE_STORE_IMAGES_BUCKET=imagenestienda
 ```
 
 Construir e iniciar frontend y backend:

@@ -1,7 +1,8 @@
-import { APP_CONFIG } from '../config/appConfig';
+import { APP_CONFIG, DEFAULT_SUPABASE_STORE_IMAGES_BUCKET } from '../config/appConfig';
 
 const storageBaseUrl = `${APP_CONFIG.supabaseUrl}/storage/v1`;
-const bucketName = APP_CONFIG.supabaseStoreImagesBucket || 'imagenestienda';
+export const storeImagesBucketName =
+  APP_CONFIG.supabaseStoreImagesBucket || DEFAULT_SUPABASE_STORE_IMAGES_BUCKET;
 
 const authHeaders = () => ({
   apikey: APP_CONFIG.supabaseAnonKey,
@@ -17,12 +18,12 @@ const assertStorageConfig = () => {
 export const getStoreImagePublicUrl = (path) => {
   if (!path) return '';
   if (/^https?:\/\//i.test(path)) return path;
-  return `${storageBaseUrl}/object/public/${bucketName}/${encodeURIComponent(path)}`;
+  return `${storageBaseUrl}/object/public/${storeImagesBucketName}/${encodeURIComponent(path)}`;
 };
 
 export const listStoreImages = async () => {
   assertStorageConfig();
-  const response = await fetch(`${storageBaseUrl}/object/list/${bucketName}`, {
+  const response = await fetch(`${storageBaseUrl}/object/list/${storeImagesBucketName}`, {
     method: 'POST',
     headers: {
       ...authHeaders(),
@@ -69,7 +70,7 @@ export const uploadStoreImage = async (file) => {
       .toLowerCase() || 'producto';
   const path = `${safeName}-${Date.now()}.${extension}`;
 
-  const response = await fetch(`${storageBaseUrl}/object/${bucketName}/${encodeURIComponent(path)}`, {
+  const response = await fetch(`${storageBaseUrl}/object/${storeImagesBucketName}/${encodeURIComponent(path)}`, {
     method: 'POST',
     headers: {
       ...authHeaders(),
