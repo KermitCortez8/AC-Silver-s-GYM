@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from services.gym_service import GymService
+from services.gym_domain_service import GymDomainService
 
 
 class ClientsService:
     """Servicio fino para manejar la entidad Cliente con la forma requerida por la UI.
 
-    Internamente reutiliza GymService para persistencia y generación de ids.
+    Internamente reutiliza GymDomainService para reglas de negocio.
     """
 
-    def __init__(self, gym_service: GymService) -> None:
+    def __init__(self, gym_service: GymDomainService) -> None:
         self.gym = gym_service
 
     def list_clients(self) -> list[dict[str, Any]]:

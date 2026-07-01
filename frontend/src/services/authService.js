@@ -101,26 +101,3 @@ export const authenticateWithPassword = async ({ correo, password }) => {
     source: 'backend',
   };
 };
-
-export const createDemoCredentials = (role = 'user') => {
-  const normalizedRole = role === 'admin' ? 'admin' : 'user';
-  const domain = normalizedRole === 'admin' ? '@urp.edu.pe' : '@ejemplo.com';
-
-  const profile = {
-    sub: `demo-${normalizedRole}-001`,
-    email: normalizedRole === 'admin' ? 'admin@urp.edu.pe' : 'usuario@ejemplo.com',
-    name: normalizedRole === 'admin' ? 'Admin del Sistema' : 'Usuario de Prueba',
-    picture: '',
-    given_name: normalizedRole === 'admin' ? 'Admin' : 'Usuario',
-    family_name: normalizedRole === 'admin' ? 'Sistema' : 'Prueba',
-  };
-
-  const token = btoa(JSON.stringify(profile)).replace(/=/g, '');
-
-  return {
-    user: formatUserData(profile),
-    token,
-    expiresIn: 60 * 60,
-    source: 'demo',
-  };
-};

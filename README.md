@@ -20,8 +20,9 @@ cd backend
 
 # Instala dependencias
 
-python -m venv .venv / py -m venv .venv
-source .venv/bin/activate  /  .venv/bin/activate
+
+py -m venv .venv
+.\.venv\Scripts\Activate
 pip install -r requirements.txt
 python -m app.main
 ```
