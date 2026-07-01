@@ -4,6 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: ac-silvers-gym-backend
+    env_file:
+      - ./backend/.env
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -31,6 +33,9 @@ services:
         VITE_AUTH_MODE: "${VITE_AUTH_MODE:-backend}"
         VITE_ENABLE_DEMO_LOGIN: "${VITE_ENABLE_DEMO_LOGIN:-true}"
         VITE_SUPPORT_EMAIL: "${VITE_SUPPORT_EMAIL:-soporte@acsilversgym.com}"
+        VITE_SUPABASE_URL: "${VITE_SUPABASE_URL:-https://egakogbdxywyzshdetzh.supabase.co}"
+        VITE_SUPABASE_LANDING_BUCKET: "${VITE_SUPABASE_LANDING_BUCKET:-imageneslandingpage}"
+        VITE_SUPABASE_LANDING_FOLDER: "${VITE_SUPABASE_LANDING_FOLDER:-landingpage}"
     container_name: ac-silvers-gym-frontend
     restart: unless-stopped
     depends_on:
