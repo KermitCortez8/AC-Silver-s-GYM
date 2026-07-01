@@ -98,6 +98,7 @@ class ProductoTiendaInput(BaseModel):
     cantidad_stock: int = 0
     stock_minimo: Optional[int] = 5
     estado: Optional[str] = "Disponible"
+    imagen_url: Optional[str] = ""
 
 
 class PedidoTiendaItemInput(BaseModel):
