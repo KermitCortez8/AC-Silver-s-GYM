@@ -61,24 +61,6 @@
         <div v-if="googleReady" class="space-y-4">
           <div ref="googleButtonRef" class="flex min-h-[48px] items-center justify-center"></div>
         </div>
-
-        <div v-if="APP_CONFIG.enableDemoLogin" class="mt-5 grid gap-3 sm:grid-cols-2">
-          <button
-            class="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 font-bold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="processing"
-            @click="handleDemoLogin('user')"
-          >
-            Miembro de prueba
-          </button>
-
-          <button
-            class="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 font-bold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="processing"
-            @click="handleDemoLogin('admin')"
-          >
-            Admin de prueba
-          </button>
-        </div>
       </section>
     </main>
   </div>
@@ -88,9 +70,8 @@
 import { onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
-import { APP_CONFIG } from '../config/appConfig';
 import { GOOGLE_CONFIG } from '../config/googleConfig';
-import { authenticateWithGoogleCredential, authenticateWithPassword, createDemoCredentials, loadGoogleIdentityScript } from '../services/authService';
+import { authenticateWithGoogleCredential, authenticateWithPassword, loadGoogleIdentityScript } from '../services/authService';
 
 const router = useRouter();
 const { signIn, initializeAuth, isAuthenticated, isAdmin } = useAuth();
@@ -177,23 +158,6 @@ const renderGoogleButton = async () => {
     });
   } catch (error) {
     googleError.value = error?.message || 'No se pudo cargar Google';
-  }
-};
-
-const handleDemoLogin = async (role) => {
-  processing.value = true;
-  try {
-    const result = createDemoCredentials(role);
-    await signIn(result.token, {
-      ...result.user,
-      expiresIn: result.expiresIn,
-      authSource: result.source,
-    });
-    navigateByRole(role);
-  } catch (error) {
-    googleError.value = error?.message || 'No se pudo iniciar la sesion de prueba';
-  } finally {
-    processing.value = false;
   }
 };
 

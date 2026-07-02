@@ -166,6 +166,7 @@ const calendarEvents = computed(() =>
       const titleLines = [
         item.codigo_dia || service,
         service,
+        item.rutina_nombre,
         eventMeta(item),
       ].filter(Boolean);
 
@@ -217,12 +218,14 @@ const calendarOptions = computed(() => ({
     const service = serviceLabel(item.servicio);
     const time = `${displayTime(item.hora_inicio)}-${displayTime(item.hora_fin)}`;
     const meta = eventMeta(item);
+    const routine = item.rutina_nombre || '';
 
     return {
       html: `
         <div class="excel-event-card">
           <span class="excel-event-code">${escapeHtml(code)}</span>
           <span class="excel-event-service">${escapeHtml(service)}</span>
+          ${routine ? `<span class="excel-event-meta">${escapeHtml(routine)}</span>` : ''}
           <span class="excel-event-meta">${escapeHtml(meta || time)}</span>
         </div>
       `,
@@ -234,6 +237,8 @@ const calendarOptions = computed(() => ({
       serviceLabel(item.servicio),
       item.dia,
       `${displayTime(item.hora_inicio)} - ${displayTime(item.hora_fin)}`,
+      item.rutina_nombre ? `Rutina: ${item.rutina_nombre}` : '',
+      item.zonas_musculares ? `Zonas: ${item.zonas_musculares}` : '',
       item.cupos !== undefined ? `Cupos: ${item.cupos_usados || 0}/${item.cupos}` : '',
       item.checkLabel || item.cliente_nombre || '',
     ].filter(Boolean).join(' | ');
@@ -245,6 +250,8 @@ const exportExcel = () => {
     Servicio: serviceLabel(item.servicio),
     Dia: item.dia || '',
     Codigo: item.codigo_dia || '',
+    Rutina: item.rutina_nombre || '',
+    Zonas: item.zonas_musculares || '',
     Inicio: item.hora_inicio || '',
     Salida: item.hora_fin || '',
     Cupos: item.cupos ?? '',

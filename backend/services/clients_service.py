@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from services.gym_service import GymService
+from services.gym_domain_service import GymDomainService
 
 
 class ClientsService:
     """Servicio fino para manejar la entidad Cliente con la forma requerida por la UI.
 
-    Internamente reutiliza GymService para persistencia y generación de ids.
+    Internamente reutiliza GymDomainService para reglas de negocio.
     """
 
-    def __init__(self, gym_service: GymService) -> None:
+    def __init__(self, gym_service: GymDomainService) -> None:
         self.gym = gym_service
 
     def list_clients(self) -> list[dict[str, Any]]:
@@ -20,6 +20,22 @@ class ClientsService:
     def get_client(self, id_usuario: str) -> dict[str, Any] | None:
         normalized = str(id_usuario or "").strip().upper()
         return next((c for c in self.list_clients() if str(c.get("id_usuario") or "").strip().upper() == normalized), None)
+
+    def get_client_for_user(self, user: Any) -> dict[str, Any]:
+        id_cliente = int(getattr(user, "id_cliente", 0) or 0)
+        email = str(getattr(user, "email", "") or getattr(user, "correo", "") or "").strip().lower()
+        dni = str(getattr(user, "dni", "") or "").strip()
+
+        client = None
+        if id_cliente:
+            client = next((c for c in self.list_clients() if int(c.get("id_cliente", 0) or 0) == id_cliente), None)
+        if not client and email:
+            client = next((c for c in self.list_clients() if str(c.get("correo") or "").strip().lower() == email), None)
+        if not client and dni:
+            client = next((c for c in self.list_clients() if str(c.get("dni") or "").strip() == dni), None)
+        if not client:
+            raise ValueError("Cliente no encontrado")
+        return client
 
     def upsert_client(self, payload: dict[str, Any]) -> dict[str, Any]:
         item = {}

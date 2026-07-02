@@ -31,7 +31,13 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
+
+!backend/.env
+!frontend/.env
+/.env
 
 # typescript
 *.tsbuildinfo
@@ -46,5 +52,9 @@ backend/.venv/
 venv/
 **/__pycache__/
 *.pyc
+backend/db/state.json
+
+# Local Supabase SQL files
+supabase/*.sql
 
 .vscode/

@@ -22,7 +22,7 @@
               </div>
             </div>
             <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-300">
-              <span class="rounded-full bg-red-500/15 px-2.5 py-1 text-red-200">{{ isAdmin ? 'Administrador' : 'Usuario' }}</span>
+              <span class="rounded-full bg-red-500/15 px-2.5 py-1 text-red-200">{{ roleLabel }}</span>
               <span class="rounded-full bg-white/10 px-2.5 py-1">Acceso activo</span>
             </div>
           </div>
@@ -134,10 +134,18 @@ const props = defineProps({
 
 const route = useRoute();
 const router = useRouter();
-const { user, signOut, isAdmin } = useAuth();
+const { user, signOut, isAdmin, isTrainer } = useAuth();
 const { isDarkTheme, toggleTheme } = useTheme();
 
 const navigationLinks = computed(() => {
+  if (props.mode === 'trainer' || isTrainer.value) {
+    return [
+      { label: 'Supervision', to: '/trainer/dashboard', icon: 'SU' },
+      { label: 'Rutinas', to: '/trainer/routines', icon: 'RU' },
+      { label: 'Monitoreo', to: '/trainer/routine-monitor', icon: 'MO' },
+    ];
+  }
+
   if (props.mode === 'admin' || isAdmin.value) {
     return [
       { label: 'Inicio', to: '/admin/dashboard', icon: 'IN' },
@@ -162,6 +170,11 @@ const navigationLinks = computed(() => {
 });
 
 const currentSectionTitle = computed(() => navigationLinks.value.find((link) => route.path.startsWith(link.to))?.label || 'Panel');
+const roleLabel = computed(() => {
+  if (isAdmin.value) return 'Administrador';
+  if (isTrainer.value) return 'Trainer';
+  return 'Usuario';
+});
 
 const userInitials = computed(() => {
   const name = user.value?.name || 'AC';

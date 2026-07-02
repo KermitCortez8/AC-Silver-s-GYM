@@ -73,14 +73,7 @@ const router = useRouter();
 const gymStore = useGymStore();
 
 const idCliente = computed(() => Number(route.params.idCliente || 0));
-const storedClient = (() => {
-  try {
-    return JSON.parse(window.sessionStorage.getItem('pending_public_registration') || 'null');
-  } catch (error) {
-    return null;
-  }
-})();
-const client = ref(storedClient);
+const client = ref(null);
 const isSubmitting = ref(false);
 const feedback = ref('');
 const feedbackTone = ref('success');
@@ -102,7 +95,6 @@ const confirmPayment = async () => {
   try {
     const saved = await gymStore.confirmPublicPayment(idCliente.value, form);
     client.value = saved;
-    window.sessionStorage.removeItem('pending_public_registration');
     feedbackTone.value = 'success';
     feedback.value = 'Pago confirmado. Tu membresia quedo en tramite para activacion administrativa.';
     window.setTimeout(() => router.push('/login'), 1400);

@@ -19,7 +19,7 @@ app.use(router)
 // Inicializar autenticación y sincronizar con backend si está configurado
 const auth = useAuthStore()
 auth.initializeAuth().then(() => {
-	if (APP_CONFIG.dataMode === 'supabase' || APP_CONFIG.authApiBaseUrl) {
+	if (APP_CONFIG.authApiBaseUrl) {
 		try {
 			const gym = useGymStore()
 			gym.fetchFromBackend().catch((err) => console.warn('Error sync datos remotos:', err))

@@ -89,10 +89,18 @@
         <div class="mt-5 max-h-[420px] space-y-3 overflow-y-auto">
           <article v-for="item in cart" :key="item.id_producto" class="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div class="flex items-start justify-between gap-3">
+              <div class="flex min-w-0 items-start gap-3">
+                <img
+                  v-if="item.imagen_url"
+                  :src="item.imagen_url"
+                  :alt="item.nombre"
+                  class="h-14 w-14 rounded-xl border border-white/10 object-cover"
+                />
               <div class="min-w-0">
                 <p class="truncate font-bold text-white">{{ item.nombre }}</p>
                 <p class="mt-1 text-sm text-slate-400">Cantidad: {{ item.cantidad }}</p>
               </div>
+            </div>
               <p class="shrink-0 font-black text-amber-300">S/. {{ (Number(item.precio || 0) * Number(item.cantidad || 0)).toFixed(2) }}</p>
             </div>
           </article>

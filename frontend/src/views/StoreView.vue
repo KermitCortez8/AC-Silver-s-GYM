@@ -38,10 +38,11 @@
 
       <div v-if="productos.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[1080px] text-left text-sm">
+          <table class="w-full min-w-[1160px] text-left text-sm">
             <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
               <tr>
                 <th class="px-5 py-4 font-bold">Producto</th>
+                <th class="px-4 py-4 font-bold">Imagen</th>
                 <th class="px-4 py-4 font-bold">Categoria</th>
                 <th class="px-4 py-4 font-bold">Precio</th>
                 <th class="px-4 py-4 font-bold">Stock</th>
@@ -62,6 +63,15 @@
                       <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{{ producto.descripcion || 'Sin descripcion' }}</p>
                     </div>
                   </div>
+                </td>
+                <td class="px-4 py-4 align-top">
+                  <img
+                    v-if="producto.imagen_url"
+                    :src="producto.imagen_url"
+                    :alt="producto.nombre"
+                    class="h-14 w-14 rounded-xl border border-white/10 object-cover"
+                  />
+                  <span v-else class="text-xs text-slate-500">Sin imagen</span>
                 </td>
                 <td class="px-4 py-4 align-top text-slate-300">{{ producto.categoria || 'General' }}</td>
                 <td class="whitespace-nowrap px-4 py-4 align-top font-black text-emerald-300">
@@ -119,8 +129,14 @@
 
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <article v-for="producto in visibleProducts" :key="producto.id_producto" class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
-              <div class="mb-3 flex aspect-square items-center justify-center rounded-xl border border-amber-200/20 bg-amber-300/10">
-                <div class="text-center">
+              <div class="mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-amber-200/20 bg-amber-300/10">
+                <img
+                  v-if="producto.imagen_url"
+                  :src="producto.imagen_url"
+                  :alt="producto.nombre"
+                  class="h-full w-full object-cover"
+                />
+                <div v-else class="text-center">
                   <p class="text-xs uppercase tracking-[0.25em] text-amber-200">{{ producto.categoria }}</p>
                   <p class="mt-2 text-3xl font-black text-white">{{ productCode(producto.id_producto).slice(-4) }}</p>
                 </div>
@@ -160,6 +176,12 @@
           <div class="mt-5 max-h-96 space-y-3 overflow-y-auto">
             <article v-for="item in cart" :key="item.id_producto" class="rounded-2xl border border-white/10 bg-slate-950/80 p-3">
               <div class="flex items-start justify-between gap-2">
+                <img
+                  v-if="item.imagen_url"
+                  :src="item.imagen_url"
+                  :alt="item.nombre"
+                  class="h-12 w-12 rounded-xl border border-white/10 object-cover"
+                />
                 <div class="min-w-0 flex-1">
                   <p class="truncate font-semibold text-white">{{ item.nombre }}</p>
                   <p class="mt-1 text-sm text-emerald-300">S/. {{ Number(item.precio || 0).toFixed(2) }}</p>
@@ -284,6 +306,29 @@
                 <option>Descatalogado</option>
               </select>
             </label>
+            <div class="space-y-3 sm:col-span-2">
+              <span class="text-sm text-slate-300">Imagen del producto</span>
+              <div class="grid gap-4 lg:grid-cols-[180px_1fr]">
+                <div class="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
+                  <img v-if="form.imagen_url" :src="form.imagen_url" :alt="form.nombre || 'Producto'" class="h-full w-full object-cover" />
+                  <div v-else class="px-4 text-center text-xs text-slate-500">Sin imagen seleccionada</div>
+                </div>
+                <div class="space-y-3">
+                  <label class="block space-y-2">
+                    <span class="text-xs uppercase tracking-[0.22em] text-slate-500">Subir desde local</span>
+                    <input type="file" accept="image/*" class="field-input" :disabled="isUploadingImage" @change="handleLocalImageUpload" />
+                  </label>
+                  <p v-if="isUploadingImage" class="text-xs font-semibold text-amber-200">Subiendo imagen...</p>
+                  <label class="space-y-2">
+                    <span class="text-xs uppercase tracking-[0.22em] text-slate-500">URL de imagen</span>
+                    <input v-model="form.imagen_url" class="field-input" placeholder="https://..." />
+                  </label>
+                  <p v-if="imageFeedback" class="rounded-xl border px-3 py-2 text-xs" :class="imageFeedbackTone === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50'">
+                    {{ imageFeedback }}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <button type="submit" class="mt-6 w-full rounded-2xl bg-amber-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-amber-300">
@@ -299,6 +344,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGymStore } from '../stores/gymStore';
+import { uploadStoreImage } from '../services/storeImageService';
 
 const route = useRoute();
 const router = useRouter();
@@ -316,6 +362,9 @@ const isProductEditorOpen = ref(false);
 const cantidadInput = ref({});
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
+const imageFeedback = ref('');
+const imageFeedbackTone = ref('success');
+const isUploadingImage = ref(false);
 
 const form = reactive({
   nombre: '',
@@ -327,6 +376,7 @@ const form = reactive({
   cantidad: 0,
   minimo: 5,
   estado: 'Disponible',
+  imagen_url: '',
 });
 
 const feedbackToneClass = computed(() => {
@@ -363,6 +413,8 @@ const resetForm = () => {
   form.cantidad = 0;
   form.minimo = 5;
   form.estado = 'Disponible';
+  form.imagen_url = '';
+  imageFeedback.value = '';
 };
 
 const openNewProducto = () => {
@@ -387,9 +439,32 @@ const editProducto = (producto) => {
   form.cantidad = Number(producto.cantidad || 0);
   form.minimo = Number(producto.minimo || 5);
   form.estado = producto.estado || 'Disponible';
+  form.imagen_url = producto.imagen_url || '';
   feedbackMessage.value = '';
+  imageFeedback.value = '';
   isProductEditorOpen.value = true;
 };
+
+const handleLocalImageUpload = async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  isUploadingImage.value = true;
+  imageFeedback.value = '';
+  try {
+    const uploaded = await uploadStoreImage(file);
+    form.imagen_url = uploaded.url;
+    imageFeedbackTone.value = 'success';
+    imageFeedback.value = 'Imagen subida desde tu ordenador.';
+  } catch (error) {
+    imageFeedbackTone.value = 'error';
+    imageFeedback.value = error instanceof Error ? error.message : 'No se pudo subir la imagen.';
+  } finally {
+    isUploadingImage.value = false;
+    event.target.value = '';
+  }
+};
+
 
 const handleSubmit = async () => {
   try {
@@ -404,6 +479,7 @@ const handleSubmit = async () => {
       cantidad: form.cantidad,
       minimo: form.minimo,
       estado: form.estado,
+      imagen_url: form.imagen_url,
     });
     const savedLabel = editingId.value ? 'Producto actualizado.' : 'Producto registrado.';
     closeProductEditor();

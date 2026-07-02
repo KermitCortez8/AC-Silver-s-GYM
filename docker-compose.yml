@@ -1,0 +1,55 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ac-silvers-gym-backend
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_data:/app/db
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_NAME: "${VITE_APP_NAME:-AC Silver's GYM}"
+        VITE_GOOGLE_CLIENT_ID: "${VITE_GOOGLE_CLIENT_ID:-}"
+        VITE_AUTH_API_BASE_URL: "/api"
+        VITE_AUTH_MODE: "${VITE_AUTH_MODE:-backend}"
+        VITE_ENABLE_DEMO_LOGIN: "${VITE_ENABLE_DEMO_LOGIN:-true}"
+        VITE_SUPPORT_EMAIL: "${VITE_SUPPORT_EMAIL:-soporte@acsilversgym.com}"
+        VITE_SUPABASE_URL: "${VITE_SUPABASE_URL:-https://egakogbdxywyzshdetzh.supabase.co}"
+        VITE_SUPABASE_LANDING_BUCKET: "${VITE_SUPABASE_LANDING_BUCKET:-imageneslandingpage}"
+        VITE_SUPABASE_LANDING_FOLDER: "${VITE_SUPABASE_LANDING_FOLDER:-landingpage}"
+        VITE_SUPABASE_ANON_KEY: "${VITE_SUPABASE_ANON_KEY:-}"
+    container_name: ac-silvers-gym-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  backend_data:

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from config import get_settings
 from routes.attendance_routes import router as attendance_router
@@ -11,9 +14,12 @@ from routes.gym_routes import router as gym_router
 from routes.inventory_routes import router as inventory_router
 from routes.memberships_routes import router as membership_router
 from routes.store_routes import router as store_router
+from routes.trainer_routes import router as trainer_router
 from routes.users_routes import router as users_router
 
 settings = get_settings()
+store_images_dir = Path(settings.store_images_dir)
+store_images_dir.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(
     title=settings.app_name,
@@ -27,6 +33,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.mount(
+    "/api/uploads/store-images",
+    StaticFiles(directory=str(store_images_dir)),
+    name="store-images",
 )
 
 
@@ -52,12 +64,13 @@ app.include_router(membership_router, prefix="/api")
 app.include_router(attendance_router, prefix="/api")
 app.include_router(inventory_router, prefix="/api")
 app.include_router(store_router, prefix="/api")
+app.include_router(trainer_router, prefix="/api")
 
 
 def main() -> None:
     import uvicorn
 
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("app.main:app", host=settings.host, port=settings.port, reload=False)
 
 
 if __name__ == "__main__":

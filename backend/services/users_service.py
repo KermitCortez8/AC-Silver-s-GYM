@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from services.gym_service import GymService
+from services.gym_domain_service import GymDomainService
 
 
 class UsersService:
     """Servicio fino para el flujo de Usuario."""
 
-    def __init__(self, gym_service: GymService) -> None:
+    def __init__(self, gym_service: GymDomainService) -> None:
         self.gym = gym_service
 
     def list_users(self) -> list[dict[str, Any]]:
