@@ -92,6 +92,33 @@ jobs:
       - name: Descargar código fuente
         uses: actions/checkout@v3
 
+      - name: Crear envs temporales para Docker Compose
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          {
+            printf 'SUPABASE_URL=%s\n' "$SUPABASE_URL"
+            printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
+            printf 'BACKEND_HOST=0.0.0.0\n'
+            printf 'BACKEND_PORT=8000\n'
+            printf 'CORS_ORIGINS=http://localhost:5173,http://localhost:5174\n'
+          } > backend/.env
+
+          {
+            printf "VITE_APP_NAME=AC Silver's GYM\n"
+            printf 'VITE_GOOGLE_CLIENT_ID=\n'
+            printf 'VITE_AUTH_MODE=backend\n'
+            printf 'VITE_ENABLE_DEMO_LOGIN=true\n'
+            printf 'VITE_SUPPORT_EMAIL=soporte@acsilversgym.com\n'
+            printf 'VITE_SUPABASE_URL=%s\n' "$VITE_SUPABASE_URL"
+            printf 'VITE_SUPABASE_LANDING_BUCKET=imageneslandingpage\n'
+            printf 'VITE_SUPABASE_LANDING_FOLDER=landingpage\n'
+            printf 'VITE_SUPABASE_ANON_KEY=%s\n' "$VITE_SUPABASE_ANON_KEY"
+          } > .env
+
       - name: Validar configuración Docker Compose
         run: docker compose config
 
