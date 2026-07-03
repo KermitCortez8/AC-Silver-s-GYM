@@ -33,7 +33,7 @@ services:
         VITE_AUTH_MODE: "${VITE_AUTH_MODE:-backend}"
         VITE_ENABLE_DEMO_LOGIN: "${VITE_ENABLE_DEMO_LOGIN:-true}"
         VITE_SUPPORT_EMAIL: "${VITE_SUPPORT_EMAIL:-soporte@acsilversgym.com}"
-        VITE_SUPABASE_URL: "${VITE_SUPABASE_URL:-https://egakogbdxywyzshdetzh.supabase.co}"
+        VITE_SUPABASE_URL: "${VITE_SUPABASE_URL:-}"
         VITE_SUPABASE_LANDING_BUCKET: "${VITE_SUPABASE_LANDING_BUCKET:-imageneslandingpage}"
         VITE_SUPABASE_LANDING_FOLDER: "${VITE_SUPABASE_LANDING_FOLDER:-landingpage}"
         VITE_SUPABASE_ANON_KEY: "${VITE_SUPABASE_ANON_KEY:-}"

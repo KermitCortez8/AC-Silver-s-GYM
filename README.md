@@ -55,8 +55,9 @@ Servicios locales:
 ## Activacion con Docker
 
 El backend toma sus variables desde `backend/.env`. Para el frontend, Docker
-puede recibir variables `VITE_*` desde un archivo `.env` en la raiz o desde el
-entorno del sistema.
+recibe variables `VITE_*` desde un archivo `.env` local en la raiz o desde el
+entorno del sistema. Usa `.env.example`, `backend/.env.example` y
+`frontend/.env.example` como plantillas, sin subir los `.env` reales al repo.
 
 Variables opcionales para el build del frontend en `.env` de la raiz:
 
