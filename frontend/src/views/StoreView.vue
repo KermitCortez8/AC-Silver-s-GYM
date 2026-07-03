@@ -69,7 +69,7 @@
                     v-if="producto.imagen_url"
                     :src="producto.imagen_url"
                     :alt="producto.nombre"
-                    class="h-14 w-14 rounded-xl border border-white/10 object-cover"
+                    class="h-14 w-14 rounded-xl border border-white/10 bg-white/5 object-contain p-1"
                   />
                   <span v-else class="text-xs text-slate-500">Sin imagen</span>
                 </td>
@@ -134,7 +134,7 @@
                   v-if="producto.imagen_url"
                   :src="producto.imagen_url"
                   :alt="producto.nombre"
-                  class="h-full w-full object-cover"
+                  class="h-full w-full object-contain p-2"
                 />
                 <div v-else class="text-center">
                   <p class="text-xs uppercase tracking-[0.25em] text-amber-200">{{ producto.categoria }}</p>
@@ -180,7 +180,7 @@
                   v-if="item.imagen_url"
                   :src="item.imagen_url"
                   :alt="item.nombre"
-                  class="h-12 w-12 rounded-xl border border-white/10 object-cover"
+                  class="h-12 w-12 rounded-xl border border-white/10 bg-white/5 object-contain p-1"
                 />
                 <div class="min-w-0 flex-1">
                   <p class="truncate font-semibold text-white">{{ item.nombre }}</p>
@@ -309,20 +309,61 @@
             <div class="space-y-3 sm:col-span-2">
               <span class="text-sm text-slate-300">Imagen del producto</span>
               <div class="grid gap-4 lg:grid-cols-[180px_1fr]">
-                <div class="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
-                  <img v-if="form.imagen_url" :src="form.imagen_url" :alt="form.nombre || 'Producto'" class="h-full w-full object-cover" />
+                <div class="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-slate-900 p-2">
+                  <img v-if="form.imagen_url" :src="form.imagen_url" :alt="form.nombre || 'Producto'" class="h-full w-full object-contain" />
                   <div v-else class="px-4 text-center text-xs text-slate-500">Sin imagen seleccionada</div>
                 </div>
                 <div class="space-y-3">
+                <div class="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      class="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-400/20"
+                      :disabled="isLoadingBucketImages"
+                      @click="openBucketPicker"
+                    >
+                      {{ isLoadingBucketImages ? 'Cargando...' : 'Seleccionar del bucket' }}
+                    </button>
+                    <button
+                      v-if="form.imagen_url"
+                      type="button"
+                      class="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/5"
+                      @click="clearSelectedImage"
+                    >
+                      Quitar imagen
+                    </button>
+                  </div>
                   <label class="block space-y-2">
                     <span class="text-xs uppercase tracking-[0.22em] text-slate-500">Subir desde local</span>
                     <input type="file" accept="image/*" class="field-input" :disabled="isUploadingImage" @change="handleLocalImageUpload" />
                   </label>
-                  <p v-if="isUploadingImage" class="text-xs font-semibold text-amber-200">Subiendo imagen...</p>
-                  <label class="space-y-2">
-                    <span class="text-xs uppercase tracking-[0.22em] text-slate-500">URL de imagen</span>
-                    <input v-model="form.imagen_url" class="field-input" placeholder="https://..." />
-                  </label>
+                   <p v-if="isUploadingImage" class="text-xs font-semibold text-amber-200">Subiendo imagen a Supabase...</p>
+                  <div v-if="isBucketPickerOpen" class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+                    <div class="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Bucket Supabase</p>
+                        <p class="mt-1 text-sm font-semibold text-white">imagenestienda</p>
+                      </div>
+                      <button type="button" class="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/5" @click="closeBucketPicker">
+                        Cerrar
+                      </button>
+                    </div>
+                    <div v-if="bucketImages.length" class="grid max-h-56 grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4">
+                      <button
+                        v-for="image in bucketImages"
+                        :key="image.path || image.name"
+                        type="button"
+                        class="overflow-hidden rounded-xl border transition hover:border-amber-300"
+                        :class="form.imagen_url === image.url ? 'border-amber-300 ring-2 ring-amber-300/40' : 'border-white/10'"
+                        @click="selectBucketImage(image)"
+                      >
+                        <img :src="image.url" :alt="image.name" class="aspect-square h-full w-full object-contain bg-slate-950/60 p-1" />
+                        <p class="truncate px-2 py-1 text-[10px] text-slate-400">{{ image.name }}</p>
+                      </button>
+                    </div>
+                    <p v-else class="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-400">
+                      No hay imagenes en el bucket todavia.
+                    </p>
+                  </div>
                   <p v-if="imageFeedback" class="rounded-xl border px-3 py-2 text-xs" :class="imageFeedbackTone === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50'">
                     {{ imageFeedback }}
                   </p>
@@ -344,7 +385,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGymStore } from '../stores/gymStore';
-import { uploadStoreImage } from '../services/storeImageService';
+import { uploadStoreImage, listStoreImages } from '../services/storeImageService';
 
 const route = useRoute();
 const router = useRouter();
@@ -365,6 +406,9 @@ const feedbackTone = ref('info');
 const imageFeedback = ref('');
 const imageFeedbackTone = ref('success');
 const isUploadingImage = ref(false);
+const isBucketPickerOpen = ref(false);
+const isLoadingBucketImages = ref(false);
+const bucketImages = ref([]);
 
 const form = reactive({
   nombre: '',
@@ -415,6 +459,8 @@ const resetForm = () => {
   form.estado = 'Disponible';
   form.imagen_url = '';
   imageFeedback.value = '';
+  isBucketPickerOpen.value = false;
+  bucketImages.value = [];
 };
 
 const openNewProducto = () => {
@@ -442,7 +488,44 @@ const editProducto = (producto) => {
   form.imagen_url = producto.imagen_url || '';
   feedbackMessage.value = '';
   imageFeedback.value = '';
+  isBucketPickerOpen.value = false;
   isProductEditorOpen.value = true;
+};
+
+const loadBucketImages = async () => {
+  isLoadingBucketImages.value = true;
+  try {
+    bucketImages.value = await listStoreImages();
+  } catch (error) {
+    imageFeedbackTone.value = 'error';
+    imageFeedback.value = error instanceof Error ? error.message : 'No se pudieron cargar las imagenes del bucket.';
+    bucketImages.value = [];
+  } finally {
+    isLoadingBucketImages.value = false;
+  }
+};
+
+const openBucketPicker = async () => {
+  isBucketPickerOpen.value = true;
+  if (!bucketImages.value.length) {
+    await loadBucketImages();
+  }
+};
+
+const closeBucketPicker = () => {
+  isBucketPickerOpen.value = false;
+};
+
+const selectBucketImage = (image) => {
+  form.imagen_url = image.url;
+  imageFeedbackTone.value = 'success';
+  imageFeedback.value = `Imagen seleccionada: ${image.name}`;
+  isBucketPickerOpen.value = false;
+};
+
+const clearSelectedImage = () => {
+  form.imagen_url = '';
+  imageFeedback.value = '';
 };
 
 const handleLocalImageUpload = async (event) => {
@@ -455,7 +538,7 @@ const handleLocalImageUpload = async (event) => {
     const uploaded = await uploadStoreImage(file);
     form.imagen_url = uploaded.url;
     imageFeedbackTone.value = 'success';
-    imageFeedback.value = 'Imagen subida desde tu ordenador.';
+    imageFeedback.value = 'Imagen subida a Supabase desde tu ordenador.';
   } catch (error) {
     imageFeedbackTone.value = 'error';
     imageFeedback.value = error instanceof Error ? error.message : 'No se pudo subir la imagen.';

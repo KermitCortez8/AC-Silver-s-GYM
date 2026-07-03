@@ -13,6 +13,7 @@ const encodeStoragePath = (path) => path
 const supabaseUrl = normalizeBaseUrl(import.meta.env.VITE_SUPABASE_URL);
 const landingBucket = String(import.meta.env.VITE_SUPABASE_LANDING_BUCKET || 'imageneslandingpage').trim();
 const landingFolder = String(import.meta.env.VITE_SUPABASE_LANDING_FOLDER || 'landingpage').trim();
+const storeBucket = String(import.meta.env.VITE_SUPABASE_STORE_IMAGES_BUCKET || 'imagenestienda').trim();
 
 export const publicStorageUrl = (bucket, path) => {
   const normalizedBucket = String(bucket || '').trim();
@@ -29,3 +30,5 @@ export const landingImageUrl = (fileName) => publicStorageUrl(
   landingBucket,
   joinPath(landingFolder, fileName),
 );
+
+export const storeImageUrl = (fileName) => publicStorageUrl(storeBucket, fileName);

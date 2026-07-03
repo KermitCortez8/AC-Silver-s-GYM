@@ -34,6 +34,7 @@ class Settings(BaseModel):
     supabase_url: str = ""
     supabase_key: str = ""
     store_images_dir: str = ""
+    store_images_bucket: str = "imagenestienda"
 
     @property
     def has_supabase_credentials(self) -> bool:
@@ -66,4 +67,5 @@ def get_settings() -> Settings:
         supabase_url=(os.getenv("SUPABASE_URL") or "").strip().rstrip("/"),
         supabase_key=supabase_key.strip(),
         store_images_dir=(os.getenv("STORE_IMAGES_DIR") or str(backend_dir / "db" / "store-images")).strip(),
+        store_images_bucket=(os.getenv("SUPABASE_STORE_IMAGES_BUCKET") or "imagenestienda").strip(),
     )
