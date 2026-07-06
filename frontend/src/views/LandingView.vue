@@ -114,13 +114,42 @@
           </p>
         </div>
 
-        <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <article v-for="service in services" :key="service.title" class="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_18px_40px_rgba(127,29,29,0.10)]">
+        <p class="mt-6 text-sm font-semibold text-slate-500 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" /></svg>
+          Selecciona un servicio para ver los horarios disponibles
+        </p>
+
+        <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <article
+            v-for="service in services"
+            :key="service.title"
+            @click="toggleService(service.title)"
+            :class="[
+              'service-card group relative cursor-pointer overflow-hidden rounded-2xl border-2 bg-white shadow-[0_18px_40px_rgba(127,29,29,0.10)] transition-all duration-300',
+              selectedService === service.title
+                ? 'border-orange-500 shadow-[0_20px_48px_rgba(249,115,22,0.30)] -translate-y-1'
+                : 'border-orange-100 hover:border-orange-400 hover:shadow-[0_22px_48px_rgba(249,115,22,0.18)] hover:-translate-y-1'
+            ]"
+          >
+            <!-- Selected badge -->
+            <div
+              :class="[
+                'absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full transition-all duration-300',
+                selectedService === service.title
+                  ? 'scale-100 bg-orange-500 opacity-100'
+                  : 'scale-75 bg-white opacity-0 group-hover:scale-100 group-hover:opacity-60'
+              ]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+
             <div class="h-44 overflow-hidden bg-orange-50 sm:h-52 xl:h-48 2xl:h-56">
               <img
                 :src="service.image"
                 alt=""
-                :class="['h-full w-full', service.imageClass]"
+                  :class="['h-full w-full transition-transform duration-500 group-hover:scale-105', service.imageClass]"
                 loading="lazy"
                 @error="handleImageError"
               />
@@ -129,9 +158,93 @@
               <p class="text-sm font-black uppercase tracking-[0.22em] text-orange-500">{{ service.tag }}</p>
               <h3 class="mt-4 text-2xl font-black text-slate-950">{{ service.title }}</h3>
               <p class="mt-3 text-sm leading-6 text-slate-600">{{ service.description }}</p>
+               <div
+                :class="[
+                  'mt-4 flex items-center gap-1 text-xs font-black uppercase tracking-[0.18em] transition-colors duration-200',
+                  selectedService === service.title ? 'text-orange-600' : 'text-slate-400 group-hover:text-orange-500'
+                ]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {{ selectedService === service.title ? 'Horarios visibles ↓' : 'Ver horarios' }}
+              </div>
             </div>
           </article>
         </div>
+        <Transition name="schedule-panel">
+          <div
+            v-if="selectedService"
+            class="mt-6 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-[0_18px_40px_rgba(249,115,22,0.12)]"
+          >
+            <!-- Panel header -->
+            <div class="flex items-center justify-between bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-widest text-orange-100">Horarios disponibles</p>
+                  <h3 class="text-xl font-black text-white">{{ selectedService }}</h3>
+                </div>
+              </div>
+              <button
+                @click="selectedService = null"
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Schedule table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-orange-100 bg-orange-50">
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-orange-600">Día</th>
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-orange-600">Hora</th>
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-orange-600">Entrenador</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(sched, index) in filteredSchedules"
+                    :key="index"
+                    :class="['border-b border-slate-50 transition-colors hover:bg-orange-50/60', index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40']"
+                  >
+                    <td class="px-6 py-4">
+                      <span class="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">{{ sched.dia }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="flex items-center gap-1.5 font-black text-slate-950">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {{ sched.hora }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="flex items-center gap-2">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-xs font-black text-white">
+                          {{ sched.entrenador.charAt(0) }}
+                        </div>
+                        <span class="font-semibold text-slate-700">{{ sched.entrenador }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="border-t border-orange-100 bg-orange-50/50 px-6 py-3">
+              <p class="text-xs text-slate-500">{{ filteredSchedules.length }} sesiones semanales disponibles para <strong class="text-orange-600">{{ selectedService }}</strong></p>
+            </div>
+          </div>
+        </Transition>
       </section>
 
       <section id="membresias" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
@@ -210,6 +323,47 @@ import { computed, onMounted, ref } from 'vue';
 import { landingImageUrl } from '../config/publicStorage';
 import { apiGet } from '../services/apiClient';
 
+
+const selectedService = ref(null);
+
+const allSchedules = [
+  { dia: 'Lunes',     hora: '06:00–07:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
+  { dia: 'Lunes',     hora: '18:00–19:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
+  { dia: 'Lunes',     hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
+  { dia: 'Martes',    hora: '06:00–07:00', servicio: 'Musculación', entrenador: 'Diego Alejandro Castro Flores' },
+  { dia: 'Martes',    hora: '19:00–20:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
+  { dia: 'Miércoles', hora: '07:00–08:00', servicio: 'Fitness',     entrenador: 'Andrea Milagros Torres Paredes' },
+  { dia: 'Miércoles', hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
+  { dia: 'Jueves',    hora: '06:00–07:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
+  { dia: 'Jueves',    hora: '19:00–20:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
+  { dia: 'Viernes',   hora: '07:00–08:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
+  { dia: 'Viernes',   hora: '18:00–19:00', servicio: 'Fitness',     entrenador: 'Carlos Eduardo Ramírez Salazar' },
+  { dia: 'Viernes',   hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
+  { dia: 'Sábado',    hora: '09:00–10:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
+  { dia: 'Sábado',    hora: '10:00–11:00', servicio: 'Musculación', entrenador: 'Carlos Eduardo Ramírez Salazar' },
+  { dia: 'Sábado',    hora: '11:00–12:00', servicio: 'Baile',       entrenador: 'Andrea Milagros Torres Paredes' },
+  { dia: 'Domingo',   hora: '09:00–10:00', servicio: 'Cardio',      entrenador: 'Diego Alejandro Castro Flores' },
+];
+
+// Match card title (e.g. "Musculacion") to schedule servicio (e.g. "Musculación")
+const normalizeService = (str) =>
+  str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const filteredSchedules = computed(() =>
+  selectedService.value
+    ? allSchedules.filter(
+        (s) => normalizeService(s.servicio) === normalizeService(selectedService.value),
+      )
+    : [],
+);
+
+const toggleService = (title) => {
+  selectedService.value = selectedService.value === title ? null : title;
+};
+
 const landingImages = {
   fitness: landingImageUrl('fitness.jpg'),
   musculacion: landingImageUrl('musculacion.jpg'),
@@ -276,3 +430,27 @@ const services = [
 
 onMounted(loadPlans);
 </script>
+
+<style scoped>
+.schedule-panel-enter-active {
+  transition: all 0.38s cubic-bezier(0.34, 1.26, 0.64, 1);
+}
+.schedule-panel-leave-active {
+  transition: all 0.22s ease-in;
+}
+.schedule-panel-enter-from {
+  opacity: 0;
+  transform: translateY(-12px) scaleY(0.96);
+}
+.schedule-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scaleY(0.97);
+}
+
+
+.service-card {
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+</style>
