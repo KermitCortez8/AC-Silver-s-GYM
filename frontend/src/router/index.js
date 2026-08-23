@@ -16,6 +16,10 @@ import AttendanceView from '../views/AttendanceView.vue';
 import ServiceSchedulesView from '../views/ServiceSchedulesView.vue';
 import EnrollmentView from '../views/EnrollmentView.vue';
 import InventoryView from '../views/InventoryView.vue';
+import InventoryMovementsView from '../views/InventoryMovementsView.vue';
+import GymSettingsView from '../views/GymSettingsView.vue';
+import MembershipPlansView from '../views/MembershipPlansView.vue';
+import PromotionsView from '../views/PromotionsView.vue';
 import StoreView from '../views/StoreView.vue';
 import StorePaymentView from '../views/StorePaymentView.vue';
 import OrdersView from '../views/OrdersView.vue';
@@ -100,6 +104,26 @@ const routes = [
         path: 'inventory',
         name: 'Inventory',
         component: InventoryView,
+      },
+      {
+        path: 'inventory/movements',
+        name: 'InventoryMovements',
+        component: InventoryMovementsView,
+      },
+      {
+        path: 'plans',
+        name: 'MembershipPlans',
+        component: MembershipPlansView,
+      },
+      {
+        path: 'promotions',
+        name: 'Promotions',
+        component: PromotionsView,
+      },
+      {
+        path: 'settings',
+        name: 'GymSettings',
+        component: GymSettingsView,
       },
       {
         path: 'store',

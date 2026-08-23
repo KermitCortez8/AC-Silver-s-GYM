@@ -378,6 +378,11 @@ const handleImageError = (event) => {
 const gymAddress = 'Jirón Vista Alegre 606, Lima 15056';
 const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(gymAddress)}&output=embed`;
 const backendPlans = ref([]);
+const defaultPlans = [
+  { id_pm: 1, nombre_plan: 'MENSUAL', duracion: '30 dias', precio: 79, descripcion: 'Acceso completo por 30 dias para entrenar con flexibilidad.', activo: true },
+  { id_pm: 2, nombre_plan: '3 MESES', duracion: '90 dias', precio: 199, descripcion: 'Plan trimestral para sostener progreso y ahorrar frente al pago mensual.', activo: true },
+  { id_pm: 3, nombre_plan: 'ANUAL', duracion: '365 dias', precio: 699, descripcion: 'Membresia anual para clientes constantes con mejor precio acumulado.', activo: true },
+];
 
 const normalizePlanName = (value) => String(value || '').trim().toUpperCase();
 const formatPlanLabel = (value) =>
@@ -386,7 +391,7 @@ const formatPlanLabel = (value) =>
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const plans = computed(() =>
-  backendPlans.value
+  (backendPlans.value.length ? backendPlans.value : defaultPlans)
     .filter((plan) => plan.activo ?? plan.active ?? true)
     .map((plan) => {
       const name = normalizePlanName(plan.nombre_plan || plan.name);
@@ -405,7 +410,7 @@ const loadPlans = async () => {
     const list = await apiGet('/planes-membresia');
     backendPlans.value = Array.isArray(list) ? list : [];
   } catch {
-    backendPlans.value = [];
+    backendPlans.value = defaultPlans;
   }
 };
 

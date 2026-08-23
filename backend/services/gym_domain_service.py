@@ -26,6 +26,13 @@ def _safe_date(value: str) -> str:
     return _today_iso()
 
 
+def _days_until(date_value: Any, today: str) -> int | None:
+    try:
+        return (datetime.fromisoformat(str(date_value)[:10]) - datetime.fromisoformat(today)).days
+    except Exception:
+        return None
+
+
 class GymDomainService:
     def __init__(self, db_file: Any | None = None) -> None:
         raise RuntimeError("GymDomainService solo contiene reglas de negocio. Usa SupabaseGymService para persistencia.")
@@ -46,7 +53,36 @@ class GymDomainService:
             "catalogo_rutina": [],
             "asistencia": [],
             "membresia": [],
-            "planes_membresia": [],
+            "planes_membresia": [
+                {
+                    "id_pm": 1,
+                    "nombre_plan": "MENSUAL",
+                    "duracion": "30 dias",
+                    "precio": 79,
+                    "descripcion": "Acceso completo por 30 dias para entrenar con flexibilidad.",
+                    "beneficios": "Uso de sala, horarios por servicio y control digital de asistencia.",
+                    "activo": True,
+                },
+                {
+                    "id_pm": 2,
+                    "nombre_plan": "3 MESES",
+                    "duracion": "90 dias",
+                    "precio": 199,
+                    "descripcion": "Plan trimestral para sostener progreso y ahorrar frente al pago mensual.",
+                    "beneficios": "Acceso completo, matricula de horarios y seguimiento de rutina.",
+                    "activo": True,
+                },
+                {
+                    "id_pm": 3,
+                    "nombre_plan": "ANUAL",
+                    "duracion": "365 dias",
+                    "precio": 699,
+                    "descripcion": "Membresia anual para clientes constantes con mejor precio acumulado.",
+                    "beneficios": "Acceso completo, prioridad operativa y seguimiento continuo.",
+                    "activo": True,
+                },
+            ],
+            "promociones": [],
             "configuracion_gimnasio": {
                 "capacidad_total": 30,
                 "capacidad_por_hora": 10,
@@ -95,6 +131,11 @@ class GymDomainService:
         merged["pedidos_tienda"] = [
             self._normalize_pedido_tienda(row, index)
             for index, row in enumerate(merged.get("pedidos_tienda", []), start=1)
+            if isinstance(row, dict)
+        ]
+        merged["promociones"] = [
+            self._normalize_promocion(row, index)
+            for index, row in enumerate(merged.get("promociones", []), start=1)
             if isinstance(row, dict)
         ]
 
@@ -398,10 +439,28 @@ class GymDomainService:
             "referencia_pago": str(row.get("referencia_pago") or ""),
             "estado_pago": str(row.get("estado_pago") or "PAGADO"),
             "estado_pedido": str(row.get("estado_pedido") or "PENDIENTE"),
+            "observacion_admin": str(row.get("observacion_admin") or ""),
+            "fecha_actualizacion": str(row.get("fecha_actualizacion") or row.get("fecha_pedido") or _now_iso()),
             "subtotal": round(subtotal, 2),
             "igv": round(igv, 2),
             "total": round(total, 2),
             "items": items,
+        }
+
+    def _normalize_promocion(self, row: dict[str, Any], fallback_id: int) -> dict[str, Any]:
+        raw_plans = row.get("planes_aplicables") or []
+        if isinstance(raw_plans, str):
+            raw_plans = [part.strip() for part in raw_plans.split(",") if part.strip()]
+        return {
+            "id_promocion": int(row.get("id_promocion") or fallback_id),
+            "nombre": str(row.get("nombre") or "Promocion").strip(),
+            "descripcion": str(row.get("descripcion") or ""),
+            "tipo_descuento": str(row.get("tipo_descuento") or "porcentaje").strip().lower(),
+            "valor_descuento": max(0.0, float(row.get("valor_descuento") or 0)),
+            "fecha_inicio": str(row.get("fecha_inicio") or ""),
+            "fecha_fin": str(row.get("fecha_fin") or ""),
+            "activo": bool(row.get("activo", True)),
+            "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
         }
 
     def _ensure_plan_for_client(self, state: dict[str, Any], plan_name: str) -> dict[str, Any]:
@@ -628,6 +687,40 @@ class GymDomainService:
             if any(int(m.get("id_pm", 0)) == int(id_pm) for m in state.get("membresia", [])):
                 raise ValueError("No se puede eliminar un plan usado por membresías")
             state["planes_membresia"] = [p for p in state.get("planes_membresia", []) if int(p.get("id_pm", 0)) != int(id_pm)]
+
+        self._mutate(_fn)
+
+    def promociones(self) -> list[dict[str, Any]]:
+        return self.state.get("promociones", [])
+
+    def upsert_promocion(self, payload: dict[str, Any]) -> dict[str, Any]:
+        tipo = str(payload.get("tipo_descuento") or "porcentaje").strip().lower()
+        if tipo not in {"porcentaje", "monto"}:
+            raise ValueError("Tipo de descuento invalido")
+        valor = max(0.0, float(payload.get("valor_descuento") or 0))
+        if tipo == "porcentaje" and valor > 100:
+            raise ValueError("El porcentaje no puede ser mayor a 100")
+
+        def _fn(state: dict[str, Any]):
+            state.setdefault("promociones", [])
+            item = self._normalize_promocion({**payload, "tipo_descuento": tipo, "valor_descuento": valor}, self._next_int_id_in_state(state, "promociones", "id_promocion"))
+            item_id = int(payload.get("id_promocion") or item["id_promocion"])
+            item["id_promocion"] = item_id
+            idx = next((i for i, row in enumerate(state["promociones"]) if int(row.get("id_promocion", 0)) == item_id), -1)
+            if idx >= 0:
+                state["promociones"][idx] = item
+            else:
+                state["promociones"].insert(0, item)
+            return item
+
+        return self._mutate(_fn)
+
+    def delete_promocion(self, id_promocion: int) -> None:
+        def _fn(state: dict[str, Any]):
+            before = len(state.get("promociones", []))
+            state["promociones"] = [row for row in state.get("promociones", []) if int(row.get("id_promocion", 0)) != int(id_promocion)]
+            if len(state["promociones"]) == before:
+                raise ValueError("Promocion no encontrada")
 
         self._mutate(_fn)
 
@@ -1844,20 +1937,26 @@ class GymDomainService:
 
     def summary(self) -> dict[str, Any]:
         total_clientes = len(self.state["clientes"])
+        today = _today_iso()
         membresias_activas = len(
             [
                 m
                 for m in self.state["membresia"]
                 if str(m.get("estado", "")).lower() == "activa"
-                and str(m.get("fecha_inicio", "")) <= _today_iso() <= str(m.get("fecha_fin", ""))
+                and str(m.get("fecha_inicio", "")) <= today <= str(m.get("fecha_fin", ""))
             ]
         )
-        asistencias_hoy = len([a for a in self.state["asistencia"] if a.get("fecha") == _today_iso()])
+        asistencias_hoy = len([a for a in self.state["asistencia"] if a.get("fecha") == today])
         items_stock_bajo = [
             item
             for item in self.state["inventario"]
             if int(item.get("cantidad_stock", 0)) <= int(item.get("stock_minimo", 0))
         ]
+        pedidos = self.state.get("pedidos_tienda", [])
+        pedidos_pendientes = len([p for p in pedidos if str(p.get("estado_pedido") or "").upper() == "PENDIENTE"])
+        ventas_mes = round(sum(float(p.get("total") or 0) for p in pedidos if str(p.get("fecha_pedido") or "")[:7] == today[:7]), 2)
+        vencimientos = [m for m in self.state["membresia"] if (days := _days_until(m.get("fecha_fin"), today)) is not None and 0 <= days <= 7]
+        capacidad = self.configuracion_gimnasio()
 
         return {
             "stats": {
@@ -1866,6 +1965,10 @@ class GymDomainService:
                 "asistencias_hoy": asistencias_hoy,
                 "total_items_inventario": len(self.state["inventario"]),
                 "items_stock_bajo": len(items_stock_bajo),
+                "pedidos_pendientes": pedidos_pendientes,
+                "ventas_mes": ventas_mes,
+                "vencimientos_7_dias": len(vencimientos),
+                "aforo_dia": f"{asistencias_hoy}/{capacidad.get('capacidad_total', 30)}",
             },
             "flujos": {
                 "registro_control_inventario": {
@@ -2010,12 +2113,30 @@ class GymDomainService:
                 "referencia_pago": str(payload.get("referencia_pago") or f"PED-{datetime.now().strftime('%Y%m%d%H%M%S')}"),
                 "estado_pago": "PAGADO",
                 "estado_pedido": "PENDIENTE",
+                "observacion_admin": "",
+                "fecha_actualizacion": _now_iso(),
                 "subtotal": subtotal,
                 "igv": igv,
                 "total": total,
                 "items": items,
             }
             state["pedidos_tienda"].insert(0, pedido)
+            return pedido
+
+        return self._mutate(_fn)
+
+    def actualizar_pedido_tienda(self, id_pedido: int, payload: dict[str, Any]) -> dict[str, Any]:
+        estado = str(payload.get("estado_pedido") or "").strip().upper()
+        if estado not in {"PENDIENTE", "CONFIRMADO", "ENTREGADO", "CANCELADO"}:
+            raise ValueError("Estado de pedido invalido")
+
+        def _fn(state: dict[str, Any]):
+            pedido = next((row for row in state.get("pedidos_tienda", []) if int(row.get("id_pedido", 0) or 0) == int(id_pedido)), None)
+            if not pedido:
+                raise ValueError("Pedido no encontrado")
+            pedido["estado_pedido"] = estado
+            pedido["observacion_admin"] = str(payload.get("observacion_admin") or "")
+            pedido["fecha_actualizacion"] = _now_iso()
             return pedido
 
         return self._mutate(_fn)

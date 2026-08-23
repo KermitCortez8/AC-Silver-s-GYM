@@ -19,6 +19,7 @@ const seedState = () => ({
   attendance: [],
   attendancePasses: [],
   inventory: [],
+  inventoryMovements: [],
   productos_tienda: [],
   storeOrders: [],
   cart: [],
@@ -27,6 +28,10 @@ const seedState = () => ({
   serviceSchedules: [],
   enrollments: [],
   trainerOverview: null,
+  gymSettings: {
+    capacidad_total: 30,
+    capacidad_por_hora: 10,
+  },
 });
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -79,6 +84,8 @@ const normalizeStoreOrder = (order = {}) => ({
   referencia_pago: order.referencia_pago || order.paymentReference || '',
   estado_pago: order.estado_pago || 'PAGADO',
   estado_pedido: order.estado_pedido || 'PENDIENTE',
+  observacion_admin: order.observacion_admin || '',
+  fecha_actualizacion: order.fecha_actualizacion || order.fecha_pedido || nowISO(),
   subtotal: Number(order.subtotal || 0),
   igv: Number(order.igv || 0),
   total: Number(order.total || 0),
@@ -93,6 +100,43 @@ const normalizeStoreOrder = (order = {}) => ({
       }))
     : [],
 });
+
+const normalizePlanFromBackend = (plan = {}) => {
+  const idPm = Number(plan.id_pm || String(plan.id || '').match(/(\d+)/)?.[1] || Date.now());
+  const durationNumber = Number(String(plan.duracion || plan.duration || '').match(/\d+/)?.[0] || plan.durationMonths || 1);
+  return {
+    id: `pm-${idPm}`,
+    id_pm: idPm,
+    name: plan.nombre_plan || plan.name || 'MENSUAL',
+    duration: plan.duracion || `${durationNumber} dias`,
+    durationMonths: durationNumber,
+    price: Number(plan.precio ?? plan.price ?? 0),
+    description: plan.descripcion || plan.description || '',
+    benefits: plan.beneficios || plan.benefits || '',
+    active: plan.activo !== false && plan.active !== false,
+  };
+};
+
+const normalizePromotionFromBackend = (promotion = {}) => {
+  const idPromocion = Number(promotion.id_promocion || String(promotion.id || '').match(/(\d+)/)?.[1] || Date.now());
+  const plans = Array.isArray(promotion.planes_aplicables)
+    ? promotion.planes_aplicables.map((value) => `pm-${Number(value)}`).filter((value) => value !== 'pm-0')
+    : Array.isArray(promotion.appliesTo)
+      ? promotion.appliesTo
+      : [];
+  return {
+    id: `promo-${idPromocion}`,
+    id_promocion: idPromocion,
+    name: promotion.nombre || promotion.name || 'Promocion',
+    description: promotion.descripcion || promotion.note || '',
+    discountType: promotion.tipo_descuento === 'monto' || promotion.discountType === 'fixed' ? 'fixed' : 'percent',
+    discountValue: Number(promotion.valor_descuento ?? promotion.discountValue ?? 0),
+    startsAt: promotion.fecha_inicio || promotion.startsAt || '',
+    validUntil: promotion.fecha_fin || promotion.validUntil || '',
+    appliesTo: plans,
+    active: promotion.activo !== false && promotion.active !== false,
+  };
+};
 
 const normalizeStoreProductFromBackend = (product = {}) => ({
   id: `producto-${product.id_producto}`,
@@ -242,17 +286,19 @@ const normalizeState = (state) => ({
   ...state,
   members: Array.isArray(state?.members) ? state.members.map((member) => normalizeMember(member)) : seedState().members,
   users: Array.isArray(state?.users) ? state.users.map((user) => normalizeUser(user)) : seedState().users,
-  planCatalog: Array.isArray(state?.planCatalog) ? state.planCatalog : seedState().planCatalog,
-  promotions: Array.isArray(state?.promotions) ? state.promotions : seedState().promotions,
+  planCatalog: Array.isArray(state?.planCatalog) ? state.planCatalog.map((plan) => normalizePlanFromBackend(plan)) : seedState().planCatalog,
+  promotions: Array.isArray(state?.promotions) ? state.promotions.map((promotion) => normalizePromotionFromBackend(promotion)) : seedState().promotions,
   routines: Array.isArray(state?.routines) ? state.routines : seedState().routines,
   attendancePasses: Array.isArray(state?.attendancePasses) ? state.attendancePasses : [],
   attendance: Array.isArray(state?.attendance) ? state.attendance.map((entry) => normalizeAttendanceRecord(entry)) : seedState().attendance,
   inventory: Array.isArray(state?.inventory) ? state.inventory.map((item) => normalizeInventoryItem(item)) : seedState().inventory,
+  inventoryMovements: Array.isArray(state?.inventoryMovements) ? state.inventoryMovements : seedState().inventoryMovements,
   productos_tienda: Array.isArray(state?.productos_tienda) ? state.productos_tienda : seedState().productos_tienda,
   storeOrders: Array.isArray(state?.storeOrders) ? state.storeOrders.map((order) => normalizeStoreOrder(order)) : seedState().storeOrders,
   cart: Array.isArray(state?.cart) ? state.cart : seedState().cart,
   serviceSchedules: Array.isArray(state?.serviceSchedules) ? state.serviceSchedules : seedState().serviceSchedules,
   enrollments: Array.isArray(state?.enrollments) ? state.enrollments : seedState().enrollments,
+  gymSettings: state?.gymSettings && typeof state.gymSettings === 'object' ? state.gymSettings : seedState().gymSettings,
 });
 
 const buildAttendanceRecord = (member, response = {}, fallback = {}) =>
@@ -336,6 +382,7 @@ export const useGymStore = defineStore('gym', () => {
   const attendance = ref(initialState.attendance);
   const attendancePasses = ref(initialState.attendancePasses || []);
   const inventory = ref(initialState.inventory);
+  const inventoryMovements = ref(initialState.inventoryMovements || []);
   const productos_tienda = ref(initialState.productos_tienda);
   const storeOrders = ref(initialState.storeOrders);
   const cart = ref(initialState.cart);
@@ -344,6 +391,7 @@ export const useGymStore = defineStore('gym', () => {
   const serviceSchedules = ref(initialState.serviceSchedules);
   const enrollments = ref(initialState.enrollments);
   const trainerOverview = ref(initialState.trainerOverview);
+  const gymSettings = ref(initialState.gymSettings);
 
   const persist = () => {
     // Business data is persisted only through the backend, which writes to Supabase.
@@ -523,48 +571,96 @@ export const useGymStore = defineStore('gym', () => {
     };
   };
 
-  const upsertPlan = (payload) => {
-    const plan = {
-      id: payload.id || `plan-${Date.now()}`,
-      name: payload.name?.trim() || 'Sin nombre',
-      durationMonths: Number(payload.durationMonths ?? 1),
-      price: Number(payload.price ?? 0),
-      description: payload.description || '',
-      active: payload.active !== false,
-    };
-
-    const index = planCatalog.value.findIndex((entry) => entry.id === plan.id);
-    if (index >= 0) {
-      planCatalog.value[index] = plan;
-    } else {
-      planCatalog.value.unshift(plan);
-    }
-
+  const mergePlan = (plan) => {
+    const normalized = normalizePlanFromBackend(plan);
+    const index = planCatalog.value.findIndex((entry) => Number(entry.id_pm) === Number(normalized.id_pm));
+    if (index >= 0) planCatalog.value[index] = normalized; else planCatalog.value.unshift(normalized);
     persist();
-    return plan;
+    return normalized;
   };
 
-  const upsertPromotion = (payload) => {
-    const promotion = {
-      id: payload.id || `promo-${Date.now()}`,
-      name: payload.name?.trim() || 'Sin nombre',
-      discountType: payload.discountType || 'percent',
-      discountValue: Number(payload.discountValue ?? 0),
-      appliesTo: Array.isArray(payload.appliesTo) ? payload.appliesTo : [],
-      active: payload.active !== false,
-      validUntil: payload.validUntil || '',
-      note: payload.note || '',
+  const upsertPlan = async (payload) => {
+    const idPm = payload.id_pm || Number(String(payload.id || '').match(/(\d+)/)?.[1] || 0) || null;
+    const body = {
+      id_pm: idPm || undefined,
+      nombre_plan: String(payload.nombre_plan || payload.name || '').trim().toUpperCase() || 'SIN NOMBRE',
+      duracion: String(payload.duracion || payload.duration || `${payload.durationMonths || 1} dias`).trim(),
+      precio: Number(payload.precio ?? payload.price ?? 0),
+      descripcion: payload.descripcion || payload.description || '',
+      beneficios: payload.beneficios || payload.benefits || '',
+      activo: payload.activo ?? payload.active ?? true,
     };
 
-    const index = promotions.value.findIndex((entry) => entry.id === promotion.id);
-    if (index >= 0) {
-      promotions.value[index] = promotion;
-    } else {
-      promotions.value.unshift(promotion);
+    if (apiBase) {
+      const response = await fetch(idPm ? `${apiBase}/planes-membresia/${idPm}` : `${apiBase}/planes-membresia`, {
+        method: idPm ? 'PUT' : 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo guardar el plan'));
+      return mergePlan(await response.json());
     }
 
+    return mergePlan({ ...body, id_pm: idPm || Date.now() });
+  };
+
+  const deletePlan = async (planId) => {
+    const idPm = Number(String(planId || '').match(/(\d+)/)?.[1] || 0);
+    if (!idPm) throw new Error('Plan no encontrado');
+    if (apiBase) {
+      const response = await fetch(`${apiBase}/planes-membresia/${idPm}`, { method: 'DELETE', headers: _authHeaders() });
+      if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo eliminar el plan'));
+    }
+    planCatalog.value = planCatalog.value.filter((plan) => Number(plan.id_pm) !== idPm);
     persist();
-    return promotion;
+  };
+
+  const mergePromotion = (promotion) => {
+    const normalized = normalizePromotionFromBackend(promotion);
+    const index = promotions.value.findIndex((entry) => Number(entry.id_promocion) === Number(normalized.id_promocion));
+    if (index >= 0) promotions.value[index] = normalized; else promotions.value.unshift(normalized);
+    persist();
+    return normalized;
+  };
+
+  const upsertPromotion = async (payload) => {
+    const idPromocion = payload.id_promocion || Number(String(payload.id || '').match(/(\d+)/)?.[1] || 0) || null;
+    const body = {
+      id_promocion: idPromocion || undefined,
+      nombre: String(payload.nombre || payload.name || '').trim() || 'Promocion',
+      descripcion: payload.descripcion || payload.description || payload.note || '',
+      tipo_descuento: payload.tipo_descuento || (payload.discountType === 'fixed' ? 'monto' : 'porcentaje'),
+      valor_descuento: Number(payload.valor_descuento ?? payload.discountValue ?? 0),
+      fecha_inicio: payload.fecha_inicio || payload.startsAt || '',
+      fecha_fin: payload.fecha_fin || payload.validUntil || '',
+      activo: payload.activo ?? payload.active ?? true,
+      planes_aplicables: (payload.planes_aplicables || payload.appliesTo || [])
+        .map((value) => Number(String(value).match(/(\d+)/)?.[1] || value))
+        .filter(Boolean),
+    };
+
+    if (apiBase) {
+      const response = await fetch(idPromocion ? `${apiBase}/promociones/${idPromocion}` : `${apiBase}/promociones`, {
+        method: idPromocion ? 'PUT' : 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo guardar la promocion'));
+      return mergePromotion(await response.json());
+    }
+
+    return mergePromotion({ ...body, id_promocion: idPromocion || Date.now() });
+  };
+
+  const deletePromotion = async (promotionId) => {
+    const idPromocion = Number(String(promotionId || '').match(/(\d+)/)?.[1] || 0);
+    if (!idPromocion) throw new Error('Promocion no encontrada');
+    if (apiBase) {
+      const response = await fetch(`${apiBase}/promociones/${idPromocion}`, { method: 'DELETE', headers: _authHeaders() });
+      if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo eliminar la promocion'));
+    }
+    promotions.value = promotions.value.filter((promotion) => Number(promotion.id_promocion) !== idPromocion);
+    persist();
   };
 
   const upsertRutina = async (payload) => {
@@ -1549,6 +1645,25 @@ export const useGymStore = defineStore('gym', () => {
     return storeOrders.value;
   };
 
+  const updateStoreOrderStatus = async (idPedido, payload = {}) => {
+    const body = {
+      estado_pedido: String(payload.estado_pedido || payload.status || 'PENDIENTE').trim().toUpperCase(),
+      observacion_admin: payload.observacion_admin || payload.note || '',
+    };
+    if (apiBase) {
+      const response = await fetch(`${apiBase}/tienda/pedidos/${idPedido}`, {
+        method: 'PUT',
+        headers: _authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo actualizar el pedido'));
+      return mergeStoreOrder(await response.json());
+    }
+    const order = storeOrders.value.find((entry) => Number(entry.id_pedido) === Number(idPedido));
+    if (!order) throw new Error('Pedido no encontrado');
+    return mergeStoreOrder({ ...order, ...body, fecha_actualizacion: nowISO() });
+  };
+
   const createStoreOrder = async (payload = {}) => {
     const items = Array.isArray(payload.items) && payload.items.length ? payload.items : cart.value;
     if (!items.length) {
@@ -1665,6 +1780,54 @@ export const useGymStore = defineStore('gym', () => {
     }));
     persist();
     return routines.value;
+  };
+
+  const refreshPromotionsFromBackend = async () => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const response = await fetch(`${apiBase}/promociones`, { headers: _authHeaders() });
+    if (!response.ok) throw new Error(await readBackendError(response, 'Error al cargar promociones'));
+    const list = await response.json();
+    promotions.value = list.map((promotion) => normalizePromotionFromBackend(promotion));
+    persist();
+    return promotions.value;
+  };
+
+  const refreshGymSettingsFromBackend = async () => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const response = await fetch(`${apiBase}/gym/configuracion`, { headers: _authHeaders() });
+    if (!response.ok) throw new Error(await readBackendError(response, 'Error al cargar configuracion'));
+    gymSettings.value = await response.json();
+    persist();
+    return gymSettings.value;
+  };
+
+  const updateGymSettings = async (payload = {}) => {
+    const body = {
+      capacidad_total: Number(payload.capacidad_total || payload.totalCapacity || 30),
+      capacidad_por_hora: Number(payload.capacidad_por_hora || payload.hourCapacity || 10),
+    };
+    if (apiBase) {
+      const response = await fetch(`${apiBase}/gym/configuracion`, {
+        method: 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo guardar configuracion'));
+      gymSettings.value = await response.json();
+    } else {
+      gymSettings.value = body;
+    }
+    persist();
+    return gymSettings.value;
+  };
+
+  const refreshInventoryMovementsFromBackend = async () => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const response = await fetch(`${apiBase}/inventario/movimientos`, { headers: _authHeaders() });
+    if (!response.ok) throw new Error(await readBackendError(response, 'Error al cargar movimientos'));
+    inventoryMovements.value = await response.json();
+    persist();
+    return inventoryMovements.value;
   };
 
   const upsertServiceSchedule = async (payload) => {
@@ -1946,6 +2109,11 @@ export const useGymStore = defineStore('gym', () => {
       }));
     }
 
+    const resMovimientos = await fetch(`${apiBase}/inventario/movimientos`, { headers: _authHeaders() });
+    if (resMovimientos.ok) {
+      inventoryMovements.value = await resMovimientos.json();
+    }
+
     // Productos de tienda
     const resTienda = await fetch(`${apiBase}/tienda`, { headers: _authHeaders() });
     if (resTienda.ok) {
@@ -1963,15 +2131,11 @@ export const useGymStore = defineStore('gym', () => {
     const resPlanes = await fetch(`${apiBase}/planes-membresia`, { headers: _authHeaders() });
     if (resPlanes.ok) {
       const list = await resPlanes.json();
-      planCatalog.value = list.map((p) => ({
-        id: `pm-${p.id_pm}`,
-        name: p.nombre_plan,
-        durationMonths: Number(String(p.duracion).match(/\d+/)?.[0] || 1),
-        price: Number(p.precio || 0),
-        description: p.duracion || '',
-        active: true,
-      }));
+      planCatalog.value = list.map((p) => normalizePlanFromBackend(p));
     }
+
+    await refreshPromotionsFromBackend().catch(() => {});
+    await refreshGymSettingsFromBackend().catch(() => {});
 
     const resHorarios = await fetch(`${apiBase}/gym/horarios`, { headers: _authHeaders() });
     if (resHorarios.ok) {
@@ -2335,8 +2499,12 @@ export const useGymStore = defineStore('gym', () => {
   const registrarMovimientoToServer = async (payload) => {
     if (!apiBase) throw new Error('No hay backend configurado');
     const res = await fetch(`${apiBase}/inventario/movimientos`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error('Error al crear movimiento de inventario');
-    return res.json();
+    if (!res.ok) throw new Error(await readBackendError(res, 'Error al crear movimiento de inventario'));
+    const saved = await res.json();
+    if (saved?.movimiento) inventoryMovements.value.unshift(saved.movimiento);
+    await fetchFromBackend().catch(() => {});
+    persist();
+    return saved;
   };
 
   return {
@@ -2348,6 +2516,7 @@ export const useGymStore = defineStore('gym', () => {
     promotions,
     routines,
     inventory,
+    inventoryMovements,
     productos_tienda,
     storeOrders,
     cart,
@@ -2355,6 +2524,7 @@ export const useGymStore = defineStore('gym', () => {
     serviceSchedules,
     enrollments,
     trainerOverview,
+    gymSettings,
     stats,
     recentAttendance,
     attendanceAnalytics,
@@ -2370,7 +2540,9 @@ export const useGymStore = defineStore('gym', () => {
     isMembershipExpiringSoon,
     calculatePlanCharge,
     upsertPlan,
+    deletePlan,
     upsertPromotion,
+    deletePromotion,
     upsertRutina,
     assignPlanToMember,
     renewMembership,
@@ -2406,9 +2578,14 @@ export const useGymStore = defineStore('gym', () => {
     fetchFromBackend,
     refreshStoreProductsFromBackend,
     refreshStoreOrdersFromBackend,
+    updateStoreOrderStatus,
     refreshAttendanceFromBackend,
     refreshServiceSchedulesFromBackend,
     refreshRoutinesFromBackend,
+    refreshPromotionsFromBackend,
+    refreshGymSettingsFromBackend,
+    updateGymSettings,
+    refreshInventoryMovementsFromBackend,
     upsertServiceSchedule,
     deleteServiceSchedule,
     refreshEnrollmentsFromBackend,

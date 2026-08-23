@@ -63,6 +63,25 @@
             </div>
           </div>
 
+          <div class="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[180px_1fr_auto] md:items-end">
+            <label class="space-y-2">
+              <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Estado</span>
+              <select v-model="ensureDraft(order).estado_pedido" class="field-input">
+                <option>PENDIENTE</option>
+                <option>CONFIRMADO</option>
+                <option>ENTREGADO</option>
+                <option>CANCELADO</option>
+              </select>
+            </label>
+            <label class="space-y-2">
+              <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Observacion</span>
+              <input v-model="ensureDraft(order).observacion_admin" class="field-input" placeholder="Entrega, recojo, incidencia o anulacion" />
+            </label>
+            <button class="rounded-2xl bg-amber-400 px-4 py-3 font-black text-slate-950" @click="updateOrder(order)">
+              Guardar
+            </button>
+          </div>
+
           <div class="mt-5 overflow-hidden rounded-2xl border border-white/10">
             <div class="hidden grid-cols-[1fr_120px_130px_130px] bg-slate-900/80 px-4 py-3 text-xs uppercase tracking-[0.2em] text-slate-500 md:grid">
               <span>Producto</span>
@@ -90,12 +109,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
 const search = ref('');
 const feedback = ref('');
+const orderDrafts = reactive({});
 
 const orders = computed(() => [...gymStore.storeOrders].sort((a, b) => String(b.fecha_pedido || '').localeCompare(String(a.fecha_pedido || ''))));
 const pendingOrders = computed(() => orders.value.filter((order) => String(order.estado_pedido || '').toUpperCase() === 'PENDIENTE'));
@@ -121,6 +141,27 @@ const filteredOrders = computed(() => {
   );
 });
 
+const ensureDraft = (order) => {
+  if (!orderDrafts[order.id_pedido]) {
+    orderDrafts[order.id_pedido] = {
+      estado_pedido: order.estado_pedido || 'PENDIENTE',
+      observacion_admin: order.observacion_admin || '',
+    };
+  }
+  return orderDrafts[order.id_pedido];
+};
+
+watch(orders, (list) => {
+  list.forEach((order) => {
+    if (!orderDrafts[order.id_pedido]) {
+      orderDrafts[order.id_pedido] = {
+        estado_pedido: order.estado_pedido || 'PENDIENTE',
+        observacion_admin: order.observacion_admin || '',
+      };
+    }
+  });
+}, { immediate: true });
+
 const formatDate = (value) => {
   if (!value) return 'Sin fecha';
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
@@ -132,6 +173,15 @@ const refresh = async () => {
     await gymStore.refreshStoreOrdersFromBackend?.();
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'No se pudieron cargar los pedidos.';
+  }
+};
+
+const updateOrder = async (order) => {
+  feedback.value = '';
+  try {
+    await gymStore.updateStoreOrderStatus(order.id_pedido, ensureDraft(order));
+  } catch (error) {
+    feedback.value = error instanceof Error ? error.message : 'No se pudo actualizar el pedido.';
   }
 };
 

@@ -8,6 +8,7 @@ from config import get_settings
 from models.auth import UserProfile
 from services.auth_service import AuthService
 from services.clients_service import ClientsService
+from services.local_gym_service import LocalGymService
 from services.supabase_gym_service import SupabaseGymService
 from services.users_service import UsersService
 from utils.security import decode_token_payload
@@ -18,13 +19,32 @@ def _get_supabase_gym_service(supabase_url: str, supabase_key: str) -> SupabaseG
     return SupabaseGymService(supabase_url, supabase_key)
 
 
+@lru_cache(maxsize=1)
+def _get_local_gym_service() -> LocalGymService:
+    return LocalGymService()
+
+
 def get_gym_service() -> SupabaseGymService:
     settings = get_settings()
     if not settings.has_supabase_credentials:
-        raise RuntimeError("Faltan SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY o SUPABASE_ANON_KEY en backend/.env")
-    service = _get_supabase_gym_service(settings.supabase_url, settings.supabase_key)
-    service.ensure_fresh()
-    return service
+        return _get_local_gym_service()
+    candidate_keys = [
+        key
+        for key in (settings.supabase_key, settings.supabase_anon_key)
+        if key and settings.supabase_url
+    ]
+    seen: set[str] = set()
+    for key in candidate_keys:
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            service = _get_supabase_gym_service(settings.supabase_url, key)
+            service.ensure_fresh()
+            return service
+        except RuntimeError:
+            continue
+    return _get_local_gym_service()
 
 
 def get_clients_service() -> ClientsService:

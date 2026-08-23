@@ -6,6 +6,8 @@ services:
     container_name: ac-silvers-gym-backend
     env_file:
       - ./backend/.env
+    environment:
+      SUPABASE_ANON_KEY: "${VITE_SUPABASE_ANON_KEY:-}"
     restart: unless-stopped
     ports:
       - "8000:8000"

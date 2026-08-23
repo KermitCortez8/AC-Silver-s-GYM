@@ -40,7 +40,9 @@
                 ? 'bg-red-600 text-white shadow-lg shadow-red-950/40'
                 : 'text-slate-300 hover:bg-white/10 hover:text-white'"
             >
-              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xs font-black">{{ link.icon }}</span>
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                <component :is="link.icon" class="h-4 w-4" />
+              </span>
               <span class="truncate">{{ link.label }}</span>
             </router-link>
           </div>
@@ -108,7 +110,7 @@
               class="flex min-w-20 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-[0.68rem] font-bold transition"
               :class="isActive(link.to) ? 'bg-red-600 text-white' : 'text-slate-300 hover:bg-white/10'"
             >
-              <span class="text-xs">{{ link.icon }}</span>
+              <component :is="link.icon" class="h-4 w-4" />
               <span class="leading-tight">{{ shortLabel(link.label) }}</span>
             </router-link>
           </div>
@@ -121,6 +123,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { Activity, CalendarDays, ClipboardList, Dumbbell, Home, Package, Settings, ShoppingBag, Tags, TicketCheck, UserCog, Users, WalletCards } from 'lucide-vue-next';
 import { useAuth } from '../composables/useAuth';
 import { useTheme } from '../composables/useTheme';
 import { APP_CONFIG } from '../config/appConfig';
@@ -140,32 +143,36 @@ const { isDarkTheme, toggleTheme } = useTheme();
 const navigationLinks = computed(() => {
   if (props.mode === 'trainer' || isTrainer.value) {
     return [
-      { label: 'Supervision', to: '/trainer/dashboard', icon: 'SU' },
-      { label: 'Rutinas', to: '/trainer/routines', icon: 'RU' },
-      { label: 'Monitoreo', to: '/trainer/routine-monitor', icon: 'MO' },
+      { label: 'Supervision', to: '/trainer/dashboard', icon: Home },
+      { label: 'Rutinas', to: '/trainer/routines', icon: Dumbbell },
+      { label: 'Monitoreo', to: '/trainer/routine-monitor', icon: Activity },
     ];
   }
 
   if (props.mode === 'admin' || isAdmin.value) {
     return [
-      { label: 'Inicio', to: '/admin/dashboard', icon: 'IN' },
-      { label: 'Clientes', to: '/admin/clients', icon: 'CL' },
-      { label: 'Usuarios', to: '/admin/users', icon: 'US' },
-      { label: 'Horarios', to: '/admin/service-schedules', icon: 'HO' },
-      { label: 'Matricula', to: '/admin/enrollment', icon: 'MA' },
-      { label: 'Asistencia', to: '/admin/attendance', icon: 'AS' },
-      { label: 'Inventario', to: '/admin/inventory', icon: 'IV' },
-      { label: 'Tienda', to: '/admin/store', icon: 'TI' },
-      { label: 'Pedidos', to: '/admin/orders', icon: 'PE' },
+      { label: 'Inicio', to: '/admin/dashboard', icon: Home },
+      { label: 'Clientes', to: '/admin/clients', icon: Users },
+      { label: 'Usuarios', to: '/admin/users', icon: UserCog },
+      { label: 'Planes', to: '/admin/plans', icon: WalletCards },
+      { label: 'Promos', to: '/admin/promotions', icon: Tags },
+      { label: 'Horarios', to: '/admin/service-schedules', icon: CalendarDays },
+      { label: 'Matricula', to: '/admin/enrollment', icon: TicketCheck },
+      { label: 'Asistencia', to: '/admin/attendance', icon: Activity },
+      { label: 'Inventario', to: '/admin/inventory', icon: Package },
+      { label: 'Movimientos', to: '/admin/inventory/movements', icon: ClipboardList },
+      { label: 'Tienda', to: '/admin/store', icon: ShoppingBag },
+      { label: 'Pedidos', to: '/admin/orders', icon: ClipboardList },
+      { label: 'Config', to: '/admin/settings', icon: Settings },
     ];
   }
 
   return [
-    { label: 'Inicio', to: '/user/dashboard', icon: 'IN' },
-    { label: 'Tienda', to: '/user/store', icon: 'TI' },
-    { label: 'Horarios', to: '/user/schedule', icon: 'HO' },
-    { label: 'Matricula', to: '/user/enrollment', icon: 'MA' },
-    { label: 'Mi asistencia', to: '/user/attendance', icon: 'AS' },
+    { label: 'Inicio', to: '/user/dashboard', icon: Home },
+    { label: 'Tienda', to: '/user/store', icon: ShoppingBag },
+    { label: 'Horarios', to: '/user/schedule', icon: CalendarDays },
+    { label: 'Matricula', to: '/user/enrollment', icon: TicketCheck },
+    { label: 'Mi asistencia', to: '/user/attendance', icon: Activity },
   ];
 });
 

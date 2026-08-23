@@ -33,6 +33,7 @@ class Settings(BaseModel):
     ]
     supabase_url: str = ""
     supabase_key: str = ""
+    supabase_anon_key: str = ""
     store_images_dir: str = ""
     store_images_bucket: str = "imagenestienda"
 
@@ -53,12 +54,8 @@ def get_settings() -> Settings:
         if origin.strip()
     ]
 
-    supabase_key = (
-        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        or os.getenv("SUPABASE_ANON_KEY")
-        or os.getenv("SUPABASE_KEY")
-        or ""
-    )
+    supabase_anon_key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("VITE_SUPABASE_ANON_KEY") or ""
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY") or supabase_anon_key or ""
 
     return Settings(
         host=(os.getenv("BACKEND_HOST") or "0.0.0.0").strip(),
@@ -66,6 +63,7 @@ def get_settings() -> Settings:
         cors_origins=cors_origins,
         supabase_url=(os.getenv("SUPABASE_URL") or "").strip().rstrip("/"),
         supabase_key=supabase_key.strip(),
+        supabase_anon_key=supabase_anon_key.strip(),
         store_images_dir=(os.getenv("STORE_IMAGES_DIR") or str(backend_dir / "db" / "store-images")).strip(),
         store_images_bucket=(os.getenv("SUPABASE_STORE_IMAGES_BUCKET") or "imagenestienda").strip(),
     )

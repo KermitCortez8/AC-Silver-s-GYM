@@ -34,7 +34,26 @@ class PlanMembresiaInput(BaseModel):
     nombre_plan: str
     duracion: str
     precio: int
+    descripcion: str = ""
+    beneficios: str = ""
     activo: bool = True
+
+
+class PromocionInput(BaseModel):
+    id_promocion: int | None = None
+    nombre: str
+    descripcion: str = ""
+    tipo_descuento: Literal["porcentaje", "monto"] = "porcentaje"
+    valor_descuento: float = Field(default=0, ge=0)
+    fecha_inicio: str = ""
+    fecha_fin: str = ""
+    activo: bool = True
+    planes_aplicables: list[int] = Field(default_factory=list)
+
+
+class PedidoTiendaUpdateInput(BaseModel):
+    estado_pedido: Literal["PENDIENTE", "CONFIRMADO", "ENTREGADO", "CANCELADO"]
+    observacion_admin: str = ""
 
 
 class MembresiaInput(BaseModel):

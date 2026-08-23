@@ -79,6 +79,7 @@ class SupabaseGymService(GymDomainService):
 
     CORE_TABLES = {
         "planes_membresia": ("PLANES_MEMBRESIA", "id_pm", "id_PM"),
+        "promociones": ("PROMOCIONES", "id_promocion", "id_promocion"),
         "clientes": ("CLIENTES", "id_cliente", "id_cliente"),
         "membresia": ("MEMBRESIA", "id_membresia", "id_membresia"),
         "usuario": ("USUARIO", "id_usuario", "id_usuario"),
@@ -98,39 +99,61 @@ class SupabaseGymService(GymDomainService):
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
         self.supabase = SupabaseRestClient(supabase_url, supabase_key)
         self.lock = threading.Lock()
+        self.remote_columns: dict[str, set[str]] = {}
+        self.missing_remote_tables: set[str] = set()
         self.state = self._seed()
         self._last_refresh_at = 0.0
         self._refresh_remote_state()
 
+    def _remember_remote_columns(self, table: str, rows: list[dict[str, Any]]) -> None:
+        if rows:
+            self.remote_columns[table] = set(rows[0].keys())
+        self.missing_remote_tables.discard(table)
+
+    def _select_required(self, table: str, order: str | None = None) -> list[dict[str, Any]]:
+        rows = self.supabase.select(table, order=order)
+        self._remember_remote_columns(table, rows)
+        return rows
+
     def _select_optional(self, table: str, order: str | None = None) -> list[dict[str, Any]]:
         try:
-            return self.supabase.select(table, order=order)
+            rows = self.supabase.select(table, order=order)
+            self._remember_remote_columns(table, rows)
+            return rows
         except RuntimeError as error:
             message = str(error)
             if "PGRST" in message or "does not exist" in message or "Could not find" in message:
+                self.missing_remote_tables.add(table)
                 return []
             raise
+
+    def _filter_remote_columns(self, table: str, body: dict[str, Any]) -> dict[str, Any]:
+        columns = self.remote_columns.get(table)
+        if not columns:
+            return body
+        return {key: value for key, value in body.items() if key in columns}
 
     def _refresh_remote_state(self) -> None:
         remote_state = self._seed()
 
-        plans = self.supabase.select("PLANES_MEMBRESIA", order="id_PM.asc")
-        clients = self.supabase.select("CLIENTES", order="id_cliente.desc")
-        memberships = self.supabase.select("MEMBRESIA", order="id_membresia.desc")
-        users = self.supabase.select("USUARIO", order="id_usuario.asc")
-        inventory = self.supabase.select("INVENTARIO", order="id_item.asc")
+        plans = self._select_required("PLANES_MEMBRESIA", order="id_PM.asc")
+        clients = self._select_required("CLIENTES", order="id_cliente.desc")
+        memberships = self._select_required("MEMBRESIA", order="id_membresia.desc")
+        users = self._select_required("USUARIO", order="id_usuario.asc")
+        inventory = self._select_required("INVENTARIO", order="id_item.asc")
         inventory_moves = self._select_optional("MOV_INV", order="id_mov.desc")
-        products = self.supabase.select("TIENDA_PRODUCTOS", order="id_producto.asc")
-        sales = self.supabase.select("VENTAS", order="id_venta.desc")
-        sale_details = self.supabase.select("DETALLE_VENTA", order="id_detalle.asc")
-        routines = self.supabase.select("CATALOGO_RUTINA", order="id_rutina.asc")
-        schedules = self.supabase.select("HORARIO", order="id_horario.asc")
+        products = self._select_required("TIENDA_PRODUCTOS", order="id_producto.asc")
+        sales = self._select_required("VENTAS", order="id_venta.desc")
+        sale_details = self._select_required("DETALLE_VENTA", order="id_detalle.asc")
+        routines = self._select_required("CATALOGO_RUTINA", order="id_rutina.asc")
+        schedules = self._select_required("HORARIO", order="id_horario.asc")
         service_schedules = self._select_optional("HORARIOS_SERVICIO", order="id_horario_servicio.asc")
+        promotions = self._select_optional("PROMOCIONES", order="id_promocion.desc")
         enrollments = self._select_optional("MATRICULAS_HORARIO", order="id_matricula.desc")
         routine_progress = self._select_optional("RUTINA_PROGRESO", order="fecha.desc")
         tickets = self._select_optional("TICKETS_ATENCION", order="id_ticket.desc")
         config_rows = self._select_optional("CONFIGURACION_GIMNASIO", order="id_config.asc")
-        attendance = self.supabase.select("ASISTENCIA", order="Fecha.desc")
+        attendance = self._select_required("ASISTENCIA", order="Fecha.desc")
 
         product_names = {
             int(row.get("id_producto", 0) or 0): str(row.get("nombre_Producto") or "")
@@ -152,6 +175,7 @@ class SupabaseGymService(GymDomainService):
         remote_state["catalogo_rutina"] = [self._map_routine(row) for row in routines]
         remote_state["horario"] = [self._map_schedule(row) for row in schedules]
         remote_state["horarios_servicio"] = [self._map_service_schedule(row) for row in service_schedules]
+        remote_state["promociones"] = [self._map_promotion(row) for row in promotions]
         remote_state["matriculas_horario"] = [self._map_schedule_enrollment(row) for row in enrollments]
         remote_state["rutina_progreso"] = [self._map_routine_progress(row) for row in routine_progress]
         remote_state["tickets_atencion"] = [self._map_ticket(row) for row in tickets]
@@ -215,6 +239,8 @@ class SupabaseGymService(GymDomainService):
 
     def _sync_table(self, state_key: str, previous_rows: list[dict[str, Any]], current_rows: list[dict[str, Any]]) -> None:
         table, local_pk, remote_pk = self.CORE_TABLES[state_key]
+        if table in self.missing_remote_tables:
+            return
         previous_by_id = {self._pk(row, local_pk): row for row in previous_rows if self._pk(row, local_pk)}
         current_by_id = {self._pk(row, local_pk): row for row in current_rows if self._pk(row, local_pk)}
 
@@ -244,7 +270,7 @@ class SupabaseGymService(GymDomainService):
             if previous and row == previous:
                 continue
 
-            sale_body = self._sale_to_remote(row)
+            sale_body = self._filter_remote_columns("VENTAS", self._sale_to_remote(row))
             if previous:
                 self.supabase.update("VENTAS", "id_venta", sale_id, sale_body)
             else:
@@ -258,6 +284,7 @@ class SupabaseGymService(GymDomainService):
     def _to_remote_body(self, state_key: str, row: dict[str, Any]) -> dict[str, Any]:
         return {
             "planes_membresia": self._plan_to_remote,
+            "promociones": self._promotion_to_remote,
             "clientes": self._client_to_remote,
             "membresia": self._membership_to_remote,
             "usuario": self._user_to_remote,
@@ -333,11 +360,13 @@ class SupabaseGymService(GymDomainService):
 
     def _map_plan(self, row: dict[str, Any]) -> dict[str, Any]:
         return {
-            "id_pm": int(row.get("id_PM", 0) or 0),
-            "nombre_plan": str(row.get("Nombre_Plan") or "MENSUAL").strip().upper(),
-            "duracion": str(row.get("Duración") or "30 dias"),
-            "precio": float(row.get("Precio") or 0),
-            "activo": bool(row.get("Activo", True)),
+            "id_pm": int(row.get("id_PM") or row.get("id_pm") or row.get("id_plan") or 0),
+            "nombre_plan": str(row.get("Nombre_Plan") or row.get("nombre_plan") or row.get("nombre") or "MENSUAL").strip().upper(),
+            "duracion": str(row.get("Duración") or row.get("Duracion") or row.get("duracion") or "30 dias"),
+            "precio": float(row.get("Precio") or row.get("precio") or 0),
+            "descripcion": str(row.get("descripcion") or ""),
+            "beneficios": str(row.get("beneficios") or ""),
+            "activo": bool(row.get("Activo", row.get("activo", True))),
         }
 
     def _plan_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
@@ -346,7 +375,38 @@ class SupabaseGymService(GymDomainService):
             "Nombre_Plan": str(row.get("nombre_plan") or "MENSUAL").strip().upper(),
             "Duración": str(row.get("duracion") or "30 dias"),
             "Precio": float(row.get("precio") or 0),
+            "descripcion": str(row.get("descripcion") or ""),
+            "beneficios": str(row.get("beneficios") or ""),
             "Activo": bool(row.get("activo", True)),
+        }
+
+    def _map_promotion(self, row: dict[str, Any]) -> dict[str, Any]:
+        raw_plans = row.get("planes_aplicables") or []
+        if isinstance(raw_plans, str):
+            raw_plans = [part.strip() for part in raw_plans.split(",") if part.strip()]
+        return {
+            "id_promocion": int(row.get("id_promocion", 0) or 0),
+            "nombre": str(row.get("nombre") or ""),
+            "descripcion": str(row.get("descripcion") or ""),
+            "tipo_descuento": str(row.get("tipo_descuento") or "porcentaje"),
+            "valor_descuento": float(row.get("valor_descuento") or 0),
+            "fecha_inicio": str(row.get("fecha_inicio") or ""),
+            "fecha_fin": str(row.get("fecha_fin") or ""),
+            "activo": bool(row.get("activo", True)),
+            "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
+        }
+
+    def _promotion_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "id_promocion": int(row.get("id_promocion", 0) or 0),
+            "nombre": str(row.get("nombre") or ""),
+            "descripcion": str(row.get("descripcion") or ""),
+            "tipo_descuento": str(row.get("tipo_descuento") or "porcentaje"),
+            "valor_descuento": float(row.get("valor_descuento") or 0),
+            "fecha_inicio": self._date_or_none(row.get("fecha_inicio")),
+            "fecha_fin": self._date_or_none(row.get("fecha_fin")),
+            "activo": bool(row.get("activo", True)),
+            "planes_aplicables": list(row.get("planes_aplicables") or []),
         }
 
     def _map_client(self, row: dict[str, Any]) -> dict[str, Any]:
@@ -538,8 +598,10 @@ class SupabaseGymService(GymDomainService):
             "fecha_pedido": str(row.get("Fecha_Venta") or _now_iso()),
             "metodo_pago": str(row.get("metodo_Pago") or ""),
             "referencia_pago": "",
+            "observacion_admin": str(row.get("observacion_admin") or ""),
             "estado_pago": "PAGADO",
-            "estado_pedido": "COMPLETADO",
+            "estado_pedido": str(row.get("estado_pedido") or "COMPLETADO"),
+            "fecha_actualizacion": str(row.get("fecha_actualizacion") or row.get("Fecha_Venta") or _now_iso()),
             "subtotal": total,
             "igv": 0,
             "total": total,
@@ -552,6 +614,10 @@ class SupabaseGymService(GymDomainService):
             "Fecha_Venta": self._date_or_today(row.get("fecha_pedido")),
             "total_Venta": float(row.get("total") or row.get("subtotal") or 0),
             "metodo_Pago": str(row.get("metodo_pago") or "tarjeta"),
+            "estado_pedido": str(row.get("estado_pedido") or "PENDIENTE"),
+            "estado_pago": str(row.get("estado_pago") or "PAGADO"),
+            "observacion_admin": str(row.get("observacion_admin") or ""),
+            "fecha_actualizacion": self._date_or_today(row.get("fecha_actualizacion")),
         }
 
     def _sale_detail_to_remote(self, sale_id: int, row: dict[str, Any]) -> dict[str, Any]:
