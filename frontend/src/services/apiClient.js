@@ -1,5 +1,8 @@
 import { APP_CONFIG } from '../config/appConfig';
 
+/**
+ * Crea el registro correspondiente.
+ */
 const buildUrl = (path) => {
   if (!APP_CONFIG.authApiBaseUrl) {
     throw new Error('No hay backend configurado en VITE_AUTH_API_BASE_URL');
@@ -9,6 +12,9 @@ const buildUrl = (path) => {
   return `${APP_CONFIG.authApiBaseUrl}${normalizedPath}`;
 };
 
+/**
+ * Crea el registro correspondiente.
+ */
 const buildHeaders = (token, headers = {}) => {
   const requestHeaders = {
     'Content-Type': 'application/json',
@@ -22,6 +28,9 @@ const buildHeaders = (token, headers = {}) => {
   return requestHeaders;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const parseResponse = async (response) => {
   if (response.status === 204) {
     return null;
@@ -35,6 +44,9 @@ const parseResponse = async (response) => {
   return response.text();
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const parseError = async (response) => {
   try {
     const body = await parseResponse(response);

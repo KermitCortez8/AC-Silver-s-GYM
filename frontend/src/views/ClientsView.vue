@@ -224,12 +224,30 @@ const form = reactive({
   estado: 'EN_TRAMITE',
 });
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeStatus = (value) => String(value || '').trim().toUpperCase();
+/**
+ * Gestiona esta acción de la vista.
+ */
 const displayMembershipStatus = (client) => normalizeStatus(client.membershipStatus || client.status || 'EN_TRAMITE');
+/**
+ * Valida los datos recibidos.
+ */
 const isActiveStatus = (value) => ['ACTIVO', 'ACTIVA'].includes(normalizeStatus(value));
+/**
+ * Valida los datos recibidos.
+ */
 const isPendingStatus = (value) => normalizeStatus(value).includes('TRAMITE');
+/**
+ * Valida los datos recibidos.
+ */
 const isPendingMembership = (client) => isPendingStatus(displayMembershipStatus(client)) || isPendingStatus(client.status);
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const statusClass = (value) => {
   if (isActiveStatus(value)) return 'font-semibold text-emerald-300';
   if (isPendingStatus(value)) return 'font-semibold text-amber-300';
@@ -255,6 +273,9 @@ const feedbackToneClass = computed(() => {
   return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const resetForm = () => {
   editingId.value = '';
   form.nombre = '';
@@ -267,17 +288,26 @@ const resetForm = () => {
   form.estado = 'EN_TRAMITE';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const openNewClient = () => {
   resetForm();
   feedbackMessage.value = '';
   isEditorOpen.value = true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const closeEditor = () => {
   isEditorOpen.value = false;
   resetForm();
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const editClient = (client) => {
   editingId.value = client.id;
   form.nombre = client.name || '';
@@ -292,6 +322,9 @@ const editClient = (client) => {
   isEditorOpen.value = true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const confirmDelete = async (client) => {
   if (!window.confirm(`Eliminar al cliente ${client.id}?`)) return;
   try {
@@ -305,6 +338,9 @@ const confirmDelete = async (client) => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const activateMembership = async (client) => {
   const idCliente = client.id_cliente || Number(String(client.id || '').replace(/^SGCLI/i, ''));
   if (!idCliente) {
@@ -326,6 +362,9 @@ const activateMembership = async (client) => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handleSubmit = async () => {
   try {
     const saved = await gymStore.upsertClient({

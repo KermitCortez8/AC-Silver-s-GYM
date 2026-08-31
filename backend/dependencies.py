@@ -1,3 +1,7 @@
+# Módulo: dependencies.
+# Reúne operaciones relacionadas con esta parte del backend.
+# Conserva aquí las validaciones propias de este flujo.
+# Los accesos externos se mantienen separados de las reglas de negocio.
 from __future__ import annotations
 
 from functools import lru_cache
@@ -15,15 +19,18 @@ from utils.security import decode_token_payload
 
 
 @lru_cache(maxsize=1)
+# Obtiene los datos necesarios.
 def _get_supabase_gym_service(supabase_url: str, supabase_key: str) -> SupabaseGymService:
     return SupabaseGymService(supabase_url, supabase_key)
 
 
 @lru_cache(maxsize=1)
+# Obtiene los datos necesarios.
 def _get_local_gym_service() -> LocalGymService:
     return LocalGymService()
 
 
+# Obtiene los datos necesarios.
 def get_gym_service() -> SupabaseGymService:
     settings = get_settings()
     if not settings.has_supabase_credentials:
@@ -47,14 +54,17 @@ def get_gym_service() -> SupabaseGymService:
     return _get_local_gym_service()
 
 
+# Obtiene los datos necesarios.
 def get_clients_service() -> ClientsService:
     return ClientsService(get_gym_service())
 
 
+# Obtiene los datos necesarios.
 def get_users_service() -> UsersService:
     return UsersService(get_gym_service())
 
 
+# Obtiene los datos necesarios.
 def get_current_user(
     authorization: str | None = Header(default=None),
     gym_service: SupabaseGymService = Depends(get_gym_service),
@@ -68,9 +78,11 @@ def get_current_user(
     return AuthService(gym_service).user_from_payload(payload)
 
 
+# Procesa esta operación.
 def require_roles(*roles: str):
     allowed_roles = {str(role).strip().lower() for role in roles}
 
+    # Procesa esta operación.
     def _dependency(current_user: UserProfile = Depends(get_current_user)) -> UserProfile:
         if str(current_user.role).strip().lower() not in allowed_roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos para esta acción")
@@ -79,12 +91,14 @@ def require_roles(*roles: str):
     return _dependency
 
 
+# Procesa esta operación.
 def require_admin_or_staff(current_user: UserProfile = Depends(get_current_user)) -> UserProfile:
     if current_user.role not in {"admin", "staff"}:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos para esta acción")
     return current_user
 
 
+# Procesa esta operación.
 def require_internal_viewer(current_user: UserProfile = Depends(get_current_user)) -> UserProfile:
     if current_user.role not in {"admin", "staff", "trainer"}:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos para esta acción")

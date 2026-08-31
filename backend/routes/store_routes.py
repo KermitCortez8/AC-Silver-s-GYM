@@ -1,3 +1,7 @@
+# Módulo: store_routes.
+# Gestiona productos, pedidos y pagos de la tienda.
+# Valida el contenido de cada pedido antes de guardarlo.
+# Conecta las operaciones comerciales con el inventario.
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,6 +21,7 @@ ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 
+# Procesa esta operación.
 def _safe_image_name(filename: str) -> str:
     raw_name = Path(filename or "producto.jpg").stem
     extension = Path(filename or "").suffix.lower() or ".jpg"
@@ -27,6 +32,7 @@ def _safe_image_name(filename: str) -> str:
     return f"{safe_name}-{uuid4().hex[:12]}{extension}"
 
 
+# Obtiene los datos necesarios.
 def _get_storage_service() -> SupabaseStorageService | None:
     settings = get_settings()
     if not settings.has_supabase_credentials:
@@ -39,6 +45,7 @@ def _get_storage_service() -> SupabaseStorageService | None:
     )
 
 
+# Procesa esta operación.
 def _local_upload_dir() -> Path:
     settings = get_settings()
     upload_dir = Path(settings.store_images_dir)
@@ -46,21 +53,25 @@ def _local_upload_dir() -> Path:
     return upload_dir
 
 
+# Procesa esta operación.
 def _local_image_url(filename: str) -> str:
     return f"/api/uploads/store-images/{filename}"
 
 
 @router.get("")
+# Obtiene los datos necesarios.
 def list_productos(gym_service: GymDomainService = Depends(get_gym_service)):
     return gym_service.productos_tienda()
 
 
 @router.get("/pedidos")
+# Obtiene los datos necesarios.
 def list_pedidos(gym_service: GymDomainService = Depends(get_gym_service)):
     return gym_service.pedidos_tienda()
 
 
 @router.post("/pedidos", status_code=status.HTTP_201_CREATED)
+# Crea el registro correspondiente.
 def create_pedido(payload: PedidoTiendaInput, gym_service: GymDomainService = Depends(get_gym_service)):
     try:
         return gym_service.crear_pedido_tienda(payload.model_dump())
@@ -69,6 +80,7 @@ def create_pedido(payload: PedidoTiendaInput, gym_service: GymDomainService = De
 
 
 @router.put("/pedidos/{id_pedido}")
+# Actualiza el registro correspondiente.
 def update_pedido(id_pedido: int, payload: PedidoTiendaUpdateInput, gym_service: GymDomainService = Depends(get_gym_service)):
     try:
         return gym_service.actualizar_pedido_tienda(id_pedido, payload.model_dump())
@@ -78,6 +90,7 @@ def update_pedido(id_pedido: int, payload: PedidoTiendaUpdateInput, gym_service:
 
 
 @router.post("")
+# Actualiza el registro correspondiente.
 def upsert_producto(payload: ProductoTiendaInput, gym_service: GymDomainService = Depends(get_gym_service)):
     try:
         return gym_service.upsert_producto_tienda(payload.model_dump())
@@ -86,6 +99,7 @@ def upsert_producto(payload: ProductoTiendaInput, gym_service: GymDomainService 
 
         
 @router.get("/imagenes")
+# Obtiene los datos necesarios.
 def list_producto_imagenes():
     storage = _get_storage_service()
     if storage is not None:
@@ -113,6 +127,7 @@ def list_producto_imagenes():
 
 
 @router.post("/imagenes", status_code=status.HTTP_201_CREATED)
+# Procesa esta operación.
 async def upload_producto_imagen(file: UploadFile = File(...)):
     if not str(file.content_type or "").lower().startswith("image/"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Selecciona un archivo de imagen")
@@ -143,5 +158,6 @@ async def upload_producto_imagen(file: UploadFile = File(...)):
 
 
 @router.delete("/{id_producto}", status_code=status.HTTP_204_NO_CONTENT)
+# Elimina el registro indicado.
 def delete_producto(id_producto: int, gym_service: GymDomainService = Depends(get_gym_service)):
     gym_service.delete_producto_tienda(id_producto)

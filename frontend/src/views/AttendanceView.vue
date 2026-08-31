@@ -107,10 +107,22 @@ const clientEnrollments = computed(() => {
   return gymStore.enrollments.filter((item) => Number(item.id_cliente) === idCliente && item.estado !== 'CANCELADA');
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Miercoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sabado', domingo: 'Domingo' })[day] || day;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const attendanceFor = (item) => gymStore.attendance.find((entry) => Number(entry.idMatricula) === Number(item.id_matricula));
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const lookupClient = async () => {
   await gymStore.fetchFromBackend?.().catch(() => {});
   const query = lookup.value.trim().toUpperCase();
@@ -129,6 +141,9 @@ const lookupClient = async () => {
   feedback.value = '';
 };
 
+/**
+ * Crea el registro correspondiente.
+ */
 const registerEntry = async (item) => {
   try {
     await gymStore.registerAttendanceEntry({
@@ -144,6 +159,9 @@ const registerEntry = async (item) => {
   }
 };
 
+/**
+ * Crea el registro correspondiente.
+ */
 const registerExit = async (item) => {
   const current = attendanceFor(item);
   if (!current?.id_asistencia) return;

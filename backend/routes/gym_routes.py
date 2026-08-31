@@ -1,3 +1,7 @@
+# Módulo: gym_routes.
+# Agrupa horarios, matrículas y configuración del gimnasio.
+# Controla el acceso según el rol de la sesión.
+# Entrega respuestas HTTP a partir del servicio de dominio.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -18,6 +22,7 @@ router = APIRouter(prefix="/gym", tags=["gym-operaciones"])
 
 
 @router.get("/summary", response_model=SummaryResponse)
+# Procesa esta operación.
 def summary(
     gym_service: GymDomainService = Depends(get_gym_service),
     _current_user=Depends(require_admin_or_staff),
@@ -26,6 +31,7 @@ def summary(
 
 
 @router.get("/configuracion")
+# Obtiene los datos necesarios.
 def get_configuracion(
     gym_service: GymDomainService = Depends(get_gym_service),
     _current_user=Depends(require_admin_or_staff),
@@ -34,6 +40,7 @@ def get_configuracion(
 
 
 @router.post("/configuracion")
+# Actualiza el registro correspondiente.
 def update_configuracion(
     payload: ConfiguracionGimnasioInput,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -46,6 +53,7 @@ def update_configuracion(
 
 
 @router.get("/horarios-servicio")
+# Obtiene los datos necesarios.
 def list_horarios_servicio(
     gym_service: GymDomainService = Depends(get_gym_service),
     _current_user=Depends(require_roles("admin", "staff", "user")),
@@ -54,6 +62,7 @@ def list_horarios_servicio(
 
 
 @router.post("/horarios-servicio")
+# Actualiza el registro correspondiente.
 def upsert_horario_servicio(
     payload: HorarioServicioInput,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -66,6 +75,7 @@ def upsert_horario_servicio(
 
 
 @router.delete("/horarios-servicio/{id_horario_servicio}", status_code=status.HTTP_204_NO_CONTENT)
+# Elimina el registro indicado.
 def delete_horario_servicio(
     id_horario_servicio: int,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -78,6 +88,7 @@ def delete_horario_servicio(
 
 
 @router.get("/matriculas")
+# Obtiene los datos necesarios.
 def list_matriculas(
     id_cliente: int | None = None,
     dni: str | None = None,
@@ -91,6 +102,7 @@ def list_matriculas(
 
 
 @router.post("/matriculas")
+# Crea el registro correspondiente.
 def create_matricula(
     payload: MatriculaHorarioInput,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -103,6 +115,7 @@ def create_matricula(
 
 
 @router.delete("/matriculas/{id_matricula}", status_code=status.HTTP_204_NO_CONTENT)
+# Elimina el registro indicado.
 def delete_matricula(
     id_matricula: int,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -115,6 +128,7 @@ def delete_matricula(
 
 
 @router.get("/tickets")
+# Obtiene los datos necesarios.
 def list_tickets(
     gym_service: GymDomainService = Depends(get_gym_service),
     _current_user=Depends(require_admin_or_staff),
@@ -123,6 +137,7 @@ def list_tickets(
 
 
 @router.post("/tickets")
+# Actualiza el registro correspondiente.
 def upsert_ticket(
     payload: TicketAtencionInput,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -135,6 +150,7 @@ def upsert_ticket(
 
 
 @router.get("/rutinas")
+# Obtiene los datos necesarios.
 def list_rutinas(
     gym_service: GymDomainService = Depends(get_gym_service),
     _current_user=Depends(require_internal_viewer),
@@ -143,6 +159,7 @@ def list_rutinas(
 
 
 @router.post("/rutinas")
+# Actualiza el registro correspondiente.
 def upsert_rutina(
     payload: CatalogoRutinaInput,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -152,6 +169,7 @@ def upsert_rutina(
 
 
 @router.get("/horarios")
+# Obtiene los datos necesarios.
 def list_horarios(
     gym_service: GymDomainService = Depends(get_gym_service),
     _current_user=Depends(require_admin_or_staff),
@@ -160,6 +178,7 @@ def list_horarios(
 
 
 @router.post("/horarios")
+# Actualiza el registro correspondiente.
 def upsert_horario(
     payload: HorarioInput,
     gym_service: GymDomainService = Depends(get_gym_service),

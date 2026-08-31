@@ -1,5 +1,8 @@
 const env = import.meta.env;
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeBaseUrl = (value) => {
   const base = String(value || '').trim().replace(/\/$/, '');
 

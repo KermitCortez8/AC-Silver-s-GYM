@@ -131,9 +131,18 @@ const { user, isAdmin } = useAuth();
 const { isDarkTheme } = useTheme();
 const gymStore = useGymStore();
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeStatus = (value) => String(value || '').trim().toUpperCase();
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dateKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const todayKey = () => dateKey(new Date());
 
 const members = computed(() => gymStore.members || []);
@@ -155,6 +164,9 @@ const clientEnrollments = computed(() => {
   return enrollments.value.filter((item) => Number(item.id_cliente) === idCliente);
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const attendanceFor = (item) =>
   attendance.value.find((entry) => {
     const byEnrollment = Number(entry.idMatricula || 0) === Number(item.id_matricula || 0) && Number(item.id_matricula || 0) > 0;
@@ -220,7 +232,13 @@ const membershipChartData = computed(() => ({
 }));
 
 const services = ['fitness', 'musculacion', 'cardio', 'baile'];
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+/**
+ * Obtiene los datos necesarios.
+ */
 const readableStatus = (status) => {
   const normalized = normalizeStatus(status);
   if (normalized.startsWith('ACT')) return 'Activa';
@@ -344,6 +362,9 @@ const clientCards = computed(() => {
   ];
 });
 
+/**
+ * Actualiza los datos actuales.
+ */
 const refreshDashboard = async () => {
   await gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar dashboard:', error));
 

@@ -4,8 +4,14 @@ export const normalizeCode = (value) => String(value || '').trim().toUpperCase()
 
 export const normalizeDni = (value) => String(value || '').replace(/\D/g, '');
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const unwrapUser = (user = {}) => user?.value ?? user ?? {};
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const numericFromCode = (value) => {
   const normalized = normalizeCode(value);
   const prefixed = normalized.match(/(?:SGCLI|CLIENTE[-_]?)(\d+)/);
@@ -14,6 +20,9 @@ const numericFromCode = (value) => {
   return 0;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const userCodeCandidates = (user = {}) => {
   const currentUser = unwrapUser(user);
   return [

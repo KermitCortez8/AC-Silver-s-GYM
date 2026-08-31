@@ -113,9 +113,18 @@ const visibleRecords = computed(() =>
   }),
 );
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Miercoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sabado', domingo: 'Domingo' })[day] || day;
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const attendanceFor = (item) =>
   gymStore.attendance.find((entry) => {
     const byEnrollment = Number(entry.idMatricula || 0) === Number(item.id_matricula || 0) && Number(item.id_matricula || 0) > 0;

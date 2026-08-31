@@ -346,6 +346,9 @@ const allSchedules = [
 ];
 
 // Match card title (e.g. "Musculacion") to schedule servicio (e.g. "Musculación")
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeService = (str) =>
   str
     .toLowerCase()
@@ -360,6 +363,9 @@ const filteredSchedules = computed(() =>
     : [],
 );
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const toggleService = (title) => {
   selectedService.value = selectedService.value === title ? null : title;
 };
@@ -371,6 +377,9 @@ const landingImages = {
   baile: landingImageUrl('baile.jpg'),
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handleImageError = (event) => {
   event.currentTarget.style.display = 'none';
 };
@@ -384,7 +393,13 @@ const defaultPlans = [
   { id_pm: 3, nombre_plan: 'ANUAL', duracion: '365 dias', precio: 699, descripcion: 'Membresia anual para clientes constantes con mejor precio acumulado.', activo: true },
 ];
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizePlanName = (value) => String(value || '').trim().toUpperCase();
+/**
+ * Formatea el valor para mostrarlo.
+ */
 const formatPlanLabel = (value) =>
   normalizePlanName(value)
     .toLowerCase()
@@ -405,6 +420,9 @@ const plans = computed(() =>
     .filter((plan) => plan.id),
 );
 
+/**
+ * Consulta los datos del servidor.
+ */
 const loadPlans = async () => {
   try {
     const list = await apiGet('/planes-membresia');

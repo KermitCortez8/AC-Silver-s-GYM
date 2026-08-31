@@ -174,7 +174,13 @@ const serviceOptions = [
   },
 ];
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeDay = (day) => String(day || '').trim().toLowerCase();
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeTime = (value) => String(value || '00:00').slice(0, 5);
 
 const schedules = computed(() =>
@@ -198,9 +204,15 @@ const serviceCounts = computed(() =>
 );
 
 const filteredSchedules = computed(() => schedules.value.filter((schedule) => schedule.servicio === selectedService.value));
+/**
+ * Obtiene los datos necesarios.
+ */
 const readMaybeRef = (value) => value?.value ?? value;
 const isAdminUser = computed(() => Boolean(readMaybeRef(isAdmin)));
 const authUser = computed(() => readMaybeRef(user) || {});
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeDni = (value) => String(value || '').replace(/\D/g, '');
 const authClient = computed(() => findClientForUser(authUser.value, gymStore.members));
 const authClientId = computed(() => Number(authClient.value?.id_cliente || resolveClientIdForUser(authUser.value, gymStore.members) || 0));
@@ -216,9 +228,18 @@ const calendarSubtitle = computed(() => {
   return 'Este horario se actualiza cada vez que se agrega o quita una matricula.';
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Miercoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sabado', domingo: 'Domingo' })[day] || day;
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const selectService = (service) => {
   selectedService.value = service;
   feedback.value = '';
@@ -233,17 +254,32 @@ watch(
   { immediate: true },
 );
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const alreadyEnrolled = (schedule) =>
   visibleEnrollments.value.some((item) => Number(item.id_horario_servicio) === Number(schedule.id_horario_servicio));
 
+/**
+ * Valida los datos recibidos.
+ */
 const isScheduleFull = (schedule) => Number(schedule.cupos_usados || 0) >= Number(schedule.cupos || 0);
+/**
+ * Valida los datos recibidos.
+ */
 const isScheduleClosed = (schedule) => alreadyEnrolled(schedule) || isScheduleFull(schedule);
+/**
+ * Gestiona esta acción de la vista.
+ */
 const buttonLabel = (schedule) => {
   if (alreadyEnrolled(schedule)) return 'Ya matriculado';
   if (isScheduleFull(schedule)) return 'Sin cupos';
   return 'Matricular';
 };
 
+/**
+ * Actualiza los datos actuales.
+ */
 const refreshAll = async () => {
   await gymStore.fetchFromBackend?.().catch(async () => {
     await gymStore.refreshServiceSchedulesFromBackend?.();
@@ -254,6 +290,9 @@ const refreshAll = async () => {
   }
 };
 
+/**
+ * Consulta los datos del servidor.
+ */
 const loadAdminClient = async () => {
   await gymStore.fetchFromBackend?.().catch(() => {});
   const dni = normalizeDni(dniSearch.value);
@@ -267,6 +306,9 @@ const loadAdminClient = async () => {
   feedback.value = '';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const enroll = async (schedule) => {
   if (!currentClientId.value) {
     feedbackTone.value = 'error';
@@ -287,6 +329,9 @@ const enroll = async (schedule) => {
   }
 };
 
+/**
+ * Valida los datos recibidos.
+ */
 const cancel = async (item) => {
   try {
     await gymStore.deleteEnrollment(item.id_matricula);

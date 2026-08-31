@@ -1,3 +1,7 @@
+# Módulo: promotions_routes.
+# Expone la consulta y edición de promociones.
+# Valida descuentos, fechas y planes relacionados.
+# Restringe los cambios a personal autorizado.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -10,11 +14,13 @@ router = APIRouter(prefix="/promociones", tags=["promociones"])
 
 
 @router.get("")
+# Obtiene los datos necesarios.
 def list_promociones(gym_service: GymDomainService = Depends(get_gym_service)):
     return gym_service.promociones()
 
 
 @router.post("")
+# Actualiza el registro correspondiente.
 def upsert_promocion(
     payload: PromocionInput,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -27,6 +33,7 @@ def upsert_promocion(
 
 
 @router.put("/{id_promocion}")
+# Actualiza el registro correspondiente.
 def update_promocion(
     id_promocion: int,
     payload: PromocionInput,
@@ -42,6 +49,7 @@ def update_promocion(
 
 
 @router.delete("/{id_promocion}", status_code=status.HTTP_204_NO_CONTENT)
+# Elimina el registro indicado.
 def delete_promocion(
     id_promocion: int,
     gym_service: GymDomainService = Depends(get_gym_service),

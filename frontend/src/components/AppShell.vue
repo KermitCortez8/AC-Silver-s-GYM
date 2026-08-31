@@ -192,8 +192,14 @@ const userInitials = computed(() => {
     .join('');
 });
 
+/**
+ * Valida los datos recibidos.
+ */
 const isActive = (path) => route.path.startsWith(path);
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const shortLabel = (label) =>
   ({
     'Mi asistencia': 'Asistencia',
@@ -201,6 +207,9 @@ const shortLabel = (label) =>
     Matricula: 'Matric.',
   })[label] || label;
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handleLogout = async () => {
   await signOut();
   router.push('/login');

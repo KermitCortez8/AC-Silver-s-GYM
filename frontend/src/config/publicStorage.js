@@ -1,10 +1,19 @@
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeBaseUrl = (value) => String(value || '').trim().replace(/\/$/, '');
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const joinPath = (...segments) => segments
   .map((segment) => String(segment || '').trim().replace(/^\/+|\/+$/g, ''))
   .filter(Boolean)
   .join('/');
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const encodeStoragePath = (path) => path
   .split('/')
   .map((segment) => encodeURIComponent(segment))

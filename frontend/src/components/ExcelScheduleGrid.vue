@@ -69,6 +69,9 @@ const dayLabels = {
 
 const dayByIndex = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeDay = (day) =>
   String(day || '')
     .trim()
@@ -76,18 +79,30 @@ const normalizeDay = (day) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeTime = (value) => {
   const [hour = '00', minute = '00'] = String(value || '').split(':');
   return `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:00`;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const displayTime = (value) => normalizeTime(value).slice(0, 5);
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const timeToMinutes = (value) => {
   const [hour = 0, minute = 0] = normalizeTime(value).split(':').map(Number);
   return hour * 60 + minute;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const minutesToSlotTime = (value) => {
   if (value >= 24 * 60) return '24:00:00';
   const safeValue = Math.max(0, Math.min(24 * 60 - 1, value));
@@ -96,6 +111,9 @@ const minutesToSlotTime = (value) => {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) =>
   ({
     fitness: 'Fitness',
@@ -104,6 +122,9 @@ const serviceLabel = (service) =>
     baile: 'Baile',
   })[String(service || '').trim().toLowerCase()] || service || 'Servicio';
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const eventColor = (service) =>
   ({
     fitness: '#d9f99d',
@@ -112,6 +133,9 @@ const eventColor = (service) =>
     baile: '#fecdd3',
   })[String(service || '').trim().toLowerCase()] || '#e2e8f0';
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const eventBorderColor = (service) =>
   ({
     fitness: '#84cc16',
@@ -138,6 +162,9 @@ const visibleTimeRange = computed(() => {
   };
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const escapeHtml = (value) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -146,6 +173,9 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const eventMeta = (item) => {
   if (item.checkLabel) return item.checkLabel;
   if (item.cliente_nombre) return item.cliente_nombre;
@@ -245,6 +275,9 @@ const calendarOptions = computed(() => ({
   },
 }));
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const exportExcel = () => {
   const rows = props.items.map((item) => ({
     Servicio: serviceLabel(item.servicio),

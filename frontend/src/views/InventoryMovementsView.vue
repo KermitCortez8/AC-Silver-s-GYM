@@ -85,7 +85,13 @@ const movements = computed(() => gymStore.inventoryMovements || []);
 const feedbackClass = computed(() => feedbackTone.value === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
 const form = reactive({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, fecha_movimiento: new Date().toISOString().slice(0, 10), descripcion: '' });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const itemName = (idItem) => inventory.value.find((item) => Number(String(item.id).replace('item-', '')) === Number(idItem))?.name || `Item #${idItem}`;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const movementClass = (type) => type === 'entrada' ? 'bg-emerald-400/15 text-emerald-200' : type === 'salida' ? 'bg-rose-400/15 text-rose-200' : 'bg-cyan-400/15 text-cyan-200';
 const filteredMovements = computed(() => {
   const query = search.value.trim().toLowerCase();
@@ -93,6 +99,9 @@ const filteredMovements = computed(() => {
   return movements.value.filter((movement) => [itemName(movement.id_item), movement.tipo_movimiento, movement.descripcion].join(' ').toLowerCase().includes(query));
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const save = async () => {
   try {
     if (!form.id_item) throw new Error('Selecciona un item de inventario.');

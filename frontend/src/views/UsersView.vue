@@ -163,6 +163,9 @@ const feedbackToneClass = computed(() => {
   return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const resetForm = () => {
   editingId.value = '';
   form.nombre = '';
@@ -173,17 +176,26 @@ const resetForm = () => {
   form.rol = 'staff';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const openNewUser = () => {
   resetForm();
   feedbackMessage.value = '';
   isEditorOpen.value = true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const closeEditor = () => {
   isEditorOpen.value = false;
   resetForm();
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const editUser = (systemUser) => {
   editingId.value = systemUser.id_usuario;
   form.nombre = systemUser.nombre || '';
@@ -196,6 +208,9 @@ const editUser = (systemUser) => {
   isEditorOpen.value = true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const confirmDelete = async (systemUser) => {
   if (!window.confirm(`Eliminar al usuario ${systemUser.id_usuario}?`)) return;
   try {
@@ -209,6 +224,9 @@ const confirmDelete = async (systemUser) => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handleSubmit = async () => {
   try {
     const saved = await gymStore.upsertUser({

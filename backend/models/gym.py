@@ -1,3 +1,7 @@
+# Módulo: gym.
+# Define los esquemas de clientes, membresías y operaciones del gimnasio.
+# Valida tipos, campos obligatorios y valores permitidos.
+# Sirve como contrato entre las rutas y los servicios.
 from __future__ import annotations
 
 from typing import Any, Literal, Optional

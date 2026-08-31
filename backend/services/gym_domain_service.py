@@ -1,3 +1,7 @@
+# Módulo: gym_domain_service.
+# Contiene las reglas principales del negocio del gimnasio.
+# Procesa membresías, horarios, inventario, tienda y asistencias.
+# Trabaja sobre un estado común sin depender del almacenamiento.
 from __future__ import annotations
 
 import re
@@ -8,24 +12,29 @@ from typing import Any
 from utils.security import hash_password, verify_password
 
 
+# Procesa esta operación.
 def _today_iso() -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
 
+# Procesa esta operación.
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+# Procesa esta operación.
 def _now_time() -> str:
     return datetime.now().strftime("%H:%M")
 
 
+# Procesa esta operación.
 def _safe_date(value: str) -> str:
     if value:
         return value
     return _today_iso()
 
 
+# Procesa esta operación.
 def _days_until(date_value: Any, today: str) -> int | None:
     try:
         return (datetime.fromisoformat(str(date_value)[:10]) - datetime.fromisoformat(today)).days
@@ -34,9 +43,11 @@ def _days_until(date_value: Any, today: str) -> int | None:
 
 
 class GymDomainService:
+    # Inicializa la clase.
     def __init__(self, db_file: Any | None = None) -> None:
         raise RuntimeError("GymDomainService solo contiene reglas de negocio. Usa SupabaseGymService para persistencia.")
 
+    # Procesa esta operación.
     def _seed(self) -> dict[str, Any]:
         return {
             "inventario": [],
@@ -89,6 +100,7 @@ class GymDomainService:
             },
         }
 
+    # Procesa esta operación.
     def _normalize(self, state: dict[str, Any]) -> dict[str, Any]:
         seed = self._seed()
         merged = {**seed, **(state or {})}
@@ -162,6 +174,7 @@ class GymDomainService:
 
         return merged
 
+    # Procesa esta operación.
     def _user_role_prefix(self, rol: str) -> str:
         rol_value = str(rol or "").strip().lower()
         return {
@@ -170,6 +183,7 @@ class GymDomainService:
             "staff": "STA",
         }.get(rol_value, "USR")
 
+    # Procesa esta operación.
     def _normalize_usuario_id(self, value: Any) -> str | None:
         if value is None:
             return None
@@ -184,6 +198,7 @@ class GymDomainService:
 
         return raw
 
+    # Procesa esta operación.
     def _next_usuario_code(self, state: dict[str, Any]) -> str:
         numbers: list[int] = []
         for row in state.get("usuario", []):
@@ -194,6 +209,7 @@ class GymDomainService:
 
         return max(numbers, default=0) + 1
 
+    # Procesa esta operación.
     def _normalize_usuario_record(self, row: dict[str, Any]) -> dict[str, Any]:
         nombre = str(row.get("nombre") or ((str(row.get("nombres") or "") + " " + str(row.get("apellidos") or "")).strip()) or "").strip()
         correo = str(row.get("correo") or row.get("email") or "").strip()
@@ -217,24 +233,29 @@ class GymDomainService:
             "password_hash": password_hash,
         }
 
+    # Procesa esta operación.
     def _load(self) -> dict[str, Any]:
         raise RuntimeError("GymDomainService no lee archivos locales. Usa SupabaseGymService.")
 
+    # Procesa esta operación.
     def _save(self) -> None:
         raise RuntimeError("GymDomainService no guarda archivos locales. Usa SupabaseGymService.")
 
+    # Procesa esta operación.
     def _mutate(self, fn):
         with self.lock:
             result = fn(self.state)
             self._save()
             return result
 
+    # Procesa esta operación.
     def _next_int_id(self, table: str, key: str) -> int:
         rows = self.state[table]
         if not rows:
             return 1
         return max(int(row.get(key, 0)) for row in rows) + 1
 
+    # Procesa esta operación.
     def _active_membership_for_cliente(self, state: dict[str, Any], id_cliente: int) -> dict[str, Any] | None:
         today = _today_iso()
         for memb in state["membresia"]:
@@ -248,6 +269,7 @@ class GymDomainService:
                 return memb
         return None
 
+    # Procesa esta operación.
     def _latest_membership_for_cliente(self, state: dict[str, Any], id_cliente: int) -> dict[str, Any] | None:
         memberships = [
             membership
@@ -256,6 +278,7 @@ class GymDomainService:
         ]
         return sorted(memberships, key=lambda row: int(row.get("id_membresia", 0) or 0), reverse=True)[0] if memberships else None
 
+    # Obtiene los datos necesarios.
     def get_usuario(self, id_usuario: Any) -> dict[str, Any] | None:
         usuario_id = self._normalize_usuario_id(id_usuario)
         if not usuario_id:
@@ -263,6 +286,7 @@ class GymDomainService:
 
         return next((u for u in self.state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) == usuario_id), None)
 
+    # Obtiene los datos necesarios.
     def get_usuario_by_email(self, email: str) -> dict[str, Any] | None:
         normalized_email = str(email or "").strip().lower()
         return next(
@@ -274,9 +298,11 @@ class GymDomainService:
             None,
         )
 
+    # Procesa esta operación.
     def usuarios(self) -> list[dict[str, Any]]:
         return self.state["usuario"]
 
+    # Procesa esta operación.
     def usuarios_normalized(self) -> list[dict[str, Any]]:
         return [
             {
@@ -291,7 +317,9 @@ class GymDomainService:
             for row in self.state.get("usuario", [])
         ]
 
+    # Actualiza el registro correspondiente.
     def upsert_usuario(self, payload: dict[str, Any]) -> dict[str, Any]:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             rol = str(payload.get("rol") or "").strip().lower()
             if rol not in {"admin", "trainer", "staff"}:
@@ -339,17 +367,21 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Elimina el registro indicado.
     def delete_usuario(self, id_usuario: Any) -> None:
         usuario_id = self._normalize_usuario_id(id_usuario)
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state["usuario"] = [u for u in state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) != usuario_id]
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def clientes(self) -> list[dict[str, Any]]:
         return self.state["clientes"]
 
+    # Procesa esta operación.
     def _normalize_cliente_record(self, row: dict[str, Any], fallback_index: int) -> dict[str, Any]:
         id_cliente = row.get("id_cliente")
         if id_cliente is None:
@@ -389,6 +421,7 @@ class GymDomainService:
             "password_hash": password_hash,
         }
 
+    # Procesa esta operación.
     def _plan_duration_days(self, plan_name: str) -> int:
         normalized = str(plan_name or "").strip().upper()
         match = re.search(r"(\d+)", normalized)
@@ -400,12 +433,14 @@ class GymDomainService:
             return 30 * amount
         return 30
 
+    # Procesa esta operación.
     def _next_int_id_in_state(self, state: dict[str, Any], table: str, key: str) -> int:
         rows = state.setdefault(table, [])
         if not rows:
             return 1
         return max(int(row.get(key, 0) or 0) for row in rows) + 1
 
+    # Procesa esta operación.
     def _normalize_pedido_tienda(self, row: dict[str, Any], fallback_id: int) -> dict[str, Any]:
         items: list[dict[str, Any]] = []
         for item in row.get("items", []):
@@ -447,6 +482,7 @@ class GymDomainService:
             "items": items,
         }
 
+    # Procesa esta operación.
     def _normalize_promocion(self, row: dict[str, Any], fallback_id: int) -> dict[str, Any]:
         raw_plans = row.get("planes_aplicables") or []
         if isinstance(raw_plans, str):
@@ -463,6 +499,7 @@ class GymDomainService:
             "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
         }
 
+    # Procesa esta operación.
     def _ensure_plan_for_client(self, state: dict[str, Any], plan_name: str) -> dict[str, Any]:
         state.setdefault("planes_membresia", [])
         normalized = str(plan_name or "MENSUAL").strip().upper() or "MENSUAL"
@@ -479,6 +516,7 @@ class GymDomainService:
 
         raise ValueError(f"Plan de membresia no configurado en Supabase: {normalized}")
 
+    # Procesa esta operación.
     def _ensure_membership_for_active_client(self, state: dict[str, Any], cliente: dict[str, Any]) -> dict[str, Any] | None:
         id_cliente = int(cliente.get("id_cliente", 0) or 0)
         if not id_cliente:
@@ -506,6 +544,7 @@ class GymDomainService:
         state.setdefault("membresia", []).insert(0, membership)
         return membership
 
+    # Procesa esta operación.
     def clientes_normalized(self) -> list[dict[str, Any]]:
         result = []
         for row in self.state.get("clientes", []):
@@ -532,7 +571,9 @@ class GymDomainService:
             )
         return result
 
+    # Actualiza el registro correspondiente.
     def upsert_cliente(self, payload: dict[str, Any]) -> dict[str, Any]:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             raw_id = payload.get("id_usuario") or payload.get("id_cliente")
             id_usuario = str(raw_id).strip() if raw_id not in [None, ""] else ""
@@ -593,12 +634,15 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Obtiene los datos necesarios.
     def get_cliente(self, id_cliente: int) -> dict[str, Any] | None:
         return next((c for c in self.state["clientes"] if int(c.get("id_cliente", 0)) == int(id_cliente)), None)
 
+    # Obtiene los datos necesarios.
     def get_cliente_by_dni(self, dni: str) -> dict[str, Any] | None:
         return next((c for c in self.state["clientes"] if str(c.get("dni", "")) == str(dni)), None)
 
+    # Obtiene los datos necesarios.
     def get_cliente_by_email(self, email: str) -> dict[str, Any] | None:
         normalized = str(email or "").strip().lower()
         return next(
@@ -610,20 +654,25 @@ class GymDomainService:
             None,
         )
 
+    # Procesa esta operación.
     def authenticate_usuario_password(self, correo: str, password: str) -> dict[str, Any] | None:
         usuario = self.get_usuario_by_email(correo)
         if not usuario or not verify_password(password, str(usuario.get("password_hash") or "")):
             return None
         return usuario
 
+    # Procesa esta operación.
     def authenticate_cliente_password(self, correo: str, password: str) -> dict[str, Any] | None:
         cliente = self.get_cliente_by_email(correo)
         if not cliente or not verify_password(password, str(cliente.get("password_hash") or "")):
             return None
         return cliente
 
+    # Elimina el registro indicado.
     def delete_cliente(self, id_cliente: int) -> None:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
+            # Procesa esta operación.
             def matches_id(value):
                 try:
                     if value is None:
@@ -655,13 +704,17 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def planes_membresia(self) -> list[dict[str, Any]]:
         return self.state.get("planes_membresia", [])
 
+    # Obtiene los datos necesarios.
     def get_plan_membresia(self, id_pm: int) -> dict[str, Any] | None:
         return next((p for p in self.state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == int(id_pm)), None)
 
+    # Actualiza el registro correspondiente.
     def upsert_plan_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state.setdefault("planes_membresia", [])
             item = {**payload}
@@ -682,7 +735,9 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Elimina el registro indicado.
     def delete_plan_membresia(self, id_pm: int) -> None:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             if any(int(m.get("id_pm", 0)) == int(id_pm) for m in state.get("membresia", [])):
                 raise ValueError("No se puede eliminar un plan usado por membresías")
@@ -690,9 +745,11 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def promociones(self) -> list[dict[str, Any]]:
         return self.state.get("promociones", [])
 
+    # Actualiza el registro correspondiente.
     def upsert_promocion(self, payload: dict[str, Any]) -> dict[str, Any]:
         tipo = str(payload.get("tipo_descuento") or "porcentaje").strip().lower()
         if tipo not in {"porcentaje", "monto"}:
@@ -701,6 +758,7 @@ class GymDomainService:
         if tipo == "porcentaje" and valor > 100:
             raise ValueError("El porcentaje no puede ser mayor a 100")
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state.setdefault("promociones", [])
             item = self._normalize_promocion({**payload, "tipo_descuento": tipo, "valor_descuento": valor}, self._next_int_id_in_state(state, "promociones", "id_promocion"))
@@ -715,7 +773,9 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Elimina el registro indicado.
     def delete_promocion(self, id_promocion: int) -> None:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             before = len(state.get("promociones", []))
             state["promociones"] = [row for row in state.get("promociones", []) if int(row.get("id_promocion", 0)) != int(id_promocion)]
@@ -724,12 +784,15 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def membresias(self) -> list[dict[str, Any]]:
         return self.state["membresia"]
 
+    # Procesa esta operación.
     def membresias_por_cliente(self, id_cliente: int) -> list[dict[str, Any]]:
         return [m for m in self.state["membresia"] if int(m.get("id_cliente", 0)) == int(id_cliente)]
 
+    # Procesa esta operación.
     def crear_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(payload.get("id_cliente", 0))
         id_pm = int(payload.get("id_pm", 0))
@@ -738,6 +801,7 @@ class GymDomainService:
         if not self.get_plan_membresia(id_pm):
             raise ValueError("Plan de membresía no encontrado")
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
             item_id = item.get("id_membresia")
@@ -758,6 +822,7 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def registrar_cliente_con_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         cliente_payload = payload["cliente"]
         id_pm = int(payload["id_pm"])
@@ -776,6 +841,7 @@ class GymDomainService:
         )
         return {"cliente": cliente, "membresia": membresia}
 
+    # Procesa esta operación.
     def registrar_cliente_publico(self, payload: dict[str, Any]) -> dict[str, Any]:
         nombre = str(payload.get("nombre") or payload.get("google_name") or "").strip()
         correo = str(payload.get("correo") or payload.get("google_email") or "").strip().lower()
@@ -797,6 +863,7 @@ class GymDomainService:
         if self.get_cliente_by_email(correo):
             raise ValueError("Ya existe un cliente registrado con ese correo")
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             plan = self._ensure_plan_for_client(state, plan_name)
             id_cliente = self._next_int_id_in_state(state, "clientes", "id_cliente")
@@ -829,9 +896,11 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def confirmar_pago_cliente_publico(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(id_cliente)
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
             if not cliente:
@@ -849,9 +918,11 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def activar_membresia_cliente(self, id_cliente: int) -> dict[str, Any]:
         id_cliente = int(id_cliente)
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
             if not cliente:
@@ -880,12 +951,15 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def asistencia(self) -> list[dict[str, Any]]:
         return self.state["asistencia"]
 
+    # Procesa esta operación.
     def registrar_asistencia(self, id_cliente: int) -> dict[str, Any]:
         return self.registrar_asistencia_detallada({"id_cliente": id_cliente})
 
+    # Procesa esta operación.
     def _parse_cliente_id(self, raw_id_cliente: Any) -> int:
         try:
             if isinstance(raw_id_cliente, str):
@@ -899,6 +973,7 @@ class GymDomainService:
         except Exception:
             return 0
 
+    # Procesa esta operación.
     def _attendance_hour_key(self, hora: str) -> str:
         value = str(hora or "").strip().lower()
         if not value:
@@ -920,6 +995,7 @@ class GymDomainService:
 
         return f"{hour % 24:02d}"
 
+    # Procesa esta operación.
     def _time_to_minutes(self, hora: str) -> int:
         value = str(hora or "").strip().lower()
         value = value.replace("a. m.", "am").replace("p. m.", "pm")
@@ -940,6 +1016,7 @@ class GymDomainService:
             raise ValueError("Hora invalida")
         return hour * 60 + minute
 
+    # Procesa esta operación.
     def _date_day_name(self, fecha: str) -> str:
         names = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
         try:
@@ -947,6 +1024,7 @@ class GymDomainService:
         except Exception:
             return ""
 
+    # Procesa esta operación.
     def _normalize_day(self, value: Any) -> str:
         normalized = str(value or "").strip().lower()
         return (
@@ -959,6 +1037,7 @@ class GymDomainService:
             .replace("ú", "u")
         )
 
+    # Procesa esta operación.
     def _day_code(self, day: str) -> str:
         return {
             "lunes": "LUN",
@@ -970,6 +1049,7 @@ class GymDomainService:
             "domingo": "DOM",
         }.get(self._normalize_day(day), str(day or "DIA")[:3].upper())
 
+    # Valida los datos recibidos.
     def _validate_short_service_schedule_range(self, hora_inicio: str, hora_fin: str) -> tuple[int, int]:
         start = self._time_to_minutes(hora_inicio)
         end = self._time_to_minutes(hora_fin)
@@ -978,10 +1058,12 @@ class GymDomainService:
             raise ValueError("Los horarios disponibles deben durar 1 o 2 horas")
         return start, end
 
+    # Procesa esta operación.
     def _minutes_to_time(self, value: int) -> str:
         safe_value = max(0, min(23 * 60 + 59, int(value)))
         return f"{safe_value // 60:02d}:{safe_value % 60:02d}"
 
+    # Procesa esta operación.
     def _short_service_schedule_range(self, hora_inicio: Any, hora_fin: Any) -> tuple[str, str]:
         start_value = str(hora_inicio or "06:00").strip()
         end_value = str(hora_fin or "07:00").strip()
@@ -992,11 +1074,13 @@ class GymDomainService:
             start = self._time_to_minutes(start_value)
             return start_value, self._minutes_to_time(start + 120)
 
+    # Procesa esta operación.
     def _normalize_horarios_servicio(self, rows: Any) -> list[dict[str, Any]]:
         allowed = {"fitness", "musculacion", "cardio", "baile"}
         normalized: list[dict[str, Any]] = []
         used_ids: set[int] = set()
 
+        # Procesa esta operación.
         def next_id() -> int:
             current = 1
             while current in used_ids:
@@ -1042,6 +1126,7 @@ class GymDomainService:
 
         return sorted(normalized, key=lambda row: (str(row.get("dia")), str(row.get("hora_inicio")), str(row.get("servicio"))))
 
+    # Procesa esta operación.
     def _normalize_matricula_horario(self, row: dict[str, Any], fallback_index: int) -> dict[str, Any]:
         return {
             "id_matricula": int(row.get("id_matricula", 0) or fallback_index),
@@ -1052,6 +1137,7 @@ class GymDomainService:
             "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
         }
 
+    # Procesa esta operación.
     def _normalize_rutina_progreso(self, row: dict[str, Any], fallback_index: int) -> dict[str, Any]:
         return {
             "id_progreso": int(row.get("id_progreso", 0) or fallback_index),
@@ -1063,6 +1149,7 @@ class GymDomainService:
             "id_usuario": self._normalize_usuario_id(row.get("id_usuario")) if row.get("id_usuario") else None,
         }
 
+    # Procesa esta operación.
     def _recount_schedule_cupos(self, state: dict[str, Any]) -> None:
         counts: dict[int, int] = {}
         for enrollment in state.get("matriculas_horario", []):
@@ -1075,6 +1162,7 @@ class GymDomainService:
             schedule_id = int(schedule.get("id_horario_servicio", 0) or 0)
             schedule["cupos_usados"] = counts.get(schedule_id, 0)
 
+    # Valida los datos recibidos.
     def _validate_service_schedule(self, state: dict[str, Any], servicio: str, fecha: str, hora: str) -> None:
         servicio = str(servicio or "fitness").strip().lower()
         schedules = [row for row in state.get("horarios_servicio", []) if row.get("servicio") == servicio and bool(row.get("activo", True))]
@@ -1097,6 +1185,7 @@ class GymDomainService:
         ranges = ", ".join(f"{row.get('hora_inicio')}-{row.get('hora_fin')}" for row in day_schedules or schedules)
         raise ValueError(f"El servicio {servicio} solo registra en estos horarios: {ranges}")
 
+    # Valida los datos recibidos.
     def _validate_attendance_capacity(self, state: dict[str, Any], fecha: str, hora: str, exclude_id: int | None = None) -> None:
         cfg = state.get("configuracion_gimnasio", {}) or {}
         capacidad_total = max(1, int(cfg.get("capacidad_total") or 30))
@@ -1109,6 +1198,7 @@ class GymDomainService:
         if len(same_hour) >= capacidad_por_hora:
             raise ValueError("El cupo de asistencias para esta hora está lleno")
 
+    # Procesa esta operación.
     def registrar_asistencia_detallada(self, payload: dict[str, Any]) -> dict[str, Any]:
         raw_id_cliente = payload.get("id_cliente", 0)
         id_cliente = self._parse_cliente_id(raw_id_cliente)
@@ -1124,6 +1214,7 @@ class GymDomainService:
         hora = str(payload.get("hora") or "").strip() or _now_time()
         id_usuario_registra = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             membresia = self._active_membership_for_cliente(state, id_cliente)
             if not membresia:
@@ -1147,6 +1238,7 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def _resolve_cliente_for_attendance(self, payload: dict[str, Any]) -> int:
         if payload.get("dni"):
             cliente = self.get_cliente_by_dni(str(payload.get("dni")).strip())
@@ -1155,6 +1247,7 @@ class GymDomainService:
             return int(cliente["id_cliente"])
         return self._parse_cliente_id(payload.get("id_cliente"))
 
+    # Procesa esta operación.
     def registrar_entrada_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_matricula = int(payload.get("id_matricula", 0) or 0)
         id_horario = int(payload.get("id_horario_servicio", 0) or 0)
@@ -1163,6 +1256,7 @@ class GymDomainService:
         hora_entrada = str(payload.get("hora_entrada") or "").strip() or _now_time()
         id_usuario_registra = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             enrollment = None
             if id_matricula:
@@ -1237,10 +1331,12 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def registrar_salida_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_asistencia = int(payload.get("id_asistencia", 0) or 0)
         hora_salida = str(payload.get("hora_salida") or "").strip() or _now_time()
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             asistencia = next((row for row in state.get("asistencia", []) if int(row.get("id_asistencia", 0) or 0) == id_asistencia), None)
             if not asistencia:
@@ -1252,7 +1348,9 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def actualizar_asistencia(self, id_asistencia: int, payload: dict[str, Any]) -> dict[str, Any]:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             idx = next((i for i, row in enumerate(state["asistencia"]) if int(row.get("id_asistencia", 0) or 0) == int(id_asistencia)), -1)
             if idx < 0:
@@ -1283,7 +1381,9 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def eliminar_asistencia(self, id_asistencia: int) -> None:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             original = len(state["asistencia"])
             state["asistencia"] = [a for a in state["asistencia"] if int(a.get("id_asistencia", 0) or 0) != int(id_asistencia)]
@@ -1292,6 +1392,7 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def registrar_asistencia_por_dni(self, dni: str) -> dict[str, Any]:
         if isinstance(dni, dict):
             payload = dni
@@ -1306,13 +1407,17 @@ class GymDomainService:
         payload["id_cliente"] = int(cliente["id_cliente"])
         return self.registrar_asistencia_detallada(payload)
 
+    # Procesa esta operación.
     def inventario(self) -> list[dict[str, Any]]:
         return self.state["inventario"]
 
+    # Obtiene los datos necesarios.
     def get_item_inventario(self, id_item: int) -> dict[str, Any] | None:
         return next((i for i in self.state["inventario"] if int(i.get("id_item", 0)) == int(id_item)), None)
 
+    # Actualiza el registro correspondiente.
     def upsert_inventario(self, payload: dict[str, Any]) -> dict[str, Any]:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
             item_id = item.get("id_item")
@@ -1336,7 +1441,9 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Elimina el registro indicado.
     def delete_inventario(self, id_item: int) -> None:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state["inventario"] = [i for i in state["inventario"] if int(i.get("id_item", 0)) != int(id_item)]
             state["mov_inv"] = [m for m in state["mov_inv"] if int(m.get("id_item", 0)) != int(id_item)]
@@ -1346,9 +1453,11 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def movimientos_inventario(self) -> list[dict[str, Any]]:
         return self.state["mov_inv"]
 
+    # Procesa esta operación.
     def registrar_movimiento_inventario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_item = int(payload.get("id_item", 0))
         id_usuario = self._normalize_usuario_id(payload.get("id_usuario"))
@@ -1362,6 +1471,7 @@ class GymDomainService:
         if tipo not in {"entrada", "salida", "ajuste"}:
             raise ValueError("Tipo de movimiento inválido")
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = next((i for i in state["inventario"] if int(i.get("id_item", 0)) == id_item), None)
             if not item:
@@ -1391,9 +1501,11 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def tickets(self) -> list[dict[str, Any]]:
         return self.state["tickets_atencion"]
 
+    # Actualiza el registro correspondiente.
     def upsert_ticket(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(payload.get("id_cliente", 0))
         id_usuario = self._normalize_usuario_id(payload.get("id_usuario"))
@@ -1402,6 +1514,7 @@ class GymDomainService:
         if not self.get_usuario(id_usuario):
             raise ValueError("Usuario no encontrado")
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
             item_id = item.get("id_ticket")
@@ -1419,14 +1532,17 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def catalogo_rutina(self) -> list[dict[str, Any]]:
         return self.state["catalogo_rutina"]
 
+    # Actualiza el registro correspondiente.
     def upsert_rutina(self, payload: dict[str, Any]) -> dict[str, Any]:
         servicio = str(payload.get("servicio") or "fitness").strip().lower()
         if servicio not in {"fitness", "musculacion", "cardio", "baile"}:
             raise ValueError("Servicio invalido para rutina")
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
             item_id = item.get("id_rutina")
@@ -1446,9 +1562,11 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def horarios(self) -> list[dict[str, Any]]:
         return self.state["horario"]
 
+    # Actualiza el registro correspondiente.
     def upsert_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(payload.get("id_cliente", 0))
         id_rutina = int(payload.get("id_rutina", 0))
@@ -1462,6 +1580,7 @@ class GymDomainService:
         hora_fin = str(payload.get("hora_fin") or "07:00").strip()
         capacidad_maxima = max(1, int(payload.get("capacidad_maxima") or 1))
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
             item_id = item.get("id_horario")
@@ -1498,10 +1617,13 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def configuracion_gimnasio(self) -> dict[str, Any]:
         return self.state.get("configuracion_gimnasio", {"capacidad_total": 30, "capacidad_por_hora": 10})
 
+    # Procesa esta operación.
     def actualizar_configuracion_gimnasio(self, payload: dict[str, Any]) -> dict[str, Any]:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             cfg = state.setdefault("configuracion_gimnasio", {})
             cfg["capacidad_total"] = max(1, int(payload.get("capacidad_total", cfg.get("capacidad_total", 30))))
@@ -1510,6 +1632,7 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def horarios_servicio(self) -> list[dict[str, Any]]:
         routines_by_id = {
             int(routine.get("id_rutina", 0) or 0): routine
@@ -1528,6 +1651,7 @@ class GymDomainService:
             )
         return result
 
+    # Obtiene los datos necesarios.
     def get_horario_servicio(self, id_horario_servicio: int) -> dict[str, Any] | None:
         return next(
             (
@@ -1538,6 +1662,7 @@ class GymDomainService:
             None,
         )
 
+    # Actualiza el registro correspondiente.
     def upsert_horario_servicio(self, payload: dict[str, Any]) -> dict[str, Any]:
         servicio = str(payload.get("servicio") or "").strip().lower()
         if servicio not in {"fitness", "musculacion", "cardio", "baile"}:
@@ -1570,6 +1695,7 @@ class GymDomainService:
             "activo": bool(payload.get("activo", True)),
         }
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state["horarios_servicio"] = self._normalize_horarios_servicio(state.get("horarios_servicio", []))
             if item["id_horario_servicio"] <= 0:
@@ -1595,7 +1721,9 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Elimina el registro indicado.
     def delete_horario_servicio(self, id_horario_servicio: int) -> None:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             schedule_id = int(id_horario_servicio)
             if any(
@@ -1612,6 +1740,7 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def matriculas_horario(self, id_cliente: int | None = None, dni: str | None = None) -> list[dict[str, Any]]:
         resolved_id = int(id_cliente or 0)
         if dni:
@@ -1660,7 +1789,9 @@ class GymDomainService:
             )
         return sorted(result, key=lambda row: (str(row.get("dia")), str(row.get("hora_inicio"))))
 
+    # Procesa esta operación.
     def asignar_rutina_matricula(self, id_matricula: int, id_rutina: int) -> dict[str, Any]:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             idx = next(
                 (
@@ -1711,6 +1842,7 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def trainer_rutinas_cliente(self, dni: str) -> dict[str, Any]:
         cliente = self.get_cliente_by_dni(str(dni or "").strip())
         if not cliente:
@@ -1744,11 +1876,13 @@ class GymDomainService:
             ],
         }
 
+    # Procesa esta operación.
     def registrar_progreso_rutina(self, id_matricula: int, payload: dict[str, Any]) -> dict[str, Any]:
         fecha = str(payload.get("fecha") or _today_iso())[:10]
         observacion = str(payload.get("observacion") or "").strip()
         id_usuario = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             enrollment = next(
                 (
@@ -1798,6 +1932,7 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def trainer_overview(self) -> dict[str, Any]:
         active_enrollments = [
             row
@@ -1864,6 +1999,7 @@ class GymDomainService:
             "routines": routines_summary,
         }
 
+    # Procesa esta operación.
     def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get("dni"):
             cliente = self.get_cliente_by_dni(str(payload.get("dni")).strip())
@@ -1875,6 +2011,7 @@ class GymDomainService:
 
         id_horario = int(payload.get("id_horario_servicio", 0) or 0)
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             cliente = self.get_cliente(id_cliente)
             if not cliente:
@@ -1925,7 +2062,9 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def cancelar_matricula_horario(self, id_matricula: int) -> None:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             idx = next((i for i, row in enumerate(state.get("matriculas_horario", [])) if int(row.get("id_matricula", 0) or 0) == int(id_matricula)), -1)
             if idx < 0:
@@ -1935,6 +2074,7 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def summary(self) -> dict[str, Any]:
         total_clientes = len(self.state["clientes"])
         today = _today_iso()
@@ -1988,13 +2128,17 @@ class GymDomainService:
             "alertas": items_stock_bajo,
         }
 
+    # Procesa esta operación.
     def productos_tienda(self) -> list[dict[str, Any]]:
         return self.state.get("productos_tienda", [])
 
+    # Obtiene los datos necesarios.
     def get_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
         return next((p for p in self.state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)), None)
 
+    # Actualiza el registro correspondiente.
     def upsert_producto_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state.setdefault("productos_tienda", [])
             producto = {**payload}
@@ -2029,21 +2173,26 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Elimina el registro indicado.
     def delete_producto_tienda(self, id_producto: int) -> None:
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             if "productos_tienda" in state:
                 state["productos_tienda"] = [p for p in state["productos_tienda"] if int(p.get("id_producto", 0)) != int(id_producto)]
 
         self._mutate(_fn)
 
+    # Procesa esta operación.
     def pedidos_tienda(self) -> list[dict[str, Any]]:
         return self.state.get("pedidos_tienda", [])
 
+    # Procesa esta operación.
     def crear_pedido_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
         raw_items = payload.get("items") or []
         if not raw_items:
             raise ValueError("El pedido no tiene productos")
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state.setdefault("pedidos_tienda", [])
             state.setdefault("productos_tienda", [])
@@ -2125,11 +2274,13 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Procesa esta operación.
     def actualizar_pedido_tienda(self, id_pedido: int, payload: dict[str, Any]) -> dict[str, Any]:
         estado = str(payload.get("estado_pedido") or "").strip().upper()
         if estado not in {"PENDIENTE", "CONFIRMADO", "ENTREGADO", "CANCELADO"}:
             raise ValueError("Estado de pedido invalido")
 
+        # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             pedido = next((row for row in state.get("pedidos_tienda", []) if int(row.get("id_pedido", 0) or 0) == int(id_pedido)), None)
             if not pedido:
