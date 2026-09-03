@@ -176,7 +176,15 @@ const navigationLinks = computed(() => {
   ];
 });
 
-const currentSectionTitle = computed(() => navigationLinks.value.find((link) => route.path.startsWith(link.to))?.label || 'Panel');
+const activeLink = computed(() => {
+  const matches = navigationLinks.value.filter(
+    (link) => route.path === link.to || route.path.startsWith(`${link.to}/`),
+  );
+  if (!matches.length) return null;
+  return matches.reduce((best, link) => (link.to.length > best.to.length ? link : best));
+});
+
+const currentSectionTitle = computed(() => activeLink.value?.label || 'Panel');
 const roleLabel = computed(() => {
   if (isAdmin.value) return 'Administrador';
   if (isTrainer.value) return 'Trainer';
@@ -192,7 +200,7 @@ const userInitials = computed(() => {
     .join('');
 });
 
-const isActive = (path) => route.path.startsWith(path);
+const isActive = (path) => activeLink.value?.to === path;
 
 const shortLabel = (label) =>
   ({
