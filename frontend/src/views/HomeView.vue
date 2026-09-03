@@ -96,8 +96,8 @@
             <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Mi horario</p>
             <h2 class="mt-2 text-2xl font-black text-white">Tabla semanal</h2>
           </div>
-          <router-link to="/user/enrollment" class="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950">
-            Matricular horario
+          <router-link to="/user/schedule" class="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950">
+            Cambiar horario
           </router-link>
         </div>
 

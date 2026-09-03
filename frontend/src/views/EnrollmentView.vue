@@ -1,527 +1,285 @@
 <template>
-  <div class="space-y-6 pb-12">
-    <!-- Hero Header Principal -->
-    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/90 via-slate-950/95 to-slate-900/90 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
-      <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-red-600/10 blur-3xl pointer-events-none"></div>
-
-      <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div class="max-w-2xl">
-          <div class="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-cyan-300">
-            <Sparkles class="h-3.5 w-3.5" />
-            Matrícula de Clases
-          </div>
-          <h1 class="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">
-            Registro de Horario del Cliente
-          </h1>
-          <p class="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">
-            Compara el <strong class="text-cyan-300">Horario Completo del Gimnasio</strong> con tu <strong class="text-emerald-300">Horario Propio</strong>. Selecciona el ejercicio que más te guste, verifica cupos y horas, y matricúlate con 1 solo clic.
+  <div class="space-y-5 pb-10">
+    <header class="rounded-3xl border border-white/10 bg-slate-950/55 p-5 shadow-xl backdrop-blur-xl sm:p-6">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="min-w-0">
+          <p class="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
+            {{ isAdminUser ? 'Matrícula de cliente' : 'Mi horario' }}
+          </p>
+          <h1 class="mt-2 truncate text-2xl font-black text-white sm:text-3xl">{{ ownCalendarTitle }}</h1>
+          <p class="mt-1 text-sm text-slate-400">
+            {{ visibleEnrollments.length
+              ? `${visibleEnrollments.length} clase${visibleEnrollments.length === 1 ? '' : 's'} en el horario actual.`
+              : isAdminUser && !selectedClient
+                ? 'Busca un cliente para consultar y gestionar su horario.'
+                : 'Aún no hay clases agregadas a este horario.' }}
           </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-col gap-2 sm:flex-row">
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-slate-200 transition hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
+            class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-bold text-slate-200 transition hover:bg-white/10 disabled:cursor-wait disabled:opacity-60"
             :disabled="isRefreshing"
             @click="refreshAll({ announce: true })"
           >
             <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': isRefreshing }" />
             {{ isRefreshing ? 'Actualizando…' : 'Actualizar' }}
           </button>
-        </div>
-      </div>
-
-      <!-- Resumen de los 2 Horarios -->
-      <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 sm:p-4">
-          <p class="text-xs uppercase tracking-wider text-slate-400">Total Clases Gym</p>
-          <p class="mt-1 text-2xl font-black text-white">{{ schedules.length }}</p>
-          <span class="text-[11px] text-cyan-400">Horario completo</span>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 sm:p-4">
-          <p class="text-xs uppercase tracking-wider text-slate-400">Cupos Libres Gym</p>
-          <p class="mt-1 text-2xl font-black text-emerald-400">{{ totalAvailableSlots }}</p>
-          <span class="text-[11px] text-slate-400">Disponibles ahora</span>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 sm:p-4">
-          <p class="text-xs uppercase tracking-wider text-slate-400">Mis Clases</p>
-          <p class="mt-1 text-2xl font-black text-cyan-300">{{ visibleEnrollments.length }}</p>
-          <span class="text-[11px]" :class="visibleEnrollments.length ? 'text-cyan-400' : 'text-amber-400'">
-            {{ visibleEnrollments.length ? 'Matriculadas' : 'Horario vacío' }}
-          </span>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 sm:p-4">
-          <p class="text-xs uppercase tracking-wider text-slate-400">Cliente Activo</p>
-          <p class="mt-1 truncate text-base font-black text-white sm:text-lg">
-            {{ currentClient?.name || 'Cliente' }}
-          </p>
-          <span class="text-[11px] text-slate-400 truncate block">
-            {{ currentClient?.dni ? `DNI: ${currentClient.dni}` : 'Sesión personal' }}
-          </span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Búsqueda de cliente por DNI para Administradores -->
-    <section v-if="isAdminUser" class="rounded-3xl border border-amber-400/20 bg-amber-400/5 p-5 backdrop-blur-xl">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
-        <form class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="loadAdminClient">
-          <label class="flex-1 space-y-1.5">
-            <span class="text-xs font-bold uppercase tracking-wider text-amber-200">Panel Admin: DNI del cliente a matricular</span>
-            <input
-              v-model="dniSearch"
-              inputmode="numeric"
-              autocomplete="off"
-              class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition focus:border-amber-400"
-              placeholder="Ingresa el DNI del cliente..."
-            />
-          </label>
           <button
-            type="submit"
-            class="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-amber-300 disabled:cursor-wait disabled:opacity-60"
-            :disabled="isSearchingClient"
+            type="button"
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+            :disabled="!currentClientId"
+            @click="openSchedulePicker"
           >
-            <Search class="h-4 w-4" />
-            {{ isSearchingClient ? 'Buscando…' : 'Buscar cliente' }}
+            <Calendar class="h-4 w-4" />
+            {{ visibleEnrollments.length ? 'Cambiar horario' : 'Elegir horario' }}
           </button>
-        </form>
-
-        <div v-if="selectedClient" class="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
-          Gestionando a: <strong class="text-white">{{ selectedClient.name }}</strong> (DNI {{ selectedClient.dni }})
         </div>
       </div>
+    </header>
+
+    <section v-if="isAdminUser" class="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4">
+      <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="loadAdminClient">
+        <label class="flex-1 space-y-1.5">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-200">Cliente por DNI</span>
+          <input
+            v-model="dniSearch"
+            inputmode="numeric"
+            autocomplete="off"
+            class="field-input"
+            placeholder="Ingresa el DNI del cliente"
+          />
+        </label>
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-amber-300 disabled:cursor-wait disabled:opacity-60"
+          :disabled="isSearchingClient"
+        >
+          <Search class="h-4 w-4" />
+          {{ isSearchingClient ? 'Buscando…' : 'Buscar' }}
+        </button>
+        <div v-if="selectedClient" class="rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+          <strong>{{ selectedClient.name }}</strong>
+          <span class="ml-1 text-emerald-200/70">DNI {{ selectedClient.dni }}</span>
+        </div>
+      </form>
     </section>
 
-    <!-- Notificación / Feedback Flotante -->
     <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="transform -translate-y-2 opacity-0"
-      enter-to-class="transform translate-y-0 opacity-100"
-      leave-active-class="transition duration-200 ease-in"
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="-translate-y-2 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-150 ease-in"
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
       <div
-        v-if="feedback"
-        class="flex items-center justify-between gap-3 rounded-2xl border p-4 text-sm font-semibold shadow-xl"
-        :class="feedbackTone === 'error'
-          ? 'border-rose-500/30 bg-rose-500/15 text-rose-100'
-          : 'border-emerald-500/30 bg-emerald-500/15 text-emerald-100'"
+        v-if="feedback && !isPickerOpen"
+        class="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm"
+        :class="feedbackClass"
         role="status"
         aria-live="polite"
       >
-        <div class="flex items-center gap-3">
-          <span class="flex h-7 w-7 items-center justify-center rounded-full" :class="feedbackTone === 'error' ? 'bg-rose-500/20' : 'bg-emerald-500/20'">
-            <CheckCircle2 v-if="feedbackTone === 'success'" class="h-4 w-4 text-emerald-300" />
-            <AlertCircle v-else class="h-4 w-4 text-rose-300" />
-          </span>
+        <div class="flex items-center gap-2">
+          <CheckCircle2 v-if="feedbackTone === 'success'" class="h-4 w-4 shrink-0" />
+          <AlertCircle v-else class="h-4 w-4 shrink-0" />
           <p>{{ feedback }}</p>
         </div>
-        <button type="button" class="text-xs opacity-70 hover:opacity-100" @click="feedback = ''">
+        <button type="button" aria-label="Cerrar mensaje" @click="feedback = ''">
           <X class="h-4 w-4" />
         </button>
       </div>
     </Transition>
 
-    <!-- Flujo simple en 3 pasos -->
-    <div class="grid gap-3 sm:grid-cols-3">
-      <div class="flex items-center gap-3 rounded-2xl border border-white/5 bg-slate-900/40 p-3.5 backdrop-blur-sm">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-400/10 font-black text-cyan-400">1</div>
-        <div class="min-w-0">
-          <p class="text-xs font-black uppercase text-white">Explora el Gym</p>
-          <p class="text-xs text-slate-400 truncate">Revisa el horario completo</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-3 rounded-2xl border border-white/5 bg-slate-900/40 p-3.5 backdrop-blur-sm">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-400/10 font-black text-cyan-400">2</div>
-        <div class="min-w-0">
-          <p class="text-xs font-black uppercase text-white">Elige tu Ejercicio</p>
-          <p class="text-xs text-slate-400 truncate">Consulta cupos libres y horas</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-3 rounded-2xl border border-white/5 bg-slate-900/40 p-3.5 backdrop-blur-sm">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 font-black text-emerald-400">3</div>
-        <div class="min-w-0">
-          <p class="text-xs font-black uppercase text-white">Matricúlate</p>
-          <p class="text-xs text-slate-400 truncate">Se añadirá a tu horario personal</p>
-        </div>
-      </div>
-    </div>
+    <main aria-label="Horario actual">
+      <ExcelScheduleGrid
+        :title="ownCalendarTitle"
+        subtitle="Este es el horario vigente. Usa “Cambiar horario” para agregar o quitar una clase."
+        :items="enrichedEnrollments"
+        file-name="mi-horario-personal.xlsx"
+        :empty-message="currentClientId
+          ? 'Este horario está vacío. Pulsa “Elegir horario” para agregar la primera clase.'
+          : 'Selecciona un cliente para mostrar su horario.'"
+      />
+    </main>
 
-    <!-- Barra de Selección de Vista de los 2 Horarios -->
-    <section class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-3 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 pl-2">Modo de Vista:</span>
-        <div class="inline-flex rounded-xl border border-white/10 bg-slate-900/80 p-1">
-          <button
-            type="button"
-            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition"
-            :class="viewMode === 'split' ? 'bg-cyan-400 text-slate-950 shadow-md font-black' : 'text-slate-300 hover:text-white'"
-            @click="viewMode = 'split'"
-          >
-            <Columns2 class="h-3.5 w-3.5" />
-            2 Horarios en Paralelo
-          </button>
-          <button
-            type="button"
-            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition"
-            :class="viewMode === 'full' ? 'bg-cyan-400 text-slate-950 shadow-md font-black' : 'text-slate-300 hover:text-white'"
-            @click="viewMode = 'full'"
-          >
-            <Calendar class="h-3.5 w-3.5" />
-            Solo Horario Completo Gym
-          </button>
-          <button
-            type="button"
-            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold transition"
-            :class="viewMode === 'own' ? 'bg-cyan-400 text-slate-950 shadow-md font-black' : 'text-slate-300 hover:text-white'"
-            @click="viewMode = 'own'"
-          >
-            <Clock class="h-3.5 w-3.5" />
-            Solo Mi Horario ({{ visibleEnrollments.length }})
-          </button>
-        </div>
-      </div>
-
-      <!-- Indicador visual de estado del horario propio -->
-      <div class="flex items-center gap-2 pl-2 sm:pl-0">
-        <span class="inline-block h-2.5 w-2.5 rounded-full" :class="visibleEnrollments.length ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
-        <span class="text-xs font-medium text-slate-300">
-          Tu horario personal:
-          <strong :class="visibleEnrollments.length ? 'text-emerald-300 font-bold' : 'text-amber-300 font-bold'">
-            {{ visibleEnrollments.length ? `${visibleEnrollments.length} clase(s) agregada(s)` : 'Vacío (Sin clases aún)' }}
-          </strong>
-        </span>
-      </div>
-    </section>
-
-    <!-- Panel de Clase Seleccionada para Matrícula Rápida (Destacado) -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="transform -translate-y-4 opacity-0"
-      enter-to-class="transform translate-y-0 opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <article
-        v-if="selectedSchedule"
-        class="relative overflow-hidden rounded-3xl border-2 border-cyan-400/50 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-6 shadow-2xl shadow-cyan-950/20"
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
       >
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div class="space-y-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="rounded-full bg-cyan-400/20 px-3 py-1 text-xs font-black uppercase tracking-wider text-cyan-300">
-                Clase Seleccionada
-              </span>
-              <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-200">
-                {{ serviceLabel(selectedSchedule.servicio) }}
-              </span>
-              <span
-                v-if="selectedIsEnrolled"
-                class="rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1 text-xs font-bold text-emerald-300 inline-flex items-center gap-1"
-              >
-                <Check class="h-3 w-3" /> Ya en tu horario
-              </span>
-            </div>
-
-            <h3 class="text-2xl font-black text-white sm:text-3xl">
-              {{ exerciseName(selectedSchedule) }}
-            </h3>
-
-            <p v-if="selectedSchedule.zonas_musculares" class="text-sm text-slate-300 flex items-center gap-1.5">
-              <Dumbbell class="h-4 w-4 text-cyan-400" />
-              <span>Zonas musculares: <strong>{{ selectedSchedule.zonas_musculares }}</strong></span>
-            </p>
-          </div>
-
-          <!-- Métricas de la clase seleccionada: Horas y Cupos -->
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-3.5">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Día</span>
-              <p class="mt-1 font-black text-white capitalize">{{ dayLabel(selectedSchedule.dia) }}</p>
-            </div>
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-3.5">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Horas</span>
-              <p class="mt-1 whitespace-nowrap font-black text-cyan-300">{{ formatScheduleHours(selectedSchedule) }}</p>
-            </div>
-            <div class="col-span-2 sm:col-span-1 rounded-2xl border border-white/10 bg-white/5 p-3.5">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Cupos</span>
-              <p class="mt-1 whitespace-nowrap font-black" :class="slotsBadgeInfo(selectedSchedule).tone === 'danger' ? 'text-rose-400' : 'text-emerald-300'">
-                {{ availableSlots(selectedSchedule) }} libres de {{ selectedSchedule.cupos || 0 }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Botón de Matrícula -->
-          <div class="flex flex-col gap-2">
-            <button
-              type="button"
-              class="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-black shadow-lg transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-              :class="canEnrollSelected
-                ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 hover:brightness-110 shadow-cyan-500/20'
-                : selectedIsEnrolled
-                  ? 'border border-emerald-400/40 bg-emerald-500/20 text-emerald-100'
-                  : 'bg-slate-800 text-slate-400'"
-              :disabled="!canEnrollSelected || Boolean(actionBusy)"
-              @click="enrollSelected"
-            >
-              <CheckCircle2 v-if="selectedIsEnrolled" class="h-5 w-5 text-emerald-400" />
-              <Sparkles v-else class="h-5 w-5" />
-              {{ enrollButtonLabel }}
-            </button>
-            <button
-              type="button"
-              class="text-center text-xs text-slate-400 hover:text-white"
-              @click="selectedScheduleId = ''"
-            >
-              Cerrar selección
-            </button>
-          </div>
-        </div>
-      </article>
-    </Transition>
-
-    <!-- Explorador Rápido de Clases (Filtros por Día y Servicio) -->
-    <section class="rounded-3xl border border-white/10 bg-slate-950/40 p-5 backdrop-blur-xl">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h3 class="text-base font-black text-white">Explorador Rápido de Clases</h3>
-          <p class="text-xs text-slate-400">Filtra por día o tipo de ejercicio para ver cupos, horas y matricularte al instante.</p>
-        </div>
-
-        <!-- Buscador -->
-        <div class="relative min-w-[240px]">
-          <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-          <input
-            v-model="searchQuery"
-            class="w-full rounded-2xl border border-white/10 bg-slate-900/80 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition focus:border-cyan-400"
-            placeholder="Buscar por ejercicio o rutina..."
-          />
-        </div>
-      </div>
-
-      <!-- Chips de Filtros de Días -->
-      <div class="mt-4 flex flex-wrap gap-1.5">
-        <button
-          v-for="day in dayFilterOptions"
-          :key="day.value"
-          type="button"
-          class="rounded-xl px-3 py-1.5 text-xs font-bold transition"
-          :class="selectedDayFilter === day.value
-            ? 'bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-950/40'
-            : 'border border-white/5 bg-slate-900/80 text-slate-300 hover:bg-white/10'"
-          @click="selectedDayFilter = day.value"
-        >
-          {{ day.label }}
-        </button>
-      </div>
-
-      <!-- Chips de Servicios -->
-      <div class="mt-2 flex flex-wrap gap-1.5">
-        <button
-          v-for="srv in serviceFilterOptions"
-          :key="srv.value"
-          type="button"
-          class="rounded-xl px-3 py-1.5 text-xs font-bold transition"
-          :class="selectedServiceFilter === srv.value
-            ? 'bg-white text-slate-950 font-black shadow-md'
-            : 'border border-white/5 bg-slate-900/80 text-slate-400 hover:bg-white/10'"
-          @click="selectedServiceFilter = srv.value"
-        >
-          {{ srv.label }}
-        </button>
-      </div>
-
-      <!-- Tarjetas de Clases Rápidas Disponibles -->
-      <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-h-[360px] overflow-y-auto pr-1">
         <div
-          v-for="item in quickFilteredSchedules"
-          :key="item.id_horario_servicio"
-          class="group flex flex-col justify-between rounded-2xl border p-4 transition cursor-pointer"
-          :class="Number(selectedScheduleId) === Number(item.id_horario_servicio)
-            ? 'border-cyan-400 bg-cyan-950/30 shadow-lg shadow-cyan-950/20'
-            : isEnrolledIn(item.id_horario_servicio)
-              ? 'border-emerald-500/40 bg-emerald-950/20 hover:border-emerald-400'
-              : 'border-white/10 bg-slate-900/60 hover:border-white/20 hover:bg-slate-900/90'"
-          @click="selectAvailableSchedule(item)"
+          v-if="isPickerOpen"
+          class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/85 p-2 backdrop-blur-sm sm:p-4"
+          @click.self="closeSchedulePicker"
         >
-          <div>
-            <div class="flex items-center justify-between gap-2">
-              <span class="rounded-lg bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase text-slate-300">
-                {{ serviceLabel(item.servicio) }}
-              </span>
-              <span
-                class="rounded-md px-2 py-0.5 text-[10px] font-black"
-                :class="isEnrolledIn(item.id_horario_servicio)
-                  ? 'bg-emerald-400/20 text-emerald-300'
-                  : slotsBadgeInfo(item).tone === 'danger'
-                    ? 'bg-rose-400/20 text-rose-300'
-                    : slotsBadgeInfo(item).tone === 'warning'
-                      ? 'bg-amber-400/20 text-amber-300'
-                      : 'bg-emerald-400/10 text-emerald-300'"
+          <section
+            class="flex max-h-[96vh] w-full max-w-[1500px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="schedule-picker-title"
+          >
+            <header class="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6">
+              <div>
+                <p class="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">Gestionar horario</p>
+                <h2 id="schedule-picker-title" class="mt-1 text-xl font-black text-white sm:text-2xl">
+                  Elige una clase
+                </h2>
+                <p class="mt-1 text-xs text-slate-400">
+                  Selecciona un bloque del calendario para agregarlo o quitarlo.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="rounded-xl border border-white/10 bg-white/5 p-2.5 text-slate-300 transition hover:bg-white/10 hover:text-white"
+                aria-label="Cerrar selector de horario"
+                @click="closeSchedulePicker"
               >
-                {{ isEnrolledIn(item.id_horario_servicio) ? '✓ Matriculado' : slotsBadgeInfo(item).shortLabel }}
-              </span>
-            </div>
+                <X class="h-5 w-5" />
+              </button>
+            </header>
 
-            <h4 class="mt-2 text-sm font-black text-white group-hover:text-cyan-300 transition">
-              {{ exerciseName(item) }}
-            </h4>
-            <p class="mt-1 text-xs text-slate-400 flex items-center gap-1">
-              <Clock class="h-3 w-3 text-slate-500" />
-              <span class="capitalize">{{ dayLabel(item.dia) }}</span> · {{ formatScheduleHours(item) }}
-            </p>
-          </div>
-
-          <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
-            <span class="text-[11px] text-slate-400">
-              Cupos: <strong>{{ availableSlots(item) }}</strong> / {{ item.cupos }}
-            </span>
-
-            <button
-              v-if="!isEnrolledIn(item.id_horario_servicio)"
-              type="button"
-              class="rounded-xl px-2.5 py-1 text-xs font-black transition disabled:opacity-40"
-              :class="isScheduleFull(item)
-                ? 'bg-slate-800 text-slate-500'
-                : 'bg-cyan-400 text-slate-950 hover:bg-cyan-300'"
-              :disabled="isScheduleFull(item) || Boolean(actionBusy)"
-              @click.stop="quickEnroll(item)"
-            >
-              {{ isScheduleFull(item) ? 'Lleno' : 'Matricular' }}
-            </button>
-            <span v-else class="text-xs font-bold text-emerald-400">
-              En tu horario
-            </span>
-          </div>
-        </div>
-
-        <p v-if="!quickFilteredSchedules.length" class="col-span-full rounded-2xl border border-dashed border-white/10 p-6 text-center text-xs text-slate-400">
-          No hay clases que coincidan con los filtros seleccionados.
-        </p>
-      </div>
-    </section>
-
-    <!-- Layout de los 2 Horarios (Completo y Propio) -->
-    <div
-      class="grid gap-6"
-      :class="viewMode === 'split' ? 'xl:grid-cols-2' : 'grid-cols-1'"
-    >
-      <!-- HORARIO 1: HORARIO COMPLETO DEL GIMNASIO -->
-      <section
-        v-if="viewMode === 'split' || viewMode === 'full'"
-        class="space-y-4 rounded-3xl border border-white/10 bg-slate-950/60 p-4 shadow-xl backdrop-blur-xl sm:p-6"
-      >
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div class="inline-flex items-center gap-1.5 rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-cyan-300">
-              <Calendar class="h-3.5 w-3.5" />
-              1. Horario Completo del Gimnasio
-            </div>
-            <h2 class="mt-2 text-xl font-black text-white sm:text-2xl">Todas las clases del gimnasio</h2>
-            <p class="text-xs text-slate-400">Horario lleno con todas las disciplinas, ejercicios y cupos del gym.</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-300">
-              {{ schedules.length }} clases activas
-            </span>
-          </div>
-        </div>
-
-        <ExcelScheduleGrid
-          title="Calendario General del Gimnasio"
-          subtitle="Haz clic en cualquier clase para ver el ejercicio, cupos y matricularte."
-          :items="enrichedSchedules"
-          file-name="horario-general-gimnasio.xlsx"
-          empty-message="No hay horarios activos disponibles en este momento."
-          interactive
-          :selected-item-id="selectedScheduleId"
-          @select="selectAvailableSchedule"
-        />
-      </section>
-
-      <!-- HORARIO 2: MI HORARIO PROPIO (INICIALMENTE VACÍO) -->
-      <section
-        v-if="viewMode === 'split' || viewMode === 'own'"
-        class="space-y-4 rounded-3xl border border-white/10 bg-slate-950/60 p-4 shadow-xl backdrop-blur-xl sm:p-6"
-      >
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-300">
-              <Clock class="h-3.5 w-3.5" />
-              2. Mi Horario Propio
-            </div>
-            <h2 class="mt-2 text-xl font-black text-white sm:text-2xl">{{ ownCalendarTitle }}</h2>
-            <p class="text-xs text-slate-400">Inicia vacío; las clases matriculadas se colocarán automáticamente aquí.</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span
-              class="rounded-xl px-3 py-1.5 text-xs font-bold"
-              :class="visibleEnrollments.length ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-400/10 text-amber-300'"
-            >
-              {{ visibleEnrollments.length ? `${visibleEnrollments.length} matriculada(s)` : 'Horario vacío' }}
-            </span>
-          </div>
-        </div>
-
-        <ExcelScheduleGrid
-          title="Mi Calendario Personal"
-          subtitle="Las clases que matricules aparecerán automáticamente en esta cuadrícula."
-          :items="enrichedEnrollments"
-          file-name="mi-horario-personal.xlsx"
-          empty-message="Tu horario está vacío. Selecciona una clase del horario general y pulsa Matricular."
-          interactive
-          :selected-item-id="selectedOwnScheduleId"
-          @select="selectOwnSchedule"
-        />
-
-        <!-- Lista de clases matriculadas con opción de desmatricularse -->
-        <div v-if="visibleEnrollments.length" class="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-            <h4 class="text-xs font-black uppercase tracking-wider text-slate-400">Clases en tu horario</h4>
-            <div class="mt-3 space-y-2">
+            <div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
               <div
-                v-for="enrollment in visibleEnrollments"
-                :key="enrollment.id_matricula"
-                class="flex flex-col gap-3 rounded-xl border border-white/5 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                v-if="feedback"
+                class="mb-4 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm"
+                :class="feedbackClass"
+                role="status"
+                aria-live="polite"
               >
-                <div>
-                  <p class="text-sm font-black text-white">{{ exerciseName(enrollment) }}</p>
-                  <p class="text-xs text-slate-300">
-                    <span class="capitalize">{{ dayLabel(enrollment.dia) }}</span> · {{ formatScheduleHours(enrollment) }} · {{ serviceLabel(enrollment.servicio) }}
-                  </p>
+                <div class="flex items-center gap-2">
+                  <CheckCircle2 v-if="feedbackTone === 'success'" class="h-4 w-4 shrink-0" />
+                  <AlertCircle v-else class="h-4 w-4 shrink-0" />
+                  <p>{{ feedback }}</p>
                 </div>
-                <button
-                  type="button"
-                  class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-200 transition hover:bg-rose-500/20 disabled:opacity-50"
-                  :disabled="actionBusy === `cancel-${enrollment.id_matricula}`"
-                  @click="cancelEnrollment(enrollment)"
-                >
-                  <Trash2 class="h-3.5 w-3.5" />
-                  {{ actionBusy === `cancel-${enrollment.id_matricula}` ? 'Quitando…' : 'Quitar de mi horario' }}
+                <button type="button" aria-label="Cerrar mensaje" @click="feedback = ''">
+                  <X class="h-4 w-4" />
                 </button>
               </div>
+
+              <div class="mb-4 grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_200px_auto]">
+                <label class="space-y-1.5">
+                  <span class="text-xs font-bold text-slate-400">Buscar</span>
+                  <div class="relative">
+                    <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <input v-model="searchQuery" class="field-input pl-9" placeholder="Ejercicio, servicio u hora" />
+                  </div>
+                </label>
+                <label class="space-y-1.5">
+                  <span class="text-xs font-bold text-slate-400">Día</span>
+                  <select v-model="selectedDayFilter" class="field-input">
+                    <option v-for="day in dayFilterOptions" :key="day.value" :value="day.value">{{ day.label }}</option>
+                  </select>
+                </label>
+                <label class="space-y-1.5">
+                  <span class="text-xs font-bold text-slate-400">Servicio</span>
+                  <select v-model="selectedServiceFilter" class="field-input">
+                    <option v-for="service in serviceFilterOptions" :key="service.value" :value="service.value">{{ service.label }}</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  class="self-end rounded-xl border border-white/10 px-4 py-3 text-sm font-bold text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  @click="resetFilters"
+                >
+                  Limpiar
+                </button>
+              </div>
+
+              <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <ExcelScheduleGrid
+                  title="Horarios disponibles"
+                  :subtitle="`${filteredSchedules.length} clases visibles. Las que ya pertenecen al horario están marcadas.`"
+                  :items="enrichedFilteredSchedules"
+                  file-name="horarios-disponibles.xlsx"
+                  empty-message="No hay clases que coincidan con los filtros."
+                  interactive
+                  :selected-item-id="selectedScheduleId"
+                  @select="selectAvailableSchedule"
+                />
+
+                <aside class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 xl:sticky xl:top-0">
+                  <template v-if="selectedSchedule">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-xs font-black uppercase tracking-wider text-cyan-300">Clase seleccionada</p>
+                        <h3 class="mt-2 text-xl font-black text-white">{{ exerciseName(selectedSchedule) }}</h3>
+                      </div>
+                      <span
+                        class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black"
+                        :class="selectedIsEnrolled ? 'bg-emerald-400/15 text-emerald-200' : 'bg-white/10 text-slate-300'"
+                      >
+                        {{ selectedIsEnrolled ? 'En tu horario' : serviceLabel(selectedSchedule.servicio) }}
+                      </span>
+                    </div>
+
+                    <dl class="mt-5 divide-y divide-white/10 rounded-xl border border-white/10 bg-slate-900/60 px-3">
+                      <div class="flex items-center justify-between gap-3 py-3">
+                        <dt class="text-xs text-slate-400">Día</dt>
+                        <dd class="text-sm font-bold text-white">{{ dayLabel(selectedSchedule.dia) }}</dd>
+                      </div>
+                      <div class="flex items-center justify-between gap-3 py-3">
+                        <dt class="text-xs text-slate-400">Hora</dt>
+                        <dd class="text-sm font-bold text-white">{{ formatScheduleHours(selectedSchedule) }}</dd>
+                      </div>
+                      <div class="flex items-center justify-between gap-3 py-3">
+                        <dt class="text-xs text-slate-400">Cupos libres</dt>
+                        <dd class="text-sm font-bold" :class="isScheduleFull(selectedSchedule) ? 'text-rose-300' : 'text-emerald-300'">
+                          {{ availableSlots(selectedSchedule) }} de {{ selectedSchedule.cupos || 0 }}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    <button
+                      type="button"
+                      class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50"
+                      :class="selectedIsEnrolled
+                        ? 'border border-rose-400/30 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20'
+                        : 'bg-cyan-400 text-slate-950 hover:bg-cyan-300'"
+                      :disabled="selectedActionDisabled"
+                      @click="manageSelectedSchedule"
+                    >
+                      <Trash2 v-if="selectedIsEnrolled" class="h-4 w-4" />
+                      <CheckCircle2 v-else class="h-4 w-4" />
+                      {{ selectedActionLabel }}
+                    </button>
+                  </template>
+
+                  <div v-else class="flex min-h-56 flex-col items-center justify-center px-3 text-center">
+                    <Clock class="h-8 w-8 text-slate-600" />
+                    <h3 class="mt-3 font-black text-white">Selecciona una clase</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-400">
+                      Pulsa un bloque del calendario para ver su horario y disponibilidad.
+                    </p>
+                  </div>
+
+                  <p class="mt-4 border-t border-white/10 pt-4 text-xs leading-5 text-slate-500">
+                    El horario actual tiene {{ visibleEnrollments.length }} clase{{ visibleEnrollments.length === 1 ? '' : 's' }}.
+                  </p>
+                </aside>
+              </div>
             </div>
+          </section>
         </div>
-      </section>
-    </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   AlertCircle,
   Calendar,
-  Check,
   CheckCircle2,
   Clock,
-  Columns2,
-  Dumbbell,
   RefreshCw,
   Search,
-  Sparkles,
   Trash2,
   X,
 } from 'lucide-vue-next';
@@ -543,26 +301,25 @@ import {
   formatScheduleHours,
   isScheduleFull,
   serviceLabel,
-  slotsBadgeInfo,
+  sortServiceSchedules,
 } from '../utils/scheduleEnrollment';
 
 const { user, isAdmin } = useAuth();
 const gymStore = useGymStore();
 
-const viewMode = ref('split'); // 'split', 'full', 'own'
-const selectedDayFilter = ref('todos');
-const selectedServiceFilter = ref('todos');
-const searchQuery = ref('');
-
 const dniSearch = ref('');
 const selectedClient = ref(null);
 const selectedScheduleId = ref('');
-const selectedOwnScheduleId = ref('');
+const selectedDayFilter = ref('todos');
+const selectedServiceFilter = ref('todos');
+const searchQuery = ref('');
 const feedback = ref('');
 const feedbackTone = ref('success');
 const actionBusy = ref('');
 const isRefreshing = ref(false);
 const isSearchingClient = ref(false);
+const isPickerOpen = ref(false);
+let previousBodyOverflow = '';
 
 const dayFilterOptions = [
   { label: 'Todos los días', value: 'todos' },
@@ -572,6 +329,7 @@ const dayFilterOptions = [
   { label: 'Jueves', value: 'jueves' },
   { label: 'Viernes', value: 'viernes' },
   { label: 'Sábado', value: 'sabado' },
+  { label: 'Domingo', value: 'domingo' },
 ];
 
 const serviceFilterOptions = [
@@ -598,7 +356,6 @@ const currentClientId = computed(() =>
 );
 
 const schedules = computed(() => activeServiceSchedules(gymStore.serviceSchedules || []));
-
 const visibleEnrollments = computed(() =>
   enrollmentsForClient(
     gymStore.enrollments || [],
@@ -606,51 +363,63 @@ const visibleEnrollments = computed(() =>
     currentClientId.value,
   ),
 );
-
-const totalAvailableSlots = computed(() =>
-  schedules.value.reduce((total, schedule) => total + availableSlots(schedule), 0),
+const enrichedEnrollments = computed(() =>
+  visibleEnrollments.value.map((item) => ({ ...item, is_enrolled: true })),
 );
+const manageableSchedules = computed(() => {
+  const schedulesById = new Map(
+    schedules.value.map((schedule) => [Number(schedule.id_horario_servicio), schedule]),
+  );
+  visibleEnrollments.value.forEach((enrollment) => {
+    const scheduleId = Number(enrollment.id_horario_servicio || 0);
+    if (scheduleId && !schedulesById.has(scheduleId)) schedulesById.set(scheduleId, enrollment);
+  });
+  return sortServiceSchedules([...schedulesById.values()]);
+});
+
+const normalizeText = (value) =>
+  String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
 
 const isEnrolledIn = (scheduleId) =>
   visibleEnrollments.value.some(
     (item) => Number(item.id_horario_servicio) === Number(scheduleId),
   );
 
-const enrichedSchedules = computed(() =>
-  schedules.value.map((schedule) => ({
+const filteredSchedules = computed(() => {
+  const query = normalizeText(searchQuery.value);
+  return manageableSchedules.value.filter((schedule) => {
+    const matchesDay = selectedDayFilter.value === 'todos' || normalizeText(schedule.dia) === selectedDayFilter.value;
+    const matchesService = selectedServiceFilter.value === 'todos' || normalizeText(schedule.servicio) === selectedServiceFilter.value;
+    const searchableText = normalizeText([
+      exerciseName(schedule),
+      serviceLabel(schedule.servicio),
+      dayLabel(schedule.dia),
+      schedule.hora_inicio,
+      schedule.hora_fin,
+    ].join(' '));
+    return matchesDay && matchesService && (!query || searchableText.includes(query));
+  });
+});
+
+const enrichedFilteredSchedules = computed(() =>
+  filteredSchedules.value.map((schedule) => ({
     ...schedule,
     is_enrolled: isEnrolledIn(schedule.id_horario_servicio),
   })),
 );
 
-const enrichedEnrollments = computed(() =>
-  visibleEnrollments.value.map((item) => ({
-    ...item,
-    is_enrolled: true,
-  })),
-);
-
-const quickFilteredSchedules = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase();
-  return schedules.value.filter((item) => {
-    const matchesDay = selectedDayFilter.value === 'todos' || String(item.dia).toLowerCase() === selectedDayFilter.value;
-    const matchesService = selectedServiceFilter.value === 'todos' || String(item.servicio).toLowerCase() === selectedServiceFilter.value;
-    const name = exerciseName(item).toLowerCase();
-    const matchesQuery = !query || name.includes(query) || String(item.servicio).toLowerCase().includes(query);
-    return matchesDay && matchesService && matchesQuery;
-  });
-});
-
 const selectedSchedule = computed(() =>
-  schedules.value.find(
+  manageableSchedules.value.find(
     (schedule) => Number(schedule.id_horario_servicio) === Number(selectedScheduleId.value),
   ) || null,
 );
-
 const selectedIsEnrolled = computed(() =>
   Boolean(selectedSchedule.value && isEnrolledIn(selectedSchedule.value.id_horario_servicio)),
 );
-
 const canEnrollSelected = computed(() =>
   Boolean(
     selectedSchedule.value &&
@@ -659,32 +428,56 @@ const canEnrollSelected = computed(() =>
     !isScheduleFull(selectedSchedule.value),
   ),
 );
-
-const enrollButtonLabel = computed(() => {
-  if (actionBusy.value === `enroll-${selectedSchedule.value?.id_horario_servicio}`) return 'Matriculando…';
-  if (!currentClientId.value) return isAdminUser.value ? 'Busca un cliente por DNI primero' : 'Identificando sesión…';
-  if (selectedIsEnrolled.value) return 'Ya estás matriculado en esta clase';
+const selectedActionDisabled = computed(() =>
+  Boolean(actionBusy.value) || (!selectedIsEnrolled.value && !canEnrollSelected.value),
+);
+const selectedActionLabel = computed(() => {
+  if (selectedIsEnrolled.value) {
+    return actionBusy.value ? 'Quitando…' : 'Quitar de mi horario';
+  }
+  if (actionBusy.value) return 'Agregando…';
   if (selectedSchedule.value && isScheduleFull(selectedSchedule.value)) return 'Sin cupos disponibles';
-  return 'Matricularme en esta clase';
+  return 'Agregar a mi horario';
 });
-
 const ownCalendarTitle = computed(() => {
   if (isAdminUser.value && !selectedClient.value) return 'Horario del cliente';
-  return currentClient.value?.name ? `Horario de ${currentClient.value.name}` : 'Mi horario personal';
+  return currentClient.value?.name ? `Horario de ${currentClient.value.name}` : 'Mi horario';
 });
+const feedbackClass = computed(() =>
+  feedbackTone.value === 'error'
+    ? 'border-rose-400/25 bg-rose-400/10 text-rose-100'
+    : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100',
+);
 
 const setFeedback = (message, tone = 'success') => {
   feedback.value = message;
   feedbackTone.value = tone;
 };
 
-const selectAvailableSchedule = (schedule) => {
-  selectedScheduleId.value = schedule?.id_horario_servicio || '';
-  feedback.value = '';
+const resetFilters = () => {
+  selectedDayFilter.value = 'todos';
+  selectedServiceFilter.value = 'todos';
+  searchQuery.value = '';
 };
 
-const selectOwnSchedule = (schedule) => {
-  selectedOwnScheduleId.value = schedule?.id_horario_servicio || '';
+const openSchedulePicker = () => {
+  if (!currentClientId.value) {
+    setFeedback('Busca primero un cliente por DNI.', 'error');
+    return;
+  }
+  feedback.value = '';
+  selectedScheduleId.value = '';
+  isPickerOpen.value = true;
+};
+
+const closeSchedulePicker = () => {
+  if (actionBusy.value) return;
+  isPickerOpen.value = false;
+  selectedScheduleId.value = '';
+};
+
+const selectAvailableSchedule = (schedule) => {
+  selectedScheduleId.value = schedule?.id_horario_servicio || '';
   feedback.value = '';
 };
 
@@ -706,9 +499,9 @@ const refreshAll = async ({ announce = false } = {}) => {
     if (currentClientId.value) {
       await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value });
     }
-    if (announce) setFeedback('Horarios actualizados correctamente.');
+    if (announce) setFeedback('Horario actualizado.');
   } catch (error) {
-    setFeedback(error instanceof Error ? error.message : 'No se pudieron cargar los horarios.', 'error');
+    setFeedback(error instanceof Error ? error.message : 'No se pudo cargar el horario.', 'error');
   } finally {
     isRefreshing.value = false;
   }
@@ -733,9 +526,8 @@ const loadAdminClient = async () => {
     }
 
     selectedClient.value = client;
-    selectedOwnScheduleId.value = '';
     await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: client.id_cliente });
-    setFeedback(`Horario de ${client.name} cargado con éxito.`);
+    setFeedback(`Horario de ${client.name} cargado.`);
   } catch (error) {
     selectedClient.value = null;
     setFeedback(error instanceof Error ? error.message : 'No se pudo buscar al cliente.', 'error');
@@ -746,28 +538,7 @@ const loadAdminClient = async () => {
 
 const enrollSelected = async () => {
   const schedule = selectedSchedule.value;
-  if (!schedule) return;
-  await processEnrollment(schedule);
-};
-
-const quickEnroll = async (schedule) => {
-  selectedScheduleId.value = schedule.id_horario_servicio;
-  await processEnrollment(schedule);
-};
-
-const processEnrollment = async (schedule) => {
-  if (!currentClientId.value) {
-    setFeedback(isAdminUser.value ? 'Busca primero un cliente por DNI.' : 'No se encontró la identidad de tu cuenta.', 'error');
-    return;
-  }
-  if (isEnrolledIn(schedule.id_horario_servicio)) {
-    setFeedback('Esta clase ya está en tu horario.', 'error');
-    return;
-  }
-  if (isScheduleFull(schedule)) {
-    setFeedback('Este horario ya no tiene cupos disponibles.', 'error');
-    return;
-  }
+  if (!schedule || !canEnrollSelected.value) return;
 
   actionBusy.value = `enroll-${schedule.id_horario_servicio}`;
   try {
@@ -776,36 +547,54 @@ const processEnrollment = async (schedule) => {
       id_horario_servicio: schedule.id_horario_servicio,
     });
     await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value });
-    selectedOwnScheduleId.value = schedule.id_horario_servicio;
-    setFeedback(`¡Matrícula exitosa! "${exerciseName(schedule)}" se agregó a tu horario.`);
+    setFeedback(`“${exerciseName(schedule)}” se agregó al horario.`);
   } catch (error) {
-    setFeedback(error instanceof Error ? error.message : 'No se pudo registrar la matrícula.', 'error');
+    setFeedback(error instanceof Error ? error.message : 'No se pudo agregar la clase.', 'error');
   } finally {
     actionBusy.value = '';
   }
 };
 
-const cancelEnrollment = async (enrollment) => {
-  if (!enrollment?.id_matricula) return;
+const cancelSelected = async () => {
+  const schedule = selectedSchedule.value;
+  const enrollment = visibleEnrollments.value.find(
+    (item) => Number(item.id_horario_servicio) === Number(schedule?.id_horario_servicio),
+  );
+  if (!enrollment?.id_matricula) {
+    setFeedback('No se encontró la matrícula activa de esta clase.', 'error');
+    return;
+  }
 
   actionBusy.value = `cancel-${enrollment.id_matricula}`;
   try {
     await gymStore.deleteEnrollment(enrollment.id_matricula);
     await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value });
-    selectedOwnScheduleId.value = '';
-    setFeedback(`"${exerciseName(enrollment)}" se quitó de tu horario.`);
+    setFeedback(`“${exerciseName(enrollment)}” se quitó del horario.`);
   } catch (error) {
-    setFeedback(error instanceof Error ? error.message : 'No se pudo quitar la clase de tu horario.', 'error');
+    setFeedback(error instanceof Error ? error.message : 'No se pudo quitar la clase.', 'error');
   } finally {
     actionBusy.value = '';
   }
 };
 
+const manageSelectedSchedule = async () => {
+  if (selectedIsEnrolled.value) {
+    await cancelSelected();
+    return;
+  }
+  await enrollSelected();
+};
+
+const handleEscape = (event) => {
+  if (event.key === 'Escape' && isPickerOpen.value) closeSchedulePicker();
+};
+
 watch(currentClientId, () => {
-  selectedOwnScheduleId.value = '';
+  selectedScheduleId.value = '';
+  if (isPickerOpen.value) closeSchedulePicker();
 });
 
-watch(schedules, (items) => {
+watch(filteredSchedules, (items) => {
   if (selectedScheduleId.value && !items.some(
     (schedule) => Number(schedule.id_horario_servicio) === Number(selectedScheduleId.value),
   )) {
@@ -813,5 +602,46 @@ watch(schedules, (items) => {
   }
 });
 
-onMounted(() => refreshAll());
+watch(isPickerOpen, (isOpen) => {
+  if (typeof document === 'undefined') return;
+  if (isOpen) {
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = previousBodyOverflow;
+  }
+});
+
+onMounted(() => {
+  window.addEventListener('keydown', handleEscape);
+  refreshAll();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleEscape);
+  if (typeof document !== 'undefined') document.body.style.overflow = previousBodyOverflow;
+});
 </script>
+
+<style scoped>
+.field-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  background: rgba(2, 6, 23, 0.78);
+  padding: 0.75rem 0.9rem;
+  color: white;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field-input:focus {
+  border-color: rgb(34 211 238 / 0.75);
+  box-shadow: 0 0 0 3px rgb(34 211 238 / 0.1);
+}
+
+.field-input::placeholder {
+  color: #64748b;
+}
+</style>

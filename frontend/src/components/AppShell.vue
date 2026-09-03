@@ -171,7 +171,6 @@ const navigationLinks = computed(() => {
     { label: 'Inicio', to: '/user/dashboard', icon: Home },
     { label: 'Tienda', to: '/user/store', icon: ShoppingBag },
     { label: 'Horarios', to: '/user/schedule', icon: CalendarDays },
-    { label: 'Matricula', to: '/user/enrollment', icon: TicketCheck },
     { label: 'Mi asistencia', to: '/user/attendance', icon: Activity },
   ];
 });

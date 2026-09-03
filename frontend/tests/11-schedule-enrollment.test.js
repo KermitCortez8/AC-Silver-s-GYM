@@ -101,6 +101,12 @@ const activeEnrollments = [
     id_horario_servicio: 2,
     estado: 'CANCELADA', // should be excluded
   },
+  {
+    id_matricula: 104,
+    id_cliente: 5,
+    id_horario_servicio: 2,
+    estado: 'PAUSADA', // only active enrollments belong in the current schedule
+  },
 ];
 
 const clientEnrollments = enrollmentsForClient(activeEnrollments, sampleSchedules, 5);
@@ -111,4 +117,3 @@ assert.equal(clientEnrollments[0].hora_inicio, '06:00');
 assert.equal(clientEnrollments[0].servicio, 'musculacion');
 
 console.log('✓ 11-schedule-enrollment tests passed successfully');
-

@@ -115,7 +115,7 @@ export const enrollmentsForClient = (enrollments = [], schedules = [], clientId 
     .filter(
       (enrollment) =>
         Number(enrollment.id_cliente || 0) === numericClientId &&
-        String(enrollment.estado || 'ACTIVA').toUpperCase() !== 'CANCELADA',
+        String(enrollment.estado || 'ACTIVA').trim().toUpperCase() === 'ACTIVA',
     )
     .map((enrollment) => {
       const schedule = schedulesById.get(Number(enrollment.id_horario_servicio || 0)) || {};
