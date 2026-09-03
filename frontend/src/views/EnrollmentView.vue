@@ -4,7 +4,7 @@
       <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Matricula</p>
       <h1 class="mt-2 text-3xl font-black text-white">Matricula de horarios</h1>
       <p class="mt-2 text-slate-300">
-        {{ isAdminUser ? 'Busca un cliente por DNI y matriculalo en un horario disponible.' : 'Selecciona el horario que prefieras para tus servicios.' }}
+        {{ isAdminUser ? 'Busca un cliente por DNI y matriculalo en un horario disponible.' : 'Revisa el horario completo del gym, compara cupos y horas, y matriculate en el que prefieras.' }}
       </p>
     </section>
 
@@ -19,12 +19,31 @@
     </section>
 
     <ExcelScheduleGrid
+      v-if="isAdminUser"
       title="Horario del cliente"
       :subtitle="calendarSubtitle"
       :items="visibleEnrollments"
       file-name="horario-cliente.xlsx"
       empty-message="Aun no hay horarios matriculados para este cliente."
     />
+
+    <section v-else class="grid gap-6 xl:grid-cols-2">
+      <ExcelScheduleGrid
+        title="Horario completo del gym"
+        subtitle="Vista general con ejercicios, cupos y horas para elegir tu matricula."
+        :items="schedules"
+        file-name="horario-gym-completo.xlsx"
+        empty-message="No hay horarios activos del gym para mostrar."
+      />
+
+      <ExcelScheduleGrid
+        title="Mi horario"
+        subtitle="Este horario empieza vacio y se llena cuando te matriculas."
+        :items="visibleEnrollments"
+        file-name="mi-horario-matricula.xlsx"
+        empty-message="Tu horario esta vacio. Matriculate en un horario del gym."
+      />
+    </section>
 
     <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
@@ -73,7 +92,7 @@
               <div>
                 <p class="text-lg font-bold text-white">Grupo {{ index + 1 }}</p>
                 <p class="text-sm text-slate-400">{{ dayLabel(schedule.dia) }} {{ schedule.codigo_dia }} - {{ schedule.hora_inicio }} a {{ schedule.hora_fin }}</p>
-                <p class="mt-1 text-sm text-cyan-100">Rutina: {{ schedule.rutina_nombre || 'Pendiente' }}</p>
+                <p class="mt-1 text-sm text-cyan-100">Ejercicio: {{ schedule.rutina_nombre || 'Pendiente' }}</p>
                 <p v-if="schedule.zonas_musculares" class="text-xs text-slate-400">{{ schedule.zonas_musculares }}</p>
                 <p class="mt-1 text-sm text-slate-300">Cupos: {{ schedule.cupos_usados || 0 }} / {{ schedule.cupos }}</p>
               </div>
