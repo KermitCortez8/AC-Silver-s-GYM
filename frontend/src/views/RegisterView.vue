@@ -49,10 +49,10 @@
             class="w-full rounded-xl bg-[#dc2626] px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="isSubmitting || !planOptions.length"
           >
-            {{ isSubmitting ? 'Preparando pago seguro...' : 'Pagar con Mercado Pago' }}
+            {{ isSubmitting ? 'Preparando pago seguro...' : 'Pagar con Stripe' }}
           </button>
           <p class="text-center text-xs leading-5 text-slate-500">
-            Serás redirigido a Mercado Pago. Silver Gym no recibe ni almacena los datos de tu tarjeta.
+            Serás redirigido a Stripe Checkout. Silver Gym no recibe ni almacena los datos de tu tarjeta.
           </p>
         </form>
 
@@ -241,17 +241,14 @@ const submitRegistration = async () => {
       throw new Error('No hay planes configurados para registrar clientes.');
     }
 
-    const result = await gymStore.registerPublicClient({
-      ...form,
-      metodo_pago: 'mercado_pago',
-    });
+    const result = await gymStore.registerPublicClient({ ...form });
     const { client, payment } = result;
     registeredClient.value = client;
     if (!payment?.checkout_url) {
-      throw new Error(payment?.message || 'Mercado Pago no está configurado. Contacta al administrador.');
+      throw new Error(payment?.message || 'Stripe no está configurado. Contacta al administrador.');
     }
     feedbackTone.value = 'success';
-    feedback.value = 'Cuenta creada. Abriendo el checkout seguro de Mercado Pago...';
+    feedback.value = 'Cuenta creada. Abriendo el checkout seguro de Stripe...';
     window.location.assign(payment.checkout_url);
   } catch (error) {
     feedbackTone.value = 'error';

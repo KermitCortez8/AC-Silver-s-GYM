@@ -12,9 +12,13 @@
         <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full text-3xl" :class="resultStyle.iconBackground">
           {{ resultStyle.icon }}
         </div>
-        <p class="mt-6 text-xs font-bold uppercase tracking-[0.32em]" :class="resultStyle.labelColor">Mercado Pago</p>
+        <p class="mt-6 text-xs font-bold uppercase tracking-[0.32em]" :class="resultStyle.labelColor">Stripe</p>
         <h1 class="mt-3 text-3xl font-black">{{ resultStyle.title }}</h1>
         <p class="mx-auto mt-4 max-w-xl leading-7 text-slate-600">{{ resultStyle.description }}</p>
+
+        <p v-if="confirmationError" class="mx-auto mt-4 max-w-xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {{ confirmationError }}
+        </p>
 
         <div class="mt-7 rounded-2xl bg-slate-50 p-5 text-left text-sm">
           <div class="flex justify-between gap-4">
@@ -35,7 +39,7 @@
         </div>
 
         <p class="mt-6 text-xs leading-5 text-slate-500">
-          La confirmación definitiva llega directamente desde Mercado Pago; nunca validamos un pago solo por la URL de retorno.
+          La confirmación definitiva llega directamente desde Stripe; nunca validamos un pago solo por la URL de retorno.
         </p>
       </section>
     </main>
@@ -43,20 +47,32 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { apiPost } from '../services/apiClient';
 
 const route = useRoute();
+const router = useRouter();
 const idCliente = computed(() => Number(route.params.idCliente || 0));
 const result = computed(() => String(route.query.result || 'pending').toLowerCase());
+const confirmationState = ref('idle');
+const confirmationError = ref('');
 
 const resultStyle = computed(() => {
   if (result.value === 'success') {
+    if (confirmationState.value === 'confirmed') {
+      return {
+        icon: '✓', title: 'Pago confirmado',
+        description: 'Su cuenta ha sido inicializada. A la espera de activación de membresía.',
+        status: 'Pago confirmado; activación pendiente', border: 'border-emerald-200',
+        iconBackground: 'bg-emerald-100 text-emerald-700', labelColor: 'text-emerald-700',
+      };
+    }
     return {
-      icon: '✓', title: 'Pago recibido',
-      description: 'Mercado Pago aprobó la operación. Tu membresía se actualizará automáticamente cuando recibamos la confirmación segura.',
-      status: 'Procesando confirmación', border: 'border-emerald-200',
-      iconBackground: 'bg-emerald-100 text-emerald-700', labelColor: 'text-emerald-700',
+      icon: '…', title: 'Confirmando el pago',
+      description: 'Estamos verificando la operación directamente con Stripe.',
+      status: confirmationState.value === 'error' ? 'Confirmación pendiente' : 'Verificando', border: 'border-amber-200',
+      iconBackground: 'bg-amber-100 text-amber-700', labelColor: 'text-amber-700',
     };
   }
   if (result.value === 'failure') {
@@ -69,9 +85,43 @@ const resultStyle = computed(() => {
   }
   return {
     icon: '…', title: 'Pago pendiente',
-    description: 'Mercado Pago está procesando la operación. La membresía se actualizará automáticamente cuando exista una respuesta definitiva.',
+    description: 'Stripe está procesando la operación. La membresía se actualizará automáticamente cuando exista una respuesta definitiva.',
     status: 'Pendiente', border: 'border-amber-200',
     iconBackground: 'bg-amber-100 text-amber-700', labelColor: 'text-amber-700',
   };
 });
+
+const confirmPaidCheckout = async () => {
+  if (result.value !== 'success') return;
+
+  const sessionId = String(route.query.session_id || '').trim();
+  if (!sessionId) {
+    confirmationState.value = 'error';
+    confirmationError.value = 'Stripe no devolvió el identificador de la sesión. La confirmación continuará mediante el webhook.';
+    return;
+  }
+
+  confirmationState.value = 'verifying';
+  try {
+    const response = await apiPost(`/pagos/stripe/confirmar-retorno?session_id=${encodeURIComponent(sessionId)}`);
+    if (response?.confirmed) {
+      confirmationState.value = 'confirmed';
+      await router.replace({
+        path: '/',
+        query: {
+          registro: 'inicializado',
+          solicitud: String(response.id_cliente || idCliente.value),
+        },
+      });
+      return;
+    }
+    confirmationState.value = 'error';
+    confirmationError.value = 'El pago todavía no aparece aprobado. La cuenta permanecerá pendiente hasta recibir la confirmación.';
+  } catch (error) {
+    confirmationState.value = 'error';
+    confirmationError.value = error instanceof Error ? error.message : 'No se pudo confirmar el pago en este momento.';
+  }
+};
+
+onMounted(confirmPaidCheckout);
 </script>

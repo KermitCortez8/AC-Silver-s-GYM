@@ -886,9 +886,10 @@ class GymDomainService:
                 "estado": "PENDIENTE_PAGO",
                 "id_cliente": id_cliente,
                 "id_pm": int(plan.get("id_pm")),
+                "monto_pago": float(plan.get("precio", 0) or 0),
                 "estado_pago": "PENDIENTE",
-                "metodo_pago": str(payload.get("metodo_pago") or "pasarela"),
-                "referencia_pago": str(payload.get("referencia_pago") or f"PAY-{id_cliente:03d}"),
+                "metodo_pago": "stripe",
+                "referencia_pago": "",
             }
             state["clientes"].insert(0, cliente)
             state["membresia"].insert(0, membresia)
@@ -899,20 +900,67 @@ class GymDomainService:
     # Procesa esta operación.
     def confirmar_pago_cliente_publico(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(id_cliente)
+        id_membresia = int(payload.get("id_membresia", 0) or 0)
+        amount = float(payload.get("monto_pago", 0) or 0)
+        payment_reference = str(payload.get("referencia_pago") or "").strip()
+        if id_membresia <= 0:
+            raise ValueError("Membresía de pago inválida")
+        if amount <= 0:
+            raise ValueError("Importe de pago inválido")
+        if not payment_reference:
+            raise ValueError("Referencia de pago inválida")
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
             if not cliente:
                 raise ValueError("Cliente no encontrado")
-            membresia = self._latest_membership_for_cliente(state, id_cliente)
+            membresia = next(
+                (
+                    row
+                    for row in state.get("membresia", [])
+                    if int(row.get("id_cliente", 0) or 0) == id_cliente
+                    and int(row.get("id_membresia", 0) or 0) == id_membresia
+                ),
+                None,
+            )
             if not membresia:
                 raise ValueError("Membresia no encontrada")
-            cliente["estado"] = "EN_TRAMITE"
+
+            expected_amount = float(membresia.get("monto_pago", 0) or 0)
+            if expected_amount <= 0:
+                plan = next(
+                    (
+                        row
+                        for row in state.get("planes_membresia", [])
+                        if int(row.get("id_pm", 0) or 0) == int(membresia.get("id_pm", 0) or 0)
+                    ),
+                    None,
+                )
+                expected_amount = float((plan or {}).get("precio", 0) or 0)
+            if expected_amount <= 0 or abs(expected_amount - amount) >= 0.01:
+                raise ValueError("El importe del pago no coincide con la membresía")
+
+            current_payment_status = str(membresia.get("estado_pago") or "").strip().upper()
+            current_reference = str(membresia.get("referencia_pago") or "").strip()
+            latest_membership = self._latest_membership_for_cliente(state, id_cliente)
+            if current_payment_status == "PAGADO":
+                if current_reference == payment_reference:
+                    if (
+                        latest_membership is membresia
+                        and str(cliente.get("estado") or "").strip().upper() not in {"ACTIVO", "ACTIVA"}
+                    ):
+                        cliente["estado"] = "EN_TRAMITE"
+                    return {"cliente": cliente, "membresia": membresia}
+                raise ValueError("La membresía ya tiene otro pago confirmado")
+
+            if latest_membership is membresia:
+                cliente["estado"] = "EN_TRAMITE"
             membresia["estado"] = "EN_TRAMITE"
             membresia["estado_pago"] = "PAGADO"
             membresia["metodo_pago"] = str(payload.get("metodo_pago") or membresia.get("metodo_pago") or "pasarela")
-            membresia["referencia_pago"] = str(payload.get("referencia_pago") or membresia.get("referencia_pago") or f"PAY-{id_cliente:03d}")
+            membresia["referencia_pago"] = payment_reference
+            membresia["monto_pago"] = expected_amount
             membresia["fecha_pago"] = _today_iso()
             return {"cliente": cliente, "membresia": membresia}
 
@@ -930,15 +978,14 @@ class GymDomainService:
 
             membresia = self._latest_membership_for_cliente(state, id_cliente)
             if not membresia:
-                plan = self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
-                membresia = {
-                    "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),
-                    "id_cliente": id_cliente,
-                    "id_pm": int(plan.get("id_pm")),
-                }
-                state["membresia"].insert(0, membresia)
-            else:
-                plan = self.get_plan_membresia(int(membresia.get("id_pm", 0) or 0)) or self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
+                raise ValueError("Membresia no encontrada")
+            if str(membresia.get("estado_pago") or "").strip().upper() != "PAGADO":
+                raise ValueError("No se puede activar una membresía sin pago confirmado")
+            if str(membresia.get("estado") or "").strip().upper() in {"ACTIVA", "ACTIVO"}:
+                cliente["estado"] = "ACTIVO"
+                return {"cliente": cliente, "membresia": membresia}
+
+            plan = self.get_plan_membresia(int(membresia.get("id_pm", 0) or 0)) or self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
 
             start = _today_iso()
             end = (datetime.fromisoformat(start) + timedelta(days=self._plan_duration_days(plan.get("nombre_plan", cliente.get("plan", "MENSUAL"))))).date().isoformat()

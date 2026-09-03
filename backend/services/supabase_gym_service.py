@@ -68,6 +68,15 @@ class SupabaseRestClient:
         rows = self._request("GET", table, query=query, return_representation=True)
         return rows if isinstance(rows, list) else []
 
+    def validate_columns(self, table: str, columns: set[str]) -> None:
+        """Pide explícitamente las columnas para que PostgREST detecte una migración faltante."""
+        self._request(
+            "GET",
+            table,
+            query={"select": ",".join(sorted(columns)), "limit": 1},
+            return_representation=True,
+        )
+
     # Procesa esta operación.
     def insert(self, table: str, body: dict[str, Any] | list[dict[str, Any]]) -> None:
         self._request("POST", table, body=body)
@@ -87,6 +96,13 @@ class SupabaseRestClient:
 
 class SupabaseGymService(GymDomainService):
     REFRESH_TTL_SECONDS = 5.0
+    PAYMENT_COLUMNS = {
+        "estado_pago",
+        "fecha_pago",
+        "metodo_pago",
+        "monto_pago",
+        "referencia_pago",
+    }
 
     CORE_TABLES = {
         "planes_membresia": ("PLANES_MEMBRESIA", "id_pm", "id_PM"),
@@ -115,7 +131,24 @@ class SupabaseGymService(GymDomainService):
         self.missing_remote_tables: set[str] = set()
         self.state = self._seed()
         self._last_refresh_at = 0.0
+        self._validate_payment_schema()
         self._refresh_remote_state()
+
+    def _validate_payment_schema(self) -> None:
+        try:
+            self.supabase.validate_columns("MEMBRESIA", self.PAYMENT_COLUMNS)
+        except RuntimeError as error:
+            message = str(error).lower()
+            missing_column = (
+                "pgrst204" in message
+                or ("could not find" in message and "column" in message)
+                or ("column" in message and "does not exist" in message)
+            )
+            if missing_column:
+                raise RuntimeError(
+                    "Falta ejecutar backend/migrations/001_add_membership_payment_fields.sql en Supabase"
+                ) from error
+            raise
 
     # Procesa esta operación.
     def _remember_remote_columns(self, table: str, rows: list[dict[str, Any]]) -> None:
@@ -227,7 +260,18 @@ class SupabaseGymService(GymDomainService):
             previous = self._mutation_snapshot()
             result = fn(self.state)
             changed_keys = self._changed_state_keys(previous, self.state)
-            self._sync_remote_changes(previous, self.state, changed_keys)
+            inserted_rows: list[tuple[str, str, Any]] = []
+            try:
+                self._sync_remote_changes(previous, self.state, changed_keys, inserted_rows)
+            except Exception:
+                self.state.update(deepcopy(previous))
+                for table, remote_pk, remote_id in reversed(inserted_rows):
+                    try:
+                        self.supabase.delete(table, remote_pk, remote_id)
+                    except RuntimeError:
+                        pass
+                self._last_refresh_at = 0.0
+                raise
             self._last_refresh_at = time.monotonic()
             return result
 
@@ -253,18 +297,64 @@ class SupabaseGymService(GymDomainService):
             return self.configuracion_gimnasio()
 
     # Actualiza el registro correspondiente.
-    def _sync_remote_changes(self, previous: dict[str, Any], current: dict[str, Any], changed_keys: list[str]) -> None:
+    def _sync_remote_changes(
+        self,
+        previous: dict[str, Any],
+        current: dict[str, Any],
+        changed_keys: list[str],
+        inserted_rows: list[tuple[str, str, Any]] | None = None,
+    ) -> None:
         if not changed_keys:
             return
 
-        for state_key in [key for key in changed_keys if key in self.CORE_TABLES]:
-            self._sync_table(state_key, previous.get(state_key, []), current.get(state_key, []))
+        core_keys = [key for key in changed_keys if key in self.CORE_TABLES]
+        updates_membership_and_client = (
+            "membresia" in core_keys
+            and "clientes" in core_keys
+            and not self._contains_new_rows("membresia", previous, current)
+            and not self._contains_new_rows("clientes", previous, current)
+        )
+        if updates_membership_and_client:
+            core_keys.remove("membresia")
+            core_keys.insert(core_keys.index("clientes"), "membresia")
+
+        for state_key in core_keys:
+            self._sync_table(
+                state_key,
+                previous.get(state_key, []),
+                current.get(state_key, []),
+                inserted_rows,
+            )
 
         if "pedidos_tienda" in changed_keys:
             self._sync_orders(previous.get("pedidos_tienda", []), current.get("pedidos_tienda", []))
 
+    def _contains_new_rows(
+        self,
+        state_key: str,
+        previous: dict[str, Any],
+        current: dict[str, Any],
+    ) -> bool:
+        _, local_pk, _ = self.CORE_TABLES[state_key]
+        previous_ids = {
+            self._pk(row, local_pk)
+            for row in previous.get(state_key, [])
+            if self._pk(row, local_pk)
+        }
+        return any(
+            self._pk(row, local_pk) not in previous_ids
+            for row in current.get(state_key, [])
+            if self._pk(row, local_pk)
+        )
+
     # Actualiza el registro correspondiente.
-    def _sync_table(self, state_key: str, previous_rows: list[dict[str, Any]], current_rows: list[dict[str, Any]]) -> None:
+    def _sync_table(
+        self,
+        state_key: str,
+        previous_rows: list[dict[str, Any]],
+        current_rows: list[dict[str, Any]],
+        inserted_rows: list[tuple[str, str, Any]] | None = None,
+    ) -> None:
         table, local_pk, remote_pk = self.CORE_TABLES[state_key]
         if table in self.missing_remote_tables:
             return
@@ -275,15 +365,18 @@ class SupabaseGymService(GymDomainService):
             self.supabase.delete(table, remote_pk, self._remote_pk_value(state_key, previous_by_id[deleted_id], deleted_id))
 
         for row_id, row in current_by_id.items():
-            body = self._to_remote_body(state_key, row)
+            body = self._filter_remote_columns(table, self._to_remote_body(state_key, row))
             previous = previous_by_id.get(row_id)
-            if previous and body == self._to_remote_body(state_key, previous):
+            previous_body = self._filter_remote_columns(table, self._to_remote_body(state_key, previous)) if previous else None
+            if previous and body == previous_body:
                 continue
             remote_id = self._remote_pk_value(state_key, row, row_id)
             if previous:
                 self.supabase.update(table, remote_pk, remote_id, body)
             else:
                 self.supabase.insert(table, body)
+                if inserted_rows is not None:
+                    inserted_rows.append((table, remote_pk, remote_id))
 
     # Actualiza el registro correspondiente.
     def _sync_orders(self, previous_rows: list[dict[str, Any]], current_rows: list[dict[str, Any]]) -> None:
@@ -492,13 +585,24 @@ class SupabaseGymService(GymDomainService):
 
     # Procesa esta operación.
     def _map_membership(self, row: dict[str, Any]) -> dict[str, Any]:
+        membership_status = str(row.get("Estado") or "PENDIENTE_PAGO")
+        default_payment_status = (
+            "PAGADO"
+            if membership_status.strip().upper() in {"ACTIVA", "ACTIVO", "EN_TRAMITE"}
+            else "PENDIENTE"
+        )
         return {
             "id_membresia": int(row.get("id_membresia", 0) or 0),
             "fecha_inicio": str(row.get("Fecha_Inicio") or ""),
             "fecha_fin": str(row.get("Fecha_Fin") or ""),
-            "estado": str(row.get("Estado") or "PENDIENTE_PAGO"),
+            "estado": membership_status,
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_pm": int(row.get("id_PM", 0) or 0),
+            "monto_pago": float(row.get("monto_pago", 0) or 0),
+            "estado_pago": str(row.get("estado_pago") or default_payment_status),
+            "metodo_pago": str(row.get("metodo_pago") or ""),
+            "referencia_pago": str(row.get("referencia_pago") or ""),
+            "fecha_pago": str(row.get("fecha_pago") or ""),
         }
 
     # Procesa esta operación.
@@ -510,6 +614,11 @@ class SupabaseGymService(GymDomainService):
             "Estado": str(row.get("estado") or "PENDIENTE_PAGO"),
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_PM": int(row.get("id_pm", 0) or 0) or None,
+            "monto_pago": float(row.get("monto_pago", 0) or 0) or None,
+            "estado_pago": str(row.get("estado_pago") or "PENDIENTE"),
+            "metodo_pago": str(row.get("metodo_pago") or ""),
+            "referencia_pago": str(row.get("referencia_pago") or ""),
+            "fecha_pago": self._date_or_none(row.get("fecha_pago")),
         }
 
     # Procesa esta operación.

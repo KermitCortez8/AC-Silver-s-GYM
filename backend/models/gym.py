@@ -85,8 +85,6 @@ class RegistroPublicoClienteInput(BaseModel):
     contrasena: str = ""
     plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
     promocion: str = "SIN PROMOCION"
-    metodo_pago: str = "pasarela"
-    referencia_pago: str = ""
     google_email: str = ""
     google_name: str = ""
 

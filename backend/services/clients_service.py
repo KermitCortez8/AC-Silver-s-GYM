@@ -102,14 +102,27 @@ class ClientsService:
         return self._safe_registration_result(self.gym.confirmar_pago_cliente_publico(id_cliente, payload))
 
     # Procesa esta operación.
-    def payment_amount_matches(self, id_cliente: int, amount: float) -> bool:
+    def payment_amount_matches(self, id_cliente: int, amount: float, id_membresia: int | None = None) -> bool:
         self.gym.ensure_fresh()
         state = self.gym.state
-        membership = self.gym._latest_membership_for_cliente(state, int(id_cliente))
+        if id_membresia is not None:
+            membership = next(
+                (
+                    row
+                    for row in state.get("membresia", [])
+                    if int(row.get("id_cliente", 0) or 0) == int(id_cliente)
+                    and int(row.get("id_membresia", 0) or 0) == int(id_membresia)
+                ),
+                None,
+            )
+        else:
+            membership = self.gym._latest_membership_for_cliente(state, int(id_cliente))
         if not membership:
             return False
-        plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0) or 0))
-        expected = float((plan or {}).get("precio", 0) or 0)
+        expected = float(membership.get("monto_pago", 0) or 0)
+        if expected <= 0:
+            plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0) or 0))
+            expected = float((plan or {}).get("precio", 0) or 0)
         return expected > 0 and abs(expected - float(amount)) < 0.01
 
     # Procesa esta operación.

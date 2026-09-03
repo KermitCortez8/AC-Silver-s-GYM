@@ -54,26 +54,6 @@ Servicios locales:
 
 ## Activacion con Docker
 
-El backend toma sus variables desde `backend/.env`. Para el frontend, Docker
-recibe variables `VITE_*` desde un archivo `.env` local en la raiz o desde el
-entorno del sistema. Usa `.env.example`, `backend/.env.example` y
-`frontend/.env.example` como plantillas, sin subir los `.env` reales al repo.
-
-Variables opcionales para el build del frontend en `.env` de la raiz:
-
-```env
-VITE_APP_NAME=AC Silver's GYM
-VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-VITE_AUTH_MODE=backend
-VITE_ENABLE_DEMO_LOGIN=true
-VITE_SUPPORT_EMAIL=soporte@acsilversgym.com
-VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
-VITE_SUPABASE_LANDING_BUCKET=imageneslandingpage
-VITE_SUPABASE_LANDING_FOLDER=landingpage
-VITE_SUPABASE_ANON_KEY=tu-anon-key
-VITE_SUPABASE_STORE_IMAGES_BUCKET=imagenestienda
-```
-
 Construir e iniciar frontend y backend:
 
 ```bash
@@ -96,29 +76,4 @@ Eliminar tambien los volumenes:
 
 ```bash
 docker compose down -v
-```
-
-```env back
-SUPABASE_URL=https://egakogbdxywyzshdetzh.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=sb_secret_y71JjBTNmsTx2ZnFMWZLRA_uZ2EB5lg
-SUPABASE_STORE_IMAGES_BUCKET=imagenestienda
-BACKEND_HOST=0.0.0.0
-BACKEND_PORT=8000
-CORS_ORIGINS=http://localhost:5173,http://localhost:5174
-
-```
-
-```env front
-VITE_APP_NAME=AC Silver's GYM
-VITE_GOOGLE_CLIENT_ID=
-
-VITE_AUTH_API_BASE_URL=/api
-VITE_BACKEND_URL=http://localhost:8000
-
-VITE_SUPABASE_URL=https://egakogbdxywyzshdetzh.supabase.co
-VITE_SUPABASE_LANDING_BUCKET=imageneslandingpage
-VITE_SUPABASE_LANDING_FOLDER=landingpage
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnYWtvZ2JkeHl3eXpzaGRldHpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0OTg2NzksImV4cCI6MjA5MzA3NDY3OX0.nVX3Y8RUCDtKSNfOqEOjxZaIsFvQXof1KyG-7tB4gxM
-VITE_SUPABASE_STORE_IMAGES_BUCKET=imagenestienda
-
 ```

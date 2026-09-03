@@ -41,6 +41,8 @@ def get_gym_service() -> SupabaseGymService:
         if key and settings.supabase_url
     ]
     seen: set[str] = set()
+    connection_failed = False
+    payment_schema_missing = False
     for key in candidate_keys:
         if key in seen:
             continue
@@ -49,8 +51,21 @@ def get_gym_service() -> SupabaseGymService:
             service = _get_supabase_gym_service(settings.supabase_url, key)
             service.ensure_fresh()
             return service
-        except RuntimeError:
+        except RuntimeError as error:
+            connection_failed = True
+            if "001_add_membership_payment_fields.sql" in str(error):
+                payment_schema_missing = True
             continue
+    if payment_schema_missing:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Falta ejecutar backend/migrations/001_add_membership_payment_fields.sql en Supabase.",
+        )
+    if connection_failed:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo conectar a Supabase. El registro no fue guardado.",
+        )
     return _get_local_gym_service()
 
 
