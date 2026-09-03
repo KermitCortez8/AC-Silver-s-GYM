@@ -78,8 +78,38 @@ class SupabaseRestClient:
         )
 
     # Procesa esta operación.
-    def insert(self, table: str, body: dict[str, Any] | list[dict[str, Any]]) -> None:
-        self._request("POST", table, body=body)
+    def insert(
+        self,
+        table: str,
+        body: dict[str, Any] | list[dict[str, Any]],
+        return_representation: bool = False,
+    ) -> Any:
+        return self._request("POST", table, body=body, return_representation=return_representation)
+
+    def rpc(self, function_name: str, body: dict[str, Any]) -> Any:
+        url = f"{self.rest_url}/rpc/{quote(function_name, safe='')}"
+        headers = {
+            "apikey": self.key,
+            "Authorization": f"Bearer {self.key}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Prefer": "return=representation",
+        }
+        request = Request(
+            url,
+            data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=20) as response:
+                raw = response.read().decode("utf-8")
+        except HTTPError as error:
+            details = error.read().decode("utf-8", errors="replace")
+            raise RuntimeError(
+                f"Supabase RPC {function_name} fallo ({error.code}): {details}"
+            ) from error
+        return json.loads(raw) if raw else None
 
     # Actualiza el registro correspondiente.
     def update(self, table: str, pk_column: str, pk_value: Any, body: dict[str, Any]) -> None:
@@ -274,6 +304,101 @@ class SupabaseGymService(GymDomainService):
                 raise
             self._last_refresh_at = time.monotonic()
             return result
+
+    @staticmethod
+    def _raise_schedule_enrollment_error(error: RuntimeError) -> None:
+        normalized = str(error).lower()
+        if "ya esta matriculado" in normalized or "23505" in normalized:
+            raise ValueError("El cliente ya esta matriculado en este horario") from error
+        if "sin cupos" in normalized:
+            raise ValueError("Horario sin cupos disponibles") from error
+        if "sin membresia activa" in normalized:
+            raise ValueError("Cliente sin membresia activa") from error
+        if "horario no disponible" in normalized or "23503" in normalized:
+            raise ValueError("Horario no disponible") from error
+        raise error
+
+    def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Crea la matrícula y usa la operación atómica cuando 002 está aplicada."""
+        with self.lock:
+            # Una matrícula siempre parte del estado remoto más reciente, incluso
+            # si la caché general todavía no alcanzó su TTL.
+            self._refresh_remote_state()
+            if payload.get("dni"):
+                cliente = self.get_cliente_by_dni(str(payload.get("dni") or "").strip())
+                if not cliente:
+                    raise ValueError("Cliente no encontrado")
+                id_cliente = int(cliente.get("id_cliente", 0) or 0)
+            else:
+                id_cliente = self._parse_cliente_id(payload.get("id_cliente"))
+
+            id_horario = int(payload.get("id_horario_servicio", 0) or 0)
+            if id_cliente <= 0:
+                raise ValueError("Cliente no encontrado")
+            if id_horario <= 0:
+                raise ValueError("Horario no disponible")
+
+            self._validate_new_schedule_enrollment(
+                self.state,
+                id_cliente,
+                id_horario,
+            )
+
+            try:
+                created = self.supabase.rpc(
+                    "matricular_cliente_horario",
+                    {
+                        "p_id_cliente": id_cliente,
+                        "p_id_horario_servicio": id_horario,
+                    },
+                )
+            except RuntimeError as error:
+                normalized = str(error).lower()
+                if "pgrst202" in normalized or "could not find the function" in normalized:
+                    # Compatibilidad inmediata con bases creadas antes de 002.
+                    # PostgreSQL genera el ID; al aplicar 002, la RPC y sus locks
+                    # pasan a proteger además dos solicitudes simultáneas.
+                    try:
+                        created = self.supabase.insert(
+                            "MATRICULAS_HORARIO",
+                            {
+                                "id_cliente": id_cliente,
+                                "id_horario_servicio": id_horario,
+                                "estado": "ACTIVA",
+                            },
+                            return_representation=True,
+                        )
+                    except RuntimeError as insert_error:
+                        self._raise_schedule_enrollment_error(insert_error)
+                else:
+                    self._raise_schedule_enrollment_error(error)
+
+            if isinstance(created, list):
+                created = created[0] if created else None
+            if not isinstance(created, dict):
+                raise RuntimeError("Supabase no devolvió la matrícula creada")
+
+            enrollment = self._map_schedule_enrollment(created)
+            if int(enrollment.get("id_matricula", 0) or 0) <= 0:
+                raise RuntimeError("Supabase devolvió una matrícula sin identificador")
+
+            self.state.setdefault("matriculas_horario", [])
+            self.state["matriculas_horario"] = [
+                row
+                for row in self.state["matriculas_horario"]
+                if int(row.get("id_matricula", 0) or 0) != int(enrollment["id_matricula"])
+            ]
+            self.state["matriculas_horario"].insert(0, enrollment)
+            self._recount_schedule_cupos(self.state)
+            # La siguiente petición recarga también las matrículas creadas por
+            # cualquier otra instancia del backend.
+            self._last_refresh_at = 0.0
+
+            return next(
+                row
+                for row in self.matriculas_horario(id_cliente=id_cliente, solo_activas=True)
+                if int(row.get("id_matricula", 0) or 0) == int(enrollment["id_matricula"])
+            )
 
     # Procesa esta operación.
     def _save(self) -> None:

@@ -1,5 +1,5 @@
 <template>
-  <section class="excel-shell">
+  <section class="excel-shell" :class="{ 'excel-shell--interactive': interactive }">
     <div class="excel-header">
       <div>
         <h2>{{ title }}</h2>
@@ -45,7 +45,17 @@ const props = defineProps({
     type: String,
     default: 'No hay horarios para mostrar.',
   },
+  interactive: {
+    type: Boolean,
+    default: false,
+  },
+  selectedItemId: {
+    type: [String, Number],
+    default: '',
+  },
 });
+
+const emit = defineEmits(['select']);
 
 const baseWeek = {
   lunes: '2026-01-05',
@@ -122,6 +132,9 @@ const serviceLabel = (service) =>
     baile: 'Baile',
   })[String(service || '').trim().toLowerCase()] || service || 'Servicio';
 
+const availableSlots = (item = {}) =>
+  Math.max(0, Number(item.cupos || 0) - Number(item.cupos_usados || 0));
+
 /**
  * Gestiona esta acción de la vista.
  */
@@ -183,6 +196,14 @@ const eventMeta = (item) => {
   return `${displayTime(item.hora_inicio)}-${displayTime(item.hora_fin)}`;
 };
 
+const itemId = (item = {}) =>
+  String(item.id_horario_servicio || item.id_matricula || '');
+
+const selectCalendarItem = (item) => {
+  if (!props.interactive) return;
+  emit('select', item);
+};
+
 const calendarEvents = computed(() =>
   props.items
     .map((item) => {
@@ -233,6 +254,18 @@ const calendarOptions = computed(() => ({
   eventMaxStack: 3,
   eventOrder: 'start,servicio,title',
   events: calendarEvents.value,
+  eventClassNames: ({ event }) => {
+    const classes = [];
+    if (props.interactive) classes.push('excel-event-selectable');
+    if (itemId(event.extendedProps) === String(props.selectedItemId || '')) {
+      classes.push('excel-event-selected');
+    }
+    if (event.extendedProps?.is_enrolled) {
+      classes.push('excel-event-is-enrolled');
+    }
+    return classes;
+  },
+  eventClick: ({ event }) => selectCalendarItem(event.extendedProps || {}),
   dayHeaderContent: (arg) => {
     const dayKey = dayByIndex[arg.date.getDay()];
     return dayLabels[dayKey] || '';
@@ -244,34 +277,63 @@ const calendarOptions = computed(() => ({
   },
   eventContent: (arg) => {
     const item = arg.event.extendedProps || {};
-    const code = item.codigo_dia || serviceLabel(item.servicio);
     const service = serviceLabel(item.servicio);
-    const time = `${displayTime(item.hora_inicio)}-${displayTime(item.hora_fin)}`;
-    const meta = eventMeta(item);
-    const routine = item.rutina_nombre || '';
+    const time = `${displayTime(item.hora_inicio)} – ${displayTime(item.hora_fin)}`;
+    const routine = item.rutina_nombre || item.nombre_ejercicio || item.nombre_rutina || `Clase de ${service}`;
+    const isEnrolled = Boolean(item.is_enrolled);
+    const total = Number(item.cupos || 0);
+    const used = Number(item.cupos_usados || 0);
+    const free = Math.max(0, total - used);
+
+    let badgeHtml = '';
+    if (isEnrolled) {
+      badgeHtml = '<span class="excel-tag excel-tag--enrolled">✓ Mi Clase</span>';
+    } else if (total > 0) {
+      if (free === 0) {
+        badgeHtml = '<span class="excel-tag excel-tag--full">Lleno</span>';
+      } else if (free <= 2) {
+        badgeHtml = `<span class="excel-tag excel-tag--warning">${free} lib.</span>`;
+      } else {
+        badgeHtml = `<span class="excel-tag excel-tag--free">${free} lib.</span>`;
+      }
+    }
 
     return {
       html: `
-        <div class="excel-event-card">
-          <span class="excel-event-code">${escapeHtml(code)}</span>
-          <span class="excel-event-service">${escapeHtml(service)}</span>
-          ${routine ? `<span class="excel-event-meta">${escapeHtml(routine)}</span>` : ''}
-          <span class="excel-event-meta">${escapeHtml(meta || time)}</span>
+        <div class="excel-event-card ${isEnrolled ? 'excel-event-card--enrolled' : ''}">
+          <div class="excel-event-header">
+            <span class="excel-event-service">${escapeHtml(service)}</span>
+            ${badgeHtml}
+          </div>
+          <span class="excel-event-exercise">${escapeHtml(routine)}</span>
+          <span class="excel-event-time">${escapeHtml(time)}</span>
         </div>
       `,
     };
   },
   eventDidMount: ({ el, event }) => {
     const item = event.extendedProps || {};
-    el.title = [
+    const exercise = item.rutina_nombre || item.nombre_ejercicio || item.nombre_rutina || serviceLabel(item.servicio);
+    const accessibleDescription = [
+      exercise,
       serviceLabel(item.servicio),
       item.dia,
       `${displayTime(item.hora_inicio)} - ${displayTime(item.hora_fin)}`,
-      item.rutina_nombre ? `Rutina: ${item.rutina_nombre}` : '',
-      item.zonas_musculares ? `Zonas: ${item.zonas_musculares}` : '',
-      item.cupos !== undefined ? `Cupos: ${item.cupos_usados || 0}/${item.cupos}` : '',
-      item.checkLabel || item.cliente_nombre || '',
+      item.cupos !== undefined ? `Cupos: ${availableSlots(item)} libres de ${item.cupos}` : '',
+      item.is_enrolled ? 'Ya matriculado' : '',
     ].filter(Boolean).join(' | ');
+    el.title = accessibleDescription;
+
+    if (props.interactive) {
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', `${accessibleDescription}. Seleccionar horario.`);
+      el.addEventListener('keydown', (eventKey) => {
+        if (eventKey.key !== 'Enter' && eventKey.key !== ' ') return;
+        eventKey.preventDefault();
+        selectCalendarItem(item);
+      });
+    }
   },
 }));
 
@@ -403,6 +465,23 @@ const exportExcel = () => {
   overflow: hidden;
 }
 
+.excel-shell--interactive :deep(.excel-event-selectable) {
+  cursor: pointer;
+  transition: filter 160ms ease, outline-color 160ms ease, transform 160ms ease;
+}
+
+.excel-shell--interactive :deep(.excel-event-selectable:hover) {
+  filter: brightness(0.96) saturate(1.08);
+  transform: translateY(-1px);
+}
+
+.excel-shell--interactive :deep(.excel-event-selectable:focus-visible),
+.excel-shell--interactive :deep(.excel-event-selected) {
+  outline: 3px solid #0891b2;
+  outline-offset: 1px;
+  z-index: 5;
+}
+
 :deep(.fc-event-main) {
   padding: 1px 2px;
 }
@@ -411,36 +490,82 @@ const exportExcel = () => {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 1px;
-  color: #17324d;
-  line-height: 1.1;
+  gap: 2px;
+  color: #0f172a;
+  line-height: 1.15;
+  padding: 2px 1px;
 }
 
-:deep(.excel-event-code),
-:deep(.excel-event-service),
-:deep(.excel-event-meta) {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: normal;
-  word-break: break-word;
-}
-
-:deep(.excel-event-code) {
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
+:deep(.excel-event-header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
 }
 
 :deep(.excel-event-service) {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
 }
 
-:deep(.excel-event-meta) {
+:deep(.excel-event-exercise) {
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  color: #090d16;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+:deep(.excel-event-time) {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
   color: #334155;
-  font-size: 9px;
-  font-weight: 600;
+}
+
+:deep(.excel-tag) {
+  display: inline-flex;
+  align-items: center;
+  font-size: 8.5px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+:deep(.excel-tag--free) {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+:deep(.excel-tag--warning) {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+:deep(.excel-tag--full) {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+:deep(.excel-tag--enrolled) {
+  background: #0891b2;
+  color: #ffffff;
+  border: 1px solid #06b6d4;
+  font-weight: 900;
+}
+
+:deep(.excel-event-is-enrolled) {
+  box-shadow: 0 0 0 2px #0891b2 inset, 0 2px 6px rgba(8, 145, 178, 0.35) !important;
 }
 
 .excel-empty {

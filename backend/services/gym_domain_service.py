@@ -1680,17 +1680,27 @@ class GymDomainService:
         return self._mutate(_fn)
 
     # Procesa esta operación.
-    def horarios_servicio(self) -> list[dict[str, Any]]:
+    def horarios_servicio(self, solo_activos: bool = False) -> list[dict[str, Any]]:
+        self._recount_schedule_cupos(self.state)
         routines_by_id = {
             int(routine.get("id_rutina", 0) or 0): routine
             for routine in self.state.get("catalogo_rutina", [])
         }
         result = []
         for schedule in self.state.get("horarios_servicio", []):
+            if solo_activos and not bool(schedule.get("activo", True)):
+                continue
             routine = routines_by_id.get(int(schedule.get("id_rutina", 0) or 0), {})
+            cupos = max(1, int(schedule.get("cupos", 1) or 1))
+            cupos_usados = max(0, int(schedule.get("cupos_usados", 0) or 0))
+            cupos_disponibles = max(0, cupos - cupos_usados)
             result.append(
                 {
                     **schedule,
+                    "cupos": cupos,
+                    "cupos_usados": cupos_usados,
+                    "cupos_disponibles": cupos_disponibles,
+                    "esta_lleno": cupos_disponibles == 0,
                     "rutina_nombre": routine.get("nombre_rutina", ""),
                     "zonas_musculares": routine.get("zonas_musculares", ""),
                     "rutina_color": routine.get("color", "Azul"),
@@ -1788,7 +1798,12 @@ class GymDomainService:
         self._mutate(_fn)
 
     # Procesa esta operación.
-    def matriculas_horario(self, id_cliente: int | None = None, dni: str | None = None) -> list[dict[str, Any]]:
+    def matriculas_horario(
+        self,
+        id_cliente: int | None = None,
+        dni: str | None = None,
+        solo_activas: bool = False,
+    ) -> list[dict[str, Any]]:
         resolved_id = int(id_cliente or 0)
         if dni:
             cliente = self.get_cliente_by_dni(str(dni).strip())
@@ -1799,6 +1814,8 @@ class GymDomainService:
         result = []
         for enrollment in self.state.get("matriculas_horario", []):
             if resolved_id and int(enrollment.get("id_cliente", 0) or 0) != resolved_id:
+                continue
+            if solo_activas and str(enrollment.get("estado") or "").upper() != "ACTIVA":
                 continue
             schedule = self.get_horario_servicio(int(enrollment.get("id_horario_servicio", 0) or 0)) or {}
             effective_routine_id = int(enrollment.get("id_rutina", 0) or 0) or int(schedule.get("id_rutina", 0) or 0)
@@ -1835,6 +1852,16 @@ class GymDomainService:
                 }
             )
         return sorted(result, key=lambda row: (str(row.get("dia")), str(row.get("hora_inicio"))))
+
+    def get_matricula_horario(self, id_matricula: int) -> dict[str, Any] | None:
+        return next(
+            (
+                enrollment
+                for enrollment in self.state.get("matriculas_horario", [])
+                if int(enrollment.get("id_matricula", 0) or 0) == int(id_matricula)
+            ),
+            None,
+        )
 
     # Procesa esta operación.
     def asignar_rutina_matricula(self, id_matricula: int, id_rutina: int) -> dict[str, Any]:
@@ -2046,6 +2073,56 @@ class GymDomainService:
             "routines": routines_summary,
         }
 
+    def _validate_new_schedule_enrollment(
+        self,
+        state: dict[str, Any],
+        id_cliente: int,
+        id_horario: int,
+    ) -> None:
+        cliente = next(
+            (
+                row
+                for row in state.get("clientes", [])
+                if int(row.get("id_cliente", 0) or 0) == id_cliente
+            ),
+            None,
+        )
+        if not cliente:
+            raise ValueError("Cliente no encontrado")
+        if not self._active_membership_for_cliente(state, id_cliente):
+            raise ValueError("Cliente sin membresia activa")
+
+        schedule = next(
+            (
+                row
+                for row in state.get("horarios_servicio", [])
+                if int(row.get("id_horario_servicio", 0) or 0) == id_horario
+            ),
+            None,
+        )
+        if not schedule or not bool(schedule.get("activo", True)):
+            raise ValueError("Horario no disponible")
+
+        active_enrollments = [
+            row
+            for row in state.get("matriculas_horario", [])
+            if str(row.get("estado") or "").upper() == "ACTIVA"
+        ]
+        if any(
+            int(row.get("id_cliente", 0) or 0) == id_cliente
+            and int(row.get("id_horario_servicio", 0) or 0) == id_horario
+            for row in active_enrollments
+        ):
+            raise ValueError("El cliente ya esta matriculado en este horario")
+
+        used = sum(
+            1
+            for row in active_enrollments
+            if int(row.get("id_horario_servicio", 0) or 0) == id_horario
+        )
+        if used >= int(schedule.get("cupos", 1) or 1):
+            raise ValueError("Horario sin cupos disponibles")
+
     # Procesa esta operación.
     def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get("dni"):
@@ -2060,42 +2137,7 @@ class GymDomainService:
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
-            cliente = self.get_cliente(id_cliente)
-            if not cliente:
-                raise ValueError("Cliente no encontrado")
-            if not self._active_membership_for_cliente(state, id_cliente):
-                raise ValueError("Cliente sin membresia activa")
-            schedule = next(
-                (
-                    row
-                    for row in state.get("horarios_servicio", [])
-                    if int(row.get("id_horario_servicio", 0) or 0) == id_horario
-                ),
-                None,
-            )
-            if not schedule or not bool(schedule.get("activo", True)):
-                raise ValueError("Horario no disponible")
-            duplicate = next(
-                (
-                    row
-                    for row in state.get("matriculas_horario", [])
-                    if int(row.get("id_cliente", 0) or 0) == id_cliente
-                    and int(row.get("id_horario_servicio", 0) or 0) == id_horario
-                    and str(row.get("estado") or "").upper() == "ACTIVA"
-                ),
-                None,
-            )
-            if duplicate:
-                raise ValueError("El cliente ya esta matriculado en este horario")
-            used = len(
-                [
-                    row
-                    for row in state.get("matriculas_horario", [])
-                    if int(row.get("id_horario_servicio", 0) or 0) == id_horario and str(row.get("estado") or "").upper() == "ACTIVA"
-                ]
-            )
-            if used >= int(schedule.get("cupos", 1) or 1):
-                raise ValueError("Horario sin cupos disponibles")
+            self._validate_new_schedule_enrollment(state, id_cliente, id_horario)
             enrollment = {
                 "id_matricula": self._next_int_id_in_state(state, "matriculas_horario", "id_matricula"),
                 "id_cliente": id_cliente,
@@ -2105,17 +2147,23 @@ class GymDomainService:
             }
             state.setdefault("matriculas_horario", []).insert(0, enrollment)
             self._recount_schedule_cupos(state)
-            return self.matriculas_horario(id_cliente=id_cliente)[0]
+            return next(
+                row
+                for row in self.matriculas_horario(id_cliente=id_cliente, solo_activas=True)
+                if int(row.get("id_matricula", 0) or 0) == int(enrollment["id_matricula"])
+            )
 
         return self._mutate(_fn)
 
     # Procesa esta operación.
-    def cancelar_matricula_horario(self, id_matricula: int) -> None:
+    def cancelar_matricula_horario(self, id_matricula: int, id_cliente: int | None = None) -> None:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             idx = next((i for i, row in enumerate(state.get("matriculas_horario", [])) if int(row.get("id_matricula", 0) or 0) == int(id_matricula)), -1)
             if idx < 0:
                 raise ValueError("Matricula no encontrada")
+            if id_cliente and int(state["matriculas_horario"][idx].get("id_cliente", 0) or 0) != int(id_cliente):
+                raise PermissionError("No puedes cancelar la matricula de otro cliente")
             state["matriculas_horario"][idx]["estado"] = "CANCELADA"
             self._recount_schedule_cupos(state)
 
