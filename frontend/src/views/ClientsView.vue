@@ -228,7 +228,7 @@
     </Teleport>
 
     <Teleport to="body">
-      <div v-if="isDetailsOpen && viewingClient" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+      <div v-if="isDetailsOpen && viewingClient" role="dialog" aria-modal="true" aria-label="Detalles del cliente" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
         <div class="w-full max-w-md rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl">
           <div class="flex items-start justify-between gap-4">
             <div>
