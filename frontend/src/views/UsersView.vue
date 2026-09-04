@@ -39,31 +39,68 @@
         {{ feedbackMessage }}
       </p>
 
-      <div class="mt-5 grid gap-4 xl:grid-cols-2">
-        <article v-for="systemUser in filteredUsers" :key="systemUser.id_usuario" class="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <p class="text-lg font-bold text-white">{{ systemUser.nombre || 'Sin nombre' }}</p>
+      <div class="mt-5 overflow-x-auto">
+        <table class="w-full min-w-[960px] text-left text-sm">
+          <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
+            <tr>
+              <th class="px-5 py-4 font-bold">ID</th>
+              <th class="px-5 py-4 font-bold">Usuario</th>
+              <th class="px-5 py-4 font-bold">Rol</th>
+              <th class="px-5 py-4 font-bold">Correo electronico</th>
+              <th class="px-5 py-4 font-bold">DNI</th>
+              <th class="px-5 py-4 font-bold">Telefono</th>
+              <th class="px-5 py-4 font-bold">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/10">
+            <tr v-for="systemUser in filteredUsers" :key="systemUser.id_usuario" class="transition hover:bg-white/[0.04]">
+              <td class="px-5 py-4 align-top">
                 <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-cyan-100">{{ systemUser.id_usuario }}</span>
-              </div>
-              <p class="mt-2 text-sm text-slate-400">Correo: {{ systemUser.correo || 'Sin correo' }}</p>
-              <p class="text-sm text-slate-400">DNI: {{ systemUser.dni || 'Sin DNI' }}</p>
-              <p class="text-sm text-slate-400">Telefono: {{ systemUser.telefono || 'Sin telefono' }}</p>
-              <p class="mt-2 text-sm text-slate-300">Rol: {{ systemUser.rol }}</p>
-              <p class="mt-1 text-sm text-slate-400">Acceso: {{ systemUser.hasPassword ? 'Con contrasena' : 'Sin contrasena' }}</p>
-            </div>
-
-            <div class="flex shrink-0 gap-2">
-              <button class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5" @click="editUser(systemUser)">
-                Editar
-              </button>
-              <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 hover:bg-rose-400/10" @click="confirmDelete(systemUser)">
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </article>
+              </td>
+              <td class="px-5 py-4 align-top font-bold text-white">{{ systemUser.nombre || 'Sin nombre' }}</td>
+              <td class="px-5 py-4 align-top text-slate-300">{{ systemUser.rol }}</td>
+              <td class="px-5 py-4 align-top text-slate-400">{{ systemUser.correo || 'Sin correo' }}</td>
+              <td class="px-5 py-4 align-top text-slate-400">{{ systemUser.dni || 'Sin DNI' }}</td>
+              <td class="px-5 py-4 align-top text-slate-400">{{ systemUser.telefono || 'Sin telefono' }}</td>
+              <td class="px-5 py-4 align-top">
+                <div class="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-white hover:bg-white/5"
+                    title="Ver detalles" aria-label="Ver detalles"
+                    @click="openDetails(systemUser)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                      <circle cx="12" cy="12" r="9" />
+                      <line x1="12" y1="11" x2="12" y2="16" />
+                      <circle cx="12" cy="7.5" r="0.75" fill="currentColor" stroke="none" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-white hover:bg-white/5"
+                    title="Editar"
+                    @click="editUser(systemUser)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="grid h-9 w-9 place-items-center rounded-xl border border-rose-400/30 text-rose-100 hover:bg-rose-400/10"
+                    title="Eliminar"
+                    @click="confirmDelete(systemUser)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                      <path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <p v-if="!filteredUsers.length" class="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-400">
@@ -121,6 +158,31 @@
         </form>
       </div>
     </Teleport>
+
+    <Teleport to="body">
+      <div v-if="isDetailsOpen && viewingUser" role="dialog" aria-modal="true" aria-label="Detalles del usuario" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+        <div class="w-full max-w-md rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Detalles</p>
+              <h2 class="mt-2 text-2xl font-black text-white">{{ viewingUser.nombre || 'Sin nombre' }}</h2>
+              <span class="mt-2 inline-block rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-cyan-100">{{ viewingUser.id_usuario }}</span>
+            </div>
+            <button type="button" class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5" @click="closeDetails">
+              Cerrar
+            </button>
+          </div>
+
+          <div class="mt-6 space-y-2">
+            <p class="text-sm text-slate-400">Correo: <span class="text-slate-200">{{ viewingUser.correo || 'Sin correo' }}</span></p>
+            <p class="text-sm text-slate-400">DNI: <span class="text-slate-200">{{ viewingUser.dni || 'Sin DNI' }}</span></p>
+            <p class="text-sm text-slate-400">Telefono: <span class="text-slate-200">{{ viewingUser.telefono || 'Sin telefono' }}</span></p>
+            <p class="text-sm text-slate-300">Rol: <span class="text-slate-200">{{ viewingUser.rol }}</span></p>
+            <p class="text-sm text-slate-400">Acceso: <span class="text-slate-200">{{ viewingUser.hasPassword ? 'Con contrasena' : 'Sin contrasena' }}</span></p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -133,6 +195,8 @@ const users = computed(() => gymStore.users);
 const search = ref('');
 const editingId = ref('');
 const isEditorOpen = ref(false);
+const isDetailsOpen = ref(false);
+const viewingUser = ref(null);
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
 
@@ -194,6 +258,16 @@ const editUser = (systemUser) => {
   form.rol = systemUser.rol || 'staff';
   feedbackMessage.value = '';
   isEditorOpen.value = true;
+};
+
+const openDetails = (systemUser) => {
+  viewingUser.value = systemUser;
+  isDetailsOpen.value = true;
+};
+
+const closeDetails = () => {
+  isDetailsOpen.value = false;
+  viewingUser.value = null;
 };
 
 const confirmDelete = async (systemUser) => {
