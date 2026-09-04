@@ -34,11 +34,9 @@ yarn-error.*
 .env
 .env.*
 .env*.local
-!.env.example
 backend/.env
 frontend/.env
-!backend/.env.example
-!frontend/.env.example
+
 
 # typescript
 *.tsbuildinfo
