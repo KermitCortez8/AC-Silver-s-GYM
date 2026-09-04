@@ -67,7 +67,7 @@
                   <button
                     type="button"
                     class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-white hover:bg-white/5"
-                    title="Ver detalles"
+                    title="Ver detalles" aria-label="Ver detalles"
                     @click="openDetails(systemUser)"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
