@@ -90,10 +90,22 @@ const feedbackTone = ref('success');
 const overview = computed(() => gymStore.trainerOverview || {});
 const routines = computed(() => overview.value.routines || []);
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service || 'Servicio';
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Miercoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sabado', domingo: 'Domingo' })[day] || day || 'Dia';
+/**
+ * Gestiona esta acción de la vista.
+ */
 const routinesForService = (service) => routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(service || '').toLowerCase());
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const searchClient = async () => {
   try {
     feedback.value = '';
@@ -106,11 +118,17 @@ const searchClient = async () => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const reloadClient = async () => {
   if (!dni.value.trim()) return;
   clientData.value = await gymStore.fetchTrainerClientRoutines(dni.value);
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const assignRoutine = async (item, idRutina) => {
   if (!Number(idRutina || 0)) return;
   try {
@@ -125,6 +143,9 @@ const assignRoutine = async (item, idRutina) => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const markDone = async (item) => {
   try {
     feedback.value = '';

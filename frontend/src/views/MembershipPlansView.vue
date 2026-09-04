@@ -67,10 +67,22 @@ const plans = computed(() => gymStore.planCatalog);
 const feedbackClass = computed(() => feedbackTone.value === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
 const form = reactive({ id_pm: null, name: '', duration: '30 dias', price: 0, description: '', benefits: '', active: true });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const reset = () => Object.assign(form, { id_pm: null, name: '', duration: '30 dias', price: 0, description: '', benefits: '', active: true });
+/**
+ * Gestiona esta acción de la vista.
+ */
 const newPlan = () => reset();
+/**
+ * Gestiona esta acción de la vista.
+ */
 const editPlan = (plan) => Object.assign(form, { id_pm: plan.id_pm, name: plan.name, duration: plan.duration, price: plan.price, description: plan.description, benefits: plan.benefits, active: plan.active });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const savePlan = async () => {
   try {
     await gymStore.upsertPlan({ ...form });
@@ -83,6 +95,9 @@ const savePlan = async () => {
   }
 };
 
+/**
+ * Elimina el registro indicado.
+ */
 const removePlan = async (plan) => {
   if (!window.confirm(`Eliminar el plan ${plan.name}?`)) return;
   try {

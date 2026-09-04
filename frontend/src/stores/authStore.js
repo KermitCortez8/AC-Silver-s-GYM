@@ -10,6 +10,9 @@ import {
 import { APP_CONFIG } from '../config/appConfig';
 import { apiGet } from '../services/apiClient';
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeStoredUser = (userData) => {
   if (!userData) {
     return null;
@@ -48,6 +51,9 @@ export const useAuthStore = defineStore('auth', () => {
   });
 
   // Actions
+  /**
+   * Gestiona esta acción de la vista.
+   */
   const initializeAuth = async () => {
     try {
       isLoading.value = true;
@@ -91,6 +97,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  /**
+   * Gestiona esta acción de la vista.
+   */
   const signIn = async (idToken, userData) => {
     try {
       isLoading.value = true;
@@ -120,6 +129,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  /**
+   * Gestiona esta acción de la vista.
+   */
   const signUp = async (idToken, userData) => {
     try {
       isLoading.value = true;
@@ -148,6 +160,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  /**
+   * Gestiona esta acción de la vista.
+   */
   const signOut = async () => {
     try {
       isLoading.value = true;

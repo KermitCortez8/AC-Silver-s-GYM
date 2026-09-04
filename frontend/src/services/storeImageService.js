@@ -3,6 +3,9 @@ import { storeImageUrl } from '../config/publicStorage';
 
 const apiBase = APP_CONFIG.authApiBaseUrl;
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const parseErrorMessage = async (response) => {
   const message = await response.text();
   return message || 'No se pudo completar la operacion de imagenes';

@@ -141,6 +141,9 @@ const filteredOrders = computed(() => {
   );
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const ensureDraft = (order) => {
   if (!orderDrafts[order.id_pedido]) {
     orderDrafts[order.id_pedido] = {
@@ -162,11 +165,17 @@ watch(orders, (list) => {
   });
 }, { immediate: true });
 
+/**
+ * Formatea el valor para mostrarlo.
+ */
 const formatDate = (value) => {
   if (!value) return 'Sin fecha';
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
 };
 
+/**
+ * Actualiza los datos actuales.
+ */
 const refresh = async () => {
   feedback.value = '';
   try {
@@ -176,6 +185,9 @@ const refresh = async () => {
   }
 };
 
+/**
+ * Actualiza los datos actuales.
+ */
 const updateOrder = async (order) => {
   feedback.value = '';
   try {

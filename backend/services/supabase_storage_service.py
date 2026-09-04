@@ -1,3 +1,7 @@
+# Módulo: supabase_storage_service.
+# Guarda y elimina imágenes en Supabase Storage.
+# Construye rutas seguras y URLs públicas para cada archivo.
+# Valida extensiones y nombres antes de subir contenido.
 from __future__ import annotations
 
 import json
@@ -9,15 +13,18 @@ from urllib.request import Request, urlopen
 class SupabaseStorageService:
     IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
 
+    # Inicializa la clase.
     def __init__(self, supabase_url: str, supabase_key: str, bucket: str) -> None:
         self.base_url = supabase_url.rstrip("/")
         self.key = supabase_key
         self.bucket = bucket.strip()
 
+    # Procesa esta operación.
     def public_url(self, path: str) -> str:
         encoded_path = "/".join(quote(segment, safe="") for segment in path.split("/") if segment)
         return f"{self.base_url}/storage/v1/object/public/{quote(self.bucket, safe='')}/{encoded_path}"
 
+    # Procesa esta operación.
     def upload(self, path: str, data: bytes, content_type: str) -> dict[str, str]:
         encoded_path = "/".join(quote(segment, safe="") for segment in path.split("/") if segment)
         url = f"{self.base_url}/storage/v1/object/{quote(self.bucket, safe='')}/{encoded_path}"
@@ -42,6 +49,7 @@ class SupabaseStorageService:
             "url": self.public_url(path),
         }
 
+    # Obtiene los datos necesarios.
     def list_images(self, prefix: str = "", limit: int = 200) -> list[dict[str, str]]:
         url = f"{self.base_url}/storage/v1/object/list/{quote(self.bucket, safe='')}"
         body = {

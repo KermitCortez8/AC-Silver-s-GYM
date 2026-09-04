@@ -84,10 +84,16 @@ const passwordForm = reactive({
   password: '',
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const navigateByRole = (role) => {
   router.push(role === 'user' ? '/user' : '/admin');
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const completeLogin = async (credential) => {
   processing.value = true;
   try {
@@ -106,6 +112,9 @@ const completeLogin = async (credential) => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handlePasswordLogin = async () => {
   processing.value = true;
   googleError.value = '';
@@ -125,6 +134,9 @@ const handlePasswordLogin = async () => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const renderGoogleButton = async () => {
   if (!GOOGLE_CONFIG.webClientId) {
     googleReady.value = false;

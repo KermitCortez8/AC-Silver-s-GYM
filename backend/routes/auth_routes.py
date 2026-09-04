@@ -1,3 +1,7 @@
+# Módulo: auth_routes.
+# Expone el acceso con contraseña y con Google.
+# Valida tokens y devuelve el perfil de la sesión actual.
+# Convierte errores de autenticación en respuestas HTTP.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -13,6 +17,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 # POST /auth/google: valida la credencial y crea la sesión del usuario.
 @router.post("/google", response_model=AuthResponse)
+# Procesa esta operación.
 def google_auth(payload: AuthGoogleRequest, gym_service: GymDomainService = Depends(get_gym_service)):
     auth_service = AuthService(gym_service)
     try:
@@ -22,6 +27,7 @@ def google_auth(payload: AuthGoogleRequest, gym_service: GymDomainService = Depe
 
 
 @router.post("/password", response_model=AuthResponse)
+# Procesa esta operación.
 def password_auth(payload: AuthPasswordRequest, gym_service: GymDomainService = Depends(get_gym_service)):
     auth_service = AuthService(gym_service)
     try:
@@ -32,6 +38,7 @@ def password_auth(payload: AuthPasswordRequest, gym_service: GymDomainService = 
 
 # GET /auth/me: devuelve los datos del usuario autenticado a partir del token.
 @router.get("/me", response_model=UserProfile)
+# Procesa esta operación.
 def auth_me(
     authorization: str | None = Header(default=None),
     gym_service: GymDomainService = Depends(get_gym_service),

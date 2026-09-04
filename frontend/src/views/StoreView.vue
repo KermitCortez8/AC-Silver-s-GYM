@@ -436,16 +436,28 @@ const currentProductCode = computed(() => {
   return 'Se generara automaticamente';
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const productCode = (id) => `PROD-${String(id || 0).padStart(4, '0')}`;
 
+/**
+ * Valida los datos recibidos.
+ */
 const isProductLowStock = (producto) => Number(producto.cantidad || 0) <= Number(producto.minimo || 0);
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const productStatusClass = (status) => {
   if (status === 'Disponible') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300';
   if (status === 'Agotado') return 'border-rose-400/20 bg-rose-400/10 text-rose-300';
   return 'border-amber-400/20 bg-amber-400/10 text-amber-300';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const resetForm = () => {
   editingId.value = '';
   form.nombre = '';
@@ -463,17 +475,26 @@ const resetForm = () => {
   bucketImages.value = [];
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const openNewProducto = () => {
   resetForm();
   feedbackMessage.value = '';
   isProductEditorOpen.value = true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const closeProductEditor = () => {
   isProductEditorOpen.value = false;
   resetForm();
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const editProducto = (producto) => {
   editingId.value = producto.id_producto;
   form.nombre = producto.nombre;
@@ -492,6 +513,9 @@ const editProducto = (producto) => {
   isProductEditorOpen.value = true;
 };
 
+/**
+ * Consulta los datos del servidor.
+ */
 const loadBucketImages = async () => {
   isLoadingBucketImages.value = true;
   try {
@@ -505,6 +529,9 @@ const loadBucketImages = async () => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const openBucketPicker = async () => {
   isBucketPickerOpen.value = true;
   if (!bucketImages.value.length) {
@@ -512,10 +539,16 @@ const openBucketPicker = async () => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const closeBucketPicker = () => {
   isBucketPickerOpen.value = false;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const selectBucketImage = (image) => {
   form.imagen_url = image.url;
   imageFeedbackTone.value = 'success';
@@ -523,11 +556,17 @@ const selectBucketImage = (image) => {
   isBucketPickerOpen.value = false;
 };
 
+/**
+ * Elimina el registro indicado.
+ */
 const clearSelectedImage = () => {
   form.imagen_url = '';
   imageFeedback.value = '';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handleLocalImageUpload = async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
@@ -549,6 +588,9 @@ const handleLocalImageUpload = async (event) => {
 };
 
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handleSubmit = async () => {
   try {
     await gymStore.upsertProductoTienda({
@@ -574,6 +616,9 @@ const handleSubmit = async () => {
   }
 };
 
+/**
+ * Elimina el registro indicado.
+ */
 const deleteProducto = async (idProducto) => {
   if (!window.confirm('Eliminar este producto?')) return;
   try {
@@ -586,6 +631,9 @@ const deleteProducto = async (idProducto) => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const agregarAlCarrito = (producto) => {
   const requested = Number(cantidadInput.value[producto.id_producto] || 1);
   const stock = Number(producto.cantidad || 1);
@@ -594,6 +642,9 @@ const agregarAlCarrito = (producto) => {
   cantidadInput.value[producto.id_producto] = 1;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const goToCheckout = () => {
   if (!cart.value.length) return;
   router.push('/user/store/payment');

@@ -25,6 +25,21 @@
     </header>
 
     <main>
+      <section v-if="showRegistrationNotice" class="border-b border-emerald-200 bg-emerald-50 px-4 py-5 sm:px-6 lg:px-8">
+        <div class="mx-auto flex max-w-[1600px] items-start justify-between gap-4 rounded-2xl border border-emerald-200 bg-white px-5 py-4 shadow-sm">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Registro completado</p>
+            <p class="mt-2 text-lg font-black text-emerald-950">
+              Su cuenta ha sido inicializada. A la espera de activación de membresía.
+            </p>
+            <p v-if="registrationCode" class="mt-1 text-sm text-emerald-800">Solicitud {{ registrationCode }}</p>
+          </div>
+          <button type="button" class="rounded-full px-3 py-1 text-xl text-emerald-800 hover:bg-emerald-100" aria-label="Cerrar aviso" @click="dismissRegistrationNotice">
+            ×
+          </button>
+        </div>
+      </section>
+
       <section class="relative overflow-hidden bg-white">
         <div class="absolute inset-0">
           <img
@@ -320,9 +335,24 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { landingImageUrl } from '../config/publicStorage';
 import { apiGet } from '../services/apiClient';
 
+const route = useRoute();
+const router = useRouter();
+const showRegistrationNotice = computed(() => String(route.query.registro || '') === 'inicializado');
+const registrationCode = computed(() => {
+  const id = Number(route.query.solicitud || 0);
+  return id > 0 ? `SGCLI${String(id).padStart(3, '0')}` : '';
+});
+
+const dismissRegistrationNotice = () => {
+  const query = { ...route.query };
+  delete query.registro;
+  delete query.solicitud;
+  router.replace({ path: '/', query });
+};
 
 const selectedService = ref(null);
 
@@ -346,6 +376,9 @@ const allSchedules = [
 ];
 
 // Match card title (e.g. "Musculacion") to schedule servicio (e.g. "Musculación")
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeService = (str) =>
   str
     .toLowerCase()
@@ -360,6 +393,9 @@ const filteredSchedules = computed(() =>
     : [],
 );
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const toggleService = (title) => {
   selectedService.value = selectedService.value === title ? null : title;
 };
@@ -371,6 +407,9 @@ const landingImages = {
   baile: landingImageUrl('baile.jpg'),
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handleImageError = (event) => {
   event.currentTarget.style.display = 'none';
 };
@@ -384,7 +423,13 @@ const defaultPlans = [
   { id_pm: 3, nombre_plan: 'ANUAL', duracion: '365 dias', precio: 699, descripcion: 'Membresia anual para clientes constantes con mejor precio acumulado.', activo: true },
 ];
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizePlanName = (value) => String(value || '').trim().toUpperCase();
+/**
+ * Formatea el valor para mostrarlo.
+ */
 const formatPlanLabel = (value) =>
   normalizePlanName(value)
     .toLowerCase()
@@ -405,6 +450,9 @@ const plans = computed(() =>
     .filter((plan) => plan.id),
 );
 
+/**
+ * Consulta los datos del servidor.
+ */
 const loadPlans = async () => {
   try {
     const list = await apiGet('/planes-membresia');

@@ -16,10 +16,11 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
-// Inicializar autenticación y sincronizar con backend si está configurado
+// Los visitantes usan únicamente los endpoints públicos de cada vista.
+// La sincronización completa requiere una sesión autenticada.
 const auth = useAuthStore()
 auth.initializeAuth().then(() => {
-	if (APP_CONFIG.authApiBaseUrl) {
+	if (APP_CONFIG.authApiBaseUrl && auth.isAuthenticated) {
 		try {
 			const gym = useGymStore()
 			gym.fetchFromBackend().catch((err) => console.warn('Error sync datos remotos:', err))

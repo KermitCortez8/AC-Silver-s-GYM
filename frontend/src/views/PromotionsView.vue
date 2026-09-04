@@ -83,10 +83,22 @@ const promotions = computed(() => gymStore.promotions);
 const feedbackClass = computed(() => feedbackTone.value === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
 const form = reactive({ id_promocion: null, name: '', description: '', discountType: 'percent', discountValue: 10, startsAt: '', validUntil: '', appliesTo: [], active: true });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const reset = () => Object.assign(form, { id_promocion: null, name: '', description: '', discountType: 'percent', discountValue: 10, startsAt: '', validUntil: '', appliesTo: [], active: true });
+/**
+ * Gestiona esta acción de la vista.
+ */
 const planNames = (promo) => promo.appliesTo.map((id) => plans.value.find((plan) => plan.id === id)?.name).filter(Boolean);
+/**
+ * Gestiona esta acción de la vista.
+ */
 const edit = (promo) => Object.assign(form, { id_promocion: promo.id_promocion, name: promo.name, description: promo.description, discountType: promo.discountType, discountValue: promo.discountValue, startsAt: promo.startsAt, validUntil: promo.validUntil, appliesTo: [...promo.appliesTo], active: promo.active });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const save = async () => {
   try {
     await gymStore.upsertPromotion({ ...form });
@@ -99,6 +111,9 @@ const save = async () => {
   }
 };
 
+/**
+ * Elimina el registro indicado.
+ */
 const remove = async (promo) => {
   if (!window.confirm(`Eliminar la promocion ${promo.name}?`)) return;
   try {

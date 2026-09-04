@@ -111,9 +111,18 @@ const routineForm = reactive({
 const overview = computed(() => gymStore.trainerOverview || {});
 const routines = computed(() => overview.value.routines || []);
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service || 'Servicio';
+/**
+ * Gestiona esta acción de la vista.
+ */
 const routinesForService = (service) => routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(service || '').toLowerCase());
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const resetRoutineForm = () => {
   routineForm.id_rutina = null;
   routineForm.nombre_rutina = '';
@@ -121,6 +130,9 @@ const resetRoutineForm = () => {
   routineForm.color = 'Azul';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const editRoutine = (routine) => {
   routineForm.id_rutina = routine.id_rutina;
   routineForm.servicio = routine.servicio || 'fitness';
@@ -129,6 +141,9 @@ const editRoutine = (routine) => {
   routineForm.color = routine.color || 'Azul';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const saveRoutine = async () => {
   try {
     isSaving.value = true;
@@ -145,6 +160,9 @@ const saveRoutine = async () => {
   }
 };
 
+/**
+ * Actualiza los datos actuales.
+ */
 const refresh = async () => {
   try {
     errorMessage.value = '';

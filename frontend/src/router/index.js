@@ -23,7 +23,6 @@ import PromotionsView from '../views/PromotionsView.vue';
 import StoreView from '../views/StoreView.vue';
 import StorePaymentView from '../views/StorePaymentView.vue';
 import OrdersView from '../views/OrdersView.vue';
-import ScheduleView from '../views/ScheduleView.vue';
 import UserAttendanceView from '../views/UserAttendanceView.vue';
 import TrainerOverviewView from '../views/TrainerOverviewView.vue';
 import TrainerRoutinesView from '../views/TrainerRoutinesView.vue';
@@ -190,12 +189,12 @@ const routes = [
       {
         path: 'schedule',
         name: 'Schedule',
-        component: ScheduleView,
+        component: EnrollmentView,
       },
       {
         path: 'enrollment',
         name: 'UserEnrollment',
-        component: EnrollmentView,
+        redirect: '/user/schedule',
       },
       {
         path: 'attendance',

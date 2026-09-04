@@ -1,3 +1,7 @@
+# Módulo: main.
+# Crea la aplicación FastAPI y registra sus rutas.
+# Configura CORS, archivos públicos y comprobaciones de salud.
+# Expone el punto de entrada utilizado por Uvicorn.
 from __future__ import annotations
 
 from pathlib import Path
@@ -44,6 +48,7 @@ app.mount(
 
 
 @app.get("/")
+# Procesa esta operación.
 def root() -> dict[str, str]:
     return {
         "name": settings.app_name,
@@ -53,6 +58,7 @@ def root() -> dict[str, str]:
 
 
 @app.get("/health")
+# Procesa esta operación.
 def health() -> dict[str, str]:
     return {"status": "healthy"}
 
@@ -69,6 +75,7 @@ app.include_router(store_router, prefix="/api")
 app.include_router(trainer_router, prefix="/api")
 
 
+# Procesa esta operación.
 def main() -> None:
     import uvicorn
 

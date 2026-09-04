@@ -20,42 +20,40 @@
         <form class="mt-6 space-y-4" @submit.prevent="submitRegistration">
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Nombre completo</span>
-            <input v-model="form.nombre" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Jose Perez" />
+            <input v-model.trim="form.nombre" required autocomplete="name" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Jose Perez" />
           </label>
 
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Correo</span>
-            <input v-model="form.correo" type="email" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="cliente@correo.com" />
+            <input v-model.trim="form.correo" required type="email" autocomplete="email" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="cliente@correo.com" />
           </label>
 
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Contrasena</span>
-            <input v-model="form.password" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Minimo 6 caracteres" />
+            <input v-model="form.password" required minlength="6" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Minimo 6 caracteres" />
           </label>
 
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="block space-y-2">
               <span class="text-sm font-semibold text-slate-700">DNI</span>
-              <input v-model="form.dni" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="12345678" />
+              <input v-model.trim="form.dni" required inputmode="numeric" pattern="[0-9]{8}" maxlength="8" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="12345678" />
             </label>
             <label class="block space-y-2">
               <span class="text-sm font-semibold text-slate-700">Telefono</span>
-              <input v-model="form.telefono" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="999111222" />
+              <input v-model.trim="form.telefono" required type="tel" inputmode="tel" pattern="[0-9+ ]{7,15}" maxlength="15" autocomplete="tel" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="999111222" />
             </label>
           </div>
-
-          <label class="block space-y-2">
-            <span class="text-sm font-semibold text-slate-700">Referencia de pago</span>
-            <input v-model="form.referencia_pago" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Operacion, voucher o codigo" />
-          </label>
 
           <button
             type="submit"
             class="w-full rounded-xl bg-[#dc2626] px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="isSubmitting || !planOptions.length"
           >
-            {{ isSubmitting ? 'Procesando...' : 'Continuar a pago' }}
+            {{ isSubmitting ? 'Preparando pago seguro...' : 'Pagar con Stripe' }}
           </button>
+          <p class="text-center text-xs leading-5 text-slate-500">
+            Serás redirigido a Stripe Checkout. Silver Gym no recibe ni almacena los datos de tu tarjeta.
+          </p>
         </form>
 
         <p v-if="feedback" class="mt-5 rounded-2xl border px-4 py-3 text-sm" :class="feedbackTone === 'error' ? 'border-rose-300 bg-rose-50 text-rose-900' : 'border-emerald-300 bg-emerald-50 text-emerald-900'">
@@ -105,7 +103,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { GOOGLE_CONFIG } from '../config/googleConfig';
 import { loadGoogleIdentityScript } from '../services/authService';
 import { apiGet } from '../services/apiClient';
@@ -113,7 +111,6 @@ import { decodeJWT } from '../utils/authUtils';
 import { useGymStore } from '../stores/gymStore';
 
 const route = useRoute();
-const router = useRouter();
 const gymStore = useGymStore();
 const googleButtonRef = ref(null);
 const googleError = ref('');
@@ -128,7 +125,13 @@ const defaultPlans = [
   { id_pm: 3, nombre_plan: 'ANUAL', duracion: '365 dias', precio: 699, descripcion: 'Membresia anual con mejor precio acumulado.', activo: true },
 ];
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizePlanName = (value) => String(value || '').trim().toUpperCase();
+/**
+ * Formatea el valor para mostrarlo.
+ */
 const formatPlanLabel = (value) =>
   normalizePlanName(value)
     .toLowerCase()
@@ -151,6 +154,9 @@ const planOptions = computed(() =>
     .filter((plan) => plan.id),
 );
 
+/**
+ * Sincroniza los datos disponibles.
+ */
 const syncSelectedPlan = () => {
   if (!planOptions.value.length) {
     form.plan = '';
@@ -169,11 +175,13 @@ const form = reactive({
   dni: '',
   password: '',
   plan: normalizePlanName(route.query.plan),
-  referencia_pago: '',
   google_email: '',
   google_name: '',
 });
 
+/**
+ * Consulta los datos del servidor.
+ */
 const loadPlans = async () => {
   try {
     const list = await apiGet('/planes-membresia');
@@ -185,6 +193,9 @@ const loadPlans = async () => {
   }
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const renderGoogleButton = async () => {
   if (!GOOGLE_CONFIG.webClientId || !googleButtonRef.value) return;
 
@@ -217,6 +228,9 @@ const renderGoogleButton = async () => {
   }
 };
 
+/**
+ * Envía los datos del formulario.
+ */
 const submitRegistration = async () => {
   isSubmitting.value = true;
   feedback.value = '';
@@ -227,15 +241,15 @@ const submitRegistration = async () => {
       throw new Error('No hay planes configurados para registrar clientes.');
     }
 
-    const client = await gymStore.registerPublicClient({
-      ...form,
-      metodo_pago: 'pasarela',
-      referencia_pago: form.referencia_pago || `WEB-${Date.now()}`,
-    });
+    const result = await gymStore.registerPublicClient({ ...form });
+    const { client, payment } = result;
     registeredClient.value = client;
+    if (!payment?.checkout_url) {
+      throw new Error(payment?.message || 'Stripe no está configurado. Contacta al administrador.');
+    }
     feedbackTone.value = 'success';
-    feedback.value = 'Cuenta creada. Te llevamos a la pasarela de pago.';
-    router.push({ name: 'Payment', params: { idCliente: client.id_cliente }, query: { ref: client.paymentReference || `WEB-${Date.now()}` } });
+    feedback.value = 'Cuenta creada. Abriendo el checkout seguro de Stripe...';
+    window.location.assign(payment.checkout_url);
   } catch (error) {
     feedbackTone.value = 'error';
     feedback.value = error instanceof Error ? error.message : 'No se pudo completar el registro.';

@@ -1,3 +1,7 @@
+# Módulo: config.
+# Lee las variables de entorno usadas por el backend.
+# Agrupa credenciales, URLs y opciones de los servicios externos.
+# Entrega una configuración única durante la ejecución.
 from __future__ import annotations
 
 from functools import lru_cache
@@ -7,6 +11,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 
+# Procesa esta operación.
 def _load_env_file(path: Path) -> None:
     if not path.exists():
         return
@@ -36,13 +41,19 @@ class Settings(BaseModel):
     supabase_anon_key: str = ""
     store_images_dir: str = ""
     store_images_bucket: str = "imagenestienda"
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_mode: str = "test"
+    frontend_public_url: str = "http://localhost:5173"
 
     @property
+    # Valida los datos recibidos.
     def has_supabase_credentials(self) -> bool:
         return bool(self.supabase_url and self.supabase_key)
 
 
 @lru_cache
+# Obtiene los datos necesarios.
 def get_settings() -> Settings:
     backend_dir = Path(__file__).resolve().parent
     _load_env_file(backend_dir / ".env")
@@ -66,4 +77,8 @@ def get_settings() -> Settings:
         supabase_anon_key=supabase_anon_key.strip(),
         store_images_dir=(os.getenv("STORE_IMAGES_DIR") or str(backend_dir / "db" / "store-images")).strip(),
         store_images_bucket=(os.getenv("SUPABASE_STORE_IMAGES_BUCKET") or "imagenestienda").strip(),
+        stripe_secret_key=(os.getenv("STRIPE_SECRET_KEY") or "").strip(),
+        stripe_webhook_secret=(os.getenv("STRIPE_WEBHOOK_SECRET") or "").strip(),
+        stripe_mode=(os.getenv("STRIPE_MODE") or "test").strip().lower(),
+        frontend_public_url=(os.getenv("FRONTEND_PUBLIC_URL") or "http://localhost:5173").strip().rstrip("/"),
     )

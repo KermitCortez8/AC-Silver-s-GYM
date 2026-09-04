@@ -64,6 +64,9 @@ const form = reactive({ capacidad_total: 30, capacidad_por_hora: 10 });
 
 watch(settings, (value) => Object.assign(form, value), { immediate: true });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const save = async () => {
   try {
     await gymStore.updateGymSettings({ ...form });
