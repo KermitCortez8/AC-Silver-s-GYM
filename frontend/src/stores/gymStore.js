@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { APP_CONFIG } from '../config/appConfig';
+import { apiGet } from '../services/apiClient';
+import { parseError } from '../services/apiResponse.js';
+import { syncResources } from '../services/syncResources.js';
 import { useAuthStore } from './authStore';
 
 const PASS_EXPIRY_MINUTES = 10;
@@ -507,6 +510,9 @@ export const useGymStore = defineStore('gym', () => {
   const enrollments = ref(initialState.enrollments);
   const trainerOverview = ref(initialState.trainerOverview);
   const gymSettings = ref(initialState.gymSettings);
+  const syncError = ref('');
+  const isSyncing = ref(false);
+  let syncPromise = null;
 
   /**
    * Gestiona esta acción de la vista.
@@ -1868,12 +1874,8 @@ export const useGymStore = defineStore('gym', () => {
    * Obtiene los datos necesarios.
    */
   const readBackendError = async (response, fallbackMessage) => {
-    try {
-      const data = await response.json();
-      return data?.detail || data?.message || fallbackMessage;
-    } catch (error) {
-      return fallbackMessage;
-    }
+    const error = await parseError(response);
+    return error.message || fallbackMessage;
   };
 
   /**
@@ -2401,106 +2403,79 @@ export const useGymStore = defineStore('gym', () => {
   /**
    * Consulta los datos del servidor.
    */
-  const fetchFromBackend = async () => {
-    if (!apiBase) throw new Error('No hay backend configurado en APP_CONFIG.authApiBaseUrl');
+  const fetchFromBackend = () => {
+    if (syncPromise) return syncPromise;
+    isSyncing.value = true;
+    syncError.value = '';
 
-    // Clientes -> members
-    const resClientes = await fetch(`${apiBase}/clientes`, { headers: _authHeaders() });
-    if (resClientes.ok) {
-      const list = await resClientes.json();
-      members.value = list.map((client) => normalizeBackendClientToMember(client));
-    } else if (resClientes.status === 401 || resClientes.status === 403) {
-      const resMiCliente = await fetch(`${apiBase}/clientes/me`, { headers: _authHeaders() });
-      if (resMiCliente.ok) {
-        const client = normalizeBackendClientToMember(await resMiCliente.json());
-        const index = members.value.findIndex(
-          (entry) =>
-            Number(entry.id_cliente || 0) === Number(client.id_cliente || 0) ||
-            String(entry.email || '').toLowerCase() === String(client.email || '').toLowerCase(),
-        );
-        if (index >= 0) {
-          members.value[index] = { ...members.value[index], ...client };
-        } else {
-          members.value.unshift(client);
-        }
+    syncPromise = (async () => {
+      const role = authStore.userRole || authStore.user?.role;
+      const internal = ['admin', 'staff'].includes(role);
+      const getList = async (path) => {
+        const data = await apiGet(path, authStore.token);
+        if (!Array.isArray(data)) throw new Error('El servidor devolvió una lista de datos inválida.');
+        return data;
+      };
+      const tasks = [];
+      if (internal) {
+        tasks.push(['Clientes', async () => {
+          members.value = (await getList('/clientes')).map(normalizeBackendClientToMember);
+        }], ['Usuarios', async () => {
+          users.value = (await getList('/usuarios')).map(normalizeUser);
+        }]);
+      } else if (role === 'user') {
+        tasks.push(['Mi perfil', async () => {
+          members.value = [normalizeBackendClientToMember(await apiGet('/clientes/me', authStore.token))];
+        }]);
       }
-    }
 
-    const resUsuarios = await fetch(`${apiBase}/usuarios`, { headers: _authHeaders() });
-    if (resUsuarios.ok) {
-      const list = await resUsuarios.json();
-      users.value = list.map((user) => normalizeUser(user));
-    }
+      tasks.push(['Inventario', async () => {
+        inventory.value = (await getList('/inventario')).map((i) => ({
+          id: `item-${i.id_item}`,
+          inventoryCode: `ACT-${String(i.n_activo || i.id_item).padStart(4, '0')}`,
+          n_activo: i.n_activo || i.id_item,
+          name: i.nombre_item,
+          category: i.tipo,
+          quantity: i.cantidad_stock,
+          minQuantity: Number(i.stock_minimo ?? 1),
+          unidad_venta: i.unidad_venta || 'unidad',
+          precio_venta: Number(i.precio_venta ?? 0),
+          location: i.ubicacion || 'Almacén',
+          status: i.estado || '',
+          observations: i.observaciones || '',
+        }));
+      }],
+      ['Movimientos', refreshInventoryMovementsFromBackend],
+      ['Productos', refreshStoreProductsFromBackend],
+      ['Pedidos', refreshStoreOrdersFromBackend],
+      ['Planes', async () => {
+        planCatalog.value = (await getList('/planes-membresia')).map(normalizePlanFromBackend);
+      }],
+      ['Promociones', refreshPromotionsFromBackend]);
 
-    // Inventario
-    const resInv = await fetch(`${apiBase}/inventario`, { headers: _authHeaders() });
-    if (resInv.ok) {
-      const list = await resInv.json();
-      inventory.value = list.map((i) => ({
-        id: `item-${i.id_item}`,
-        inventoryCode: `ACT-${String(i.n_activo || i.id_item).padStart(4, '0')}`,
-        n_activo: i.n_activo || i.id_item,
-        name: i.nombre_item,
-        category: i.tipo,
-        quantity: i.cantidad_stock,
-        minQuantity: Number(i.stock_minimo ?? 1),
-        unidad_venta: i.unidad_venta || 'unidad',
-        precio_venta: Number(i.precio_venta ?? 0),
-        location: i.ubicacion || 'Almacén',
-        status: i.estado || '',
-        observations: i.observaciones || '',
-      }));
-    }
+      if (internal) {
+        tasks.push(['Configuración', refreshGymSettingsFromBackend], ['Horarios', async () => {
+          schedule.value = (await getList('/gym/horarios')).map((h) => ({
+            ...h,
+            capacidad_maxima: Number(h.capacidad_maxima ?? 1),
+            cupos_usados: Number(h.cupos_usados ?? 1),
+          }));
+        }]);
+      }
+      if (internal || role === 'user') {
+        tasks.push(['Horarios por servicio', refreshServiceSchedulesFromBackend],
+          ['Matrículas', refreshEnrollmentsFromBackend]);
+      }
+      if (internal || role === 'trainer') tasks.push(['Rutinas', refreshRoutinesFromBackend]);
+      if (role === 'trainer') tasks.push(['Supervisión', fetchTrainerOverview]);
+      tasks.push(['Asistencias', refreshAttendanceFromBackend]);
 
-    const resMovimientos = await fetch(`${apiBase}/inventario/movimientos`, { headers: _authHeaders() });
-    if (resMovimientos.ok) {
-      inventoryMovements.value = await resMovimientos.json();
-    }
-
-    // Productos de tienda
-    const resTienda = await fetch(`${apiBase}/tienda`, { headers: _authHeaders() });
-    if (resTienda.ok) {
-      const list = await resTienda.json();
-      productos_tienda.value = list.map((p) => normalizeStoreProductFromBackend(p));
-    }
-
-    const resPedidos = await fetch(`${apiBase}/tienda/pedidos`, { headers: _authHeaders() });
-    if (resPedidos.ok) {
-      const list = await resPedidos.json();
-      storeOrders.value = list.map((order) => normalizeStoreOrder(order));
-    }
-
-    // Planes de membresía
-    const resPlanes = await fetch(`${apiBase}/planes-membresia`, { headers: _authHeaders() });
-    if (resPlanes.ok) {
-      const list = await resPlanes.json();
-      planCatalog.value = list.map((p) => normalizePlanFromBackend(p));
-    }
-
-    await refreshPromotionsFromBackend().catch(() => {});
-    await refreshGymSettingsFromBackend().catch(() => {});
-
-    const resHorarios = await fetch(`${apiBase}/gym/horarios`, { headers: _authHeaders() });
-    if (resHorarios.ok) {
-      const list = await resHorarios.json();
-      schedule.value = list.map((h) => ({
-        id_horario: h.id_horario,
-        id_cliente: h.id_cliente,
-        id_rutina: h.id_rutina,
-        dia_semana: h.dia_semana,
-        hora_inicio: h.hora_inicio,
-        hora_fin: h.hora_fin,
-        capacidad_maxima: Number(h.capacidad_maxima ?? 1),
-        cupos_usados: Number(h.cupos_usados ?? 1),
-      }));
-    }
-
-    await refreshServiceSchedulesFromBackend();
-    await refreshEnrollmentsFromBackend();
-
-    await refreshRoutinesFromBackend().catch(() => {});
-
-    await refreshAttendanceFromBackend();
+      await syncResources(tasks, (message) => { syncError.value = message; });
+    })().finally(() => {
+      isSyncing.value = false;
+      syncPromise = null;
+    });
+    return syncPromise;
   };
 
   /**
@@ -2878,6 +2853,8 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   return {
+    syncError,
+    isSyncing,
     members,
     users,
     attendance,

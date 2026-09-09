@@ -30,15 +30,23 @@ const buildHeaders = (token, headers = {}) => {
 };
 
 export const request = async (path, options = {}, token = '') => {
-  const response = await fetch(buildUrl(path), {
-    ...options,
-    headers: buildHeaders(token, options.headers),
-  });
+  let response;
+  try {
+    response = await fetch(buildUrl(path), {
+      ...options,
+      headers: buildHeaders(token, options.headers),
+    });
+  } catch {
+    throw new Error('No se pudo contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.');
+  }
 
   if (!response.ok) {
     throw await parseError(response);
   }
 
+  if (response.status !== 204 && !(response.headers.get('content-type') || '').includes('application/json')) {
+    throw new Error('El servidor no devolvió los datos esperados. Inténtalo de nuevo o contacta con administración.');
+  }
   return parseResponse(response);
 };
 

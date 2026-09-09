@@ -11,6 +11,7 @@ from models.gym import (
     CatalogoRutinaInput,
     ConfiguracionGimnasioInput,
     HorarioInput,
+    HorarioPublico,
     HorarioServicioInput,
     MatriculaHorarioInput,
     SummaryResponse,
@@ -76,6 +77,12 @@ def update_configuracion(
         return gym_service.actualizar_configuracion_gimnasio(payload.model_dump())
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+
+@router.get("/horarios-publicos", response_model=list[HorarioPublico])
+def list_horarios_publicos(gym_service: GymDomainService = Depends(get_gym_service)):
+    """Publica solo horarios activos y campos del catálogo, sin datos de clientes."""
+    return gym_service.horarios_servicio(solo_activos=True)
 
 
 @router.get("/horarios-servicio")

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import logging
 
 from fastapi import Depends, Header, HTTPException, status
 
@@ -12,10 +13,11 @@ from config import get_settings
 from models.auth import UserProfile
 from services.auth_service import AuthService
 from services.clients_service import ClientsService
-from services.local_gym_service import LocalGymService
 from services.supabase_gym_service import SupabaseGymService
 from services.users_service import UsersService
 from utils.security import decode_token_payload
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -24,17 +26,14 @@ def _get_supabase_gym_service(supabase_url: str, supabase_key: str) -> SupabaseG
     return SupabaseGymService(supabase_url, supabase_key)
 
 
-@lru_cache(maxsize=1)
-# Obtiene los datos necesarios.
-def _get_local_gym_service() -> LocalGymService:
-    return LocalGymService()
-
-
 # Obtiene los datos necesarios.
 def get_gym_service() -> SupabaseGymService:
     settings = get_settings()
     if not settings.has_supabase_credentials:
-        return _get_local_gym_service()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="La conexión con la base de datos no está configurada. Contacta con administración.",
+        )
     candidate_keys = [
         key
         for key in (settings.supabase_key, settings.supabase_anon_key)
@@ -51,8 +50,12 @@ def get_gym_service() -> SupabaseGymService:
             service = _get_supabase_gym_service(settings.supabase_url, key)
             service.ensure_fresh()
             return service
-        except RuntimeError as error:
+        except (RuntimeError, OSError) as error:
             connection_failed = True
+            details = str(error)
+            for credential in candidate_keys:
+                details = details.replace(credential, "[redacted]")
+            logger.warning("Error al consultar Supabase (%s): %s", type(error).__name__, details)
             if "001_add_membership_payment_fields.sql" in str(error):
                 payment_schema_missing = True
             continue
@@ -64,9 +67,9 @@ def get_gym_service() -> SupabaseGymService:
     if connection_failed:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No se pudo conectar a Supabase. El registro no fue guardado.",
+            detail="No se pudo conectar con la base de datos. Inténtalo de nuevo en unos momentos.",
         )
-    return _get_local_gym_service()
+    raise HTTPException(status_code=503, detail="La conexión con la base de datos no está configurada.")
 
 
 # Obtiene los datos necesarios.

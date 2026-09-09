@@ -1,6 +1,6 @@
 # Módulo: local_gym_service.
 # Ejecuta el dominio con almacenamiento local en memoria.
-# Se utiliza cuando Supabase no está disponible o configurado.
+# Se utiliza en pruebas; la API requiere una conexión válida a Supabase.
 # Conserva la misma interfaz que el servicio remoto.
 from __future__ import annotations
 

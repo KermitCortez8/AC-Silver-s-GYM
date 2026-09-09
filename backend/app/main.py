@@ -6,11 +6,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from config import get_settings
+from dependencies import get_gym_service
+from services.supabase_gym_service import SupabaseGymService
 from routes.attendance_routes import router as attendance_router
 from routes.auth_routes import router as auth_router
 from routes.clients_routes import router as clients_router
@@ -60,8 +62,10 @@ def root() -> dict[str, str]:
 @app.get("/health")
 @app.get("/api/health", include_in_schema=False)
 # Procesa esta operación.
-def health() -> dict[str, str]:
-    return {"status": "healthy"}
+def health(_gym_service: SupabaseGymService = Depends(get_gym_service)) -> dict[str, str]:
+    # La dependencia valida las credenciales y refresca los datos remotos.
+    # Si la base de datos falla, responde 503 en lugar de anunciar healthy.
+    return {"status": "healthy", "database": "connected"}
 
 
 app.include_router(auth_router, prefix="/api")

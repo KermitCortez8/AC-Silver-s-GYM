@@ -9,6 +9,18 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 
+class HorarioPublico(BaseModel):
+    id_horario_servicio: int
+    servicio: str
+    dia: str
+    hora_inicio: str
+    hora_fin: str
+    rutina_nombre: str = ""
+    cupos: int
+    cupos_usados: int
+    cupos_disponibles: int
+
+
 class UsuarioInput(BaseModel):
     id_usuario: str | int | None = None
     nombre: str = ""

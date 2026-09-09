@@ -8,11 +8,24 @@
     </div>
 
     <router-view />
+    <div v-if="authStore.isAuthenticated && gymStore.syncError" role="alert" class="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-3xl rounded-2xl border border-red-300 bg-red-50 p-4 text-red-950 shadow-xl">
+      <p class="font-bold">No se pudieron actualizar todos los datos</p>
+      <p class="mt-1 max-h-32 overflow-y-auto text-sm">{{ gymStore.syncError }}</p>
+      <p class="mt-1 text-sm">Los datos que ves pueden estar desactualizados.</p>
+      <button type="button" :disabled="gymStore.isSyncing" class="mt-3 rounded-lg bg-red-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50" @click="retrySync">
+        {{ gymStore.isSyncing ? 'Actualizando…' : 'Reintentar' }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { useAuthStore } from './stores/authStore';
+import { useGymStore } from './stores/gymStore';
 
 const authStore = useAuthStore();
+const gymStore = useGymStore();
+const retrySync = () => gymStore.fetchFromBackend().catch(() => {
+  // El store conserva el error para mostrarlo en el aviso.
+});
 </script>
