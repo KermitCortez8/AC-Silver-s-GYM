@@ -7,6 +7,7 @@ import AdminDashboard from '../views/AdminDashboard.vue';
 import TrainerDashboard from '../views/TrainerDashboard.vue';
 import UserDashboard from '../views/UserDashboard.vue';
 import LandingView from '../views/LandingView.vue';
+import NosotrosView from '../views/NosotrosView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import PaymentView from '../views/PaymentView.vue';
 import HomeView from '../views/HomeView.vue';
@@ -46,6 +47,12 @@ const routes = [
     path: '/',
     name: 'Home',
     component: LandingView,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/nosotros',
+    name: 'Nosotros',
+    component: NosotrosView,
     meta: { requiresAuth: false },
   },
   {
@@ -208,6 +215,12 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to) {
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth' };
+    }
+    return { top: 0 };
+  },
 });
 
 // Guard de rutas
