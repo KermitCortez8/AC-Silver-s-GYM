@@ -58,6 +58,7 @@ def root() -> dict[str, str]:
 
 
 @app.get("/health")
+@app.get("/api/health", include_in_schema=False)
 # Procesa esta operación.
 def health() -> dict[str, str]:
     return {"status": "healthy"}

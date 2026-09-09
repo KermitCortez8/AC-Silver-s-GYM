@@ -60,6 +60,21 @@ Construir e iniciar frontend y backend:
 docker compose up --build
 ```
 
+La red usa el nombre de interfaz fijo `br-acsgym`, de modo que las reglas del
+firewall del host no queden apuntando a una interfaz eliminada al recrear la red.
+
+Si ya existía una red creada con una versión anterior, aplica el nuevo nombre una
+sola vez con `docker compose down` (sin `-v`) y vuelve a iniciar. Los volúmenes se
+conservan.
+
+El healthcheck del frontend comprueba también `/api/health` a través de Nginx.
+Si falla, revisar `docker compose logs --tail=50 frontend backend`. Un timeout
+`while connecting to upstream` indica un problema de conexión entre contenedores;
+`while reading response header` indica que el backend no respondió a tiempo.
+La coexistencia de un filtro antiguo con política `FORWARD DROP` y las reglas
+modernas de Docker puede bloquear conexiones incluso si ambos contenedores están
+activos ([documentación de Docker](https://docs.docker.com/engine/network/firewall-nftables/)).
+
 Servicios con Docker:
 
 - Frontend: http://localhost:5173

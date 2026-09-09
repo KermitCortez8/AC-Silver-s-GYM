@@ -1,4 +1,5 @@
 import { APP_CONFIG } from '../config/appConfig';
+import { parseError, parseResponse } from './apiResponse.js';
 
 /**
  * Crea el registro correspondiente.
@@ -26,42 +27,6 @@ const buildHeaders = (token, headers = {}) => {
   }
 
   return requestHeaders;
-};
-
-/**
- * Gestiona esta acción de la vista.
- */
-const parseResponse = async (response) => {
-  if (response.status === 204) {
-    return null;
-  }
-
-  const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    return response.json();
-  }
-
-  return response.text();
-};
-
-/**
- * Gestiona esta acción de la vista.
- */
-const parseError = async (response) => {
-  try {
-    const body = await parseResponse(response);
-    if (body && typeof body === 'object' && 'detail' in body) {
-      return new Error(String(body.detail));
-    }
-
-    if (typeof body === 'string' && body.trim()) {
-      return new Error(body);
-    }
-  } catch (error) {
-    // Caer al mensaje genérico.
-  }
-
-  return new Error(`Error HTTP ${response.status}`);
 };
 
 export const request = async (path, options = {}, token = '') => {
