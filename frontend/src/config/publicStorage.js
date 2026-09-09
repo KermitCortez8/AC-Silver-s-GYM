@@ -1,10 +1,19 @@
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeBaseUrl = (value) => String(value || '').trim().replace(/\/$/, '');
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const joinPath = (...segments) => segments
   .map((segment) => String(segment || '').trim().replace(/^\/+|\/+$/g, ''))
   .filter(Boolean)
   .join('/');
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const encodeStoragePath = (path) => path
   .split('/')
   .map((segment) => encodeURIComponent(segment))
@@ -13,6 +22,7 @@ const encodeStoragePath = (path) => path
 const supabaseUrl = normalizeBaseUrl(import.meta.env.VITE_SUPABASE_URL);
 const landingBucket = String(import.meta.env.VITE_SUPABASE_LANDING_BUCKET || 'imageneslandingpage').trim();
 const landingFolder = String(import.meta.env.VITE_SUPABASE_LANDING_FOLDER || 'landingpage').trim();
+const storeBucket = String(import.meta.env.VITE_SUPABASE_STORE_IMAGES_BUCKET || 'imagenestienda').trim();
 
 export const publicStorageUrl = (bucket, path) => {
   const normalizedBucket = String(bucket || '').trim();
@@ -29,3 +39,5 @@ export const landingImageUrl = (fileName) => publicStorageUrl(
   landingBucket,
   joinPath(landingFolder, fileName),
 );
+
+export const storeImageUrl = (fileName) => publicStorageUrl(storeBucket, fileName);

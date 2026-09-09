@@ -157,6 +157,9 @@ const feedbackClass = computed(() => {
   return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
 });
 
+/**
+ * Sincroniza los datos disponibles.
+ */
 const syncCustomer = () => {
   const currentUser = user.value || {};
   const currentClient = client.value || {};
@@ -165,6 +168,9 @@ const syncCustomer = () => {
   payment.dni = currentClient.dni || currentUser.dni || '';
 };
 
+/**
+ * Envía los datos del formulario.
+ */
 const submitPayment = async () => {
   feedback.value = '';
   isSubmitting.value = true;

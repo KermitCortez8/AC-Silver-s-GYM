@@ -1,3 +1,7 @@
+# Módulo: main.
+# Crea la aplicación FastAPI y registra sus rutas.
+# Configura CORS, archivos públicos y comprobaciones de salud.
+# Expone el punto de entrada utilizado por Uvicorn.
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,6 +17,7 @@ from routes.clients_routes import router as clients_router
 from routes.gym_routes import router as gym_router
 from routes.inventory_routes import router as inventory_router
 from routes.memberships_routes import router as membership_router
+from routes.promotions_routes import router as promotions_router
 from routes.store_routes import router as store_router
 from routes.trainer_routes import router as trainer_router
 from routes.users_routes import router as users_router
@@ -43,6 +48,7 @@ app.mount(
 
 
 @app.get("/")
+# Procesa esta operación.
 def root() -> dict[str, str]:
     return {
         "name": settings.app_name,
@@ -52,6 +58,8 @@ def root() -> dict[str, str]:
 
 
 @app.get("/health")
+@app.get("/api/health", include_in_schema=False)
+# Procesa esta operación.
 def health() -> dict[str, str]:
     return {"status": "healthy"}
 
@@ -61,12 +69,14 @@ app.include_router(gym_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(clients_router, prefix="/api")
 app.include_router(membership_router, prefix="/api")
+app.include_router(promotions_router, prefix="/api")
 app.include_router(attendance_router, prefix="/api")
 app.include_router(inventory_router, prefix="/api")
 app.include_router(store_router, prefix="/api")
 app.include_router(trainer_router, prefix="/api")
 
 
+# Procesa esta operación.
 def main() -> None:
     import uvicorn
 

@@ -373,6 +373,9 @@ const sortOptions = [
   { value: 'estado', label: 'Estado' },
 ];
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const defaultForm = () => ({
   id_horario_servicio: null,
   servicio: 'fitness',
@@ -387,10 +390,25 @@ const defaultForm = () => ({
 
 const form = reactive(defaultForm());
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeService = (service) => String(service || '').trim().toLowerCase();
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[normalizeService(service)] || service;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dayLabel = (day) => days.find((entry) => entry.value === day)?.label || day;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dayOrder = (day) => days.findIndex((entry) => entry.value === day);
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceOrder = (service) => Math.max(0, serviceFilters.findIndex((entry) => entry.value === service) - 1);
 const routineById = computed(() =>
   routines.value.reduce((result, routine) => {
@@ -398,23 +416,41 @@ const routineById = computed(() =>
     return result;
   }, {}),
 );
+/**
+ * Gestiona esta acción de la vista.
+ */
 const routineName = (idRutina) => routineById.value[Number(idRutina)]?.nombre_rutina || 'Sin rutina';
+/**
+ * Gestiona esta acción de la vista.
+ */
 const routineZones = (idRutina) => routineById.value[Number(idRutina)]?.zonas_musculares || 'Rutina pendiente';
 const routinesForSelectedService = computed(() =>
   routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(form.servicio || '').toLowerCase()),
 );
+/**
+ * Valida los datos recibidos.
+ */
 const isScheduleActive = (schedule) => schedule.activo !== false;
 const activeSchedules = computed(() => schedules.value.filter((item) => item.activo !== false).length);
 const totalSlots = computed(() => schedules.value.reduce((sum, item) => sum + Number(item.cupos || 0), 0));
 const usedSlots = computed(() => schedules.value.reduce((sum, item) => sum + Number(item.cupos_usados || 0), 0));
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const timeToMinutes = (value) => {
   const [hour = 0, minute = 0] = String(value || '').split(':').map(Number);
   return hour * 60 + minute;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const availableSlots = (schedule) => Math.max(0, Number(schedule.cupos || 0) - Number(schedule.cupos_usados || 0));
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const durationLabel = (schedule) => {
   const duration = timeToMinutes(schedule.hora_fin) - timeToMinutes(schedule.hora_inicio);
   if (duration === 60) return 'Duracion 1 hora';
@@ -422,6 +458,9 @@ const durationLabel = (schedule) => {
   return `Duracion ${Math.max(0, duration)} min`;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const slotsPercent = (schedule) => {
   const total = Number(schedule.cupos || 0);
   if (!total) return 0;
@@ -437,6 +476,9 @@ const servicePalette = {
   baile: { background: '#fecdd3', border: '#fb7185' },
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceStyle = (service) => {
   const colors = servicePalette[normalizeService(service)] || { background: '#e2e8f0', border: '#94a3b8' };
   return {
@@ -445,17 +487,26 @@ const serviceStyle = (service) => {
   };
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const statusClass = (schedule) =>
   isScheduleActive(schedule)
     ? 'bg-emerald-400/15 text-emerald-100 ring-1 ring-emerald-300/20'
     : 'bg-slate-700/80 text-slate-300 ring-1 ring-white/10';
 
+/**
+ * Normaliza el valor recibido.
+ */
 const normalizeText = (value) =>
   String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const searchableScheduleText = (schedule) =>
   normalizeText(
     [
@@ -471,6 +522,9 @@ const searchableScheduleText = (schedule) =>
     ].join(' '),
   );
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const matchesStatus = (schedule) => {
   if (filters.estado === 'activos') return schedule.activo !== false;
   if (filters.estado === 'pausados') return schedule.activo === false;
@@ -479,6 +533,9 @@ const matchesStatus = (schedule) => {
   return true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const compareBase = (a, b) => {
   const serviceDiff = serviceOrder(a.servicio) - serviceOrder(b.servicio);
   if (serviceDiff) return serviceDiff;
@@ -528,6 +585,9 @@ const filteredSchedules = computed(() => {
     }));
 });
 
+/**
+ * Valida los datos recibidos.
+ */
 const hasValidShortDuration = () => {
   const duration = timeToMinutes(form.hora_fin) - timeToMinutes(form.hora_inicio);
   return duration === 60 || duration === 120;
@@ -551,21 +611,33 @@ watch(
   },
 );
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const resetForm = () => {
   Object.assign(form, defaultForm());
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const openNewSchedule = () => {
   resetForm();
   feedback.value = '';
   isEditorOpen.value = true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const closeEditor = () => {
   isEditorOpen.value = false;
   resetForm();
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const resetFilters = () => {
   Object.assign(filters, {
     search: '',
@@ -576,6 +648,9 @@ const resetFilters = () => {
   });
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const editSchedule = (schedule) => {
   Object.assign(form, {
     id_horario_servicio: schedule.id_horario_servicio,
@@ -592,7 +667,13 @@ const editSchedule = (schedule) => {
   isEditorOpen.value = true;
 };
 
+/**
+ * Actualiza los datos actuales.
+ */
 const refresh = () => gymStore.refreshServiceSchedulesFromBackend?.().catch(() => {});
+/**
+ * Actualiza los datos actuales.
+ */
 const refreshAll = async () => {
   await Promise.all([
     gymStore.refreshRoutinesFromBackend?.().catch(() => {}),
@@ -600,6 +681,9 @@ const refreshAll = async () => {
   ]);
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const saveSchedule = async () => {
   isSaving.value = true;
   feedback.value = '';
@@ -622,6 +706,9 @@ const saveSchedule = async () => {
   }
 };
 
+/**
+ * Elimina el registro indicado.
+ */
 const removeSchedule = async (schedule) => {
   if (!window.confirm('Eliminar este horario?')) return;
   try {

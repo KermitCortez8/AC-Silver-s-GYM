@@ -13,8 +13,8 @@
           <h2 class="mt-2 text-2xl font-black text-white">Mi horario y asistencia</h2>
           <p class="mt-2 text-slate-300">Cada bloque muestra un check cuando ya tiene entrada registrada y la salida cuando fue guardada.</p>
         </div>
-        <router-link to="/user/enrollment" class="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950">
-          Matricular horario
+        <router-link to="/user/schedule" class="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950">
+          Cambiar horario
         </router-link>
       </div>
 
@@ -113,9 +113,18 @@ const visibleRecords = computed(() =>
   }),
 );
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service;
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Miercoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sabado', domingo: 'Domingo' })[day] || day;
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const attendanceFor = (item) =>
   gymStore.attendance.find((entry) => {
     const byEnrollment = Number(entry.idMatricula || 0) === Number(item.id_matricula || 0) && Number(item.id_matricula || 0) > 0;

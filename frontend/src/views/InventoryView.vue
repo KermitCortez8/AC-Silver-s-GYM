@@ -209,8 +209,14 @@ const feedbackToneClass = computed(() => {
   return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
 });
 
+/**
+ * Valida los datos recibidos.
+ */
 const isLowStock = (item) => Number(item.quantity || 0) <= Number(item.minQuantity || 0);
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const inventoryStatusClass = (status) => {
   if (status === 'Operativo') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300';
   if (status === 'En mantenimiento') return 'border-amber-400/20 bg-amber-400/10 text-amber-300';
@@ -226,6 +232,9 @@ const currentInventoryCode = computed(() => {
   return 'Se generara automaticamente';
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const resetForm = () => {
   editingId.value = '';
   form.name = '';
@@ -239,17 +248,26 @@ const resetForm = () => {
   form.observations = '';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const openNewItem = () => {
   resetForm();
   feedbackMessage.value = '';
   isEditorOpen.value = true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const closeEditor = () => {
   isEditorOpen.value = false;
   resetForm();
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const editItem = (item) => {
   editingId.value = item.id;
   form.name = item.name;
@@ -265,6 +283,9 @@ const editItem = (item) => {
   isEditorOpen.value = true;
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const handleSubmit = async () => {
   try {
     await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form });
@@ -278,6 +299,9 @@ const handleSubmit = async () => {
   }
 };
 
+/**
+ * Elimina el registro indicado.
+ */
 const deleteItem = async (id) => {
   if (!window.confirm('Eliminar este articulo?')) return;
   try {

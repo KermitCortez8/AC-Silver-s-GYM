@@ -16,10 +16,13 @@ import AttendanceView from '../views/AttendanceView.vue';
 import ServiceSchedulesView from '../views/ServiceSchedulesView.vue';
 import EnrollmentView from '../views/EnrollmentView.vue';
 import InventoryView from '../views/InventoryView.vue';
+import InventoryMovementsView from '../views/InventoryMovementsView.vue';
+import GymSettingsView from '../views/GymSettingsView.vue';
+import MembershipPlansView from '../views/MembershipPlansView.vue';
+import PromotionsView from '../views/PromotionsView.vue';
 import StoreView from '../views/StoreView.vue';
 import StorePaymentView from '../views/StorePaymentView.vue';
 import OrdersView from '../views/OrdersView.vue';
-import ScheduleView from '../views/ScheduleView.vue';
 import UserAttendanceView from '../views/UserAttendanceView.vue';
 import TrainerOverviewView from '../views/TrainerOverviewView.vue';
 import TrainerRoutinesView from '../views/TrainerRoutinesView.vue';
@@ -102,6 +105,26 @@ const routes = [
         component: InventoryView,
       },
       {
+        path: 'inventory/movements',
+        name: 'InventoryMovements',
+        component: InventoryMovementsView,
+      },
+      {
+        path: 'plans',
+        name: 'MembershipPlans',
+        component: MembershipPlansView,
+      },
+      {
+        path: 'promotions',
+        name: 'Promotions',
+        component: PromotionsView,
+      },
+      {
+        path: 'settings',
+        name: 'GymSettings',
+        component: GymSettingsView,
+      },
+      {
         path: 'store',
         name: 'Store',
         component: StoreView,
@@ -166,12 +189,12 @@ const routes = [
       {
         path: 'schedule',
         name: 'Schedule',
-        component: ScheduleView,
+        component: EnrollmentView,
       },
       {
         path: 'enrollment',
         name: 'UserEnrollment',
-        component: EnrollmentView,
+        redirect: '/user/schedule',
       },
       {
         path: 'attendance',

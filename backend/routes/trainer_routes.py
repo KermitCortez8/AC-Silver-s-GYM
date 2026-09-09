@@ -1,3 +1,7 @@
+# Módulo: trainer_routes.
+# Expone rutinas y seguimiento para entrenadores.
+# Comprueba permisos antes de modificar planes de trabajo.
+# Organiza el progreso registrado para cada cliente.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -10,6 +14,7 @@ router = APIRouter(prefix="/trainer", tags=["trainer"])
 
 
 @router.get("/overview")
+# Procesa esta operación.
 def trainer_overview(
     gym_service: GymDomainService = Depends(get_gym_service),
     _current_user=Depends(require_internal_viewer),
@@ -18,6 +23,7 @@ def trainer_overview(
 
 
 @router.post("/rutinas")
+# Actualiza el registro correspondiente.
 def upsert_trainer_rutina(
     payload: CatalogoRutinaInput,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -30,6 +36,7 @@ def upsert_trainer_rutina(
 
 
 @router.post("/matriculas/{id_matricula}/rutina")
+# Procesa esta operación.
 def assign_trainer_rutina(
     id_matricula: int,
     payload: MatriculaRutinaInput,
@@ -43,6 +50,7 @@ def assign_trainer_rutina(
 
 
 @router.get("/clientes-rutinas")
+# Procesa esta operación.
 def trainer_cliente_rutinas(
     dni: str,
     gym_service: GymDomainService = Depends(get_gym_service),
@@ -55,6 +63,7 @@ def trainer_cliente_rutinas(
 
 
 @router.post("/matriculas/{id_matricula}/progreso")
+# Procesa esta operación.
 def trainer_rutina_progreso(
     id_matricula: int,
     payload: RutinaProgresoInput,

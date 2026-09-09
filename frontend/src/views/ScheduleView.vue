@@ -52,6 +52,9 @@ const myEnrollments = computed(() => {
   return gymStore.enrollments.filter((item) => Number(item.id_cliente) === idCliente && item.estado !== 'CANCELADA');
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const attendanceFor = (item) =>
   gymStore.attendance.find((entry) => {
     const byEnrollment = Number(entry.idMatricula || 0) === Number(item.id_matricula || 0) && Number(item.id_matricula || 0) > 0;

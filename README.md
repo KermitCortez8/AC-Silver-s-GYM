@@ -54,31 +54,26 @@ Servicios locales:
 
 ## Activacion con Docker
 
-El backend toma sus variables desde `backend/.env`. Para el frontend, Docker
-recibe variables `VITE_*` desde un archivo `.env` local en la raiz o desde el
-entorno del sistema. Usa `.env.example`, `backend/.env.example` y
-`frontend/.env.example` como plantillas, sin subir los `.env` reales al repo.
-
-Variables opcionales para el build del frontend en `.env` de la raiz:
-
-```env
-VITE_APP_NAME=AC Silver's GYM
-VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-VITE_AUTH_MODE=backend
-VITE_ENABLE_DEMO_LOGIN=true
-VITE_SUPPORT_EMAIL=soporte@acsilversgym.com
-VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
-VITE_SUPABASE_LANDING_BUCKET=imageneslandingpage
-VITE_SUPABASE_LANDING_FOLDER=landingpage
-VITE_SUPABASE_ANON_KEY=tu-anon-key
-VITE_SUPABASE_STORE_IMAGES_BUCKET=imagenestienda
-```
-
 Construir e iniciar frontend y backend:
 
 ```bash
 docker compose up --build
 ```
+
+La red usa el nombre de interfaz fijo `br-acsgym`, de modo que las reglas del
+firewall del host no queden apuntando a una interfaz eliminada al recrear la red.
+
+Si ya existía una red creada con una versión anterior, aplica el nuevo nombre una
+sola vez con `docker compose down` (sin `-v`) y vuelve a iniciar. Los volúmenes se
+conservan.
+
+El healthcheck del frontend comprueba también `/api/health` a través de Nginx.
+Si falla, revisar `docker compose logs --tail=50 frontend backend`. Un timeout
+`while connecting to upstream` indica un problema de conexión entre contenedores;
+`while reading response header` indica que el backend no respondió a tiempo.
+La coexistencia de un filtro antiguo con política `FORWARD DROP` y las reglas
+modernas de Docker puede bloquear conexiones incluso si ambos contenedores están
+activos ([documentación de Docker](https://docs.docker.com/engine/network/firewall-nftables/)).
 
 Servicios con Docker:
 

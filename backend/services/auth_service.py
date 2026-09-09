@@ -1,3 +1,7 @@
+# Módulo: auth_service.
+# Autentica usuarios y clientes con Google o contraseña.
+# Construye perfiles y tokens para cada tipo de cuenta.
+# Busca la identidad registrada antes de iniciar la sesión.
 from __future__ import annotations
 
 from models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, UserProfile
@@ -6,9 +10,11 @@ from utils.security import create_local_token, get_expiry_seconds, get_user_role
 
 
 class AuthService:
+    # Inicializa la clase.
     def __init__(self, gym_service: GymDomainService) -> None:
         self.gym_service = gym_service
 
+    # Procesa esta operación.
     def google_auth(self, payload: AuthGoogleRequest) -> AuthResponse:
         profile = normalize_profile(payload.profile, payload.credential)
         if not profile["email"]:
@@ -43,6 +49,7 @@ class AuthService:
             expiresIn=get_expiry_seconds(payload.credential),
         )
 
+    # Procesa esta operación.
     def password_auth(self, payload: AuthPasswordRequest) -> AuthResponse:
         correo = str(payload.correo or "").strip().lower()
         password = str(payload.password or "")
@@ -82,6 +89,7 @@ class AuthService:
 
         raise ValueError("Correo o contraseña incorrectos")
 
+    # Procesa esta operación.
     def user_from_payload(self, payload: dict) -> UserProfile:
         profile = normalize_profile(payload, "")
         usuario = self.gym_service.get_usuario_by_email(profile["email"])

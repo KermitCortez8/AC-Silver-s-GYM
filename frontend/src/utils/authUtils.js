@@ -7,6 +7,9 @@ const AUTH_USER_KEY = 'gym_auth_user';
 const AUTH_TOKEN_KEY = 'gym_auth_token';
 const TOKEN_EXPIRY_KEY = 'gym_auth_token_expiry';
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const safeParse = (value) => {
   if (!value) {
     return null;

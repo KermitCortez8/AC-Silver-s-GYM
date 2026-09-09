@@ -18,6 +18,9 @@ const route = useRoute();
 const authStore = useAuth();
 const statusMessage = ref('Por favor espera mientras completamos tu inicio de sesión.');
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const redirectToLogin = (reason) => {
   statusMessage.value = reason;
   window.setTimeout(() => {
@@ -25,6 +28,9 @@ const redirectToLogin = (reason) => {
   }, 1200);
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const redirectByRole = (role) => {
   router.replace(role === 'admin' ? '/admin' : '/user');
 };

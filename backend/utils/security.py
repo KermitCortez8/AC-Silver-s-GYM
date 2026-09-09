@@ -1,3 +1,7 @@
+# Módulo: security.
+# Agrupa funciones para contraseñas, tokens y perfiles.
+# Firma sesiones locales y comprueba su fecha de vencimiento.
+# Normaliza los datos recibidos desde proveedores externos.
 from __future__ import annotations
 
 import base64
@@ -9,12 +13,14 @@ import time
 from typing import Any
 
 
+# Obtiene los datos necesarios.
 def get_user_role(email: str | None) -> str:
     if not email:
         return "user"
     return "admin" if email.endswith("@urp.edu.pe") else "user"
 
 
+# Procesa esta operación.
 def decode_token_payload(token: str) -> dict[str, Any] | None:
     if not token:
         return None
@@ -43,6 +49,7 @@ def decode_token_payload(token: str) -> dict[str, Any] | None:
         return None
 
 
+# Procesa esta operación.
 def normalize_profile(profile: dict[str, Any] | None, token: str) -> dict[str, Any]:
     source = profile or decode_token_payload(token) or {}
     email = str(source.get("email") or "").strip()
@@ -62,6 +69,7 @@ def normalize_profile(profile: dict[str, Any] | None, token: str) -> dict[str, A
     }
 
 
+# Obtiene los datos necesarios.
 def get_expiry_seconds(token: str, default_seconds: int = 3600) -> int:
     payload = decode_token_payload(token)
     if not payload or "exp" not in payload:
@@ -73,6 +81,7 @@ def get_expiry_seconds(token: str, default_seconds: int = 3600) -> int:
     return max(expires_at - int(time.time()), 60)
 
 
+# Valida los datos recibidos.
 def hash_password(password: str) -> str:
     value = str(password or "")
     if not value:
@@ -83,6 +92,7 @@ def hash_password(password: str) -> str:
     return f"pbkdf2_sha256${salt}${digest}"
 
 
+# Valida los datos recibidos.
 def verify_password(password: str, stored_hash: str) -> bool:
     value = str(password or "")
     stored = str(stored_hash or "")
@@ -101,6 +111,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
     return secrets.compare_digest(candidate, digest)
 
 
+# Crea el registro correspondiente.
 def create_local_token(profile: dict[str, Any], expires_seconds: int = 3600) -> str:
     now = int(time.time())
     payload = {

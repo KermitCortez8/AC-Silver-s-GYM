@@ -94,9 +94,18 @@ const filteredSchedules = computed(() => {
   );
 });
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service || 'Servicio';
+/**
+ * Gestiona esta acción de la vista.
+ */
 const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Miercoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sabado', domingo: 'Domingo' })[day] || day || 'Dia';
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const attendanceLabel = (item) => {
   const records = Array.isArray(item.asistencias) ? item.asistencias : [];
   if (!records.length) return 'Sin asistencia registrada';
@@ -104,6 +113,9 @@ const attendanceLabel = (item) => {
   return `Ultima: ${last.fecha || last.Fecha || 'fecha'} ${last.hora_entrada || last.hora || last.Hora || ''}`.trim();
 };
 
+/**
+ * Actualiza los datos actuales.
+ */
 const refresh = async () => {
   try {
     errorMessage.value = '';

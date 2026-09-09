@@ -1,3 +1,7 @@
+# Módulo: attendance_routes.
+# Expone las rutas para registrar entradas y salidas.
+# Comprueba la identidad del usuario antes de modificar asistencias.
+# Delega las reglas de asistencia al servicio del gimnasio.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -17,12 +21,14 @@ router = APIRouter(prefix="/asistencia", tags=["asistencia"])
 
 # GET /asistencia: lista todos los registros de asistencia.
 @router.get("")
+# Obtiene los datos necesarios.
 def list_asistencia(gym_service: GymDomainService = Depends(get_gym_service)):
     return gym_service.asistencia()
 
 
 # POST /asistencia/checkin: marca asistencia usando el id del cliente.
 @router.post("/checkin")
+# Valida los datos recibidos.
 def checkin(payload: CheckinAsistenciaInput, gym_service: GymDomainService = Depends(get_gym_service)):
     try:
         return gym_service.registrar_asistencia_detallada(payload.dict())
@@ -32,6 +38,7 @@ def checkin(payload: CheckinAsistenciaInput, gym_service: GymDomainService = Dep
 
 # POST /asistencia/checkin-dni: marca asistencia usando el DNI del cliente.
 @router.post("/checkin-dni")
+# Valida los datos recibidos.
 def checkin_dni(payload: CheckinAsistenciaDniInput, gym_service: GymDomainService = Depends(get_gym_service)):
     try:
         return gym_service.registrar_asistencia_por_dni(payload.dict())
@@ -40,6 +47,7 @@ def checkin_dni(payload: CheckinAsistenciaDniInput, gym_service: GymDomainServic
 
 
 @router.post("/entrada")
+# Procesa esta operación.
 def registrar_entrada(payload: AsistenciaEntradaInput, gym_service: GymDomainService = Depends(get_gym_service)):
     try:
         return gym_service.registrar_entrada_horario(payload.model_dump())
@@ -48,6 +56,7 @@ def registrar_entrada(payload: AsistenciaEntradaInput, gym_service: GymDomainSer
 
 
 @router.post("/salida")
+# Procesa esta operación.
 def registrar_salida(payload: AsistenciaSalidaInput, gym_service: GymDomainService = Depends(get_gym_service)):
     try:
         return gym_service.registrar_salida_horario(payload.model_dump())
@@ -57,6 +66,7 @@ def registrar_salida(payload: AsistenciaSalidaInput, gym_service: GymDomainServi
 
 # PUT /asistencia/{id_asistencia}: edita fecha, hora, servicio o cliente del registro.
 @router.put("/{id_asistencia}")
+# Actualiza el registro correspondiente.
 def update_asistencia(
     id_asistencia: int,
     payload: AsistenciaUpdateInput,
@@ -71,6 +81,7 @@ def update_asistencia(
 
 # DELETE /asistencia/{id_asistencia}: elimina un registro de asistencia.
 @router.delete("/{id_asistencia}", status_code=status.HTTP_204_NO_CONTENT)
+# Elimina el registro indicado.
 def delete_asistencia(id_asistencia: int, gym_service: GymDomainService = Depends(get_gym_service)):
     try:
         gym_service.eliminar_asistencia(id_asistencia)

@@ -4,6 +4,9 @@ const THEME_STORAGE_KEY = 'ac-silver-theme';
 const theme = ref('dark');
 let initialized = false;
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const applyTheme = (value) => {
   if (typeof document === 'undefined') return;
   document.documentElement.dataset.theme = value;
@@ -23,12 +26,18 @@ export const initializeTheme = () => {
 export const useTheme = () => {
   initializeTheme();
 
+  /**
+   * Gestiona esta acción de la vista.
+   */
   const setTheme = (value) => {
     theme.value = value === 'light' ? 'light' : 'dark';
     applyTheme(theme.value);
     window.localStorage.setItem(THEME_STORAGE_KEY, theme.value);
   };
 
+  /**
+   * Gestiona esta acción de la vista.
+   */
   const toggleTheme = () => {
     setTheme(theme.value === 'dark' ? 'light' : 'dark');
   };

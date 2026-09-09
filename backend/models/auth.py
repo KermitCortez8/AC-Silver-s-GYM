@@ -1,3 +1,7 @@
+# Módulo: auth.
+# Define los datos de entrada y salida para autenticación.
+# Limita los roles permitidos en los perfiles de usuario.
+# Mantiene estable el contrato de las rutas de acceso.
 from __future__ import annotations
 
 from typing import Any, Literal

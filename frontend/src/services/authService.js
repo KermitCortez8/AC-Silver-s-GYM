@@ -4,6 +4,9 @@ import { apiPost } from './apiClient';
 
 let googleScriptPromise = null;
 
+/**
+ * Obtiene los datos necesarios.
+ */
 const getExpirySeconds = (payload) => {
   if (!payload?.exp) {
     return 60 * 60;

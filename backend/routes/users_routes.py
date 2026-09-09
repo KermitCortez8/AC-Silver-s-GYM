@@ -1,3 +1,7 @@
+# Módulo: users_routes.
+# Gestiona las cuentas del personal del gimnasio.
+# Permite crear, actualizar y eliminar usuarios internos.
+# Restringe estas acciones a administradores y personal autorizado.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -10,6 +14,7 @@ router = APIRouter(tags=["usuarios"])
 
 
 @router.get("/usuarios")
+# Obtiene los datos necesarios.
 def list_usuarios(
     users_service: UsersService = Depends(get_users_service),
     _current_user=Depends(require_admin_or_staff),
@@ -18,6 +23,7 @@ def list_usuarios(
 
 
 @router.post("/usuarios")
+# Actualiza el registro correspondiente.
 def upsert_usuario(
     payload: UsuarioInput,
     users_service: UsersService = Depends(get_users_service),
@@ -30,6 +36,7 @@ def upsert_usuario(
 
 
 @router.delete("/usuarios/{id_usuario}", status_code=status.HTTP_204_NO_CONTENT)
+# Elimina el registro indicado.
 def delete_usuario(
     id_usuario: str,
     users_service: UsersService = Depends(get_users_service),

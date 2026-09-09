@@ -56,6 +56,9 @@
                 {{ routine.clientes_asignados || 0 }}
               </span>
             </div>
+            <button class="mt-4 w-full rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/10" @click="editRoutine(routine)">
+              Editar rutina
+            </button>
           </article>
         </div>
 
@@ -98,6 +101,7 @@ const serviceOptions = [
 ];
 
 const routineForm = reactive({
+  id_rutina: null,
   servicio: 'fitness',
   nombre_rutina: '',
   zonas_musculares: '',
@@ -107,15 +111,39 @@ const routineForm = reactive({
 const overview = computed(() => gymStore.trainerOverview || {});
 const routines = computed(() => overview.value.routines || []);
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculacion', cardio: 'Cardio', baile: 'Baile' })[service] || service || 'Servicio';
+/**
+ * Gestiona esta acción de la vista.
+ */
 const routinesForService = (service) => routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(service || '').toLowerCase());
 
+/**
+ * Gestiona esta acción de la vista.
+ */
 const resetRoutineForm = () => {
+  routineForm.id_rutina = null;
   routineForm.nombre_rutina = '';
   routineForm.zonas_musculares = '';
   routineForm.color = 'Azul';
 };
 
+/**
+ * Gestiona esta acción de la vista.
+ */
+const editRoutine = (routine) => {
+  routineForm.id_rutina = routine.id_rutina;
+  routineForm.servicio = routine.servicio || 'fitness';
+  routineForm.nombre_rutina = routine.nombre_rutina || '';
+  routineForm.zonas_musculares = routine.zonas_musculares || '';
+  routineForm.color = routine.color || 'Azul';
+};
+
+/**
+ * Gestiona esta acción de la vista.
+ */
 const saveRoutine = async () => {
   try {
     isSaving.value = true;
@@ -132,6 +160,9 @@ const saveRoutine = async () => {
   }
 };
 
+/**
+ * Actualiza los datos actuales.
+ */
 const refresh = async () => {
   try {
     errorMessage.value = '';
