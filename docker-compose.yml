@@ -4,6 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: ac-silvers-gym-backend
+    # Usa docker0, cuya salida ya administra Docker en Codespaces y Docker Desktop.
+    network_mode: bridge
     env_file:
       - ./backend/.env
     environment:
@@ -11,6 +13,8 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+      # Nginx comparte la red del backend; ambos puertos se publican aquí.
+      - "5173:8080"
     volumes:
       - backend_data:/app/db
     healthcheck:
@@ -40,24 +44,18 @@ services:
         VITE_SUPABASE_LANDING_FOLDER: "${VITE_SUPABASE_LANDING_FOLDER:-landingpage}"
         VITE_SUPABASE_ANON_KEY: "${VITE_SUPABASE_ANON_KEY:-}"
     container_name: ac-silvers-gym-frontend
+    network_mode: service:backend
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
-    ports:
-      - "5173:8080"
+        restart: true
     healthcheck:
       test: ["CMD-SHELL", "wget -T 2 -qO- http://127.0.0.1:8080/ > /dev/null && wget -T 4 -qO- http://127.0.0.1:8080/api/health > /dev/null"]
       interval: 10s
       timeout: 8s
       retries: 5
       start_period: 5s
-
-networks:
-  default:
-    driver_opts:
-      # Mantiene válidas las reglas del host al recrear la red con compose down/up.
-      com.docker.network.bridge.name: br-acsgym
 
 volumes:
   backend_data:

@@ -215,48 +215,54 @@
               </button>
             </div>
 
-            <!-- Schedule table -->
-            <div class="overflow-x-auto">
+            <p v-if="schedulesLoading && !allSchedules.length" role="status" class="px-6 py-8 text-sm text-slate-600">Cargando horarios…</p>
+            <div v-else-if="schedulesError" role="alert" class="px-6 py-6 text-sm text-red-800">
+              <p>No se pudieron actualizar los horarios. {{ schedulesError }}</p>
+              <button type="button" :disabled="schedulesLoading" class="mt-3 rounded-lg bg-red-700 px-4 py-2 font-bold text-white disabled:opacity-50" @click="loadSchedules">
+                {{ schedulesLoading ? 'Actualizando…' : 'Reintentar' }}
+              </button>
+            </div>
+            <p v-else-if="!filteredSchedules.length" class="px-6 py-8 text-sm text-slate-600">No hay horarios activos para este servicio.</p>
+            <div v-else class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-orange-100 bg-orange-50">
                     <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-orange-600">Día</th>
                     <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-orange-600">Hora</th>
-                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-orange-600">Entrenador</th>
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-orange-600">Rutina</th>
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-orange-600">Cupos</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
                     v-for="(sched, index) in filteredSchedules"
-                    :key="index"
+                    :key="sched.id_horario_servicio"
                     :class="['border-b border-slate-50 transition-colors hover:bg-orange-50/60', index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40']"
                   >
                     <td class="px-6 py-4">
-                      <span class="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">{{ sched.dia }}</span>
+                      <span class="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">{{ dayLabel(sched.dia) }}</span>
                     </td>
                     <td class="px-6 py-4">
                       <span class="flex items-center gap-1.5 font-black text-slate-950">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {{ sched.hora }}
+                        {{ formatScheduleHours(sched) }}
                       </span>
                     </td>
                     <td class="px-6 py-4">
-                      <div class="flex items-center gap-2">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-xs font-black text-white">
-                          {{ sched.entrenador.charAt(0) }}
-                        </div>
-                        <span class="font-semibold text-slate-700">{{ sched.entrenador }}</span>
-                      </div>
+                      <span class="font-semibold text-slate-700">{{ exerciseName(sched) }}</span>
+                    </td>
+                    <td class="px-6 py-4 font-semibold text-slate-700">
+                      {{ availableSlots(sched) > 0 ? `${availableSlots(sched)} disponibles` : 'Completo' }}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div class="border-t border-orange-100 bg-orange-50/50 px-6 py-3">
-              <p class="text-xs text-slate-500">{{ filteredSchedules.length }} sesiones semanales disponibles para <strong class="text-orange-600">{{ selectedService }}</strong></p>
+            <div v-if="!schedulesError && !schedulesLoading" class="border-t border-orange-100 bg-orange-50/50 px-6 py-3">
+              <p class="text-xs text-slate-500">{{ filteredSchedules.length }} sesiones semanales programadas para <strong class="text-orange-600">{{ selectedService }}</strong></p>
             </div>
           </div>
         </Transition>
@@ -275,14 +281,21 @@
               </router-link>
             </div>
 
-            <div class="mt-8 grid gap-4 lg:grid-cols-3">
+            <p v-if="plansLoading && !backendPlans.length" role="status" class="mt-8 text-sm text-slate-600">Cargando planes…</p>
+            <div v-else-if="plansError" role="alert" class="mt-8 rounded-2xl bg-red-50 p-5 text-sm text-red-800">
+              <p>No se pudieron actualizar los planes. {{ plansError }}</p>
+              <button type="button" :disabled="plansLoading" class="mt-3 rounded-lg bg-red-700 px-4 py-2 font-bold text-white disabled:opacity-50" @click="loadPlans">
+                {{ plansLoading ? 'Actualizando…' : 'Reintentar' }}
+              </button>
+            </div>
+            <div v-else-if="plans.length" class="mt-8 grid gap-4 lg:grid-cols-3">
               <router-link v-for="plan in plans" :key="plan.id" :to="{ path: '/registro', query: { plan: plan.id } }" class="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-orange-300">
                 <p class="text-sm font-black uppercase tracking-[0.18em] text-orange-500">{{ plan.label }}</p>
                 <p class="mt-3 text-4xl font-black text-slate-950">S/ {{ plan.price }}</p>
                 <p class="mt-3 text-sm leading-6 text-slate-600">{{ plan.description }}</p>
               </router-link>
             </div>
-            <p v-if="!plans.length" class="mt-8 rounded-2xl border border-orange-100 bg-white p-5 text-sm font-bold text-slate-600">
+            <p v-else class="mt-8 rounded-2xl border border-orange-100 bg-white p-5 text-sm font-bold text-slate-600">
               Planes pendientes de configuracion.
             </p>
           </div>
@@ -334,10 +347,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { landingImageUrl } from '../config/publicStorage';
 import { apiGet } from '../services/apiClient';
+import { activeServiceSchedules, availableSlots, dayLabel, exerciseName, formatScheduleHours } from '../utils/scheduleEnrollment.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -356,24 +370,29 @@ const dismissRegistrationNotice = () => {
 
 const selectedService = ref(null);
 
-const allSchedules = [
-  { dia: 'Lunes',     hora: '06:00–07:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
-  { dia: 'Lunes',     hora: '18:00–19:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
-  { dia: 'Lunes',     hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
-  { dia: 'Martes',    hora: '06:00–07:00', servicio: 'Musculación', entrenador: 'Diego Alejandro Castro Flores' },
-  { dia: 'Martes',    hora: '19:00–20:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
-  { dia: 'Miércoles', hora: '07:00–08:00', servicio: 'Fitness',     entrenador: 'Andrea Milagros Torres Paredes' },
-  { dia: 'Miércoles', hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
-  { dia: 'Jueves',    hora: '06:00–07:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
-  { dia: 'Jueves',    hora: '19:00–20:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
-  { dia: 'Viernes',   hora: '07:00–08:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
-  { dia: 'Viernes',   hora: '18:00–19:00', servicio: 'Fitness',     entrenador: 'Carlos Eduardo Ramírez Salazar' },
-  { dia: 'Viernes',   hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
-  { dia: 'Sábado',    hora: '09:00–10:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
-  { dia: 'Sábado',    hora: '10:00–11:00', servicio: 'Musculación', entrenador: 'Carlos Eduardo Ramírez Salazar' },
-  { dia: 'Sábado',    hora: '11:00–12:00', servicio: 'Baile',       entrenador: 'Andrea Milagros Torres Paredes' },
-  { dia: 'Domingo',   hora: '09:00–10:00', servicio: 'Cardio',      entrenador: 'Diego Alejandro Castro Flores' },
-];
+const allSchedules = ref([]);
+const schedulesLoading = ref(true);
+const schedulesError = ref('');
+let schedulesRequest = null;
+
+const loadSchedules = () => {
+  if (schedulesRequest) return schedulesRequest;
+  schedulesLoading.value = true;
+  schedulesRequest = (async () => {
+    try {
+      const list = await apiGet('/gym/horarios-publicos');
+      if (!Array.isArray(list)) throw new Error('No se recibieron los horarios esperados.');
+      allSchedules.value = activeServiceSchedules(list);
+      schedulesError.value = '';
+    } catch (error) {
+      schedulesError.value = error.message || 'No se pudieron cargar los horarios.';
+    } finally {
+      schedulesLoading.value = false;
+      schedulesRequest = null;
+    }
+  })();
+  return schedulesRequest;
+};
 
 // Match card title (e.g. "Musculacion") to schedule servicio (e.g. "Musculación")
 /**
@@ -387,7 +406,7 @@ const normalizeService = (str) =>
 
 const filteredSchedules = computed(() =>
   selectedService.value
-    ? allSchedules.filter(
+    ? allSchedules.value.filter(
         (s) => normalizeService(s.servicio) === normalizeService(selectedService.value),
       )
     : [],
@@ -398,6 +417,7 @@ const filteredSchedules = computed(() =>
  */
 const toggleService = (title) => {
   selectedService.value = selectedService.value === title ? null : title;
+  if (selectedService.value) loadSchedules();
 };
 
 const landingImages = {
@@ -417,11 +437,9 @@ const handleImageError = (event) => {
 const gymAddress = 'Jirón Vista Alegre 606, Lima 15056';
 const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(gymAddress)}&output=embed`;
 const backendPlans = ref([]);
-const defaultPlans = [
-  { id_pm: 1, nombre_plan: 'MENSUAL', duracion: '30 dias', precio: 79, descripcion: 'Acceso completo por 30 dias para entrenar con flexibilidad.', activo: true },
-  { id_pm: 2, nombre_plan: '3 MESES', duracion: '90 dias', precio: 199, descripcion: 'Plan trimestral para sostener progreso y ahorrar frente al pago mensual.', activo: true },
-  { id_pm: 3, nombre_plan: 'ANUAL', duracion: '365 dias', precio: 699, descripcion: 'Membresia anual para clientes constantes con mejor precio acumulado.', activo: true },
-];
+const plansLoading = ref(true);
+const plansError = ref('');
+let plansRequest = null;
 
 /**
  * Normaliza el valor recibido.
@@ -436,7 +454,7 @@ const formatPlanLabel = (value) =>
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const plans = computed(() =>
-  (backendPlans.value.length ? backendPlans.value : defaultPlans)
+  backendPlans.value
     .filter((plan) => plan.activo ?? plan.active ?? true)
     .map((plan) => {
       const name = normalizePlanName(plan.nombre_plan || plan.name);
@@ -453,13 +471,23 @@ const plans = computed(() =>
 /**
  * Consulta los datos del servidor.
  */
-const loadPlans = async () => {
-  try {
-    const list = await apiGet('/planes-membresia');
-    backendPlans.value = Array.isArray(list) ? list : [];
-  } catch {
-    backendPlans.value = defaultPlans;
-  }
+const loadPlans = () => {
+  if (plansRequest) return plansRequest;
+  plansLoading.value = true;
+  plansRequest = (async () => {
+    try {
+      const list = await apiGet('/planes-membresia');
+      if (!Array.isArray(list)) throw new Error('No se recibieron los planes esperados.');
+      backendPlans.value = list;
+      plansError.value = '';
+    } catch (error) {
+      plansError.value = error.message || 'No se pudieron cargar los planes.';
+    } finally {
+      plansLoading.value = false;
+      plansRequest = null;
+    }
+  })();
+  return plansRequest;
 };
 
 const stats = [
@@ -481,7 +509,24 @@ const services = [
   { tag: '04', title: 'Baile', description: 'Clases grupales dinamicas para entrenar con movimiento y motivacion.', image: landingImages.baile, imageClass: 'object-cover object-center' },
 ];
 
-onMounted(loadPlans);
+const refreshPublicData = () => {
+  if (document.visibilityState !== 'hidden') {
+    loadPlans();
+    loadSchedules();
+  }
+};
+let refreshTimer;
+onMounted(() => {
+  refreshPublicData();
+  refreshTimer = window.setInterval(refreshPublicData, 30000);
+  window.addEventListener('focus', refreshPublicData);
+  document.addEventListener('visibilitychange', refreshPublicData);
+});
+onUnmounted(() => {
+  window.clearInterval(refreshTimer);
+  window.removeEventListener('focus', refreshPublicData);
+  document.removeEventListener('visibilitychange', refreshPublicData);
+});
 </script>
 
 <style scoped>
