@@ -58,8 +58,3 @@ backend/db/state.json
 supabase/*.sql
 
 .vscode/
-
-# Reportes de cobertura generados (SonarQube los lee, no se versionan)
-backend/coverage.xml
-backend/.coverage
-frontend/coverage/
