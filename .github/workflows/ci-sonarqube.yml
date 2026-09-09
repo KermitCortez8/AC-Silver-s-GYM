@@ -1,0 +1,73 @@
+name: CI - Pruebas unitarias y SonarQube
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    name: Backend - pruebas y cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Correr pruebas con cobertura
+        working-directory: backend
+        run: pytest --cov=. --cov-report=xml:coverage.xml tests/
+
+      # El SonarQube del equipo corre en una laptop local (Docker), no es accesible
+      # desde los runners de GitHub. Este paso solo se activa si en el futuro se
+      # configuran los secrets SONAR_HOST_URL (URL publica) y SONAR_TOKEN.
+      - name: Analisis SonarQube - Backend
+        if: ${{ vars.SONAR_HOST_URL != '' || secrets.SONAR_HOST_URL != '' }}
+        uses: SonarSource/sonarqube-scan-action@v4
+        with:
+          projectBaseDir: backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  frontend:
+    name: Frontend - pruebas y cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm install
+
+      - name: Correr pruebas con cobertura
+        working-directory: frontend
+        run: |
+          mkdir -p coverage
+          node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info
+
+      - name: Analisis SonarQube - Frontend
+        if: ${{ vars.SONAR_HOST_URL != '' || secrets.SONAR_HOST_URL != '' }}
+        uses: SonarSource/sonarqube-scan-action@v4
+        with:
+          projectBaseDir: frontend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
