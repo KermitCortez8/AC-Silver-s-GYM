@@ -12,6 +12,7 @@ from models.gym import ClienteInput, RegistroPublicoClienteInput
 from models.auth import UserProfile
 from services.clients_service import ClientsService
 from services.stripe_service import StripeService
+from services.membership_notifications import notify_membership
 
 router = APIRouter(tags=["clientes"])
 
@@ -71,12 +72,14 @@ def _confirm_verified_checkout(
             "referencia_pago": verified_session_id,
         },
     )
+    notification = notify_membership(settings, clients_service, saved, "payment")
     return {
         "confirmed": True,
         "payment_status": "paid",
         "id_cliente": int(raw_client_id),
         "membership_status": str((saved.get("membresia") or {}).get("estado") or "EN_TRAMITE"),
         "message": "Su cuenta ha sido inicializada. A la espera de activación de membresía.",
+        "notification": notification,
     }
 
 
@@ -148,6 +151,8 @@ def registro_publico(
         return {**result, "payment": payment}
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
 
 
 @router.post("/pagos/stripe/webhook", status_code=status.HTTP_200_OK)
@@ -169,7 +174,10 @@ async def stripe_webhook(
         session_id = str(_value(checkout, "id", "") or "")
         if not session_id:
             raise ValueError("El webhook de Stripe no contiene una sesión")
-        _confirm_verified_checkout(session_id, clients_service, settings)
+        result = _confirm_verified_checkout(session_id, clients_service, settings)
+        if (result.get("notification") or {}).get("status") == "error":
+            # Stripe reintenta si no se pudo persistir el correo; el pago es idempotente.
+            raise RuntimeError("Pago confirmado; no se pudo guardar la notificación de correo")
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
     except RuntimeError as error:
@@ -197,12 +205,32 @@ def confirmar_retorno_stripe(
 def activar_membresia_cliente(
     id_cliente: int,
     clients_service: ClientsService = Depends(get_clients_service),
+    settings: Settings = Depends(get_settings),
     _current_user=Depends(require_admin_or_staff),
 ):
     try:
-        return clients_service.activate_client_membership(id_cliente)
+        saved = clients_service.activate_client_membership(id_cliente)
+        notification = notify_membership(settings, clients_service, saved, "activation")
+        return {**saved, "notification": notification}
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+
+@router.post("/clientes/{id_cliente}/notificar-activacion")
+def retry_activation_notification(
+    id_cliente: int,
+    clients_service: ClientsService = Depends(get_clients_service),
+    settings: Settings = Depends(get_settings),
+    _current_user=Depends(require_admin_or_staff),
+):
+    """Reintenta el correo sin modificar el estado ni la vigencia de la cuenta."""
+    client = clients_service.gym.get_cliente(id_cliente)
+    membership = clients_service.gym._latest_membership_for_cliente(clients_service.gym.state, id_cliente)
+    if not client or not membership:
+        raise HTTPException(status_code=404, detail="Cliente o membresía no encontrados")
+    if str(client.get("estado") or "").upper() not in {"ACTIVO", "ACTIVA"} or str(membership.get("estado") or "").upper() not in {"ACTIVO", "ACTIVA"}:
+        raise HTTPException(status_code=400, detail="La cuenta debe estar activa para enviar este correo")
+    return notify_membership(settings, clients_service, {"cliente": client, "membresia": membership}, "activation")
 
 
 @router.delete("/clientes/{id_cliente}", status_code=status.HTTP_204_NO_CONTENT)

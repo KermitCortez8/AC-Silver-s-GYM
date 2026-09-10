@@ -231,6 +231,7 @@ class GymDomainService:
             "rol": rol if rol in {"admin", "trainer", "staff"} else "staff",
             "estado": "ACTIVO",
             "password_hash": password_hash,
+            "google_sub": str(row.get("google_sub") or ""),
         }
 
     # Procesa esta operación.
@@ -357,6 +358,7 @@ class GymDomainService:
                 "rol": rol,
                 "estado": "Activo",
                 "password_hash": hash_password(password) if password else str(existing.get("password_hash") or ""),
+                "google_sub": str(existing.get("google_sub") or ""),
             }
 
             if idx >= 0:
@@ -419,6 +421,7 @@ class GymDomainService:
             "promocion": promocion,
             "estado": estado.upper() if estado else "ACTIVO",
             "password_hash": password_hash,
+            "google_sub": str(row.get("google_sub") or ""),
         }
 
     # Procesa esta operación.
@@ -625,6 +628,7 @@ class GymDomainService:
             if password and len(password) < 6:
                 raise ValueError("La contraseña debe tener al menos 6 caracteres")
             item["password_hash"] = hash_password(password) if password else str(existing.get("password_hash") or "")
+            item["google_sub"] = str(existing.get("google_sub") or "")
             if idx >= 0:
                 state["clientes"][idx] = item
             else:
@@ -653,6 +657,31 @@ class GymDomainService:
             ),
             None,
         )
+
+    def get_account_by_google_sub(self, subject: str) -> tuple[str, dict[str, Any]] | None:
+        if not subject:
+            return None
+        for kind in ("usuario", "clientes"):
+            for account in self.state[kind]:
+                if account.get("google_sub") == subject:
+                    return kind, account
+        return None
+
+    def link_google_account(self, kind: str, account_id: str, subject: str) -> dict[str, Any]:
+        if kind not in {"usuario", "clientes"} or not subject:
+            raise ValueError("Identidad de Google inválida")
+
+        def _fn(state: dict[str, Any]):
+            for table in ("usuario", "clientes"):
+                if any(row.get("google_sub") == subject for row in state[table]):
+                    raise ValueError("La identidad de Google ya está vinculada. Inicia sesión nuevamente.")
+            account = next((row for row in state[kind] if row.get("id_usuario") == account_id), None)
+            if not account or account.get("google_sub"):
+                raise ValueError("No se pudo vincular esta cuenta de Google")
+            account["google_sub"] = subject
+            return account
+
+        return self._mutate(_fn)
 
     # Procesa esta operación.
     def authenticate_usuario_password(self, correo: str, password: str) -> dict[str, Any] | None:
@@ -843,12 +872,14 @@ class GymDomainService:
 
     # Procesa esta operación.
     def registrar_cliente_publico(self, payload: dict[str, Any]) -> dict[str, Any]:
-        nombre = str(payload.get("nombre") or payload.get("google_name") or "").strip()
-        correo = str(payload.get("correo") or payload.get("google_email") or "").strip().lower()
+        nombre = str(payload.get("nombre") or "").strip()
+        correo = str(payload.get("correo") or "").strip().lower()
         telefono = str(payload.get("telefono") or "").strip()
         dni = str(payload.get("dni") or "").strip()
         password = str(payload.get("password") or payload.get("contrasena") or "").strip()
         plan_name = str(payload.get("plan") or "MENSUAL").strip().upper()
+        # Este valor lo incorpora ClientsService después de verificar la credencial.
+        google_sub = str(payload.get("google_sub") or "")
 
         if not nombre:
             raise ValueError("Ingresa tu nombre")
@@ -856,12 +887,16 @@ class GymDomainService:
             raise ValueError("Ingresa un correo valido")
         if not dni:
             raise ValueError("Ingresa tu DNI")
-        if len(password) < 6:
+        if not google_sub and len(password) < 6:
             raise ValueError("La contraseña debe tener al menos 6 caracteres")
         if self.get_cliente_by_dni(dni):
             raise ValueError("Ya existe un cliente registrado con ese DNI")
         if self.get_cliente_by_email(correo):
             raise ValueError("Ya existe un cliente registrado con ese correo")
+        if self.get_usuario_by_email(correo):
+            raise ValueError("Ya existe una cuenta con ese correo. Inicia sesión para continuar.")
+        if google_sub and self.get_account_by_google_sub(google_sub):
+            raise ValueError("Ya existe una cuenta con esta identidad de Google. Inicia sesión.")
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
@@ -878,6 +913,7 @@ class GymDomainService:
                 "promocion": str(payload.get("promocion") or "SIN PROMOCION").strip() or "SIN PROMOCION",
                 "estado": "PENDIENTE_PAGO",
                 "password_hash": hash_password(password),
+                "google_sub": google_sub,
             }
             membresia = {
                 "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),

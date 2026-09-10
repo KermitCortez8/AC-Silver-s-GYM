@@ -60,7 +60,7 @@ export const formatUserData = (googleUserData) => {
     picture: googleUserData.picture || '',
     givenName: googleUserData.given_name || '',
     familyName: googleUserData.family_name || '',
-    role: googleUserData.role || getUserRole(normalizedEmail),
+    role: googleUserData.role || 'user',
     loginTime: new Date().toISOString(),
   };
 };
@@ -90,6 +90,13 @@ export const saveAuthSession = (user, token, expiresIn) => {
     if (typeof expiresIn === 'number' && expiresIn > 0) {
       const expiryTime = Date.now() + expiresIn * 1000;
       localStorage.setItem(TOKEN_EXPIRY_KEY, expiryTime.toString());
+    } else if (token) {
+      const payload = decodeJWT(token);
+      if (Number.isFinite(payload?.exp)) {
+        localStorage.setItem(TOKEN_EXPIRY_KEY, String(payload.exp * 1000));
+      } else {
+        localStorage.removeItem(TOKEN_EXPIRY_KEY);
+      }
     }
   } catch (error) {
     console.error('Error al guardar sesión:', error);

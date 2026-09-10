@@ -4,9 +4,9 @@
 # Mantiene estable el contrato de las rutas de acceso.
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class UserProfile(BaseModel):
@@ -24,8 +24,14 @@ class UserProfile(BaseModel):
 
 
 class AuthGoogleRequest(BaseModel):
-    credential: str
-    profile: dict[str, Any] | None = None
+    credential: str = Field(min_length=1, max_length=16384)
+    password: str = ""
+
+
+class GoogleProfile(BaseModel):
+    email: str
+    name: str
+    picture: str = ""
 
 
 class AuthPasswordRequest(BaseModel):

@@ -1,53 +1,54 @@
-# Módulo: auth_routes.
-# Expone el acceso con contraseña y con Google.
-# Valida tokens y devuelve el perfil de la sesión actual.
-# Convierte errores de autenticación en respuestas HTTP.
+"""Acceso con Google o contraseña y consulta de la sesión verificada."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 
-from dependencies import get_gym_service
-from models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, UserProfile
-from services.auth_service import AuthService
+from dependencies import get_current_user, get_gym_service
+from models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, GoogleProfile, UserProfile
+from services.auth_service import AuthService, ClientActivationRequired, GoogleLinkRequired
+from services.google_auth_service import verify_google_credential
 from services.gym_domain_service import GymDomainService
-from utils.security import decode_token_payload
+from utils.security import normalize_profile
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-# POST /auth/google: valida la credencial y crea la sesión del usuario.
-@router.post("/google", response_model=AuthResponse)
-# Procesa esta operación.
-def google_auth(payload: AuthGoogleRequest, gym_service: GymDomainService = Depends(get_gym_service)):
-    auth_service = AuthService(gym_service)
+@router.post("/google/profile", response_model=GoogleProfile)
+def google_profile(payload: AuthGoogleRequest):
     try:
-        return auth_service.google_auth(payload)
+        return GoogleProfile(**normalize_profile(verify_google_credential(payload.credential), ""))
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise HTTPException(status_code=401, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@router.post("/google", response_model=AuthResponse)
+def google_auth(payload: AuthGoogleRequest, gym_service: GymDomainService = Depends(get_gym_service)):
+    try:
+        return AuthService(gym_service).google_auth(payload)
+    except GoogleLinkRequired as error:
+        raise HTTPException(status_code=409, detail={"code": "google_link_required", "message": str(error)}) from error
+    except ClientActivationRequired as error:
+        raise HTTPException(status_code=403, detail={"code": "account_pending_activation", "message": str(error)}) from error
+    except ValueError as error:
+        raise HTTPException(status_code=401, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 @router.post("/password", response_model=AuthResponse)
-# Procesa esta operación.
 def password_auth(payload: AuthPasswordRequest, gym_service: GymDomainService = Depends(get_gym_service)):
-    auth_service = AuthService(gym_service)
     try:
-        return auth_service.password_auth(payload)
+        return AuthService(gym_service).password_auth(payload)
+    except ClientActivationRequired as error:
+        raise HTTPException(status_code=403, detail={"code": "account_pending_activation", "message": str(error)}) from error
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(error)) from error
+        raise HTTPException(status_code=401, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
-# GET /auth/me: devuelve los datos del usuario autenticado a partir del token.
 @router.get("/me", response_model=UserProfile)
-# Procesa esta operación.
-def auth_me(
-    authorization: str | None = Header(default=None),
-    gym_service: GymDomainService = Depends(get_gym_service),
-):
-    if not authorization:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Falta token")
-    token = authorization.replace("Bearer ", "").strip()
-    payload = decode_token_payload(token)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
-    auth_service = AuthService(gym_service)
-    return auth_service.user_from_payload(payload)
+def auth_me(current_user: UserProfile = Depends(get_current_user)):
+    return current_user

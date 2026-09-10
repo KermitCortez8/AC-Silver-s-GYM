@@ -2681,7 +2681,7 @@ export const useGymStore = defineStore('gym', () => {
 
     const saved = await res.json();
     const membership = saved.membresia || {};
-    return mergeClient({
+    const client = mergeClient({
       ...(saved.cliente || {}),
       id_membresia: membership.id_membresia,
       membership_status: membership.estado,
@@ -2690,6 +2690,7 @@ export const useGymStore = defineStore('gym', () => {
       payment_status: membership.estado_pago,
       payment_reference: membership.referencia_pago,
     });
+    return { ...client, notification: saved.notification || null };
   };
 
   /**

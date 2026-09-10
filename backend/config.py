@@ -8,7 +8,7 @@ from functools import lru_cache
 import os
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # Procesa esta operación.
@@ -45,6 +45,15 @@ class Settings(BaseModel):
     stripe_webhook_secret: str = ""
     stripe_mode: str = "test"
     frontend_public_url: str = "http://localhost:5173"
+    google_client_id: str = ""
+    auth_secret_key: str = ""
+    gmail_email: str = ""
+    gmail_app_password: str = Field(default="", repr=False, exclude=True)
+    email_from_name: str = "Silver Gym Surco"
+
+    @property
+    def has_gmail_credentials(self) -> bool:
+        return bool(self.gmail_email.strip() and self.gmail_app_password.strip())
 
     @property
     # Valida los datos recibidos.
@@ -81,4 +90,9 @@ def get_settings() -> Settings:
         stripe_webhook_secret=(os.getenv("STRIPE_WEBHOOK_SECRET") or "").strip(),
         stripe_mode=(os.getenv("STRIPE_MODE") or "test").strip().lower(),
         frontend_public_url=(os.getenv("FRONTEND_PUBLIC_URL") or "http://localhost:5173").strip().rstrip("/"),
+        google_client_id=(os.getenv("GOOGLE_CLIENT_ID") or "").strip(),
+        auth_secret_key=(os.getenv("AUTH_SECRET_KEY") or "").strip(),
+        gmail_email=(os.getenv("GMAIL_EMAIL") or "").strip(),
+        gmail_app_password="".join((os.getenv("GMAIL_APP_PASSWORD") or "").split()),
+        email_from_name=(os.getenv("EMAIL_FROM_NAME") or "Silver Gym Surco").strip(),
     )

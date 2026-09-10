@@ -166,9 +166,19 @@
                     type="button"
                     class="rounded-xl bg-emerald-400 px-3 py-2 text-xs font-bold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
                     :disabled="activatingClientId === client.id"
-                    @click="activateMembership(client)"
+                    @click="requestActivation(client)"
                   >
                     {{ activatingClientId === client.id ? 'Activando...' : 'Activar' }}
+                  </button>
+
+                  <button
+                    v-if="isActiveStatus(client.status) && isActiveStatus(client.membershipStatus)"
+                    type="button"
+                    class="rounded-xl border border-white/20 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                    :disabled="Boolean(notifyingClientId)"
+                    @click="retryActivationEmail(client)"
+                  >
+                    {{ notifyingClientId === client.id ? 'Enviando...' : 'Notificar activación' }}
                   </button>
 
                   <button
@@ -401,9 +411,12 @@
                 class="field-input"
               >
                 <option value="EN_TRAMITE">EN_TRAMITE</option>
-                <option value="ACTIVO">ACTIVO</option>
+                <option value="ACTIVO" :disabled="editingNeedsActivation">ACTIVO</option>
                 <option value="INACTIVO">INACTIVO</option>
               </select>
+              <p v-if="editingNeedsActivation" class="text-xs text-slate-400">
+                La preinscripción se activa desde «Activar», después de confirmar el pago.
+              </p>
             </label>
           </div>
 
@@ -521,6 +534,16 @@
         </div>
       </div>
     </Teleport>
+    <ConfirmDialog
+      v-if="pendingActivation"
+      title="¿Estás seguro de la activación?"
+      :message="`Se activará la cuenta de ${pendingActivation.name || pendingActivation.id} y se enviará un correo a ${pendingActivation.email || 'su correo registrado'}.`"
+      confirm-label="Sí, activar"
+      :busy="Boolean(activatingClientId)"
+      :error="activationError"
+      @cancel="cancelActivation"
+      @confirm="activateMembership(pendingActivation)"
+    />
   </div>
 </template>
 
@@ -533,8 +556,12 @@ import {
 } from 'vue';
 
 import { useGymStore } from '../stores/gymStore';
+import { useAuthStore } from '../stores/authStore';
+import { apiPost } from '../services/apiClient';
+import ConfirmDialog from '../components/ConfirmDialog.vue';
 
 const gymStore = useGymStore();
+const authStore = useAuthStore();
 
 const clients = computed(() => gymStore.members);
 const productos = computed(() => gymStore.productos_tienda);
@@ -548,6 +575,44 @@ const viewingClient = ref(null);
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
 const activatingClientId = ref('');
+const pendingActivation = ref(null);
+const activationError = ref('');
+const notifyingClientId = ref('');
+const editingNeedsActivation = computed(() => {
+  const client = clients.value.find((entry) => entry.id === editingId.value);
+  return client && ['EN_TRAMITE', 'PENDIENTE_PAGO'].includes(normalizeStatus(client.membershipStatus));
+});
+
+const requestActivation = (client) => {
+  if (activatingClientId.value) return;
+  pendingActivation.value = { ...client };
+  activationError.value = '';
+};
+const cancelActivation = () => {
+  if (activatingClientId.value) return;
+  pendingActivation.value = null;
+  activationError.value = '';
+};
+const notificationMessage = (notification) => {
+  if (notification?.status === 'sent') return 'Correo de activación enviado al cliente.';
+  if (notification?.status === 'queued') return 'El correo está pendiente de envío y se reintentará automáticamente.';
+  return 'El correo no se pudo enviar. Revisa la configuración del servicio y usa Notificar activación para reintentarlo.';
+};
+const retryActivationEmail = async (client) => {
+  if (notifyingClientId.value) return;
+  notifyingClientId.value = client.id;
+  try {
+    const idCliente = client.id_cliente || Number(String(client.id).replace(/^SGCLI/i, ''));
+    const notification = await apiPost(`/clientes/${idCliente}/notificar-activacion`, {}, authStore.token);
+    feedbackTone.value = ['sent', 'queued'].includes(notification.status) ? 'success' : 'info';
+    feedbackMessage.value = notificationMessage(notification);
+  } catch (error) {
+    feedbackTone.value = 'error';
+    feedbackMessage.value = error.message || 'No se pudo enviar el correo.';
+  } finally {
+    notifyingClientId.value = '';
+  }
+};
 
 const form = reactive({
   nombre: '',
@@ -785,6 +850,7 @@ const confirmDelete = async (client) => {
  * Activa la membresía del cliente seleccionado.
  */
 const activateMembership = async (client) => {
+  if (!client || activatingClientId.value) return;
   const idCliente =
     client.id_cliente ||
     Number(
@@ -797,12 +863,14 @@ const activateMembership = async (client) => {
 
     feedbackMessage.value =
       'No se encontro el ID numerico del cliente.';
+    activationError.value = feedbackMessage.value;
 
     return;
   }
 
   activatingClientId.value =
     client.id;
+  activationError.value = '';
 
   try {
     const saved =
@@ -814,7 +882,8 @@ const activateMembership = async (client) => {
       'success';
 
     feedbackMessage.value =
-      `Membresia de ${saved.id} activada.`;
+      `Membresía de ${saved.id} activada. ${notificationMessage(saved.notification)}`;
+    pendingActivation.value = null;
   } catch (error) {
     feedbackTone.value =
       'error';
@@ -823,6 +892,7 @@ const activateMembership = async (client) => {
       error instanceof Error
         ? error.message
         : 'No se pudo activar la membresia.';
+    activationError.value = feedbackMessage.value;
   } finally {
     activatingClientId.value =
       '';

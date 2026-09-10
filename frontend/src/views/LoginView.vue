@@ -52,32 +52,38 @@
           </button>
         </form>
 
-        <div v-if="googleReady" class="my-6 flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-slate-400">
+        <div class="my-6 flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-slate-400">
           <span class="h-px flex-1 bg-orange-100"></span>
           Google
           <span class="h-px flex-1 bg-orange-100"></span>
         </div>
 
-        <div v-if="googleReady" class="space-y-4">
-          <div ref="googleButtonRef" class="flex min-h-[48px] items-center justify-center"></div>
-        </div>
+        <GoogleSignInButton :disabled="processing" @credential="completeLogin" />
+        <form v-if="linkCredential" class="mt-5 space-y-3" @submit.prevent="completeLogin(linkCredential, linkPassword)">
+          <label class="block space-y-2">
+            <span class="text-sm font-semibold text-slate-700">Contraseña actual del gimnasio</span>
+            <input v-model="linkPassword" required type="password" autocomplete="current-password" class="w-full rounded-2xl border border-orange-100 px-4 py-3" />
+          </label>
+          <button type="submit" :disabled="processing" class="w-full rounded-2xl bg-orange-500 px-4 py-3 font-bold text-white disabled:opacity-60">Vincular Google y entrar</button>
+          <button type="button" :disabled="processing" class="w-full text-sm text-slate-600 underline" @click="cancelLink">Cancelar vinculación</button>
+        </form>
       </section>
     </main>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
-import { GOOGLE_CONFIG } from '../config/googleConfig';
-import { authenticateWithGoogleCredential, authenticateWithPassword, loadGoogleIdentityScript } from '../services/authService';
+import GoogleSignInButton from '../components/GoogleSignInButton.vue';
+import { authenticateWithGoogleCredential, authenticateWithPassword } from '../services/authService';
 
 const router = useRouter();
-const { signIn, initializeAuth, isAuthenticated, isAdmin } = useAuth();
-const googleButtonRef = ref(null);
+const { signIn, initializeAuth, isAuthenticated, dashboardPath } = useAuth();
 const googleError = ref('');
-const googleReady = ref(Boolean(GOOGLE_CONFIG.webClientId));
+const linkCredential = ref('');
+const linkPassword = ref('');
 const processing = ref(false);
 const passwordForm = reactive({
   correo: '',
@@ -88,24 +94,35 @@ const passwordForm = reactive({
  * Gestiona esta acción de la vista.
  */
 const navigateByRole = (role) => {
-  router.push(role === 'user' ? '/user' : '/admin');
+  router.replace(role === 'trainer' ? '/trainer/dashboard' : ['admin', 'staff'].includes(role) ? '/admin/dashboard' : '/user/dashboard');
+};
+
+const cancelLink = () => {
+  linkCredential.value = '';
+  linkPassword.value = '';
+  googleError.value = '';
 };
 
 /**
  * Gestiona esta acción de la vista.
  */
-const completeLogin = async (credential) => {
+const completeLogin = async (credential, password = '') => {
+  if (processing.value) return;
   processing.value = true;
+  googleError.value = '';
   try {
-    const result = await authenticateWithGoogleCredential(credential);
+    const result = await authenticateWithGoogleCredential(credential, password);
     await signIn(result.token, {
       ...result.user,
       expiresIn: result.expiresIn,
       role: result.user.role,
       authSource: result.source,
     });
+    cancelLink();
     navigateByRole(result.user.role);
   } catch (error) {
+    linkCredential.value = error?.code === 'google_link_required' ? credential : '';
+    linkPassword.value = '';
     googleError.value = error?.message || 'No se pudo completar el inicio de sesion';
   } finally {
     processing.value = false;
@@ -116,6 +133,7 @@ const completeLogin = async (credential) => {
  * Gestiona esta acción de la vista.
  */
 const handlePasswordLogin = async () => {
+  if (processing.value) return;
   processing.value = true;
   googleError.value = '';
   try {
@@ -134,59 +152,8 @@ const handlePasswordLogin = async () => {
   }
 };
 
-/**
- * Gestiona esta acción de la vista.
- */
-const renderGoogleButton = async () => {
-  if (!GOOGLE_CONFIG.webClientId) {
-    googleReady.value = false;
-    return;
-  }
-
-  try {
-    await loadGoogleIdentityScript();
-
-    if (!window.google?.accounts?.id || !googleButtonRef.value) {
-      throw new Error('Google no esta disponible');
-    }
-
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CONFIG.webClientId,
-      callback: async (response) => {
-        await completeLogin(response.credential);
-      },
-      auto_select: false,
-      cancel_on_tap_outside: true,
-    });
-
-    googleButtonRef.value.innerHTML = '';
-    window.google.accounts.id.renderButton(googleButtonRef.value, {
-      type: 'standard',
-      theme: 'outline',
-      size: 'large',
-      shape: 'pill',
-      text: 'signin_with',
-      width: 320,
-    });
-  } catch (error) {
-    googleError.value = error?.message || 'No se pudo cargar Google';
-  }
-};
-
 onMounted(async () => {
   await initializeAuth();
-
-  if (isAuthenticated.value) {
-    navigateByRole(isAdmin.value ? 'admin' : 'user');
-    return;
-  }
-
-  await renderGoogleButton();
-});
-
-watch(isAuthenticated, (nextValue) => {
-  if (nextValue) {
-    navigateByRole(isAdmin.value ? 'admin' : 'user');
-  }
+  if (isAuthenticated.value) router.replace(dashboardPath.value);
 });
 </script>

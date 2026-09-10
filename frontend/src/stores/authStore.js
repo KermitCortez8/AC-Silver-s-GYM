@@ -23,7 +23,7 @@ const normalizeStoredUser = (userData) => {
       ...userData,
       id: userData.id_usuario || userData.id,
       id_usuario: userData.id_usuario || userData.id,
-      role: userData.role || (String(userData.email).endsWith('@urp.edu.pe') ? 'admin' : 'user'),
+      role: userData.role || 'user',
       telefono: userData.telefono || '',
     };
   }
@@ -57,7 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
   const initializeAuth = async () => {
     try {
       isLoading.value = true;
-      const { user: storedUser, token: storedToken } = getAuthSession();
+      const { token: storedToken } = getAuthSession();
 
       if (storedToken && APP_CONFIG.authApiBaseUrl) {
         try {
@@ -77,19 +77,17 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
-      if (storedUser && isValidUser(storedUser)) {
-        user.value = normalizeStoredUser(storedUser);
-        token.value = storedToken;
-        userRole.value = storedUser.role || 'user';
-        isSignout.value = false;
-      } else {
-        user.value = null;
-        token.value = null;
-        userRole.value = null;
-        isSignout.value = true;
-      }
+      clearAuthStorage();
+      user.value = null;
+      token.value = null;
+      userRole.value = null;
+      isSignout.value = true;
     } catch (error) {
       console.error('Error al inicializar autenticación:', error);
+      clearAuthStorage();
+      user.value = null;
+      token.value = null;
+      userRole.value = null;
       isSignout.value = true;
     } finally {
       isLoading.value = false;
@@ -167,6 +165,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       isLoading.value = true;
       clearAuthStorage();
+      window.google?.accounts?.id?.disableAutoSelect();
       user.value = null;
       token.value = null;
       userRole.value = null;

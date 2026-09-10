@@ -214,8 +214,11 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const authStore = useAuthStore();
 
-  // Inicializar autenticación si no está hecho
-  if (!authStore.isInitialized) {
+  // Comprueba también las sesiones abiertas antes de entrar a una ruta protegida
+  // o de redirigir al panel: una cuenta puede estar pendiente o desactivada.
+  const needsSessionCheck = authStore.isAuthenticated &&
+    (to.meta.requiresAuth || to.path === '/' || to.path === '/login');
+  if (!authStore.isInitialized || needsSessionCheck) {
     await authStore.initializeAuth();
   }
 

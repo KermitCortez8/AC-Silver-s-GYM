@@ -208,6 +208,19 @@ class SupabaseGymService(GymDomainService):
     # Procesa esta operación.
     def _filter_remote_columns(self, table: str, body: dict[str, Any]) -> dict[str, Any]:
         columns = self.remote_columns.get(table)
+        if body.get("google_sub") and (not columns or "google_sub" not in columns):
+            try:
+                self.supabase.validate_columns(table, {"google_sub"})
+            except RuntimeError as error:
+                raise RuntimeError(
+                    "No se pudo guardar la identidad de Google. Comprueba la conexión y ejecuta "
+                    "backend/migrations/003_add_google_identity.sql en Supabase."
+                ) from error
+            if columns:
+                columns.add("google_sub")
+        elif not body.get("google_sub"):
+            # Mantiene compatibles las cuentas anteriores mientras se aplica la migración.
+            body = {key: value for key, value in body.items() if key != "google_sub"}
         if not columns:
             return body
         return {key: value for key, value in body.items() if key in columns}
@@ -687,6 +700,7 @@ class SupabaseGymService(GymDomainService):
             "promocion": "SIN PROMOCION",
             "estado": self._bool_to_status(row.get("Estado")),
             "password_hash": str(row.get("password_hash") or row.get("Password_Hash") or ""),
+            "google_sub": str(row.get("google_sub") or ""),
             "fecha_registro": str(row.get("Fecha_Registro") or ""),
         }
 
@@ -706,6 +720,7 @@ class SupabaseGymService(GymDomainService):
             "Estado": self._status_to_bool(row.get("estado")),
             "Plan": str(row.get("plan") or "MENSUAL").strip().upper(),
             "password_hash": str(row.get("password_hash") or ""),
+            "google_sub": str(row.get("google_sub") or "") or None,
         }
 
     # Procesa esta operación.
@@ -758,6 +773,7 @@ class SupabaseGymService(GymDomainService):
             "rol": str(row.get("Rol") or local.get("rol") or "staff").strip().lower(),
             "estado": "ACTIVO" if bool(row.get("Estado", True)) else "INACTIVO",
             "password_hash": password,
+            "google_sub": str(row.get("google_sub") or ""),
         }
 
     # Procesa esta operación.
@@ -774,6 +790,7 @@ class SupabaseGymService(GymDomainService):
             "rol": role,
             "estado": "ACTIVO" if bool(row.get("Estado", True)) else "INACTIVO",
             "password_hash": str(row.get("Contraseña") or row.get("ContraseÃ±a") or ""),
+            "google_sub": str(row.get("google_sub") or ""),
         }
 
     # Procesa esta operación.
@@ -785,6 +802,7 @@ class SupabaseGymService(GymDomainService):
             "Telefono": str(row.get("telefono") or ""),
             "DNI": str(row.get("dni") or ""),
             "Contraseña": str(row.get("password_hash") or ""),
+            "google_sub": str(row.get("google_sub") or "") or None,
             "Rol": str(row.get("rol") or "staff").strip().lower(),
             "Estado": self._status_to_bool(row.get("estado") or "ACTIVO"),
         }

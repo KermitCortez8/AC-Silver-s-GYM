@@ -15,7 +15,12 @@
         <div v-if="googleError" class="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
           {{ googleError }}
         </div>
-        <div ref="googleButtonRef" class="mt-5 flex min-h-[48px] items-center"></div>
+        <GoogleSignInButton class="mt-5" text="signup_with" :disabled="isSubmitting || googleProcessing" @credential="selectGoogleAccount" />
+        <p v-if="googleProcessing" role="status" class="mt-3 text-sm text-slate-600">Verificando tu cuenta de Google...</p>
+        <div v-if="googleCredential" class="mt-4 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900">
+          <p>Cuenta de Google verificada: {{ form.correo }}. Completa tus datos y elige un plan. Podrás ingresar con Google cuando el administrador active tu cuenta.</p>
+          <button type="button" class="mt-2 font-bold underline" :disabled="isSubmitting" @click="clearGoogleAccount">Usar correo y contraseña</button>
+        </div>
 
         <form class="mt-6 space-y-4" @submit.prevent="submitRegistration">
           <label class="block space-y-2">
@@ -25,10 +30,10 @@
 
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Correo</span>
-            <input v-model.trim="form.correo" required type="email" autocomplete="email" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="cliente@correo.com" />
+            <input v-model.trim="form.correo" :readonly="Boolean(googleCredential)" required type="email" autocomplete="email" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626] read-only:bg-slate-100" placeholder="cliente@correo.com" />
           </label>
 
-          <label class="block space-y-2">
+          <label v-if="!googleCredential" class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">Contrasena</span>
             <input v-model="form.password" required minlength="6" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-[#dc2626]" placeholder="Minimo 6 caracteres" />
           </label>
@@ -47,12 +52,15 @@
           <button
             type="submit"
             class="w-full rounded-xl bg-[#dc2626] px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="isSubmitting || !planOptions.length"
+            :disabled="isSubmitting || googleProcessing || !planOptions.length"
           >
             {{ isSubmitting ? 'Preparando pago seguro...' : 'Pagar con Stripe' }}
           </button>
           <p class="text-center text-xs leading-5 text-slate-500">
             Serás redirigido a Stripe Checkout. Silver Gym no recibe ni almacena los datos de tu tarjeta.
+          </p>
+          <p class="text-center text-sm leading-5 text-slate-600">
+            Después del pago, tu cuenta quedará pendiente de activación por el administrador.
           </p>
         </form>
 
@@ -104,15 +112,15 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { GOOGLE_CONFIG } from '../config/googleConfig';
-import { loadGoogleIdentityScript } from '../services/authService';
+import GoogleSignInButton from '../components/GoogleSignInButton.vue';
+import { getVerifiedGoogleProfile } from '../services/authService';
 import { apiGet } from '../services/apiClient';
-import { decodeJWT } from '../utils/authUtils';
 import { useGymStore } from '../stores/gymStore';
 
 const route = useRoute();
 const gymStore = useGymStore();
-const googleButtonRef = ref(null);
+const googleCredential = ref('');
+const googleProcessing = ref(false);
 const googleError = ref('');
 const feedback = ref('');
 const feedbackTone = ref('success');
@@ -175,8 +183,6 @@ const form = reactive({
   dni: '',
   password: '',
   plan: normalizePlanName(route.query.plan),
-  google_email: '',
-  google_name: '',
 });
 
 /**
@@ -193,38 +199,26 @@ const loadPlans = async () => {
   }
 };
 
-/**
- * Gestiona esta acción de la vista.
- */
-const renderGoogleButton = async () => {
-  if (!GOOGLE_CONFIG.webClientId || !googleButtonRef.value) return;
+const clearGoogleAccount = () => {
+  googleCredential.value = '';
+  googleError.value = '';
+  form.correo = '';
+  form.password = '';
+};
 
+const selectGoogleAccount = async (credential) => {
+  if (isSubmitting.value || googleProcessing.value) return;
+  googleProcessing.value = true;
+  clearGoogleAccount();
   try {
-    await loadGoogleIdentityScript();
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CONFIG.webClientId,
-      callback: (response) => {
-        const profile = decodeJWT(response.credential);
-        if (!profile) return;
-        form.nombre = profile.name || form.nombre;
-        form.correo = profile.email || form.correo;
-        form.google_email = profile.email || '';
-        form.google_name = profile.name || '';
-      },
-      auto_select: false,
-      cancel_on_tap_outside: true,
-    });
-    googleButtonRef.value.innerHTML = '';
-    window.google.accounts.id.renderButton(googleButtonRef.value, {
-      type: 'standard',
-      theme: 'outline',
-      size: 'large',
-      shape: 'pill',
-      text: 'signup_with',
-      width: 320,
-    });
+    const profile = await getVerifiedGoogleProfile(credential);
+    form.nombre = profile.name || form.nombre;
+    form.correo = profile.email;
+    googleCredential.value = credential;
   } catch (error) {
-    googleError.value = error?.message || 'No se pudo cargar Google';
+    googleError.value = error.message || 'No se pudo verificar tu cuenta de Google';
+  } finally {
+    googleProcessing.value = false;
   }
 };
 
@@ -232,6 +226,7 @@ const renderGoogleButton = async () => {
  * Envía los datos del formulario.
  */
 const submitRegistration = async () => {
+  if (isSubmitting.value || googleProcessing.value) return;
   isSubmitting.value = true;
   feedback.value = '';
   registeredClient.value = null;
@@ -241,14 +236,14 @@ const submitRegistration = async () => {
       throw new Error('No hay planes configurados para registrar clientes.');
     }
 
-    const result = await gymStore.registerPublicClient({ ...form });
+    const result = await gymStore.registerPublicClient({ ...form, google_credential: googleCredential.value });
     const { client, payment } = result;
     registeredClient.value = client;
     if (!payment?.checkout_url) {
       throw new Error(payment?.message || 'Stripe no está configurado. Contacta al administrador.');
     }
     feedbackTone.value = 'success';
-    feedback.value = 'Cuenta creada. Abriendo el checkout seguro de Stripe...';
+    feedback.value = 'Preregistro creado. Abriendo el checkout seguro de Stripe. Tu cuenta requerirá activación por el administrador.';
     window.location.assign(payment.checkout_url);
   } catch (error) {
     feedbackTone.value = 'error';
@@ -260,6 +255,5 @@ const submitRegistration = async () => {
 
 onMounted(() => {
   loadPlans();
-  renderGoogleButton();
 });
 </script>

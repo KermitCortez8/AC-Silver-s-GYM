@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import asyncio
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from config import get_settings
 from dependencies import get_gym_service
 from services.supabase_gym_service import SupabaseGymService
+from services.membership_notifications import process_pending_emails
 from routes.attendance_routes import router as attendance_router
 from routes.auth_routes import router as auth_router
 from routes.clients_routes import router as clients_router
@@ -28,10 +31,23 @@ settings = get_settings()
 store_images_dir = Path(settings.store_images_dir)
 store_images_dir.mkdir(parents=True, exist_ok=True)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    notifications = asyncio.create_task(process_pending_emails(settings))
+    try:
+        yield
+    finally:
+        notifications.cancel()
+        with suppress(asyncio.CancelledError):
+            await notifications
+
+
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
     description="Backend HTTP con FastAPI para AC Silver's GYM",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

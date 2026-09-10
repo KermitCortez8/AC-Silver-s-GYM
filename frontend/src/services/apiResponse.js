@@ -28,6 +28,11 @@ export const parseError = async (response) => {
   try {
     const body = await parseResponse(response);
     if (body && typeof body === 'object' && 'detail' in body) {
+      if (body.detail && typeof body.detail === 'object' && body.detail.message) {
+        const error = new Error(body.detail.message);
+        error.code = body.detail.code;
+        return error;
+      }
       return new Error(String(body.detail));
     }
 
@@ -42,4 +47,3 @@ export const parseError = async (response) => {
 
   return new Error(`Error HTTP ${response.status}`);
 };
-
