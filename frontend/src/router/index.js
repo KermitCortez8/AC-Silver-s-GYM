@@ -88,6 +88,7 @@ const routes = [
         path: 'attendance',
         name: 'Attendance',
         component: AttendanceView,
+        meta: { requiresAdministrator: true },
       },
       {
         path: 'service-schedules',
@@ -232,6 +233,10 @@ router.beforeEach(async (to) => {
   }
 
   // Verificar roles
+  if (to.meta.requiresAdministrator && authStore.userRole !== 'admin') {
+    return authStore.dashboardPath;
+  }
+
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
     return '/';
   }

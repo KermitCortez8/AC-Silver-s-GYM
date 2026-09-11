@@ -77,6 +77,16 @@ class SupabaseRestClient:
             return_representation=True,
         )
 
+    def select_all(self, table: str, order: str) -> list[dict[str, Any]]:
+        rows = []
+        # Respeta también instalaciones con un límite de PostgREST menor a 1000.
+        while True:
+            page = self._request("GET", table, query={"select": "*", "order": order,
+                                                     "offset": len(rows), "limit": 1000})
+            if not page:
+                return rows
+            rows.extend(page)
+
     # Procesa esta operación.
     def insert(
         self,
@@ -230,8 +240,8 @@ class SupabaseGymService(GymDomainService):
         remote_state = self._seed()
 
         plans = self._select_required("PLANES_MEMBRESIA", order="id_PM.asc")
-        clients = self._select_required("CLIENTES", order="id_cliente.desc")
-        memberships = self._select_required("MEMBRESIA", order="id_membresia.desc")
+        clients = self.supabase.select_all("CLIENTES", order="id_cliente.asc")
+        memberships = self.supabase.select_all("MEMBRESIA", order="id_membresia.asc")
         users = self._select_required("USUARIO", order="id_usuario.asc")
         inventory = self._select_required("INVENTARIO", order="id_item.asc")
         inventory_moves = self._select_optional("MOV_INV", order="id_mov.desc")
@@ -242,11 +252,11 @@ class SupabaseGymService(GymDomainService):
         schedules = self._select_required("HORARIO", order="id_horario.asc")
         service_schedules = self._select_optional("HORARIOS_SERVICIO", order="id_horario_servicio.asc")
         promotions = self._select_optional("PROMOCIONES", order="id_promocion.desc")
-        enrollments = self._select_optional("MATRICULAS_HORARIO", order="id_matricula.desc")
+        enrollments = self.supabase.select_all("MATRICULAS_HORARIO", order="id_matricula.asc")
         routine_progress = self._select_optional("RUTINA_PROGRESO", order="fecha.desc")
         tickets = self._select_optional("TICKETS_ATENCION", order="id_ticket.desc")
         config_rows = self._select_optional("CONFIGURACION_GIMNASIO", order="id_config.asc")
-        attendance = self._select_required("ASISTENCIA", order="Fecha.desc")
+        attendance = self.supabase.select_all("ASISTENCIA", order="id_asistencia.asc")
 
         product_names = {
             int(row.get("id_producto", 0) or 0): str(row.get("nombre_Producto") or "")
@@ -357,17 +367,18 @@ class SupabaseGymService(GymDomainService):
                 id_horario,
             )
 
+            admin_id = str(payload.get("_admin_id") or "")
+            rpc_name = "matricular_cliente_horario_admin" if admin_id else "matricular_cliente_horario"
+            rpc_body = {"p_id_cliente": id_cliente, "p_id_horario_servicio": id_horario}
+            if admin_id:
+                rpc_body["p_admin_id"] = admin_id
             try:
-                created = self.supabase.rpc(
-                    "matricular_cliente_horario",
-                    {
-                        "p_id_cliente": id_cliente,
-                        "p_id_horario_servicio": id_horario,
-                    },
-                )
+                created = self.supabase.rpc(rpc_name, rpc_body)
             except RuntimeError as error:
                 normalized = str(error).lower()
                 if "pgrst202" in normalized or "could not find the function" in normalized:
+                    if admin_id:
+                        raise RuntimeError("Falta ejecutar backend/migrations/006_schedule_email_notifications.sql en Supabase.") from error
                     # Compatibilidad inmediata con bases creadas antes de 002.
                     # PostgreSQL genera el ID; al aplicar 002, la RPC y sus locks
                     # pasan a proteger además dos solicitudes simultáneas.
@@ -407,11 +418,14 @@ class SupabaseGymService(GymDomainService):
             # cualquier otra instancia del backend.
             self._last_refresh_at = 0.0
 
-            return next(
+            result = next(
                 row
                 for row in self.matriculas_horario(id_cliente=id_cliente, solo_activas=True)
                 if int(row.get("id_matricula", 0) or 0) == int(enrollment["id_matricula"])
             )
+            if admin_id:
+                result["_email_notification_queued"] = True
+            return result
 
     # Procesa esta operación.
     def _save(self) -> None:
@@ -1102,6 +1116,10 @@ class SupabaseGymService(GymDomainService):
             "hora": hour,
             "hora_entrada": str(row.get("hora_entrada") or hour),
             "hora_salida": str(row.get("hora_salida") or ""),
+            "fecha_salida": str(row.get("fecha_salida") or "") or None,
+            "anulado": bool(row.get("anulado", False)),
+            "auditoria": row.get("auditoria") or [],
+            "version": int(row.get("version") or 0),
             "servicio": str(row.get("servicio") or "fitness"),
             "id_usuario_registra": row.get("id_usuario_registra"),
             "id_membresia": row.get("id_membresia"),
@@ -1125,5 +1143,36 @@ class SupabaseGymService(GymDomainService):
             "id_matricula": int(row.get("id_matricula")) if row.get("id_matricula") else None,
             "id_horario_servicio": int(row.get("id_horario_servicio")) if row.get("id_horario_servicio") else None,
             "hora_entrada": str(row.get("hora_entrada") or hour),
-            "hora_salida": str(row.get("hora_salida") or ""),
+            "hora_salida": str(row.get("hora_salida")) if row.get("hora_salida") else None,
+            "fecha_salida": row.get("fecha_salida") or None,
+            "anulado": bool(row.get("anulado", False)),
+            "auditoria": row.get("auditoria") or [],
+            "version": int(row.get("version") or 0),
         }
+
+    def save_attendance(self, row, expected_version, audit):
+        from services.attendance_service import AttendanceConflict
+
+        with self.lock:
+            try:
+                saved = self.supabase.rpc("guardar_asistencia", {
+                    "p_registro": self._attendance_to_remote(row),
+                    "p_version": expected_version, "p_evento": audit,
+                })
+            except RuntimeError as error:
+                # Solo se muestran los mensajes de validación emitidos por nuestra RPC.
+                if '"code":"P0001"' in str(error).replace(" ", ""):
+                    try:
+                        message = json.loads(str(error)[str(error).index("{"):])["message"]
+                    except (ValueError, KeyError):
+                        message = "El registro cambió. Actualiza la asistencia e inténtalo de nuevo."
+                    raise AttendanceConflict(message) from error
+                raise
+            mapped = self._map_attendance(saved)
+            rows = self.state.setdefault("asistencia", [])
+            index = next((i for i, r in enumerate(rows) if r["id_asistencia"] == mapped["id_asistencia"]), None)
+            if index is None:
+                rows.insert(0, mapped)
+            else:
+                rows[index] = mapped
+            return deepcopy(mapped)

@@ -34,6 +34,7 @@ store_images_dir.mkdir(parents=True, exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # Los recordatorios de clases se ejecutan en Supabase Cron + Edge Function.
     notifications = asyncio.create_task(process_pending_emails(settings))
     try:
         yield

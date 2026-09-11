@@ -2468,7 +2468,7 @@ export const useGymStore = defineStore('gym', () => {
       }
       if (internal || role === 'trainer') tasks.push(['Rutinas', refreshRoutinesFromBackend]);
       if (role === 'trainer') tasks.push(['Supervisión', fetchTrainerOverview]);
-      tasks.push(['Asistencias', refreshAttendanceFromBackend]);
+      if (role === 'admin' || role === 'user') tasks.push(['Asistencias', refreshAttendanceFromBackend]);
 
       await syncResources(tasks, (message) => { syncError.value = message; });
     })().finally(() => {

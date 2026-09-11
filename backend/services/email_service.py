@@ -1,4 +1,4 @@
-"""Correos de membresía enviados por Gmail SMTP con una contraseña de aplicación."""
+"""Correos del gimnasio enviados por Gmail SMTP con una contraseña de aplicación."""
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation

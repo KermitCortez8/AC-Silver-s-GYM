@@ -1,0 +1,888 @@
+.attendance-page {
+  --att-good: #8ee1bd;
+  --att-good-bg: #16372b;
+  --att-warm: #f8d28a;
+  --att-warm-bg: #3a2f1d;
+  display: grid;
+  gap: 24px;
+  color: var(--app-text);
+  min-width: 0;
+}
+:root[data-theme='light'] .attendance-page {
+  --att-good: #176446;
+  --att-good-bg: #e6f5ed;
+  --att-warm: #80550b;
+  --att-warm-bg: #fff4d8;
+}
+.attendance-page h1,
+.attendance-page h2,
+.attendance-page h3,
+.attendance-page h4,
+.att-dialog h2 {
+  margin: 0;
+  line-height: 1.25;
+  font-weight: 750;
+}
+.attendance-page h1 {
+  font-size: clamp(28px, 3vw, 36px);
+  letter-spacing: -1.2px;
+  margin: 6px 0 8px;
+}
+.attendance-page h2,
+.att-dialog h2 {
+  font-size: 21px;
+  letter-spacing: -0.5px;
+}
+.attendance-page h3 {
+  font-size: 15px;
+}
+.attendance-page p,
+.att-dialog p {
+  margin: 0;
+}
+.att-muted {
+  color: var(--app-text-muted);
+  line-height: 1.65;
+}
+.att-small {
+  font-size: 12px;
+}
+.att-eyebrow {
+  color: var(--app-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin-bottom: 7px !important;
+}
+.att-page-header,
+.att-heading-row,
+.att-toolbar,
+.att-schedule-top,
+.att-schedule-bottom,
+.att-pagination,
+.att-person-bottom {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+}
+.att-page-header {
+  flex-wrap: wrap;
+}
+.att-header-tools,
+.att-row-actions,
+.att-date,
+.att-toolbar > span,
+.att-empty > span,
+.att-blocked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.att-date {
+  font-size: 12px;
+  color: var(--app-text-muted);
+  white-space: nowrap;
+}
+.att-panel {
+  padding: 25px;
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  background: var(--app-surface);
+  min-width: 0;
+  box-shadow: 0 3px 14px #00000003;
+}
+.att-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 1px solid var(--app-border);
+  background: var(--app-input);
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  line-height: 1.4;
+  min-height: 40px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.att-button:hover {
+  background: var(--app-surface-strong);
+}
+.att-button.att-primary {
+  background: var(--app-accent);
+  color: white;
+  border-color: transparent;
+}
+.att-button.att-primary:hover {
+  background: var(--app-accent-hover);
+}
+.att-button:disabled,
+.att-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.attendance-page button:focus-visible,
+.att-dialog button:focus-visible,
+.attendance-page a:focus-visible,
+.att-dialog summary:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: 3px;
+}
+.attendance-page label,
+.att-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-text-soft);
+  min-width: 0;
+}
+.attendance-page input,
+.attendance-page select,
+.att-dialog input,
+.att-dialog textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--app-border);
+  border-radius: 9px;
+  padding: 11px 12px;
+  font: inherit;
+  color: var(--app-text);
+  background: var(--app-input);
+}
+.attendance-page input:focus,
+.attendance-page select:focus,
+.att-dialog input:focus,
+.att-dialog textarea:focus {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 1px;
+}
+.att-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.att-metric {
+  display: flex;
+  gap: 17px;
+  padding: 23px;
+  border-radius: 18px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+}
+.att-metric p {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-text-soft);
+}
+.att-metric strong {
+  display: block;
+  font-size: 36px;
+  font-weight: 750;
+  letter-spacing: -1px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.att-metric small {
+  font-size: 11px;
+  color: var(--app-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.att-metric-icon,
+.att-soft-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  background: var(--app-surface-strong);
+  color: var(--app-text-soft);
+  border-radius: 12px;
+}
+.att-metric-featured {
+  border-color: var(--app-border-strong);
+  background: linear-gradient(
+    110deg,
+    var(--app-accent-soft),
+    var(--app-surface)
+  );
+}
+.att-metric-featured .att-metric-icon {
+  background: var(--app-accent-soft);
+  color: var(--app-accent-text);
+}
+.att-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--att-good);
+}
+.att-tabs {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+}
+.att-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  padding: 10px 17px;
+  border-radius: 8px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.att-tabs button[aria-selected='true'] {
+  color: var(--app-text);
+  background: var(--app-input);
+  box-shadow: 0 1px 5px #00000014;
+}
+.att-control-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.att-search {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 26px 0 8px;
+}
+.att-search label {
+  flex: 1;
+}
+.att-search-input {
+  position: relative;
+}
+.att-search-input svg {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--app-text-muted);
+}
+.att-search-input input {
+  padding-left: 40px;
+  min-height: 45px;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+.att-search .att-button {
+  min-height: 45px;
+}
+.att-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 40px 12px;
+  color: var(--app-text-muted);
+}
+.att-empty h3 {
+  color: var(--app-text);
+}
+.att-empty p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.att-search-empty {
+  padding: 48px 12px 28px;
+}
+.att-empty-illustration {
+  display: grid !important;
+  place-items: center;
+  height: 80px;
+  width: 80px;
+  border-radius: 24px;
+  background: var(--app-surface-strong);
+  color: var(--app-text-muted);
+  margin-bottom: 8px;
+  transform: rotate(-5deg);
+}
+.att-client-result {
+  margin-top: 25px;
+  padding-top: 23px;
+  border-top: 1px solid var(--app-border);
+}
+.att-client-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.att-client-card h3 {
+  font-size: 18px;
+}
+.att-client-card p {
+  font-size: 12px;
+}
+.att-client-card > .att-badge {
+  margin-left: auto;
+}
+.att-avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--app-accent-soft);
+  color: var(--app-accent-text);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.att-avatar.small {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 11px;
+  background: var(--app-surface-strong);
+  color: var(--app-text-soft);
+}
+.att-membership {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 17px;
+  background: var(--app-surface-soft);
+  border-radius: 12px;
+  margin: 20px 0 27px;
+}
+.att-membership span,
+.att-membership strong {
+  display: block;
+  font-size: 11px;
+}
+.att-membership span {
+  color: var(--app-text-muted);
+  margin-bottom: 5px;
+}
+.att-membership strong {
+  font-size: 12px;
+  font-weight: 650;
+}
+.att-schedule-heading {
+  margin-bottom: 15px;
+}
+.att-schedule-card {
+  padding: 18px;
+  border: 1px solid var(--app-border);
+  border-radius: 13px;
+  margin-top: 12px;
+}
+.att-schedule-card.is-today {
+  border-left: 3px solid var(--app-accent);
+}
+.att-service {
+  font-size: 15px;
+  font-weight: 700;
+}
+.att-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  font-weight: 650;
+  white-space: normal;
+}
+.att-badge.dentro {
+  background: var(--att-warm-bg);
+  color: var(--att-warm);
+}
+.att-badge.completada {
+  background: var(--att-good-bg);
+  color: var(--att-good);
+}
+.att-badge.anulada,
+.att-badge.today {
+  background: var(--app-accent-soft);
+  color: var(--app-accent-text);
+}
+.att-badge.neutral {
+  background: var(--app-surface-strong);
+  color: var(--app-text-muted);
+}
+.att-schedule-card h4 {
+  color: var(--app-text-soft);
+  font-size: 12px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+.att-schedule-bottom {
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.att-visittimes {
+  display: flex;
+  gap: 25px;
+  font-size: 10px;
+  color: var(--app-text-muted);
+}
+.att-visittimes strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--app-text);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.att-blocked {
+  margin-top: 12px !important;
+  align-items: flex-start;
+}
+.att-blocked svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.att-count {
+  display: grid;
+  place-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--app-surface-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+.att-inside-panel > .att-muted {
+  margin-top: 10px;
+}
+.att-inside-list {
+  margin-top: 20px;
+  max-height: 580px;
+  overflow-y: auto;
+}
+.att-person {
+  border-top: 1px solid var(--app-border);
+  padding: 17px 0;
+}
+.att-person-top {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.att-person-top h3 {
+  font-size: 13px;
+}
+.att-person-top p {
+  font-size: 11px;
+  color: var(--app-text-muted);
+  margin-top: 3px;
+}
+.att-person-bottom {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.att-person-bottom small {
+  display: block;
+  color: var(--app-text-muted);
+  font-size: 11px;
+  margin-top: 4px;
+}
+.att-overdue {
+  color: var(--app-accent-text);
+}
+.att-aside-note {
+  display: flex;
+  gap: 10px;
+  padding: 15px;
+  border-radius: 11px;
+  background: var(--app-surface-strong);
+  color: var(--app-text-muted);
+  margin-top: 18px;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.att-aside-note svg {
+  flex-shrink: 0;
+}
+.att-message {
+  padding: 13px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 12px 0 !important;
+  border: 1px solid var(--app-border);
+}
+.att-message.is-error {
+  background: var(--app-accent-soft);
+  color: var(--app-accent-text);
+}
+.att-message.is-success {
+  background: var(--att-good-bg);
+  color: var(--att-good);
+}
+.att-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 23px 0;
+}
+.att-filters label {
+  flex: 1 1 130px;
+}
+.att-filters input,
+.att-filters select {
+  min-height: 40px;
+  font-size: 12px;
+}
+.att-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  color: var(--app-text-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 12px;
+  padding: 6px 0;
+}
+.att-danger {
+  color: var(--app-accent-text);
+}
+.att-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+}
+.att-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 620px;
+}
+.att-table th {
+  background: var(--app-surface-strong);
+  color: var(--app-text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  font-weight: 650;
+  padding: 14px 16px;
+}
+.att-table td {
+  padding: 17px 16px;
+  font-size: 12px;
+  border-top: 1px solid var(--app-border);
+}
+.att-table strong {
+  font-weight: 650;
+}
+.att-table small {
+  display: block;
+  color: var(--app-text-muted);
+  margin-top: 5px;
+  font-size: 11px;
+}
+.att-time {
+  font-variant-numeric: tabular-nums;
+}
+.att-pagination {
+  padding-top: 20px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+}
+.att-pagination .att-button {
+  padding: 8px 10px;
+}
+.att-notice {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+  color: var(--app-text-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.att-notice svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.att-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 25px;
+}
+.att-week-day {
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  min-height: 210px;
+}
+.att-week-day.is-current {
+  border-color: var(--app-accent);
+}
+.att-week-day > header {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+  border-bottom: 1px solid var(--app-border);
+  padding-bottom: 12px;
+  margin-bottom: 13px;
+}
+.att-week-day > header > span:first-child {
+  font-size: 10px;
+  color: var(--app-text-muted);
+  width: 100%;
+}
+.att-week-day > header > strong {
+  font-size: 22px;
+  font-weight: 650;
+  margin-right: auto;
+}
+.att-week-event {
+  padding: 10px 0;
+  font-size: 11px;
+}
+.att-week-event > strong {
+  font-size: 12px;
+}
+.att-week-event > p {
+  margin: 5px 0 10px;
+  font-size: 10px;
+  color: var(--app-text-muted);
+  line-height: 1.7;
+}
+.att-week-note {
+  margin-top: 16px !important;
+}
+.att-dialog {
+  width: min(570px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  padding: 0;
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  background: var(--app-canvas);
+  color: var(--app-text);
+  margin: auto;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px #0005;
+}
+.att-dialog::backdrop {
+  background: #0009;
+  backdrop-filter: blur(3px);
+}
+.att-dialog-body {
+  padding: 27px;
+  display: grid;
+  gap: 18px;
+}
+.att-icon-button {
+  display: grid;
+  place-items: center;
+  padding: 7px;
+  border: 0;
+  color: var(--app-text-muted);
+  cursor: pointer;
+}
+.att-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.att-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.att-audit {
+  font-size: 12px;
+  color: var(--app-text-muted);
+}
+.att-audit summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+.att-audit li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--app-border);
+}
+.att-audit small {
+  display: block;
+  margin: 4px 0;
+}
+.att-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.att-spinning {
+  animation: att-spin 1s linear infinite;
+}
+@keyframes att-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .att-spinning {
+    animation: none;
+  }
+}
+@media (max-width: 1150px) {
+  .att-control-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .att-week-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .att-metric {
+    padding: 17px;
+    gap: 10px;
+  }
+  .att-metric-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .att-toolbar {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 640px) {
+  .att-table {
+    display: block;
+    min-width: 0;
+  }
+  .att-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .att-table tbody {
+    display: block;
+  }
+  .att-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 18px;
+    border-bottom: 1px solid var(--app-border);
+  }
+  .att-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+  .att-table td {
+    border: 0;
+    padding: 0;
+  }
+  .att-table td[data-label='Cliente'],
+  .att-table td[data-label='Fecha / servicio'],
+  .att-table td[data-label='Estado'],
+  .att-table td[data-label='Acciones'] {
+    grid-column: 1 / -1;
+  }
+  .att-table td[data-label='Entrada']::before,
+  .att-table td[data-label='Salida']::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    color: var(--app-text-muted);
+    margin-bottom: 5px;
+  }
+  .attendance-page {
+    gap: 18px;
+  }
+  .att-metrics {
+    gap: 8px;
+  }
+  .att-metric {
+    padding: 13px 10px;
+    display: block;
+  }
+  .att-metric-icon {
+    display: none;
+  }
+  .att-metric strong {
+    font-size: 29px;
+  }
+  .att-metric p {
+    font-size: 10px;
+    min-height: 30px;
+  }
+  .att-metric small {
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .att-panel {
+    padding: 18px;
+    border-radius: 16px;
+  }
+  .att-heading-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .att-header-tools {
+    flex-wrap: wrap;
+  }
+  .att-search {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .att-membership {
+    grid-template-columns: 1fr 1fr;
+  }
+  .att-client-card > .att-badge {
+    margin-left: 0;
+  }
+  .att-visittimes {
+    gap: 20px;
+  }
+  .att-schedule-bottom .att-button {
+    width: 100%;
+  }
+  .att-week-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .att-week-day {
+    min-height: 140px;
+  }
+  .att-tabs button {
+    padding: 10px 13px;
+  }
+  .att-form-grid {
+    gap: 12px;
+  }
+  .att-dialog-body {
+    padding: 20px;
+  }
+  .att-dialog-actions {
+    flex-wrap: wrap;
+  }
+  .att-toolbar > span {
+    font-size: 11px;
+  }
+}

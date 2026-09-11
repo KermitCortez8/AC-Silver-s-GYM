@@ -8,6 +8,7 @@ import re
 import threading
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from utils.security import hash_password, verify_password
 
@@ -1884,6 +1885,8 @@ class GymDomainService:
                         asistencia
                         for asistencia in self.state.get("asistencia", [])
                         if int(asistencia.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
+                        and self._parse_cliente_id(asistencia.get("id_cliente_num") or asistencia.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
+                        and not asistencia.get("anulado")
                     ],
                 }
             )
@@ -2061,10 +2064,8 @@ class GymDomainService:
                 item
                 for item in self.state.get("asistencia", [])
                 if int(item.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
-                or (
-                    int(item.get("id_cliente_num") or item.get("id_cliente") or 0) == int(enrollment.get("id_cliente", 0) or 0)
-                    and str(item.get("servicio") or "").strip().lower() == str(enrollment.get("servicio") or "").strip().lower()
-                )
+                and self._parse_cliente_id(item.get("id_cliente_num") or item.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
+                and not item.get("anulado")
             ]
             routine_supervision.append(
                 {
@@ -2217,7 +2218,9 @@ class GymDomainService:
                 and str(m.get("fecha_inicio", "")) <= today <= str(m.get("fecha_fin", ""))
             ]
         )
-        asistencias_hoy = len([a for a in self.state["asistencia"] if a.get("fecha") == today])
+        attendance_today = datetime.now(ZoneInfo("America/Lima")).date().isoformat()
+        valid_attendance = [a for a in self.state["asistencia"] if not a.get("anulado")]
+        asistencias_hoy = len([a for a in valid_attendance if a.get("fecha") == attendance_today])
         items_stock_bajo = [
             item
             for item in self.state["inventario"]
@@ -2252,7 +2255,7 @@ class GymDomainService:
                     "membresias": len(self.state["membresia"]),
                 },
                 "registro_asistencia_usuario": {
-                    "asistencias": len(self.state["asistencia"]),
+                    "asistencias": len(valid_attendance),
                     "asistencias_hoy": asistencias_hoy,
                 },
             },

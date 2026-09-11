@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from config import get_settings
 from dependencies import get_gym_service, require_admin_or_staff, require_internal_viewer, require_roles
 from models.gym import (
     CatalogoRutinaInput,
@@ -18,6 +19,7 @@ from models.gym import (
     TicketAtencionInput,
 )
 from services.gym_domain_service import GymDomainService
+from services.schedule_notifications import notify_schedule_enrollment
 
 router = APIRouter(prefix="/gym", tags=["gym-operaciones"])
 
@@ -151,9 +153,21 @@ def create_matricula(
         if current_user.role == "user":
             enrollment["id_cliente"] = _require_session_cliente_id(current_user)
             enrollment["dni"] = ""
-        return gym_service.matricular_cliente_horario(enrollment)
+        if current_user.role == "admin":
+            enrollment["_admin_id"] = str(current_user.id_usuario or current_user.id)
+        saved = gym_service.matricular_cliente_horario(enrollment)
+        if saved.pop("_email_notification_queued", False):
+            saved["email_notification"] = notify_schedule_enrollment(get_settings(), int(saved["id_matricula"]))
+        return saved
     except ValueError as error:
         raise HTTPException(status_code=_enrollment_error_status(error), detail=str(error)) from error
+    except (RuntimeError, OSError) as error:
+        detail = (
+            "Falta ejecutar backend/migrations/006_schedule_email_notifications.sql en Supabase."
+            if "006_schedule_email_notifications.sql" in str(error)
+            else "No se pudo guardar la matrícula. Comprueba la conexión e inténtalo de nuevo."
+        )
+        raise HTTPException(status_code=503, detail=detail) from error
 
 
 @router.delete("/matriculas/{id_matricula}", status_code=status.HTTP_204_NO_CONTENT)
