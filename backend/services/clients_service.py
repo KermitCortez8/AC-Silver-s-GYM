@@ -7,6 +7,8 @@ from __future__ import annotations
 from typing import Any
 
 from services.gym_domain_service import GymDomainService
+from services.google_auth_service import verify_google_credential
+from utils.security import get_auth_secret, verify_password
 
 
 class ClientsService:
@@ -58,6 +60,14 @@ class ClientsService:
         item["promocion"] = str(payload.get("promocion") or "SIN PROMOCION").strip() or "SIN PROMOCION"
         item["estado"] = str(payload.get("estado") or "ACTIVO").strip().upper() or "ACTIVO"
 
+        if item["id_usuario"] and item["estado"] in {"ACTIVO", "ACTIVA"}:
+            self.gym.ensure_fresh()
+            existing = self.gym.get_cliente(self.gym._parse_cliente_id(item["id_usuario"]))
+            if existing and str(existing.get("estado") or "").upper() not in {"ACTIVO", "ACTIVA"}:
+                membership = self.gym._latest_membership_for_cliente(self.gym.state, existing["id_cliente"])
+                if membership and str(membership.get("estado") or "").upper() in {"EN_TRAMITE", "PENDIENTE_PAGO"}:
+                    raise ValueError("Usa Activar en la lista de clientes para confirmar la activación y enviar su correo.")
+
         saved = self.gym.upsert_cliente(item)
 
         # Build normalized shape to return
@@ -79,23 +89,47 @@ class ClientsService:
     def _safe_registration_result(self, result: dict[str, Any]) -> dict[str, Any]:
         cliente = {**(result.get("cliente") or {})}
         cliente.pop("password_hash", None)
+        cliente.pop("google_sub", None)
         if "cliente" in result:
             cliente["has_password"] = bool((result.get("cliente") or {}).get("password_hash"))
         return {**result, "cliente": cliente}
 
     # Crea el registro correspondiente.
     def register_public_client(self, payload: dict[str, Any]) -> dict[str, Any]:
-        correo = str(payload.get("correo") or payload.get("google_email") or "").strip().lower()
+        payload = dict(payload)
+        payload.pop("google_sub", None)
+        credential = payload.pop("google_credential", "")
+        claims = verify_google_credential(credential) if credential else None
+        if claims:
+            get_auth_secret()
+            email = str(claims["email"]).strip().lower()
+            if payload.get("correo") and str(payload["correo"]).strip().lower() != email:
+                raise ValueError("El correo debe coincidir con la cuenta verificada por Google")
+            payload.update(
+                correo=email, nombre=str(payload.get("nombre") or claims.get("name") or email.split("@")[0]),
+                google_sub=str(claims["sub"]), password="", contrasena="",
+            )
+        correo = str(payload.get("correo") or "").strip().lower()
         dni = str(payload.get("dni") or "").strip()
         existing = self.gym.get_cliente_by_email(correo) if correo else None
+        if claims and existing and existing.get("google_sub") != claims["sub"]:
+            raise ValueError("Ya tienes una cuenta con ese correo. Ve a Acceso para vincular Google con tu contraseña.")
+        if existing and not claims and not verify_password(
+            str(payload.get("password") or payload.get("contrasena") or ""), str(existing.get("password_hash") or ""),
+        ):
+            raise ValueError("Ya existe una cuenta con ese correo. Inicia sesión para continuar.")
+        result = None
         if existing and str(existing.get("dni") or "").strip() == dni:
             self.gym.ensure_fresh()
             state = self.gym.state
             membership = self.gym._latest_membership_for_cliente(state, int(existing.get("id_cliente", 0) or 0))
             if membership and str(membership.get("estado_pago") or "").upper() == "PENDIENTE":
                 plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0) or 0)) or {}
-                return self._safe_registration_result({"cliente": existing, "membresia": membership, "plan": plan})
-        return self._safe_registration_result(self.gym.registrar_cliente_publico(payload))
+                result = {"cliente": existing, "membresia": membership, "plan": plan}
+        if result is None:
+            result = self.gym.registrar_cliente_publico(payload)
+        # El preregistro solo crea la solicitud y permite pagar; no inicia una sesión.
+        return self._safe_registration_result(result)
 
     # Procesa esta operación.
     def confirm_public_payment(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:

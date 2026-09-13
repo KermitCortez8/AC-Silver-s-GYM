@@ -39,7 +39,7 @@
         </div>
 
         <p class="mt-6 text-xs leading-5 text-slate-500">
-          La confirmación definitiva llega directamente desde Stripe; nunca validamos un pago solo por la URL de retorno.
+          Para usar tu cuenta, el administrador debe activarla después de confirmar el pago.
         </p>
       </section>
     </main>
@@ -48,11 +48,10 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { apiPost } from '../services/apiClient';
 
 const route = useRoute();
-const router = useRouter();
 const idCliente = computed(() => Number(route.params.idCliente || 0));
 const result = computed(() => String(route.query.result || 'pending').toLowerCase());
 const confirmationState = ref('idle');
@@ -63,7 +62,7 @@ const resultStyle = computed(() => {
     if (confirmationState.value === 'confirmed') {
       return {
         icon: '✓', title: 'Pago confirmado',
-        description: 'Su cuenta ha sido inicializada. A la espera de activación de membresía.',
+        description: 'Tu pago fue confirmado. Tu cuenta está pendiente de activación por el administrador. Podrás ingresar cuando sea activada.',
         status: 'Pago confirmado; activación pendiente', border: 'border-emerald-200',
         iconBackground: 'bg-emerald-100 text-emerald-700', labelColor: 'text-emerald-700',
       };
@@ -106,13 +105,6 @@ const confirmPaidCheckout = async () => {
     const response = await apiPost(`/pagos/stripe/confirmar-retorno?session_id=${encodeURIComponent(sessionId)}`);
     if (response?.confirmed) {
       confirmationState.value = 'confirmed';
-      await router.replace({
-        path: '/',
-        query: {
-          registro: 'inicializado',
-          solicitud: String(response.id_cliente || idCliente.value),
-        },
-      });
       return;
     }
     confirmationState.value = 'error';

@@ -192,7 +192,8 @@
           class="app-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t px-2 py-2 backdrop-blur-xl lg:hidden"
         >
           <div
-            class="mx-auto grid max-w-2xl auto-cols-fr grid-flow-col gap-1 overflow-x-auto"
+            ref="mobileNavigation"
+            class="mx-auto grid max-w-2xl auto-cols-[minmax(5rem,1fr)] grid-flow-col gap-1 overflow-x-auto"
           >
             <router-link
               v-for="link in navigationLinks"
@@ -219,7 +220,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import {
@@ -322,11 +323,11 @@ const navigationLinks = computed(() => {
         to: '/admin/enrollment',
         icon: TicketCheck,
       },
-      {
+      ...(user.value?.role === 'admin' ? [{
         label: 'Asistencia',
         to: '/admin/attendance',
         icon: Activity,
-      },
+      }] : []),
       {
         label: 'Inventario',
         to: '/admin/inventory',
@@ -442,6 +443,18 @@ const userInitials = computed(() => {
  */
 const isActive = (path) =>
   activeLink.value?.to === path;
+
+const mobileNavigation = ref(null);
+const revealActiveMobileLink = async () => {
+  await nextTick();
+  const navigation = mobileNavigation.value;
+  const active = navigation?.querySelector('[aria-current="page"]');
+  if (active?.getClientRects().length) {
+    navigation.scrollLeft = active.offsetLeft - navigation.clientWidth / 2 + active.clientWidth / 2;
+  }
+};
+onMounted(revealActiveMobileLink);
+watch(() => route.path, revealActiveMobileLink);
 
 /**
  * Obtiene una versión corta de algunas etiquetas

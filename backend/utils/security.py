@@ -12,6 +12,29 @@ import secrets
 import time
 from typing import Any
 
+import jwt
+
+from config import get_settings
+
+
+def get_auth_secret() -> str:
+    secret = get_settings().auth_secret_key
+    if len(secret.encode("utf-8")) < 32:
+        raise RuntimeError("Configura AUTH_SECRET_KEY con al menos 32 bytes aleatorios en backend/.env")
+    return secret
+
+
+def verify_session_token(token: str) -> dict[str, Any] | None:
+    """Solo acepta sesiones firmadas por esta aplicación, con vencimiento e identidad."""
+    secret = get_auth_secret()
+    try:
+        return jwt.decode(
+            token, secret, algorithms=["HS256"], issuer="ac-silvers-gym",
+            audience="gym-api", options={"require": ["exp", "iat", "sub", "iss", "aud"]},
+        )
+    except jwt.InvalidTokenError:
+        return None
+
 
 # Obtiene los datos necesarios.
 def get_user_role(email: str | None) -> str:
@@ -65,7 +88,7 @@ def normalize_profile(profile: dict[str, Any] | None, token: str) -> dict[str, A
         "picture": str(source.get("picture") or ""),
         "givenName": str(source.get("given_name") or source.get("givenName") or name.split(" ")[0] or ""),
         "familyName": str(source.get("family_name") or source.get("familyName") or ""),
-        "role": str(source.get("role") or get_user_role(email)),
+        "role": str(source.get("role") or "user"),
     }
 
 
@@ -124,8 +147,12 @@ def create_local_token(profile: dict[str, Any], expires_seconds: int = 3600) -> 
         "telefono": str(profile.get("telefono") or ""),
         "dni": str(profile.get("dni") or ""),
         "role": str(profile.get("role") or "user"),
+        "picture": str(profile.get("picture") or ""),
+        "givenName": str(profile.get("givenName") or ""),
+        "familyName": str(profile.get("familyName") or ""),
+        "iss": "ac-silvers-gym",
+        "aud": "gym-api",
         "iat": now,
         "exp": now + int(expires_seconds),
     }
-    raw = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-    return base64.b64encode(raw).decode("utf-8").rstrip("=")
+    return jwt.encode(payload, get_auth_secret(), algorithm="HS256")

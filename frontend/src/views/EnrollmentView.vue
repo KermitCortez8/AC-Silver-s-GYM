@@ -542,12 +542,13 @@ const enrollSelected = async () => {
 
   actionBusy.value = `enroll-${schedule.id_horario_servicio}`;
   try {
-    await gymStore.enrollSchedule({
+    const saved = await gymStore.enrollSchedule({
       id_cliente: currentClientId.value,
       id_horario_servicio: schedule.id_horario_servicio,
     });
     await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value });
-    setFeedback(`“${exerciseName(schedule)}” se agregó al horario.`);
+    const notification = saved?.email_notification?.message;
+    setFeedback(`“${exerciseName(schedule)}” se agregó al horario.${notification ? ` ${notification}` : ''}`);
   } catch (error) {
     setFeedback(error instanceof Error ? error.message : 'No se pudo agregar la clase.', 'error');
   } finally {

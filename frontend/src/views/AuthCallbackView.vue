@@ -31,16 +31,12 @@ const redirectToLogin = (reason) => {
 /**
  * Gestiona esta acción de la vista.
  */
-const redirectByRole = (role) => {
-  router.replace(role === 'admin' ? '/admin' : '/user');
-};
-
 onMounted(async () => {
   try {
     await authStore.initializeAuth();
 
     if (authStore.isAuthenticated.value) {
-      redirectByRole(authStore.isAdmin.value ? 'admin' : 'user');
+      router.replace(authStore.dashboardPath.value);
       return;
     }
 
