@@ -97,8 +97,7 @@ class RegistroPublicoClienteInput(BaseModel):
     contrasena: str = ""
     plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
     promocion: str = "SIN PROMOCION"
-    google_email: str = ""
-    google_name: str = ""
+    google_credential: str = ""
 
 
 class PagoPublicoClienteInput(BaseModel):

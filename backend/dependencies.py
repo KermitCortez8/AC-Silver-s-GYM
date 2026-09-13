@@ -11,11 +11,11 @@ from fastapi import Depends, Header, HTTPException, status
 
 from config import get_settings
 from models.auth import UserProfile
-from services.auth_service import AuthService
+from services.auth_service import AuthService, ClientActivationRequired
 from services.clients_service import ClientsService
 from services.supabase_gym_service import SupabaseGymService
 from services.users_service import UsersService
-from utils.security import decode_token_payload
+from utils.security import verify_session_token
 
 logger = logging.getLogger(__name__)
 
@@ -89,11 +89,20 @@ def get_current_user(
 ) -> UserProfile:
     if not authorization:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Falta token")
-    token = authorization.replace("Bearer ", "").strip()
-    payload = decode_token_payload(token)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
-    return AuthService(gym_service).user_from_payload(payload)
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token.strip():
+        raise HTTPException(status_code=401, detail="Token inválido")
+    try:
+        payload = verify_session_token(token.strip())
+        if not payload:
+            raise ValueError("La sesión es inválida o venció. Inicia sesión nuevamente.")
+        return AuthService(gym_service).user_from_payload(payload)
+    except ClientActivationRequired as error:
+        raise HTTPException(status_code=403, detail={"code": "account_pending_activation", "message": str(error)}) from error
+    except ValueError as error:
+        raise HTTPException(status_code=401, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 # Procesa esta operación.

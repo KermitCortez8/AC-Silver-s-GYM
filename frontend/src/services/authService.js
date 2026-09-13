@@ -1,102 +1,66 @@
-import { APP_CONFIG } from '../config/appConfig';
-import { decodeJWT, formatUserData, isValidUser } from '../utils/authUtils';
 import { apiPost } from './apiClient';
 
 let googleScriptPromise = null;
-
-/**
- * Obtiene los datos necesarios.
- */
-const getExpirySeconds = (payload) => {
-  if (!payload?.exp) {
-    return 60 * 60;
-  }
-
-  const expiresIn = Math.floor(Number(payload.exp) - Date.now() / 1000);
-  return Math.max(expiresIn, 60);
-};
 
 export const loadGoogleIdentityScript = () => {
   if (typeof window === 'undefined') {
     return Promise.reject(new Error('Google Identity Services requiere navegador'));
   }
-
-  if (window.google?.accounts?.id) {
-    return Promise.resolve(window.google);
-  }
-
-  if (googleScriptPromise) {
-    return googleScriptPromise;
-  }
+  if (window.google?.accounts?.id) return Promise.resolve(window.google);
+  if (googleScriptPromise) return googleScriptPromise;
 
   googleScriptPromise = new Promise((resolve, reject) => {
-    const existingScript = document.querySelector('script[data-google-identity="true"]');
-
-    if (existingScript) {
-      existingScript.addEventListener('load', () => resolve(window.google));
-      existingScript.addEventListener('error', () => reject(new Error('No se pudo cargar Google Identity Services')));
-      return;
+    const existing = document.querySelector('script[data-google-identity="true"]');
+    const script = existing || document.createElement('script');
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      script.removeEventListener('load', loaded);
+      script.removeEventListener('error', failed);
+    };
+    const failed = () => {
+      cleanup();
+      script.remove();
+      reject(new Error('No se pudo cargar Google. Comprueba tu conexión e inténtalo nuevamente.'));
+    };
+    const loaded = () => {
+      if (!window.google?.accounts?.id) return failed();
+      cleanup();
+      resolve(window.google);
+    };
+    const timeout = window.setTimeout(failed, 15000);
+    script.addEventListener('load', loaded);
+    script.addEventListener('error', failed);
+    if (!existing) {
+      script.src = 'https://accounts.google.com/gsi/client?hl=es';
+      script.async = true;
+      script.defer = true;
+      script.dataset.googleIdentity = 'true';
+      document.head.appendChild(script);
     }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.dataset.googleIdentity = 'true';
-    script.onload = () => resolve(window.google);
-    script.onerror = () => reject(new Error('No se pudo cargar Google Identity Services'));
-    document.head.appendChild(script);
+  }).catch((error) => {
+    googleScriptPromise = null;
+    throw error;
   });
-
   return googleScriptPromise;
 };
 
-export const authenticateWithGoogleCredential = async (credential) => {
-  if (!credential) {
-    throw new Error('No se recibió credencial de Google');
+export const getVerifiedGoogleProfile = async (credential) => {
+  if (!credential) throw new Error('No se recibió credencial de Google');
+  return apiPost('/auth/google/profile', { credential });
+};
+
+export const authenticateWithGoogleCredential = async (credential, password = '') => {
+  if (!credential) throw new Error('No se recibió credencial de Google');
+  // El navegador no decide la identidad ni el rol: solo acepta la sesión del servidor.
+  const result = await apiPost('/auth/google', { credential, password });
+  if (!result?.token || !result?.user?.email) {
+    throw new Error('El servidor no devolvió una sesión válida');
   }
-
-  const decoded = decodeJWT(credential);
-  if (!decoded || !decoded.email) {
-    throw new Error('No se pudo decodificar la credencial de Google');
-  }
-
-  const user = formatUserData(decoded);
-
-  if (!isValidUser(user)) {
-    throw new Error('Datos de usuario inválidos');
-  }
-
-  const expiresIn = getExpirySeconds(decoded);
-
-  if (APP_CONFIG.authApiBaseUrl) {
-    const result = await apiPost('/auth/google', {
-      credential,
-      profile: user,
-    });
-
-    return {
-      user: result.user || user,
-      token: result.token || credential,
-      expiresIn: result.expiresIn || expiresIn,
-      source: 'backend',
-    };
-  }
-
-  return {
-    user,
-    token: credential,
-    expiresIn,
-    source: 'google',
-  };
+  return result;
 };
 
 export const authenticateWithPassword = async ({ correo, password }) => {
-  const result = await apiPost('/auth/password', {
-    correo,
-    password,
-  });
-
+  const result = await apiPost('/auth/password', { correo, password });
   return {
     user: result.user,
     token: result.token,

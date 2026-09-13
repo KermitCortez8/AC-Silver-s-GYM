@@ -1,0 +1,6 @@
+project_id = "silver-gym"
+
+[functions.schedule-emails]
+# Cron usa un secreto propio comprobado por la función, no un JWT de usuario.
+verify_jwt = false
+entrypoint = "./functions/schedule-emails/index.ts"

@@ -7,6 +7,7 @@ import AdminDashboard from '../views/AdminDashboard.vue';
 import TrainerDashboard from '../views/TrainerDashboard.vue';
 import UserDashboard from '../views/UserDashboard.vue';
 import LandingView from '../views/LandingView.vue';
+import NosotrosView from '../views/NosotrosView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import PaymentView from '../views/PaymentView.vue';
 import HomeView from '../views/HomeView.vue';
@@ -49,6 +50,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: '/nosotros',
+    name: 'Nosotros',
+    component: NosotrosView,
+    meta: { requiresAuth: false },
+  },
+  {
     path: '/registro',
     name: 'Register',
     component: RegisterView,
@@ -88,6 +95,7 @@ const routes = [
         path: 'attendance',
         name: 'Attendance',
         component: AttendanceView,
+        meta: { requiresAdministrator: true },
       },
       {
         path: 'service-schedules',
@@ -208,14 +216,23 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to) {
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth' };
+    }
+    return { top: 0 };
+  },
 });
 
 // Guard de rutas
 router.beforeEach(async (to) => {
   const authStore = useAuthStore();
 
-  // Inicializar autenticación si no está hecho
-  if (!authStore.isInitialized) {
+  // Comprueba también las sesiones abiertas antes de entrar a una ruta protegida
+  // o de redirigir al panel: una cuenta puede estar pendiente o desactivada.
+  const needsSessionCheck = authStore.isAuthenticated &&
+    (to.meta.requiresAuth || to.path === '/' || to.path === '/login');
+  if (!authStore.isInitialized || needsSessionCheck) {
     await authStore.initializeAuth();
   }
 
@@ -229,6 +246,10 @@ router.beforeEach(async (to) => {
   }
 
   // Verificar roles
+  if (to.meta.requiresAdministrator && authStore.userRole !== 'admin') {
+    return authStore.dashboardPath;
+  }
+
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
     return '/';
   }

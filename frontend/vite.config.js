@@ -17,6 +17,10 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [vue()],
     server: {
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+      },
       proxy: {
         '/api': {
           target: normalizeBackendTarget(env.VITE_BACKEND_URL),
