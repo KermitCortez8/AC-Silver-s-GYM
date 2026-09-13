@@ -483,14 +483,7 @@ const initializeGoogleSignIn = async () => {
       );
     }
 
-    /*
-     * Soporta distintas convenciones por si googleConfig.js
-     * utiliza clientId o client_id.
-     */
-    const clientId =
-      GOOGLE_CONFIG?.clientId ||
-      GOOGLE_CONFIG?.client_id ||
-      GOOGLE_CONFIG?.CLIENT_ID;
+    const clientId = GOOGLE_CONFIG.webClientId;
 
     if (!clientId) {
       throw new Error(
