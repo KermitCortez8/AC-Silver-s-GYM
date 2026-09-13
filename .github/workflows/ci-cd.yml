@@ -38,6 +38,9 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Pruebas unitarias
+        env:
+          # Clave exclusiva de pruebas, sin acceso a sesiones reales.
+          AUTH_SECRET_KEY: ci-only-test-key-not-for-production-0123456789abcdef
         run: pytest
 
       - name: Construcción de imagen Docker (Backend)
