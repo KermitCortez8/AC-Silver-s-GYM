@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-5 pb-10">
-    <header class="rounded-3xl border border-white/10 bg-slate-950/55 p-5 shadow-xl backdrop-blur-xl sm:p-6">
+    <header class="enrollment-header rounded-3xl border border-white/10 p-5 sm:p-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="min-w-0">
           <p class="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">
@@ -94,6 +94,8 @@
 
     <main aria-label="Horario actual">
       <ExcelScheduleGrid
+        :date="selectedDate"
+        @range-change="changeWeek"
         :title="ownCalendarTitle"
         subtitle="Este es el horario vigente. Usa “Cambiar horario” para agregar o quitar una clase."
         :items="enrichedEnrollments"
@@ -193,6 +195,8 @@
 
               <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <ExcelScheduleGrid
+                  :date="selectedDate"
+                  @range-change="changeWeek"
                   title="Horarios disponibles"
                   :subtitle="`${filteredSchedules.length} clases visibles. Las que ya pertenecen al horario están marcadas.`"
                   :items="enrichedFilteredSchedules"
@@ -220,8 +224,8 @@
 
                     <dl class="mt-5 divide-y divide-white/10 rounded-xl border border-white/10 bg-slate-900/60 px-3">
                       <div class="flex items-center justify-between gap-3 py-3">
-                        <dt class="text-xs text-slate-400">Día</dt>
-                        <dd class="text-sm font-bold text-white">{{ dayLabel(selectedSchedule.dia) }}</dd>
+                        <dt class="text-xs text-slate-400">Fecha de la sesión</dt>
+                        <dd class="text-sm font-bold text-white">{{ dateLabel(selectedOccurrenceDate, { weekday: 'long' }) }}</dd>
                       </div>
                       <div class="flex items-center justify-between gap-3 py-3">
                         <dt class="text-xs text-slate-400">Hora</dt>
@@ -235,6 +239,7 @@
                       </div>
                     </dl>
 
+                    <p class="mt-3 text-xs text-slate-400">La matrícula se repite cada {{ dayLabel(selectedSchedule.dia).toLowerCase() }} mientras esté vigente.</p>
                     <button
                       type="button"
                       class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50"
@@ -284,6 +289,9 @@ import {
   X,
 } from 'lucide-vue-next';
 import ExcelScheduleGrid from '../components/ExcelScheduleGrid.vue';
+import { useRoute } from 'vue-router';
+import { dateLabel } from '../utils/attendance.js';
+import { calendarDate } from '../utils/scheduleCalendar.js';
 import { useAuth } from '../composables/useAuth';
 import { useGymStore } from '../stores/gymStore';
 import {
@@ -306,6 +314,15 @@ import {
 
 const { user, isAdmin } = useAuth();
 const gymStore = useGymStore();
+const route = useRoute();
+const selectedDate = ref(calendarDate(route.query.fecha));
+const selectedOccurrenceDate = ref('');
+watch(() => route.query.fecha, (value) => { selectedDate.value = calendarDate(value); });
+const changeWeek = (range) => {
+  selectedDate.value = range.from;
+  selectedScheduleId.value = '';
+  selectedOccurrenceDate.value = '';
+};
 
 const dniSearch = ref('');
 const selectedClient = ref(null);
@@ -384,10 +401,8 @@ const normalizeText = (value) =>
     .trim()
     .toLowerCase();
 
-const isEnrolledIn = (scheduleId) =>
-  visibleEnrollments.value.some(
-    (item) => Number(item.id_horario_servicio) === Number(scheduleId),
-  );
+const enrolledIds = computed(() => new Set(visibleEnrollments.value.map((item) => Number(item.id_horario_servicio))));
+const isEnrolledIn = (scheduleId) => enrolledIds.value.has(Number(scheduleId));
 
 const filteredSchedules = computed(() => {
   const query = normalizeText(searchQuery.value);
@@ -478,6 +493,7 @@ const closeSchedulePicker = () => {
 
 const selectAvailableSchedule = (schedule) => {
   selectedScheduleId.value = schedule?.id_horario_servicio || '';
+  selectedOccurrenceDate.value = schedule?.fecha || '';
   feedback.value = '';
 };
 
@@ -486,19 +502,13 @@ const refreshAll = async ({ announce = false } = {}) => {
   isRefreshing.value = true;
 
   try {
-    try {
-      await gymStore.fetchFromBackend?.();
-    } catch (primaryError) {
-      const fallback = await Promise.allSettled([
-        gymStore.refreshServiceSchedulesFromBackend?.(),
-        gymStore.refreshEnrollmentsFromBackend?.(),
-      ]);
-      if (fallback.every((result) => result.status === 'rejected')) throw primaryError;
+    const tasks = [gymStore.refreshServiceSchedulesFromBackend(), gymStore.refreshScheduleClientsFromBackend()];
+    if (!isAdminUser.value || currentClientId.value) {
+      tasks.push(gymStore.refreshEnrollmentsFromBackend(currentClientId.value ? { id_cliente: currentClientId.value } : {}));
     }
-
-    if (currentClientId.value) {
-      await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value });
-    }
+    const results = await Promise.allSettled(tasks);
+    const failure = results.find((result) => result.status === 'rejected');
+    if (failure) throw failure.reason;
     if (announce) setFeedback('Horario actualizado.');
   } catch (error) {
     setFeedback(error instanceof Error ? error.message : 'No se pudo cargar el horario.', 'error');
@@ -517,7 +527,7 @@ const loadAdminClient = async () => {
 
   isSearchingClient.value = true;
   try {
-    await gymStore.fetchFromBackend?.().catch(() => {});
+    await gymStore.refreshScheduleClientsFromBackend();
     const client = gymStore.members.find((member) => normalizeDni(member.dni) === dni) || null;
     if (!client) {
       selectedClient.value = null;
@@ -546,7 +556,6 @@ const enrollSelected = async () => {
       id_cliente: currentClientId.value,
       id_horario_servicio: schedule.id_horario_servicio,
     });
-    await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value });
     const notification = saved?.email_notification?.message;
     setFeedback(`“${exerciseName(schedule)}” se agregó al horario.${notification ? ` ${notification}` : ''}`);
   } catch (error) {
@@ -569,7 +578,6 @@ const cancelSelected = async () => {
   actionBusy.value = `cancel-${enrollment.id_matricula}`;
   try {
     await gymStore.deleteEnrollment(enrollment.id_matricula);
-    await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value });
     setFeedback(`“${exerciseName(enrollment)}” se quitó del horario.`);
   } catch (error) {
     setFeedback(error instanceof Error ? error.message : 'No se pudo quitar la clase.', 'error');
@@ -625,6 +633,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.enrollment-header { background: var(--app-surface); box-shadow: 0 4px 16px var(--app-shadow); }
 .field-input {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);

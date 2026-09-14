@@ -48,6 +48,8 @@ def schedule_email(settings: Settings, data: dict) -> dict:
         description = "Te recordamos tu clase programada. Revisa la hora de inicio y prepárate para entrenar."
         subject = f"Recordatorio: {service} a las {start} · Silver Gym Surco"
     url = f"{base}/user/schedule"
+    if event == "reminder":
+        url += f"?fecha={occurrence.date().isoformat()}"
     rows = "".join(
         f'<tr><td style="padding:10px;border-bottom:1px solid #eee;color:#555">{escape(label)}</td>'
         f'<td style="padding:10px;border-bottom:1px solid #eee">{escape(value)}</td></tr>'
