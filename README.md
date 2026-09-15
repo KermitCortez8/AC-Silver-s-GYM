@@ -110,3 +110,12 @@ docker compose up -d --no-build
 docker compose ps
 ```
 
+
+## MVP y versiones
+
+La entrega **1.1.0** consolida horarios, asistencia y membresías.
+Consulta el [alcance y guía de aceptación del MVP](docs/releases/1.1.0.md)
+y el [historial de cambios](CHANGELOG.md).
+
+El proyecto utiliza Git Flow: `feature/*` → `develop` → `release/*` → `main`,
+con reintegración en `develop` y tags anotados `vX.Y.Z` sobre `main`.
