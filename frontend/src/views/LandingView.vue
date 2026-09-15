@@ -386,7 +386,9 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { serviceImages } from '../config/serviceImages';
 import { apiGet } from '../services/apiClient';
-import heroBanner from '../assets/hero-banner.png';
+import { landingImageUrl } from '../config/publicStorage';
+
+const heroBanner = landingImageUrl('hero-banner.png');
 
 const route = useRoute();
 const router = useRouter();

@@ -1,11 +1,8 @@
-import fitness from '../assets/service-fitness.jpg';
-import musculacion from '../assets/service-musculacion.jpg';
-import cardio from '../assets/service-cardio.jpg';
-import baile from '../assets/service-baile.jpg';
+import { landingImageUrl } from './publicStorage';
 
 export const serviceImages = {
-  fitness,
-  musculacion,
-  cardio,
-  baile,
+  fitness: landingImageUrl('service-fitness.jpg'),
+  musculacion: landingImageUrl('service-musculacion.jpg'),
+  cardio: landingImageUrl('service-cardio.jpg'),
+  baile: landingImageUrl('service-baile.jpg'),
 };
