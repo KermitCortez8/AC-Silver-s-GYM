@@ -46,7 +46,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version="1.0.0",
+    version="1.1.0",
     description="Backend HTTP con FastAPI para AC Silver's GYM",
     lifespan=lifespan,
 )
