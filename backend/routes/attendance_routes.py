@@ -1,4 +1,5 @@
 """Solamente el administrador registra asistencia; cada cliente consulta la suya."""
+from collections import Counter
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -76,7 +77,8 @@ def week(inicio: date | None = None, user=Depends(require_roles("user")), attend
         record = next((r for r in rows if r.get("id_matricula") == enrollment["id_matricula"] and r["fecha"] == day), None)
         items.append({**schedule, "id_matricula": enrollment["id_matricula"], "fecha": day, "asistencia": record})
     return {"inicio": start.isoformat(), "fin": end.isoformat(), "hoy": attendance.now().date().isoformat(),
-            "horarios": sorted(items, key=lambda i: (i["fecha"], i["hora_inicio"])), "visitas": len(rows)}
+            "horarios": sorted(items, key=lambda i: (i["fecha"], i["hora_inicio"])), "visitas": len(rows),
+            "visitas_por_fecha": dict(Counter(row["fecha"] for row in rows))}
 
 
 @router.post("/entrada")

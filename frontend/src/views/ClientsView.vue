@@ -25,34 +25,9 @@
           </div>
         </div>
       </div>
-
-      <div class="mt-5 flex gap-2 border-b border-white/10">
-        <button
-          class="px-4 py-2 text-sm font-medium transition"
-          :class="activeTab === 'clientes'
-            ? 'border-b-2 border-cyan-400 text-cyan-300'
-            : 'text-slate-400 hover:text-slate-200'"
-          @click="activeTab = 'clientes'"
-        >
-          Gestion de Clientes
-        </button>
-
-        <button
-          class="px-4 py-2 text-sm font-medium transition"
-          :class="activeTab === 'tienda'
-            ? 'border-b-2 border-cyan-400 text-cyan-300'
-            : 'text-slate-400 hover:text-slate-200'"
-          @click="activeTab = 'tienda'"
-        >
-          Tienda para Clientes
-        </button>
-      </div>
     </section>
 
-    <section
-      v-if="activeTab === 'clientes'"
-      class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
-    >
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Lista</p>
@@ -229,59 +204,6 @@
       >
         No hay clientes para mostrar.
       </p>
-    </section>
-
-    <section
-      v-if="activeTab === 'tienda'"
-      class="space-y-6"
-    >
-      <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-        <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-          Catalogo
-        </p>
-
-        <h2 class="mt-2 text-2xl font-black text-white">
-          Productos disponibles
-        </h2>
-
-        <p class="mt-1 text-sm text-slate-400">
-          Estos productos se muestran en la tienda del cliente.
-        </p>
-      </div>
-
-      <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-        <div
-          v-for="producto in productos"
-          :key="producto.id_producto"
-          class="rounded-2xl border border-white/10 bg-slate-900/80 p-4"
-        >
-          <div
-            class="mb-3 flex aspect-square items-center justify-center rounded-xl bg-cyan-400/10 text-sm font-black uppercase tracking-[0.2em] text-cyan-100"
-          >
-            Stock
-          </div>
-
-          <p class="text-xs font-bold uppercase text-cyan-200">
-            {{ producto.categoria }}
-          </p>
-
-          <p class="mt-1 truncate font-semibold text-white">
-            {{ producto.nombre }}
-          </p>
-
-          <p class="mt-1 line-clamp-2 text-xs text-slate-400">
-            {{ producto.descripcion }}
-          </p>
-
-          <p class="mt-3 text-lg font-black text-emerald-300">
-            S/. {{ Number(producto.precio || 0).toFixed(2) }}
-          </p>
-
-          <p class="mt-1 text-xs text-slate-400">
-            Stock: {{ producto.cantidad }}
-          </p>
-        </div>
-      </div>
     </section>
 
     <Teleport to="body">
@@ -564,10 +486,8 @@ const gymStore = useGymStore();
 const authStore = useAuthStore();
 
 const clients = computed(() => gymStore.members);
-const productos = computed(() => gymStore.productos_tienda);
 
 const search = ref('');
-const activeTab = ref('clientes');
 const editingId = ref('');
 const isEditorOpen = ref(false);
 const isDetailsOpen = ref(false);

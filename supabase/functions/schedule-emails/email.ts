@@ -129,7 +129,13 @@ export function scheduleMail(
       "Te recordamos tu clase programada. Revisa la hora de inicio y prepárate para entrenar.";
     subject = `Recordatorio: ${service} a las ${start} · Silver Gym Surco`;
   }
-  const url = `${settings.frontendUrl}/user/schedule`;
+  let url = `${settings.frontendUrl}/user/schedule`;
+  if (data.event_type === "reminder") {
+    const date = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date(data.class_start!));
+    url += `?fecha=${date}`;
+  }
   const rows = details.map(([label, value]) =>
     `<tr><td style="padding:10px;border-bottom:1px solid #eee;color:#555">${
       escape(label)

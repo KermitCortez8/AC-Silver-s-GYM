@@ -2,9 +2,10 @@ name: CI/CD Pipeline GYM
 
 on:
   push:
-    branches: [ "main", "dockerrealease" ] # Añadí tu rama actual para que puedas probarlo de inmediato
+    branches: [ "main", "develop", "release/**", "hotfix/**" ]
+    tags: [ "v*" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop", "release/**" ]
 
 jobs:
   # -------------------------------------------
@@ -23,7 +24,7 @@ jobs:
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10' # Ajusta si usas otra versión
+          python-version: '3.12'
 
       - name: Instalar dependencias
         run: |
@@ -63,7 +64,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           # Apunta a tu package-lock.json existente
           cache-dependency-path: ./frontend/package-lock.json
@@ -78,7 +79,7 @@ jobs:
         run: npm test
 
       - name: Construcción de la aplicación
-        run: npm run build --if-present
+        run: npm run build
 
       - name: Construcción de imagen Docker (Frontend)
         # Utiliza el frontend/Dockerfile que ya tienes creado
@@ -123,7 +124,7 @@ jobs:
           } > .env
 
       - name: Validar configuración Docker Compose
-        run: docker compose config
+        run: docker compose config --quiet
 
       - name: Construir programa completo con Docker Compose
         run: docker compose build

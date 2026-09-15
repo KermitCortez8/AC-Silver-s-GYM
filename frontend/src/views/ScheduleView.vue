@@ -10,7 +10,7 @@
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">{{ memberIdentity?.name || 'Cliente' }}</p>
-          <h2 class="mt-2 text-2xl font-black text-white">Tabla semanal</h2>
+          <h2 class="mt-2 text-2xl font-black text-white">Semanas del mes</h2>
         </div>
         <router-link to="/user/enrollment" class="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950">
           Matricular horario
@@ -38,7 +38,7 @@ import { computed, onMounted } from 'vue';
 import { useAuth } from '../composables/useAuth';
 import ExcelScheduleGrid from '../components/ExcelScheduleGrid.vue';
 import { useGymStore } from '../stores/gymStore';
-import { attendanceBelongsToClient, buildClientIdentityFromUser, findClientForUser, resolveClientIdForUser, weekdayFromISO } from '../utils/clientIdentity';
+import { buildClientIdentityFromUser, findClientForUser, resolveClientIdForUser } from '../utils/clientIdentity';
 
 const { user } = useAuth();
 const gymStore = useGymStore();
@@ -52,35 +52,7 @@ const myEnrollments = computed(() => {
   return gymStore.enrollments.filter((item) => Number(item.id_cliente) === idCliente && item.estado !== 'CANCELADA');
 });
 
-/**
- * Gestiona esta acción de la vista.
- */
-const attendanceFor = (item) =>
-  gymStore.attendance.find((entry) => {
-    const byEnrollment = Number(entry.idMatricula || 0) === Number(item.id_matricula || 0) && Number(item.id_matricula || 0) > 0;
-    const bySchedule = Number(entry.idHorarioServicio || 0) === Number(item.id_horario_servicio || 0) && Number(item.id_horario_servicio || 0) > 0;
-    const byClientSchedule =
-      attendanceBelongsToClient(entry, memberIdentity.value) &&
-      String(entry.service || '').toLowerCase() === String(item.servicio || '').toLowerCase() &&
-      weekdayFromISO(entry.date) === String(item.dia || '').toLowerCase();
-
-    return byEnrollment || bySchedule || byClientSchedule;
-  });
-
-const calendarItems = computed(() =>
-  myEnrollments.value.map((item) => {
-    const attendance = attendanceFor(item);
-    return {
-      ...item,
-      cliente_nombre: attendance ? 'OK Guardado' : 'Pendiente',
-      entryTime: attendance?.entryTime || '',
-      exitTime: attendance?.exitTime || '',
-      checkLabel: attendance
-        ? `OK Entrada ${attendance.entryTime || attendance.time || '--:--'} / Salida ${attendance.exitTime || 'pendiente'}`
-        : 'Pendiente',
-    };
-  }),
-);
+const calendarItems = computed(() => myEnrollments.value);
 
 onMounted(async () => {
   await gymStore.fetchFromBackend?.().catch(() => {});
