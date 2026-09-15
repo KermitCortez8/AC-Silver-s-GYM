@@ -2214,6 +2214,14 @@ export const useGymStore = defineStore('gym', () => {
   /**
    * Actualiza los datos actuales.
    */
+  const refreshScheduleClientsFromBackend = async () => {
+    const isClient = (authStore.userRole || authStore.user?.role) === 'user';
+    const data = await apiGet(isClient ? '/clientes/me' : '/clientes', authStore.token);
+    members.value = (isClient ? [data] : data).map(normalizeBackendClientToMember);
+    persist();
+    return members.value;
+  };
+
   const refreshEnrollmentsFromBackend = async (filters = {}) => {
     if (!apiBase) throw new Error('No hay backend configurado');
     const params = new URLSearchParams();
@@ -2937,6 +2945,7 @@ export const useGymStore = defineStore('gym', () => {
     upsertServiceSchedule,
     deleteServiceSchedule,
     refreshEnrollmentsFromBackend,
+    refreshScheduleClientsFromBackend,
     fetchTrainerOverview,
     upsertTrainerRoutine,
     assignTrainerRoutine,

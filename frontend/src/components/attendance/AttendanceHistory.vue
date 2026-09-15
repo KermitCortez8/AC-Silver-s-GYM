@@ -183,7 +183,6 @@
 </template>
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
-import * as XLSX from 'xlsx';
 import {
   CalendarSearch,
   ChevronLeft,
@@ -278,7 +277,7 @@ const exportRecords = async () => {
   error.value = '';
   try {
     const filters = { ...active.value };
-    const rows = await attendanceGet('/exportar', filters, token.value);
+    const [rows, XLSX] = await Promise.all([attendanceGet('/exportar', filters, token.value), import('xlsx')]);
     const sheet = XLSX.utils.json_to_sheet(
       rows.map((r) => ({
         ...(props.admin

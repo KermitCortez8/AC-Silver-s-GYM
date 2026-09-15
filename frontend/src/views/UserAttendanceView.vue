@@ -26,34 +26,18 @@
           <h2>
             {{
               week
-                ? `${dateLabel(week.inicio, { year: undefined })} – ${dateLabel(week.fin)}`
+                ? `${dateLabel(visibleRange.from, { year: undefined })} – ${dateLabel(visibleRange.to)}`
                 : 'Horario y visitas'
             }}
           </h2>
           <p class="att-muted">
-            {{ week?.visitas ?? '—' }} visitas registradas esta semana · Hora de
+            {{ visibleVisits }} visitas registradas en estas fechas · Hora de
             Perú
           </p>
         </div>
-        <div class="att-row-actions">
-          <button
-            class="att-button"
-            aria-label="Semana anterior"
-            :disabled="loading"
-            @click="move(-7)"
-          >
-            <ChevronLeft :size="16" /></button
-          ><button class="att-button" :disabled="loading" @click="currentWeek">
-            Hoy</button
-          ><button
-            class="att-button"
-            aria-label="Semana siguiente"
-            :disabled="loading"
-            @click="move(7)"
-          >
-            <ChevronRight :size="16" />
-          </button>
-        </div>
+      </div>
+      <div class="mb-4 rounded-xl" style="background: var(--app-surface); border: 1px solid var(--app-border)">
+        <ScheduleWeekPicker :model-value="selectedDate" @update:model-value="selectDate" />
       </div>
       <p v-if="error" role="alert" class="att-message is-error">
         {{ error }} <button class="att-link" @click="load">Reintentar</button>
@@ -116,11 +100,12 @@
   </div>
 </template>
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import ScheduleWeekPicker from '../components/ScheduleWeekPicker.vue';
+import { calendarDate, monthWeeks, weekStart } from '../utils/scheduleCalendar.js';
 import {
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   ShieldCheck,
 } from 'lucide-vue-next';
 import { useAuth } from '../composables/useAuth';
@@ -129,7 +114,6 @@ import {
   addDays,
   dateLabel,
   days,
-  limaDate,
   services,
   shortTime,
   states,
@@ -137,10 +121,19 @@ import {
 import AttendanceHistory from '../components/attendance/AttendanceHistory.vue';
 import '../styles/attendance.css';
 const { token } = useAuth();
+const route = useRoute();
+const selectedDate = ref(calendarDate(route.query.fecha));
+const visibleRange = computed(() => monthWeeks(selectedDate.value.slice(0, 7)).find((range) => range.start === weekStart(selectedDate.value)));
+let requestId = 0;
 const week = ref(null),
-  start = ref(''),
   loading = ref(false),
   error = ref('');
+const visibleVisits = computed(() => {
+  if (!week.value || loading.value) return '—';
+  if (!week.value.visitas_por_fecha) return week.value.visitas;
+  return Object.entries(week.value.visitas_por_fecha).reduce((sum, [date, count]) =>
+    sum + (date >= visibleRange.value.from && date <= visibleRange.value.to ? count : 0), 0);
+});
 const weekDays = computed(() =>
   Object.values(days).map((name, index) => {
     const date = addDays(week.value.inicio, index);
@@ -149,31 +142,31 @@ const weekDays = computed(() =>
       date,
       items: week.value.horarios.filter((item) => item.fecha === date),
     };
-  }),
+  }).filter((day) => day.date >= visibleRange.value.from && day.date <= visibleRange.value.to),
 );
 const load = async () => {
+  const id = ++requestId;
   loading.value = true;
   error.value = '';
   try {
-    week.value = await attendanceGet(
+    const result = await attendanceGet(
       '/mi-semana',
-      { inicio: start.value },
+      { inicio: weekStart(selectedDate.value) },
       token.value,
     );
+    if (id === requestId) week.value = result;
   } catch (err) {
+    if (id !== requestId) return;
     error.value = err.message;
     week.value = null;
   } finally {
-    loading.value = false;
+    if (id === requestId) loading.value = false;
   }
 };
-const move = (delta) => {
-  start.value = addDays(week.value?.inicio || start.value || limaDate(), delta);
+const selectDate = (date) => {
+  selectedDate.value = date;
   load();
 };
-const currentWeek = () => {
-  start.value = '';
-  load();
-};
+watch(() => route.query.fecha, (value) => selectDate(calendarDate(value)));
 onMounted(load);
 </script>
