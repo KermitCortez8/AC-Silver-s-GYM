@@ -7,7 +7,7 @@ import logging
 from uuid import uuid4
 
 from config import Settings
-from services.email_service import GmailEmailService, membership_email
+from services.email_service import ResendEmailService, membership_email
 from services.supabase_gym_service import SupabaseRestClient
 
 logger = logging.getLogger(__name__)
@@ -52,11 +52,11 @@ class MembershipNotificationService:
     def __init__(self, settings: Settings, repository=None, sender=None) -> None:
         self.settings = settings
         self.repository = repository or NotificationRepository(settings)
-        self.sender = sender or GmailEmailService(settings)
+        self.sender = sender or ResendEmailService(settings)
 
     @property
     def configured(self) -> bool:
-        return bool(self.settings.has_gmail_credentials and self.settings.has_supabase_credentials)
+        return bool(self.settings.has_email_credentials and self.settings.has_supabase_credentials)
 
     def notify(self, event: str, saved: dict, plan: dict) -> dict:
         if not self.configured:
@@ -71,7 +71,7 @@ class MembershipNotificationService:
             return self.process_one(event_key) or {"status": "queued", "message": "El correo está pendiente de envío."}
         except (RuntimeError, OSError, ValueError, KeyError) as error:
             # El pago o la activación ya se guardaron. Un fallo del correo no los revierte.
-            logger.warning("No se pudo preparar el correo de membresía (%s). Revisa Gmail y la migración 004.", type(error).__name__)
+            logger.warning("No se pudo preparar el correo de membresía (%s). Revisa Resend y la migración 004.", type(error).__name__)
             return {"status": "error", "message": "No se pudo preparar el correo. Revisa la configuración y reintenta el envío."}
 
     def process_one(self, event_key: str | None = None) -> dict | None:
@@ -81,7 +81,7 @@ class MembershipNotificationService:
         if not job:
             return None
         try:
-            # Se conserva el contenido de la compra; el remitente es la cuenta Gmail configurada.
+            # Se conserva el contenido de la compra; el remitente es la cuenta Resend configurada.
             delivery_id = self.sender.send(job["payload"], job["event_key"])
         except (RuntimeError, OSError) as error:
             self.repository.finish(job, error=str(error))
@@ -92,7 +92,7 @@ class MembershipNotificationService:
 
 
 def notify_membership(settings: Settings, clients_service, saved: dict, event: str) -> dict:
-    if not getattr(settings, "has_gmail_credentials", False):
+    if not getattr(settings, "has_email_credentials", False):
         return {"status": "not_configured", "message": "El servicio de correo todavía no está configurado."}
     service = MembershipNotificationService(settings)
     if not service.configured:
@@ -108,7 +108,7 @@ def notify_membership(settings: Settings, clients_service, saved: dict, event: s
 async def process_pending_emails(settings: Settings) -> None:
     service = MembershipNotificationService(settings)
     if not service.configured:
-        logger.info("Notificaciones de membresía deshabilitadas: configura GMAIL_EMAIL y GMAIL_APP_PASSWORD.")
+        logger.info("Notificaciones de membresía deshabilitadas: configura RESEND_API_KEY y EMAIL_FROM.")
         return
     while True:
         try:

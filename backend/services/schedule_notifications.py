@@ -1,4 +1,4 @@
-"""Avisos de matrícula y recordatorios de clases con Gmail y una cola privada."""
+"""Avisos de matrícula y recordatorios de clases con Resend y una cola privada."""
 from __future__ import annotations
 
 from datetime import datetime, time, timedelta, timezone
@@ -9,7 +9,7 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from config import Settings
-from services.email_service import GmailEmailService, _email, _gmail_sender
+from services.email_service import ResendEmailService, _email, email_sender
 from services.supabase_gym_service import SupabaseRestClient
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def schedule_email(settings: Settings, data: dict) -> dict:
     if event not in {"enrollment", "reminder"}:
         raise ValueError("Tipo de aviso de horario inválido")
     recipient = _email(str(data.get("correo") or ""))
-    _, sender = _gmail_sender(settings)
+    _, sender = email_sender(settings)
     base = settings.frontend_public_url.rstrip("/")
     if urlsplit(base).scheme not in {"http", "https"} or not urlsplit(base).netloc:
         raise ValueError("Configura FRONTEND_PUBLIC_URL para el enlace al horario")
@@ -44,7 +44,7 @@ def schedule_email(settings: Settings, data: dict) -> dict:
         occurrence = datetime.fromisoformat(data["class_start"]).astimezone(LIMA)
         details.insert(2, ("Fecha", occurrence.strftime("%d/%m/%Y")))
         title = "Te esperamos en tu próxima clase"
-        # No afirma «falta una hora»: un reintento de SMTP puede llegar más tarde.
+        # No afirma «falta una hora»: un reintento de Resend puede llegar más tarde.
         description = "Te recordamos tu clase programada. Revisa la hora de inicio y prepárate para entrenar."
         subject = f"Recordatorio: {service} a las {start} · Silver Gym Surco"
     url = f"{base}/user/schedule"
@@ -107,11 +107,11 @@ class ScheduleNotificationService:
     def __init__(self, settings: Settings, repository=None, sender=None):
         self.settings = settings
         self.repository = repository or ScheduleNotificationRepository(settings)
-        self.sender = sender or GmailEmailService(settings)
+        self.sender = sender or ResendEmailService(settings)
 
     @property
     def configured(self):
-        return self.settings.has_gmail_credentials and self.settings.has_supabase_credentials
+        return self.settings.has_email_credentials and self.settings.has_supabase_credentials
 
     def process_one(self, event_key=None):
         if not self.configured:
@@ -147,5 +147,5 @@ def notify_schedule_enrollment(settings: Settings, enrollment_id: int):
         }
     except (RuntimeError, OSError, ValueError, KeyError) as error:
         # La matrícula y la cola ya se confirmaron en una única transacción.
-        logger.warning("Aviso de matrícula pendiente (%s). Revisa Gmail, Supabase y la migración 006.", type(error).__name__)
+        logger.warning("Aviso de matrícula pendiente (%s). Revisa Resend, Supabase y la migración 006.", type(error).__name__)
         return {"status": "queued", "message": "El correo está pendiente; se reintentará automáticamente."}

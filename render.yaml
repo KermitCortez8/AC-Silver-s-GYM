@@ -22,3 +22,9 @@ services:
         value: "1"
       - key: STRIPE_MODE
         value: test
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: onboarding@resend.dev
+      - key: EMAIL_FROM_NAME
+        value: Silver Gym Surco
