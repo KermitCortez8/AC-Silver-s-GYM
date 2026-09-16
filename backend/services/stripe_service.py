@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+import hashlib
+import json
 from typing import Any
 
 import stripe
@@ -78,28 +80,36 @@ class StripeService:
         if description:
             product_data["description"] = description
 
+        checkout_params = dict(
+            mode="payment",
+            payment_method_types=["card"],
+            client_reference_id=f"membership:{client_id}",
+            customer_email=str(client.get("correo") or "").strip(),
+            line_items=[{
+                "price_data": {
+                    "currency": "pen",
+                    "unit_amount": amount_in_cents,
+                    "product_data": product_data,
+                },
+                "quantity": 1,
+            }],
+            metadata=metadata,
+            payment_intent_data={"metadata": metadata},
+            success_url=f"{return_url}?result=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{return_url}?result=failure",
+            locale="es",
+            submit_type="pay",
+        )
+        # Stripe exige los mismos parámetros al reutilizar una clave. El hash
+        # mantiene los reintentos estables y distingue cambios de URL o importe.
+        fingerprint = hashlib.sha256(json.dumps(
+            checkout_params, sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")).hexdigest()
         try:
             session = stripe.checkout.Session.create(
                 api_key=self.settings.stripe_secret_key,
-                mode="payment",
-                payment_method_types=["card"],
-                client_reference_id=f"membership:{client_id}",
-                customer_email=str(client.get("correo") or "").strip(),
-                line_items=[{
-                    "price_data": {
-                        "currency": "pen",
-                        "unit_amount": amount_in_cents,
-                        "product_data": product_data,
-                    },
-                    "quantity": 1,
-                }],
-                metadata=metadata,
-                payment_intent_data={"metadata": metadata},
-                success_url=f"{return_url}?result=success&session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=f"{return_url}?result=failure",
-                locale="es",
-                submit_type="pay",
-                idempotency_key=f"membership-checkout-{membership_id or client_id}",
+                idempotency_key=f"membership-checkout-v2-{membership_id or client_id}-{fingerprint}",
+                **checkout_params,
             )
         except Exception as error:
             raise RuntimeError("Stripe rechazó la creación del checkout") from error
