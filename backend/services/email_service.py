@@ -1,14 +1,13 @@
-"""Correos del gimnasio enviados por Gmail SMTP con una contraseña de aplicación."""
+"""Plantillas y envío de correos mediante la API HTTPS de Resend."""
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
-from email.message import EmailMessage
-from email.policy import SMTP
-from email.utils import formataddr, formatdate, parseaddr
+from email.utils import parseaddr
 from html import escape
 from hashlib import sha256
-import smtplib
-import ssl
+import json
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 from urllib.parse import urlsplit
 
 from config import Settings
@@ -23,18 +22,18 @@ def _email(value: str) -> str:
     return address
 
 
-def _gmail_sender(settings: Settings) -> tuple[str, str]:
-    address = _email(settings.gmail_email.strip())
+def email_sender(settings: Settings) -> tuple[str, str]:
+    address = _email(settings.email_from.strip())
     name = settings.email_from_name.strip() or "Silver Gym Surco"
     if "\r" in name or "\n" in name:
         raise ValueError("Nombre del remitente inválido")
-    return address, formataddr((name, address))
+    return address, f"{name} <{address}>"
 
 
 def membership_email(settings: Settings, event: str, saved: dict, plan: dict) -> dict:
     client, membership = saved["cliente"], saved["membresia"]
     recipient = _email(str(client.get("correo") or client.get("email") or ""))
-    _, sender = _gmail_sender(settings)
+    _, sender = email_sender(settings)
     if event not in {"payment", "activation"}:
         raise ValueError("Tipo de notificación inválido")
     if str(membership.get("estado_pago") or "").upper() != "PAGADO":
@@ -107,58 +106,56 @@ def membership_email(settings: Settings, event: str, saved: dict, plan: dict) ->
     return {"from": sender, "to": [recipient], "subject": f"{title} · Silver Gym Surco", "html": html, "text": text}
 
 
-class GmailEmailService:
+class ResendEmailService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
     def send(self, payload: dict, event_key: str) -> str:
-        password = "".join(self.settings.gmail_app_password.split())
-        if len(password) != 16 or not password.isascii():
-            raise RuntimeError("Configura GMAIL_APP_PASSWORD con la contraseña de aplicación de 16 caracteres que genera Google.")
-        connection = None
+        if not self.settings.has_email_credentials:
+            raise RuntimeError("Configura RESEND_API_KEY y EMAIL_FROM para enviar correos.")
         try:
-            sender_address, sender_header = _gmail_sender(self.settings)
+            _, sender = email_sender(self.settings)
             recipients = payload.get("to")
             if not isinstance(recipients, list) or len(recipients) != 1:
                 raise ValueError("La notificación debe tener un único destinatario")
-            recipient = _email(str(recipients[0]))
+            # Actualiza también el remitente de mensajes encolados antes de migrar de Gmail.
+            body = {
+                "from": sender,
+                "to": [_email(str(recipients[0]))],
+                "subject": str(payload["subject"]),
+                "html": str(payload["html"]),
+                "text": str(payload["text"]),
+            }
+            # Misma clave en Python y Supabase: un proyecto y evento identifican el envío.
             digest = sha256(f"{self.settings.supabase_url.rstrip('/')}|{event_key}".encode()).hexdigest()
-            message_id = f"<membership-{digest}@{sender_address.rsplit('@', 1)[1]}>"
-            message = EmailMessage(policy=SMTP)
-            # También permite procesar pendientes creados con el antiguo remitente de Resend.
-            message["From"] = sender_header
-            message["To"] = recipient
-            message["Subject"] = str(payload["subject"])
-            message["Message-ID"] = message_id
-            message["Date"] = formatdate(usegmt=True)
-            message.set_content(str(payload["text"]), charset="utf-8")
-            message.add_alternative(str(payload["html"]), subtype="html", charset="utf-8")
-
-            connection = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15, context=ssl.create_default_context())
-            connection.login(sender_address, password)
-            refused = connection.send_message(message, from_addr=sender_address, to_addrs=[recipient])
-            if refused:
-                raise RuntimeError("Gmail rechazó el destinatario de la notificación.")
-            return message_id
-        except smtplib.SMTPAuthenticationError as error:
-            raise RuntimeError("Gmail rechazó el acceso. Revisa GMAIL_EMAIL, la verificación en dos pasos y GMAIL_APP_PASSWORD.") from error
-        except smtplib.SMTPRecipientsRefused as error:
-            raise RuntimeError("Gmail rechazó el destinatario de la notificación.") from error
-        except smtplib.SMTPResponseException as error:
-            raise RuntimeError(f"Gmail rechazó el envío (SMTP {error.smtp_code}). Comprueba la cuenta y sus límites de envío.") from error
-        except (smtplib.SMTPException, OSError) as error:
-            raise RuntimeError("No se pudo confirmar el envío con Gmail; se reintentará.") from error
+            request = Request(
+                "https://api.resend.com/emails",
+                data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {self.settings.resend_api_key}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "AC-Silvers-GYM/1.1",
+                    "Idempotency-Key": f"gym-{digest}",
+                },
+                method="POST",
+            )
+            with urlopen(request, timeout=15) as response:
+                result = json.load(response)
+            delivery_id = result.get("id") if isinstance(result, dict) else None
+            if not isinstance(delivery_id, str) or not delivery_id.strip():
+                raise RuntimeError("Resend no confirmó el envío; se reintentará.")
+            return delivery_id
+        except HTTPError as error:
+            # Nunca persistir el cuerpo del proveedor: puede contener direcciones o credenciales.
+            messages = {
+                401: "Resend rechazó la clave. Revisa RESEND_API_KEY.",
+                403: "Resend rechazó el envío. Revisa el remitente y el destinatario permitido para pruebas.",
+                409: "Resend detectó un conflicto de envío. Conserva el contenido y remitente del evento al reintentar.",
+                422: "Resend rechazó los datos. Revisa EMAIL_FROM y el correo del cliente.",
+                429: "Se alcanzó el límite de Resend; el correo queda pendiente de reintento.",
+            }
+            raise RuntimeError(messages.get(error.code, "Resend no está disponible; se reintentará.")) from error
+        except OSError as error:
+            raise RuntimeError("No se pudo confirmar el envío con Resend; se reintentará.") from error
         except (ValueError, KeyError) as error:
-            raise RuntimeError("Revisa el remitente de Gmail y los datos del correo.") from error
-        finally:
-            if connection is not None:
-                # Si Gmail aceptó DATA, un fallo al cerrar no convierte el envío en fallido.
-                try:
-                    connection.quit()
-                except (smtplib.SMTPException, OSError):
-                    pass
-                finally:
-                    try:
-                        connection.close()
-                    except OSError:
-                        pass
+            raise RuntimeError("Revisa la configuración de Resend y los datos del correo.") from error

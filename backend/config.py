@@ -47,13 +47,13 @@ class Settings(BaseModel):
     frontend_public_url: str = "http://localhost:5173"
     google_client_id: str = ""
     auth_secret_key: str = ""
-    gmail_email: str = ""
-    gmail_app_password: str = Field(default="", repr=False, exclude=True)
+    resend_api_key: str = Field(default="", repr=False, exclude=True)
+    email_from: str = "onboarding@resend.dev"
     email_from_name: str = "Silver Gym Surco"
 
     @property
-    def has_gmail_credentials(self) -> bool:
-        return bool(self.gmail_email.strip() and self.gmail_app_password.strip())
+    def has_email_credentials(self) -> bool:
+        return bool(self.resend_api_key.strip() and self.email_from.strip())
 
     @property
     # Valida los datos recibidos.
@@ -92,7 +92,7 @@ def get_settings() -> Settings:
         frontend_public_url=(os.getenv("FRONTEND_PUBLIC_URL") or "http://localhost:5173").strip().rstrip("/"),
         google_client_id=(os.getenv("GOOGLE_CLIENT_ID") or "").strip(),
         auth_secret_key=(os.getenv("AUTH_SECRET_KEY") or "").strip(),
-        gmail_email=(os.getenv("GMAIL_EMAIL") or "").strip(),
-        gmail_app_password="".join((os.getenv("GMAIL_APP_PASSWORD") or "").split()),
+        resend_api_key=(os.getenv("RESEND_API_KEY") or "").strip(),
+        email_from=(os.getenv("EMAIL_FROM") or "onboarding@resend.dev").strip(),
         email_from_name=(os.getenv("EMAIL_FROM_NAME") or "Silver Gym Surco").strip(),
     )
