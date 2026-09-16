@@ -1,0 +1,24 @@
+# Entorno de integración para la Sprint Review: develop -> Render -> Supabase.
+# Los despliegues son manuales para mantener estable la demostración.
+services:
+  - type: web
+    name: ac-silvers-gym-api-review
+    runtime: python
+    plan: free
+    branch: develop
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: AUTH_SECRET_KEY
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: STRIPE_MODE
+        value: test
