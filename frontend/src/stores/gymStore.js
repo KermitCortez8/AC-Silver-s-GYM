@@ -513,6 +513,9 @@ export const useGymStore = defineStore('gym', () => {
   const syncError = ref('');
   const isSyncing = ref(false);
   let syncPromise = null;
+  let syncScope = '';
+  let lastSyncScope = '';
+  let lastSyncAt = -Infinity;
 
   /**
    * Gestiona esta acción de la vista.
@@ -2411,8 +2414,17 @@ export const useGymStore = defineStore('gym', () => {
   /**
    * Consulta los datos del servidor.
    */
-  const fetchFromBackend = () => {
-    if (syncPromise) return syncPromise;
+  const fetchFromBackend = ({ force = false } = {}) => {
+    if (!authStore.token) return Promise.resolve();
+    const scope = `${authStore.token}|${authStore.userRole}`;
+    if (syncPromise) {
+      if (syncScope === scope && !force) return syncPromise;
+      // Un refresco tras guardar debe consultar después de la carga anterior.
+      return syncPromise.catch(() => {}).then(() => fetchFromBackend({ force }));
+    }
+    if (!force && lastSyncScope === scope && Date.now() - lastSyncAt < 30_000) return Promise.resolve();
+    syncScope = scope;
+    lastSyncAt = -Infinity;
     isSyncing.value = true;
     syncError.value = '';
 
@@ -2425,16 +2437,17 @@ export const useGymStore = defineStore('gym', () => {
         return data;
       };
       const tasks = [];
+      let clientsReady = Promise.resolve();
       if (internal) {
-        tasks.push(['Clientes', async () => {
+        tasks.push(['Clientes', () => clientsReady = (async () => {
           members.value = (await getList('/clientes')).map(normalizeBackendClientToMember);
-        }], ['Usuarios', async () => {
+        })()], ['Usuarios', async () => {
           users.value = (await getList('/usuarios')).map(normalizeUser);
         }]);
       } else if (role === 'user') {
-        tasks.push(['Mi perfil', async () => {
+        tasks.push(['Mi perfil', () => clientsReady = (async () => {
           members.value = [normalizeBackendClientToMember(await apiGet('/clientes/me', authStore.token))];
-        }]);
+        })()]);
       }
 
       tasks.push(['Inventario', async () => {
@@ -2476,9 +2489,15 @@ export const useGymStore = defineStore('gym', () => {
       }
       if (internal || role === 'trainer') tasks.push(['Rutinas', refreshRoutinesFromBackend]);
       if (role === 'trainer') tasks.push(['Supervisión', fetchTrainerOverview]);
-      if (role === 'admin' || role === 'user') tasks.push(['Asistencias', refreshAttendanceFromBackend]);
+      if (role === 'admin' || role === 'user') tasks.push(['Asistencias', async () => {
+        // La normalización de asistencias necesita los nombres de clientes.
+        await clientsReady.catch(() => {});
+        await refreshAttendanceFromBackend();
+      }]);
 
       await syncResources(tasks, (message) => { syncError.value = message; });
+      lastSyncScope = scope;
+      lastSyncAt = Date.now();
     })().finally(() => {
       isSyncing.value = false;
       syncPromise = null;
@@ -2856,7 +2875,7 @@ export const useGymStore = defineStore('gym', () => {
     if (!res.ok) throw new Error(await readBackendError(res, 'Error al crear movimiento de inventario'));
     const saved = await res.json();
     if (saved?.movimiento) inventoryMovements.value.unshift(saved.movimiento);
-    await fetchFromBackend().catch(() => {});
+    await fetchFromBackend({ force: true }).catch(() => {});
     persist();
     return saved;
   };

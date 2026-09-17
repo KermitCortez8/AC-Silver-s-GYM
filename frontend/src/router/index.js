@@ -1,34 +1,34 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/authStore';
 
-// Vistas
-import LoginView from '../views/LoginView.vue';
-import AdminDashboard from '../views/AdminDashboard.vue';
-import TrainerDashboard from '../views/TrainerDashboard.vue';
-import UserDashboard from '../views/UserDashboard.vue';
-import LandingView from '../views/LandingView.vue';
-import NosotrosView from '../views/NosotrosView.vue';
-import RegisterView from '../views/RegisterView.vue';
-import PaymentView from '../views/PaymentView.vue';
-import HomeView from '../views/HomeView.vue';
-import ClientsView from '../views/ClientsView.vue';
-import UsersView from '../views/UsersView.vue';
+// Cada vista se descarga una vez, cuando se necesita.
+const LoginView = () => import('../views/LoginView.vue');
+const AdminDashboard = () => import('../views/AdminDashboard.vue');
+const TrainerDashboard = () => import('../views/TrainerDashboard.vue');
+const UserDashboard = () => import('../views/UserDashboard.vue');
+const LandingView = () => import('../views/LandingView.vue');
+const NosotrosView = () => import('../views/NosotrosView.vue');
+const RegisterView = () => import('../views/RegisterView.vue');
+const PaymentView = () => import('../views/PaymentView.vue');
+const HomeView = () => import('../views/HomeView.vue');
+const ClientsView = () => import('../views/ClientsView.vue');
+const UsersView = () => import('../views/UsersView.vue');
 const AttendanceView = () => import('../views/AttendanceView.vue');
 const ServiceSchedulesView = () => import('../views/ServiceSchedulesView.vue');
 const EnrollmentView = () => import('../views/EnrollmentView.vue');
-import InventoryView from '../views/InventoryView.vue';
-import InventoryMovementsView from '../views/InventoryMovementsView.vue';
-import GymSettingsView from '../views/GymSettingsView.vue';
-import MembershipPlansView from '../views/MembershipPlansView.vue';
-import PromotionsView from '../views/PromotionsView.vue';
-import StoreView from '../views/StoreView.vue';
-import StorePaymentView from '../views/StorePaymentView.vue';
-import OrdersView from '../views/OrdersView.vue';
+const InventoryView = () => import('../views/InventoryView.vue');
+const InventoryMovementsView = () => import('../views/InventoryMovementsView.vue');
+const GymSettingsView = () => import('../views/GymSettingsView.vue');
+const MembershipPlansView = () => import('../views/MembershipPlansView.vue');
+const PromotionsView = () => import('../views/PromotionsView.vue');
+const StoreView = () => import('../views/StoreView.vue');
+const StorePaymentView = () => import('../views/StorePaymentView.vue');
+const OrdersView = () => import('../views/OrdersView.vue');
 const UserAttendanceView = () => import('../views/UserAttendanceView.vue');
-import TrainerOverviewView from '../views/TrainerOverviewView.vue';
-import TrainerRoutinesView from '../views/TrainerRoutinesView.vue';
-import TrainerRoutineMonitorView from '../views/TrainerRoutineMonitorView.vue';
-import AuthCallbackView from '../views/AuthCallbackView.vue';
+const TrainerOverviewView = () => import('../views/TrainerOverviewView.vue');
+const TrainerRoutinesView = () => import('../views/TrainerRoutinesView.vue');
+const TrainerRoutineMonitorView = () => import('../views/TrainerRoutineMonitorView.vue');
+const AuthCallbackView = () => import('../views/AuthCallbackView.vue');
 
 const routes = [
   {
@@ -228,8 +228,8 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const authStore = useAuthStore();
 
-  // Comprueba también las sesiones abiertas antes de entrar a una ruta protegida
-  // o de redirigir al panel: una cuenta puede estar pendiente o desactivada.
+  // Valida al entrar y reutiliza la comprobación durante 30 segundos.
+  // El backend sigue comprobando la sesión y los permisos en cada operación.
   const needsSessionCheck = authStore.isAuthenticated &&
     (to.meta.requiresAuth || to.path === '/' || to.path === '/login');
   if (!authStore.isInitialized || needsSessionCheck) {
