@@ -508,7 +508,6 @@ const filteredSchedules = computed(() =>
  */
 const loadSchedules = async () => {
   try {
-    const list = await apiGet('/horarios-publicos');
     const list = await apiGet('/gym/horarios-publicos');
     backendSchedules.value = Array.isArray(list) ? list : [];
   } catch {
