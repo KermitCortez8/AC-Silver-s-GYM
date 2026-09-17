@@ -25,7 +25,7 @@ import { useGymStore } from './stores/gymStore';
 
 const authStore = useAuthStore();
 const gymStore = useGymStore();
-const retrySync = () => gymStore.fetchFromBackend().catch(() => {
+const retrySync = () => gymStore.fetchFromBackend({ force: true }).catch(() => {
   // El store conserva el error para mostrarlo en el aviso.
 });
 </script>

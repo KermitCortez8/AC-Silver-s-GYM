@@ -16,6 +16,7 @@ class HorarioPublico(BaseModel):
     hora_inicio: str
     hora_fin: str
     rutina_nombre: str = ""
+    entrenador: str = ""
     cupos: int
     cupos_usados: int
     cupos_disponibles: int

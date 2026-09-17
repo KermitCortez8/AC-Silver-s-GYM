@@ -9,6 +9,7 @@ import {
 } from '../utils/authUtils';
 import { APP_CONFIG } from '../config/appConfig';
 import { apiGet } from '../services/apiClient';
+import { createSessionValidator } from '../services/sessionValidation.js';
 
 /**
  * Normaliza el valor recibido.
@@ -39,6 +40,12 @@ export const useAuthStore = defineStore('auth', () => {
   const userRole = ref(null);
   const isSignout = ref(false);
   const isInitialized = ref(false);
+  let sessionRevision = 0;
+  const sessionValidator = createSessionValidator(async (storedToken) => {
+    const sessionUser = normalizeStoredUser(await apiGet('/auth/me', storedToken));
+    if (!sessionUser || !isValidUser(sessionUser)) throw new Error('Sesión inválida');
+    return sessionUser;
+  });
 
   // Getters
   const isAuthenticated = computed(() => !!user.value);
@@ -54,15 +61,18 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Gestiona esta acción de la vista.
    */
-  const initializeAuth = async () => {
+  const initializeAuth = async ({ force = false } = {}) => {
+    const revision = sessionRevision;
     try {
       isLoading.value = true;
       const { token: storedToken } = getAuthSession();
 
       if (storedToken && APP_CONFIG.authApiBaseUrl) {
         try {
-          const backendUser = await apiGet('/auth/me', storedToken);
-          const sessionUser = normalizeStoredUser(backendUser);
+          const sessionUser = await sessionValidator.validate(storedToken, { force });
+          // Una respuesta anterior no debe restaurar una sesión cerrada o sustituida.
+          if (revision !== sessionRevision) return;
+          if (getAuthSession().token !== storedToken) return initializeAuth();
 
           if (sessionUser && isValidUser(sessionUser)) {
             user.value = sessionUser;
@@ -73,11 +83,14 @@ export const useAuthStore = defineStore('auth', () => {
             return;
           }
         } catch (error) {
+          if (revision !== sessionRevision) return;
+          if (getAuthSession().token !== storedToken) return initializeAuth();
           clearAuthStorage();
         }
       }
 
       clearAuthStorage();
+      sessionValidator.clear();
       user.value = null;
       token.value = null;
       userRole.value = null;
@@ -85,6 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       console.error('Error al inicializar autenticación:', error);
       clearAuthStorage();
+      sessionValidator.clear();
       user.value = null;
       token.value = null;
       userRole.value = null;
@@ -111,6 +125,8 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Datos de usuario inválidos');
       }
 
+      sessionRevision += 1;
+      sessionValidator.clear();
       user.value = formattedUser;
       token.value = idToken;
       userRole.value = userData.role || formattedUser.role || 'user';
@@ -143,6 +159,8 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Datos de usuario inválidos');
       }
 
+      sessionRevision += 1;
+      sessionValidator.clear();
       user.value = formattedUser;
       token.value = idToken;
       userRole.value = formattedUser.role || 'user';
@@ -162,6 +180,8 @@ export const useAuthStore = defineStore('auth', () => {
    * Gestiona esta acción de la vista.
    */
   const signOut = async () => {
+    sessionRevision += 1;
+    sessionValidator.clear();
     try {
       isLoading.value = true;
       clearAuthStorage();

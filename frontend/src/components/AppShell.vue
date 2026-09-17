@@ -69,6 +69,9 @@
               v-for="link in navigationLinks"
               :key="link.to"
               :to="link.to"
+              @pointerenter="preloadRoute(link.to)"
+              @focus="preloadRoute(link.to)"
+              @touchstart.passive="preloadRoute(link.to)"
               class="flex min-w-0 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition"
               :class="
                 isActive(link.to)
@@ -199,6 +202,9 @@
               v-for="link in navigationLinks"
               :key="link.to"
               :to="link.to"
+              @pointerenter="preloadRoute(link.to)"
+              @focus="preloadRoute(link.to)"
+              @touchstart.passive="preloadRoute(link.to)"
               class="flex min-w-20 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-[0.68rem] font-bold transition"
               :class="
                 isActive(link.to)
@@ -252,6 +258,17 @@ const props = defineProps({
 
 const route = useRoute();
 const router = useRouter();
+const preloadedViews = new WeakSet();
+const preloadRoute = (path) => {
+  if (navigator.connection?.saveData) return;
+  for (const record of router.resolve(path).matched) {
+    const load = record.components?.default;
+    if (typeof load !== 'function' || preloadedViews.has(load)) continue;
+    preloadedViews.add(load);
+    // Solo descarga el código; no monta vistas ni consulta datos del usuario.
+    Promise.resolve().then(load).catch(() => preloadedViews.delete(load));
+  }
+};
 
 const {
   user,
