@@ -100,8 +100,7 @@ docker compose down -v
 
 Si la construcción falla con `failed to get reader from content store`,
 `content digest ... not found` o `parent snapshot ... does not exist`, Docker
-puede tener referencias a capas que ya no existen en su caché. Para recuperar
-la construcción, ejecuta desde la raíz del proyecto:
+puede tener referencias a capas que ya no existen en su caché. Para recuperar, ejecuta desde la raíz del proyecto:
 
 ```bash
 docker builder prune --all --force
