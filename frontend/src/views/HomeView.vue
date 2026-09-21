@@ -8,7 +8,7 @@
             <h1 class="mt-2 text-3xl font-black text-white sm:text-4xl">Operacion general</h1>
             <p class="mt-2 text-slate-300">Resumen visual de clientes, horarios, matriculas, asistencia e inventario.</p>
           </div>
-          <button class="rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm font-bold text-white" @click="refreshDashboard">
+          <button class="rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm font-bold text-white" @click="refreshDashboard(true)">
             Actualizar datos
           </button>
         </div>
@@ -365,16 +365,11 @@ const clientCards = computed(() => {
 /**
  * Actualiza los datos actuales.
  */
-const refreshDashboard = async () => {
-  await gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar dashboard:', error));
-
-  if (!isAdmin.value && currentClientId.value) {
-    await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: currentClientId.value }).catch(() => {});
-    await gymStore.refreshAttendanceFromBackend?.().catch(() => {});
-  }
+const refreshDashboard = async (force = false) => {
+  await gymStore.fetchFromBackend?.({ force }).catch((error) => console.warn('No se pudo refrescar dashboard:', error));
 };
 
-onMounted(refreshDashboard);
+onMounted(() => refreshDashboard());
 </script>
 
 <style scoped>

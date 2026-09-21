@@ -1741,6 +1741,7 @@ class GymDomainService:
                     "rutina_nombre": routine.get("nombre_rutina", ""),
                     "zonas_musculares": routine.get("zonas_musculares", ""),
                     "rutina_color": routine.get("color", "Azul"),
+                    "entrenador": str(schedule.get("entrenador") or routine.get("entrenador") or "").strip(),
                 }
             )
         return result

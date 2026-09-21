@@ -1,13 +1,13 @@
 import {
   containsControls,
   type DeliveryContext,
+  deliveryError,
   emailAddress,
-  GmailSender,
   InvalidMail,
   type MailSettings,
+  ResendSender,
   scheduleMail,
   type Sender,
-  smtpError,
 } from "./email.ts";
 
 type Settings = MailSettings & { supabaseKey: string };
@@ -26,22 +26,22 @@ class ConfigurationError extends Error {}
 const value = (env: Env, name: string) => (env(name) ?? "").trim();
 
 export function readSettings(env: Env): Settings {
-  const gmailEmail = value(env, "GMAIL_EMAIL");
-  const gmailPassword = value(env, "GMAIL_APP_PASSWORD").replace(/\s/g, "");
+  const emailFrom = value(env, "EMAIL_FROM") || "onboarding@resend.dev";
+  const resendApiKey = value(env, "RESEND_API_KEY");
   const senderName = value(env, "EMAIL_FROM_NAME") || "Silver Gym Surco";
   const frontendUrl = value(env, "FRONTEND_PUBLIC_URL").replace(/\/+$/, "");
   const supabaseUrl = value(env, "SUPABASE_URL").replace(/\/+$/, "");
   const supabaseKey = value(env, "SUPABASE_SERVICE_ROLE_KEY");
   try {
-    emailAddress(gmailEmail);
+    emailAddress(emailFrom);
   } catch {
     throw new ConfigurationError(
-      "Configura GMAIL_EMAIL en Edge Functions > Secrets.",
+      "Configura EMAIL_FROM en Edge Functions > Secrets.",
     );
   }
-  if (!/^[\x21-\x7e]{16}$/.test(gmailPassword)) {
+  if (!resendApiKey || containsControls(resendApiKey)) {
     throw new ConfigurationError(
-      "Configura GMAIL_APP_PASSWORD con los 16 caracteres de la contraseña de aplicación.",
+      "Configura RESEND_API_KEY en Edge Functions > Secrets.",
     );
   }
   if (containsControls(senderName)) {
@@ -71,8 +71,8 @@ export function readSettings(env: Env): Settings {
     );
   }
   return {
-    gmailEmail,
-    gmailPassword,
+    emailFrom,
+    resendApiKey,
     senderName,
     frontendUrl,
     supabaseUrl,
@@ -228,14 +228,14 @@ export async function processBatch(
     } catch (error) {
       const invalid = error instanceof InvalidMail;
       await repository.finish(job, {
-        error: invalid ? error.message : smtpError(error),
+        error: invalid ? error.message : deliveryError(error),
       });
       counts.retried++;
-      // Un fallo de Gmail no debe multiplicarse por todos los clientes del lote.
+      // Un fallo de Resend no debe multiplicarse por todos los clientes del lote.
       if (!invalid) break;
       continue;
     }
-    // Si falla guardar después de SMTP, conservar la reserva. No reenviar aquí.
+    // Si falla guardar después de Resend, conservar la reserva. No reenviar aquí.
     await repository.finish(job, { deliveryId });
     counts.sent++;
   }
@@ -299,24 +299,24 @@ export function createHandler(dependencies: Dependencies = {}) {
       const repository = dependencies.repository?.(settings) ??
         new SupabaseRepository(settings);
       const sender = dependencies.sender?.(settings) ??
-        new GmailSender(settings);
+        new ResendSender(settings);
       if (body.dry_run) {
         await repository.check();
         try {
-          await sender.verify();
+          await sender.checkConfiguration();
         } catch (error) {
-          return respond({ error: smtpError(error), dry_run: true }, 503);
+          return respond({ error: deliveryError(error), dry_run: true }, 503);
         }
         return respond({
           ok: true,
           dry_run: true,
           database: "ok",
-          gmail: "ok",
+          resend: "configured_not_sent",
           sent: 0,
         });
       }
       const counts = await processBatch(settings, repository, sender);
-      // Solo contadores: nunca correos, nombres, contraseñas ni cuerpos SMTP.
+      // Solo contadores: nunca correos, nombres, contraseñas ni cuerpos Resend.
       console.info("schedule-emails", counts);
       return respond({ ok: true, ...counts });
     } catch (error) {

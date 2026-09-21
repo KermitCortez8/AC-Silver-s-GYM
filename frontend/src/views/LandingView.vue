@@ -211,13 +211,13 @@
                   <tr class="border-b border-orange-100 bg-orange-50">
                     <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-orange-600">Día</th>
                     <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-orange-600">Hora</th>
-                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-orange-600">Entrenador</th>
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-orange-600">Rutina</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
                     v-for="(sched, index) in filteredSchedules"
-                    :key="index"
+                    :key="sched.id_horario_servicio || index"
                     :class="['sched-row border-b border-slate-50 transition-colors', index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40']"
                   >
                     <td class="px-6 py-4">
@@ -234,10 +234,15 @@
                     <td class="px-6 py-4">
                       <div class="flex min-w-0 items-center gap-2">
                         <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-xs font-black text-white">
-                          {{ sched.entrenador.charAt(0) }}
+                          {{ (sched.entrenador || 'I').charAt(0) }}
                         </div>
                         <span class="sched-name truncate font-semibold text-slate-700">{{ sched.entrenador }}</span>
                       </div>
+                    </td>
+                  </tr>
+                  <tr v-if="!filteredSchedules.length">
+                    <td colspan="3" class="px-6 py-8 text-center text-sm text-slate-400">
+                      No hay horarios programados para este servicio por el momento.
                     </td>
                   </tr>
                 </tbody>
@@ -418,7 +423,7 @@ watch(
 
 const selectedService = ref(null);
 
-const allSchedules = [
+const defaultSchedules = [
   { dia: 'Lunes',     hora: '06:00–07:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
   { dia: 'Lunes',     hora: '18:00–19:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
   { dia: 'Lunes',     hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
@@ -437,23 +442,78 @@ const allSchedules = [
   { dia: 'Domingo',   hora: '09:00–10:00', servicio: 'Cardio',      entrenador: 'Diego Alejandro Castro Flores' },
 ];
 
+const backendSchedules = ref([]);
+
+const DAY_ORDER = {
+  lunes: 1,
+  martes: 2,
+  miercoles: 3,
+  jueves: 4,
+  viernes: 5,
+  sabado: 6,
+  domingo: 7,
+};
+
 // Match card title (e.g. "Musculacion") to schedule servicio (e.g. "Musculación")
 /**
  * Normaliza el valor recibido.
  */
 const normalizeService = (str) =>
-  str
+  String(str || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
+const capitalizeDay = (day) => {
+  const str = String(day || '').trim();
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+const normalizeScheduleItem = (item) => {
+  const hora = item.hora || (item.hora_inicio && item.hora_fin ? `${item.hora_inicio}–${item.hora_fin}` : item.hora_inicio || '');
+  const dia = capitalizeDay(item.dia);
+  const entrenador = item.entrenador || item.rutina_nombre || 'Instructor Silver Gym';
+  return {
+    ...item,
+    dia,
+    hora,
+    entrenador,
+    servicio: item.servicio || '',
+  };
+};
+
+const schedules = computed(() => {
+  const source = backendSchedules.value.length ? backendSchedules.value : defaultSchedules;
+  return source
+    .map(normalizeScheduleItem)
+    .sort((a, b) => {
+      const dayA = DAY_ORDER[normalizeService(a.dia)] || 99;
+      const dayB = DAY_ORDER[normalizeService(b.dia)] || 99;
+      if (dayA !== dayB) return dayA - dayB;
+      return String(a.hora || '').localeCompare(String(b.hora || ''));
+    });
+});
+
 const filteredSchedules = computed(() =>
   selectedService.value
-    ? allSchedules.filter(
+    ? schedules.value.filter(
         (s) => normalizeService(s.servicio) === normalizeService(selectedService.value),
       )
     : [],
 );
+
+/**
+ * Consulta los horarios del servidor.
+ */
+const loadSchedules = async () => {
+  try {
+    const list = await apiGet('/gym/horarios-publicos');
+    backendSchedules.value = Array.isArray(list) ? list : [];
+  } catch {
+    backendSchedules.value = [];
+  }
+};
 
 /**
  * Gestiona esta acción de la vista.
@@ -532,7 +592,10 @@ const services = [
   { tag: '04', title: 'Baile', description: 'Clases grupales dinamicas para entrenar con movimiento y motivacion.', image: landingImages.baile, imageClass: 'object-cover object-[40%_center]' },
 ];
 
-onMounted(loadPlans);
+onMounted(() => {
+  loadPlans();
+  loadSchedules();
+});
 </script>
 
 <style scoped>

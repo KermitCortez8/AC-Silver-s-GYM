@@ -33,7 +33,7 @@ def test_week_attendance_matches_date_and_client_across_month_boundary():
 
 
 def test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month():
-    settings = Settings(gmail_email='gym@example.com', gmail_app_password='abcdefghijklmnop', frontend_public_url='https://gym.example.com')
+    settings = Settings(email_from='gym@example.com', resend_api_key='re_test', frontend_public_url='https://gym.example.com')
     data = {'event_type': 'reminder', 'correo': 'client@example.com', 'nombre': 'Ana',
             'servicio': 'fitness', 'dia': 'lunes', 'hora_inicio': '23:00', 'hora_fin': '23:59',
             'class_start': '2026-09-01T04:00:00+00:00'}
@@ -45,7 +45,7 @@ def test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month():
 
 
 def test_enrollment_email_keeps_weekly_recurrence():
-    settings = Settings(gmail_email='gym@example.com', gmail_app_password='abcdefghijklmnop', frontend_public_url='https://gym.example.com')
+    settings = Settings(email_from='gym@example.com', resend_api_key='re_test', frontend_public_url='https://gym.example.com')
     mail = schedule_email(settings, {'event_type': 'enrollment', 'correo': 'client@example.com',
         'servicio': 'fitness', 'dia': 'lunes', 'hora_inicio': '08:00', 'hora_fin': '09:00'})
     assert 'Cada lunes' in mail['text']

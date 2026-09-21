@@ -8,6 +8,18 @@ on:
     branches: [ "main", "develop", "release/**" ]
 
 jobs:
+  schedule-emails-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Validar función de recordatorios
+        run: deno check supabase/functions/schedule-emails/index.ts
+      - name: Pruebas de correo sin red ni credenciales
+        run: deno test supabase/tests/
+
   # -------------------------------------------
   # PIPELINE DEL BACKEND (Python / FastAPI)
   # -------------------------------------------

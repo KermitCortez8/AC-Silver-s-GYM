@@ -1,11 +1,6 @@
-// SMTP con TLS desde el inicio: Supabase bloquea 25/587; Gmail admite 465.
-// Versión fijada de la misma librería utilizada por el ejemplo SMTP de Supabase.
-// @ts-types="npm:@types/nodemailer@8.0.1"
-import nodemailer from "npm:nodemailer@9.1.1";
-
 export type MailSettings = {
-  gmailEmail: string;
-  gmailPassword: string;
+  resendApiKey: string;
+  emailFrom: string;
   senderName: string;
   frontendUrl: string;
   supabaseUrl: string;
@@ -25,7 +20,7 @@ export type DeliveryContext = {
 export type Mail = { to: string; subject: string; text: string; html: string };
 export interface Sender {
   send(mail: Mail, eventKey: string): Promise<string>;
-  verify(): Promise<void>;
+  checkConfiguration(): Promise<void>;
 }
 
 export class InvalidMail extends Error {}
@@ -68,7 +63,7 @@ const escape = (value: string) =>
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
-    "'": "&#39;",
+    "'": "&#x27;",
   }[char]!));
 
 function hour(value: string): string {
@@ -132,7 +127,10 @@ export function scheduleMail(
   let url = `${settings.frontendUrl}/user/schedule`;
   if (data.event_type === "reminder") {
     const date = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit",
+      timeZone: "America/Lima",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     }).format(new Date(data.class_start!));
     url += `?fecha=${date}`;
   }
@@ -166,87 +164,91 @@ export function scheduleMail(
   return { to, subject, text, html };
 }
 
-export async function messageId(
+export async function idempotencyKey(
   settings: MailSettings,
   eventKey: string,
 ): Promise<string> {
-  // Mismo identificador que el emisor Python si coinciden proyecto y evento.
-  const input = new TextEncoder().encode(`${settings.supabaseUrl}|${eventKey}`);
+  const input = new TextEncoder().encode(
+    `${settings.supabaseUrl.replace(/\/+$/, "")}|${eventKey}`,
+  );
   const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", input));
   const digest = Array.from(hash, (byte) => byte.toString(16).padStart(2, "0"))
     .join("");
-  return `<membership-${digest}@${settings.gmailEmail.split("@")[1]}>`;
+  return `gym-${digest}`;
 }
 
-export function smtpError(error: unknown): string {
-  const code = (error as { code?: string } | null)?.code;
-  if (code === "EAUTH") {
-    return "Gmail rechazó el acceso. Revisa GMAIL_EMAIL y la contraseña de aplicación.";
-  }
-  if (code === "EENVELOPE") {
-    return "Gmail rechazó el destinatario. Revisa el correo del cliente.";
-  }
-  return "No se pudo confirmar el envío con Gmail; se reintentará automáticamente.";
+export class ResendError extends Error {}
+
+export function deliveryError(error: unknown): string {
+  if (error instanceof ResendError) return error.message;
+  return "No se pudo confirmar el envío con Resend; se reintentará automáticamente.";
 }
 
-export class GmailSender implements Sender {
-  constructor(private settings: MailSettings) {}
+export class ResendSender implements Sender {
+  constructor(
+    private settings: MailSettings,
+    private fetcher: typeof fetch = fetch,
+  ) {}
 
-  private transport() {
-    return nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: this.settings.gmailEmail,
-        pass: this.settings.gmailPassword,
-      },
-      connectionTimeout: 7000,
-      greetingTimeout: 7000,
-      socketTimeout: 10000,
-      dnsTimeout: 5000,
-      logger: false,
-      debug: false,
-      disableFileAccess: true,
-      disableUrlAccess: true,
-      tls: { minVersion: "TLSv1.2", rejectUnauthorized: true },
-    });
-  }
-
-  async verify(): Promise<void> {
-    const transport = this.transport();
-    try {
-      await transport.verify(); // Autentica; no ejecuta MAIL/RCPT/DATA.
-    } finally {
-      transport.close();
+  async checkConfiguration(): Promise<void> {
+    emailAddress(this.settings.emailFrom);
+    if (
+      !this.settings.resendApiKey ||
+      containsControls(this.settings.resendApiKey)
+    ) {
+      throw new ResendError(
+        "Configura RESEND_API_KEY en Edge Functions > Secrets.",
+      );
     }
+    if (containsControls(this.settings.senderName)) {
+      throw new ResendError("Revisa EMAIL_FROM_NAME.");
+    }
+    // No envía mensajes ni afirma validar la clave remotamente.
+    // Una API key limitada a envíos no permite consultar otros endpoints.
   }
 
   async send(mail: Mail, eventKey: string): Promise<string> {
-    const transport = this.transport();
-    const id = await messageId(this.settings, eventKey);
-    try {
-      const result = await transport.sendMail({
-        ...mail,
-        from: {
-          name: this.settings.senderName,
-          address: this.settings.gmailEmail,
-        },
-        to: emailAddress(mail.to),
-        messageId: id,
-        envelope: {
-          from: this.settings.gmailEmail,
-          to: [emailAddress(mail.to)],
-        },
-      });
-      if (result.rejected?.length || !result.accepted?.length) {
-        throw Object.assign(new Error("Destinatario rechazado"), {
-          code: "EENVELOPE",
-        });
-      }
-      return id;
-    } finally {
-      transport.close();
+    await this.checkConfiguration();
+    const response = await this.fetcher("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.settings.resendApiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": await idempotencyKey(this.settings, eventKey),
+      },
+      body: JSON.stringify({
+        from: `${this.settings.senderName} <${
+          emailAddress(this.settings.emailFrom)
+        }>`,
+        to: [emailAddress(mail.to)],
+        subject: mail.subject,
+        html: mail.html,
+        text: mail.text,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      const messages: Record<number, string> = {
+        401: "Resend rechazó la clave. Revisa RESEND_API_KEY.",
+        403:
+          "Resend rechazó el envío. Revisa el remitente y el destinatario permitido para pruebas.",
+        409:
+          "Resend detectó un conflicto de envío. Conserva el contenido y remitente del evento al reintentar.",
+        422:
+          "Resend rechazó los datos. Revisa EMAIL_FROM y el correo del cliente.",
+        429:
+          "Se alcanzó el límite de Resend; el correo queda pendiente de reintento.",
+      };
+      throw new ResendError(
+        messages[response.status] ??
+          "Resend no está disponible; se reintentará.",
+      );
     }
+    const result = await response.json();
+    if (typeof result?.id !== "string" || !result.id.trim()) {
+      throw new ResendError("Resend no confirmó el envío; se reintentará.");
+    }
+    return result.id;
   }
 }
