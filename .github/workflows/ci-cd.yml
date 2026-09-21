@@ -1,17 +1,30 @@
 name: CI/CD Pipeline GYM
 
+# Un único evento por merge, incluidos squash y rebase. Cerrar sin fusionar
+# no ejecuta los jobs. No se repiten las pruebas por push, tags o PR abiertos.
 on:
-  push:
-    branches: [ "main", "develop", "release/**", "hotfix/**" ]
-    tags: [ "v*" ]
   pull_request:
-    branches: [ "main", "develop", "release/**" ]
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: read
+
+# Cada PR conserva su ejecución; otro merge no cancela su despliegue.
+concurrency:
+  group: gym-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   schedule-emails-ci:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
@@ -20,123 +33,108 @@ jobs:
       - name: Pruebas de correo sin red ni credenciales
         run: deno test supabase/tests/
 
-  # -------------------------------------------
-  # PIPELINE DEL BACKEND (Python / FastAPI)
-  # -------------------------------------------
   backend-ci:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
-        working-directory: ./backend # Ubicación basada en tu repositorio
-
+        working-directory: backend
     steps:
-      - name: Descargar código fuente
-        uses: actions/checkout@v3
-
-      - name: Configurar Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
       - name: Instalar dependencias
-        run: |
-          python -m pip install --upgrade pip
-          # Instala desde tu archivo requirements.txt existente
-          pip install -r requirements.txt
-          pip install flake8 pytest
-
-      - name: Análisis de linter (Flake8)
-        run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-      - name: Pruebas unitarias
+        run: python -m pip install -r requirements.txt flake8 pytest
+      - name: Detectar errores de Python
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Pruebas del backend
         env:
-          # Clave exclusiva de pruebas, sin acceso a sesiones reales.
           AUTH_SECRET_KEY: ci-only-test-key-not-for-production-0123456789abcdef
-        run: pytest
+        run: python -m pytest tests/ -q
 
-      - name: Construcción de imagen Docker (Backend)
-        # Utiliza el backend/Dockerfile que ya tienes creado
-        run: docker build -t ac-silver-gym-backend:latest .
-
-  # -------------------------------------------
-  # PIPELINE DEL FRONTEND (Node.js / Vue)
-  # -------------------------------------------
   frontend-ci:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
-        working-directory: ./frontend # Ubicación basada en tu repositorio
-
+        working-directory: frontend
     steps:
-      - name: Descargar código fuente
-        uses: actions/checkout@v3
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          # Apunta a tu package-lock.json existente
-          cache-dependency-path: ./frontend/package-lock.json
-
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: Instalar dependencias
-        run: npm ci # Usa 'ci' en lugar de 'install' para instalaciones más limpias y exactas
-
-      - name: Análisis de linter (ESLint)
-        run: npm run lint --if-present
-
-      - name: Pruebas unitarias
+        run: npm ci
+      - name: Pruebas del frontend
         run: npm test
 
-      - name: Construcción de la aplicación
-        run: npm run build
-
-      - name: Construcción de imagen Docker (Frontend)
-        # Utiliza el frontend/Dockerfile que ya tienes creado
-        run: docker build -t ac-silver-gym-frontend:latest .
-
-  # -------------------------------------------
-  # PIPELINE DOCKER COMPLETO (Compose)
-  # -------------------------------------------
-  docker-compose-ci:
+  deploy-vercel:
+    needs: [backend-ci, frontend-ci, schedule-emails-ci]
     runs-on: ubuntu-latest
-    needs: [backend-ci, frontend-ci]
-
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - name: Descargar código fuente
-        uses: actions/checkout@v3
-
-      - name: Crear envs temporales para Docker Compose
-        env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Validar configuración de Vercel
         run: |
-          {
-            printf 'SUPABASE_URL=%s\n' "$SUPABASE_URL"
-            printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
-            printf 'BACKEND_HOST=0.0.0.0\n'
-            printf 'BACKEND_PORT=8000\n'
-            printf 'CORS_ORIGINS=http://localhost:5173,http://localhost:5174\n'
-          } > backend/.env
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Falta $name en GitHub Settings > Secrets and variables > Actions. Es una credencial de despliegue; las variables de la aplicación permanecen en Vercel."
+              exit 1
+            fi
+          done
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Vercel CLI
+        run: npm install --global vercel@latest
+      # Desde la raíz del repositorio; el proyecto Vercel usa Root Directory=frontend.
+      # pull recupera las variables VITE_ de Production antes de compilar.
+      - name: Cargar configuración y variables de producción
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Compilar frontend una sola vez
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - name: Desplegar el resultado sin recompilar
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
 
-          {
-            printf "VITE_APP_NAME=AC Silver's GYM\n"
-            printf 'VITE_GOOGLE_CLIENT_ID=\n'
-            printf 'VITE_AUTH_MODE=backend\n'
-            printf 'VITE_ENABLE_DEMO_LOGIN=true\n'
-            printf 'VITE_SUPPORT_EMAIL=soporte@acsilversgym.com\n'
-            printf 'VITE_SUPABASE_URL=%s\n' "$VITE_SUPABASE_URL"
-            printf 'VITE_SUPABASE_LANDING_BUCKET=imageneslandingpage\n'
-            printf 'VITE_SUPABASE_LANDING_FOLDER=landingpage\n'
-            printf 'VITE_SUPABASE_ANON_KEY=%s\n' "$VITE_SUPABASE_ANON_KEY"
-          } > .env
-
-      - name: Validar configuración Docker Compose
-        run: docker compose config --quiet
-
-      - name: Construir programa completo con Docker Compose
-        run: docker compose build
+  deploy-render:
+    needs: [backend-ci, frontend-ci, schedule-emails-ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      DEPLOY_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+    steps:
+      - name: Validar configuración de Render
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::Falta RENDER_DEPLOY_HOOK_URL en GitHub Settings > Secrets and variables > Actions. Copia el Deploy Hook del servicio; las variables de la aplicación permanecen en Render."
+            exit 1
+          fi
+      # Una sola petición, sin reintentos que puedan crear otro deploy.
+      # ref fija el commit probado aunque main avance durante las pruebas.
+      - name: Solicitar un despliegue del commit probado
+        run: |
+          curl --fail --silent --show-error --max-time 30 \
+            --request POST --get --data-urlencode "ref=$DEPLOY_SHA" \
+            --output /dev/null "$RENDER_DEPLOY_HOOK_URL"
+          echo "Render aceptó la solicitud. El resultado del despliegue se consulta en Render."
