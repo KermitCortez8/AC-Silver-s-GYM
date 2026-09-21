@@ -1,11 +1,11 @@
-# Entorno de integración para la Sprint Review: develop -> Render -> Supabase.
-# Los despliegues son manuales para mantener estable la demostración.
+# GitHub Actions solicita el despliegue del commit fusionado a main tras las pruebas.
+# Mantener el autodespliegue de Render apagado para no duplicarlo.
 services:
   - type: web
     name: ac-silvers-gym-api-review
     runtime: python
     plan: free
-    branch: develop
+    branch: main
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
