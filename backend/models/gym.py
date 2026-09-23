@@ -80,6 +80,7 @@ class MembresiaInput(BaseModel):
     estado: str = "Activa"
     id_cliente: int
     id_pm: int
+    id_promocion: int | None = None
 
 
 class RegistrarClienteMembresiaInput(BaseModel):
@@ -87,6 +88,7 @@ class RegistrarClienteMembresiaInput(BaseModel):
     id_pm: int
     fecha_inicio: str
     fecha_fin: str
+    id_promocion: int | None = None
 
 
 class RegistroPublicoClienteInput(BaseModel):

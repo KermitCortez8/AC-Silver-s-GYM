@@ -711,7 +711,7 @@ class SupabaseGymService(GymDomainService):
             "telefono": str(row.get("Telefono") or ""),
             "dni": str(row.get("DNI") or ""),
             "plan": str(row.get("Plan") or "MENSUAL").strip().upper(),
-            "promocion": "SIN PROMOCION",
+            "promocion": str(row.get("promocion") or "SIN PROMOCION"),
             "estado": self._bool_to_status(row.get("Estado")),
             "password_hash": str(row.get("password_hash") or row.get("Password_Hash") or ""),
             "google_sub": str(row.get("google_sub") or ""),
@@ -755,6 +755,7 @@ class SupabaseGymService(GymDomainService):
             "monto_pago": float(row.get("monto_pago", 0) or 0),
             "estado_pago": str(row.get("estado_pago") or default_payment_status),
             "metodo_pago": str(row.get("metodo_pago") or ""),
+            "id_promocion": int(row.get("id_promocion", 0) or 0) or None,
             "referencia_pago": str(row.get("referencia_pago") or ""),
             "fecha_pago": str(row.get("fecha_pago") or ""),
         }
@@ -771,6 +772,7 @@ class SupabaseGymService(GymDomainService):
             "monto_pago": float(row.get("monto_pago", 0) or 0) or None,
             "estado_pago": str(row.get("estado_pago") or "PENDIENTE"),
             "metodo_pago": str(row.get("metodo_pago") or ""),
+            "id_promocion": int(row.get("id_promocion", 0) or 0) or None,
             "referencia_pago": str(row.get("referencia_pago") or ""),
             "fecha_pago": self._date_or_none(row.get("fecha_pago")),
         }

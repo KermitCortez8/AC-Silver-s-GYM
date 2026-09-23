@@ -240,16 +240,17 @@ const normalizeBackendClientToMember = (client = {}) => ({
   phone: client.telefono || client.phone || '',
   role: 'user',
   plan: client.plan || '',
-  promocion: client.promocion || '',
+  promocion: client.promocion || 'SIN PROMOCION',
+  id_promocion: client.id_promocion || null,
   planId: '',
   id_membresia: client.id_membresia || null,
   membershipStatus: client.membership_status || client.estado || '',
-  membershipStart: client.membership_start || client.fecha_registro || client.joinedAt || '',
-  membershipEnd: client.membership_end || '',
-  paymentStatus: client.payment_status || '',
-  paymentReference: client.payment_reference || '',
+  membershipStart: client.membership_start || client.fecha_inicio || client.fecha_registro || client.joinedAt || '',
+  membershipEnd: client.membership_end || client.fecha_fin || '',
+  paymentStatus: client.payment_status || client.estado_pago || '',
+  paymentReference: client.payment_reference || client.referencia_pago || '',
   hasPassword: Boolean(client.has_password ?? client.hasPassword),
-  membershipPrice: 0,
+  membershipPrice: Number(client.monto_pago ?? 0),
   status: String(client.estado || (client.estado === false ? 'INACTIVO' : 'ACTIVO')).toUpperCase(),
   joinedAt: client.fecha_registro || client.joinedAt || '',
   attendanceRate: 0,
@@ -2528,13 +2529,47 @@ export const useGymStore = defineStore('gym', () => {
       dni: String(payload.dni || existingClient?.dni || '').trim(),
       password: String(payload.password || payload.contrasena || '').trim(),
       plan: String(payload.plan || existingClient?.plan || 'MENSUAL').trim() || 'MENSUAL',
-      promocion: String(payload.promocion || existingClient?.promocion || 'SIN PROMOCION').trim() || 'SIN PROMOCION',
+      // id_promocion NO va dentro del objeto cliente — va en la raíz del payload de registro
+      promocion: 'SIN PROMOCION',
       estado: String(payload.estado || existingClient?.status || 'ACTIVO').trim().toUpperCase() || 'ACTIVO',
     };
 
     if (apiBase) {
-      const saved = await upsertClienteToServer(clientPayload);
+      let saved;
+      const isNewClient = !payload.id_usuario;
+
+      if (isNewClient) {
+        // Clientes NUEVOS: siempre usar registro-cliente-membresia para crear cliente + membresía juntos
+        const planObj = planCatalog.value.find(p => p.name === clientPayload.plan) || planCatalog.value[0];
+        const numericPm = planObj ? Number(planObj.id_pm || planObj.id || 1) : 1;
+
+        const d = new Date();
+        const startDate = d.toISOString().split('T')[0];
+        const durationDays = clientPayload.plan === 'ANUAL' ? 365 : (clientPayload.plan === '3 MESES' ? 90 : 30);
+        d.setDate(d.getDate() + durationDays);
+        const endDate = d.toISOString().split('T')[0];
+
+        const promoId = Number(payload.id_promocion) > 0 ? Number(payload.id_promocion) : null;
+        const regPayload = {
+          cliente: clientPayload,
+          id_pm: numericPm,
+          fecha_inicio: startDate,
+          fecha_fin: endDate,
+          id_promocion: promoId,
+        };
+        const res = await registerClienteMembresiaToServer(regPayload);
+        saved = { ...res.cliente, ...res.membresia };
+      } else {
+        // EDICIÓN: solo actualizar datos del cliente
+        saved = await upsertClienteToServer(clientPayload);
+      }
+
+      // Resolver nombre real de la promoción usando el catálogo local
       const numericId = Number(saved.id_cliente || 0) || Number(String(saved.id_usuario || '').replace(/^SGCLI/i, '')) || Number(existingClient?.id_cliente || 0) || Date.now();
+      const savedPromoId = saved.id_promocion || (payload.id_promocion && Number(payload.id_promocion) > 0 ? Number(payload.id_promocion) : null);
+      const promoObj = savedPromoId ? promotions.value.find(p => Number(p.id_promocion) === Number(savedPromoId)) : null;
+      const promoName = promoObj ? (promoObj.name || promoObj.nombre || `promo-${savedPromoId}`) : 'SIN PROMOCION';
+
       const normalized = {
         id: saved.id_usuario || `SGCLI${String(numericId).padStart(3, '0')}`,
         id_cliente: numericId,
@@ -2545,15 +2580,17 @@ export const useGymStore = defineStore('gym', () => {
         phone: saved.telefono || clientPayload.telefono,
         role: 'user',
         plan: saved.plan || clientPayload.plan,
+        promocion: promoName,
+        id_promocion: savedPromoId,
         planId: '',
         id_membresia: saved.id_membresia || existingClient?.id_membresia || null,
-        membershipStatus: saved.membership_status || existingClient?.membershipStatus || saved.estado || clientPayload.estado,
-        membershipStart: saved.membership_start || existingClient?.membershipStart || '',
-        membershipEnd: saved.membership_end || existingClient?.membershipEnd || '',
-        paymentStatus: saved.payment_status || existingClient?.paymentStatus || '',
-        paymentReference: saved.payment_reference || existingClient?.paymentReference || '',
+        membershipStatus: saved.membership_status || saved.estado || existingClient?.membershipStatus || clientPayload.estado,
+        membershipStart: saved.membership_start || saved.fecha_inicio || existingClient?.membershipStart || '',
+        membershipEnd: saved.membership_end || saved.fecha_fin || existingClient?.membershipEnd || '',
+        paymentStatus: saved.payment_status || saved.estado_pago || existingClient?.paymentStatus || '',
+        paymentReference: saved.payment_reference || saved.referencia_pago || existingClient?.paymentReference || '',
         hasPassword: Boolean(saved.has_password ?? saved.hasPassword ?? existingClient?.hasPassword),
-        membershipPrice: Number(existingClient?.membershipPrice ?? 0),
+        membershipPrice: Number(saved.monto_pago ?? existingClient?.membershipPrice ?? 0),
         status: saved.estado || clientPayload.estado,
         joinedAt: existingClient?.joinedAt || '',
         attendanceRate: Number(existingClient?.attendanceRate ?? 0),
@@ -2561,6 +2598,7 @@ export const useGymStore = defineStore('gym', () => {
         changeHistory: Array.isArray(existingClient?.changeHistory) ? existingClient.changeHistory : [],
         schedules: Array.isArray(existingClient?.schedules) ? existingClient.schedules : [],
       };
+
 
       const index = members.value.findIndex((entry) => String(entry.id) === String(normalized.id));
       if (index >= 0) {
@@ -2718,6 +2756,32 @@ export const useGymStore = defineStore('gym', () => {
       payment_reference: membership.referencia_pago,
     });
     return { ...client, notification: saved.notification || null };
+  };
+
+  /**
+   * Gestiona el pago manual en efectivo.
+   */
+  const confirmarPagoEfectivo = async (idCliente) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const res = await fetch(`${apiBase}/clientes/${idCliente}/confirmar-pago-manual`, {
+      method: 'POST',
+      headers: _authHeaders(),
+    });
+    if (!res.ok) throw new Error(await readBackendError(res, 'No se pudo confirmar el pago manual'));
+
+    const data = await res.json();
+    const saved = data.data;
+    const membership = saved.membresia || {};
+    const client = mergeClient({
+      ...(saved.cliente || {}),
+      id_membresia: membership.id_membresia,
+      membership_status: membership.estado,
+      membership_start: membership.fecha_inicio,
+      membership_end: membership.fecha_fin,
+      payment_status: membership.estado_pago,
+      payment_reference: membership.referencia_pago,
+    });
+    return client;
   };
 
   /**
@@ -2986,5 +3050,6 @@ export const useGymStore = defineStore('gym', () => {
     upsertUserToServer,
     deleteUserFromServer,
     registrarMovimientoToServer,
+    confirmarPagoEfectivo,
   };
 });

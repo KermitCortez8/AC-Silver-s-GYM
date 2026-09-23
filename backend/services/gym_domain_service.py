@@ -562,14 +562,16 @@ class GymDomainService:
                     "telefono": row["telefono"],
                     "dni": row["dni"],
                     "plan": row["plan"],
-                    "promocion": row["promocion"],
+                    "promocion": f"promo-{membership.get('id_promocion')}" if membership.get("id_promocion") else row.get("promocion", "SIN PROMOCION"),
                     "estado": row["estado"],
                     "id_membresia": membership.get("id_membresia"),
+                    "id_promocion": membership.get("id_promocion"),
                     "membership_status": membership.get("estado") or row["estado"],
                     "membership_start": membership.get("fecha_inicio", ""),
                     "membership_end": membership.get("fecha_fin", ""),
                     "payment_status": membership.get("estado_pago", ""),
                     "payment_reference": membership.get("referencia_pago", ""),
+                    "monto_pago": membership.get("monto_pago"),
                     "has_password": bool(row.get("password_hash")),
                 }
             )
@@ -814,6 +816,39 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    def _apply_promocion_discount(self, state: dict[str, Any], id_pm: int, id_promocion: int | None) -> float:
+        plan = next((p for p in state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == int(id_pm)), None)
+        if not plan:
+            return 0.0
+        
+        precio_base = float(plan.get("precio", 0) or 0)
+        
+        if not id_promocion:
+            return precio_base
+
+        promocion = next((p for p in state.get("promociones", []) if int(p.get("id_promocion", 0)) == int(id_promocion)), None)
+        if not promocion:
+            return precio_base
+            
+        if not promocion.get("activo", True):
+            return precio_base
+            
+        fecha_fin = str(promocion.get("fecha_fin") or "")
+        if fecha_fin and fecha_fin < _today_iso():
+            return precio_base
+            
+        planes_aplicables = promocion.get("planes_aplicables") or []
+        if planes_aplicables and int(id_pm) not in planes_aplicables:
+            return precio_base
+            
+        valor = float(promocion.get("valor_descuento") or 0)
+        tipo = str(promocion.get("tipo_descuento") or "porcentaje").strip().lower()
+        
+        if tipo == "monto":
+            return max(0.0, precio_base - valor)
+        else:
+            return max(0.0, precio_base - (precio_base * valor / 100))
+
     # Procesa esta operación.
     def membresias(self) -> list[dict[str, Any]]:
         return self.state["membresia"]
@@ -834,6 +869,7 @@ class GymDomainService:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
+            id_promocion = item.get("id_promocion")
             item_id = item.get("id_membresia")
             if item_id is None:
                 item_id = self._next_int_id("membresia", "id_membresia")
@@ -843,6 +879,11 @@ class GymDomainService:
             item["fecha_inicio"] = _safe_date(item.get("fecha_inicio", ""))
             item["fecha_fin"] = _safe_date(item.get("fecha_fin", ""))
             item["estado"] = item.get("estado", "Activa")
+            item["monto_pago"] = self._apply_promocion_discount(state, id_pm, id_promocion)
+            item["estado_pago"] = "PENDIENTE"
+            item["metodo_pago"] = "stripe"
+            item["referencia_pago"] = ""
+            
             idx = next((i for i, row in enumerate(state["membresia"]) if int(row.get("id_membresia", 0)) == int(item_id)), -1)
             if idx >= 0:
                 state["membresia"][idx] = item
@@ -853,13 +894,37 @@ class GymDomainService:
         return self._mutate(_fn)
 
     # Procesa esta operación.
+    def _calcular_monto_con_descuento(self, id_pm: int, id_promocion: int | None) -> float:
+        """Calcula el monto a pagar aplicando el descuento de la promoción al precio base del plan."""
+        plan = next(
+            (p for p in self.state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == id_pm),
+            None,
+        )
+        precio_base = float(plan.get("precio", 0) if plan else 0)
+        if not id_promocion:
+            return precio_base
+        promo = next(
+            (p for p in self.state.get("promociones", []) if int(p.get("id_promocion", 0)) == int(id_promocion)),
+            None,
+        )
+        if not promo:
+            return precio_base
+        tipo = str(promo.get("tipo_descuento") or "porcentaje")
+        valor = float(promo.get("valor_descuento") or 0)
+        if tipo == "porcentaje":
+            return round(precio_base * (1 - valor / 100), 2)
+        return max(0.0, round(precio_base - valor, 2))
+
+    # Procesa esta operación.
     def registrar_cliente_con_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         cliente_payload = payload["cliente"]
         id_pm = int(payload["id_pm"])
         fecha_inicio = payload["fecha_inicio"]
         fecha_fin = payload["fecha_fin"]
+        id_promocion = int(payload.get("id_promocion") or 0) or None
 
         cliente = self.upsert_cliente(cliente_payload)
+        monto_pago = self._calcular_monto_con_descuento(id_pm, id_promocion)
         membresia = self.crear_membresia(
             {
                 "id_cliente": int(cliente["id_cliente"]),
@@ -867,6 +932,9 @@ class GymDomainService:
                 "fecha_inicio": fecha_inicio,
                 "fecha_fin": fecha_fin,
                 "estado": "Activa",
+                "id_promocion": id_promocion,
+                "monto_pago": monto_pago,
+                "estado_pago": "PENDIENTE",
             }
         )
         return {"cliente": cliente, "membresia": membresia}
@@ -998,6 +1066,34 @@ class GymDomainService:
             membresia["metodo_pago"] = str(payload.get("metodo_pago") or membresia.get("metodo_pago") or "pasarela")
             membresia["referencia_pago"] = payment_reference
             membresia["monto_pago"] = expected_amount
+            membresia["fecha_pago"] = _today_iso()
+            return {"cliente": cliente, "membresia": membresia}
+
+        return self._mutate(_fn)
+
+    # Procesa esta operación de pago manual
+    def confirmar_pago_manual_cliente(self, id_cliente: int) -> dict[str, Any]:
+        id_cliente = int(id_cliente)
+
+        def _fn(state: dict[str, Any]):
+            cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            
+            membresia = self._latest_membership_for_cliente(state, id_cliente)
+            if not membresia:
+                raise ValueError("Membresia no encontrada")
+                
+            current_payment_status = str(membresia.get("estado_pago") or "").strip().upper()
+            if current_payment_status == "PAGADO":
+                raise ValueError("La membresía ya tiene un pago confirmado")
+
+            if str(cliente.get("estado") or "").strip().upper() not in {"ACTIVO", "ACTIVA"}:
+                cliente["estado"] = "EN_TRAMITE"
+            membresia["estado"] = "EN_TRAMITE"
+            membresia["estado_pago"] = "PAGADO"
+            membresia["metodo_pago"] = "efectivo"
+            membresia["referencia_pago"] = f"MANUAL-{id_cliente}-{_today_iso().replace('-', '')}"
             membresia["fecha_pago"] = _today_iso()
             return {"cliente": cliente, "membresia": membresia}
 

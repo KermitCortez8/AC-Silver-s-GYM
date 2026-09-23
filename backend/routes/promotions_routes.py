@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import get_gym_service, require_admin_or_staff
+from dependencies import get_gym_service, require_admin_or_staff, require_roles
 from models.gym import PromocionInput
 from services.gym_domain_service import GymDomainService
 
@@ -24,7 +24,7 @@ def list_promociones(gym_service: GymDomainService = Depends(get_gym_service)):
 def upsert_promocion(
     payload: PromocionInput,
     gym_service: GymDomainService = Depends(get_gym_service),
-    _current_user=Depends(require_admin_or_staff),
+    _current_user=Depends(require_roles("admin")),
 ):
     try:
         return gym_service.upsert_promocion(payload.model_dump())
@@ -38,7 +38,7 @@ def update_promocion(
     id_promocion: int,
     payload: PromocionInput,
     gym_service: GymDomainService = Depends(get_gym_service),
-    _current_user=Depends(require_admin_or_staff),
+    _current_user=Depends(require_roles("admin")),
 ):
     data = payload.model_dump()
     data["id_promocion"] = id_promocion
@@ -53,7 +53,7 @@ def update_promocion(
 def delete_promocion(
     id_promocion: int,
     gym_service: GymDomainService = Depends(get_gym_service),
-    _current_user=Depends(require_admin_or_staff),
+    _current_user=Depends(require_roles("admin")),
 ):
     try:
         gym_service.delete_promocion(id_promocion)

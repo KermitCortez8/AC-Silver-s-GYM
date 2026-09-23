@@ -308,21 +308,27 @@
               <span class="text-sm text-slate-300">Promocion</span>
 
               <select
-                v-model="form.promocion"
+                v-model="form.id_promocion"
                 class="field-input"
               >
-                <option value="SIN PROMOCION">
+                <option :value="0">
                   SIN PROMOCION
                 </option>
 
                 <option
                   v-for="p in gymStore.promotions"
                   :key="p.id"
-                  :value="p.name"
+                  :value="p.id_promocion"
                 >
                   {{ p.name }}
                 </option>
               </select>
+              <p class="text-xs text-slate-400">
+                Precio estimado: S/. {{ estimatedCharge.finalPrice }}
+                <span v-if="estimatedCharge.discountAmount > 0" class="text-fuchsia-300">
+                  (descuento: S/. {{ estimatedCharge.discountAmount }})
+                </span>
+              </p>
             </label>
 
             <label class="space-y-2 sm:col-span-2">
@@ -428,6 +434,12 @@
                 {{ displayMembershipStatus(viewingClient) }}
               </span>
             </p>
+            
+            <p v-if="viewingClient.monto_pago !== undefined && getPlanPrice(viewingClient.plan) > viewingClient.monto_pago" class="text-xs text-fuchsia-300 mt-1">
+              Precio base: S/. {{ getPlanPrice(viewingClient.plan) }} — 
+              Pagado: S/. {{ viewingClient.monto_pago }} — 
+              Ahorro: S/. {{ getPlanPrice(viewingClient.plan) - viewingClient.monto_pago }}
+            </p>
 
             <p class="text-sm text-slate-400">
               Vigencia:
@@ -452,6 +464,23 @@
                 }}
               </span>
             </p>
+          </div>
+          
+          <div class="mt-6 flex flex-col gap-3">
+            <button
+              v-if="viewingClient.paymentStatus === 'PENDIENTE'"
+              class="w-full rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 font-bold text-amber-300 transition hover:bg-amber-400/20"
+              @click="markAsPaidManual(viewingClient)"
+            >
+              💰 Confirmar Pago (Manual/Efectivo)
+            </button>
+            <button
+              v-if="viewingClient.paymentStatus === 'PAGADO' && viewingClient.status !== 'ACTIVO'"
+              class="w-full rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 font-bold text-emerald-300 transition hover:bg-emerald-400/20"
+              @click="activateMembership(viewingClient)"
+            >
+              Activar Membresía
+            </button>
           </div>
         </div>
       </div>
@@ -541,7 +570,7 @@ const form = reactive({
   dni: '',
   password: '',
   plan: 'MENSUAL',
-  promocion: 'SIN PROMOCION',
+  id_promocion: 0,
   estado: 'EN_TRAMITE',
 });
 
@@ -598,6 +627,21 @@ const statusClass = (value) => {
 
   return 'font-semibold text-slate-300';
 };
+
+const getPlanPrice = (planName) => {
+  const plan = gymStore.planCatalog.find((p) => p.name === planName);
+  return plan ? Number(plan.price || 0) : 0;
+};
+
+const estimatedCharge = computed(() => {
+  try {
+    const plan = gymStore.planCatalog.find((p) => p.name === form.plan) || gymStore.planCatalog[0];
+    if (!plan) return { finalPrice: 0, discountAmount: 0 };
+    return gymStore.calculatePlanCharge(plan.id, form.id_promocion ? `promo-${form.id_promocion}` : '');
+  } catch (e) {
+    return { finalPrice: 0, discountAmount: 0 };
+  }
+});
 
 const filteredClients = computed(() => {
   const query = search.value
@@ -669,7 +713,7 @@ const resetForm = () => {
   form.dni = '';
   form.password = '';
   form.plan = 'MENSUAL';
-  form.promocion = 'SIN PROMOCION';
+  form.id_promocion = 0;
   form.estado = 'EN_TRAMITE';
 };
 
@@ -702,9 +746,7 @@ const editClient = (client) => {
   form.dni = client.dni || '';
   form.password = '';
   form.plan = client.plan || 'MENSUAL';
-  form.promocion =
-    client.promocion ||
-    'SIN PROMOCION';
+  form.id_promocion = 0;
   form.estado =
     client.status ||
     'ACTIVO';
@@ -763,6 +805,28 @@ const confirmDelete = async (client) => {
       error instanceof Error
         ? error.message
         : 'No se pudo eliminar el cliente.';
+  }
+};
+
+/**
+ * Marca la membresía como pagada en efectivo manualmente.
+ */
+const markAsPaidManual = async (client) => {
+  if (!client || !window.confirm(`¿Confirmas que recibiste el pago en efectivo para la membresía de ${client.name}?`)) return;
+  const idCliente = client.id_cliente || Number(String(client.id || '').replace(/^SGCLI/i, ''));
+  
+  if (!idCliente) return;
+
+  try {
+    const saved = await gymStore.confirmarPagoEfectivo(idCliente);
+    if (viewingClient.value && viewingClient.value.id === saved.id) {
+      viewingClient.value = { ...saved };
+    }
+    feedbackTone.value = 'success';
+    feedbackMessage.value = `Pago de ${saved.id} confirmado correctamente. Ya puedes activar la membresía.`;
+  } catch (error) {
+    feedbackTone.value = 'error';
+    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo registrar el pago.';
   }
 };
 
@@ -848,8 +912,8 @@ const handleSubmit = async () => {
         plan:
           form.plan,
 
-        promocion:
-          form.promocion,
+        id_promocion:
+          form.id_promocion || undefined,
 
         estado:
           form.estado,

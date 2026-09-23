@@ -13,6 +13,34 @@
 
     <p v-if="feedback" class="rounded-2xl border px-4 py-3 text-sm" :class="feedbackClass">{{ feedback }}</p>
 
+    <!-- KPIs Section -->
+    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Reglas comerciales vigentes</p>
+        <p class="mt-2 text-3xl font-black text-white">{{ activePromotionsCount }}</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Ahorrado a clientes este mes</p>
+        <p class="mt-2 text-3xl font-black text-fuchsia-300">S/. {{ totalAhorrado.toFixed(2) }}</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Ventas con cupón o promo</p>
+        <p class="mt-2 text-3xl font-black text-cyan-300">{{ porcentajeVentasConPromo.toFixed(1) }}%</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Ticket medio con descuento</p>
+        <p class="mt-2 text-3xl font-black text-emerald-300">S/. {{ ticketMedioConDescuento.toFixed(2) }}</p>
+      </div>
+    </section>
+
+    <!-- Chart Section -->
+    <section class="rounded-2xl border border-white/10 bg-slate-950/70 p-6">
+      <h2 class="text-lg font-bold text-white mb-4">Impacto en Caja Semanal</h2>
+      <div class="h-64 w-full">
+        <Bar :data="chartData" :options="chartOptions" />
+      </div>
+    </section>
+
     <section class="grid gap-5 xl:grid-cols-[1fr_440px]">
       <div class="grid gap-4 lg:grid-cols-2">
         <article v-for="promo in promotions" :key="promo.id" class="rounded-2xl border border-white/10 bg-slate-950/70 p-5">
@@ -65,7 +93,7 @@
             Promocion activa
           </label>
         </div>
-        <button class="mt-5 w-full rounded-2xl bg-fuchsia-400 px-4 py-3 font-black text-slate-950">Guardar promocion</button>
+        <button class="mt-5 w-full rounded-2xl bg-fuchsia-400 px-4 py-3 font-black text-slate-950">Guardar y Activar Regla</button>
       </form>
     </section>
   </div>
@@ -74,6 +102,18 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useGymStore } from '../stores/gymStore';
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+} from 'chart.js';
+import { Bar } from 'vue-chartjs';
+
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 const gymStore = useGymStore();
 const feedback = ref('');
@@ -82,6 +122,76 @@ const plans = computed(() => gymStore.planCatalog);
 const promotions = computed(() => gymStore.promotions);
 const feedbackClass = computed(() => feedbackTone.value === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
 const form = reactive({ id_promocion: null, name: '', description: '', discountType: 'percent', discountValue: 10, startsAt: '', validUntil: '', appliesTo: [], active: true });
+
+const activePromotionsCount = computed(() => promotions.value.filter(p => p.active).length);
+
+const activeClients = computed(() => gymStore.members.filter(m => m.status === 'ACTIVO' && m.membershipPrice > 0));
+
+const totalAhorrado = computed(() => {
+  return activeClients.value.reduce((acc, client) => {
+    const plan = plans.value.find(p => p.name === client.plan);
+    if (plan && client.membershipPrice < plan.price) {
+      return acc + (plan.price - client.membershipPrice);
+    }
+    return acc;
+  }, 0);
+});
+
+const porcentajeVentasConPromo = computed(() => {
+  if (activeClients.value.length === 0) return 0;
+  const withPromo = activeClients.value.filter(client => {
+    const plan = plans.value.find(p => p.name === client.plan);
+    return plan && client.membershipPrice < plan.price;
+  });
+  return (withPromo.length / activeClients.value.length) * 100;
+});
+
+const ticketMedioConDescuento = computed(() => {
+  const withPromo = activeClients.value.filter(client => {
+    const plan = plans.value.find(p => p.name === client.plan);
+    return plan && client.membershipPrice < plan.price;
+  });
+  if (withPromo.length === 0) return 0;
+  const totalPagado = withPromo.reduce((acc, client) => acc + client.membershipPrice, 0);
+  return totalPagado / withPromo.length;
+});
+
+const chartData = computed(() => {
+  // Datos calculados dinámicamente para el gráfico
+  const withPromo = activeClients.value.filter(client => {
+    const plan = plans.value.find(p => p.name === client.plan);
+    return plan && client.membershipPrice < plan.price;
+  });
+  const totalNeto = withPromo.reduce((acc, client) => acc + client.membershipPrice, 0);
+  
+  return {
+    labels: ['Actual'],
+    datasets: [
+      {
+        label: 'Ingreso Neto Caja Promo (S/.)',
+        backgroundColor: '#22d3ee',
+        data: [totalNeto]
+      },
+      {
+        label: 'Descuento Otorgado (S/.)',
+        backgroundColor: '#e879f9',
+        data: [totalAhorrado.value]
+      }
+    ]
+  };
+});
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: '#cbd5e1' } }
+  },
+  scales: {
+    x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+  }
+};
 
 /**
  * Gestiona esta acción de la vista.
@@ -117,7 +227,7 @@ const save = async () => {
 const remove = async (promo) => {
   if (!window.confirm(`Eliminar la promocion ${promo.name}?`)) return;
   try {
-    await gymStore.deletePromotion(promo.id);
+    await gymStore.deletePromotion(promo.id_promocion);
     feedbackTone.value = 'success';
     feedback.value = 'Promocion eliminada.';
   } catch (error) {
