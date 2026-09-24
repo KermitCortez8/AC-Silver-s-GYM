@@ -6,12 +6,7 @@
           Silver Gym Surco
         </router-link>
 
-        <nav class="hidden items-center gap-6 text-sm font-bold uppercase tracking-[0.04em] text-slate-700 lg:flex">
-          <a href="#servicios" class="transition hover:text-orange-600">Servicios</a>
-          <router-link to="/nosotros" class="transition hover:text-orange-600">Nosotros</router-link>
-          <a href="#membresias" class="transition hover:text-orange-600">Membresias</a>
-          <a href="#ubicacion" class="transition hover:text-orange-600">Ubicacion</a>
-        </nav>
+        <LandingNavigation />
 
         <div class="flex items-center gap-2">
           <router-link to="/registro" class="btn-cta rounded-full bg-orange-500 px-4 py-2 text-sm text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600">
@@ -387,6 +382,7 @@
 </template>
 
 <script setup>
+import LandingNavigation from '../components/LandingNavigation.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { serviceImages } from '../config/serviceImages';
