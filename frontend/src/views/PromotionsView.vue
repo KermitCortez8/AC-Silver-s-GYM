@@ -28,7 +28,7 @@
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
         <div class="flex justify-between items-start">
           <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Descuentos Aplicados</p>
-          <i class="fa-solid fa-dollar-sign text-purple-400 bg-purple-400/10 p-2 rounded-full text-xs px-3"></i>
+          <i class="fa-solid fa-dollar-sign text-amber-500 bg-amber-400/10 p-2 rounded-full text-xs px-3"></i>
         </div>
         <p class="mt-4 text-4xl font-black text-white">S/. {{ totalAhorrado.toFixed(2) }}</p>
         <p class="mt-2 text-xs text-slate-400">Ahorrados a clientes este mes</p>
@@ -76,7 +76,7 @@
           <tbody class="divide-y divide-white/5">
             <tr v-for="promo in promotions" :key="promo.id" class="transition hover:bg-white/5">
               <td class="px-6 py-4">
-                <span class="rounded-full bg-fuchsia-400/10 px-2.5 py-1 text-xs font-bold text-fuchsia-300">
+                <span class="rounded-full bg-rose-400/10 px-2.5 py-1 text-xs font-bold text-rose-400">
                   #{{ promo.id_promocion }}
                 </span>
               </td>
@@ -119,8 +119,8 @@
 
     <!-- Modal Form -->
     <Teleport to="body">
-      <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity">
-        <form class="w-full max-w-5xl rounded-3xl border border-white/10 bg-[#0f111a] p-0 shadow-2xl overflow-y-auto max-h-[90vh]" @submit.prevent="save">
+      <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-opacity">
+        <form class="w-full max-w-5xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto max-h-[90vh]" @submit.prevent="save">
           <!-- Top gradient border -->
           <div class="h-1 w-full bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 rounded-t-3xl"></div>
           
@@ -145,18 +145,18 @@
               <div class="space-y-6">
                 <div>
                   <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-solid fa-wand-magic-sparkles text-rose-400"></i> NOMBRE DE LA PROMOCIÓN</label>
-                  <input v-model="form.name" class="w-full rounded-xl border border-white/5 bg-[#161925] px-4 py-3 text-white placeholder-slate-500 focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-400 transition" placeholder="Ej. Promo Verano" />
+                  <input v-model="form.name" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Ej. Promo Verano" />
                 </div>
                 
                 <div>
                   <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-regular fa-file-lines text-slate-400"></i> DESCRIPCIÓN INTERNA <span class="text-slate-500 lowercase normal-case">(opcional)</span></label>
-                  <textarea v-model="form.description" rows="2" class="w-full rounded-xl border border-white/5 bg-[#161925] px-4 py-3 text-white placeholder-slate-500 focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-400 transition" placeholder="Detalle o notas internas del descuento..."></textarea>
+                  <textarea v-model="form.description" rows="2" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Detalle o notas internas del descuento..."></textarea>
                 </div>
                 
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-solid fa-chart-pie text-slate-400"></i> TIPO</label>
-                    <select v-model="form.discountType" class="w-full rounded-xl border border-white/5 bg-[#161925] px-4 py-3 text-white focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-400 transition">
+                    <select v-model="form.discountType" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition">
                       <option value="percent">Porcentaje (%)</option>
                       <option value="fixed">Monto fijo (S/.)</option>
                     </select>
@@ -164,7 +164,7 @@
                   <div>
                     <label class="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-widest mb-2"><i class="fa-regular fa-square-check"></i> VALOR</label>
                     <div class="relative">
-                      <input v-model.number="form.discountValue" type="number" min="0" step="0.01" class="w-full rounded-xl border border-white/5 bg-[#161925] px-4 py-3 text-white focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-400 transition pr-10" placeholder="0.00" />
+                      <input v-model.number="form.discountValue" type="number" min="0" step="0.01" class="field-input pr-10 focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="0.00" />
                       <span class="absolute right-4 top-3.5 text-slate-400 font-bold text-sm">{{ form.discountType === 'percent' ? '%' : 'S/.' }}</span>
                     </div>
                   </div>
@@ -173,18 +173,18 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-regular fa-calendar text-slate-400"></i> INICIO <span class="text-slate-500 lowercase normal-case">(opcional)</span></label>
-                    <input v-model="form.startsAt" type="date" class="w-full rounded-xl border border-white/5 bg-[#161925] px-4 py-3 text-white focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-400 transition" />
+                    <input v-model="form.startsAt" type="date" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" />
                   </div>
                   <div>
                     <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-regular fa-calendar text-slate-400"></i> FIN <span class="text-slate-500 lowercase normal-case">(opcional)</span></label>
-                    <input v-model="form.validUntil" type="date" class="w-full rounded-xl border border-white/5 bg-[#161925] px-4 py-3 text-white focus:border-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-400 transition" />
+                    <input v-model="form.validUntil" type="date" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" />
                   </div>
                 </div>
               </div>
               
               <!-- Right Column -->
               <div class="space-y-6">
-                <div class="rounded-3xl border border-white/5 bg-[#161925]/50 p-6">
+                <div class="rounded-3xl border border-white/10 bg-slate-900/45 p-6">
                   <div class="flex items-center justify-between mb-4">
                     <label class="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-widest"><i class="fa-regular fa-credit-card"></i> PLANES APLICABLES</label>
                     <span class="text-xs text-slate-500">Selecciona al menos uno</span>
@@ -204,7 +204,7 @@
                   </div>
                 </div>
                 
-                <label class="flex items-center justify-between rounded-3xl border border-white/5 bg-[#161925]/50 p-6 cursor-pointer hover:bg-white/5 transition-colors">
+                <label class="flex items-center justify-between rounded-3xl border border-white/10 bg-slate-900/45 p-6 cursor-pointer hover:bg-white/10 transition-colors">
                   <div class="flex items-center gap-4">
                     <div class="h-2 w-2 rounded-full" :class="form.active ? 'bg-emerald-400' : 'bg-slate-500'"></div>
                     <div>
@@ -237,6 +237,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useGymStore } from '../stores/gymStore';
+import { useTheme } from '../composables/useTheme';
 import {
   Chart as ChartJS,
   Title,
@@ -361,17 +362,19 @@ const chartData = computed(() => {
   };
 });
 
-const chartOptions = {
+const { isDarkTheme } = useTheme();
+
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: { labels: { color: '#cbd5e1' } }
+    legend: { labels: { color: isDarkTheme.value ? '#cbd5e1' : '#525252' } }
   },
   scales: {
-    x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+    x: { ticks: { color: isDarkTheme.value ? '#94a3b8' : '#737373' }, grid: { color: isDarkTheme.value ? 'rgba(255,255,255,0.1)' : 'rgba(23,23,23,0.1)' } },
+    y: { ticks: { color: isDarkTheme.value ? '#94a3b8' : '#737373' }, grid: { color: isDarkTheme.value ? 'rgba(255,255,255,0.1)' : 'rgba(23,23,23,0.1)' } }
   }
-};
+}));
 
 /**
  * Gestiona esta acción de la vista.

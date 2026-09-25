@@ -520,6 +520,10 @@ video {
   color: var(--app-text) !important;
 }
 
+[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="bg-slate-900/45"] {
+  background-color: var(--app-surface) !important;
+}
+
 [data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="text-slate-300"] {
   color: var(--app-text-soft) !important;
 }
