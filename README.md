@@ -1,6 +1,6 @@
 # AC Silver's GYM
 
-Aplicacion web para la ggestion de un gimnasio. El proyecto esta dividido en un
+Aplicacion-web para la ggestion de un gimnasio. El proyecto esta dividido en un
 frontend Vue/Vite y un backend FastAPI que se conecta a Supabase para consultar
 y guardar la informacion del sistema.
 
