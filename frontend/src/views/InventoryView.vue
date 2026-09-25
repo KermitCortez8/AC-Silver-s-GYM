@@ -8,13 +8,29 @@
           <p class="mt-2 text-slate-300">Controla stock, ubicacion, estado operativo y observaciones de cada recurso del gimnasio.</p>
         </div>
 
-        <button class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300" @click="openNewItem">
+        <button v-if="activeTab === 'articulos'" class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300" @click="openNewItem">
           Ingresar Nuevo Articulo
         </button>
       </div>
+
+      <nav class="mt-5 flex gap-2 border-t border-white/10 pt-5" aria-label="Secciones de inventario">
+        <button
+          v-for="tab in tabs"
+          :key="tab.value"
+          type="button"
+          class="rounded-xl px-4 py-2 text-sm font-bold transition"
+          :class="activeTab === tab.value ? 'bg-amber-400 text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/5'"
+          :aria-current="activeTab === tab.value ? 'page' : undefined"
+          @click="activeTab = tab.value"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
     </section>
 
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <InventoryMovementsPanel v-if="activeTab === 'movimientos'" />
+
+    <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
@@ -180,9 +196,21 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import { useGymStore } from '../stores/gymStore';
 
+const route = useRoute();
+const router = useRouter();
 const gymStore = useGymStore();
+const tabs = [
+  { value: 'articulos', label: 'Articulos' },
+  { value: 'movimientos', label: 'Movimientos' },
+];
+const activeTab = computed({
+  get: () => (route.query.tab === 'movimientos' ? 'movimientos' : 'articulos'),
+  set: (tab) => router.replace({ query: { ...route.query, tab } }),
+});
 const inventory = computed(() => gymStore.inventory);
 const lowStock = computed(() => gymStore.lowStockInventory);
 const maintenanceItems = computed(() => inventory.value.filter((item) => item.status === 'En mantenimiento').length);

@@ -11,16 +11,32 @@
         </div>
 
         <button
-          v-if="isAdmin"
+          v-if="isAdmin && activeTab === 'productos'"
           class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300"
           @click="openNewProducto"
         >
           Ingresar Nuevo Articulo
         </button>
       </div>
+
+      <nav v-if="isAdmin" class="mt-5 flex gap-2 border-t border-white/10 pt-5" aria-label="Secciones de tienda">
+        <button
+          v-for="tab in tabs"
+          :key="tab.value"
+          type="button"
+          class="rounded-xl px-4 py-2 text-sm font-bold transition"
+          :class="activeTab === tab.value ? 'bg-amber-400 text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/5'"
+          :aria-current="activeTab === tab.value ? 'page' : undefined"
+          @click="activeTab = tab.value"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
     </section>
 
-    <section v-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <StoreMovementsPanel v-if="isAdmin && activeTab === 'movimientos'" />
+
+    <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Catalogo</p>
@@ -384,6 +400,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import StoreMovementsPanel from '../components/store/StoreMovementsPanel.vue';
 import { useGymStore } from '../stores/gymStore';
 import { uploadStoreImage, listStoreImages } from '../services/storeImageService';
 
@@ -392,6 +409,14 @@ const router = useRouter();
 const gymStore = useGymStore();
 
 const isAdmin = computed(() => route.path.startsWith('/admin/store'));
+const tabs = [
+  { value: 'productos', label: 'Productos' },
+  { value: 'movimientos', label: 'Movimientos' },
+];
+const activeTab = computed({
+  get: () => (route.query.tab === 'movimientos' ? 'movimientos' : 'productos'),
+  set: (tab) => router.replace({ query: { ...route.query, tab } }),
+});
 const productos = computed(() => gymStore.productos_tienda);
 const visibleProducts = computed(() => productos.value.filter((producto) => producto.estado !== 'Descatalogado'));
 const inventario = computed(() => gymStore.inventory);
