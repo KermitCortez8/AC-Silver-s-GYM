@@ -45,7 +45,10 @@
       </nav>
     </section>
 
-    <section v-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <StoreMovementsPanel v-if="isAdmin && activeTab === 'movimientos'" />
+
+      <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+      
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">Estado</p>
