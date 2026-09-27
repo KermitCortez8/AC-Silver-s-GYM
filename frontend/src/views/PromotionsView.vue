@@ -5,15 +5,87 @@
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Ventas</p>
           <h1 class="mt-2 text-3xl font-black text-white">Promociones y descuentos</h1>
-          <p class="mt-2 text-slate-300">Administra ofertas por vigencia y por plan para acelerar conversiones.</p>
+          <p class="mt-2 text-slate-300">Administra ofertas con cuota de personas, límite de cupos y vista previa en tiempo real.</p>
         </div>
-        <button class="flex items-center gap-2 rounded-2xl bg-rose-500 px-5 py-3 font-black text-white transition hover:bg-rose-400 shadow-lg shadow-rose-500/20" @click="openNewModal">
+        <button class="flex items-center gap-2 rounded-2xl bg-rose-500 px-5 py-3 font-black text-white transition hover:bg-rose-400 shadow-lg shadow-rose-500/20 cursor-pointer" @click="openNewModal">
           <i class="fa-solid fa-plus"></i> Nueva promoción
         </button>
       </div>
     </section>
 
-    <p v-if="feedback" class="rounded-2xl border px-4 py-3 text-sm" :class="feedbackClass">{{ feedback }}</p>
+    <!-- Modal de Notificación / Alerta -->
+    <Teleport to="body">
+      <div v-if="feedback" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all">
+        <div class="w-full max-w-md rounded-3xl border bg-slate-900 p-6 shadow-2xl space-y-5" :class="feedbackTone === 'error' ? 'border-rose-500/40' : 'border-emerald-500/40'">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-inner" :class="feedbackTone === 'error' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'">
+                <i :class="feedbackTone === 'error' ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-check'"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-black text-white">
+                  {{ feedbackTone === 'error' ? 'Aviso del Sistema' : '¡Promoción Guardada!' }}
+                </h3>
+                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Notificación</p>
+              </div>
+            </div>
+            <button type="button" class="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-base transition cursor-pointer" @click="feedback = ''" title="Cerrar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-white/5">
+            <p class="text-sm font-medium text-slate-200 leading-relaxed">
+              {{ feedback }}
+            </p>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button type="button" @click="feedback = ''" :class="feedbackTone === 'error' ? 'bg-rose-500 hover:bg-rose-400 shadow-rose-500/25' : 'bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/25'" class="w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-white transition-all shadow-lg cursor-pointer">
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal de Confirmación de Eliminación -->
+    <Teleport to="body">
+      <div v-if="promoToDelete" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all">
+        <div class="w-full max-w-md rounded-3xl border border-rose-500/30 bg-slate-900 p-6 shadow-2xl space-y-6">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="h-11 w-11 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl shrink-0 shadow-inner">
+                <i class="fa-solid fa-trash-can"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-black text-white">¿Eliminar Promoción?</h3>
+                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Confirmación requerida</p>
+              </div>
+            </div>
+            <button type="button" class="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-base transition cursor-pointer" @click="promoToDelete = null" title="Cerrar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-white/5 space-y-1">
+            <p class="text-sm font-medium text-slate-300">
+              ¿Estás seguro de que deseas eliminar la promoción <span class="font-black text-white">"{{ promoToDelete.name }}"</span>?
+            </p>
+            <p class="text-xs text-rose-400/80 font-semibold">Esta acción no se puede deshacer.</p>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-1">
+            <button type="button" class="px-5 py-2.5 rounded-xl border border-white/10 bg-slate-800 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer" @click="promoToDelete = null">
+              Cancelar
+            </button>
+            <button type="button" class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-xs font-black uppercase tracking-wider text-white transition shadow-lg shadow-rose-500/25 flex items-center gap-2 cursor-pointer" @click="confirmDelete">
+              <i class="fa-solid fa-trash-can"></i> Sí, Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- KPIs Section -->
     <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -66,10 +138,12 @@
           <thead class="border-b border-white/10 bg-white/5 text-xs uppercase tracking-wider text-slate-400">
             <tr>
               <th class="px-6 py-4 font-semibold">ID</th>
-              <th class="px-6 py-4 font-semibold">Nombre</th>
+              <th class="px-6 py-4 font-semibold">Nombre / Estado</th>
+              <th class="px-6 py-4 font-semibold">Etiqueta (Badge)</th>
               <th class="px-6 py-4 font-semibold">Descuento</th>
               <th class="px-6 py-4 font-semibold">Vigencia</th>
-              <th class="px-6 py-4 font-semibold">Planes aplicables</th>
+              <th class="px-6 py-4 font-semibold">Plan Aplicable</th>
+              <th class="px-6 py-4 font-semibold">Cupos / Personas</th>
               <th class="px-6 py-4 font-semibold text-center">Acciones</th>
             </tr>
           </thead>
@@ -81,34 +155,70 @@
                 </span>
               </td>
               <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
+                <div class="flex flex-col gap-1">
                   <span class="font-bold text-white">{{ promo.name }}</span>
-                  <i v-if="promo.active" class="fa-solid fa-circle-check text-emerald-400" title="Activa"></i>
-                  <i v-else class="fa-solid fa-circle-pause text-slate-500" title="Pausada"></i>
+                  <div class="flex items-center gap-1.5">
+                    <span 
+                      :class="{
+                        'bg-emerald-500/15 text-emerald-400 border-emerald-500/30': getPromoStatus(promo).tone === 'emerald',
+                        'bg-slate-700/40 text-slate-400 border-slate-600/30': getPromoStatus(promo).tone === 'slate',
+                        'bg-amber-500/15 text-amber-400 border-amber-500/30': getPromoStatus(promo).tone === 'amber',
+                        'bg-rose-500/15 text-rose-400 border-rose-500/30': getPromoStatus(promo).tone === 'rose'
+                      }"
+                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider"
+                    >
+                      <i :class="getPromoStatus(promo).icon"></i>
+                      {{ getPromoStatus(promo).label }}
+                    </span>
+                  </div>
                 </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-slate-900 border border-slate-700 text-slate-200 tracking-wider shadow-sm">
+                  <span>{{ promo.icono_etiqueta || '🏷️' }}</span>
+                  <span class="text-rose-400 font-extrabold">{{ promo.discountType === 'fixed' ? `-S/${promo.discountValue}` : `-${promo.discountValue}%` }}</span>
+                  <span v-if="promo.palabra_clave" class="uppercase text-slate-300 font-bold ml-0.5">{{ promo.palabra_clave }}</span>
+                </span>
               </td>
               <td class="px-6 py-4 font-bold text-emerald-300">
                 {{ promo.discountType === 'fixed' ? `S/. ${promo.discountValue}` : `${promo.discountValue}%` }}
               </td>
-              <td class="px-6 py-4 text-slate-400">
+              <td class="px-6 py-4 text-slate-400 text-xs">
                 {{ promo.startsAt || 'Desde hoy' }} - {{ promo.validUntil || 'Sin fin' }}
               </td>
-              <td class="px-6 py-4 text-cyan-100 text-xs">
+              <td class="px-6 py-4 text-cyan-200 text-xs font-bold uppercase">
                 {{ planNames(promo).join(', ') || 'Todos los planes' }}
+              </td>
+              <td class="px-6 py-4">
+                <div v-if="promo.limite_cupos" class="flex flex-col gap-1">
+                  <span class="text-xs font-bold text-white">
+                    {{ promo.usos_actuales || 0 }} / {{ promo.limite_cupos }} personas
+                  </span>
+                  <div class="w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      class="h-full rounded-full transition-all" 
+                      :class="(promo.usos_actuales || 0) >= promo.limite_cupos ? 'bg-amber-400' : 'bg-rose-500'" 
+                      :style="{ width: Math.min(100, Math.round(((promo.usos_actuales || 0) / promo.limite_cupos) * 100)) + '%' }"
+                    ></div>
+                  </div>
+                </div>
+                <span v-else class="text-xs text-slate-400 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-infinity text-cyan-400"></i> Sin límite
+                </span>
               </td>
               <td class="px-6 py-4 text-center">
                 <div class="flex items-center justify-center gap-3">
-                  <button class="text-slate-400 hover:text-white transition" @click="editModal(promo)" title="Editar">
+                  <button class="text-slate-400 hover:text-white transition cursor-pointer" @click="editModal(promo)" title="Editar">
                     <i class="fa-solid fa-pen"></i>
                   </button>
-                  <button class="text-rose-400/70 hover:text-rose-400 transition" @click="remove(promo)" title="Eliminar">
+                  <button class="text-rose-400/70 hover:text-rose-400 transition cursor-pointer" @click="requestDelete(promo)" title="Eliminar">
                     <i class="fa-solid fa-trash-can"></i>
                   </button>
                 </div>
               </td>
             </tr>
             <tr v-if="promotions.length === 0">
-              <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+              <td colspan="8" class="px-6 py-8 text-center text-slate-500">
                 No hay reglas comerciales configuradas.
               </td>
             </tr>
@@ -117,10 +227,10 @@
       </div>
     </section>
 
-    <!-- Modal Form -->
+    <!-- Modal Form con Preview y Plan Único -->
     <Teleport to="body">
       <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-opacity">
-        <form class="w-full max-w-5xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto max-h-[90vh]" @submit.prevent="save">
+        <form class="w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto max-h-[92vh]" @submit.prevent="save">
           <!-- Top gradient border -->
           <div class="h-1 w-full bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 rounded-t-3xl"></div>
           
@@ -135,81 +245,221 @@
                   <h2 class="mt-1 text-2xl font-black text-white">Regla comercial</h2>
                 </div>
               </div>
-              <button type="button" class="text-slate-400 hover:text-white text-xl transition" @click="closeModal">
+              <button type="button" class="text-slate-400 hover:text-white text-xl transition cursor-pointer" @click="closeModal">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>
             
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <!-- Left Column -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <!-- Left Column: Datos generales + Etiqueta + Limite -->
               <div class="space-y-6">
                 <div>
-                  <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-solid fa-wand-magic-sparkles text-rose-400"></i> NOMBRE DE LA PROMOCIÓN</label>
-                  <input v-model="form.name" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Ej. Promo Verano" />
+                  <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-rose-400"></i> NOMBRE DE LA PROMOCIÓN
+                  </label>
+                  <input v-model="form.name" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Ej. Promo Verano" required />
                 </div>
                 
                 <div>
-                  <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-regular fa-file-lines text-slate-400"></i> DESCRIPCIÓN INTERNA <span class="text-slate-500 lowercase normal-case">(opcional)</span></label>
+                  <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                    <i class="fa-regular fa-file-lines text-slate-400"></i> DESCRIPCIÓN INTERNA <span class="text-slate-500 lowercase normal-case">(opcional)</span>
+                  </label>
                   <textarea v-model="form.description" rows="2" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Detalle o notas internas del descuento..."></textarea>
                 </div>
                 
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-solid fa-chart-pie text-slate-400"></i> TIPO</label>
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                      <i class="fa-solid fa-chart-pie text-slate-400"></i> TIPO
+                    </label>
                     <select v-model="form.discountType" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition">
                       <option value="percent">Porcentaje (%)</option>
                       <option value="fixed">Monto fijo (S/.)</option>
                     </select>
                   </div>
                   <div>
-                    <label class="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-widest mb-2"><i class="fa-regular fa-square-check"></i> VALOR</label>
+                    <label class="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-widest mb-2">
+                      <i class="fa-regular fa-square-check"></i> VALOR
+                    </label>
                     <div class="relative">
-                      <input v-model.number="form.discountValue" type="number" min="0" step="0.01" class="field-input pr-10 focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="0.00" />
+                      <input v-model.number="form.discountValue" type="number" min="0" step="0.01" class="field-input pr-10 focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="0.00" required />
                       <span class="absolute right-4 top-3.5 text-slate-400 font-bold text-sm">{{ form.discountType === 'percent' ? '%' : 'S/.' }}</span>
                     </div>
                   </div>
                 </div>
+
+                <!-- Límite de Cupos por Persona -->
+                <div>
+                  <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                    <i class="fa-solid fa-users text-indigo-400"></i> LÍMITE DE PERSONAS / CUPOS <span class="text-slate-500 lowercase normal-case">(opcional)</span>
+                  </label>
+                  <div class="relative">
+                    <input v-model.number="form.limite_cupos" type="number" min="1" class="field-input pr-24 focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Ej. 10 (Dejar vacío = ilimitado)" />
+                    <span class="absolute right-4 top-3.5 text-slate-400 font-bold text-xs uppercase">Personas</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-1">Al alcanzar este número de ventas, la promoción pasará automáticamente a estado AGOTADA / CUMPLIDA.</p>
+                </div>
                 
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-regular fa-calendar text-slate-400"></i> INICIO <span class="text-slate-500 lowercase normal-case">(opcional)</span></label>
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                      <i class="fa-regular fa-calendar text-slate-400"></i> INICIO <span class="text-slate-500 lowercase normal-case">(opcional)</span>
+                    </label>
                     <input v-model="form.startsAt" type="date" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" />
                   </div>
                   <div>
-                    <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2"><i class="fa-regular fa-calendar text-slate-400"></i> FIN <span class="text-slate-500 lowercase normal-case">(opcional)</span></label>
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
+                      <i class="fa-regular fa-calendar text-slate-400"></i> FIN <span class="text-slate-500 lowercase normal-case">(opcional)</span>
+                    </label>
                     <input v-model="form.validUntil" type="date" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" />
+                  </div>
+                </div>
+
+                <!-- Personalización de Etiqueta (Badge) -->
+                <div class="rounded-3xl border border-rose-500/20 bg-slate-900/60 p-5 space-y-4">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 text-xs font-black text-rose-400 uppercase tracking-widest">
+                      <i class="fa-solid fa-tag"></i> PERSONALIZACIÓN DE ETIQUETA (BADGE)
+                    </label>
+                    <span class="text-[10px] text-slate-400 font-medium">Visible en planes</span>
+                  </div>
+
+                  <!-- Palabra Clave -->
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">Palabra Clave / Tag</label>
+                    <input 
+                      v-model="form.palabra_clave" 
+                      @input="form.palabra_clave = form.palabra_clave.toUpperCase()"
+                      class="field-input text-xs uppercase font-bold tracking-wider focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" 
+                      placeholder="Ej. NAVIDAD, VERANO, FLASH" 
+                      maxlength="20"
+                    />
+                  </div>
+
+                  <!-- Vista Previa de la Etiqueta -->
+                  <div class="pt-2 border-t border-white/5 flex items-center justify-between">
+                    <span class="text-[11px] text-slate-400 font-semibold">Badge generado:</span>
+                    <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-slate-950 border border-slate-700 text-slate-200 tracking-wider shadow-inner">
+                      <span>🏷️</span>
+                      <span class="text-rose-400 font-extrabold">{{ form.discountType === 'fixed' ? `-S/${form.discountValue || 0}` : `-${form.discountValue || 0}%` }}</span>
+                      <span v-if="form.palabra_clave" class="uppercase text-slate-200 font-bold ml-0.5">{{ form.palabra_clave }}</span>
+                    </span>
                   </div>
                 </div>
               </div>
               
-              <!-- Right Column -->
+              <!-- Right Column: Selección de 1 solo plan + LIVE PREVIEW EN MODO OSCURO -->
               <div class="space-y-6">
-                <div class="rounded-3xl border border-white/10 bg-slate-900/45 p-6">
-                  <div class="flex items-center justify-between mb-4">
-                    <label class="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-widest"><i class="fa-regular fa-credit-card"></i> PLANES APLICABLES</label>
-                    <span class="text-xs text-slate-500">Selecciona al menos uno</span>
-                  </div>
-                  <div class="grid grid-cols-2 gap-3">
-                    <label v-for="plan in plans" :key="plan.id" :class="form.appliesTo.includes(plan.id) ? 'border-rose-500 bg-rose-500/5' : 'border-white/5 hover:bg-white/5'" class="relative flex cursor-pointer flex-col justify-between rounded-2xl border p-4 transition-colors">
-                      <div class="flex justify-between items-start">
-                        <div class="flex items-center gap-2">
-                          <input type="checkbox" v-model="form.appliesTo" :value="plan.id" class="text-rose-500 focus:ring-rose-500 bg-slate-800 border-white/10 rounded" />
-                          <span class="text-sm font-black text-white uppercase">{{ plan.name }}</span>
-                        </div>
-                        <div v-if="form.appliesTo.includes(plan.id)" class="bg-rose-500/20 text-rose-400 text-xs font-black px-2 py-1 rounded-lg">S/. {{ Number(plan.price || 0).toFixed(2) }}</div>
-                        <div v-else class="text-slate-300 text-xs font-black px-2 py-1">S/. {{ Number(plan.price || 0).toFixed(2) }}</div>
-                      </div>
-                      <p class="mt-2 text-xs text-slate-400 ml-6">{{ plan.duration_days || 30 }} días de acceso</p>
+                <!-- Selector de Plan Único -->
+                <div class="rounded-3xl border border-white/10 bg-slate-900/45 p-5 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-widest">
+                      <i class="fa-regular fa-credit-card"></i> SELECCIONA EL PLAN APLICABLE
                     </label>
+                    <span class="text-[10px] text-amber-400 font-bold bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+                      1 solo plan
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-slate-400">Elige exactamente un plan de la lista para asociarle esta oferta promocional:</p>
+                  
+                  <div class="grid grid-cols-1 gap-2.5">
+                    <div 
+                      v-for="plan in plans" 
+                      :key="plan.id"
+                      @click="selectSinglePlan(plan.id)"
+                      :class="form.appliesTo.includes(plan.id) ? 'border-rose-500 bg-rose-500/10 ring-1 ring-rose-500/50' : 'border-white/5 hover:border-slate-700 bg-slate-950/60'"
+                      class="relative flex cursor-pointer items-center justify-between rounded-2xl border p-3.5 transition-all"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div :class="form.appliesTo.includes(plan.id) ? 'bg-rose-500 border-rose-400 text-white' : 'bg-slate-900 border-slate-700 text-transparent'" class="h-5 w-5 rounded-full border flex items-center justify-center text-xs transition">
+                          <i class="fa-solid fa-check text-[10px]"></i>
+                        </div>
+                        <div>
+                          <p class="text-sm font-black text-white uppercase leading-none">{{ plan.name }}</p>
+                          <p class="text-[11px] text-slate-400 mt-1">{{ plan.duration || '30 dias' }}</p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <p class="text-sm font-black text-white">S/. {{ Number(plan.price || 0).toFixed(2) }}</p>
+                        <p class="text-[10px] text-slate-400">Precio regular</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <label class="flex items-center justify-between rounded-3xl border border-white/10 bg-slate-900/45 p-6 cursor-pointer hover:bg-white/10 transition-colors">
+
+                <!-- LIVE PREVIEW CARD (TEMA OSCURO - CLIENTE FINAL) -->
+                <div class="rounded-3xl border border-rose-500/30 bg-slate-950 p-6 shadow-2xl space-y-4 relative overflow-hidden">
+                  <div class="absolute -top-12 -right-12 h-32 w-32 bg-rose-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                  <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                    <div class="flex items-center gap-2">
+                      <i class="fa-solid fa-eye text-rose-400 text-xs"></i>
+                      <span class="text-xs font-black uppercase tracking-widest text-slate-300">VISTA PREVIA DE TARJETA (MODO OSCURO)</span>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      Vista Cliente
+                    </span>
+                  </div>
+
+                  <!-- Live Card Content -->
+                  <div class="rounded-2xl border border-white/10 bg-slate-900/90 p-5 space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">PLAN SELECCIONADO</span>
+                        <h3 class="text-xl font-black text-white uppercase tracking-tight">
+                          {{ selectedPlan ? selectedPlan.name : 'SELECCIONA UN PLAN' }}
+                        </h3>
+                      </div>
+                      <!-- Badge Promocional -->
+                      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-slate-950 border border-slate-700 text-slate-200 tracking-wider shadow-md">
+                        <span>{{ form.icono_etiqueta || '🏷️' }}</span>
+                        <span class="text-rose-400 font-extrabold">{{ form.discountType === 'fixed' ? `-S/${form.discountValue || 0}` : `-${form.discountValue || 0}%` }}</span>
+                        <span v-if="form.palabra_clave" class="uppercase text-slate-200 font-bold ml-0.5">{{ form.palabra_clave }}</span>
+                      </span>
+                    </div>
+
+                    <!-- Pricing Display -->
+                    <div class="pt-2 flex items-baseline justify-between border-t border-white/5">
+                      <div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Precio Final Promocional</p>
+                        <div class="flex items-baseline gap-2 mt-0.5">
+                          <span class="text-2xl font-black text-emerald-400">S/. {{ previewCalculatedPrice.toFixed(2) }}</span>
+                          <span v-if="previewSavings > 0" class="text-xs text-slate-500 line-through">S/. {{ Number(selectedPlan?.price || 0).toFixed(2) }}</span>
+                        </div>
+                      </div>
+                      <div v-if="previewSavings > 0" class="text-right">
+                        <span class="inline-block rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-extrabold text-emerald-300">
+                          Ahorras S/. {{ previewSavings.toFixed(2) }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Cupos Availability Badge -->
+                    <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs font-semibold">
+                      <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-clock text-slate-400"></i>
+                        <span class="text-slate-300">{{ selectedPlan?.duration || '30 dias' }}</span>
+                      </div>
+                      <div>
+                        <span v-if="form.limite_cupos && form.limite_cupos > 0" :class="form.usos_actuales >= form.limite_cupos ? 'text-rose-400 bg-rose-500/10 border-rose-500/30' : 'text-amber-400 bg-amber-400/10 border-amber-400/30'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold">
+                          <i :class="form.usos_actuales >= form.limite_cupos ? 'fa-solid fa-ban' : 'fa-solid fa-fire'"></i>
+                          {{ form.usos_actuales >= form.limite_cupos ? 'AGOTADO / CUMPLIDO' : `Quedan ${Math.max(0, form.limite_cupos - (form.usos_actuales || 0))} de ${form.limite_cupos} cupos` }}
+                        </span>
+                        <span v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[11px] font-bold">
+                          <i class="fa-solid fa-bolt"></i> Cupos ilimitados
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Activo Toggle -->
+                <label class="flex items-center justify-between rounded-3xl border border-white/10 bg-slate-900/45 p-5 cursor-pointer hover:bg-white/10 transition-colors">
                   <div class="flex items-center gap-4">
                     <div class="h-2 w-2 rounded-full" :class="form.active ? 'bg-emerald-400' : 'bg-slate-500'"></div>
                     <div>
                       <p class="text-sm font-bold text-white">Promoción activa</p>
-                      <p class="text-xs text-slate-400 mt-1">Estará disponible de inmediato tras guardar</p>
+                      <p class="text-xs text-slate-400 mt-0.5">Estará disponible de inmediato tras guardar</p>
                     </div>
                   </div>
                   <div class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors" :class="form.active ? 'bg-rose-500' : 'bg-slate-600'">
@@ -222,8 +472,8 @@
             
             <!-- Actions -->
             <div class="mt-10 flex justify-end items-center gap-6">
-              <button type="button" class="text-sm font-bold text-slate-300 hover:text-white transition" @click="closeModal">Cancelar</button>
-              <button type="submit" class="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-3 text-sm font-black text-white hover:bg-rose-400 transition shadow-lg shadow-rose-500/20">
+              <button type="button" class="text-sm font-bold text-slate-300 hover:text-white transition cursor-pointer" @click="closeModal">Cancelar</button>
+              <button type="submit" class="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-3 text-sm font-black text-white hover:bg-rose-400 transition shadow-lg shadow-rose-500/20 cursor-pointer">
                 <i class="fa-solid fa-check"></i> Guardar y Activar Regla
               </button>
             </div>
@@ -256,8 +506,22 @@ const feedback = ref('');
 const feedbackTone = ref('success');
 const plans = computed(() => gymStore.planCatalog);
 const promotions = computed(() => gymStore.promotions);
-const feedbackClass = computed(() => feedbackTone.value === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
-const form = reactive({ id_promocion: null, name: '', description: '', discountType: 'percent', discountValue: 10, startsAt: '', validUntil: '', appliesTo: [], active: true });
+
+const form = reactive({
+  id_promocion: null,
+  name: '',
+  description: '',
+  discountType: 'percent',
+  discountValue: 10,
+  startsAt: '',
+  validUntil: '',
+  icono_etiqueta: '🏷️',
+  palabra_clave: '',
+  appliesTo: [],
+  limite_cupos: null,
+  usos_actuales: 0,
+  active: true,
+});
 
 const activePromotionsCount = computed(() => promotions.value.filter(p => p.active).length);
 
@@ -292,6 +556,45 @@ const ticketMedioConDescuento = computed(() => {
   return totalPagado / withPromo.length;
 });
 
+// Selección de Plan Único
+const selectSinglePlan = (planId) => {
+  form.appliesTo = [planId];
+};
+
+const selectedPlan = computed(() => {
+  if (!form.appliesTo.length) return plans.value[0] || null;
+  return plans.value.find(p => p.id === form.appliesTo[0]) || plans.value[0] || null;
+});
+
+const previewCalculatedPrice = computed(() => {
+  if (!selectedPlan.value) return 0;
+  const basePrice = Number(selectedPlan.value.price || 0);
+  const val = Number(form.discountValue || 0);
+  if (form.discountType === 'fixed') {
+    return Math.max(0, basePrice - val);
+  } else {
+    return Math.max(0, basePrice - (basePrice * val / 100));
+  }
+});
+
+const previewSavings = computed(() => {
+  if (!selectedPlan.value) return 0;
+  const basePrice = Number(selectedPlan.value.price || 0);
+  return Math.max(0, basePrice - previewCalculatedPrice.value);
+});
+
+const getPromoStatus = (promo) => {
+  if (!promo.active) return { label: 'Pausada', tone: 'slate', icon: 'fa-solid fa-pause' };
+  if (promo.limite_cupos && promo.usos_actuales >= promo.limite_cupos) {
+    return { label: 'Agotada / Cumplida', tone: 'amber', icon: 'fa-solid fa-flag-checkered' };
+  }
+  const today = new Date().toISOString().split('T')[0];
+  if (promo.validUntil && promo.validUntil < today) {
+    return { label: 'Expirada', tone: 'rose', icon: 'fa-solid fa-calendar-xmark' };
+  }
+  return { label: 'Activa', tone: 'emerald', icon: 'fa-solid fa-circle-check' };
+};
+
 const isModalOpen = ref(false);
 const openNewModal = () => {
   reset();
@@ -309,15 +612,12 @@ const chartData = computed(() => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
-  // Filtrar clientes que tienen promoción y empezaron su membresía en el mes actual
   const withPromoThisMonth = activeClients.value.filter(client => {
     const plan = plans.value.find(p => p.name === client.plan);
     const hasPromo = plan && client.membershipPrice < plan.price;
     if (!hasPromo) return false;
     
-    // Si no tiene fecha, simulamos con la actual para no perder el dato en la demo
     const startDate = client.membershipStart ? new Date(`${client.membershipStart}T00:00:00`) : new Date();
-    
     return startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear;
   });
   
@@ -332,7 +632,6 @@ const chartData = computed(() => {
     const startDate = client.membershipStart ? new Date(`${client.membershipStart}T00:00:00`) : new Date();
     const day = startDate.getDate();
     
-    // Agrupar en Sem 1 (1-7), Sem 2 (8-14), Sem 3 (15-21), Sem 4 (22+)
     let weekIndex = 0;
     if (day <= 7) weekIndex = 0;
     else if (day <= 14) weekIndex = 1;
@@ -348,13 +647,13 @@ const chartData = computed(() => {
     datasets: [
       {
         label: 'Descuento Otorgado (S/.)',
-        backgroundColor: '#a855f7', // purple-500
+        backgroundColor: '#a855f7',
         data: baseValuesDesc,
         borderRadius: 4,
       },
       {
         label: 'Ingreso Neto Caja (S/.)',
-        backgroundColor: '#f43f5e', // rose-500
+        backgroundColor: '#f43f5e',
         data: baseValuesNeto,
         borderRadius: 4,
       }
@@ -376,46 +675,80 @@ const chartOptions = computed(() => ({
   }
 }));
 
-/**
- * Gestiona esta acción de la vista.
- */
-const reset = () => Object.assign(form, { id_promocion: null, name: '', description: '', discountType: 'percent', discountValue: 10, startsAt: '', validUntil: '', appliesTo: [], active: true });
-/**
- * Gestiona esta acción de la vista.
- */
-const planNames = (promo) => promo.appliesTo.map((id) => plans.value.find((plan) => plan.id === id)?.name).filter(Boolean);
-/**
- * Gestiona esta acción de la vista.
- */
-const edit = (promo) => Object.assign(form, { id_promocion: promo.id_promocion, name: promo.name, description: promo.description, discountType: promo.discountType, discountValue: promo.discountValue, startsAt: promo.startsAt, validUntil: promo.validUntil, appliesTo: [...promo.appliesTo], active: promo.active });
+const reset = () => {
+  const defaultPlanId = plans.value[0]?.id || null;
+  Object.assign(form, {
+    id_promocion: null,
+    name: '',
+    description: '',
+    discountType: 'percent',
+    discountValue: 10,
+    startsAt: '',
+    validUntil: '',
+    icono_etiqueta: '🏷️',
+    palabra_clave: '',
+    appliesTo: defaultPlanId ? [defaultPlanId] : [],
+    limite_cupos: null,
+    usos_actuales: 0,
+    active: true,
+  });
+};
 
-/**
- * Gestiona esta acción de la vista.
- */
+const planNames = (promo) => promo.appliesTo.map((id) => plans.value.find((plan) => plan.id === id)?.name).filter(Boolean);
+
+const edit = (promo) => {
+  const plansList = Array.isArray(promo.appliesTo) ? promo.appliesTo : [];
+  Object.assign(form, {
+    id_promocion: promo.id_promocion,
+    name: promo.name,
+    description: promo.description,
+    discountType: promo.discountType,
+    discountValue: promo.discountValue,
+    startsAt: promo.startsAt,
+    validUntil: promo.validUntil,
+    icono_etiqueta: promo.icono_etiqueta || '🏷️',
+    palabra_clave: promo.palabra_clave || '',
+    appliesTo: plansList.slice(0, 1),
+    limite_cupos: promo.limite_cupos !== undefined && promo.limite_cupos !== null ? promo.limite_cupos : null,
+    usos_actuales: promo.usos_actuales || 0,
+    active: promo.active,
+  });
+};
+
 const save = async () => {
+  if (!form.appliesTo || !form.appliesTo.length) {
+    feedbackTone.value = 'error';
+    feedback.value = 'Debes seleccionar exactamente un plan para la promoción.';
+    return;
+  }
   try {
     await gymStore.upsertPromotion({ ...form });
     feedbackTone.value = 'success';
-    feedback.value = 'Promocion guardada.';
+    feedback.value = 'Promoción guardada exitosamente.';
     closeModal();
   } catch (error) {
     feedbackTone.value = 'error';
-    feedback.value = error instanceof Error ? error.message : 'No se pudo guardar la promocion.';
+    feedback.value = error instanceof Error ? error.message : 'No se pudo guardar la promoción.';
   }
 };
 
-/**
- * Elimina el registro indicado.
- */
-const remove = async (promo) => {
-  if (!window.confirm(`Eliminar la promocion ${promo.name}?`)) return;
+const promoToDelete = ref(null);
+
+const requestDelete = (promo) => {
+  promoToDelete.value = promo;
+};
+
+const confirmDelete = async () => {
+  if (!promoToDelete.value) return;
+  const target = promoToDelete.value;
+  promoToDelete.value = null;
   try {
-    await gymStore.deletePromotion(promo.id_promocion);
+    await gymStore.deletePromotion(target.id_promocion);
     feedbackTone.value = 'success';
-    feedback.value = 'Promocion eliminada.';
+    feedback.value = 'Promoción eliminada exitosamente.';
   } catch (error) {
     feedbackTone.value = 'error';
-    feedback.value = error instanceof Error ? error.message : 'No se pudo eliminar la promocion.';
+    feedback.value = error instanceof Error ? error.message : 'No se pudo eliminar la promoción.';
   }
 };
 

@@ -64,8 +64,13 @@ class PromocionInput(BaseModel):
     valor_descuento: float = Field(default=0, ge=0)
     fecha_inicio: str = ""
     fecha_fin: str = ""
+    icono_etiqueta: str = "🏷️"
+    palabra_clave: str = ""
     activo: bool = True
     planes_aplicables: list[int] = Field(default_factory=list)
+    limite_cupos: int | None = Field(default=None, ge=1)
+    usos_actuales: int = Field(default=0, ge=0)
+
 
 
 class PedidoTiendaUpdateInput(BaseModel):

@@ -19,6 +19,11 @@ def list_promociones(gym_service: GymDomainService = Depends(get_gym_service)):
     return gym_service.promociones()
 
 
+@router.get("/vigentes-publico")
+def list_promociones_vigentes_publicas(gym_service: GymDomainService = Depends(get_gym_service)):
+    return gym_service.promociones_vigentes_publicas()
+
+
 @router.post("")
 # Actualiza el registro correspondiente.
 def upsert_promocion(

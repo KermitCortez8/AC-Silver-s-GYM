@@ -155,13 +155,13 @@ const normalizeStoreOrder = (order = {}) => ({
   total: Number(order.total || 0),
   items: Array.isArray(order.items)
     ? order.items.map((item) => ({
-        id_producto: Number(item.id_producto || 0),
-        nombre_producto: item.nombre_producto || item.nombre || 'Producto',
-        imagen_url: item.imagen_url || item.imageUrl || '',
-        cantidad: Number(item.cantidad || 1),
-        precio_unitario: Number(item.precio_unitario || item.precio || 0),
-        subtotal: Number(item.subtotal || Number(item.precio_unitario || item.precio || 0) * Number(item.cantidad || 1)),
-      }))
+      id_producto: Number(item.id_producto || 0),
+      nombre_producto: item.nombre_producto || item.nombre || 'Producto',
+      imagen_url: item.imagen_url || item.imageUrl || '',
+      cantidad: Number(item.cantidad || 1),
+      precio_unitario: Number(item.precio_unitario || item.precio || 0),
+      subtotal: Number(item.subtotal || Number(item.precio_unitario || item.precio || 0) * Number(item.cantidad || 1)),
+    }))
     : [],
 });
 
@@ -203,7 +203,11 @@ const normalizePromotionFromBackend = (promotion = {}) => {
     discountValue: Number(promotion.valor_descuento ?? promotion.discountValue ?? 0),
     startsAt: promotion.fecha_inicio || promotion.startsAt || '',
     validUntil: promotion.fecha_fin || promotion.validUntil || '',
+    icono_etiqueta: promotion.icono_etiqueta || promotion.badgeIcon || '🏷️',
+    palabra_clave: promotion.palabra_clave || promotion.badgeTag || '',
     appliesTo: plans,
+    limite_cupos: promotion.limite_cupos !== undefined && promotion.limite_cupos !== null && String(promotion.limite_cupos).trim() !== '' ? Number(promotion.limite_cupos) : null,
+    usos_actuales: Number(promotion.usos_actuales ?? promotion.usesCount ?? 0),
     active: promotion.activo !== false && promotion.active !== false,
   };
 };
@@ -560,9 +564,9 @@ export const useGymStore = defineStore('gym', () => {
       lowStockItems,
       attendanceRate: members.value.length
         ? Math.round(
-            members.value.reduce((sum, member) => sum + Number(member.attendanceRate || 0), 0) /
-              members.value.length,
-          )
+          members.value.reduce((sum, member) => sum + Number(member.attendanceRate || 0), 0) /
+          members.value.length,
+        )
         : 0,
     };
   });
@@ -806,10 +810,14 @@ export const useGymStore = defineStore('gym', () => {
       valor_descuento: Number(payload.valor_descuento ?? payload.discountValue ?? 0),
       fecha_inicio: payload.fecha_inicio || payload.startsAt || '',
       fecha_fin: payload.fecha_fin || payload.validUntil || '',
+      icono_etiqueta: payload.icono_etiqueta || payload.badgeIcon || '🏷️',
+      palabra_clave: String(payload.palabra_clave || payload.badgeTag || '').trim().toUpperCase(),
       activo: payload.activo ?? payload.active ?? true,
       planes_aplicables: (payload.planes_aplicables || payload.appliesTo || [])
         .map((value) => Number(String(value).match(/(\d+)/)?.[1] || value))
         .filter(Boolean),
+      limite_cupos: payload.limite_cupos !== undefined && payload.limite_cupos !== null && String(payload.limite_cupos).trim() !== '' ? Number(payload.limite_cupos) : null,
+      usos_actuales: Number(payload.usos_actuales || 0),
     };
 
     if (apiBase) {
@@ -819,7 +827,8 @@ export const useGymStore = defineStore('gym', () => {
         body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo guardar la promocion'));
-      return mergePromotion(await response.json());
+      const saved = await response.json();
+      return mergePromotion({ ...body, ...(saved || {}) });
     }
 
     return mergePromotion({ ...body, id_promocion: idPromocion || Date.now() });
@@ -1461,7 +1470,7 @@ export const useGymStore = defineStore('gym', () => {
   const deleteMember = (id) => {
     if (apiBase && /^(?:cliente-|SGCLI)\d+$/i.test(id)) {
       const id_cliente = Number(String(id).replace(/^(?:cliente-|SGCLI)/i, ''));
-      fetch(`${apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => {});
+      fetch(`${apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => { });
     }
     members.value = members.value.filter((member) => member.id !== id);
     attendance.value = attendance.value.filter((entry) => entry.memberId !== id);
@@ -1688,7 +1697,7 @@ export const useGymStore = defineStore('gym', () => {
   const deleteInventoryItem = (id) => {
     if (apiBase && /^item-\d+$/.test(id)) {
       const id_item = Number(id.split('-')[1]);
-      fetch(`${apiBase}/inventario/${id_item}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => {});
+      fetch(`${apiBase}/inventario/${id_item}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => { });
     }
     inventory.value = inventory.value.filter((item) => item.id !== id);
     persist();
@@ -1718,7 +1727,7 @@ export const useGymStore = defineStore('gym', () => {
         ...producto,
         id_producto: producto.id_producto || undefined,
       };
-      
+
       const res = await fetch(`${apiBase}/tienda`, {
         method: 'POST',
         headers: _authHeaders(),
@@ -1727,7 +1736,7 @@ export const useGymStore = defineStore('gym', () => {
 
       if (!res.ok) throw new Error('Error al guardar producto en backend');
       const saved = await res.json();
-      
+
       const id_producto = saved.id_producto || payload.id_producto || Date.now();
       const normalized = {
         id: `producto-${id_producto}`,
@@ -1750,7 +1759,7 @@ export const useGymStore = defineStore('gym', () => {
       } else {
         productos_tienda.value.unshift(normalized);
       }
-      
+
       persist();
       return normalized;
     }
@@ -1777,7 +1786,7 @@ export const useGymStore = defineStore('gym', () => {
     } else {
       productos_tienda.value.unshift(normalized);
     }
-    
+
     persist();
     return normalized;
   };
@@ -1796,7 +1805,7 @@ export const useGymStore = defineStore('gym', () => {
         console.error('Error al eliminar producto en backend:', error);
       }
     }
-    
+
     productos_tienda.value = productos_tienda.value.filter((p) => p.id_producto !== id_producto);
     persist();
   };
@@ -1807,7 +1816,7 @@ export const useGymStore = defineStore('gym', () => {
    */
   const addToCart = (producto, cantidad = 1) => {
     const existingItem = cart.value.find((item) => item.id_producto === producto.id_producto);
-    
+
     if (existingItem) {
       existingItem.cantidad += cantidad;
     } else {
@@ -1819,7 +1828,7 @@ export const useGymStore = defineStore('gym', () => {
         cantidad: Math.max(1, cantidad),
       });
     }
-    
+
     persist();
   };
 
@@ -1850,7 +1859,7 @@ export const useGymStore = defineStore('gym', () => {
     persist();
   };
 
- const cartTotal = computed(() => {
+  const cartTotal = computed(() => {
     const subtotal = cart.value.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
     const igv = subtotal * 0.18;
     const total = subtotal + igv;
@@ -1987,7 +1996,7 @@ export const useGymStore = defineStore('gym', () => {
 
       const saved = mergeStoreOrder(await response.json());
       clearCart();
-      await refreshStoreProductsFromBackend().catch(() => {});
+      await refreshStoreProductsFromBackend().catch(() => { });
       return saved;
     }
 
@@ -2303,7 +2312,7 @@ export const useGymStore = defineStore('gym', () => {
     };
     const index = routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
     if (index >= 0) routines.value[index] = normalized; else routines.value.unshift(normalized);
-    await fetchTrainerOverview().catch(() => {});
+    await fetchTrainerOverview().catch(() => { });
     persist();
     return normalized;
   };
@@ -2325,7 +2334,7 @@ export const useGymStore = defineStore('gym', () => {
     const index = enrollments.value.findIndex((entry) => Number(entry.id_matricula) === Number(saved.id_matricula));
     if (index >= 0) enrollments.value[index] = { ...enrollments.value[index], ...saved };
     else enrollments.value.unshift(saved);
-    await fetchTrainerOverview().catch(() => {});
+    await fetchTrainerOverview().catch(() => { });
     persist();
     return saved;
   };
@@ -2387,7 +2396,7 @@ export const useGymStore = defineStore('gym', () => {
     } else {
       enrollments.value.unshift(saved);
     }
-    await refreshServiceSchedulesFromBackend().catch(() => {});
+    await refreshServiceSchedulesFromBackend().catch(() => { });
     persist();
     return saved;
   };
@@ -2408,7 +2417,7 @@ export const useGymStore = defineStore('gym', () => {
     enrollments.value = enrollments.value.map((entry) =>
       Number(entry.id_matricula) === Number(idMatricula) ? { ...entry, estado: 'CANCELADA' } : entry,
     );
-    await refreshServiceSchedulesFromBackend().catch(() => {});
+    await refreshServiceSchedulesFromBackend().catch(() => { });
     persist();
   };
 
@@ -2421,7 +2430,7 @@ export const useGymStore = defineStore('gym', () => {
     if (syncPromise) {
       if (syncScope === scope && !force) return syncPromise;
       // Un refresco tras guardar debe consultar después de la carga anterior.
-      return syncPromise.catch(() => {}).then(() => fetchFromBackend({ force }));
+      return syncPromise.catch(() => { }).then(() => fetchFromBackend({ force }));
     }
     if (!force && lastSyncScope === scope && Date.now() - lastSyncAt < 30_000) return Promise.resolve();
     syncScope = scope;
@@ -2467,13 +2476,13 @@ export const useGymStore = defineStore('gym', () => {
           observations: i.observaciones || '',
         }));
       }],
-      ['Movimientos', refreshInventoryMovementsFromBackend],
-      ['Productos', refreshStoreProductsFromBackend],
-      ['Pedidos', refreshStoreOrdersFromBackend],
-      ['Planes', async () => {
-        planCatalog.value = (await getList('/planes-membresia')).map(normalizePlanFromBackend);
-      }],
-      ['Promociones', refreshPromotionsFromBackend]);
+        ['Movimientos', refreshInventoryMovementsFromBackend],
+        ['Productos', refreshStoreProductsFromBackend],
+        ['Pedidos', refreshStoreOrdersFromBackend],
+        ['Planes', async () => {
+          planCatalog.value = (await getList('/planes-membresia')).map(normalizePlanFromBackend);
+        }],
+        ['Promociones', refreshPromotionsFromBackend]);
 
       if (internal) {
         tasks.push(['Configuración', refreshGymSettingsFromBackend], ['Horarios', async () => {
@@ -2492,7 +2501,7 @@ export const useGymStore = defineStore('gym', () => {
       if (role === 'trainer') tasks.push(['Supervisión', fetchTrainerOverview]);
       if (role === 'admin' || role === 'user') tasks.push(['Asistencias', async () => {
         // La normalización de asistencias necesita los nombres de clientes.
-        await clientsReady.catch(() => {});
+        await clientsReady.catch(() => { });
         await refreshAttendanceFromBackend();
       }]);
 
@@ -2939,7 +2948,7 @@ export const useGymStore = defineStore('gym', () => {
     if (!res.ok) throw new Error(await readBackendError(res, 'Error al crear movimiento de inventario'));
     const saved = await res.json();
     if (saved?.movimiento) inventoryMovements.value.unshift(saved.movimiento);
-    await fetchFromBackend({ force: true }).catch(() => {});
+    await fetchFromBackend({ force: true }).catch(() => { });
     persist();
     return saved;
   };

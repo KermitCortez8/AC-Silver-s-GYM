@@ -673,6 +673,8 @@ class SupabaseGymService(GymDomainService):
         raw_plans = row.get("planes_aplicables") or []
         if isinstance(raw_plans, str):
             raw_plans = [part.strip() for part in raw_plans.split(",") if part.strip()]
+        limite = row.get("limite_cupos")
+        limite_cupos = int(limite) if limite is not None and str(limite).strip() != "" else None
         return {
             "id_promocion": int(row.get("id_promocion", 0) or 0),
             "nombre": str(row.get("nombre") or ""),
@@ -681,8 +683,12 @@ class SupabaseGymService(GymDomainService):
             "valor_descuento": float(row.get("valor_descuento") or 0),
             "fecha_inicio": str(row.get("fecha_inicio") or ""),
             "fecha_fin": str(row.get("fecha_fin") or ""),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
+            "palabra_clave": str(row.get("palabra_clave") or ""),
             "activo": bool(row.get("activo", True)),
             "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
+            "limite_cupos": limite_cupos,
+            "usos_actuales": int(row.get("usos_actuales", 0) or 0),
         }
 
     # Procesa esta operación.
@@ -695,8 +701,12 @@ class SupabaseGymService(GymDomainService):
             "valor_descuento": float(row.get("valor_descuento") or 0),
             "fecha_inicio": self._date_or_none(row.get("fecha_inicio")),
             "fecha_fin": self._date_or_none(row.get("fecha_fin")),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
+            "palabra_clave": str(row.get("palabra_clave") or ""),
             "activo": bool(row.get("activo", True)),
             "planes_aplicables": list(row.get("planes_aplicables") or []),
+            "limite_cupos": row.get("limite_cupos"),
+            "usos_actuales": int(row.get("usos_actuales", 0) or 0),
         }
 
     # Procesa esta operación.
