@@ -439,7 +439,8 @@ video {
 [data-theme="light"] .app-shell [class~="bg-slate-950/45"],
 [data-theme="light"] .app-shell [class~="bg-slate-950/40"],
 [data-theme="light"] .app-shell [class~="bg-slate-950"] {
-  background-color: var(--app-surface-strong) !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
 }
 
 [data-theme="light"] .app-shell [class~="bg-slate-950/80"],
@@ -448,7 +449,7 @@ video {
 [data-theme="light"] .app-shell [class~="bg-slate-800/80"],
 [data-theme="light"] .app-shell [class~="bg-slate-700"],
 [data-theme="light"] .app-shell [class~="bg-slate-700/80"] {
-  background-color: #e5e5e5 !important;
+  background-color: #f1f5f9 !important;
 }
 
 [data-theme="light"] .app-shell [class~="border-white/10"] {
@@ -458,35 +459,46 @@ video {
 [data-theme="light"] .app-shell [class~="text-white"],
 [data-theme="light"] .app-shell [class~="text-slate-50"],
 [data-theme="light"] .app-shell [class~="text-slate-200"] {
-  color: var(--app-text) !important;
+  color: #0f172a !important;
 }
 
 [data-theme="light"] .app-shell [class~="text-slate-300"] {
-  color: var(--app-text-soft) !important;
+  color: #334155 !important;
 }
 
 [data-theme="light"] .app-shell [class~="text-slate-400"],
 [data-theme="light"] .app-shell [class~="text-slate-500"] {
-  color: var(--app-text-muted) !important;
+  color: #64748b !important;
+}
+
+/* Colores de acento según la paleta adecuada */
+[data-theme="light"] .app-shell [class^="text-emerald-"],
+[data-theme="light"] .app-shell [class*=" text-emerald-"] {
+  color: #059669 !important;
 }
 
 [data-theme="light"] .app-shell [class^="text-cyan-"],
 [data-theme="light"] .app-shell [class*=" text-cyan-"],
+[data-theme="light"] .app-shell [class^="text-sky-"],
+[data-theme="light"] .app-shell [class*=" text-sky-"] {
+  color: #0284c7 !important;
+}
+
 [data-theme="light"] .app-shell [class^="text-amber-"],
 [data-theme="light"] .app-shell [class*=" text-amber-"],
 [data-theme="light"] .app-shell [class^="text-orange-"],
-[data-theme="light"] .app-shell [class*=" text-orange-"],
-[data-theme="light"] .app-shell [class^="text-emerald-"],
-[data-theme="light"] .app-shell [class*=" text-emerald-"],
-[data-theme="light"] .app-shell [class^="text-sky-"],
-[data-theme="light"] .app-shell [class*=" text-sky-"],
+[data-theme="light"] .app-shell [class*=" text-orange-"] {
+  color: #d97706 !important;
+}
+
 [data-theme="light"] .app-shell [class^="text-rose-"],
 [data-theme="light"] .app-shell [class*=" text-rose-"] {
-  color: var(--app-accent-text) !important;
+  color: #e11d48 !important;
 }
 
 [data-theme="light"] .app-shell [class~="bg-red-600"][class~="text-white"],
 [data-theme="light"] .app-shell [class~="bg-red-500"][class~="text-white"],
+[data-theme="light"] .app-shell [class~="bg-rose-500"][class~="text-white"],
 [data-theme="light"] .app-shell [class~="bg-cyan-400"][class~="text-white"],
 [data-theme="light"] .app-shell [class~="bg-amber-300"][class~="text-white"],
 [data-theme="light"] .app-shell [class~="bg-amber-400"][class~="text-white"],
@@ -495,7 +507,7 @@ video {
 }
 
 [data-theme="light"] .app-shell [class~="fixed"][class~="inset-0"][class~="bg-slate-950/80"] {
-  background-color: rgba(0, 0, 0, 0.72) !important;
+  background-color: rgba(0, 0, 0, 0.65) !important;
 }
 
 [data-theme="light"] .app-shell [class~="hover:bg-white/5"]:hover,
@@ -505,41 +517,70 @@ video {
 }
 
 [data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"][class~="bg-slate-950/80"] {
-  background-color: rgba(0, 0, 0, 0.72) !important;
+  background-color: rgba(0, 0, 0, 0.65) !important;
 }
 
-[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="bg-slate-950"] {
-  background-color: #f5f5f5 !important;
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="bg-slate-950"] {
+  background-color: #ffffff !important;
 }
 
-[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="border-white/10"] {
-  border-color: var(--app-border) !important;
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="bg-slate-900"],
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="bg-slate-900/60"],
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="bg-slate-950/60"],
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="bg-slate-900/45"] {
+  background-color: #f1f5f9 !important;
 }
 
-[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="text-white"] {
-  color: var(--app-text) !important;
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="border-white/10"],
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="border-white/5"] {
+  border-color: #e2e8f0 !important;
 }
 
-[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="bg-slate-900/45"] {
-  background-color: var(--app-surface) !important;
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="text-white"]:not(.dark-card-preview *):not(.dark-card-preview),
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="text-slate-200"]:not(.dark-card-preview *):not(.dark-card-preview) {
+  color: #0f172a !important;
 }
 
-[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="text-slate-300"] {
-  color: var(--app-text-soft) !important;
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="text-slate-300"]:not(.dark-card-preview *):not(.dark-card-preview) {
+  color: #334155 !important;
 }
 
-[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="text-slate-400"] {
-  color: var(--app-text-muted) !important;
+[data-theme="light"] [class~="fixed"][class~="inset-0"] [class~="text-slate-400"]:not(.dark-card-preview *):not(.dark-card-preview) {
+  color: #64748b !important;
 }
 
-[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] .field-input {
-  border-color: var(--app-border) !important;
-  background: var(--app-input) !important;
-  color: var(--app-text) !important;
+[data-theme="light"] [class~="fixed"][class~="inset-0"] .field-input {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
 }
 
-[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] .field-input::placeholder {
-  color: var(--app-text-faint) !important;
+[data-theme="light"] [class~="fixed"][class~="inset-0"] .field-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Forzar que los textos dentro de botones sólidos sigan siendo blancos en modo claro */
+[data-theme="light"] [class~="bg-rose-500"],
+[data-theme="light"] [class~="bg-rose-500"] *,
+[data-theme="light"] [class~="bg-rose-500"] button,
+[data-theme="light"] [class~="bg-emerald-500"],
+[data-theme="light"] [class~="bg-emerald-500"] * {
+  color: #ffffff !important;
+}
+
+/* Preservar vista previa de tarjeta según el tema activo */
+[data-theme="light"] .card-preview,
+[data-theme="light"] .dark-card-preview {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .card-preview [class~="bg-slate-900/90"],
+[data-theme="light"] .card-preview [class~="bg-slate-950"],
+[data-theme="light"] .dark-card-preview [class~="bg-slate-900/90"],
+[data-theme="light"] .dark-card-preview [class~="bg-slate-950"] {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
 }
 
 @media (max-width: 640px) {

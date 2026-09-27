@@ -709,6 +709,16 @@ class SupabaseGymService(GymDomainService):
             "usos_actuales": int(row.get("usos_actuales", 0) or 0),
         }
 
+    def _persist_promocion_usos(self, id_promocion: int | None, usos: int) -> None:
+        if not id_promocion or "PROMOCIONES" in self.missing_remote_tables:
+            return
+        try:
+            body = self._filter_remote_columns("PROMOCIONES", {"usos_actuales": max(0, int(usos or 0))})
+            if body:
+                self.supabase.update("PROMOCIONES", "id_promocion", int(id_promocion), body)
+        except Exception:
+            pass
+
     # Procesa esta operación.
     def _map_client(self, row: dict[str, Any]) -> dict[str, Any]:
         client_id = int(row.get("id_cliente", 0) or 0)

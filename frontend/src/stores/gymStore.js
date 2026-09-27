@@ -245,7 +245,7 @@ const normalizeBackendClientToMember = (client = {}) => ({
   role: 'user',
   plan: client.plan || '',
   promocion: client.promocion || 'SIN PROMOCION',
-  id_promocion: client.id_promocion || null,
+  id_promocion: client.id_promocion || (client.promocion && String(client.promocion).startsWith('promo-') ? Number(String(client.promocion).replace('promo-', '')) : null),
   planId: '',
   id_membresia: client.id_membresia || null,
   membershipStatus: client.membership_status || client.estado || '',
@@ -604,7 +604,17 @@ export const useGymStore = defineStore('gym', () => {
   const activePlans = computed(() => planCatalog.value.filter((plan) => plan.active));
 
   const activePromotions = computed(() =>
-    promotions.value.filter((promotion) => promotion.active && (!promotion.validUntil || promotion.validUntil >= todayISO())),
+    promotions.value.filter((promotion) => {
+      if (!promotion.active) return false;
+      const today = todayISO();
+      if (promotion.validUntil && promotion.validUntil < today) return false;
+      const isCupoCumplido =
+        promotion.limite_cupos !== null &&
+        promotion.limite_cupos !== undefined &&
+        Number(promotion.usos_actuales || 0) >= Number(promotion.limite_cupos);
+      if (isCupoCumplido) return false;
+      return true;
+    }),
   );
 
   const membershipAlerts = computed(() =>
@@ -1015,7 +1025,8 @@ export const useGymStore = defineStore('gym', () => {
       const startDate = member.membershipEnd && member.membershipEnd > todayISO() ? member.membershipEnd : todayISO();
       const endDate = addMonthsISO(startDate, getPlanById(planId)?.durationMonths || 1);
 
-      const payload = { id_cliente, id_pm, fecha_inicio: startDate, fecha_fin: endDate };
+      const id_promocion = promotionId ? Number(String(promotionId).match(/(\d+)/)?.[1] || promotionId) : null;
+      const payload = { id_cliente, id_pm, fecha_inicio: startDate, fecha_fin: endDate, id_promocion };
       return fetch(`${apiBase}/membresias`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(payload) })
         .then((r) => {
           if (!r.ok) throw new Error('Error al asignar membresía en backend');
@@ -2616,6 +2627,7 @@ export const useGymStore = defineStore('gym', () => {
         members.value.unshift(normalized);
       }
       persist();
+      fetchFromBackend({ force: true }).catch(() => {});
       return normalized;
     }
 
@@ -2764,6 +2776,7 @@ export const useGymStore = defineStore('gym', () => {
       payment_status: membership.estado_pago,
       payment_reference: membership.referencia_pago,
     });
+    await fetchFromBackend({ force: true }).catch(() => {});
     return { ...client, notification: saved.notification || null };
   };
 
@@ -2790,6 +2803,7 @@ export const useGymStore = defineStore('gym', () => {
       payment_status: membership.estado_pago,
       payment_reference: membership.referencia_pago,
     });
+    await fetchFromBackend({ force: true }).catch(() => {});
     return client;
   };
 

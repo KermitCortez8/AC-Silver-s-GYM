@@ -94,7 +94,7 @@
           <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Promociones Activas</p>
           <i class="fa-solid fa-check text-emerald-400 bg-emerald-400/10 p-2 rounded-full text-xs"></i>
         </div>
-        <p class="mt-4 text-4xl font-black text-white">{{ activePromotionsCount }}</p>
+        <p class="mt-4 text-3xl font-black text-white">{{ activePromotionsCount }}</p>
         <p class="mt-2 text-xs text-emerald-400">Reglas comerciales vigentes</p>
       </div>
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
@@ -102,7 +102,7 @@
           <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Descuentos Aplicados</p>
           <i class="fa-solid fa-dollar-sign text-amber-500 bg-amber-400/10 p-2 rounded-full text-xs px-3"></i>
         </div>
-        <p class="mt-4 text-4xl font-black text-white">S/. {{ totalAhorrado.toFixed(2) }}</p>
+        <p class="mt-4 text-3xl font-black text-white">S/. {{ totalAhorrado.toFixed(2) }}</p>
         <p class="mt-2 text-xs text-slate-400">Ahorrados a clientes este mes</p>
       </div>
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
@@ -110,7 +110,7 @@
           <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Conversión en Caja</p>
           <i class="fa-solid fa-arrow-trend-up text-rose-400 bg-rose-400/10 p-2 rounded-full text-xs"></i>
         </div>
-        <p class="mt-4 text-4xl font-black text-white">{{ porcentajeVentasConPromo.toFixed(1) }}%</p>
+        <p class="mt-4 text-3xl font-black text-white">{{ porcentajeVentasConPromo.toFixed(1) }}%</p>
         <p class="mt-2 text-xs text-slate-400">Ventas con cupón o promo</p>
       </div>
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
@@ -118,7 +118,7 @@
           <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Ticket Promedio</p>
           <i class="fa-solid fa-lock text-cyan-400 bg-cyan-400/10 p-2 rounded-full text-xs"></i>
         </div>
-        <p class="mt-4 text-4xl font-black text-white">S/. {{ ticketMedioConDescuento.toFixed(2) }}</p>
+        <p class="mt-4 text-3xl font-black text-white">S/. {{ ticketMedioConDescuento.toFixed(2) }}</p>
         <p class="mt-2 text-xs text-slate-400">Ticket medio con descuento</p>
       </div>
     </section>
@@ -183,8 +183,13 @@
               <td class="px-6 py-4 font-bold text-emerald-300">
                 {{ promo.discountType === 'fixed' ? `S/. ${promo.discountValue}` : `${promo.discountValue}%` }}
               </td>
-              <td class="px-6 py-4 text-slate-400 text-xs">
-                {{ promo.startsAt || 'Desde hoy' }} - {{ promo.validUntil || 'Sin fin' }}
+              <td class="px-6 py-4 text-xs">
+                <span v-if="getPromoStatus(promo).label === 'Terminada'" class="inline-flex items-center gap-1 font-extrabold text-amber-400">
+                  <i class="fa-solid fa-ban text-[11px]"></i> No aplica (Terminada)
+                </span>
+                <span v-else class="text-slate-400">
+                  {{ promo.startsAt || 'Desde hoy' }} - {{ promo.validUntil || 'Sin fin' }}
+                </span>
               </td>
               <td class="px-6 py-4 text-cyan-200 text-xs font-bold uppercase">
                 {{ planNames(promo).join(', ') || 'Todos los planes' }}
@@ -208,9 +213,17 @@
               </td>
               <td class="px-6 py-4 text-center">
                 <div class="flex items-center justify-center gap-3">
-                  <button class="text-slate-400 hover:text-white transition cursor-pointer" @click="editModal(promo)" title="Editar">
+                  <button 
+                    v-if="getPromoStatus(promo).label !== 'Terminada'" 
+                    class="text-slate-400 hover:text-white transition cursor-pointer" 
+                    @click="editModal(promo)" 
+                    title="Editar"
+                  >
                     <i class="fa-solid fa-pen"></i>
                   </button>
+                  <span v-else class="text-slate-600 opacity-60 cursor-not-allowed" title="Promoción terminada (solo eliminar)">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                  </span>
                   <button class="text-rose-400/70 hover:text-rose-400 transition cursor-pointer" @click="requestDelete(promo)" title="Eliminar">
                     <i class="fa-solid fa-trash-can"></i>
                   </button>
@@ -387,14 +400,16 @@
                   </div>
                 </div>
 
-                <!-- LIVE PREVIEW CARD (TEMA OSCURO - CLIENTE FINAL) -->
-                <div class="rounded-3xl border border-rose-500/30 bg-slate-950 p-6 shadow-2xl space-y-4 relative overflow-hidden">
+                <!-- LIVE PREVIEW CARD (CLIENTE FINAL) -->
+                <div class="rounded-3xl border border-rose-500/30 bg-slate-950 p-6 shadow-2xl space-y-4 relative overflow-hidden card-preview">
                   <div class="absolute -top-12 -right-12 h-32 w-32 bg-rose-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
                   <div class="flex items-center justify-between pb-3 border-b border-white/10">
                     <div class="flex items-center gap-2">
                       <i class="fa-solid fa-eye text-rose-400 text-xs"></i>
-                      <span class="text-xs font-black uppercase tracking-widest text-slate-300">VISTA PREVIA DE TARJETA (MODO OSCURO)</span>
+                      <span class="text-xs font-black uppercase tracking-widest text-slate-300">
+                        VISTA PREVIA DE TARJETA ({{ isDarkTheme ? 'MODO OSCURO' : 'MODO CLARO' }})
+                      </span>
                     </div>
                     <span class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                       Vista Cliente
@@ -441,9 +456,9 @@
                         <span class="text-slate-300">{{ selectedPlan?.duration || '30 dias' }}</span>
                       </div>
                       <div>
-                        <span v-if="form.limite_cupos && form.limite_cupos > 0" :class="form.usos_actuales >= form.limite_cupos ? 'text-rose-400 bg-rose-500/10 border-rose-500/30' : 'text-amber-400 bg-amber-400/10 border-amber-400/30'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold">
-                          <i :class="form.usos_actuales >= form.limite_cupos ? 'fa-solid fa-ban' : 'fa-solid fa-fire'"></i>
-                          {{ form.usos_actuales >= form.limite_cupos ? 'AGOTADO / CUMPLIDO' : `Quedan ${Math.max(0, form.limite_cupos - (form.usos_actuales || 0))} de ${form.limite_cupos} cupos` }}
+                        <span v-if="form.limite_cupos && form.limite_cupos > 0" :class="form.usos_actuales >= form.limite_cupos ? 'text-amber-400 bg-amber-500/10 border-amber-500/30' : 'text-amber-400 bg-amber-400/10 border-amber-400/30'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold">
+                          <i :class="form.usos_actuales >= form.limite_cupos ? 'fa-solid fa-flag-checkered' : 'fa-solid fa-fire'"></i>
+                          {{ form.usos_actuales >= form.limite_cupos ? 'Terminada' : `Quedan ${Math.max(0, form.limite_cupos - (form.usos_actuales || 0))} de ${form.limite_cupos} cupos` }}
                         </span>
                         <span v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[11px] font-bold">
                           <i class="fa-solid fa-bolt"></i> Cupos ilimitados
@@ -505,7 +520,23 @@ const gymStore = useGymStore();
 const feedback = ref('');
 const feedbackTone = ref('success');
 const plans = computed(() => gymStore.planCatalog);
-const promotions = computed(() => gymStore.promotions);
+const promotions = computed(() => {
+  return gymStore.promotions.map((promo) => {
+    const usesInStore = gymStore.members.filter((m) => {
+      if (!m || m.status === 'INACTIVO') return false;
+      const mPromoId = Number(
+        m.id_promocion || (m.promocion && String(m.promocion).startsWith('promo-') ? String(m.promocion).replace('promo-', '') : 0)
+      );
+      return mPromoId === Number(promo.id_promocion);
+    }).length;
+
+    const usosActuales = Number(promo.usos_actuales ?? usesInStore);
+    return {
+      ...promo,
+      usos_actuales: usosActuales,
+    };
+  });
+});
 
 const form = reactive({
   id_promocion: null,
@@ -585,12 +616,11 @@ const previewSavings = computed(() => {
 
 const getPromoStatus = (promo) => {
   if (!promo.active) return { label: 'Pausada', tone: 'slate', icon: 'fa-solid fa-pause' };
-  if (promo.limite_cupos && promo.usos_actuales >= promo.limite_cupos) {
-    return { label: 'Agotada / Cumplida', tone: 'amber', icon: 'fa-solid fa-flag-checkered' };
-  }
   const today = new Date().toISOString().split('T')[0];
-  if (promo.validUntil && promo.validUntil < today) {
-    return { label: 'Expirada', tone: 'rose', icon: 'fa-solid fa-calendar-xmark' };
+  const isCupoCumplido = promo.limite_cupos && promo.usos_actuales >= promo.limite_cupos;
+  const isExpirada = promo.validUntil && promo.validUntil < today;
+  if (isCupoCumplido || isExpirada) {
+    return { label: 'Terminada', tone: 'amber', icon: 'fa-solid fa-flag-checkered' };
   }
   return { label: 'Activa', tone: 'emerald', icon: 'fa-solid fa-circle-check' };
 };
@@ -604,6 +634,11 @@ const closeModal = () => {
   isModalOpen.value = false;
 };
 const editModal = (promo) => {
+  if (getPromoStatus(promo).label === 'Terminada') {
+    feedbackTone.value = 'error';
+    feedback.value = 'Las promociones terminadas no se pueden editar, únicamente eliminar.';
+    return;
+  }
   edit(promo);
   isModalOpen.value = true;
 };
@@ -752,10 +787,20 @@ const confirmDelete = async () => {
   }
 };
 
-onMounted(() => gymStore.fetchFromBackend?.().catch(() => {}));
+onMounted(() => gymStore.fetchFromBackend?.({ force: true }).catch(() => {}));
 </script>
 
 <style scoped>
-.field-input { width: 100%; border: 1px solid rgba(255,255,255,.1); border-radius: 1rem; background: rgba(2,6,23,.72); padding: .75rem 1rem; color: white; outline: none; }
-.field-input::placeholder { color: #64748b; }
+.field-input {
+  width: 100%;
+  border: 1px solid var(--app-border, rgba(255,255,255,.1));
+  border-radius: 1rem;
+  background: var(--app-input, rgba(2,6,23,.72));
+  padding: .75rem 1rem;
+  color: var(--app-text, white);
+  outline: none;
+}
+.field-input::placeholder {
+  color: var(--app-text-faint, #64748b);
+}
 </style>

@@ -316,7 +316,7 @@
                 </option>
 
                 <option
-                  v-for="p in gymStore.promotions"
+                  v-for="p in availablePromotions"
                   :key="p.id"
                   :value="p.id_promocion"
                 >
@@ -632,6 +632,17 @@ const getPlanPrice = (planName) => {
   const plan = gymStore.planCatalog.find((p) => p.name === planName);
   return plan ? Number(plan.price || 0) : 0;
 };
+
+const availablePromotions = computed(() => {
+  const active = gymStore.activePromotions;
+  if (form.id_promocion) {
+    const current = gymStore.promotions.find(p => Number(p.id_promocion) === Number(form.id_promocion));
+    if (current && !active.some(p => Number(p.id_promocion) === Number(current.id_promocion))) {
+      return [...active, current];
+    }
+  }
+  return active;
+});
 
 const estimatedCharge = computed(() => {
   try {
