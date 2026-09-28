@@ -81,7 +81,7 @@ class AttendanceService:
                      if int(m.get("id_cliente") or 0) == client_id
                      and str(m.get("estado", "")).upper() in {"ACTIVA", "ACTIVO"}
                      and str(m.get("estado_pago", "")).upper() == "PAGADO"
-                     and str(m.get("fecha_inicio", "")) <= day <= str(m.get("fecha_fin", ""))), None)
+                     and str(m.get("fecha_inicio", ""))[:10] <= day <= str(m.get("fecha_fin", ""))[:10]), None)
 
     def entry_context(self, enrollment, now):
         client_id = int(enrollment.get("id_cliente") or 0)
