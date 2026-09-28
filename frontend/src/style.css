@@ -512,6 +512,10 @@ video {
   background-color: #f5f5f5 !important;
 }
 
+[data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="bg-slate-950/80"] {
+  background-color: #f5f5f5 !important;
+}
+
 [data-theme="light"] [class~="fixed"][class~="inset-0"][class~="z-50"] [class~="border-white/10"] {
   border-color: var(--app-border) !important;
 }

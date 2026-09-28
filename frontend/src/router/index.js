@@ -17,7 +17,6 @@ const AttendanceView = () => import('../views/AttendanceView.vue');
 const ServiceSchedulesView = () => import('../views/ServiceSchedulesView.vue');
 const EnrollmentView = () => import('../views/EnrollmentView.vue');
 const InventoryView = () => import('../views/InventoryView.vue');
-const InventoryMovementsView = () => import('../views/InventoryMovementsView.vue');
 const GymSettingsView = () => import('../views/GymSettingsView.vue');
 const MembershipPlansView = () => import('../views/MembershipPlansView.vue');
 const PromotionsView = () => import('../views/PromotionsView.vue');
@@ -114,8 +113,7 @@ const routes = [
       },
       {
         path: 'inventory/movements',
-        name: 'InventoryMovements',
-        component: InventoryMovementsView,
+        redirect: { name: 'Inventory', query: { tab: 'movimientos' } },
       },
       {
         path: 'plans',

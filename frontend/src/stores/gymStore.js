@@ -1590,7 +1590,8 @@ export const useGymStore = defineStore('gym', () => {
         const index = inventory.value.findIndex((entry) => entry.id === item.id);
         if (index >= 0) inventory.value[index] = item; else inventory.value.unshift(item);
         persist();
-        return item;
+        // El alta registra su entrada en MOV_INV y un item Tipo Tienda crea su producto.
+        return fetchFromBackend({ force: true }).catch(() => {}).then(() => item);
       });
     }
 
@@ -1684,13 +1685,24 @@ export const useGymStore = defineStore('gym', () => {
   /**
    * Elimina el registro indicado.
    */
-  const deleteInventoryItem = (id) => {
+  const deleteInventoryItem = async (id) => {
     if (apiBase && /^item-\d+$/.test(id)) {
       const id_item = Number(id.split('-')[1]);
-      fetch(`${apiBase}/inventario/${id_item}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => {});
+      const response = await fetch(`${apiBase}/inventario/${id_item}`, { method: 'DELETE', headers: _authHeaders() });
+      if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo eliminar el articulo'));
+      // Con historial o producto en tienda el backend no borra: lo marca como Descontinuado.
+      const result = response.status === 204 ? null : await response.json();
+      if (result?.accion === 'descontinuado') {
+        const item = inventory.value.find((entry) => entry.id === id);
+        if (item) item.status = result.item?.estado || 'Descontinuado';
+        persist();
+        await fetchFromBackend({ force: true }).catch(() => {});
+        return result;
+      }
     }
     inventory.value = inventory.value.filter((item) => item.id !== id);
     persist();
+    return null;
   };
 
   // Funciones para productos de tienda
@@ -1724,7 +1736,7 @@ export const useGymStore = defineStore('gym', () => {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error('Error al guardar producto en backend');
+      if (!res.ok) throw new Error(await readBackendError(res, 'Error al guardar producto en backend'));
       const saved = await res.json();
       
       const id_producto = saved.id_producto || payload.id_producto || Date.now();
@@ -1751,6 +1763,8 @@ export const useGymStore = defineStore('gym', () => {
       }
       
       persist();
+      // Un producto nuevo puede crear su item en Inventario y su entrada inicial.
+      await fetchFromBackend({ force: true }).catch(() => {});
       return normalized;
     }
 
@@ -1945,7 +1959,10 @@ export const useGymStore = defineStore('gym', () => {
         body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo actualizar el pedido'));
-      return mergeStoreOrder(await response.json());
+      const saved = mergeStoreOrder(await response.json());
+      // Cancelar devuelve el stock: refresca Inventario, Tienda y Movimientos.
+      if (body.estado_pedido === 'CANCELADO') await fetchFromBackend({ force: true }).catch(() => {});
+      return saved;
     }
     const order = storeOrders.value.find((entry) => Number(entry.id_pedido) === Number(idPedido));
     if (!order) throw new Error('Pedido no encontrado');
@@ -2880,6 +2897,19 @@ export const useGymStore = defineStore('gym', () => {
     return saved;
   };
 
+  /**
+   * Corrige un movimiento; el backend recalcula el stock compartido de Inventario y Tienda.
+   */
+  const updateInventoryMovement = async (idMov, payload) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const res = await fetch(`${apiBase}/inventario/movimientos/${idMov}`, { method: 'PUT', headers: _authHeaders(), body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error(await readBackendError(res, 'No se pudo actualizar el movimiento'));
+    const saved = await res.json();
+    await fetchFromBackend({ force: true }).catch(() => {});
+    persist();
+    return saved;
+  };
+
   return {
     syncError,
     isSyncing,
@@ -2986,5 +3016,6 @@ export const useGymStore = defineStore('gym', () => {
     upsertUserToServer,
     deleteUserFromServer,
     registrarMovimientoToServer,
+    updateInventoryMovement,
   };
 });
