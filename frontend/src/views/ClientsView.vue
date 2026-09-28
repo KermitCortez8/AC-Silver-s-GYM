@@ -392,28 +392,28 @@
           <div class="mt-6 space-y-2">
             <p class="text-sm text-slate-400">
               Correo:
-              <span class="text-slate-200">
+              <span class="text-slate-300">
                 {{ viewingClient.email || 'Sin correo' }}
               </span>
             </p>
 
             <p class="text-sm text-slate-400">
               DNI:
-              <span class="text-slate-200">
+              <span class="text-slate-300">
                 {{ viewingClient.dni || 'Sin DNI' }}
               </span>
             </p>
 
             <p class="text-sm text-slate-400">
               Telefono:
-              <span class="text-slate-200">
+              <span class="text-slate-300">
                 {{ viewingClient.phone || 'Sin telefono' }}
               </span>
             </p>
 
             <p class="text-sm text-slate-300">
               Plan:
-              <span class="text-slate-200">
+              <span class="text-slate-300">
                 {{ viewingClient.plan || 'MENSUAL' }}
                 -
                 {{ viewingClient.promocion || 'SIN PROMOCION' }}
@@ -431,7 +431,7 @@
 
             <p class="text-sm text-slate-400">
               Vigencia:
-              <span class="text-slate-200">
+              <span class="text-slate-300">
                 {{ viewingClient.membershipStart || 'por activar' }}
                 -
                 {{ viewingClient.membershipEnd || 'por activar' }}
@@ -443,7 +443,7 @@
               class="text-sm text-slate-400"
             >
               Pago:
-              <span class="text-slate-200">
+              <span class="text-slate-300">
                 {{ viewingClient.paymentStatus || 'PENDIENTE' }}
                 {{
                   viewingClient.paymentReference
