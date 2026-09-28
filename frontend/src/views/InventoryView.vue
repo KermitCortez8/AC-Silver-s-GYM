@@ -8,13 +8,29 @@
           <p class="mt-2 text-slate-300">Controla stock, ubicacion, estado operativo y observaciones de cada recurso del gimnasio.</p>
         </div>
 
-        <button class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] hover:bg-amber-300" @click="openNewItem">
+        <button v-if="activeTab === 'articulos'" class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] hover:bg-amber-300" @click="openNewItem">
           + Ingresar Nuevo Articulo
         </button>
       </div>
+
+      <nav class="mt-5 flex gap-2 border-t border-white/10 pt-5" aria-label="Secciones de inventario">
+        <button
+          v-for="tab in tabs"
+          :key="tab.value"
+          type="button"
+          class="rounded-xl px-4 py-2 text-sm font-bold transition"
+          :class="activeTab === tab.value ? 'bg-amber-400 text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/5'"
+          :aria-current="activeTab === tab.value ? 'page' : undefined"
+          @click="activeTab = tab.value"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
     </section>
 
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <InventoryMovementsPanel v-if="activeTab === 'movimientos'" />
+
+    <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
@@ -103,6 +119,7 @@
           <option>Dado de baja</option>
           <option>Stock bajo</option>
           <option>Agotado</option>
+          <option>Descontinuado</option>
         </select>
       </div>
 
@@ -208,17 +225,32 @@
               <input v-model="form.name" class="field-input" placeholder="Nombre del articulo" />
             </label>
             <label class="space-y-2">
-              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Categoria</span>
-              <input v-model="form.category" class="field-input" placeholder="Equipos, bebidas..." />
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Categoria (Tipo)</span>
+              <input v-model="form.category" class="field-input" list="inventory-types" placeholder="Tienda, Equipo de fuerza..." />
+              <datalist id="inventory-types">
+                <option value="Tienda" />
+                <option v-for="entry in categorySummary" :key="entry.name" :value="entry.name" />
+              </datalist>
             </label>
             <label class="space-y-2">
-              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Cantidad</span>
-              <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">{{ editingId ? 'Stock actual' : 'Stock inicial' }}</span>
+              <div v-if="!editingId" class="flex items-center gap-2">
                 <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" @click="form.quantity = Math.max(0, form.quantity - 1)">−</button>
                 <input v-model.number="form.quantity" type="number" min="0" class="field-input flex-1 text-center" />
                 <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" @click="form.quantity = form.quantity + 1">+</button>
               </div>
+              <input v-else :value="form.quantity" type="number" class="field-input cursor-not-allowed text-center opacity-70" readonly />
             </label>
+            <div class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50 sm:col-span-2">
+              <template v-if="editingId">
+                El stock no se edita aqui. Para cambiarlo registra una entrada, salida o ajuste en la pestaña Movimientos.
+                <span v-if="isTiendaForm" class="font-bold">Este articulo se vende en Tienda: el cambio afectara el stock de Inventario y de Tienda.</span>
+              </template>
+              <template v-else>
+                El stock inicial se registra como una entrada en Movimientos.
+                <span v-if="isTiendaForm" class="font-bold">Al ser Tipo "Tienda" se creara su producto en la tienda, oculto hasta que le asignes precio.</span>
+              </template>
+            </div>
             <label class="space-y-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Unidad de venta</span>
               <input v-model="form.unidad_venta" class="field-input" placeholder="unidad, botella, paquete..." />
@@ -241,8 +273,10 @@
                 <option>En mantenimiento</option>
                 <option>Fuera de servicio</option>
                 <option>Dado de baja</option>
+                <option>Disponible</option>
                 <option>Stock bajo</option>
                 <option>Agotado</option>
+                <option>Descontinuado</option>
               </select>
               <span class="mt-1 inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wide" :class="inventoryStatusClass(form.status)">
                 {{ form.status }}
@@ -265,10 +299,22 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { CheckCircle2, Package, Search, Tag, TrendingDown, Wrench } from 'lucide-vue-next';
+import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import { useGymStore } from '../stores/gymStore';
 
+const route = useRoute();
+const router = useRouter();
 const gymStore = useGymStore();
+const tabs = [
+  { value: 'articulos', label: 'Articulos' },
+  { value: 'movimientos', label: 'Movimientos' },
+];
+const activeTab = computed({
+  get: () => (route.query.tab === 'movimientos' ? 'movimientos' : 'articulos'),
+  set: (tab) => router.replace({ query: { ...route.query, tab } }),
+});
 const inventory = computed(() => gymStore.inventory);
 const lowStock = computed(() => gymStore.lowStockInventory);
 const maintenanceItems = computed(() => inventory.value.filter((item) => item.status === 'En mantenimiento').length);
@@ -330,6 +376,8 @@ const form = reactive({
   observations: '',
 });
 
+const isTiendaForm = computed(() => String(form.category || '').trim().toLowerCase() === 'tienda');
+
 const feedbackToneClass = computed(() => {
   if (feedbackTone.value === 'success') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
   if (feedbackTone.value === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
@@ -369,6 +417,7 @@ const inventoryStatusClass = (status) => {
   if (status === 'En mantenimiento') return 'bg-violet-100 text-violet-700 border-violet-300';
   if (status === 'Stock bajo') return 'bg-yellow-100 text-yellow-800 border-yellow-300';
   if (status === 'Agotado') return 'bg-rose-100 text-rose-700 border-rose-300';
+  if (status === 'Descontinuado') return 'bg-slate-300 text-slate-600 border-slate-400 line-through';
   return 'bg-slate-200 text-slate-700 border-slate-300';
 };
 
@@ -451,11 +500,13 @@ const handleSubmit = async () => {
  * Elimina el registro indicado.
  */
 const deleteItem = async (id) => {
-  if (!window.confirm('Eliminar este articulo?')) return;
+  if (!window.confirm('Eliminar este articulo?\n\nSi ya tiene movimientos o se vende en Tienda no se borrara: quedara como "Descontinuado" para conservar su historial.')) return;
   try {
-    await gymStore.deleteInventoryItem(id);
+    const result = await gymStore.deleteInventoryItem(id);
     feedbackTone.value = 'success';
-    feedbackMessage.value = 'Articulo eliminado.';
+    feedbackMessage.value = result?.accion === 'descontinuado'
+      ? 'El articulo tiene historial o se vende en Tienda: se marco como Descontinuado.'
+      : 'Articulo eliminado.';
   } catch (error) {
     feedbackTone.value = 'error';
     feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo eliminar el articulo.';

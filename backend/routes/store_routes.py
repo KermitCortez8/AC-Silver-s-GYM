@@ -11,7 +11,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from config import get_settings
-from dependencies import get_gym_service
+from dependencies import get_gym_service, get_optional_actor_id
 from models.gym import PedidoTiendaInput, PedidoTiendaUpdateInput, ProductoTiendaInput
 from services.gym_domain_service import GymDomainService
 from services.supabase_storage_service import SupabaseStorageService
@@ -81,9 +81,14 @@ def create_pedido(payload: PedidoTiendaInput, gym_service: GymDomainService = De
 
 @router.put("/pedidos/{id_pedido}")
 # Actualiza el registro correspondiente.
-def update_pedido(id_pedido: int, payload: PedidoTiendaUpdateInput, gym_service: GymDomainService = Depends(get_gym_service)):
+def update_pedido(
+    id_pedido: int,
+    payload: PedidoTiendaUpdateInput,
+    gym_service: GymDomainService = Depends(get_gym_service),
+    actor_id: str | None = Depends(get_optional_actor_id),
+):
     try:
-        return gym_service.actualizar_pedido_tienda(id_pedido, payload.model_dump())
+        return gym_service.actualizar_pedido_tienda(id_pedido, payload.model_dump(), actor=actor_id)
     except ValueError as error:
         status_code = status.HTTP_404_NOT_FOUND if "no encontrado" in str(error).lower() else status.HTTP_400_BAD_REQUEST
         raise HTTPException(status_code=status_code, detail=str(error)) from error
@@ -91,9 +96,13 @@ def update_pedido(id_pedido: int, payload: PedidoTiendaUpdateInput, gym_service:
 
 @router.post("")
 # Actualiza el registro correspondiente.
-def upsert_producto(payload: ProductoTiendaInput, gym_service: GymDomainService = Depends(get_gym_service)):
+def upsert_producto(
+    payload: ProductoTiendaInput,
+    gym_service: GymDomainService = Depends(get_gym_service),
+    actor_id: str | None = Depends(get_optional_actor_id),
+):
     try:
-        return gym_service.upsert_producto_tienda(payload.model_dump())
+        return gym_service.upsert_producto_tienda(payload.model_dump(), actor=actor_id)
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 

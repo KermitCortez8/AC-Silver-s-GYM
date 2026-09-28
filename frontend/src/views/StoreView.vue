@@ -47,8 +47,7 @@
 
     <StoreMovementsPanel v-if="isAdmin && activeTab === 'movimientos'" />
 
-      <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      
+    <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">Estado</p>
@@ -462,11 +461,12 @@
                   <input v-model="form.categoria" class="field-input" placeholder="Suplementos, Bebidas..." />
                 </label>
                 <label class="space-y-2">
-                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item de almacen</span>
-                  <select v-model.number="form.id_item" class="field-input">
-                    <option :value="null">Sin vincular</option>
-                    <option v-for="item in inventario" :key="item.id" :value="Number(String(item.id).replace('item-', ''))">
-                      {{ item.inventoryCode }} - {{ item.name }}
+                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item de inventario</span>
+                  <input v-if="editingLinked" :value="linkedItemLabel" class="field-input cursor-not-allowed opacity-70" readonly />
+                  <select v-else v-model="form.id_item" class="field-input">
+                    <option :value="null">{{ editingId ? 'Sin vincular' : 'Crear nuevo item en Inventario (Tipo Tienda)' }}</option>
+                    <option v-for="item in availableTiendaItems" :key="item.id" :value="itemNumber(item)">
+                      {{ item.inventoryCode }} - {{ item.name }} ({{ item.quantity }})
                     </option>
                   </select>
                 </label>
@@ -488,21 +488,19 @@
                   <input v-model.number="form.precio" type="number" min="0" step="0.01" class="field-input" />
                 </label>
                 <label class="space-y-2">
-                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Cantidad en stock</span>
-                  <input v-model.number="form.cantidad" type="number" min="0" class="field-input" />
+                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ stockEditable ? 'Stock inicial' : 'Stock (desde Inventario)' }}</span>
+                  <input v-if="stockEditable" v-model.number="form.cantidad" type="number" min="0" class="field-input" />
+                  <input v-else :value="stockMostrado" type="number" class="field-input cursor-not-allowed opacity-70" readonly />
                 </label>
                 <label class="space-y-2">
                   <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Stock minimo</span>
                   <input v-model.number="form.minimo" type="number" min="0" class="field-input" />
                 </label>
-                <label class="space-y-2 sm:col-span-2">
-                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Estado</span>
-                  <select v-model="form.estado" class="field-input">
-                    <option>Disponible</option>
-                    <option>Agotado</option>
-                    <option>Descatalogado</option>
-                  </select>
-                </label>
+                <div class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50 sm:col-span-2">
+                  <p v-if="stockEditable">El stock inicial se registrara como una entrada en los movimientos de Inventario.</p>
+                  <p v-else class="font-bold">El stock se comparte entre Inventario y Tienda. Para modificarlo registra un movimiento en Inventario &rarr; Movimientos.</p>
+                  <p class="mt-1">El estado se calcula solo: <span class="font-bold">Disponible</span> con stock, <span class="font-bold">Agotado</span> sin stock y <span class="font-bold">Descatalogado</span> (oculto a clientes) si no tiene precio o el item ya no es Tipo Tienda o esta Descontinuado.</p>
+                </div>
               </div>
             </div>
 
@@ -726,6 +724,26 @@ const productCode = (id) => `PROD-${String(id || 0).padStart(4, '0')}`;
 /**
  * Valida los datos recibidos.
  */
+const itemNumber = (item) => Number(String(item.id).replace('item-', ''));
+const findItem = (idItem) => inventario.value.find((item) => itemNumber(item) === Number(idItem)) || null;
+
+// Items Tipo Tienda que todavia no tienen producto (el vinculo es 1:1).
+const availableTiendaItems = computed(() => {
+  const vinculados = new Set(productos.value.filter((p) => p.id_item && p.id_producto !== editingId.value).map((p) => Number(p.id_item)));
+  return inventario.value.filter((item) => String(item.category || '').trim().toLowerCase() === 'tienda' && !vinculados.has(itemNumber(item)));
+});
+const editingLinked = computed(() => Boolean(editingId.value && productos.value.find((p) => p.id_producto === editingId.value)?.id_item));
+const linkedItemLabel = computed(() => {
+  const item = findItem(form.id_item);
+  return item ? `${item.inventoryCode} - ${item.name}` : `Item #${form.id_item}`;
+});
+// Solo un producto nuevo que crea su propio item acepta stock inicial.
+const stockEditable = computed(() => !editingId.value && !form.id_item);
+const stockMostrado = computed(() => {
+  const item = findItem(form.id_item);
+  return item ? Number(item.quantity || 0) : Number(form.cantidad || 0);
+});
+
 const isProductLowStock = (producto) => Number(producto.cantidad || 0) <= Number(producto.minimo || 0);
 
 /**

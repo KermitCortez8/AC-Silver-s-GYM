@@ -159,6 +159,14 @@ class MovimientoInventarioInput(BaseModel):
     cantidad: int = 1
 
 
+class MovimientoInventarioUpdateInput(BaseModel):
+    id_item: int | None = None
+    tipo_movimiento: Literal["entrada", "salida", "ajuste"] | None = None
+    fecha_movimiento: str | None = None
+    descripcion: str | None = None
+    cantidad: int | None = Field(default=None, ge=1)
+
+
 class TicketAtencionInput(BaseModel):
     id_ticket: int | None = None
     id_cliente: int
