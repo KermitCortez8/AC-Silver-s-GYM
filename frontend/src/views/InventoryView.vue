@@ -7,9 +7,7 @@
         class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between"
       >
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-            Recursos
-          </p>
+          <p class="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Recursos &middot; Gestion de inventario</p>
           <h1 class="mt-2 text-3xl font-black text-white">Inventario</h1>
           <p class="mt-2 text-slate-300">
             Controla stock, ubicacion, estado operativo y observaciones de cada
@@ -17,21 +15,30 @@
           </p>
         </div>
 
-        <button
-          class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300"
-          @click="openNewItem"
-        >
-          Ingresar Nuevo Articulo
+        <button v-if="activeTab === 'articulos'" class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] hover:bg-amber-300" @click="openNewItem">
+          + Ingresar Nuevo Articulo
         </button>
       </div>
+
+      <nav class="mt-5 flex gap-2 border-t border-white/10 pt-5" aria-label="Secciones de inventario">
+        <button
+          v-for="tab in tabs"
+          :key="tab.value"
+          type="button"
+          class="rounded-xl px-4 py-2 text-sm font-bold transition"
+          :class="activeTab === tab.value ? 'bg-amber-400 text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/5'"
+          :aria-current="activeTab === tab.value ? 'page' : undefined"
+          @click="activeTab = tab.value"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
     </section>
 
-    <section
-      class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
-    >
-      <div
-        class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
-      >
+    <InventoryMovementsPanel v-if="activeTab === 'movimientos'" />
+
+    <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
             Estado
@@ -40,20 +47,91 @@
             Listado de inventario
           </h2>
         </div>
-        <div class="grid gap-3 sm:grid-cols-3">
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
-            <p class="text-xs text-slate-400">Total</p>
-            <p class="text-xl font-black text-white">{{ inventory.length }}</p>
-          </div>
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
-            <p class="text-xs text-slate-400">Stock bajo</p>
-            <p class="text-xl font-black text-white">{{ lowStock.length }}</p>
-          </div>
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
-            <p class="text-xs text-slate-400">En mantenimiento</p>
-            <p class="text-xl font-black text-white">{{ maintenanceItems }}</p>
+      </div>
+
+      <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-blue-400 bg-slate-900/80 px-4 py-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+            <Package :size="20" stroke-width="2.5" />
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Total registrados</p>
+            <p class="text-2xl font-black text-white">{{ inventory.length }}</p>
           </div>
         </div>
+        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-green-400 bg-slate-900/80 px-4 py-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-600">
+            <CheckCircle2 :size="20" stroke-width="2.5" />
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Disponibilidad operativa</p>
+            <p class="text-2xl font-black text-white">{{ operationalPercent }}%</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-yellow-400 bg-slate-900/80 px-4 py-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700">
+            <TrendingDown :size="20" stroke-width="2.5" />
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Stock bajo</p>
+            <p class="text-2xl font-black text-white">{{ lowStock.length }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-violet-400 bg-slate-900/80 px-4 py-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+            <Wrench :size="20" stroke-width="2.5" />
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">En mantenimiento</p>
+            <p class="text-2xl font-black text-white">{{ maintenanceItems }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-2.5">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
+          :class="selectedCategory === 'all' ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
+          @click="selectedCategory = 'all'"
+        >
+          Todas las categorias <span :class="selectedCategory === 'all' ? 'text-slate-900/70' : 'text-slate-500'">{{ inventory.length }}</span>
+        </button>
+        <button
+          v-for="entry in categorySummary"
+          :key="entry.name"
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
+          :class="selectedCategory === entry.name ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
+          @click="selectedCategory = entry.name"
+        >
+          <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ background: categoryDotColor(entry.name) }"></span>
+          {{ entry.name }} <span :class="selectedCategory === entry.name ? 'text-slate-900/70' : 'text-slate-500'">{{ entry.count }}</span>
+        </button>
+      </div>
+
+      <p class="mt-3 text-xs text-slate-500">Mostrando {{ filteredInventory.length }} de {{ inventory.length }} articulos</p>
+
+      <div class="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr]">
+        <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
+          <Search :size="16" class="shrink-0 text-slate-500" />
+          <input v-model="searchQuery" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar por codigo, nombre o marca..." />
+        </div>
+        <select v-model="selectedLocation" class="field-input">
+          <option value="all">Todas las ubicaciones</option>
+          <option v-for="loc in locationOptions" :key="loc" :value="loc">{{ loc }}</option>
+        </select>
+        <select v-model="selectedStatus" class="field-input">
+          <option value="all">Todos los estados</option>
+          <option>Operativo</option>
+          <option>Disponible</option>
+          <option>En mantenimiento</option>
+          <option>Fuera de servicio</option>
+          <option>Dado de baja</option>
+          <option>Stock bajo</option>
+          <option>Agotado</option>
+          <option>Descontinuado</option>
+        </select>
       </div>
 
       <p
@@ -64,10 +142,7 @@
         {{ feedbackMessage }}
       </p>
 
-      <div
-        v-if="inventory.length"
-        class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70"
-      >
+      <div v-if="filteredInventory.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
           <table class="w-full min-w-[1120px] text-left text-sm">
             <thead
@@ -78,22 +153,16 @@
                 <th class="px-4 py-4 font-bold">Categoria</th>
                 <th class="px-4 py-4 font-bold">Ubicacion</th>
                 <th class="px-4 py-4 font-bold">Stock</th>
-                <th class="px-4 py-4 font-bold">Precio venta</th>
+                <th class="px-4 py-4 font-bold">Precio</th>
                 <th class="px-4 py-4 font-bold">Estado</th>
                 <th class="px-5 py-4 text-right font-bold">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/10">
-              <tr
-                v-for="item in inventory"
-                :key="item.id"
-                class="transition hover:bg-white/[0.04]"
-              >
+              <tr v-for="item in filteredInventory" :key="item.id" class="transition hover:bg-white/[0.04]">
                 <td class="max-w-sm px-5 py-4 align-top">
                   <div class="flex items-start gap-3">
-                    <span
-                      class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-black text-amber-200"
-                    >
+                    <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-200">
                       {{ item.inventoryCode }}
                     </span>
                     <div class="min-w-0">
@@ -109,12 +178,13 @@
                     </div>
                   </div>
                 </td>
-                <td class="px-4 py-4 align-top text-slate-300">
-                  {{ item.category || 'General' }}
+                <td class="px-4 py-4 align-top">
+                  <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-slate-200">
+                    <span class="h-1.5 w-1.5 shrink-0 rounded-full" :style="{ background: categoryDotColor(item.category) }"></span>
+                    {{ item.category || 'General' }}
+                  </span>
                 </td>
-                <td class="px-4 py-4 align-top text-slate-300">
-                  {{ item.location || 'Sin ubicacion' }}
-                </td>
+                <td class="px-4 py-4 align-top text-slate-300">{{ item.location || 'Sin ubicacion' }}</td>
                 <td class="px-4 py-4 align-top">
                   <p
                     class="font-bold"
@@ -122,20 +192,16 @@
                   >
                     {{ item.quantity }} {{ item.unidad_venta || 'unidad' }}
                   </p>
-                  <p class="mt-1 text-xs text-slate-400">
-                    Minimo: {{ item.minQuantity || 0 }}
-                  </p>
+                  <div class="mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
+                    <div class="h-full rounded-full transition-all" :class="isLowStock(item) ? 'bg-rose-500' : 'bg-green-500'" :style="{ width: stockBarPercent(item) + '%' }"></div>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-400">Minimo: {{ item.minQuantity || 0 }}</p>
                 </td>
-                <td
-                  class="whitespace-nowrap px-4 py-4 align-top font-black text-emerald-300"
-                >
+                <td class="whitespace-nowrap px-4 py-4 align-top font-black text-emerald-300">
                   S/. {{ Number(item.precio_venta || 0).toFixed(2) }}
                 </td>
                 <td class="px-4 py-4 align-top">
-                  <span
-                    class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold"
-                    :class="inventoryStatusClass(item.status)"
-                  >
+                  <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="inventoryStatusClass(item.status)">
                     {{ item.status }}
                   </span>
                 </td>
@@ -161,136 +227,178 @@
         </div>
       </div>
 
-      <p
-        v-if="!inventory.length"
-        class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400"
-      >
-        No hay articulos en inventario. Usa "Ingresar Nuevo Articulo" para
-        registrar el primero.
+      <p v-if="!filteredInventory.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">
+        {{ inventory.length ? 'Ningun articulo coincide con los filtros aplicados.' : 'No hay articulos en inventario. Usa "Ingresar Nuevo Articulo" para registrar el primero.' }}
       </p>
     </section>
 
-    <WorkspaceDialog
-      :open="isEditorOpen"
-      :title="editingId ? 'Editar artículo' : 'Nuevo artículo'"
-      @close="closeEditor"
-    >
-      <form @submit.prevent="handleSubmit">
-        <div
-          class="mt-4 rounded-2xl border ws-border-warning ws-tint-warning px-4 py-3 text-sm ws-warning"
-        >
-          <p class="text-xs uppercase tracking-[0.35em] ws-warning">
-            Identificador único
-          </p>
-          <p class="mt-1 font-semibold ws-text">{{ currentInventoryCode }}</p>
-        </div>
+    <Teleport to="body">
+      <div v-if="isEditorOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+        <form class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl" @submit.prevent="handleSubmit">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Articulo</p>
+              <h2 class="mt-2 text-2xl font-black text-white">{{ editingId ? 'Editar articulo' : 'Nuevo articulo' }}</h2>
+            </div>
+            <button type="button" class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5" @click="closeEditor">
+              Cerrar
+            </button>
+          </div>
 
-        <div class="mt-5 grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm ws-soft">Nombre</span>
-            <input
-              v-model="form.name"
-              class="ws-input"
-              placeholder="Nombre del articulo"
-            />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Categoria</span>
-            <input
-              v-model="form.category"
-              class="ws-input"
-              placeholder="Equipos, bebidas..."
-            />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Cantidad</span>
-            <input
-              v-model.number="form.quantity"
-              type="number"
-              min="0"
-              class="ws-input"
-            />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Unidad de venta</span>
-            <input
-              v-model="form.unidad_venta"
-              class="ws-input"
-              placeholder="unidad, botella, paquete..."
-            />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Precio de venta (S/.)</span>
-            <input
-              v-model.number="form.precio_venta"
-              type="number"
-              min="0"
-              step="0.01"
-              class="ws-input"
-            />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Stock minimo</span>
-            <input
-              v-model.number="form.minQuantity"
-              type="number"
-              min="0"
-              class="ws-input"
-            />
-          </label>
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Ubicacion</span>
-            <input
-              v-model="form.location"
-              class="ws-input"
-              placeholder="Sala 1"
-            />
-          </label>
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm ws-soft">Estado</span>
-            <select v-model="form.status" class="ws-input">
-              <option>Operativo</option>
-              <option>En mantenimiento</option>
-              <option>Fuera de servicio</option>
-              <option>Dado de baja</option>
-              <option>Stock bajo</option>
-              <option>Agotado</option>
-            </select>
-          </label>
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm ws-soft">Observaciones</span>
-            <textarea
-              v-model="form.observations"
-              rows="3"
-              class="ws-input"
-              placeholder="Estado del equipo, mantenimiento pendiente, incidencias..."
-            ></textarea>
-          </label>
-        </div>
+          <div class="mt-4 flex items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400 text-slate-950">
+              <Tag :size="20" stroke-width="2.5" />
+            </span>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.35em] text-amber-200">Identificador unico</p>
+              <p class="mt-1 font-semibold text-white">{{ currentInventoryCode }}</p>
+            </div>
+          </div>
 
-        <button
-          type="submit"
-          class="mt-6 w-full rounded-2xl ws-primary px-4 py-3 font-bold transition"
-        >
-          {{ editingId ? 'Guardar cambios' : 'Agregar articulo' }}
-        </button>
-      </form>
-    </WorkspaceDialog>
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <label class="space-y-2 sm:col-span-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Nombre</span>
+              <input v-model="form.name" class="field-input" placeholder="Nombre del articulo" />
+            </label>
+            <label class="space-y-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Categoria (Tipo)</span>
+              <input v-model="form.category" class="field-input" list="inventory-types" placeholder="Tienda, Equipo de fuerza..." />
+              <datalist id="inventory-types">
+                <option value="Tienda" />
+                <option v-for="entry in categorySummary" :key="entry.name" :value="entry.name" />
+              </datalist>
+            </label>
+            <label class="space-y-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">{{ editingId ? 'Stock actual' : 'Stock inicial' }}</span>
+              <div v-if="!editingId" class="flex items-center gap-2">
+                <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" @click="form.quantity = Math.max(0, form.quantity - 1)">−</button>
+                <input v-model.number="form.quantity" type="number" min="0" class="field-input flex-1 text-center" />
+                <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" @click="form.quantity = form.quantity + 1">+</button>
+              </div>
+              <input v-else :value="form.quantity" type="number" class="field-input cursor-not-allowed text-center opacity-70" readonly />
+            </label>
+            <div class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50 sm:col-span-2">
+              <template v-if="editingId">
+                El stock no se edita aqui. Para cambiarlo registra una entrada, salida o ajuste en la pestaña Movimientos.
+                <span v-if="isTiendaForm" class="font-bold">Este articulo se vende en Tienda: el cambio afectara el stock de Inventario y de Tienda.</span>
+              </template>
+              <template v-else>
+                El stock inicial se registra como una entrada en Movimientos.
+                <span v-if="isTiendaForm" class="font-bold">Al ser Tipo "Tienda" se creara su producto en la tienda, oculto hasta que le asignes precio.</span>
+              </template>
+            </div>
+            <label class="space-y-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Unidad de venta</span>
+              <input v-model="form.unidad_venta" class="field-input" placeholder="unidad, botella, paquete..." />
+            </label>
+            <label class="space-y-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Precio de venta (S/.)</span>
+              <input v-model.number="form.precio_venta" type="number" min="0" step="0.01" class="field-input" />
+            </label>
+            <label class="space-y-2">
+              <span class="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-400">
+                Stock minimo
+                <span v-if="form.quantity <= form.minQuantity" class="rounded-full border border-yellow-400/40 bg-yellow-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-yellow-800">Alerta activa</span>
+              </span>
+              <input v-model.number="form.minQuantity" type="number" min="0" class="field-input" />
+            </label>
+            <label class="space-y-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Ubicacion</span>
+              <input v-model="form.location" class="field-input" placeholder="Sala 1" />
+            </label>
+            <label class="space-y-2 sm:col-span-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Estado</span>
+              <select v-model="form.status" class="field-input">
+                <option>Operativo</option>
+                <option>En mantenimiento</option>
+                <option>Fuera de servicio</option>
+                <option>Dado de baja</option>
+                <option>Disponible</option>
+                <option>Stock bajo</option>
+                <option>Agotado</option>
+                <option>Descontinuado</option>
+              </select>
+              <span class="mt-1 inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black uppercase tracking-wide" :class="inventoryStatusClass(form.status)">
+                {{ form.status }}
+              </span>
+            </label>
+            <label class="space-y-2 sm:col-span-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Observaciones</span>
+              <textarea v-model="form.observations" rows="3" class="field-input" placeholder="Estado del equipo, mantenimiento pendiente, incidencias..."></textarea>
+            </label>
+          </div>
+
+          <button type="submit" class="mt-6 w-full rounded-2xl bg-amber-400 px-4 py-3 text-base font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.01] hover:bg-amber-300">
+            {{ editingId ? 'Guardar cambios' : 'Agregar articulo' }}
+          </button>
+        </form>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
-import WorkspaceDialog from '../components/WorkspaceDialog.vue';
+import { useRoute, useRouter } from 'vue-router';
+import { CheckCircle2, Package, Search, Tag, TrendingDown, Wrench } from 'lucide-vue-next';
+import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import { useGymStore } from '../stores/gymStore';
 
+const route = useRoute();
+const router = useRouter();
 const gymStore = useGymStore();
+const tabs = [
+  { value: 'articulos', label: 'Articulos' },
+  { value: 'movimientos', label: 'Movimientos' },
+];
+const activeTab = computed({
+  get: () => (route.query.tab === 'movimientos' ? 'movimientos' : 'articulos'),
+  set: (tab) => router.replace({ query: { ...route.query, tab } }),
+});
 const inventory = computed(() => gymStore.inventory);
 const lowStock = computed(() => gymStore.lowStockInventory);
-const maintenanceItems = computed(
-  () =>
-    inventory.value.filter((item) => item.status === 'En mantenimiento').length,
-);
+const maintenanceItems = computed(() => inventory.value.filter((item) => item.status === 'En mantenimiento').length);
+
+// Filtros de la tabla (solo lectura, no afectan el store).
+const searchQuery = ref('');
+const selectedCategory = ref('all');
+const selectedLocation = ref('all');
+const selectedStatus = ref('all');
+
+const locationOptions = computed(() => {
+  const set = new Set(inventory.value.map((item) => item.location).filter(Boolean));
+  return Array.from(set);
+});
+
+const filteredInventory = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  return inventory.value.filter((item) => {
+    const matchesQuery =
+      !query ||
+      item.name?.toLowerCase().includes(query) ||
+      item.inventoryCode?.toLowerCase().includes(query) ||
+      item.category?.toLowerCase().includes(query);
+    const matchesCategory = selectedCategory.value === 'all' || (item.category || 'General') === selectedCategory.value;
+    const matchesLocation = selectedLocation.value === 'all' || item.location === selectedLocation.value;
+    const matchesStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value;
+    return matchesQuery && matchesCategory && matchesLocation && matchesStatus;
+  });
+});
+
+// Derivados de inventory, solo lectura.
+const operationalPercent = computed(() => {
+  if (!inventory.value.length) return 0;
+  const operational = inventory.value.filter((item) => item.status === 'Operativo' || item.status === 'Disponible').length;
+  return Math.round((operational / inventory.value.length) * 100);
+});
+const categorySummary = computed(() => {
+  const counts = new Map();
+  inventory.value.forEach((item) => {
+    const key = item.category || 'General';
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+  return Array.from(counts.entries()).map(([name, count]) => ({ name, count }));
+});
 const editingId = ref('');
 const isEditorOpen = ref(false);
 const feedbackMessage = ref('');
@@ -308,6 +416,8 @@ const form = reactive({
   observations: '',
 });
 
+const isTiendaForm = computed(() => String(form.category || '').trim().toLowerCase() === 'tienda');
+
 const feedbackToneClass = computed(() => {
   if (feedbackTone.value === 'success')
     return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
@@ -323,16 +433,35 @@ const isLowStock = (item) =>
   Number(item.quantity || 0) <= Number(item.minQuantity || 0);
 
 /**
+ * Ancho de la barra de stock respecto al minimo (3x el minimo = 100%).
+ */
+const stockBarPercent = (item) => {
+  const min = Number(item.minQuantity || 1);
+  const qty = Number(item.quantity || 0);
+  const reference = Math.max(min * 3, 1);
+  return Math.min(100, Math.round((qty / reference) * 100));
+};
+
+// Color del punto por categoria (categoria es texto libre, color estable segun el nombre).
+const categoryDotPalette = ['#0d9488', '#7c3aed', '#2563eb', '#db2777', '#4f46e5'];
+const categoryDotColor = (category) => {
+  const key = category || 'General';
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) hash = (hash + key.charCodeAt(i)) % categoryDotPalette.length;
+  return categoryDotPalette[hash];
+};
+
+/**
  * Gestiona esta acción de la vista.
  */
 const inventoryStatusClass = (status) => {
-  if (status === 'Operativo')
-    return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300';
-  if (status === 'En mantenimiento')
-    return 'border-amber-400/20 bg-amber-400/10 text-amber-300';
-  if (status === 'Stock bajo')
-    return 'border-orange-400/20 bg-orange-400/10 text-orange-300';
-  return 'border-rose-400/20 bg-rose-400/10 text-rose-300';
+  if (status === 'Operativo') return 'bg-green-100 text-green-700 border-green-300';
+  if (status === 'Disponible') return 'bg-blue-100 text-blue-700 border-blue-300';
+  if (status === 'En mantenimiento') return 'bg-violet-100 text-violet-700 border-violet-300';
+  if (status === 'Stock bajo') return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+  if (status === 'Agotado') return 'bg-rose-100 text-rose-700 border-rose-300';
+  if (status === 'Descontinuado') return 'bg-slate-300 text-slate-600 border-slate-400 line-through';
+  return 'bg-slate-200 text-slate-700 border-slate-300';
 };
 
 const currentInventoryCode = computed(() => {
@@ -425,11 +554,13 @@ const handleSubmit = async () => {
  * Elimina el registro indicado.
  */
 const deleteItem = async (id) => {
-  if (!window.confirm('Eliminar este articulo?')) return;
+  if (!window.confirm('Eliminar este articulo?\n\nSi ya tiene movimientos o se vende en Tienda no se borrara: quedara como "Descontinuado" para conservar su historial.')) return;
   try {
-    await gymStore.deleteInventoryItem(id);
+    const result = await gymStore.deleteInventoryItem(id);
     feedbackTone.value = 'success';
-    feedbackMessage.value = 'Articulo eliminado.';
+    feedbackMessage.value = result?.accion === 'descontinuado'
+      ? 'El articulo tiene historial o se vende en Tienda: se marco como Descontinuado.'
+      : 'Articulo eliminado.';
   } catch (error) {
     feedbackTone.value = 'error';
     feedbackMessage.value =

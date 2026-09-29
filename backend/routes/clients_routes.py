@@ -216,6 +216,20 @@ def activar_membresia_cliente(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
 
+@router.post("/clientes/{id_cliente}/confirmar-pago-manual")
+def confirmar_pago_manual(
+    id_cliente: int,
+    clients_service: ClientsService = Depends(get_clients_service),
+    settings: Settings = Depends(get_settings),
+    _current_user=Depends(require_admin_or_staff),
+):
+    try:
+        saved = clients_service.confirm_manual_payment(id_cliente)
+        return {"message": "Pago confirmado manualmente", "data": saved}
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+
 @router.post("/clientes/{id_cliente}/notificar-activacion")
 def retry_activation_notification(
     id_cliente: int,

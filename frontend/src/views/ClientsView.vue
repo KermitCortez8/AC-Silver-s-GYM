@@ -277,17 +277,12 @@
               type="password"
               autocomplete="new-password"
               class="ws-input"
-              :placeholder="
-                editingId
-                  ? 'Dejar vacio para conservar la actual'
-                  : 'Minimo 6 caracteres'
-              "
+              :placeholder="editingId ? 'Dejar vacio para conservar la actual' : 'Minimo 6 caracteres'"
             />
           </label>
 
           <label class="space-y-2">
             <span class="text-sm ws-soft">Teléfono</span>
-
             <input
               v-model="form.telefono"
               class="ws-input"
@@ -297,13 +292,11 @@
 
           <label class="space-y-2">
             <span class="text-sm ws-soft">DNI</span>
-
             <input v-model="form.dni" class="ws-input" placeholder="12345678" />
           </label>
 
           <label class="space-y-2">
             <span class="text-sm ws-soft">Plan</span>
-
             <select v-model="form.plan" class="ws-input">
               <option value="MENSUAL">MENSUAL</option>
               <option value="3 MESES">3 MESES</option>
@@ -313,23 +306,29 @@
 
           <label class="space-y-2">
             <span class="text-sm ws-soft">Promocion</span>
-
-            <select v-model="form.promocion" class="ws-input">
-              <option value="SIN PROMOCION">SIN PROMOCION</option>
-
+            <select v-model="form.id_promocion" class="ws-input">
+              <option :value="0">SIN PROMOCION</option>
               <option
-                v-for="p in gymStore.promotions"
+                v-for="p in availablePromotions"
                 :key="p.id"
-                :value="p.name"
+                :value="p.id_promocion"
               >
                 {{ p.name }}
               </option>
             </select>
+            <p class="text-xs ws-muted">
+              Precio estimado: S/. {{ estimatedCharge.finalPrice }}
+              <span
+                v-if="estimatedCharge.discountAmount > 0"
+                class="ws-warning"
+              >
+                (descuento: S/. {{ estimatedCharge.discountAmount }})
+              </span>
+            </p>
           </label>
 
           <label class="space-y-2 sm:col-span-2">
             <span class="text-sm ws-soft">Estado</span>
-
             <select v-model="form.estado" class="ws-input">
               <option value="EN_TRAMITE">EN_TRAMITE</option>
               <option value="ACTIVO" :disabled="editingNeedsActivation">
@@ -407,27 +406,65 @@
           <div>
             <dt>Vigencia</dt>
             <dd>
-              {{ viewingClient.membershipStart || 'Por activar'
-              }}<span class="block ws-muted text-xs mt-1"
-                >hasta {{ viewingClient.membershipEnd || 'Por activar' }}</span
-              >
+              {{ viewingClient.membershipStart || 'Por activar' }}
+              <span class="block ws-muted text-xs mt-1">
+                hasta {{ viewingClient.membershipEnd || 'Por activar' }}
+              </span>
             </dd>
           </div>
+
           <div
             v-if="viewingClient.paymentReference || viewingClient.paymentStatus"
             class="client-detail-wide"
           >
             <dt>Pago</dt>
             <dd>
-              {{ viewingClient.paymentStatus || 'PENDIENTE'
-              }}<span
+              {{ viewingClient.paymentStatus || 'PENDIENTE' }}
+              <span
                 v-if="viewingClient.paymentReference"
                 class="block ws-muted text-sm mt-1"
-                >{{ viewingClient.paymentReference }}</span
               >
+                {{ viewingClient.paymentReference }}
+              </span>
+            </dd>
+          </div>
+
+          <div
+            v-if="
+              Number(viewingClient.membershipPrice || 0) > 0 &&
+              getPlanPrice(viewingClient.plan) > Number(viewingClient.membershipPrice || 0)
+            "
+            class="client-detail-wide"
+          >
+            <dt>Descuento aplicado</dt>
+            <dd>
+              Precio base: S/. {{ getPlanPrice(viewingClient.plan).toFixed(2) }}
+              <span class="block ws-success text-sm mt-1">
+                Pagado: S/. {{ Number(viewingClient.membershipPrice || 0).toFixed(2) }}
+                · Ahorro: S/. {{ (getPlanPrice(viewingClient.plan) - Number(viewingClient.membershipPrice || 0)).toFixed(2) }}
+              </span>
             </dd>
           </div>
         </dl>
+
+        <div class="mt-6 flex flex-col gap-3">
+          <button
+            v-if="viewingClient.paymentStatus === 'PENDIENTE'"
+            type="button"
+            class="w-full rounded-xl border ws-border-warning ws-tint-warning px-4 py-3 font-bold ws-warning transition ws-hover"
+            @click="markAsPaidManual(viewingClient)"
+          >
+            Confirmar Pago (Manual/Efectivo)
+          </button>
+          <button
+            v-if="viewingClient.paymentStatus === 'PAGADO' && !isActiveStatus(viewingClient.status)"
+            type="button"
+            class="w-full rounded-xl border ws-border-success ws-tint-success px-4 py-3 font-bold ws-success transition ws-hover"
+            @click="requestActivation(viewingClient)"
+          >
+            Activar Membresía
+          </button>
+        </div>
       </template>
     </WorkspaceDialog>
     <ConfirmDialog
@@ -525,7 +562,7 @@ const form = reactive({
   dni: '',
   password: '',
   plan: 'MENSUAL',
-  promocion: 'SIN PROMOCION',
+  id_promocion: 0,
   estado: 'EN_TRAMITE',
 });
 
@@ -575,6 +612,32 @@ const statusClass = (value) => {
 
   return 'font-semibold text-slate-300';
 };
+
+const getPlanPrice = (planName) => {
+  const plan = gymStore.planCatalog.find((p) => p.name === planName);
+  return plan ? Number(plan.price || 0) : 0;
+};
+
+const availablePromotions = computed(() => {
+  const active = gymStore.activePromotions;
+  if (form.id_promocion) {
+    const current = gymStore.promotions.find(p => Number(p.id_promocion) === Number(form.id_promocion));
+    if (current && !active.some(p => Number(p.id_promocion) === Number(current.id_promocion))) {
+      return [...active, current];
+    }
+  }
+  return active;
+});
+
+const estimatedCharge = computed(() => {
+  try {
+    const plan = gymStore.planCatalog.find((p) => p.name === form.plan) || gymStore.planCatalog[0];
+    if (!plan) return { finalPrice: 0, discountAmount: 0 };
+    return gymStore.calculatePlanCharge(plan.id, form.id_promocion ? `promo-${form.id_promocion}` : '');
+  } catch (e) {
+    return { finalPrice: 0, discountAmount: 0 };
+  }
+});
 
 const filteredClients = computed(() => {
   const query = search.value.trim().toLowerCase();
@@ -637,7 +700,7 @@ const resetForm = () => {
   form.dni = '';
   form.password = '';
   form.plan = 'MENSUAL';
-  form.promocion = 'SIN PROMOCION';
+  form.id_promocion = 0;
   form.estado = 'EN_TRAMITE';
 };
 
@@ -670,7 +733,7 @@ const editClient = (client) => {
   form.dni = client.dni || '';
   form.password = '';
   form.plan = client.plan || 'MENSUAL';
-  form.promocion = client.promocion || 'SIN PROMOCION';
+  form.id_promocion = Number(client.id_promocion || 0);
   form.estado = client.status || 'ACTIVO';
 
   feedbackMessage.value = '';
@@ -718,6 +781,28 @@ const confirmDelete = async (client) => {
       error instanceof Error
         ? error.message
         : 'No se pudo eliminar el cliente.';
+  }
+};
+
+/**
+ * Marca la membresía como pagada en efectivo manualmente.
+ */
+const markAsPaidManual = async (client) => {
+  if (!client || !window.confirm(`¿Confirmas que recibiste el pago en efectivo para la membresía de ${client.name}?`)) return;
+  const idCliente = client.id_cliente || Number(String(client.id || '').replace(/^SGCLI/i, ''));
+  
+  if (!idCliente) return;
+
+  try {
+    const saved = await gymStore.confirmarPagoEfectivo(idCliente);
+    if (viewingClient.value && viewingClient.value.id === saved.id) {
+      viewingClient.value = { ...saved };
+    }
+    feedbackTone.value = 'success';
+    feedbackMessage.value = `Pago de ${saved.id} confirmado correctamente. Ya puedes activar la membresía.`;
+  } catch (error) {
+    feedbackTone.value = 'error';
+    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo registrar el pago.';
   }
 };
 
@@ -781,7 +866,7 @@ const handleSubmit = async () => {
 
       plan: form.plan,
 
-      promocion: form.promocion,
+      id_promocion: form.id_promocion || undefined,
 
       estado: form.estado,
     });

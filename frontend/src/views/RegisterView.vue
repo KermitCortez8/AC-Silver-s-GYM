@@ -304,7 +304,8 @@
             <span
               v-for="tag in plan.tags"
               :key="tag"
-              class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.06em] text-slate-600"
+              :class="tag === plan.promoTag ? 'bg-white border border-slate-300 text-slate-950 font-black shadow-sm' : 'bg-slate-100 text-slate-600 font-bold'"
+              class="rounded-full px-3.5 py-1 text-xs uppercase tracking-[0.06em]"
             >
               {{ tag }}
             </span>
@@ -444,6 +445,8 @@ const formatPlanLabel = (value) =>
     );
 
 
+const activePromotions = ref([]);
+
 /* -------------------------------------------------------------------------- */
 /* OPCIONES DE PLAN                                                           */
 /* -------------------------------------------------------------------------- */
@@ -471,24 +474,56 @@ const planOptions = computed(() =>
         ''
       ).trim();
 
+      const originalPrice = Number(
+        plan.precio ??
+        plan.price ??
+        0
+      );
+      const idPm = Number(plan.id_pm || 0);
+
+      const promo = activePromotions.value.find((p) => {
+        const applicable = p.planes_aplicables || [];
+        return !applicable.length || (idPm && applicable.includes(idPm));
+      });
+
+      let finalPrice = originalPrice;
+      let promoTag = null;
+
+      if (promo) {
+        const valor = Number(promo.valor_descuento || 0);
+        const icon = promo.icono_etiqueta || '🏷️';
+        const tagWord = promo.palabra_clave || promo.nombre || '';
+        if (promo.tipo_descuento === 'monto') {
+          finalPrice = Math.max(0, originalPrice - valor);
+          promoTag = `${icon} -S/${valor} ${tagWord}`.trim();
+        } else {
+          finalPrice = Math.max(0, Math.round(originalPrice * (1 - valor / 100) * 100) / 100);
+          promoTag = `${icon} -${valor}% ${tagWord}`.trim();
+        }
+      }
+
+      const tags = [];
+      if (promoTag) tags.push(promoTag);
+      if (duration) tags.push(duration);
+
       return {
         id: name,
 
         label: formatPlanLabel(name),
 
-        price: Number(
-          plan.precio ??
-          plan.price ??
-          0
-        ),
+        price: finalPrice,
+
+        originalPrice: promo ? originalPrice : null,
+
+        hasPromo: Boolean(promo),
+
+        promoTag,
 
         detail: duration
           ? `Acceso por ${duration}.`
           : 'Plan disponible para registro.',
 
-        tags: duration
-          ? [duration]
-          : [],
+        tags,
       };
     })
     .filter((plan) => plan.id)
@@ -767,12 +802,23 @@ const submitRegistration = async () => {
 };
 
 
+const loadPromotions = async () => {
+  try {
+    const list = await apiGet('/promociones/vigentes-publico');
+    activePromotions.value = Array.isArray(list) ? list : [];
+  } catch {
+    activePromotions.value = [];
+  }
+};
+
+
 /* -------------------------------------------------------------------------- */
 /* INICIALIZACIÓN                                                             */
 /* -------------------------------------------------------------------------- */
 
 onMounted(() => {
   loadPlans();
+  loadPromotions();
 });
 </script>
 

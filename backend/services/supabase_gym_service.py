@@ -10,7 +10,7 @@ import json
 import re
 import threading
 import time
-from typing import Any
+from typing import Any, NoReturn
 from urllib.error import HTTPError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
@@ -285,6 +285,7 @@ class SupabaseGymService(GymDomainService):
         remote_state["configuracion_gimnasio"] = self._map_config(config_rows[0] if config_rows else {})
         remote_state["asistencia"] = [self._map_attendance(row) for row in attendance]
         self._recount_schedule_cupos(remote_state)
+        self._sincronizar_productos_tienda(remote_state)
         self.state = remote_state
         self._last_refresh_at = time.monotonic()
 
@@ -311,13 +312,24 @@ class SupabaseGymService(GymDomainService):
         with self.lock:
             self._refresh_remote_state_if_stale()
             previous = self._mutation_snapshot()
-            result = fn(self.state)
-            changed_keys = self._changed_state_keys(previous, self.state)
-            inserted_rows: list[tuple[str, str, Any]] = []
             try:
-                self._sync_remote_changes(previous, self.state, changed_keys, inserted_rows)
+                result = fn(self.state)
             except Exception:
                 self.state.update(deepcopy(previous))
+                raise
+            changed_keys = self._changed_state_keys(previous, self.state)
+            inserted_rows: list[tuple[str, str, Any]] = []
+            updated_rows: list[tuple[str, str, Any, dict[str, Any]]] = []
+            try:
+                self._sync_remote_changes(previous, self.state, changed_keys, inserted_rows, updated_rows)
+            except Exception:
+                self.state.update(deepcopy(previous))
+                # Deja Supabase como estaba: restaura filas actualizadas y borra las insertadas.
+                for table, remote_pk, remote_id, previous_body in reversed(updated_rows):
+                    try:
+                        self.supabase.update(table, remote_pk, remote_id, previous_body)
+                    except RuntimeError:
+                        pass
                 for table, remote_pk, remote_id in reversed(inserted_rows):
                     try:
                         self.supabase.delete(table, remote_pk, remote_id)
@@ -329,7 +341,7 @@ class SupabaseGymService(GymDomainService):
             return result
 
     @staticmethod
-    def _raise_schedule_enrollment_error(error: RuntimeError) -> None:
+    def _raise_schedule_enrollment_error(error: RuntimeError) -> NoReturn:
         normalized = str(error).lower()
         if "ya esta matriculado" in normalized or "23505" in normalized:
             raise ValueError("El cliente ya esta matriculado en este horario") from error
@@ -369,7 +381,7 @@ class SupabaseGymService(GymDomainService):
 
             admin_id = str(payload.get("_admin_id") or "")
             rpc_name = "matricular_cliente_horario_admin" if admin_id else "matricular_cliente_horario"
-            rpc_body = {"p_id_cliente": id_cliente, "p_id_horario_servicio": id_horario}
+            rpc_body: dict[str, Any] = {"p_id_cliente": id_cliente, "p_id_horario_servicio": id_horario}
             if admin_id:
                 rpc_body["p_admin_id"] = admin_id
             try:
@@ -455,6 +467,7 @@ class SupabaseGymService(GymDomainService):
         current: dict[str, Any],
         changed_keys: list[str],
         inserted_rows: list[tuple[str, str, Any]] | None = None,
+        updated_rows: list[tuple[str, str, Any, dict[str, Any]]] | None = None,
     ) -> None:
         if not changed_keys:
             return
@@ -476,10 +489,11 @@ class SupabaseGymService(GymDomainService):
                 previous.get(state_key, []),
                 current.get(state_key, []),
                 inserted_rows,
+                updated_rows,
             )
 
         if "pedidos_tienda" in changed_keys:
-            self._sync_orders(previous.get("pedidos_tienda", []), current.get("pedidos_tienda", []))
+            self._sync_orders(previous.get("pedidos_tienda", []), current.get("pedidos_tienda", []), inserted_rows, updated_rows)
 
     def _contains_new_rows(
         self,
@@ -506,6 +520,7 @@ class SupabaseGymService(GymDomainService):
         previous_rows: list[dict[str, Any]],
         current_rows: list[dict[str, Any]],
         inserted_rows: list[tuple[str, str, Any]] | None = None,
+        updated_rows: list[tuple[str, str, Any, dict[str, Any]]] | None = None,
     ) -> None:
         table, local_pk, remote_pk = self.CORE_TABLES[state_key]
         if table in self.missing_remote_tables:
@@ -525,13 +540,21 @@ class SupabaseGymService(GymDomainService):
             remote_id = self._remote_pk_value(state_key, row, row_id)
             if previous:
                 self.supabase.update(table, remote_pk, remote_id, body)
+                if updated_rows is not None and previous_body is not None:
+                    updated_rows.append((table, remote_pk, remote_id, previous_body))
             else:
                 self.supabase.insert(table, body)
                 if inserted_rows is not None:
                     inserted_rows.append((table, remote_pk, remote_id))
 
     # Actualiza el registro correspondiente.
-    def _sync_orders(self, previous_rows: list[dict[str, Any]], current_rows: list[dict[str, Any]]) -> None:
+    def _sync_orders(
+        self,
+        previous_rows: list[dict[str, Any]],
+        current_rows: list[dict[str, Any]],
+        inserted_rows: list[tuple[str, str, Any]] | None = None,
+        updated_rows: list[tuple[str, str, Any, dict[str, Any]]] | None = None,
+    ) -> None:
         previous_by_id = {int(row.get("id_pedido", 0) or 0): row for row in previous_rows if int(row.get("id_pedido", 0) or 0)}
         current_by_id = {int(row.get("id_pedido", 0) or 0): row for row in current_rows if int(row.get("id_pedido", 0) or 0)}
 
@@ -546,8 +569,13 @@ class SupabaseGymService(GymDomainService):
             sale_body = self._filter_remote_columns("VENTAS", self._sale_to_remote(row))
             if previous:
                 self.supabase.update("VENTAS", "id_venta", sale_id, sale_body)
+                if updated_rows is not None:
+                    previous_sale_body = self._filter_remote_columns("VENTAS", self._sale_to_remote(previous))
+                    updated_rows.append(("VENTAS", "id_venta", sale_id, previous_sale_body))
             else:
                 self.supabase.insert("VENTAS", sale_body)
+                if inserted_rows is not None:
+                    inserted_rows.append(("VENTAS", "id_venta", sale_id))
 
             self.supabase.delete_where("DETALLE_VENTA", "id_venta", sale_id)
             detail_rows = [self._sale_detail_to_remote(sale_id, item) for item in row.get("items", [])]
@@ -673,6 +701,8 @@ class SupabaseGymService(GymDomainService):
         raw_plans = row.get("planes_aplicables") or []
         if isinstance(raw_plans, str):
             raw_plans = [part.strip() for part in raw_plans.split(",") if part.strip()]
+        limite = row.get("limite_cupos")
+        limite_cupos = int(limite) if limite is not None and str(limite).strip() != "" else None
         return {
             "id_promocion": int(row.get("id_promocion", 0) or 0),
             "nombre": str(row.get("nombre") or ""),
@@ -681,8 +711,12 @@ class SupabaseGymService(GymDomainService):
             "valor_descuento": float(row.get("valor_descuento") or 0),
             "fecha_inicio": str(row.get("fecha_inicio") or ""),
             "fecha_fin": str(row.get("fecha_fin") or ""),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
+            "palabra_clave": str(row.get("palabra_clave") or ""),
             "activo": bool(row.get("activo", True)),
             "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
+            "limite_cupos": limite_cupos,
+            "usos_actuales": int(row.get("usos_actuales", 0) or 0),
         }
 
     # Procesa esta operación.
@@ -695,9 +729,23 @@ class SupabaseGymService(GymDomainService):
             "valor_descuento": float(row.get("valor_descuento") or 0),
             "fecha_inicio": self._date_or_none(row.get("fecha_inicio")),
             "fecha_fin": self._date_or_none(row.get("fecha_fin")),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
+            "palabra_clave": str(row.get("palabra_clave") or ""),
             "activo": bool(row.get("activo", True)),
             "planes_aplicables": list(row.get("planes_aplicables") or []),
+            "limite_cupos": row.get("limite_cupos"),
+            "usos_actuales": int(row.get("usos_actuales", 0) or 0),
         }
+
+    def _persist_promocion_usos(self, id_promocion: int | None, usos: int) -> None:
+        if not id_promocion or "PROMOCIONES" in self.missing_remote_tables:
+            return
+        try:
+            body = self._filter_remote_columns("PROMOCIONES", {"usos_actuales": max(0, int(usos or 0))})
+            if body:
+                self.supabase.update("PROMOCIONES", "id_promocion", int(id_promocion), body)
+        except Exception:
+            pass
 
     # Procesa esta operación.
     def _map_client(self, row: dict[str, Any]) -> dict[str, Any]:
@@ -711,7 +759,7 @@ class SupabaseGymService(GymDomainService):
             "telefono": str(row.get("Telefono") or ""),
             "dni": str(row.get("DNI") or ""),
             "plan": str(row.get("Plan") or "MENSUAL").strip().upper(),
-            "promocion": "SIN PROMOCION",
+            "promocion": str(row.get("promocion") or "SIN PROMOCION"),
             "estado": self._bool_to_status(row.get("Estado")),
             "password_hash": str(row.get("password_hash") or row.get("Password_Hash") or ""),
             "google_sub": str(row.get("google_sub") or ""),
@@ -755,6 +803,7 @@ class SupabaseGymService(GymDomainService):
             "monto_pago": float(row.get("monto_pago", 0) or 0),
             "estado_pago": str(row.get("estado_pago") or default_payment_status),
             "metodo_pago": str(row.get("metodo_pago") or ""),
+            "id_promocion": int(row.get("id_promocion", 0) or 0) or None,
             "referencia_pago": str(row.get("referencia_pago") or ""),
             "fecha_pago": str(row.get("fecha_pago") or ""),
         }
@@ -771,6 +820,7 @@ class SupabaseGymService(GymDomainService):
             "monto_pago": float(row.get("monto_pago", 0) or 0) or None,
             "estado_pago": str(row.get("estado_pago") or "PENDIENTE"),
             "metodo_pago": str(row.get("metodo_pago") or ""),
+            "id_promocion": int(row.get("id_promocion", 0) or 0) or None,
             "referencia_pago": str(row.get("referencia_pago") or ""),
             "fecha_pago": self._date_or_none(row.get("fecha_pago")),
         }
@@ -845,7 +895,7 @@ class SupabaseGymService(GymDomainService):
             "Tipo": str(row.get("tipo") or "General"),
             "Cantidad_Stock_E": int(row.get("cantidad_stock", 0) or 0),
             "Estado": str(row.get("estado") or "Operativo"),
-            "N_ACTIVO": int(row.get("n_activo")) if row.get("n_activo") else None,
+            "N_ACTIVO": int(row.get("n_activo") or 0) or None,
         }
 
     # Procesa esta operación.
@@ -877,7 +927,7 @@ class SupabaseGymService(GymDomainService):
         stock = int(row.get("cantidad_stock", 0) or 0)
         return {
             "id_producto": int(row.get("id_producto", 0) or 0),
-            "id_item": None,
+            "id_item": int(row.get("id_item") or 0) or None,
             "nombre_producto": str(row.get("nombre_Producto") or ""),
             "descripcion": "",
             "categoria": str(row.get("categoria") or "General"),
@@ -893,9 +943,11 @@ class SupabaseGymService(GymDomainService):
     def _product_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
         return {
             "id_producto": int(row.get("id_producto", 0) or 0),
+            "id_item": int(row.get("id_item") or 0) or None,
             "nombre_Producto": str(row.get("nombre_producto") or ""),
             "categoria": str(row.get("categoria") or "General"),
             "precio_Venta": float(row.get("precio_venta") or 0),
+            # Copia del stock de INVENTARIO: el backend la escribe pero nunca la usa como fuente.
             "cantidad_stock": int(row.get("cantidad_stock", 0) or 0),
             "stock_minimo": int(row.get("stock_minimo", 5) or 5),
             "imagen_url": str(row.get("imagen_url") or ""),
@@ -917,10 +969,10 @@ class SupabaseGymService(GymDomainService):
         total = float(row.get("total_Venta") or 0)
         return {
             "id_pedido": int(row.get("id_venta", 0) or 0),
-            "id_cliente": None,
-            "cliente_nombre": "Cliente",
-            "cliente_correo": "",
-            "cliente_dni": "",
+            "id_cliente": int(row.get("id_cliente") or 0) or None,
+            "cliente_nombre": str(row.get("cliente_nombre") or "Cliente"),
+            "cliente_correo": str(row.get("cliente_correo") or ""),
+            "cliente_dni": str(row.get("cliente_dni") or ""),
             "fecha_pedido": str(row.get("Fecha_Venta") or _now_iso()),
             "metodo_pago": str(row.get("metodo_Pago") or ""),
             "referencia_pago": "",
@@ -938,6 +990,10 @@ class SupabaseGymService(GymDomainService):
     def _sale_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
         return {
             "id_venta": int(row.get("id_pedido", 0) or 0),
+            "id_cliente": int(row.get("id_cliente") or 0) or None,
+            "cliente_nombre": str(row.get("cliente_nombre") or ""),
+            "cliente_correo": str(row.get("cliente_correo") or ""),
+            "cliente_dni": str(row.get("cliente_dni") or ""),
             "Fecha_Venta": self._date_or_today(row.get("fecha_pedido")),
             "total_Venta": float(row.get("total") or row.get("subtotal") or 0),
             "metodo_Pago": str(row.get("metodo_pago") or "tarjeta"),
@@ -1024,7 +1080,7 @@ class SupabaseGymService(GymDomainService):
             "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
             "servicio": str(row.get("servicio") or "fitness").strip().lower(),
             "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
-            "codigo_dia": str(row.get("codigo_dia") or self._day_code(row.get("dia"))).strip().upper(),
+            "codigo_dia": str(row.get("codigo_dia") or self._day_code(str(row.get("dia") or ""))).strip().upper(),
             "dia": self._normalize_day(row.get("dia")) or "lunes",
             "hora_inicio": str(row.get("hora_inicio") or "06:00"),
             "hora_fin": str(row.get("hora_fin") or "07:00"),
@@ -1134,14 +1190,14 @@ class SupabaseGymService(GymDomainService):
         return {
             "id_asistencia": int(row.get("id_asistencia", 0) or 0),
             "id_cliente": int(row.get("id_cliente_num") or self._parse_cliente_id(row.get("id_cliente"))),
-            "id_membresia": int(row.get("id_membresia")) if row.get("id_membresia") else None,
+            "id_membresia": int(row.get("id_membresia") or 0) or None,
             "Fecha": self._date_or_today(row.get("fecha")),
             "Hora": hour,
             "Validación": bool(row.get("validacion", True)),
             "servicio": str(row.get("servicio") or "fitness").strip().lower(),
             "id_usuario_registra": self._remote_user_id_or_none(row.get("id_usuario_registra")),
-            "id_matricula": int(row.get("id_matricula")) if row.get("id_matricula") else None,
-            "id_horario_servicio": int(row.get("id_horario_servicio")) if row.get("id_horario_servicio") else None,
+            "id_matricula": int(row.get("id_matricula") or 0) or None,
+            "id_horario_servicio": int(row.get("id_horario_servicio") or 0) or None,
             "hora_entrada": str(row.get("hora_entrada") or hour),
             "hora_salida": str(row.get("hora_salida")) if row.get("hora_salida") else None,
             "fecha_salida": row.get("fecha_salida") or None,

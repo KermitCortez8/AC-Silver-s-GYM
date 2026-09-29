@@ -275,14 +275,29 @@
                 ]"
                 :style="plan.id === '3 MESES' ? { borderColor: '#ff4d56', background: 'linear-gradient(180deg, rgba(220,38,38,0.16), rgba(220,38,38,0.02) 60%)' } : {}"
               >
-                <span
-                  v-if="plan.id === '3 MESES'"
-                  class="absolute -top-3 right-6 rounded-full bg-orange-500 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.05em] text-white shadow"
-                >
-                  Mas elegido
-                </span>
+                <div class="absolute -top-3 right-6 flex flex-wrap items-center justify-end gap-1.5">
+                  <span
+                    v-if="plan.hasPromo"
+                    class="rounded-full bg-white border border-slate-200 px-3.5 py-1 text-[0.7rem] font-black uppercase tracking-[0.05em] text-slate-950 shadow-md flex items-center gap-1.5"
+                  >
+                    {{ plan.promoBadge }}
+                  </span>
+                  <span
+                    v-if="plan.id === '3 MESES'"
+                    class="rounded-full bg-orange-500 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.05em] text-white shadow"
+                  >
+                    Mas elegido
+                  </span>
+                </div>
                 <p class="text-sm font-black uppercase tracking-[0.06em] text-orange-300">{{ plan.label }}</p>
-                <p class="text-3xl font-black tabular-nums text-white">S/ {{ plan.price }}</p>
+                <div class="flex items-baseline gap-2">
+                  <span v-if="plan.hasPromo" class="text-xl font-bold line-through text-white/50 tabular-nums">
+                    S/ {{ plan.originalPrice }}
+                  </span>
+                  <span class="text-3xl font-black tabular-nums text-white">
+                    S/ {{ plan.price }}
+                  </span>
+                </div>
                 <p class="flex items-center gap-2 text-sm leading-6 text-white/60">
                   <span class="font-black text-emerald-400">✓</span>{{ plan.description }}
                 </p>
@@ -354,6 +369,7 @@
               <router-link to="/nosotros" class="text-sm font-semibold text-white/65 transition hover:text-white">Nosotros</router-link>
               <a href="#membresias" class="text-sm font-semibold text-white/65 transition hover:text-white">Membresias</a>
               <a href="#ubicacion" class="text-sm font-semibold text-white/65 transition hover:text-white">Ubicacion</a>
+               <router-link to="/preguntas-frecuentes" class="text-sm font-semibold text-white/65 transition hover:text-white">Preguntas Frecuentes</router-link>
             </nav>
           </div>
 
@@ -418,7 +434,7 @@ watch(
 );
 
 const selectedService = ref(null);
-
+           
 const defaultSchedules = [
   { dia: 'Lunes',     hora: '06:00–07:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
   { dia: 'Lunes',     hora: '18:00–19:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
@@ -530,6 +546,7 @@ const handleImageError = (event) => {
 const gymAddress = 'Jirón Vista Alegre 606, Lima 15056';
 const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(gymAddress)}&output=embed`;
 const backendPlans = ref([]);
+const activePromotions = ref([]);
 const defaultPlans = [
   { id_pm: 1, nombre_plan: 'MENSUAL', duracion: '30 dias', precio: 79, descripcion: 'Acceso completo por 30 dias para entrenar con flexibilidad.', activo: true },
   { id_pm: 2, nombre_plan: '3 MESES', duracion: '90 dias', precio: 199, descripcion: 'Plan trimestral para sostener progreso y ahorrar frente al pago mensual.', activo: true },
@@ -553,10 +570,41 @@ const plans = computed(() =>
     .filter((plan) => plan.activo ?? plan.active ?? true)
     .map((plan) => {
       const name = normalizePlanName(plan.nombre_plan || plan.name);
+      const originalPrice = Number(plan.precio ?? plan.price ?? 0);
+      const idPm = Number(plan.id_pm || 0);
+
+      const promo = activePromotions.value.find((p) => {
+        const applicable = p.planes_aplicables || [];
+        return !applicable.length || (idPm && applicable.includes(idPm));
+      });
+
+      let finalPrice = originalPrice;
+      let promoBadge = null;
+      let promoName = null;
+
+      if (promo) {
+        promoName = promo.nombre;
+        const valor = Number(promo.valor_descuento || 0);
+        const icon = promo.icono_etiqueta || '🏷️';
+        const tagText = promo.palabra_clave ? promo.palabra_clave : (promo.nombre || '');
+        if (promo.tipo_descuento === 'monto') {
+          finalPrice = Math.max(0, originalPrice - valor);
+          promoBadge = `${icon} -S/${valor} ${tagText}`.trim();
+        } else {
+          finalPrice = Math.max(0, Math.round(originalPrice * (1 - valor / 100) * 100) / 100);
+          promoBadge = `${icon} -${valor}% ${tagText}`.trim();
+        }
+      }
+
       return {
         id: name,
+        id_pm: idPm,
         label: formatPlanLabel(name),
-        price: Number(plan.precio ?? plan.price ?? 0),
+        price: finalPrice,
+        originalPrice: promo ? originalPrice : null,
+        hasPromo: Boolean(promo),
+        promoBadge,
+        promoName,
         description: plan.duracion || plan.description || 'Plan disponible para registro.',
       };
     })
@@ -575,6 +623,15 @@ const loadPlans = async () => {
   }
 };
 
+const loadPromotions = async () => {
+  try {
+    const list = await apiGet('/promociones/vigentes-publico');
+    activePromotions.value = Array.isArray(list) ? list : [];
+  } catch {
+    activePromotions.value = [];
+  }
+};
+
 const stats = [
   { label: 'Horario', value: 'Lun a sab' },
   { label: 'Servicios', value: '4 areas' },
@@ -590,6 +647,7 @@ const services = [
 
 onMounted(() => {
   loadPlans();
+  loadPromotions();
   loadSchedules();
 });
 </script>
