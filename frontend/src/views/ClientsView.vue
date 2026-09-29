@@ -1,25 +1,41 @@
 <template>
   <div class="space-y-6">
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+    <section
+      class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+    >
+      <div
+        class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between"
+      >
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Administracion</p>
-          <h1 class="mt-2 text-3xl font-black text-white">Clientes del sistema</h1>
-          <p class="mt-2 text-slate-300">Gestiona clientes, datos de contacto y activacion de membresias.</p>
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
+            Administracion
+          </p>
+          <h1 class="mt-2 text-3xl font-black text-white">
+            Clientes del sistema
+          </h1>
+          <p class="mt-2 text-slate-300">
+            Gestiona clientes, datos de contacto y activacion de membresias.
+          </p>
         </div>
 
         <div class="grid gap-3 sm:grid-cols-3">
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+          <div
+            class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300"
+          >
             <p class="text-slate-400">Total</p>
             <p class="text-xl font-black text-white">{{ clients.length }}</p>
           </div>
 
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+          <div
+            class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300"
+          >
             <p class="text-slate-400">Activos</p>
             <p class="text-xl font-black text-white">{{ activeClients }}</p>
           </div>
 
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+          <div
+            class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300"
+          >
             <p class="text-slate-400">En tramite</p>
             <p class="text-xl font-black text-white">{{ pendingClients }}</p>
           </div>
@@ -27,11 +43,19 @@
       </div>
     </section>
 
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <section
+      class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+    >
+      <div
+        class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+      >
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Lista</p>
-          <h2 class="mt-2 text-2xl font-black text-white">Clientes registrados</h2>
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
+            Lista
+          </p>
+          <h2 class="mt-2 text-2xl font-black text-white">
+            Clientes registrados
+          </h2>
         </div>
 
         <div class="flex flex-col gap-3 sm:flex-row">
@@ -143,17 +167,28 @@
                     :disabled="activatingClientId === client.id"
                     @click="requestActivation(client)"
                   >
-                    {{ activatingClientId === client.id ? 'Activando...' : 'Activar' }}
+                    {{
+                      activatingClientId === client.id
+                        ? 'Activando...'
+                        : 'Activar'
+                    }}
                   </button>
 
                   <button
-                    v-if="isActiveStatus(client.status) && isActiveStatus(client.membershipStatus)"
+                    v-if="
+                      isActiveStatus(client.status) &&
+                      isActiveStatus(client.membershipStatus)
+                    "
                     type="button"
                     class="rounded-xl border border-white/20 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
                     :disabled="Boolean(notifyingClientId)"
                     @click="retryActivationEmail(client)"
                   >
-                    {{ notifyingClientId === client.id ? 'Enviando...' : 'Notificar activación' }}
+                    {{
+                      notifyingClientId === client.id
+                        ? 'Enviando...'
+                        : 'Notificar activación'
+                    }}
                   </button>
 
                   <button
@@ -206,256 +241,195 @@
       </p>
     </section>
 
-    <Teleport to="body">
-      <div
-        v-if="isEditorOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
-      >
-        <form
-          class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl"
-          @submit.prevent="handleSubmit"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-                Cliente
-              </p>
+    <WorkspaceDialog
+      :open="isEditorOpen"
+      :title="editingId ? 'Editar cliente' : 'Nuevo cliente'"
+      @close="closeEditor"
+    >
+      <form @submit.prevent="handleSubmit">
+        <div class="mt-6 grid gap-4 sm:grid-cols-2">
+          <label class="space-y-2 sm:col-span-2">
+            <span class="text-sm ws-soft">Nombre</span>
 
-              <h2 class="mt-2 text-2xl font-black text-white">
-                {{ editingId ? 'Editar cliente' : 'Nuevo cliente' }}
-              </h2>
-            </div>
+            <input
+              v-model="form.nombre"
+              class="ws-input"
+              placeholder="Jose Perez"
+            />
+          </label>
 
-            <button
-              type="button"
-              class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5"
-              @click="closeEditor"
-            >
-              Cerrar
-            </button>
-          </div>
+          <label class="space-y-2 sm:col-span-2">
+            <span class="text-sm ws-soft">Correo</span>
 
-          <div class="mt-6 grid gap-4 sm:grid-cols-2">
-            <label class="space-y-2 sm:col-span-2">
-              <span class="text-sm text-slate-300">Nombre</span>
+            <input
+              v-model="form.correo"
+              type="email"
+              class="ws-input"
+              placeholder="cliente@correo.com"
+            />
+          </label>
 
-              <input
-                v-model="form.nombre"
-                class="field-input"
-                placeholder="Jose Perez"
-              />
-            </label>
+          <label class="space-y-2 sm:col-span-2">
+            <span class="text-sm ws-soft">Contraseña</span>
 
-            <label class="space-y-2 sm:col-span-2">
-              <span class="text-sm text-slate-300">Correo</span>
-
-              <input
-                v-model="form.correo"
-                type="email"
-                class="field-input"
-                placeholder="cliente@correo.com"
-              />
-            </label>
-
-            <label class="space-y-2 sm:col-span-2">
-              <span class="text-sm text-slate-300">Contrasena</span>
-
-              <input
-                v-model="form.password"
-                type="password"
-                autocomplete="new-password"
-                class="field-input"
-                :placeholder="editingId
+            <input
+              v-model="form.password"
+              type="password"
+              autocomplete="new-password"
+              class="ws-input"
+              :placeholder="
+                editingId
                   ? 'Dejar vacio para conservar la actual'
-                  : 'Minimo 6 caracteres'"
-              />
-            </label>
+                  : 'Minimo 6 caracteres'
+              "
+            />
+          </label>
 
-            <label class="space-y-2">
-              <span class="text-sm text-slate-300">Telefono</span>
+          <label class="space-y-2">
+            <span class="text-sm ws-soft">Teléfono</span>
 
-              <input
-                v-model="form.telefono"
-                class="field-input"
-                placeholder="999 111 222"
-              />
-            </label>
+            <input
+              v-model="form.telefono"
+              class="ws-input"
+              placeholder="999 111 222"
+            />
+          </label>
 
-            <label class="space-y-2">
-              <span class="text-sm text-slate-300">DNI</span>
+          <label class="space-y-2">
+            <span class="text-sm ws-soft">DNI</span>
 
-              <input
-                v-model="form.dni"
-                class="field-input"
-                placeholder="12345678"
-              />
-            </label>
+            <input v-model="form.dni" class="ws-input" placeholder="12345678" />
+          </label>
 
-            <label class="space-y-2">
-              <span class="text-sm text-slate-300">Plan</span>
+          <label class="space-y-2">
+            <span class="text-sm ws-soft">Plan</span>
 
-              <select
-                v-model="form.plan"
-                class="field-input"
+            <select v-model="form.plan" class="ws-input">
+              <option value="MENSUAL">MENSUAL</option>
+              <option value="3 MESES">3 MESES</option>
+              <option value="ANUAL">ANUAL</option>
+            </select>
+          </label>
+
+          <label class="space-y-2">
+            <span class="text-sm ws-soft">Promocion</span>
+
+            <select v-model="form.promocion" class="ws-input">
+              <option value="SIN PROMOCION">SIN PROMOCION</option>
+
+              <option
+                v-for="p in gymStore.promotions"
+                :key="p.id"
+                :value="p.name"
               >
-                <option value="MENSUAL">MENSUAL</option>
-                <option value="3 MESES">3 MESES</option>
-                <option value="ANUAL">ANUAL</option>
-              </select>
-            </label>
+                {{ p.name }}
+              </option>
+            </select>
+          </label>
 
-            <label class="space-y-2">
-              <span class="text-sm text-slate-300">Promocion</span>
+          <label class="space-y-2 sm:col-span-2">
+            <span class="text-sm ws-soft">Estado</span>
 
-              <select
-                v-model="form.promocion"
-                class="field-input"
-              >
-                <option value="SIN PROMOCION">
-                  SIN PROMOCION
-                </option>
-
-                <option
-                  v-for="p in gymStore.promotions"
-                  :key="p.id"
-                  :value="p.name"
-                >
-                  {{ p.name }}
-                </option>
-              </select>
-            </label>
-
-            <label class="space-y-2 sm:col-span-2">
-              <span class="text-sm text-slate-300">Estado</span>
-
-              <select
-                v-model="form.estado"
-                class="field-input"
-              >
-                <option value="EN_TRAMITE">EN_TRAMITE</option>
-                <option value="ACTIVO" :disabled="editingNeedsActivation">ACTIVO</option>
-                <option value="INACTIVO">INACTIVO</option>
-              </select>
-              <p v-if="editingNeedsActivation" class="text-xs text-slate-400">
-                La preinscripción se activa desde «Activar», después de confirmar el pago.
-              </p>
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            class="mt-6 w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300"
-          >
-            {{ editingId ? 'Guardar cambios' : 'Registrar cliente' }}
-          </button>
-        </form>
-      </div>
-    </Teleport>
-
-    <Teleport to="body">
-      <div
-        v-if="isDetailsOpen && viewingClient"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Detalles del cliente"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
-      >
-        <div
-          class="w-full max-w-md rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-                Detalles
-              </p>
-
-              <h2 class="mt-2 text-2xl font-black text-white">
-                {{ viewingClient.name || 'Sin nombre' }}
-              </h2>
-
-              <span
-                class="mt-2 inline-block rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-cyan-100"
-              >
-                {{ viewingClient.id }}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5"
-              @click="closeDetails"
-            >
-              Cerrar
-            </button>
-          </div>
-
-          <div class="mt-6 space-y-2">
-            <p class="text-sm text-slate-400">
-              Correo:
-              <span class="text-slate-200">
-                {{ viewingClient.email || 'Sin correo' }}
-              </span>
+            <select v-model="form.estado" class="ws-input">
+              <option value="EN_TRAMITE">EN_TRAMITE</option>
+              <option value="ACTIVO" :disabled="editingNeedsActivation">
+                ACTIVO
+              </option>
+              <option value="INACTIVO">INACTIVO</option>
+            </select>
+            <p v-if="editingNeedsActivation" class="text-xs ws-muted">
+              La preinscripción se activa desde «Activar», después de confirmar
+              el pago.
             </p>
-
-            <p class="text-sm text-slate-400">
-              DNI:
-              <span class="text-slate-200">
-                {{ viewingClient.dni || 'Sin DNI' }}
-              </span>
-            </p>
-
-            <p class="text-sm text-slate-400">
-              Telefono:
-              <span class="text-slate-200">
-                {{ viewingClient.phone || 'Sin telefono' }}
-              </span>
-            </p>
-
-            <p class="text-sm text-slate-300">
-              Plan:
-              <span class="text-slate-200">
-                {{ viewingClient.plan || 'MENSUAL' }}
-                -
-                {{ viewingClient.promocion || 'SIN PROMOCION' }}
-              </span>
-            </p>
-
-            <p class="text-sm text-slate-300">
-              Membresia:
-              <span
-                :class="statusClass(displayMembershipStatus(viewingClient))"
-              >
-                {{ displayMembershipStatus(viewingClient) }}
-              </span>
-            </p>
-
-            <p class="text-sm text-slate-400">
-              Vigencia:
-              <span class="text-slate-200">
-                {{ viewingClient.membershipStart || 'por activar' }}
-                -
-                {{ viewingClient.membershipEnd || 'por activar' }}
-              </span>
-            </p>
-
-            <p
-              v-if="viewingClient.paymentReference || viewingClient.paymentStatus"
-              class="text-sm text-slate-400"
-            >
-              Pago:
-              <span class="text-slate-200">
-                {{ viewingClient.paymentStatus || 'PENDIENTE' }}
-                {{
-                  viewingClient.paymentReference
-                    ? `- ${viewingClient.paymentReference}`
-                    : ''
-                }}
-              </span>
-            </p>
-          </div>
+          </label>
         </div>
-      </div>
-    </Teleport>
+
+        <button
+          type="submit"
+          class="mt-6 w-full rounded-2xl ws-primary px-4 py-3 font-bold transition"
+        >
+          {{ editingId ? 'Guardar cambios' : 'Registrar cliente' }}
+        </button>
+      </form>
+    </WorkspaceDialog>
+
+    <WorkspaceDialog
+      :open="isDetailsOpen && Boolean(viewingClient)"
+      title="Detalles del cliente"
+      @close="closeDetails"
+    >
+      <template v-if="viewingClient">
+        <div class="mb-6 border-b ws-border pb-5">
+          <h3 class="text-2xl font-black ws-text break-words">
+            {{ viewingClient.name || 'Sin nombre' }}
+          </h3>
+          <span class="ws-badge ws-tint-info ws-info mt-3">{{
+            viewingClient.id
+          }}</span>
+        </div>
+        <dl class="client-detail-grid">
+          <div class="client-detail-wide">
+            <dt>Correo electrónico</dt>
+            <dd>{{ viewingClient.email || 'Sin correo' }}</dd>
+          </div>
+          <div>
+            <dt>DNI</dt>
+            <dd>{{ viewingClient.dni || 'Sin DNI' }}</dd>
+          </div>
+          <div>
+            <dt>Teléfono</dt>
+            <dd>{{ viewingClient.phone || 'Sin teléfono' }}</dd>
+          </div>
+          <div>
+            <dt>Plan</dt>
+            <dd>{{ viewingClient.plan || 'MENSUAL' }}</dd>
+          </div>
+          <div>
+            <dt>Promoción</dt>
+            <dd>{{ viewingClient.promocion || 'SIN PROMOCION' }}</dd>
+          </div>
+          <div>
+            <dt>Membresía</dt>
+            <dd>
+              <span
+                class="ws-badge"
+                :class="
+                  isActiveStatus(displayMembershipStatus(viewingClient))
+                    ? 'ws-success ws-tint-success'
+                    : isPendingStatus(displayMembershipStatus(viewingClient))
+                      ? 'ws-warning ws-tint-warning'
+                      : 'ws-soft ws-inset'
+                "
+                >{{ displayMembershipStatus(viewingClient) }}</span
+              >
+            </dd>
+          </div>
+          <div>
+            <dt>Vigencia</dt>
+            <dd>
+              {{ viewingClient.membershipStart || 'Por activar'
+              }}<span class="block ws-muted text-xs mt-1"
+                >hasta {{ viewingClient.membershipEnd || 'Por activar' }}</span
+              >
+            </dd>
+          </div>
+          <div
+            v-if="viewingClient.paymentReference || viewingClient.paymentStatus"
+            class="client-detail-wide"
+          >
+            <dt>Pago</dt>
+            <dd>
+              {{ viewingClient.paymentStatus || 'PENDIENTE'
+              }}<span
+                v-if="viewingClient.paymentReference"
+                class="block ws-muted text-sm mt-1"
+                >{{ viewingClient.paymentReference }}</span
+              >
+            </dd>
+          </div>
+        </dl>
+      </template>
+    </WorkspaceDialog>
     <ConfirmDialog
       v-if="pendingActivation"
       title="¿Estás seguro de la activación?"
@@ -470,13 +444,9 @@
 </template>
 
 <script setup>
-import {
-  computed,
-  onMounted,
-  reactive,
-  ref,
-} from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
+import WorkspaceDialog from '../components/WorkspaceDialog.vue';
 import { useGymStore } from '../stores/gymStore';
 import { useAuthStore } from '../stores/authStore';
 import { apiPost } from '../services/apiClient';
@@ -500,7 +470,12 @@ const activationError = ref('');
 const notifyingClientId = ref('');
 const editingNeedsActivation = computed(() => {
   const client = clients.value.find((entry) => entry.id === editingId.value);
-  return client && ['EN_TRAMITE', 'PENDIENTE_PAGO'].includes(normalizeStatus(client.membershipStatus));
+  return (
+    client &&
+    ['EN_TRAMITE', 'PENDIENTE_PAGO'].includes(
+      normalizeStatus(client.membershipStatus),
+    )
+  );
 });
 
 const requestActivation = (client) => {
@@ -514,17 +489,26 @@ const cancelActivation = () => {
   activationError.value = '';
 };
 const notificationMessage = (notification) => {
-  if (notification?.status === 'sent') return 'Correo de activación enviado al cliente.';
-  if (notification?.status === 'queued') return 'El correo está pendiente de envío y se reintentará automáticamente.';
+  if (notification?.status === 'sent')
+    return 'Correo de activación enviado al cliente.';
+  if (notification?.status === 'queued')
+    return 'El correo está pendiente de envío y se reintentará automáticamente.';
   return 'El correo no se pudo enviar. Revisa la configuración del servicio y usa Notificar activación para reintentarlo.';
 };
 const retryActivationEmail = async (client) => {
   if (notifyingClientId.value) return;
   notifyingClientId.value = client.id;
   try {
-    const idCliente = client.id_cliente || Number(String(client.id).replace(/^SGCLI/i, ''));
-    const notification = await apiPost(`/clientes/${idCliente}/notificar-activacion`, {}, authStore.token);
-    feedbackTone.value = ['sent', 'queued'].includes(notification.status) ? 'success' : 'info';
+    const idCliente =
+      client.id_cliente || Number(String(client.id).replace(/^SGCLI/i, ''));
+    const notification = await apiPost(
+      `/clientes/${idCliente}/notificar-activacion`,
+      {},
+      authStore.token,
+    );
+    feedbackTone.value = ['sent', 'queued'].includes(notification.status)
+      ? 'success'
+      : 'info';
     feedbackMessage.value = notificationMessage(notification);
   } catch (error) {
     feedbackTone.value = 'error';
@@ -557,25 +541,18 @@ const normalizeStatus = (value) =>
  * Obtiene el estado de membresía mostrado para el cliente.
  */
 const displayMembershipStatus = (client) =>
-  normalizeStatus(
-    client.membershipStatus ||
-    client.status ||
-    'EN_TRAMITE',
-  );
+  normalizeStatus(client.membershipStatus || client.status || 'EN_TRAMITE');
 
 /**
  * Valida si el estado corresponde a una membresía activa.
  */
 const isActiveStatus = (value) =>
-  ['ACTIVO', 'ACTIVA'].includes(
-    normalizeStatus(value),
-  );
+  ['ACTIVO', 'ACTIVA'].includes(normalizeStatus(value));
 
 /**
  * Valida si el estado corresponde a una membresía en trámite.
  */
-const isPendingStatus = (value) =>
-  normalizeStatus(value).includes('TRAMITE');
+const isPendingStatus = (value) => normalizeStatus(value).includes('TRAMITE');
 
 /**
  * Valida si la membresía del cliente se encuentra pendiente.
@@ -600,9 +577,7 @@ const statusClass = (value) => {
 };
 
 const filteredClients = computed(() => {
-  const query = search.value
-    .trim()
-    .toLowerCase();
+  const query = search.value.trim().toLowerCase();
 
   if (!query) {
     return clients.value;
@@ -629,20 +604,13 @@ const filteredClients = computed(() => {
 
 const activeClients = computed(
   () =>
-    clients.value.filter(
-      (client) =>
-        isActiveStatus(
-          displayMembershipStatus(client),
-        ),
+    clients.value.filter((client) =>
+      isActiveStatus(displayMembershipStatus(client)),
     ).length,
 );
 
 const pendingClients = computed(
-  () =>
-    clients.value.filter(
-      (client) =>
-        isPendingMembership(client),
-    ).length,
+  () => clients.value.filter((client) => isPendingMembership(client)).length,
 );
 
 const feedbackToneClass = computed(() => {
@@ -702,12 +670,8 @@ const editClient = (client) => {
   form.dni = client.dni || '';
   form.password = '';
   form.plan = client.plan || 'MENSUAL';
-  form.promocion =
-    client.promocion ||
-    'SIN PROMOCION';
-  form.estado =
-    client.status ||
-    'ACTIVO';
+  form.promocion = client.promocion || 'SIN PROMOCION';
+  form.estado = client.status || 'ACTIVO';
 
   feedbackMessage.value = '';
   isEditorOpen.value = true;
@@ -733,27 +697,18 @@ const closeDetails = () => {
  * Gestiona la eliminación de un cliente previa confirmación.
  */
 const confirmDelete = async (client) => {
-  if (
-    !window.confirm(
-      `Eliminar al cliente ${client.id}?`,
-    )
-  ) {
+  if (!window.confirm(`Eliminar al cliente ${client.id}?`)) {
     return;
   }
 
   try {
-    await gymStore.deleteClient(
-      client.id,
-    );
+    await gymStore.deleteClient(client.id);
 
     feedbackTone.value = 'success';
 
-    feedbackMessage.value =
-      `Cliente ${client.id} eliminado.`;
+    feedbackMessage.value = `Cliente ${client.id} eliminado.`;
 
-    if (
-      editingId.value === client.id
-    ) {
+    if (editingId.value === client.id) {
       closeEditor();
     }
   } catch (error) {
@@ -772,41 +727,29 @@ const confirmDelete = async (client) => {
 const activateMembership = async (client) => {
   if (!client || activatingClientId.value) return;
   const idCliente =
-    client.id_cliente ||
-    Number(
-      String(client.id || '')
-        .replace(/^SGCLI/i, ''),
-    );
+    client.id_cliente || Number(String(client.id || '').replace(/^SGCLI/i, ''));
 
   if (!idCliente) {
     feedbackTone.value = 'error';
 
-    feedbackMessage.value =
-      'No se encontro el ID numerico del cliente.';
+    feedbackMessage.value = 'No se encontro el ID numerico del cliente.';
     activationError.value = feedbackMessage.value;
 
     return;
   }
 
-  activatingClientId.value =
-    client.id;
+  activatingClientId.value = client.id;
   activationError.value = '';
 
   try {
-    const saved =
-      await gymStore.activateClientMembership(
-        idCliente,
-      );
+    const saved = await gymStore.activateClientMembership(idCliente);
 
-    feedbackTone.value =
-      'success';
+    feedbackTone.value = 'success';
 
-    feedbackMessage.value =
-      `Membresía de ${saved.id} activada. ${notificationMessage(saved.notification)}`;
+    feedbackMessage.value = `Membresía de ${saved.id} activada. ${notificationMessage(saved.notification)}`;
     pendingActivation.value = null;
   } catch (error) {
-    feedbackTone.value =
-      'error';
+    feedbackTone.value = 'error';
 
     feedbackMessage.value =
       error instanceof Error
@@ -814,8 +757,7 @@ const activateMembership = async (client) => {
         : 'No se pudo activar la membresia.';
     activationError.value = feedbackMessage.value;
   } finally {
-    activatingClientId.value =
-      '';
+    activatingClientId.value = '';
   }
 };
 
@@ -824,68 +766,72 @@ const activateMembership = async (client) => {
  */
 const handleSubmit = async () => {
   try {
-    const saved =
-      await gymStore.upsertClient({
-        id_usuario:
-          editingId.value ||
-          undefined,
+    const saved = await gymStore.upsertClient({
+      id_usuario: editingId.value || undefined,
 
-        nombre:
-          form.nombre,
+      nombre: form.nombre,
 
-        correo:
-          form.correo,
+      correo: form.correo,
 
-        telefono:
-          form.telefono,
+      telefono: form.telefono,
 
-        dni:
-          form.dni,
+      dni: form.dni,
 
-        password:
-          form.password,
+      password: form.password,
 
-        plan:
-          form.plan,
+      plan: form.plan,
 
-        promocion:
-          form.promocion,
+      promocion: form.promocion,
 
-        estado:
-          form.estado,
-      });
+      estado: form.estado,
+    });
 
     closeEditor();
 
-    feedbackTone.value =
-      'success';
+    feedbackTone.value = 'success';
 
-    feedbackMessage.value =
-      `Cliente ${saved.id} guardado con estado ${saved.status || form.estado}.`;
+    feedbackMessage.value = `Cliente ${saved.id} guardado con estado ${saved.status || form.estado}.`;
   } catch (error) {
-    feedbackTone.value =
-      'error';
+    feedbackTone.value = 'error';
 
     feedbackMessage.value =
-      error instanceof Error
-        ? error.message
-        : 'No se pudo guardar el cliente.';
+      error instanceof Error ? error.message : 'No se pudo guardar el cliente.';
   }
 };
 
 onMounted(() => {
   gymStore
     .fetchFromBackend?.()
-    .catch((error) =>
-      console.warn(
-        'No se pudo refrescar clientes:',
-        error,
-      ),
-    );
+    .catch((error) => console.warn('No se pudo refrescar clientes:', error));
 });
 </script>
 
 <style scoped>
+.client-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.client-detail-grid dt {
+  color: var(--ws-muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+.client-detail-grid dd {
+  color: var(--ws-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.client-detail-wide {
+  grid-column: 1 / -1;
+}
+@media (max-width: 380px) {
+  .client-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .field-input {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
