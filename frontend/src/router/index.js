@@ -8,6 +8,7 @@ const TrainerDashboard = () => import('../views/TrainerDashboard.vue');
 const UserDashboard = () => import('../views/UserDashboard.vue');
 const LandingView = () => import('../views/LandingView.vue');
 const NosotrosView = () => import('../views/NosotrosView.vue');
+const PreguntasFrecuentesView = () => import('../views/PreguntasFrecuentesView.vue');
 const RegisterView = () => import('../views/RegisterView.vue');
 const PaymentView = () => import('../views/PaymentView.vue');
 const HomeView = () => import('../views/HomeView.vue');
@@ -53,6 +54,12 @@ const routes = [
     path: '/nosotros',
     name: 'Nosotros',
     component: NosotrosView,
+    meta: { requiresAuth: false },
+  },
+    {
+    path: '/preguntas-frecuentes',
+    name: 'PreguntasFrecuentes',
+    component: PreguntasFrecuentesView,
     meta: { requiresAuth: false },
   },
   {
