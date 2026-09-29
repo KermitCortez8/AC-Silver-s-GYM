@@ -374,6 +374,7 @@
               <router-link to="/nosotros" class="text-sm font-semibold text-white/65 transition hover:text-white">Nosotros</router-link>
               <a href="#membresias" class="text-sm font-semibold text-white/65 transition hover:text-white">Membresias</a>
               <a href="#ubicacion" class="text-sm font-semibold text-white/65 transition hover:text-white">Ubicacion</a>
+               <router-link to="/preguntas-frecuentes" class="text-sm font-semibold text-white/65 transition hover:text-white">Preguntas Frecuentes</router-link>
             </nav>
           </div>
 
@@ -437,7 +438,7 @@ watch(
 );
 
 const selectedService = ref(null);
-
+           
 const defaultSchedules = [
   { dia: 'Lunes',     hora: '06:00–07:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
   { dia: 'Lunes',     hora: '18:00–19:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
