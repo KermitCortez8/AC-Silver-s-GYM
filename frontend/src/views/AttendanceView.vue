@@ -176,14 +176,22 @@
               }}</strong>
             </div>
           </div>
+          <p v-if="clientBlock" class="att-message is-error" role="alert">
+            <strong>No se puede registrar la entrada.</strong>
+            {{ clientBlock }}
+          </p>
           <div class="att-heading-row att-schedule-heading">
             <h3>Horarios matriculados</h3>
             <span class="att-muted att-small"
-              >{{ clientData.horarios.length }} horarios</span
+              >{{
+                visibleSchedules.length === clientData.horarios.length
+                  ? `${clientData.horarios.length} horarios`
+                  : `${visibleSchedules.length} de ${clientData.horarios.length} horarios`
+              }}</span
             >
           </div>
           <article
-            v-for="item in clientData.horarios"
+            v-for="item in visibleSchedules"
             :key="item.id_matricula"
             class="att-schedule-card"
             :class="{ 'is-today': item.hoy }"
@@ -242,6 +250,7 @@
                 v-else-if="!item.asistencia"
                 class="att-button att-primary"
                 :disabled="!item.puede_entrar || Boolean(busy)"
+                :title="item.puede_entrar ? '' : blockedText(item)"
                 @click="enter(item)"
               >
                 <LogIn :size="16" />{{
@@ -252,12 +261,25 @@
               </button>
             </div>
             <p
-              v-if="item.motivo && !item.asistencia"
-              class="att-muted att-small att-blocked"
+              v-if="item.motivo && !item.asistencia && !clientBlock"
+              class="att-blocked-reason"
+              role="status"
             >
-              <Info :size="14" />{{ item.motivo }}
+              <Info :size="16" /><span>{{ blockedText(item) }}</span>
             </p>
           </article>
+          <button
+            v-if="canToggleSchedules"
+            type="button"
+            class="att-link att-schedule-toggle"
+            @click="showAllSchedules = !showAllSchedules"
+          >
+            {{
+              showAllSchedules
+                ? 'Mostrar solo los de hoy'
+                : `Ver ${hiddenSchedules} horario${hiddenSchedules === 1 ? '' : 's'} de otros días`
+            }}
+          </button>
           <div v-if="!clientData.horarios.length" class="att-empty">
             <CalendarDays :size="28" />
             <h3>Sin horarios matriculados</h3>
@@ -370,7 +392,7 @@
   </div>
 </template>
 <script setup>
-import { nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
   ArrowRight,
   CalendarDays,
@@ -418,6 +440,44 @@ const searching = ref(false),
 let searchNumber = 0,
   summaryNumber = 0,
   timer;
+// Motivo que impide registrar entradas a nivel de cliente (no depende del horario).
+const clientBlock = computed(() => {
+  const data = clientData.value;
+  if (!data) return '';
+  if (data.cliente.estado !== 'ACTIVO')
+    return 'La cuenta del cliente no está activada. Confirma su pago y activa su membresía desde el módulo Clientes.';
+  if (!data.membresia)
+    return 'El cliente no tiene una membresía activa, pagada y vigente. Revisa su membresía en el módulo Clientes.';
+  return '';
+});
+const todayName = () =>
+  new Date(
+    `${clientData.value?.fecha || limaDate()}T12:00:00`,
+  ).toLocaleDateString('es-PE', { weekday: 'long' });
+// Explica con días y horas concretos por qué el botón está inhabilitado.
+const blockedText = (item) =>
+  !item.hoy && item.motivo?.includes('no corresponde a hoy')
+    ? `Esta clase es el ${String(days[item.dia] || item.dia).toLowerCase()} de ${shortTime(item.hora_inicio)} a ${shortTime(item.hora_fin)}. Hoy es ${todayName()}, así que todavía no se puede registrar la entrada.`
+    : item.motivo;
+// Los horarios de hoy van primero; los de otros días quedan a un clic.
+const showAllSchedules = ref(false);
+const todaySchedules = computed(() =>
+  (clientData.value?.horarios || []).filter((item) => item.hoy),
+);
+const visibleSchedules = computed(() => {
+  const all = clientData.value?.horarios || [];
+  return showAllSchedules.value || !todaySchedules.value.length
+    ? all
+    : todaySchedules.value;
+});
+const hiddenSchedules = computed(
+  () => (clientData.value?.horarios.length || 0) - visibleSchedules.value.length,
+);
+const canToggleSchedules = computed(
+  () =>
+    todaySchedules.value.length > 0 &&
+    (clientData.value?.horarios.length || 0) > todaySchedules.value.length,
+);
 const handleTabKey = async (event) => {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
   event.preventDefault();
@@ -439,6 +499,7 @@ const clearClient = () => {
   clientData.value = null;
   lookupError.value = '';
   feedback.value = '';
+  showAllSchedules.value = false;
 };
 const lookupClient = async () => {
   if (!/^\d{8}$/.test(dni.value)) {
@@ -530,3 +591,140 @@ onUnmounted(() => {
   summaryNumber++;
 });
 </script>
+
+<style scoped>
+.att-blocked-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #f0c98f;
+  border-radius: 10px;
+  background: #fff6e8;
+  color: #7a4b00;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.att-blocked-reason svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Más aire entre bloques y columnas que no se desbordan */
+.att-control-grid {
+  gap: 24px;
+}
+.att-control-grid > * {
+  min-width: 0;
+}
+.att-membership {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 24px;
+}
+.att-schedule-bottom {
+  gap: 12px;
+}
+.att-schedule-toggle {
+  display: block;
+  margin: 12px auto 0;
+  padding: 8px 12px;
+}
+
+/* Tablet: el panel de "Entradas sin salida" pasa debajo de la búsqueda */
+@media (max-width: 1100px) {
+  .att-control-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Celular */
+@media (max-width: 720px) {
+  .att-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .att-header-tools {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .att-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .att-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 12px;
+  }
+  .att-metric small {
+    display: none;
+  }
+  .att-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .att-toolbar > span {
+    display: none;
+  }
+  .att-tabs {
+    display: flex;
+    width: 100%;
+  }
+  .att-tabs button {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+  }
+  .att-search {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .att-search-input input {
+    font-size: 16px;
+  }
+  .att-button {
+    min-height: 44px;
+  }
+  .att-search .att-button,
+  .att-schedule-bottom .att-button {
+    width: 100%;
+    justify-content: center;
+  }
+  .att-client-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .att-client-card > div {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+  .att-membership {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .att-schedule-bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .att-visittimes {
+    display: flex;
+    justify-content: space-between;
+  }
+  .att-person-bottom {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+</style>
