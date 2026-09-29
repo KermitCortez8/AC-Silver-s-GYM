@@ -701,6 +701,8 @@ class SupabaseGymService(GymDomainService):
         raw_plans = row.get("planes_aplicables") or []
         if isinstance(raw_plans, str):
             raw_plans = [part.strip() for part in raw_plans.split(",") if part.strip()]
+        limite = row.get("limite_cupos")
+        limite_cupos = int(limite) if limite is not None and str(limite).strip() != "" else None
         return {
             "id_promocion": int(row.get("id_promocion", 0) or 0),
             "nombre": str(row.get("nombre") or ""),
@@ -709,8 +711,12 @@ class SupabaseGymService(GymDomainService):
             "valor_descuento": float(row.get("valor_descuento") or 0),
             "fecha_inicio": str(row.get("fecha_inicio") or ""),
             "fecha_fin": str(row.get("fecha_fin") or ""),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
+            "palabra_clave": str(row.get("palabra_clave") or ""),
             "activo": bool(row.get("activo", True)),
             "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
+            "limite_cupos": limite_cupos,
+            "usos_actuales": int(row.get("usos_actuales", 0) or 0),
         }
 
     # Procesa esta operación.
@@ -723,9 +729,23 @@ class SupabaseGymService(GymDomainService):
             "valor_descuento": float(row.get("valor_descuento") or 0),
             "fecha_inicio": self._date_or_none(row.get("fecha_inicio")),
             "fecha_fin": self._date_or_none(row.get("fecha_fin")),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
+            "palabra_clave": str(row.get("palabra_clave") or ""),
             "activo": bool(row.get("activo", True)),
             "planes_aplicables": list(row.get("planes_aplicables") or []),
+            "limite_cupos": row.get("limite_cupos"),
+            "usos_actuales": int(row.get("usos_actuales", 0) or 0),
         }
+
+    def _persist_promocion_usos(self, id_promocion: int | None, usos: int) -> None:
+        if not id_promocion or "PROMOCIONES" in self.missing_remote_tables:
+            return
+        try:
+            body = self._filter_remote_columns("PROMOCIONES", {"usos_actuales": max(0, int(usos or 0))})
+            if body:
+                self.supabase.update("PROMOCIONES", "id_promocion", int(id_promocion), body)
+        except Exception:
+            pass
 
     # Procesa esta operación.
     def _map_client(self, row: dict[str, Any]) -> dict[str, Any]:
@@ -739,7 +759,7 @@ class SupabaseGymService(GymDomainService):
             "telefono": str(row.get("Telefono") or ""),
             "dni": str(row.get("DNI") or ""),
             "plan": str(row.get("Plan") or "MENSUAL").strip().upper(),
-            "promocion": "SIN PROMOCION",
+            "promocion": str(row.get("promocion") or "SIN PROMOCION"),
             "estado": self._bool_to_status(row.get("Estado")),
             "password_hash": str(row.get("password_hash") or row.get("Password_Hash") or ""),
             "google_sub": str(row.get("google_sub") or ""),
@@ -783,6 +803,7 @@ class SupabaseGymService(GymDomainService):
             "monto_pago": float(row.get("monto_pago", 0) or 0),
             "estado_pago": str(row.get("estado_pago") or default_payment_status),
             "metodo_pago": str(row.get("metodo_pago") or ""),
+            "id_promocion": int(row.get("id_promocion", 0) or 0) or None,
             "referencia_pago": str(row.get("referencia_pago") or ""),
             "fecha_pago": str(row.get("fecha_pago") or ""),
         }
@@ -799,6 +820,7 @@ class SupabaseGymService(GymDomainService):
             "monto_pago": float(row.get("monto_pago", 0) or 0) or None,
             "estado_pago": str(row.get("estado_pago") or "PENDIENTE"),
             "metodo_pago": str(row.get("metodo_pago") or ""),
+            "id_promocion": int(row.get("id_promocion", 0) or 0) or None,
             "referencia_pago": str(row.get("referencia_pago") or ""),
             "fecha_pago": self._date_or_none(row.get("fecha_pago")),
         }
