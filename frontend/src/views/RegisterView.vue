@@ -182,12 +182,13 @@
               </span>
 
               <input
-                v-model.trim="form.telefono"
+                :value="form.telefono"
+                @input="updateTelefono"
                 required
                 type="tel"
-                inputmode="tel"
-                pattern="[0-9+ ]{7,15}"
-                maxlength="15"
+                inputmode="numeric"
+                pattern="[0-9]{7,9}"
+                maxlength="9"
                 autocomplete="tel"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
                 placeholder="999111222"
@@ -548,6 +549,12 @@ const form = reactive({
     route.query.plan
   ),
 });
+
+const updateTelefono = (event) => {
+  const telefono = event.target.value.replace(/\D/g, '').slice(0, 9);
+  event.target.value = telefono;
+  form.telefono = telefono;
+};
 
 
 /* -------------------------------------------------------------------------- */

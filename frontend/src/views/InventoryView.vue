@@ -1,11 +1,18 @@
 <template>
   <div class="space-y-6">
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+    <section
+      class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+    >
+      <div
+        class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between"
+      >
         <div>
           <p class="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Recursos &middot; Gestion de inventario</p>
           <h1 class="mt-2 text-3xl font-black text-white">Inventario</h1>
-          <p class="mt-2 text-slate-300">Controla stock, ubicacion, estado operativo y observaciones de cada recurso del gimnasio.</p>
+          <p class="mt-2 text-slate-300">
+            Controla stock, ubicacion, estado operativo y observaciones de cada
+            recurso del gimnasio.
+          </p>
         </div>
 
         <button v-if="activeTab === 'articulos'" class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] hover:bg-amber-300" @click="openNewItem">
@@ -33,8 +40,12 @@
     <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
-          <h2 class="mt-2 text-2xl font-black text-white">Listado de inventario</h2>
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
+            Estado
+          </p>
+          <h2 class="mt-2 text-2xl font-black text-white">
+            Listado de inventario
+          </h2>
         </div>
       </div>
 
@@ -123,19 +134,26 @@
         </select>
       </div>
 
-      <p v-if="feedbackMessage" class="mt-4 rounded-2xl border px-4 py-3 text-sm" :class="feedbackToneClass">
+      <p
+        v-if="feedbackMessage"
+        class="mt-4 rounded-2xl border px-4 py-3 text-sm"
+        :class="feedbackToneClass"
+      >
         {{ feedbackMessage }}
       </p>
 
       <div v-if="filteredInventory.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
           <table class="w-full min-w-[1120px] text-left text-sm">
-            <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
+            <thead
+              class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400"
+            >
               <tr>
                 <th class="px-5 py-4 font-bold">Articulo</th>
                 <th class="px-4 py-4 font-bold">Categoria</th>
                 <th class="px-4 py-4 font-bold">Ubicacion</th>
                 <th class="px-4 py-4 font-bold">Stock</th>
+                <th class="px-4 py-4 font-bold">Precio</th>
                 <th class="px-4 py-4 font-bold">Estado</th>
                 <th class="px-5 py-4 text-right font-bold">Acciones</th>
               </tr>
@@ -149,8 +167,14 @@
                     </span>
                     <div class="min-w-0">
                       <p class="font-bold text-white">{{ item.name }}</p>
-                      <p class="mt-1 text-xs text-amber-100/80">N. Activo: {{ item.n_activo || 'Auto' }}</p>
-                      <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{{ item.observations || 'Sin observaciones' }}</p>
+                      <p class="mt-1 text-xs text-amber-100/80">
+                        N. Activo: {{ item.n_activo || 'Auto' }}
+                      </p>
+                      <p
+                        class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400"
+                      >
+                        {{ item.observations || 'Sin observaciones' }}
+                      </p>
                     </div>
                   </div>
                 </td>
@@ -162,7 +186,10 @@
                 </td>
                 <td class="px-4 py-4 align-top text-slate-300">{{ item.location || 'Sin ubicacion' }}</td>
                 <td class="px-4 py-4 align-top">
-                  <p class="font-bold" :class="isLowStock(item) ? 'text-rose-300' : 'text-white'">
+                  <p
+                    class="font-bold"
+                    :class="isLowStock(item) ? 'text-rose-300' : 'text-white'"
+                  >
                     {{ item.quantity }} {{ item.unidad_venta || 'unidad' }}
                   </p>
                   <div class="mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
@@ -170,17 +197,26 @@
                   </div>
                   <p class="mt-1 text-xs text-slate-400">Minimo: {{ item.minQuantity || 0 }}</p>
                 </td>
+                <td class="whitespace-nowrap px-4 py-4 align-top font-black text-emerald-300">
+                  S/. {{ Number(item.precio_venta || 0).toFixed(2) }}
+                </td>
                 <td class="px-4 py-4 align-top">
-                  <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="inventoryStatusClass(item.status)">
+                  <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="inventoryStatusClass(item.status)">
                     {{ item.status }}
                   </span>
                 </td>
                 <td class="px-5 py-4 align-top">
                   <div class="flex justify-end gap-2">
-                    <button class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5" @click="editItem(item)">
+                    <button
+                      class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5"
+                      @click="editItem(item)"
+                    >
                       Editar
                     </button>
-                    <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 transition hover:bg-rose-400/10" @click="deleteItem(item.id)">
+                    <button
+                      class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 transition hover:bg-rose-400/10"
+                      @click="deleteItem(item.id)"
+                    >
                       Eliminar
                     </button>
                   </div>
@@ -254,6 +290,10 @@
             <label class="space-y-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Unidad de venta</span>
               <input v-model="form.unidad_venta" class="field-input" placeholder="unidad, botella, paquete..." />
+            </label>
+            <label class="space-y-2">
+              <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Precio de venta (S/.)</span>
+              <input v-model.number="form.precio_venta" type="number" min="0" step="0.01" class="field-input" />
             </label>
             <label class="space-y-2">
               <span class="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-400">
@@ -379,15 +419,18 @@ const form = reactive({
 const isTiendaForm = computed(() => String(form.category || '').trim().toLowerCase() === 'tienda');
 
 const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
-  if (feedbackTone.value === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
+  if (feedbackTone.value === 'success')
+    return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
+  if (feedbackTone.value === 'error')
+    return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
   return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
 });
 
 /**
  * Valida los datos recibidos.
  */
-const isLowStock = (item) => Number(item.quantity || 0) <= Number(item.minQuantity || 0);
+const isLowStock = (item) =>
+  Number(item.quantity || 0) <= Number(item.minQuantity || 0);
 
 /**
  * Ancho de la barra de stock respecto al minimo (3x el minimo = 100%).
@@ -423,7 +466,10 @@ const inventoryStatusClass = (status) => {
 
 const currentInventoryCode = computed(() => {
   if (editingId.value) {
-    return inventory.value.find((item) => item.id === editingId.value)?.inventoryCode || 'Se generara automaticamente';
+    return (
+      inventory.value.find((item) => item.id === editingId.value)
+        ?.inventoryCode || 'Se generara automaticamente'
+    );
   }
 
   return 'Se generara automaticamente';
@@ -485,14 +531,22 @@ const editItem = (item) => {
  */
 const handleSubmit = async () => {
   try {
-    await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form });
-    const savedLabel = editingId.value ? 'Articulo actualizado.' : 'Articulo registrado.';
+    await gymStore.upsertInventoryItem({
+      id: editingId.value || undefined,
+      ...form,
+    });
+    const savedLabel = editingId.value
+      ? 'Articulo actualizado.'
+      : 'Articulo registrado.';
     closeEditor();
     feedbackTone.value = 'success';
     feedbackMessage.value = savedLabel;
   } catch (error) {
     feedbackTone.value = 'error';
-    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo guardar el articulo.';
+    feedbackMessage.value =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo guardar el articulo.';
   }
 };
 
@@ -509,12 +563,17 @@ const deleteItem = async (id) => {
       : 'Articulo eliminado.';
   } catch (error) {
     feedbackTone.value = 'error';
-    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo eliminar el articulo.';
+    feedbackMessage.value =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo eliminar el articulo.';
   }
 };
 
 onMounted(() => {
-  gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar inventario:', error));
+  gymStore
+    .fetchFromBackend?.()
+    .catch((error) => console.warn('No se pudo refrescar inventario:', error));
 });
 </script>
 

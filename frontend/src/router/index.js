@@ -50,6 +50,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: '/tp-remix',
+    name: 'TpRemix',
+    component: () => import('../views/TpRemixView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
     path: '/nosotros',
     name: 'Nosotros',
     component: NosotrosView,

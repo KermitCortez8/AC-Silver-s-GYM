@@ -45,6 +45,43 @@
       </nav>
     </section>
 
+    <div v-if="!isAdmin" class="ws-panel flex flex-col gap-4 sm:flex-row sm:items-end">
+      <label class="ws-search"
+        ><span class="sr-only">Buscar productos</span
+        ><Search :size="18" /><input
+          v-model="productSearch"
+          type="search"
+          class="ws-input"
+          placeholder="Busca por nombre o categoría"
+      /></label>
+      <label class="sm:w-52"
+        ><span class="ws-field-label">Categoría</span
+        ><select v-model="categoryFilter" class="ws-input">
+          <option value="">Todas las categorías</option>
+          <option v-for="category in categories" :key="category">
+            {{ category }}
+          </option>
+        </select></label
+      >
+      <button
+        v-if="productSearch || categoryFilter"
+        class="ws-btn"
+        @click="
+          productSearch = '';
+          categoryFilter = '';
+        "
+      >
+        Limpiar filtros
+      </button>
+    </div>
+    <p
+      v-if="!isAdmin && feedbackMessage && !isProductEditorOpen"
+      role="status"
+      class="ws-notice"
+      :class="feedbackToneClass"
+    >
+      {{ feedbackMessage }}
+    </p>
     <StoreMovementsPanel v-if="isAdmin && activeTab === 'movimientos'" />
 
     <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
@@ -126,16 +163,18 @@
       <!-- Tabla -->
       <div v-if="productos.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[1160px] text-left text-sm">
-            <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
+          <table class="ws-table store-admin-table">
+            <thead
+              class="border-b ws-border ws-inset text-xs uppercase tracking-[0.16em] ws-muted"
+            >
               <tr>
                 <th class="px-5 py-4 font-bold">Producto</th>
                 <th class="px-4 py-4 font-bold">Imagen</th>
-                <th class="px-4 py-4 font-bold">Categoria</th>
+                <th class="px-4 py-4 font-bold">Categoría</th>
                 <th class="px-4 py-4 font-bold">Precio</th>
                 <th class="px-4 py-4 font-bold">Stock</th>
                 <th class="px-4 py-4 font-bold">Estado</th>
-                <th class="px-4 py-4 font-bold">Almacen</th>
+                <th class="px-4 py-4 font-bold">Almacén</th>
                 <th class="px-5 py-4 text-right font-bold">Acciones</th>
               </tr>
             </thead>
@@ -143,44 +182,45 @@
               <tr v-for="producto in productosPaginados" :key="producto.id_producto" class="transition hover:bg-white/[0.04]">
 
                 <!-- Producto -->
-                <td class="max-w-sm px-5 py-4 align-top">
+                <td data-label="Producto" class="max-w-sm px-5 py-4 align-top">
                   <div class="flex items-start gap-3">
-                    <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-black text-amber-200">
+                    <span
+                      class="mt-0.5 rounded-lg ws-tint-warning px-2.5 py-1 text-xs font-black ws-warning"
+                    >
                       {{ productCode(producto.id_producto) }}
                     </span>
                     <div class="min-w-0">
-                      <p class="font-bold text-white">{{ producto.nombre }}</p>
-                      <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{{ producto.descripcion || 'Sin descripcion' }}</p>
+                      <p class="font-bold ws-text">{{ producto.nombre }}</p>
+                      <p class="mt-1 line-clamp-2 text-xs leading-5 ws-muted">
+                        {{ producto.descripcion || 'Sin descripción' }}
+                      </p>
                     </div>
                   </div>
                 </td>
-
-                <!-- Imagen -->
-                <td class="px-4 py-4 align-top">
+                <td data-label="Imagen" class="px-4 py-4 align-top">
                   <img
                     v-if="producto.imagen_url"
                     :src="producto.imagen_url"
                     :alt="producto.nombre"
-                    class="h-14 w-14 rounded-xl border border-white/10 bg-white/5 object-contain p-1"
+                    class="h-14 w-14 rounded-xl border ws-border ws-surface object-contain p-1"
                   />
-                  <span v-else class="text-xs text-slate-500">Sin imagen</span>
+                  <span v-else class="text-xs ws-muted">Sin imagen</span>
+                </td>
+                <td data-label="Categoría" class="px-4 py-4 align-top ws-soft">
+                  {{ producto.categoria || 'General' }}
                 </td>
 
-                <!-- Categoría -->
-                <td class="px-4 py-4 align-top text-slate-300">{{ producto.categoria || 'General' }}</td>
-
                 <!-- Precio -->
-                <td class="whitespace-nowrap px-4 py-4 align-top font-black text-emerald-300">
+                <td data-label="Precio" class="whitespace-nowrap px-4 py-4 align-top font-black text-emerald-300">
                   S/. {{ Number(producto.precio || 0).toFixed(2) }}
                 </td>
 
                 <!-- Stock con barra -->
-                <td class="px-4 py-4 align-top">
+                <td data-label="Stock" class="px-4 py-4 align-top">
                   <p class="font-bold" :class="isProductLowStock(producto) ? 'text-rose-300' : 'text-white'">
                     {{ producto.cantidad }} {{ producto.unidad_venta || 'unidad' }}
                   </p>
                   <p class="mt-0.5 text-xs text-slate-400">Minimo: {{ producto.minimo || 0 }}</p>
-                  <!-- Barra de stock -->
                   <div class="mt-2 w-full overflow-hidden rounded-full bg-slate-800/80" style="height: 5px;">
                     <div
                       class="h-full rounded-full transition-all duration-500"
@@ -194,7 +234,7 @@
                 </td>
 
                 <!-- Estado -->
-                <td class="px-4 py-4 align-top">
+                <td data-label="Estado" class="px-4 py-4 align-top">
                   <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold" :class="productStatusClass(producto.estado)">
                     <span class="h-1.5 w-1.5 rounded-full" :class="productStatusDot(producto.estado)"></span>
                     {{ producto.estado }}
@@ -202,13 +242,13 @@
                 </td>
 
                 <!-- Almacen -->
-                <td class="px-4 py-4 align-top">
+                <td data-label="Almacén" class="px-4 py-4 align-top">
                   <span v-if="producto.id_item" class="font-semibold text-amber-200">Item #{{ producto.id_item }}</span>
                   <span v-else class="text-slate-500">Sin vincular</span>
                 </td>
 
                 <!-- Acciones -->
-                <td class="px-5 py-4 align-top">
+                <td data-label="Acciones" class="px-5 py-4 align-top">
                   <div class="flex justify-end gap-2">
                     <button
                       class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:border-white/20 hover:bg-white/5"
@@ -267,29 +307,40 @@
         <p class="text-sm font-semibold text-slate-300">{{ busqueda || categoriaActiva ? 'Sin resultados' : 'Sin productos registrados' }}</p>
         <p class="mt-1 text-xs text-slate-500">{{ busqueda || categoriaActiva ? 'Prueba con otro termino o categoria.' : 'Usa "Ingresar Nuevo Articulo" para agregar el primero.' }}</p>
       </div>
-
     </section>
 
     <!-- ═══════════════════════════════════════════════
          CLIENTE — VISTA DE TIENDA (CARRITO)
     ════════════════════════════════════════════════ -->
     <section v-else class="space-y-6">
-      <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div class="space-y-4">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+          >
             <div>
-              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Ecommerce</p>
-              <h2 class="mt-2 text-2xl font-black text-white">Articulos disponibles</h2>
+              <p class="ws-eyebrow">Para tu entrenamiento</p>
+              <h2 class="mt-2 text-2xl font-black ws-text">
+                Encuentra tu complemento ideal
+              </h2>
             </div>
-            <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-right">
-              <p class="text-xs text-slate-400">Productos</p>
-              <p class="text-xl font-black text-white">{{ visibleProducts.length }}</p>
+            <div class="rounded-2xl ws-inset px-4 py-3 text-right">
+              <p class="text-xs ws-muted">Productos</p>
+              <p class="text-xl font-black ws-text">
+                {{ visibleProducts.length }}
+              </p>
             </div>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <article v-for="producto in visibleProducts" :key="producto.id_producto" class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
-              <div class="mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-amber-200/20 bg-amber-300/10">
+            <article
+              v-for="producto in visibleProducts"
+              :key="producto.id_producto"
+              class="ws-panel store-product-card"
+            >
+              <div
+                class="store-product-image mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-xl border ws-border-warning ws-tint-warning"
+              >
                 <img
                   v-if="producto.imagen_url"
                   :src="producto.imagen_url"
@@ -297,100 +348,205 @@
                   class="h-full w-full object-contain p-2"
                 />
                 <div v-else class="text-center">
-                  <p class="text-xs uppercase tracking-[0.25em] text-amber-200">{{ producto.categoria }}</p>
-                  <p class="mt-2 text-3xl font-black text-white">{{ productCode(producto.id_producto).slice(-4) }}</p>
+                  <p class="text-xs uppercase tracking-[0.25em] ws-warning">
+                    {{ producto.categoria }}
+                  </p>
+                  <Package
+                    :size="48"
+                    class="mx-auto mt-3 ws-muted"
+                    aria-hidden="true"
+                  />
                 </div>
               </div>
-              <p class="font-semibold text-white">{{ producto.nombre }}</p>
-              <p class="mt-1 line-clamp-2 text-sm text-slate-400">{{ producto.descripcion || 'Producto disponible en tienda.' }}</p>
-              <p class="mt-3 text-lg font-black text-emerald-300">S/. {{ Number(producto.precio || 0).toFixed(2) }}</p>
-              <p class="mt-1 text-xs text-slate-400">Stock: {{ producto.cantidad }}</p>
+              <p class="font-semibold ws-text">{{ producto.nombre }}</p>
+              <p class="mt-1 line-clamp-2 text-sm ws-muted">
+                {{ producto.descripcion || 'Producto disponible en tienda.' }}
+              </p>
+              <p class="mt-3 text-lg font-black ws-success">
+                S/. {{ Number(producto.precio || 0).toFixed(2) }}
+              </p>
+              <p class="mt-1 text-xs ws-muted">
+                Stock: {{ producto.cantidad }}
+              </p>
 
-              <div v-if="producto.estado === 'Disponible' && Number(producto.cantidad || 0) > 0" class="mt-4 flex gap-2">
+              <div
+                v-if="
+                  producto.estado === 'Disponible' &&
+                  Number(producto.cantidad || 0) > 0
+                "
+                class="mt-4 flex gap-2"
+              >
                 <input
-                  v-model.number="cantidadInput[producto.id_producto]"
+                  :value="cantidadInput[producto.id_producto] ?? 1"
+                  @input="
+                    cantidadInput[producto.id_producto] = Number(
+                      $event.target.value,
+                    )
+                  "
+                  :aria-label="`Cantidad de ${producto.nombre}`"
                   type="number"
                   min="1"
                   :max="producto.cantidad"
-                  class="field-input flex-1 px-3 py-2 text-sm"
+                  class="ws-input flex-1 px-3 py-2 text-sm"
                 />
-                <button class="flex-1 rounded-xl bg-amber-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-amber-300" @click="agregarAlCarrito(producto)">
+                <button
+                  class="flex-1 rounded-xl ws-primary px-3 py-2 text-sm font-bold ws-onaccent transition ws-primary-hover"
+                  @click="agregarAlCarrito(producto)"
+                >
                   Agregar
                 </button>
               </div>
-              <div v-else class="mt-4 rounded-xl bg-slate-950/60 px-3 py-2 text-center text-sm text-slate-400">
-                {{ producto.estado !== 'Disponible' ? producto.estado : 'Agotado' }}
+              <div
+                v-else
+                class="mt-4 rounded-xl ws-inset px-3 py-2 text-center text-sm ws-muted"
+              >
+                {{
+                  producto.estado !== 'Disponible' ? producto.estado : 'Agotado'
+                }}
               </div>
             </article>
           </div>
 
-          <p v-if="!visibleProducts.length" class="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-slate-400">
-            No hay productos disponibles en la tienda.
+          <p
+            v-if="!visibleProducts.length"
+            class="rounded-2xl border border-dashed ws-border p-10 text-center text-sm ws-muted"
+          >
+            {{
+              productSearch || categoryFilter
+                ? 'No encontramos productos con esos filtros. Prueba otra búsqueda.'
+                : 'Pronto encontrarás nuevos productos aquí.'
+            }}
           </p>
         </div>
 
-        <aside class="h-fit rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur lg:sticky lg:top-4">
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Carrito</p>
-          <h2 class="mt-2 text-2xl font-black text-white">Mi compra</h2>
+        <aside class="h-fit ws-panel xl:sticky xl:top-4">
+          <p class="ws-eyebrow">Carrito</p>
+          <h2 class="mt-2 text-2xl font-black ws-text">Mi compra</h2>
 
           <div class="mt-5 max-h-96 space-y-3 overflow-y-auto">
-            <article v-for="item in cart" :key="item.id_producto" class="rounded-2xl border border-white/10 bg-slate-950/80 p-3">
+            <article
+              v-for="item in cart"
+              :key="item.id_producto"
+              class="rounded-2xl border ws-border ws-inset p-3"
+            >
               <div class="flex items-start justify-between gap-2">
                 <img
                   v-if="item.imagen_url"
                   :src="item.imagen_url"
                   :alt="item.nombre"
-                  class="h-12 w-12 rounded-xl border border-white/10 bg-white/5 object-contain p-1"
+                  class="h-12 w-12 rounded-xl border ws-border ws-surface object-contain p-1"
                 />
                 <div class="min-w-0 flex-1">
-                  <p class="truncate font-semibold text-white">{{ item.nombre }}</p>
-                  <p class="mt-1 text-sm text-emerald-300">S/. {{ Number(item.precio || 0).toFixed(2) }}</p>
+                  <p class="truncate font-semibold ws-text">
+                    {{ item.nombre }}
+                  </p>
+                  <p class="mt-1 text-sm ws-success">
+                    S/. {{ Number(item.precio || 0).toFixed(2) }}
+                  </p>
                 </div>
-                <button class="rounded-full bg-rose-500/20 px-2 py-1 text-sm font-bold text-rose-200 hover:bg-rose-500 hover:text-white" @click="() => gymStore.removeFromCart(item.id_producto)">
+                <button
+                  class="rounded-full ws-tint-danger px-2 py-1 text-sm font-bold ws-danger hover:bg-rose-500 ws-hover-text"
+                  :aria-label="`Quitar ${item.nombre} del carrito`"
+                  @click="() => gymStore.removeFromCart(item.id_producto)"
+                >
                   x
                 </button>
               </div>
 
               <div class="mt-3 flex items-center gap-2">
-                <button class="rounded bg-slate-800 px-2 py-1 text-sm text-white hover:bg-slate-700" @click="() => gymStore.updateCartQuantity(item.id_producto, Math.max(1, item.cantidad - 1))">-</button>
+                <button
+                  class="rounded ws-inset px-2 py-1 text-sm ws-text ws-hover"
+                  :aria-label="`Reducir cantidad de ${item.nombre}`"
+                  @click="
+                    () =>
+                      gymStore.updateCartQuantity(
+                        item.id_producto,
+                        Math.max(1, item.cantidad - 1),
+                      )
+                  "
+                >
+                  -
+                </button>
                 <input
                   :value="item.cantidad"
+                  :aria-label="`Cantidad de ${item.nombre} en el carrito`"
                   type="number"
                   min="1"
-                  class="w-full rounded bg-slate-800 px-2 py-1 text-center text-sm text-white outline-none"
-                  @change="(event) => gymStore.updateCartQuantity(item.id_producto, Math.max(1, Number(event.target.value)))"
+                  class="w-full rounded ws-inset px-2 py-1 text-center text-sm ws-text outline-none"
+                  @change="
+                    (event) =>
+                      gymStore.updateCartQuantity(
+                        item.id_producto,
+                        Math.max(1, Number(event.target.value)),
+                      )
+                  "
                 />
-                <button class="rounded bg-slate-800 px-2 py-1 text-sm text-white hover:bg-slate-700" @click="() => gymStore.updateCartQuantity(item.id_producto, item.cantidad + 1)">+</button>
+                <button
+                  class="rounded ws-inset px-2 py-1 text-sm ws-text ws-hover"
+                  :aria-label="`Aumentar cantidad de ${item.nombre}`"
+                  @click="
+                    () =>
+                      gymStore.updateCartQuantity(
+                        item.id_producto,
+                        item.cantidad + 1,
+                      )
+                  "
+                >
+                  +
+                </button>
               </div>
 
-              <p class="mt-2 text-right text-sm text-slate-300">
-                Subtotal: S/. {{ (Number(item.precio || 0) * Number(item.cantidad || 0)).toFixed(2) }}
+              <p class="mt-2 text-right text-sm ws-soft">
+                Subtotal: S/.
+                {{
+                  (
+                    Number(item.precio || 0) * Number(item.cantidad || 0)
+                  ).toFixed(2)
+                }}
               </p>
             </article>
 
-            <p v-if="!cart.length" class="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">
+            <p
+              v-if="!cart.length"
+              class="rounded-2xl border border-dashed ws-border p-6 text-center text-sm ws-muted"
+            >
               Tu carrito esta vacio.
             </p>
           </div>
 
-          <div v-if="cart.length" class="mt-6 space-y-3 border-t border-white/10 pt-4">
+          <div
+            v-if="cart.length"
+            class="mt-6 space-y-3 border-t ws-border pt-4"
+          >
             <div class="flex justify-between text-sm">
-              <p class="text-slate-300">Subtotal:</p>
-              <p class="font-semibold text-white">S/. {{ cartTotal.subtotal.toFixed(2) }}</p>
+              <p class="ws-soft">Subtotal:</p>
+              <p class="font-semibold ws-text">
+                S/. {{ cartTotal.subtotal.toFixed(2) }}
+              </p>
             </div>
             <div class="flex justify-between text-sm">
-              <p class="text-slate-300">IGV (18%):</p>
-              <p class="font-semibold text-emerald-300">S/. {{ cartTotal.igv.toFixed(2) }}</p>
+              <p class="ws-soft">IGV (18%):</p>
+              <p class="font-semibold ws-success">
+                S/. {{ cartTotal.igv.toFixed(2) }}
+              </p>
             </div>
-            <div class="flex justify-between border-t border-white/10 pt-3">
-              <p class="font-black text-white">Total:</p>
-              <p class="text-xl font-black text-amber-300">S/. {{ cartTotal.total.toFixed(2) }}</p>
+            <div class="flex justify-between border-t ws-border pt-3">
+              <p class="font-black ws-text">Total:</p>
+              <p class="text-xl font-black ws-warning">
+                S/. {{ cartTotal.total.toFixed(2) }}
+              </p>
             </div>
 
-            <button class="mt-4 w-full rounded-2xl bg-amber-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-amber-300" @click="goToCheckout">
+            <button
+              class="mt-4 w-full rounded-2xl ws-primary px-4 py-3 font-bold ws-onaccent transition ws-primary-hover"
+              @click="goToCheckout"
+            >
               Procesar compra
             </button>
-            <button class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-white transition hover:bg-white/10" @click="() => gymStore.clearCart()">
+            <button
+              class="w-full rounded-2xl border ws-border ws-surface px-4 py-3 font-bold ws-text transition ws-hover"
+              @click="() => gymStore.clearCart()"
+            >
               Limpiar carrito
             </button>
           </div>
@@ -450,7 +606,7 @@
               <div class="grid gap-4 sm:grid-cols-2">
                 <label class="space-y-2 sm:col-span-2">
                   <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Nombre del producto</span>
-                  <input v-model="form.nombre" class="field-input" placeholder="Proteina Whey, Bebida Energetica, etc." />
+                  <input v-model="form.nombre" required class="field-input" placeholder="Proteina Whey, Bebida Energetica, etc." />
                 </label>
                 <label class="space-y-2 sm:col-span-2">
                   <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Descripcion</span>
@@ -530,7 +686,11 @@
                       :disabled="isLoadingBucketImages"
                       @click="openBucketPicker"
                     >
-                      {{ isLoadingBucketImages ? 'Cargando...' : 'Seleccionar del bucket' }}
+                      {{
+                        isLoadingBucketImages
+                          ? 'Cargando...'
+                          : 'Elegir de la galería'
+                      }}
                     </button>
                     <button
                       v-if="form.imagen_url"
@@ -566,21 +726,31 @@
                         Cerrar
                       </button>
                     </div>
-                    <div v-if="bucketImages.length" class="grid max-h-56 grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4">
+                    <div
+                      v-if="bucketImages.length"
+                      class="grid max-h-56 grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4"
+                    >
                       <button
                         v-for="image in bucketImages"
                         :key="image.path || image.name"
                         type="button"
-                        class="overflow-hidden rounded-xl border transition hover:border-amber-300"
-                        :class="form.imagen_url === image.url ? 'border-amber-300 ring-2 ring-amber-300/40' : 'border-white/10'"
+                        class="overflow-hidden rounded-xl border transition ws-hover-border"
+                        :class="
+                          form.imagen_url === image.url
+                            ? 'ws-border-warning ring-2 ws-ring'
+                            : 'ws-border'
+                        "
                         @click="selectBucketImage(image)"
                       >
                         <img :src="image.url" :alt="image.name" class="aspect-square h-full w-full bg-slate-950/60 object-contain p-1" />
                         <p class="truncate px-2 py-1 text-[10px] text-slate-400">{{ image.name }}</p>
                       </button>
                     </div>
-                    <p v-else class="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-400">
-                      No hay imagenes en el bucket todavia.
+                    <p
+                      v-else
+                      class="rounded-xl border border-dashed ws-border px-4 py-6 text-center text-xs ws-muted"
+                    >
+                      Todavía no hay imágenes en la galería.
                     </p>
                   </div>
 
@@ -593,25 +763,40 @@
 
           </div>
 
+          <p
+            v-if="feedbackMessage && feedbackTone === 'error'"
+            role="alert"
+            class="mx-6 mt-4 rounded-xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+          >
+            {{ feedbackMessage }}
+          </p>
+
           <!-- Modal footer -->
           <div class="border-t border-white/10 bg-slate-950/80 px-6 py-4">
-            <button type="submit" class="w-full rounded-2xl bg-amber-400 px-4 py-3.5 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 hover:shadow-amber-400/30">
-              {{ editingId ? 'Guardar cambios' : 'Registrar producto' }}
+            <button
+              :disabled="isSaving || isUploadingImage"
+              type="submit"
+              class="w-full rounded-2xl bg-amber-400 px-4 py-3.5 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 hover:shadow-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {{ isSaving ? 'Guardando…' : (editingId ? 'Guardar cambios' : 'Registrar producto') }}
             </button>
           </div>
         </form>
       </div>
     </Teleport>
-
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
+import { Package, Search } from 'lucide-vue-next';
 import { useRoute, useRouter } from 'vue-router';
 import StoreMovementsPanel from '../components/store/StoreMovementsPanel.vue';
 import { useGymStore } from '../stores/gymStore';
-import { uploadStoreImage, listStoreImages } from '../services/storeImageService';
+import {
+  uploadStoreImage,
+  listStoreImages,
+} from '../services/storeImageService';
 
 const route = useRoute();
 const router = useRouter();
@@ -627,7 +812,32 @@ const activeTab = computed({
   set: (tab) => router.replace({ query: { ...route.query, tab } }),
 });
 const productos = computed(() => gymStore.productos_tienda);
-const visibleProducts = computed(() => productos.value.filter((producto) => producto.estado !== 'Descatalogado'));
+const productSearch = ref('');
+const categoryFilter = ref('');
+const isSaving = ref(false);
+const catalogProducts = computed(() =>
+  isAdmin.value
+    ? productos.value
+    : productos.value.filter((p) => p.estado !== 'Descatalogado'),
+);
+const categories = computed(() =>
+  [
+    ...new Set(catalogProducts.value.map((p) => p.categoria || 'General')),
+  ].sort(),
+);
+const filteredProducts = computed(() => {
+  const query = productSearch.value.trim().toLocaleLowerCase('es');
+  return catalogProducts.value.filter(
+    (p) =>
+      (!categoryFilter.value ||
+        (p.categoria || 'General') === categoryFilter.value) &&
+      (!query ||
+        `${p.nombre} ${p.categoria || 'General'} ${p.descripcion || ''}`
+          .toLocaleLowerCase('es')
+          .includes(query)),
+  );
+});
+const visibleProducts = computed(() => filteredProducts.value);
 const inventario = computed(() => gymStore.inventory);
 const cart = computed(() => gymStore.cart);
 const cartTotal = computed(() => gymStore.cartTotal);
@@ -704,9 +914,11 @@ const form = reactive({
 });
 
 const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
-  if (feedbackTone.value === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
-  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
+  if (feedbackTone.value === 'success')
+    return 'ws-border-success ws-tint-success ws-success';
+  if (feedbackTone.value === 'error')
+    return 'ws-border-danger ws-tint-danger ws-danger';
+  return 'ws-border-info ws-tint-info ws-info';
 });
 
 const currentProductCode = computed(() => {
@@ -750,9 +962,10 @@ const isProductLowStock = (producto) => Number(producto.cantidad || 0) <= Number
  * Devuelve la clase de color para el badge de estado.
  */
 const productStatusClass = (status) => {
-  if (status === 'Disponible') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300';
-  if (status === 'Agotado') return 'border-rose-400/20 bg-rose-400/10 text-rose-300';
-  return 'border-amber-400/20 bg-amber-400/10 text-amber-300';
+  if (status === 'Disponible')
+    return 'ws-border-success ws-tint-success ws-success';
+  if (status === 'Agotado') return 'ws-border-danger ws-tint-danger ws-danger';
+  return 'ws-border-warning ws-tint-warning ws-warning';
 };
 
 /**
@@ -816,6 +1029,7 @@ const openNewProducto = () => {
  * Gestiona esta acción de la vista.
  */
 const closeProductEditor = () => {
+  if (isSaving.value || isUploadingImage.value) return;
   isProductEditorOpen.value = false;
   resetForm();
 };
@@ -850,7 +1064,10 @@ const loadBucketImages = async () => {
     bucketImages.value = await listStoreImages();
   } catch (error) {
     imageFeedbackTone.value = 'error';
-    imageFeedback.value = error instanceof Error ? error.message : 'No se pudieron cargar las imagenes del bucket.';
+    imageFeedback.value =
+      error instanceof Error
+        ? error.message
+        : 'No se pudieron cargar las imagenes del bucket.';
     bucketImages.value = [];
   } finally {
     isLoadingBucketImages.value = false;
@@ -905,10 +1122,11 @@ const handleLocalImageUpload = async (event) => {
     const uploaded = await uploadStoreImage(file);
     form.imagen_url = uploaded.url;
     imageFeedbackTone.value = 'success';
-    imageFeedback.value = 'Imagen subida a Supabase desde tu ordenador.';
+    imageFeedback.value = 'Imagen subida correctamente.';
   } catch (error) {
     imageFeedbackTone.value = 'error';
-    imageFeedback.value = error instanceof Error ? error.message : 'No se pudo subir la imagen.';
+    imageFeedback.value =
+      error instanceof Error ? error.message : 'No se pudo subir la imagen.';
   } finally {
     isUploadingImage.value = false;
     event.target.value = '';
@@ -919,6 +1137,9 @@ const handleLocalImageUpload = async (event) => {
  * Gestiona esta acción de la vista.
  */
 const handleSubmit = async () => {
+  if (isSaving.value || isUploadingImage.value) return;
+  isSaving.value = true;
+  feedbackMessage.value = '';
   try {
     await gymStore.upsertProductoTienda({
       id_producto: editingId.value || undefined,
@@ -933,13 +1154,21 @@ const handleSubmit = async () => {
       estado: form.estado,
       imagen_url: form.imagen_url,
     });
-    const savedLabel = editingId.value ? 'Producto actualizado.' : 'Producto registrado.';
+    const savedLabel = editingId.value
+      ? 'Producto actualizado.'
+      : 'Producto registrado.';
+    isSaving.value = false;
     closeProductEditor();
     feedbackTone.value = 'success';
     feedbackMessage.value = savedLabel;
   } catch (error) {
     feedbackTone.value = 'error';
-    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo guardar el producto.';
+    feedbackMessage.value =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo guardar el producto.';
+  } finally {
+    isSaving.value = false;
   }
 };
 
@@ -954,7 +1183,10 @@ const deleteProducto = async (idProducto) => {
     feedbackMessage.value = 'Producto eliminado.';
   } catch (error) {
     feedbackTone.value = 'error';
-    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo eliminar el producto.';
+    feedbackMessage.value =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo eliminar el producto.';
   }
 };
 
@@ -967,6 +1199,8 @@ const agregarAlCarrito = (producto) => {
   const cantidad = Math.max(1, Math.min(requested, stock));
   gymStore.addToCart(producto, cantidad);
   cantidadInput.value[producto.id_producto] = 1;
+  feedbackTone.value = 'success';
+  feedbackMessage.value = `${producto.nombre} añadido al carrito.`;
 };
 
 /**
@@ -978,11 +1212,17 @@ const goToCheckout = () => {
 };
 
 onMounted(() => {
-  gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar tienda:', error));
+  gymStore
+    .fetchFromBackend?.()
+    .catch((error) => console.warn('No se pudo refrescar tienda:', error));
 });
 </script>
 
 <style scoped>
+.store-admin-table {
+  min-width: 980px;
+}
+
 .field-input {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -997,9 +1237,50 @@ onMounted(() => {
 .field-input:focus {
   border-color: rgba(251, 191, 36, 0.4);
 }
-
-.field-input::placeholder {
-  color: #64748b;
+.store-product-card {
+  display: flex;
+  flex-direction: column;
+}
+.store-product-image {
+  background: var(--ws-inset);
+  border-color: var(--ws-border);
+}
+.store-product-card > div:last-child {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+@media (max-width: 767px) {
+  .store-admin-table {
+    min-width: 0;
+  }
+  .store-admin-table thead {
+    display: none;
+  }
+  .store-admin-table tbody,
+  .store-admin-table tr {
+    display: block;
+  }
+  .store-admin-table tr {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--ws-border);
+  }
+  .store-admin-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+    border: 0;
+    padding: 0.5rem;
+    max-width: none;
+    overflow-wrap: anywhere;
+  }
+  .store-admin-table td::before {
+    content: attr(data-label);
+    color: var(--ws-muted);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    padding-top: 0.15rem;
+  }
 }
 
 .bg-amber-400\/8 {
