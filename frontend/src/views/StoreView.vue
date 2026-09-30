@@ -87,72 +87,88 @@
     <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">Estado</p>
-          <h2 class="mt-1.5 flex items-center gap-2.5 text-2xl font-black text-white">
-            Listado de productos
-            <span class="rounded-lg bg-emerald-400/15 px-2 py-0.5 text-xs font-bold text-emerald-300">{{ productosFiltrados.length }} visibles</span>
-          </h2>
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
+          <h2 class="mt-2 text-2xl font-black text-white">Listado de productos</h2>
         </div>
+      </div>
 
-        <!-- Stats horizontales -->
-        <div class="flex flex-wrap gap-4">
-          <div class="text-center">
-            <p class="text-xs text-slate-500">Total</p>
-            <p class="mt-0.5 text-2xl font-black text-white">{{ productos.length }}</p>
-            <span class="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+      <!-- Stats cards con iconos (estilo Inventario) -->
+      <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-blue-400 bg-slate-900/80 px-4 py-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+            <ShoppingBag :size="20" stroke-width="2.5" />
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Total productos</p>
+            <p class="text-2xl font-black text-white">{{ productos.length }}</p>
           </div>
-          <div class="text-center">
-            <p class="text-xs text-slate-500">Stock bajo</p>
-            <p class="mt-0.5 text-2xl font-black" :class="lowStockCount > 0 ? 'text-rose-300' : 'text-white'">{{ lowStockCount }}</p>
-            <span class="mt-1 inline-block h-1.5 w-1.5 rounded-full" :class="lowStockCount > 0 ? 'bg-rose-400' : 'bg-slate-700'"></span>
+        </div>
+        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-green-400 bg-slate-900/80 px-4 py-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-600">
+            <BarChart3 :size="20" stroke-width="2.5" />
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Disponibilidad</p>
+            <p class="text-2xl font-black text-white">{{ disponibilidadPct }}%</p>
           </div>
-          <div class="text-center">
-            <p class="text-xs text-slate-500">Agotados</p>
-            <p class="mt-0.5 text-2xl font-black" :class="agotadosCount > 0 ? 'text-amber-300' : 'text-white'">{{ agotadosCount }}</p>
-            <span class="mt-1 inline-block h-1.5 w-1.5 rounded-full" :class="agotadosCount > 0 ? 'bg-amber-400' : 'bg-slate-700'"></span>
+        </div>
+        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-yellow-400 bg-slate-900/80 px-4 py-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700">
+            <TrendingDown :size="20" stroke-width="2.5" />
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Stock bajo</p>
+            <p class="text-2xl font-black" :class="lowStockCount > 0 ? 'text-rose-300' : 'text-white'">{{ lowStockCount }}</p>
           </div>
-          <div class="text-center">
-            <p class="text-xs text-slate-500">Disponibilidad</p>
-            <p class="mt-0.5 text-2xl font-black text-emerald-300">{{ disponibilidadPct }}%</p>
-            <span class="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+        </div>
+        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-rose-400 bg-slate-900/80 px-4 py-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+            <AlertTriangle :size="20" stroke-width="2.5" />
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Agotados</p>
+            <p class="text-2xl font-black" :class="agotadosCount > 0 ? 'text-rose-300' : 'text-white'">{{ agotadosCount }}</p>
           </div>
         </div>
       </div>
 
-      <!-- Búsqueda + filtros por categoría -->
-      <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <!-- Buscador -->
-        <div class="relative max-w-xs w-full">
-          <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-          </svg>
-          <input
-            v-model="busqueda"
-            type="text"
-            placeholder="Buscar producto, codigo..."
-            class="w-full rounded-xl border border-white/10 bg-slate-900/80 py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-500 outline-none transition focus:border-white/20"
-          />
-        </div>
+      <!-- Pills de categorías con punto de color (estilo Inventario) -->
+      <div class="mt-5 flex flex-wrap gap-2.5">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
+          :class="categoriaActiva === '' ? 'border-rose-500 bg-rose-600 text-white' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
+          @click="categoriaActiva = ''; paginaActual = 1"
+        >
+          Todas las categorias <span :class="categoriaActiva === '' ? 'text-white/70' : 'text-slate-500'">{{ productos.length }}</span>
+        </button>
+        <button
+          v-for="cat in categoriasUnicas"
+          :key="cat"
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
+          :class="categoriaActiva === cat ? 'border-rose-500 bg-rose-600 text-white' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
+          @click="categoriaActiva = cat; paginaActual = 1"
+        >
+          <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ background: categoriaDotColor(cat) }"></span>
+          {{ cat }} <span :class="categoriaActiva === cat ? 'text-white/70' : 'text-slate-500'">{{ productos.filter(p => (p.categoria || 'General') === cat).length }}</span>
+        </button>
+      </div>
 
-        <!-- Tabs de categoría -->
-        <div class="flex flex-wrap items-center gap-2">
-          <button
-            class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition"
-            :class="categoriaActiva === '' ? 'bg-rose-600 text-white shadow-sm' : 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5'"
-            @click="categoriaActiva = ''; paginaActual = 1"
-          >
-            Todos ({{ productos.length }})
-          </button>
-          <button
-            v-for="cat in categoriasUnicas"
-            :key="cat"
-            class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition"
-            :class="categoriaActiva === cat ? 'bg-rose-600 text-white shadow-sm' : 'border border-white/10 text-slate-400 hover:text-white hover:bg-white/5'"
-            @click="categoriaActiva = cat; paginaActual = 1"
-          >
-            {{ cat }}
-          </button>
+      <p class="mt-3 text-xs text-slate-500">Mostrando {{ productosFiltrados.length }} de {{ productos.length }} productos</p>
+
+      <!-- Buscador + select de estado en fila (estilo Inventario) -->
+      <div class="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr]">
+        <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
+          <Search :size="16" class="shrink-0 text-slate-500" />
+          <input v-model="busqueda" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar producto, codigo..." />
         </div>
+        <select v-model="filtroEstado" class="field-input">
+          <option value="">Todos los estados</option>
+          <option>Disponible</option>
+          <option>Agotado</option>
+          <option>Descatalogado</option>
+        </select>
       </div>
 
       <!-- Feedback -->
@@ -160,13 +176,11 @@
         {{ feedbackMessage }}
       </p>
 
-      <!-- Tabla -->
+      <!-- Tabla con min-w fijo para no romperse en zoom -->
       <div v-if="productos.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
-          <table class="ws-table store-admin-table">
-            <thead
-              class="border-b ws-border ws-inset text-xs uppercase tracking-[0.16em] ws-muted"
-            >
+          <table class="w-full min-w-[1100px] text-left text-sm">
+            <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
               <tr>
                 <th class="px-5 py-4 font-bold">Producto</th>
                 <th class="px-4 py-4 font-bold">Imagen</th>
@@ -182,32 +196,33 @@
               <tr v-for="producto in productosPaginados" :key="producto.id_producto" class="transition hover:bg-white/[0.04]">
 
                 <!-- Producto -->
-                <td data-label="Producto" class="max-w-sm px-5 py-4 align-top">
+                <td class="max-w-sm px-5 py-4 align-top">
                   <div class="flex items-start gap-3">
-                    <span
-                      class="mt-0.5 rounded-lg ws-tint-warning px-2.5 py-1 text-xs font-black ws-warning"
-                    >
+                    <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-200">
                       {{ productCode(producto.id_producto) }}
                     </span>
                     <div class="min-w-0">
-                      <p class="font-bold ws-text">{{ producto.nombre }}</p>
-                      <p class="mt-1 line-clamp-2 text-xs leading-5 ws-muted">
+                      <p class="font-bold text-white">{{ producto.nombre }}</p>
+                      <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">
                         {{ producto.descripcion || 'Sin descripción' }}
                       </p>
                     </div>
                   </div>
                 </td>
-                <td data-label="Imagen" class="px-4 py-4 align-top">
+                <td class="px-4 py-4 align-top">
                   <img
                     v-if="producto.imagen_url"
                     :src="producto.imagen_url"
                     :alt="producto.nombre"
-                    class="h-14 w-14 rounded-xl border ws-border ws-surface object-contain p-1"
+                    class="h-14 w-14 rounded-xl border border-white/10 bg-slate-950/60 object-contain p-1"
                   />
-                  <span v-else class="text-xs ws-muted">Sin imagen</span>
+                  <span v-else class="text-xs text-slate-500">Sin imagen</span>
                 </td>
-                <td data-label="Categoría" class="px-4 py-4 align-top ws-soft">
-                  {{ producto.categoria || 'General' }}
+                <td class="px-4 py-4 align-top">
+                  <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-slate-200">
+                    <span class="h-1.5 w-1.5 shrink-0 rounded-full" :style="{ background: categoriaDotColor(producto.categoria || 'General') }"></span>
+                    {{ producto.categoria || 'General' }}
+                  </span>
                 </td>
 
                 <!-- Precio -->
@@ -216,27 +231,19 @@
                 </td>
 
                 <!-- Stock con barra -->
-                <td data-label="Stock" class="px-4 py-4 align-top">
+                <td class="px-4 py-4 align-top">
                   <p class="font-bold" :class="isProductLowStock(producto) ? 'text-rose-300' : 'text-white'">
                     {{ producto.cantidad }} {{ producto.unidad_venta || 'unidad' }}
                   </p>
-                  <p class="mt-0.5 text-xs text-slate-400">Minimo: {{ producto.minimo || 0 }}</p>
-                  <div class="mt-2 w-full overflow-hidden rounded-full bg-slate-800/80" style="height: 5px;">
-                    <div
-                      class="h-full rounded-full transition-all duration-500"
-                      :class="stockBarColor(producto)"
-                      :style="{ width: stockBarWidth(producto) + '%' }"
-                    ></div>
+                  <div class="mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
+                    <div class="h-full rounded-full transition-all" :class="isProductLowStock(producto) ? 'bg-rose-500' : 'bg-green-500'" :style="{ width: stockBarWidth(producto) + '%' }"></div>
                   </div>
-                  <p class="mt-1 text-[10px]" :class="isProductLowStock(producto) ? 'text-rose-400' : 'text-slate-600'">
-                    {{ stockBarWidth(producto) }}% de capacidad
-                  </p>
+                  <p class="mt-1 text-xs text-slate-400">Minimo: {{ producto.minimo || 0 }}</p>
                 </td>
 
                 <!-- Estado -->
-                <td data-label="Estado" class="px-4 py-4 align-top">
-                  <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold" :class="productStatusClass(producto.estado)">
-                    <span class="h-1.5 w-1.5 rounded-full" :class="productStatusDot(producto.estado)"></span>
+                <td class="px-4 py-4 align-top">
+                  <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="productStatusClass(producto.estado)">
                     {{ producto.estado }}
                   </span>
                 </td>
@@ -789,7 +796,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Package, Search } from 'lucide-vue-next';
+import { Package, Search, ShoppingBag, TrendingDown, AlertTriangle, BarChart3 } from 'lucide-vue-next';
 import { useRoute, useRouter } from 'vue-router';
 import StoreMovementsPanel from '../components/store/StoreMovementsPanel.vue';
 import { useGymStore } from '../stores/gymStore';
@@ -845,16 +852,30 @@ const cartTotal = computed(() => gymStore.cartTotal);
 // Búsqueda y filtro por categoría
 const busqueda = ref('');
 const categoriaActiva = ref('');
+const filtroEstado = ref('');
 
 const categoriasUnicas = computed(() => {
   const cats = productos.value.map((p) => p.categoria || 'General').filter(Boolean);
   return [...new Set(cats)].sort();
 });
 
+// Paleta de colores para puntos de categorías
+const CATEGORY_COLORS = [
+  '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#f97316', '#84cc16',
+];
+function categoriaDotColor(cat) {
+  const idx = categoriasUnicas.value.indexOf(cat);
+  return CATEGORY_COLORS[idx % CATEGORY_COLORS.length] ?? '#94a3b8';
+}
+
 const productosFiltrados = computed(() => {
   let lista = productos.value;
   if (categoriaActiva.value) {
     lista = lista.filter((p) => (p.categoria || 'General') === categoriaActiva.value);
+  }
+  if (filtroEstado.value) {
+    lista = lista.filter((p) => p.estado === filtroEstado.value);
   }
   const q = busqueda.value.trim().toLowerCase();
   if (q) {
