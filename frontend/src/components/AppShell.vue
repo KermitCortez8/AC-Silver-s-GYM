@@ -351,11 +351,6 @@ const navigationLinks = computed(() => {
         icon: Package,
       },
       {
-        label: 'Movimientos',
-        to: '/admin/inventory/movements',
-        icon: ClipboardList,
-      },
-      {
         label: 'Tienda',
         to: '/admin/store',
         icon: ShoppingBag,

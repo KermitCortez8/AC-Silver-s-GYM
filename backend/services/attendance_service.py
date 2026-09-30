@@ -81,7 +81,7 @@ class AttendanceService:
                      if int(m.get("id_cliente") or 0) == client_id
                      and str(m.get("estado", "")).upper() in {"ACTIVA", "ACTIVO"}
                      and str(m.get("estado_pago", "")).upper() == "PAGADO"
-                     and str(m.get("fecha_inicio", "")) <= day <= str(m.get("fecha_fin", ""))), None)
+                     and str(m.get("fecha_inicio", ""))[:10] <= day <= str(m.get("fecha_fin", ""))[:10]), None)
 
     def entry_context(self, enrollment, now):
         client_id = int(enrollment.get("id_cliente") or 0)
@@ -98,7 +98,10 @@ class AttendanceService:
             raise ValueError("El horario no está disponible.")
         if schedule.get("dia") != DAYS[now.weekday()]:
             raise ValueError("Este horario no corresponde a hoy.")
-        start, end = time.fromisoformat(schedule["hora_inicio"]), time.fromisoformat(schedule["hora_fin"])
+        try:
+            start, end = time.fromisoformat(str(schedule["hora_inicio"])), time.fromisoformat(str(schedule["hora_fin"]))
+        except (ValueError, KeyError) as error:
+            raise ValueError("El horario tiene una hora inválida. Corrígela en el módulo de horarios.") from error
         if not start <= now.time() < end:
             raise ValueError(f"La entrada se habilita de {schedule['hora_inicio'][:5]} a {schedule['hora_fin'][:5]} (hora de Perú).")
         inside = [r for r in self.gym.state.get("asistencia", []) if not r.get("anulado") and not r.get("hora_salida")]

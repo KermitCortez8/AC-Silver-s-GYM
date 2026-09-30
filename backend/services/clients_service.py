@@ -135,6 +135,10 @@ class ClientsService:
     def confirm_public_payment(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
         return self._safe_registration_result(self.gym.confirmar_pago_cliente_publico(id_cliente, payload))
 
+    # Confirma el pago de manera manual (efectivo/caja)
+    def confirm_manual_payment(self, id_cliente: int) -> dict[str, Any]:
+        return self._safe_registration_result(self.gym.confirmar_pago_manual_cliente(id_cliente))
+
     # Procesa esta operación.
     def payment_amount_matches(self, id_cliente: int, amount: float, id_membresia: int | None = None) -> bool:
         self.gym.ensure_fresh()

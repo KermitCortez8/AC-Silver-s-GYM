@@ -1,440 +1,408 @@
 <template>
-  <div class="space-y-6">
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-            Administracion
-          </p>
-
-          <h1 class="mt-2 text-3xl font-black text-white">
-            Usuarios del sistema
-          </h1>
-
-          <p class="mt-2 text-slate-300">
-            Gestiona accesos internos por rol, correo, telefono y DNI.
-          </p>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2">
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
-            <p class="text-slate-400">Total</p>
-            <p class="text-xl font-black text-white">
-              {{ users.length }}
-            </p>
-          </div>
-
-          <div class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
-            <p class="text-slate-400">
-              Con contrasena
-            </p>
-
-            <p class="text-xl font-black text-white">
-              {{ usersWithPassword }}
-            </p>
-          </div>
-        </div>
+  <div class="workspace-view space-y-6">
+    <header class="ws-panel ws-hero ws-toolbar">
+      <div>
+        <p class="ws-eyebrow">Administración · Equipo</p>
+        <h1 class="ws-title">Usuarios del sistema</h1>
+        <p class="ws-description">
+          Gestiona los accesos de tu equipo y encuentra a cada persona por
+          nombre, correo o DNI.
+        </p>
       </div>
+      <button type="button" class="ws-btn ws-primary" @click="openNewUser">
+        <Plus :size="18" /> Nuevo usuario
+      </button>
+    </header>
+
+    <section class="grid gap-4 sm:grid-cols-3" aria-label="Resumen de usuarios">
+      <article class="ws-metric">
+        <p class="ws-muted text-sm">Usuarios registrados</p>
+        <p class="ws-metric-value">{{ users.length }}</p>
+        <p class="ws-muted text-xs">Miembros del equipo</p>
+      </article>
+      <article class="ws-metric">
+        <p class="ws-muted text-sm">Con contraseña</p>
+        <p class="ws-metric-value ws-success">{{ usersWithPassword }}</p>
+        <p class="ws-muted text-xs">Credencial configurada</p>
+      </article>
+      <article class="ws-metric">
+        <p class="ws-muted text-sm">Sin contraseña</p>
+        <p class="ws-metric-value ws-warning">
+          {{ users.length - usersWithPassword }}
+        </p>
+        <p class="ws-muted text-xs">Revisa su método de acceso</p>
+      </article>
     </section>
 
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <p
+      v-if="feedbackMessage && !isEditorOpen"
+      role="status"
+      class="ws-notice"
+      :class="feedbackToneClass"
+    >
+      {{ feedbackMessage }}
+    </p>
+    <section class="ws-panel space-y-5" :aria-busy="isLoading">
+      <div class="ws-toolbar">
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-            Lista
+          <h2 class="ws-heading">Tu equipo</h2>
+          <p class="ws-muted text-sm mt-1" role="status">
+            {{ filteredUsers.length }} de {{ users.length }} usuarios
           </p>
-
-          <h2 class="mt-2 text-2xl font-black text-white">
-            Usuarios registrados
-          </h2>
         </div>
-
-        <div class="flex flex-col gap-3 sm:flex-row">
-          <input
+        <label class="ws-search max-w-md"
+          ><span class="sr-only">Buscar usuarios</span
+          ><Search :size="18" /><input
             v-model="search"
-            class="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none"
-            placeholder="Buscar por ID, correo, rol o DNI..."
-          />
-
-          <button
-            class="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-slate-950"
-            @click="openNewUser"
-          >
-            Nuevo usuario
-          </button>
+            class="ws-input"
+            type="search"
+            placeholder="Nombre, correo, DNI o teléfono"
+        /></label>
+      </div>
+      <div
+        class="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Filtrar por rol"
+      >
+        <button
+          v-for="role in roleFilters"
+          :key="role.value"
+          type="button"
+          class="ws-chip"
+          :aria-pressed="roleFilter === role.value"
+          @click="roleFilter = role.value"
+        >
+          {{ role.label }}
+          <span class="opacity-70">{{
+            role.value
+              ? users.filter((u) => u.rol === role.value).length
+              : users.length
+          }}</span>
+        </button>
+        <button
+          v-if="search || roleFilter"
+          type="button"
+          class="ws-btn"
+          @click="
+            search = '';
+            roleFilter = '';
+          "
+        >
+          Limpiar filtros
+        </button>
+      </div>
+      <p
+        v-if="isLoading && !users.length"
+        role="status"
+        class="ws-notice ws-tint-info ws-info"
+      >
+        <LoaderCircle :size="18" class="ws-spin" /> Cargando usuarios…
+      </p>
+      <template v-else-if="filteredUsers.length">
+        <div class="ws-table-wrap ws-desktop-table">
+          <table class="ws-table">
+            <caption class="sr-only">
+              Usuarios registrados y acciones de administración
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Usuario</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Contacto</th>
+                <th scope="col">DNI</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="systemUser in filteredUsers"
+                :key="systemUser.id_usuario"
+              >
+                <td>
+                  <div class="flex items-center gap-3">
+                    <span class="ws-avatar" aria-hidden="true">{{
+                      initials(systemUser.nombre)
+                    }}</span>
+                    <div>
+                      <p class="font-bold">
+                        {{ systemUser.nombre || 'Sin nombre' }}
+                      </p>
+                      <p class="ws-muted text-xs mt-1">
+                        ID {{ systemUser.id_usuario }}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="ws-badge ws-info ws-tint-info">{{
+                    roleLabel(systemUser.rol)
+                  }}</span>
+                </td>
+                <td>
+                  <p class="ws-soft break-all">
+                    {{ systemUser.correo || 'Sin correo' }}
+                  </p>
+                  <p class="ws-muted text-xs mt-1">
+                    {{ systemUser.telefono || 'Sin teléfono' }}
+                  </p>
+                </td>
+                <td class="ws-soft whitespace-nowrap">
+                  {{ systemUser.dni || 'Sin DNI' }}
+                </td>
+                <td>
+                  <div class="ws-actions flex-nowrap">
+                    <button
+                      class="ws-btn"
+                      :aria-label="`Ver detalles de ${systemUser.nombre || systemUser.id_usuario}`"
+                      @click="openDetails(systemUser)"
+                    >
+                      <Eye :size="16" /><span class="sr-only"
+                        >Ver detalles</span
+                      >
+                    </button>
+                    <button
+                      class="ws-btn"
+                      :aria-label="`Editar a ${systemUser.nombre || systemUser.id_usuario}`"
+                      @click="editUser(systemUser)"
+                    >
+                      <Pencil :size="16" /><span>Editar</span>
+                    </button>
+                    <button
+                      class="ws-btn ws-danger ws-hover-danger"
+                      :aria-label="`Eliminar a ${systemUser.nombre || systemUser.id_usuario}`"
+                      @click="confirmDelete(systemUser)"
+                    >
+                      <Trash2 :size="16" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
-
-      <p
-        v-if="feedbackMessage"
-        class="mt-4 rounded-2xl border px-4 py-3 text-sm"
-        :class="feedbackToneClass"
-      >
-        {{ feedbackMessage }}
-      </p>
-
-      <div class="mt-5 overflow-x-auto">
-        <table class="w-full min-w-[960px] text-left text-sm">
-          <thead
-            class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400"
+        <div class="ws-mobile-list">
+          <article
+            v-for="systemUser in filteredUsers"
+            :key="systemUser.id_usuario"
+            class="ws-mobile-card"
           >
-            <tr>
-              <th class="px-5 py-4 font-bold">ID</th>
-              <th class="px-5 py-4 font-bold">Usuario</th>
-              <th class="px-5 py-4 font-bold">Rol</th>
-              <th class="px-5 py-4 font-bold">
-                Correo electronico
-              </th>
-              <th class="px-5 py-4 font-bold">DNI</th>
-              <th class="px-5 py-4 font-bold">Telefono</th>
-              <th class="px-5 py-4 font-bold">Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody class="divide-y divide-white/10">
-            <tr
-              v-for="systemUser in filteredUsers"
-              :key="systemUser.id_usuario"
-              class="transition hover:bg-white/[0.04]"
-            >
-              <td class="px-5 py-4 align-top">
-                <span
-                  class="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-cyan-100"
-                >
-                  {{ systemUser.id_usuario }}
-                </span>
-              </td>
-
-              <td class="px-5 py-4 align-top font-bold text-white">
-                {{ systemUser.nombre || 'Sin nombre' }}
-              </td>
-
-              <td class="px-5 py-4 align-top text-slate-300">
-                {{ systemUser.rol }}
-              </td>
-
-              <td class="px-5 py-4 align-top text-slate-400">
-                {{ systemUser.correo || 'Sin correo' }}
-              </td>
-
-              <td class="px-5 py-4 align-top text-slate-400">
-                {{ systemUser.dni || 'Sin DNI' }}
-              </td>
-
-              <td class="px-5 py-4 align-top text-slate-400">
-                {{ systemUser.telefono || 'Sin telefono' }}
-              </td>
-
-              <td class="px-5 py-4 align-top">
-                <div class="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-white hover:bg-white/5"
-                    title="Ver detalles"
-                    aria-label="Ver detalles"
-                    @click="openDetails(systemUser)"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      class="h-4 w-4"
-                    >
-                      <circle cx="12" cy="12" r="9" />
-                      <line
-                        x1="12"
-                        y1="11"
-                        x2="12"
-                        y2="16"
-                      />
-                      <circle
-                        cx="12"
-                        cy="7.5"
-                        r="0.75"
-                        fill="currentColor"
-                        stroke="none"
-                      />
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-white hover:bg-white/5"
-                    title="Editar"
-                    @click="editUser(systemUser)"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      class="h-4 w-4"
-                    >
-                      <path
-                        d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
-                      />
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="grid h-9 w-9 place-items-center rounded-xl border border-rose-400/30 text-rose-100 hover:bg-rose-400/10"
-                    title="Eliminar"
-                    @click="confirmDelete(systemUser)"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      class="h-4 w-4"
-                    >
-                      <path
-                        d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            <div class="flex items-center gap-3">
+              <span class="ws-avatar" aria-hidden="true">{{
+                initials(systemUser.nombre)
+              }}</span>
+              <div class="min-w-0">
+                <h3 class="font-bold break-words">
+                  {{ systemUser.nombre || 'Sin nombre' }}
+                </h3>
+                <span class="ws-badge ws-tint-info ws-info mt-1">{{
+                  roleLabel(systemUser.rol)
+                }}</span>
+              </div>
+            </div>
+            <p class="ws-soft text-sm break-all mt-4">
+              {{ systemUser.correo || 'Sin correo' }}
+            </p>
+            <p class="ws-muted text-xs mt-1">
+              DNI: {{ systemUser.dni || 'Sin DNI' }} ·
+              {{ systemUser.telefono || 'Sin teléfono' }}
+            </p>
+            <div class="ws-actions mt-4">
+              <button class="ws-btn" @click="openDetails(systemUser)">
+                <Eye :size="16" /> Detalles</button
+              ><button class="ws-btn" @click="editUser(systemUser)">
+                <Pencil :size="16" /> Editar</button
+              ><button
+                class="ws-btn ws-danger"
+                :aria-label="`Eliminar a ${systemUser.nombre || systemUser.id_usuario}`"
+                @click="confirmDelete(systemUser)"
+              >
+                <Trash2 :size="16" />
+              </button>
+            </div>
+          </article>
+        </div>
+      </template>
+      <div v-else class="ws-empty">
+        <UsersRound :size="32" />
+        <h3>
+          {{
+            users.length
+              ? 'No encontramos coincidencias'
+              : 'Tu equipo empieza aquí'
+          }}
+        </h3>
+        <p>
+          {{
+            users.length
+              ? 'Prueba con otro nombre o cambia el filtro de rol.'
+              : 'Crea un usuario para darle acceso al equipo.'
+          }}
+        </p>
+        <button
+          v-if="search || roleFilter"
+          class="ws-btn mt-4"
+          @click="
+            search = '';
+            roleFilter = '';
+          "
+        >
+          Limpiar filtros</button
+        ><button v-else class="ws-btn ws-primary mt-4" @click="openNewUser">
+          Crear usuario
+        </button>
       </div>
-
-      <p
-        v-if="!filteredUsers.length"
-        class="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-400"
-      >
-        No hay usuarios para mostrar.
-      </p>
     </section>
 
-    <Teleport to="body">
-      <div
-        v-if="isEditorOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
-      >
-        <form
-          class="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl"
-          @submit.prevent="handleSubmit"
+    <WorkspaceDialog
+      :open="isEditorOpen"
+      :title="editingId ? 'Editar usuario' : 'Nuevo usuario'"
+      :busy="isSaving"
+      @close="closeEditor"
+    >
+      <form @submit.prevent="handleSubmit">
+        <p class="ws-muted text-sm mb-5">
+          Define los datos y el rol de acceso de esta persona.
+        </p>
+        <p
+          v-if="feedbackMessage && feedbackTone === 'error'"
+          role="alert"
+          class="ws-notice ws-tint-danger ws-danger mb-4"
         >
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-                Usuario
-              </p>
-
-              <h2 class="mt-2 text-2xl font-black text-white">
-                {{ editingId ? 'Editar usuario' : 'Nuevo usuario' }}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5"
-              @click="closeEditor"
-            >
-              Cerrar
-            </button>
-          </div>
-
-          <div class="mt-6 grid gap-4 sm:grid-cols-2">
-            <label class="space-y-2 sm:col-span-2">
-              <span class="text-sm text-slate-300">
-                Nombre
-              </span>
-
-              <input
-                v-model="form.nombre"
-                class="field-input"
-                placeholder="Renato Cortez"
-              />
-            </label>
-
-            <label class="space-y-2 sm:col-span-2">
-              <span class="text-sm text-slate-300">
-                Correo
-              </span>
-
-              <input
-                v-model="form.correo"
-                type="email"
-                class="field-input"
-                placeholder="usuario@correo.com"
-              />
-            </label>
-
-            <label class="space-y-2 sm:col-span-2">
-              <span class="text-sm text-slate-300">
-                Contrasena
-              </span>
-
-              <input
-                v-model="form.password"
-                type="password"
-                autocomplete="new-password"
-                class="field-input"
-                :placeholder="
-                  editingId
-                    ? 'Dejar vacio para conservar la actual'
-                    : 'Minimo 6 caracteres'
-                "
-              />
-            </label>
-
-            <label class="space-y-2">
-              <span class="text-sm text-slate-300">
-                Telefono
-              </span>
-
-              <input
-                v-model="form.telefono"
-                class="field-input"
-                placeholder="999 111 222"
-              />
-            </label>
-
-            <label class="space-y-2">
-              <span class="text-sm text-slate-300">
-                DNI
-              </span>
-
-              <input
-                v-model="form.dni"
-                class="field-input"
-                placeholder="12345678"
-              />
-            </label>
-
-            <label class="space-y-2 sm:col-span-2">
-              <span class="text-sm text-slate-300">
-                Rol
-              </span>
-
-              <select
-                v-model="form.rol"
-                class="field-input"
-              >
-                <option value="admin">
-                  admin
-                </option>
-
-                <option value="trainer">
-                  trainer
-                </option>
-
-                <option value="staff">
-                  staff
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            class="mt-6 w-full rounded-2xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 transition hover:bg-cyan-300"
+          {{ feedbackMessage }}
+        </p>
+        <fieldset :disabled="isSaving" class="grid gap-4 sm:grid-cols-2">
+          <label class="sm:col-span-2"
+            ><span class="ws-field-label">Nombre</span
+            ><input
+              v-model="form.nombre"
+              class="ws-input"
+              autocomplete="name"
+              required
+              placeholder="Nombre y apellidos"
+          /></label>
+          <label class="sm:col-span-2"
+            ><span class="ws-field-label">Correo electrónico</span
+            ><input
+              v-model="form.correo"
+              class="ws-input"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder="usuario@correo.com"
+          /></label>
+          <label class="sm:col-span-2"
+            ><span class="ws-field-label"
+              >Contraseña {{ editingId ? '(opcional)' : '' }}</span
+            ><input
+              v-model="form.password"
+              class="ws-input"
+              type="password"
+              autocomplete="new-password"
+              minlength="6"
+              :required="!editingId"
+              :placeholder="
+                editingId
+                  ? 'Dejar vacía para conservar la actual'
+                  : 'Mínimo 6 caracteres'
+              "
+          /></label>
+          <label
+            ><span class="ws-field-label">Teléfono</span
+            ><input
+              v-model="form.telefono"
+              class="ws-input"
+              type="tel"
+              autocomplete="tel"
+              placeholder="999 111 222"
+          /></label>
+          <label
+            ><span class="ws-field-label">DNI</span
+            ><input
+              v-model="form.dni"
+              class="ws-input"
+              inputmode="numeric"
+              maxlength="8"
+              placeholder="12345678"
+          /></label>
+          <label class="sm:col-span-2"
+            ><span class="ws-field-label">Rol</span
+            ><select v-model="form.rol" class="ws-input">
+              <option value="admin">Administrador</option>
+              <option value="trainer">Entrenador</option>
+              <option value="staff">Personal</option>
+            </select></label
           >
-            {{ editingId ? 'Guardar cambios' : 'Registrar usuario' }}
+        </fieldset>
+        <div class="ws-actions mt-6 justify-end">
+          <button
+            type="button"
+            class="ws-btn"
+            :disabled="isSaving"
+            @click="closeEditor"
+          >
+            Cancelar</button
+          ><button type="submit" class="ws-btn ws-primary" :disabled="isSaving">
+            <LoaderCircle v-if="isSaving" :size="16" class="ws-spin" />{{
+              isSaving
+                ? 'Guardando…'
+                : editingId
+                  ? 'Guardar cambios'
+                  : 'Crear usuario'
+            }}
           </button>
-        </form>
-      </div>
-    </Teleport>
-
-    <Teleport to="body">
-      <div
-        v-if="isDetailsOpen && viewingUser"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Detalles del usuario"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
-      >
-        <div
-          class="w-full max-w-md rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-                Detalles
-              </p>
-
-              <h2 class="mt-2 text-2xl font-black text-white">
-                {{ viewingUser.nombre || 'Sin nombre' }}
-              </h2>
-
-              <span
-                class="mt-2 inline-block rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-cyan-100"
-              >
-                {{ viewingUser.id_usuario }}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/5"
-              @click="closeDetails"
-            >
-              Cerrar
-            </button>
-          </div>
-
-          <div class="mt-6 space-y-2">
-            <p class="text-sm text-slate-400">
-              Correo:
-              <span class="text-slate-200">
-                {{ viewingUser.correo || 'Sin correo' }}
-              </span>
-            </p>
-
-            <p class="text-sm text-slate-400">
-              DNI:
-              <span class="text-slate-200">
-                {{ viewingUser.dni || 'Sin DNI' }}
-              </span>
-            </p>
-
-            <p class="text-sm text-slate-400">
-              Telefono:
-              <span class="text-slate-200">
-                {{ viewingUser.telefono || 'Sin telefono' }}
-              </span>
-            </p>
-
-            <p class="text-sm text-slate-300">
-              Rol:
-              <span class="text-slate-200">
-                {{ viewingUser.rol }}
-              </span>
-            </p>
-
-            <p class="text-sm text-slate-400">
-              Acceso:
-              <span class="text-slate-200">
-                {{
-                  viewingUser.hasPassword
-                    ? 'Con contrasena'
-                    : 'Sin contrasena'
-                }}
-              </span>
-            </p>
+        </div>
+      </form>
+    </WorkspaceDialog>
+    <WorkspaceDialog
+      :open="isDetailsOpen"
+      title="Detalles del usuario"
+      @close="closeDetails"
+    >
+      <template v-if="viewingUser">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="ws-avatar">{{ initials(viewingUser.nombre) }}</span>
+          <div>
+            <h3 class="font-bold text-lg">
+              {{ viewingUser.nombre || 'Sin nombre' }}
+            </h3>
+            <p class="ws-muted text-sm">ID {{ viewingUser.id_usuario }}</p>
           </div>
         </div>
-      </div>
-    </Teleport>
+        <dl class="grid gap-4 sm:grid-cols-2">
+          <div
+            v-for="(value, label) in {
+              Correo: viewingUser.correo || 'Sin correo',
+              Teléfono: viewingUser.telefono || 'Sin teléfono',
+              DNI: viewingUser.dni || 'Sin DNI',
+              Rol: roleLabel(viewingUser.rol),
+              Acceso: viewingUser.hasPassword
+                ? 'Con contraseña'
+                : 'Sin contraseña',
+            }"
+            :key="label"
+          >
+            <dt class="ws-muted text-xs">{{ label }}</dt>
+            <dd class="ws-soft mt-1 break-all">{{ value }}</dd>
+          </div>
+        </dl>
+      </template>
+    </WorkspaceDialog>
   </div>
 </template>
-
 <script setup>
-import {
-  computed,
-  onMounted,
-  reactive,
-  ref,
-} from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
+import {
+  Eye,
+  LoaderCircle,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  UsersRound,
+} from 'lucide-vue-next';
+import WorkspaceDialog from '../components/WorkspaceDialog.vue';
+import { initials } from '../utils/attendance';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
@@ -442,6 +410,19 @@ const gymStore = useGymStore();
 const users = computed(() => gymStore.users);
 
 const search = ref('');
+const roleFilter = ref('');
+const isSaving = ref(false);
+const isLoading = ref(false);
+const roleFilters = [
+  { value: '', label: 'Todos' },
+  { value: 'admin', label: 'Administradores' },
+  { value: 'trainer', label: 'Entrenadores' },
+  { value: 'staff', label: 'Personal' },
+];
+const roleLabel = (role) =>
+  ({ admin: 'Administrador', trainer: 'Entrenador', staff: 'Personal' })[
+    role
+  ] || role;
 const editingId = ref('');
 const isEditorOpen = ref(false);
 const isDetailsOpen = ref(false);
@@ -459,15 +440,14 @@ const form = reactive({
 });
 
 const filteredUsers = computed(() => {
-  const query = search.value
-    .trim()
-    .toLowerCase();
+  const query = search.value.trim().toLowerCase();
 
-  if (!query) {
-    return users.value;
-  }
+  const matchingRole = users.value.filter(
+    (user) => !roleFilter.value || user.rol === roleFilter.value,
+  );
+  if (!query) return matchingRole;
 
-  return users.value.filter((systemUser) =>
+  return matchingRole.filter((systemUser) =>
     [
       systemUser.id_usuario,
       systemUser.nombre,
@@ -475,9 +455,7 @@ const filteredUsers = computed(() => {
       systemUser.telefono,
       systemUser.dni,
       systemUser.rol,
-      systemUser.hasPassword
-        ? 'con contrasena'
-        : 'sin contrasena',
+      systemUser.hasPassword ? 'con contraseña' : 'sin contraseña',
     ]
       .join(' ')
       .toLowerCase()
@@ -486,22 +464,19 @@ const filteredUsers = computed(() => {
 });
 
 const usersWithPassword = computed(
-  () =>
-    users.value.filter(
-      (systemUser) => systemUser.hasPassword,
-    ).length,
+  () => users.value.filter((systemUser) => systemUser.hasPassword).length,
 );
 
 const feedbackToneClass = computed(() => {
   if (feedbackTone.value === 'success') {
-    return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
+    return 'ws-border-success ws-tint-success ws-success';
   }
 
   if (feedbackTone.value === 'error') {
-    return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
+    return 'ws-border-danger ws-tint-danger ws-danger';
   }
 
-  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
+  return 'ws-border-info ws-tint-info ws-info';
 });
 
 /**
@@ -532,6 +507,7 @@ const openNewUser = () => {
  * Cierra el formulario de creación o edición.
  */
 const closeEditor = () => {
+  if (isSaving.value) return;
   isEditorOpen.value = false;
 
   resetForm();
@@ -541,28 +517,19 @@ const closeEditor = () => {
  * Carga los datos del usuario seleccionado para editarlo.
  */
 const editUser = (systemUser) => {
-  editingId.value =
-    systemUser.id_usuario;
+  editingId.value = systemUser.id_usuario;
 
-  form.nombre =
-    systemUser.nombre || '';
+  form.nombre = systemUser.nombre || '';
 
-  form.correo =
-    systemUser.correo ||
-    systemUser.email ||
-    '';
+  form.correo = systemUser.correo || systemUser.email || '';
 
-  form.telefono =
-    systemUser.telefono || '';
+  form.telefono = systemUser.telefono || '';
 
-  form.dni =
-    systemUser.dni || '';
+  form.dni = systemUser.dni || '';
 
   form.password = '';
 
-  form.rol =
-    systemUser.rol ||
-    'staff';
+  form.rol = systemUser.rol || 'staff';
 
   feedbackMessage.value = '';
   isEditorOpen.value = true;
@@ -588,35 +555,26 @@ const closeDetails = () => {
  * Elimina un usuario previa confirmación.
  */
 const confirmDelete = async (systemUser) => {
-  const confirmed =
-    window.confirm(
-      `Eliminar al usuario ${systemUser.id_usuario}?`,
-    );
+  const confirmed = window.confirm(
+    `Eliminar al usuario ${systemUser.id_usuario}?`,
+  );
 
   if (!confirmed) {
     return;
   }
 
   try {
-    await gymStore.deleteUser(
-      systemUser.id_usuario,
-    );
+    await gymStore.deleteUser(systemUser.id_usuario);
 
-    feedbackTone.value =
-      'success';
+    feedbackTone.value = 'success';
 
-    feedbackMessage.value =
-      `Usuario ${systemUser.id_usuario} eliminado.`;
+    feedbackMessage.value = `Usuario ${systemUser.id_usuario} eliminado.`;
 
-    if (
-      editingId.value ===
-      systemUser.id_usuario
-    ) {
+    if (editingId.value === systemUser.id_usuario) {
       closeEditor();
     }
   } catch (error) {
-    feedbackTone.value =
-      'error';
+    feedbackTone.value = 'error';
 
     feedbackMessage.value =
       error instanceof Error
@@ -629,74 +587,52 @@ const confirmDelete = async (systemUser) => {
  * Registra o actualiza los datos del usuario.
  */
 const handleSubmit = async () => {
+  if (isSaving.value) return;
+  isSaving.value = true;
+  feedbackMessage.value = '';
   try {
-    const saved =
-      await gymStore.upsertUser({
-        id_usuario:
-          editingId.value ||
-          undefined,
+    const saved = await gymStore.upsertUser({
+      id_usuario: editingId.value || undefined,
 
-        nombre:
-          form.nombre,
+      nombre: form.nombre,
 
-        correo:
-          form.correo,
+      correo: form.correo,
 
-        telefono:
-          form.telefono,
+      telefono: form.telefono,
 
-        dni:
-          form.dni,
+      dni: form.dni,
 
-        password:
-          form.password,
+      password: form.password,
 
-        rol:
-          form.rol,
-      });
+      rol: form.rol,
+    });
 
+    isSaving.value = false;
     closeEditor();
 
-    feedbackTone.value =
-      'success';
+    feedbackTone.value = 'success';
 
-    feedbackMessage.value =
-      `Usuario ${saved.id_usuario} guardado.`;
+    feedbackMessage.value = `Usuario ${saved.id_usuario} guardado.`;
   } catch (error) {
-    feedbackTone.value =
-      'error';
+    feedbackTone.value = 'error';
 
     feedbackMessage.value =
-      error instanceof Error
-        ? error.message
-        : 'No se pudo guardar el usuario.';
+      error instanceof Error ? error.message : 'No se pudo guardar el usuario.';
+  } finally {
+    isSaving.value = false;
   }
 };
 
-onMounted(() => {
-  gymStore
-    .fetchFromBackend?.()
-    .catch((error) =>
-      console.warn(
-        'No se pudo refrescar usuarios:',
-        error,
-      ),
-    );
+onMounted(async () => {
+  isLoading.value = true;
+  try {
+    await gymStore.fetchFromBackend?.();
+  } catch {
+    feedbackTone.value = 'error';
+    feedbackMessage.value =
+      'No se pudieron actualizar los usuarios. Inténtalo de nuevo más tarde.';
+  } finally {
+    isLoading.value = false;
+  }
 });
 </script>
-
-<style scoped>
-.field-input {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  background: rgba(2, 6, 23, 0.72);
-  padding: 0.75rem 1rem;
-  color: white;
-  outline: none;
-}
-
-.field-input::placeholder {
-  color: #64748b;
-}
-</style>

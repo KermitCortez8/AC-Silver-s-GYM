@@ -66,12 +66,14 @@
           <div class="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[180px_1fr_auto] md:items-end">
             <label class="space-y-2">
               <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Estado</span>
-              <select v-model="ensureDraft(order).estado_pedido" class="field-input">
+              <select v-model="ensureDraft(order).estado_pedido" class="field-input" :disabled="isCancelled(order)">
                 <option>PENDIENTE</option>
                 <option>CONFIRMADO</option>
                 <option>ENTREGADO</option>
-                <option>CANCELADO</option>
+                <option :disabled="!canCancel(order)">CANCELADO</option>
               </select>
+              <span v-if="isCancelled(order)" class="block text-[11px] text-slate-500">Pedido cancelado: su stock ya fue devuelto.</span>
+              <span v-else-if="!canCancel(order)" class="block text-[11px] text-slate-500">Solo se cancelan pedidos PENDIENTE.</span>
             </label>
             <label class="space-y-2">
               <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Observacion</span>
@@ -188,10 +190,26 @@ const refresh = async () => {
 /**
  * Actualiza los datos actuales.
  */
+const orderStatus = (order) => String(order.estado_pedido || '').toUpperCase();
+const isCancelled = (order) => orderStatus(order) === 'CANCELADO';
+const canCancel = (order) => ['PENDIENTE', 'CANCELADO'].includes(orderStatus(order));
+
 const updateOrder = async (order) => {
   feedback.value = '';
+  const draft = ensureDraft(order);
+  if (draft.estado_pedido === 'CANCELADO' && !isCancelled(order)) {
+    const unidades = (order.items || []).reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
+    const detalle = (order.items || []).map((item) => `- ${item.nombre_producto}: ${item.cantidad}`).join('\n');
+    const ok = window.confirm(
+      `Cancelar el pedido #${order.id_pedido}?\n\nSe devolveran ${unidades} unidades al stock compartido de Inventario y Tienda:\n${detalle}\n\nUn pedido cancelado ya no puede cambiar de estado.`,
+    );
+    if (!ok) {
+      draft.estado_pedido = order.estado_pedido || 'PENDIENTE';
+      return;
+    }
+  }
   try {
-    await gymStore.updateStoreOrderStatus(order.id_pedido, ensureDraft(order));
+    await gymStore.updateStoreOrderStatus(order.id_pedido, draft);
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'No se pudo actualizar el pedido.';
   }

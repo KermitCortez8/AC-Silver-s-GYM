@@ -23,7 +23,7 @@
         <span v-for="service in visibleServices" :key="service"><i :style="{ background: eventBorderColor(service) }"></i>{{ serviceLabel(service) }}</span>
       </div>
     </div>
-    <p v-if="exportError" role="alert" class="calendar-error">{{ exportError }}</p>
+    <p v-if="exportError && !modalFeedback" role="alert" class="calendar-error">{{ exportError }}</p>
     <div v-if="(isMobile || viewMode === 'agenda') && occurrences.length" class="mobile-agenda">
       <section v-for="day in agendaDays" :key="day.fecha" class="agenda-day">
         <header class="agenda-day-heading">
@@ -58,6 +58,7 @@ import { calendarDate, monthWeeks, scheduleOccurrences, weekStart } from '../uti
 const ScheduleTimeGrid = defineAsyncComponent(() => import('./ScheduleTimeGrid.vue'));
 
 const props = defineProps({
+  modalFeedback: Boolean,
   date: { type: String, default: '' },
   title: {
     type: String,
@@ -89,7 +90,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['select', 'range-change']);
+const emit = defineEmits(['select', 'range-change', 'notification']);
 const selectedDate = ref(calendarDate(props.date));
 watch(() => props.date, (date) => { selectedDate.value = calendarDate(date); });
 const visibleWeek = computed(() => monthWeeks(selectedDate.value.slice(0, 7)).find((week) => week.start === weekStart(selectedDate.value)));
@@ -409,8 +410,10 @@ const exportExcel = async () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Horario');
     XLSX.writeFile(workbook, `${props.fileName.replace(/\.xlsx$/, '')}-${visibleWeek.value.from}.xlsx`);
+    if (props.modalFeedback) emit('notification', { tone: 'success', message: 'La descarga del horario de esta semana se ha iniciado.' });
   } catch {
     exportError.value = 'No se pudo exportar. Inténtalo de nuevo.';
+    if (props.modalFeedback) emit('notification', { tone: 'error', message: exportError.value });
   } finally { isExporting.value = false; }
 };
 </script>
