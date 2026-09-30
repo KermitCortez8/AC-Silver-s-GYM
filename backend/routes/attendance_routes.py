@@ -1,4 +1,5 @@
 """Solamente el administrador registra asistencia; cada cliente consulta la suya."""
+import logging
 from collections import Counter
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -8,6 +9,7 @@ from models.attendance import AttendanceAnnulment, AttendanceCorrection, Attenda
 from models.gym import AsistenciaEntradaInput, AsistenciaSalidaInput, CheckinAsistenciaDniInput, CheckinAsistenciaInput
 from services.attendance_service import AttendanceService, AttendanceConflict, DAYS
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/asistencia", tags=["asistencia"])
 administrator = require_roles("admin")
 reader = require_roles("admin", "user")
@@ -25,6 +27,8 @@ def run(action):
     except ValueError as error:
         raise HTTPException(400, str(error)) from error
     except (RuntimeError, OSError) as error:
+        # Deja en el log la causa real (RPC inexistente, tipo de dato, conexión…).
+        logger.exception("Fallo al guardar o leer asistencia")
         raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y que se haya ejecutado backend/migrations/005_harden_attendance.sql en Supabase.") from error
 
 
@@ -43,7 +47,7 @@ def history(filters: AttendanceFilters = Depends(), page: int = Query(1, ge=1), 
 
 @router.get("/resumen")
 def summary(user=Depends(administrator), attendance=Depends(service)):
-    return attendance.summary(user)
+    return run(lambda: attendance.summary(user))
 
 
 @router.get("/exportar")

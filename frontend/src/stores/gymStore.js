@@ -2788,15 +2788,10 @@ export const useGymStore = defineStore('gym', () => {
     };
 
     if (apiBase && current.id_asistencia) {
-      const res = await fetch(`${apiBase}/asistencia/${current.id_asistencia}`, {
-        method: 'PUT',
-        headers: _authHeaders(),
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(await readBackendError(res, 'Error al actualizar asistencia'));
-
-      const saved = await res.json();
-      return mergeAttendanceRecord(normalizeBackendAttendanceRecord(saved, members.value));
+      // El backend ahora exige versión y motivo (y rechaza campos extra), así que el
+      // PUT con este formato antiguo siempre respondía 422. La corrección se hace en
+      // Asistencias > Historial > Corregir (AttendanceCorrectionDialog).
+      throw new Error('Las correcciones de asistencia se hacen desde Asistencias › Historial › Corregir.');
     }
 
     const updated = normalizeAttendanceRecord({
@@ -2819,11 +2814,9 @@ export const useGymStore = defineStore('gym', () => {
     }
 
     if (apiBase && current.id_asistencia) {
-      const res = await fetch(`${apiBase}/asistencia/${current.id_asistencia}`, {
-        method: 'DELETE',
-        headers: _authHeaders(),
-      });
-      if (!res.ok && res.status !== 204) throw new Error(await readBackendError(res, 'Error al eliminar asistencia'));
+      // El backend ya no elimina: anula con versión y motivo (queda auditado).
+      // Se hace en Asistencias > Historial > Anular.
+      throw new Error('Las anulaciones de asistencia se hacen desde Asistencias › Historial › Anular.');
     }
 
     attendance.value = attendance.value.filter((entry) => {

@@ -13,9 +13,12 @@ from zoneinfo import ZoneInfo
 from utils.security import hash_password, verify_password
 
 
-# Procesa esta operación.
+_LIMA = ZoneInfo("America/Lima")
+
+
+# Fecha de hoy en Perú (el servidor puede estar en UTC).
 def _today_iso() -> str:
-    return datetime.now(timezone.utc).date().isoformat()
+    return datetime.now(_LIMA).date().isoformat()
 
 
 # Procesa esta operación.
@@ -25,7 +28,7 @@ def _now_iso() -> str:
 
 # Procesa esta operación.
 def _now_time() -> str:
-    return datetime.now().strftime("%H:%M")
+    return datetime.now(_LIMA).strftime("%H:%M")
 
 
 # Procesa esta operación.

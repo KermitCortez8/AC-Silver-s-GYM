@@ -98,210 +98,216 @@
         <div class="att-heading-row">
           <div>
             <p class="att-eyebrow">Registrar una visita</p>
-            <h2>Buscar cliente</h2>
+            <h2>{{ clientData ? 'Registrar visita' : 'Buscar cliente' }}</h2>
           </div>
           <span class="att-soft-icon"><UserSearch :size="22" /></span>
         </div>
-        <form class="att-search" @submit.prevent="lookupClient">
-          <label for="attendance-dni"
-            >DNI del cliente
-            <div class="att-search-input">
-              <Search :size="18" /><input
-                id="attendance-dni"
-                v-model="dni"
-                inputmode="numeric"
-                autocomplete="off"
-                maxlength="8"
-                pattern="[0-9]{8}"
-                required
-                placeholder="Ingresa los 8 dígitos"
-                @input="clearClient"
-              /></div></label
-          ><button
-            class="att-button att-primary"
-            :disabled="searching || Boolean(busy) || !/^\d{8}$/.test(dni)"
-          >
-            {{ searching ? 'Buscando…' : 'Buscar cliente'
-            }}<ArrowRight :size="16" />
-          </button>
-        </form>
-        <p class="att-muted att-small">
-          La búsqueda utiliza únicamente el DNI.
-        </p>
-        <p v-if="lookupError" class="att-message is-error" role="alert">
-          {{ lookupError }}
-        </p>
-        <div v-if="clientData" class="att-client-result">
-          <div class="att-client-card">
-            <span class="att-avatar">{{
-              initials(clientData.cliente.nombre)
-            }}</span>
-            <div>
-              <h3>{{ clientData.cliente.nombre }}</h3>
-              <p class="att-muted">DNI {{ clientData.cliente.dni }}</p>
-            </div>
-            <span
-              class="att-badge"
-              :class="
-                clientData.cliente.estado === 'ACTIVO' && clientData.membresia
-                  ? 'completada'
-                  : 'anulada'
-              "
-              >{{
-                clientData.cliente.estado === 'ACTIVO' && clientData.membresia
-                  ? 'Membresía vigente'
-                  : 'Requiere revisión'
-              }}</span
+        <div class="att-viewport">
+        <div class="att-slider" :class="{ 'at-result': Boolean(clientData) }">
+          <div class="att-slide att-slide-search" :inert="Boolean(clientData)">
+            <form class="att-search" @submit.prevent="lookupClient()">
+              <label for="attendance-dni"
+                >DNI del cliente
+                <div class="att-search-input">
+                  <Search :size="18" /><input
+                    id="attendance-dni"
+                    ref="dniInput"
+                    v-model="dni"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    maxlength="8"
+                    pattern="[0-9]{8}"
+                    required
+                    placeholder="Ingresa los 8 dígitos"
+                    @input="onDniInput"
+                  /></div></label
+              ><button
+                class="att-button att-primary"
+                :disabled="searching || Boolean(busy) || !/^\d{8}$/.test(dni)"
+              >
+                {{ searching ? 'Buscando…' : 'Buscar cliente'
+                }}<ArrowRight :size="16" />
+              </button>
+            </form>
+            <p class="att-muted att-small">
+              La búsqueda utiliza únicamente el DNI.
+            </p>
+            <p v-if="lookupError" class="att-message is-error" role="alert">
+              {{ lookupError }}
+            </p>
+            <div
+              v-if="!clientData && !searching && !lookupError"
+              class="att-empty att-search-empty"
             >
-          </div>
-          <div class="att-membership">
-            <div>
-              <span>Plan</span
-              ><strong>{{ clientData.cliente.plan || 'Sin plan' }}</strong>
-            </div>
-            <div>
-              <span>Vigencia</span
-              ><strong>{{
-                clientData.membresia
-                  ? `Hasta ${dateLabel(clientData.membresia.fecha_fin)}`
-                  : 'Sin membresía activa y pagada'
-              }}</strong>
-            </div>
-            <div>
-              <span>Cuenta</span
-              ><strong>{{
-                clientData.cliente.estado === 'ACTIVO'
-                  ? 'Activada'
-                  : 'Sin activar o desactivada'
-              }}</strong>
-            </div>
-          </div>
-          <p v-if="clientBlock" class="att-message is-error" role="alert">
-            <strong>No se puede registrar la entrada.</strong>
-            {{ clientBlock }}
-          </p>
-          <div class="att-heading-row att-schedule-heading">
-            <h3>Horarios matriculados</h3>
-            <span class="att-muted att-small"
-              >{{
-                visibleSchedules.length === clientData.horarios.length
-                  ? `${clientData.horarios.length} horarios`
-                  : `${visibleSchedules.length} de ${clientData.horarios.length} horarios`
-              }}</span
-            >
-          </div>
-          <article
-            v-for="item in visibleSchedules"
-            :key="item.id_matricula"
-            class="att-schedule-card"
-            :class="{ 'is-today': item.hoy }"
-          >
-            <div class="att-schedule-top">
-              <span class="att-service">{{
-                services[item.servicio] || item.servicio
-              }}</span
-              ><span
-                class="att-badge"
-                :class="
-                  item.asistencia?.estado || (item.hoy ? 'today' : 'neutral')
-                "
-                >{{
-                  item.asistencia
-                    ? states[item.asistencia.estado]
-                    : item.hoy
-                      ? 'Hoy'
-                      : days[item.dia]
-                }}</span
+              <span class="att-empty-illustration"><ScanLine :size="38" /></span>
+              <h3>Todo comienza con el DNI</h3>
+              <p>
+                Encuentra al cliente, revisa su membresía<br />y registra la
+                visita en su horario.
+              </p>
+              <span class="att-muted att-small"
+                ><Clock3 :size="14" />Fecha y hora de Perú</span
               >
             </div>
-            <h4>
-              {{ days[item.dia] }}
-              <span
-                >· {{ shortTime(item.hora_inicio) }} –
-                {{ shortTime(item.hora_fin) }}</span
-              >
-            </h4>
-            <div class="att-schedule-bottom">
-              <div class="att-visittimes">
-                <span
-                  >Entrada
-                  <strong>{{
-                    shortTime(item.asistencia?.hora_entrada)
-                  }}</strong></span
-                ><span
-                  >Salida
-                  <strong>{{
-                    shortTime(item.asistencia?.hora_salida)
-                  }}</strong></span
+          </div>
+          <div class="att-slide att-slide-result" :inert="!clientData">
+            <button
+              type="button"
+              class="att-back"
+              @click="backToSearch"
+            >
+              <ArrowLeft :size="15" />Buscar otro cliente
+            </button>
+            <div v-if="clientData" class="att-client-result">
+              <div class="att-ficha">
+                <span class="att-avatar">{{
+                  initials(clientData.cliente.nombre)
+                }}</span>
+                <div class="att-ficha-body">
+                  <h3>{{ clientData.cliente.nombre }}</h3>
+                  <p class="att-muted">
+                    DNI {{ clientData.cliente.dni }} ·
+                    {{
+                      clientData.cliente.plan
+                        ? `Plan ${clientData.cliente.plan}`
+                        : 'Sin plan'
+                    }}
+                  </p>
+                  <div class="att-chips">
+                    <span
+                      class="att-badge"
+                      :class="clientData.membresia ? 'completada' : 'anulada'"
+                      >{{
+                        clientData.membresia
+                          ? `Membresía hasta ${dateLabel(clientData.membresia.fecha_fin)}`
+                          : 'Sin membresía activa y pagada'
+                      }}</span
+                    ><span
+                      class="att-badge"
+                      :class="
+                        clientData.cliente.estado === 'ACTIVO'
+                          ? 'completada'
+                          : 'anulada'
+                      "
+                      >{{
+                        clientData.cliente.estado === 'ACTIVO'
+                          ? 'Cuenta activada'
+                          : 'Cuenta sin activar'
+                      }}</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <p v-if="clientBlock" class="att-message is-error" role="alert">
+                <strong>No se puede registrar la entrada.</strong>
+                {{ clientBlock }}
+              </p>
+              <div class="att-heading-row att-schedule-heading">
+                <h3>
+                  {{
+                    showAllSchedules || !todaySchedules.length
+                      ? 'Horarios matriculados'
+                      : 'Horarios de hoy'
+                  }}
+                </h3>
+                <span class="att-muted att-small"
+                  >{{
+                    visibleSchedules.length === clientData.horarios.length
+                      ? `${clientData.horarios.length} horario${clientData.horarios.length === 1 ? '' : 's'}`
+                      : `${visibleSchedules.length} de ${clientData.horarios.length} horarios`
+                  }}</span
                 >
               </div>
+              <article
+                v-for="item in visibleSchedules"
+                :key="item.id_matricula"
+                class="att-row"
+                :class="{
+                  'is-today': item.hoy,
+                  'is-inside': item.asistencia && !item.asistencia.hora_salida,
+                  'is-saved': isSaved(item),
+                }"
+              >
+                <div class="att-row-main">
+                  <div class="att-row-title">
+                    <h4>{{ services[item.servicio] || item.servicio }}</h4>
+                    <span
+                      v-if="item.asistencia || item.hoy"
+                      class="att-badge"
+                      :class="item.asistencia?.estado || 'today'"
+                      >{{
+                        item.asistencia ? states[item.asistencia.estado] : 'Hoy'
+                      }}</span
+                    >
+                  </div>
+                  <p class="att-muted">
+                    {{ days[item.dia] }} · {{ shortTime(item.hora_inicio) }} –
+                    {{ shortTime(item.hora_fin) }}
+                  </p>
+                </div>
+                <div class="att-row-action">
+                  <p v-if="item.asistencia" class="att-row-times">
+                    Entrada
+                    <strong>{{ shortTime(item.asistencia.hora_entrada) }}</strong>
+                    · Salida
+                    <strong>{{ shortTime(item.asistencia.hora_salida) }}</strong>
+                  </p>
+                  <button
+                    v-if="item.asistencia && !item.asistencia.hora_salida"
+                    class="att-button att-primary"
+                    :disabled="Boolean(busy)"
+                    @click="exitRecord(item.asistencia)"
+                  >
+                    <LogOut :size="16" />{{
+                      busy === `exit-${item.asistencia.id_asistencia}`
+                        ? 'Guardando…'
+                        : 'Registrar salida'
+                    }}</button
+                  ><button
+                    v-else-if="!item.asistencia"
+                    class="att-button att-primary"
+                    :disabled="!item.puede_entrar || Boolean(busy)"
+                    :title="item.puede_entrar ? '' : blockedText(item)"
+                    @click="enter(item)"
+                  >
+                    <LogIn :size="16" />{{
+                      busy === `entry-${item.id_matricula}`
+                        ? 'Guardando…'
+                        : 'Registrar entrada'
+                    }}
+                  </button>
+                </div>
+                <p
+                  v-if="item.motivo && !item.asistencia && !clientBlock"
+                  class="att-blocked-reason att-row-note"
+                  role="status"
+                >
+                  <Info :size="16" /><span>{{ blockedText(item) }}</span>
+                </p>
+              </article>
               <button
-                v-if="item.asistencia && !item.asistencia.hora_salida"
-                class="att-button att-primary"
-                :disabled="Boolean(busy)"
-                @click="exitRecord(item.asistencia)"
+                v-if="canToggleSchedules"
+                type="button"
+                class="att-link att-schedule-toggle"
+                @click="showAllSchedules = !showAllSchedules"
               >
-                <LogOut :size="16" />{{
-                  busy === `exit-${item.asistencia.id_asistencia}`
-                    ? 'Guardando…'
-                    : 'Registrar salida'
-                }}</button
-              ><button
-                v-else-if="!item.asistencia"
-                class="att-button att-primary"
-                :disabled="!item.puede_entrar || Boolean(busy)"
-                :title="item.puede_entrar ? '' : blockedText(item)"
-                @click="enter(item)"
-              >
-                <LogIn :size="16" />{{
-                  busy === `entry-${item.id_matricula}`
-                    ? 'Guardando…'
-                    : 'Registrar entrada'
+                {{
+                  showAllSchedules
+                    ? 'Mostrar solo los de hoy'
+                    : `Ver ${hiddenSchedules} horario${hiddenSchedules === 1 ? '' : 's'} de otros días`
                 }}
               </button>
+              <div v-if="!clientData.horarios.length" class="att-empty">
+                <CalendarDays :size="28" />
+                <h3>Sin horarios matriculados</h3>
+                <p>Matricula al cliente en un horario para registrar su visita.</p>
+                <router-link class="att-link" to="/admin/enrollment"
+                  >Ir a matrículas <ArrowRight :size="15"
+                /></router-link>
+              </div>
             </div>
-            <p
-              v-if="item.motivo && !item.asistencia && !clientBlock"
-              class="att-blocked-reason"
-              role="status"
-            >
-              <Info :size="16" /><span>{{ blockedText(item) }}</span>
-            </p>
-          </article>
-          <button
-            v-if="canToggleSchedules"
-            type="button"
-            class="att-link att-schedule-toggle"
-            @click="showAllSchedules = !showAllSchedules"
-          >
-            {{
-              showAllSchedules
-                ? 'Mostrar solo los de hoy'
-                : `Ver ${hiddenSchedules} horario${hiddenSchedules === 1 ? '' : 's'} de otros días`
-            }}
-          </button>
-          <div v-if="!clientData.horarios.length" class="att-empty">
-            <CalendarDays :size="28" />
-            <h3>Sin horarios matriculados</h3>
-            <p>Matricula al cliente en un horario para registrar su visita.</p>
-            <router-link class="att-link" to="/admin/enrollment"
-              >Ir a matrículas <ArrowRight :size="15"
-            /></router-link>
           </div>
         </div>
-        <div
-          v-else-if="!searching && !lookupError"
-          class="att-empty att-search-empty"
-        >
-          <span class="att-empty-illustration"><ScanLine :size="38" /></span>
-          <h3>Todo comienza con el DNI</h3>
-          <p>
-            Encuentra al cliente, revisa su membresía<br />y registra la visita
-            en su horario.
-          </p>
-          <span class="att-muted att-small"
-            ><Clock3 :size="14" />Fecha y hora de Perú</span
-          >
         </div>
       </section>
       <aside class="att-panel att-inside-panel">
@@ -332,9 +338,10 @@
         </div>
         <div v-else class="att-inside-list">
           <article
-            v-for="record in summary.pendientes"
+            v-for="record in pendingSorted"
             :key="record.id_asistencia"
             class="att-person"
+            :class="{ 'is-overdue': record.fecha !== summary.fecha }"
           >
             <div class="att-person-top">
               <span class="att-avatar small">{{
@@ -355,6 +362,8 @@
                     class="att-overdue"
                   >
                     · {{ dateLabel(record.fecha) }}</span
+                  ><span v-if="elapsed(record)" class="att-elapsed">
+                    · {{ elapsed(record) }}</span
                   ></small
                 ></span
               ><button
@@ -394,6 +403,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
+  ArrowLeft,
   ArrowRight,
   CalendarDays,
   CircleCheck,
@@ -493,6 +503,9 @@ const handleTabKey = async (event) => {
   await nextTick();
   tablist.querySelector('[aria-selected="true"]')?.focus();
 };
+const dniInput = ref(null);
+const savedKey = ref('');
+const now = ref(Date.now());
 const clearClient = () => {
   searchNumber++;
   searching.value = false;
@@ -501,23 +514,43 @@ const clearClient = () => {
   feedback.value = '';
   showAllSchedules.value = false;
 };
-const lookupClient = async () => {
-  if (!/^\d{8}$/.test(dni.value)) {
-    lookupError.value = 'Ingresa un DNI de 8 dígitos.';
+// Solo dígitos; al completar los 8 dígitos busca automáticamente.
+const onDniInput = () => {
+  dni.value = dni.value.replace(/\D/g, '').slice(0, 8);
+  clearClient();
+  if (dni.value.length === 8) lookupClient();
+};
+// Vuelve a la vista de búsqueda (el riel se desliza) y deja el campo listo para escribir.
+const backToSearch = () => {
+  clearClient();
+  dni.value = '';
+  nextTick(() => dniInput.value?.focus());
+};
+// silent = true: actualiza la ficha ya abierta SIN vaciarla (evita que la pantalla
+// vuelva a "Buscar cliente" y parpadee después de guardar o en cada refresco).
+const lookupClient = async ({ silent = false } = {}) => {
+  const query = silent ? clientData.value?.cliente?.dni : dni.value;
+  if (!/^\d{8}$/.test(query || '')) {
+    if (!silent) lookupError.value = 'Ingresa un DNI de 8 dígitos.';
     return;
   }
-  const request = ++searchNumber;
-  const query = dni.value;
-  searching.value = true;
-  lookupError.value = '';
-  clientData.value = null;
+  const request = silent ? searchNumber : ++searchNumber;
+  if (!silent) {
+    searching.value = true;
+    lookupError.value = '';
+    clientData.value = null;
+  }
   try {
     const data = await attendanceGet('/cliente', { dni: query }, token.value);
     if (request === searchNumber) clientData.value = data;
   } catch (err) {
-    if (request === searchNumber) lookupError.value = err.message;
+    if (request === searchNumber) {
+      const text = err?.message || 'No se pudo consultar al cliente.';
+      if (silent) error.value = `No se pudo actualizar la ficha. ${text}`;
+      else lookupError.value = text;
+    }
   } finally {
-    if (request === searchNumber) searching.value = false;
+    if (request === searchNumber && !silent) searching.value = false;
   }
 };
 const loadSummary = async () => {
@@ -527,10 +560,8 @@ const loadSummary = async () => {
     const data = await attendanceGet('/resumen', {}, token.value);
     if (request === summaryNumber) summary.value = data;
   } catch (err) {
-    if (request === summaryNumber) {
-      summary.value = null;
-      throw err;
-    }
+    // Se conserva el último resumen cargado; solo se avisa del error.
+    if (request === summaryNumber) throw err;
   } finally {
     if (request === summaryNumber) refreshing.value = false;
   }
@@ -539,27 +570,64 @@ const refresh = async () => {
   error.value = '';
   const results = await Promise.allSettled([
     loadSummary(),
-    ...(clientData.value ? [lookupClient()] : []),
+    ...(clientData.value ? [lookupClient({ silent: true })] : []),
   ]);
   results.forEach((result) => {
-    if (result.status === 'rejected') error.value = result.reason.message;
+    if (result.status === 'rejected')
+      error.value = result.reason?.message || 'No se pudo actualizar.';
   });
 };
+let feedbackTimer;
 const mutate = async (key, action, message) => {
   if (busy.value) return;
   busy.value = key;
   error.value = '';
   feedback.value = '';
+  savedKey.value = '';
+  clearTimeout(feedbackTimer);
   try {
     await action();
     feedback.value = message;
+    savedKey.value = key;
+    feedbackTimer = setTimeout(() => {
+      feedback.value = '';
+      savedKey.value = '';
+    }, 4000);
     await refresh();
   } catch (err) {
-    error.value = err.message;
-    if (clientData.value) await lookupClient();
+    const message =
+      err?.message || 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.';
+    // Relee resumen y ficha (p. ej. tras un conflicto 409) y conserva el mensaje del error.
+    await refresh();
+    error.value = message;
   } finally {
     busy.value = '';
   }
+};
+// Resalta por unos segundos la fila que se acaba de guardar.
+const isSaved = (item) =>
+  savedKey.value === `entry-${item.id_matricula}` ||
+  Boolean(
+    item.asistencia && savedKey.value === `exit-${item.asistencia.id_asistencia}`,
+  );
+// Entradas sin salida: primero las más antiguas (las más urgentes de revisar).
+const pendingSorted = computed(() => {
+  const at = (r) => `${r.fecha}${r.hora_entrada || r.hora || ''}`;
+  return [...(summary.value?.pendientes || [])].sort((a, b) =>
+    at(a).localeCompare(at(b)),
+  );
+});
+// "hace 2 h 15 min" desde la entrada (hora de Perú, UTC-5).
+const elapsed = (record) => {
+  const time = String(record.hora_entrada || record.hora || '').slice(0, 8);
+  const date = String(record.fecha || '').slice(0, 10);
+  const start = new Date(`${date}T${time}-05:00`).getTime();
+  if (!date || !time || Number.isNaN(start)) return '';
+  const minutes = Math.max(0, Math.floor((now.value - start) / 60000));
+  if (minutes < 1) return 'recién';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? `hace ${h} h${m ? ` ${m} min` : ''}` : `hace ${m} min`;
 };
 const enter = (item) =>
   mutate(
@@ -576,6 +644,7 @@ const exitRecord = (record) =>
 onMounted(() => {
   refresh();
   timer = setInterval(() => {
+    now.value = Date.now();
     if (
       !document.hidden &&
       !busy.value &&
@@ -587,17 +656,19 @@ onMounted(() => {
 });
 onUnmounted(() => {
   clearInterval(timer);
+  clearTimeout(feedbackTimer);
   searchNumber++;
   summaryNumber++;
 });
 </script>
 
 <style scoped>
+/* Aviso ámbar: explica por qué no se puede registrar */
 .att-blocked-reason {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin: 12px 0 0;
+  margin: 0;
   padding: 10px 12px;
   border: 1px solid #f0c98f;
   border-radius: 10px;
@@ -611,24 +682,90 @@ onUnmounted(() => {
   margin-top: 2px;
 }
 
-/* Más aire entre bloques y columnas que no se desbordan */
+/* Espacio uniforme entre los bloques de la pantalla */
 .att-control-grid {
   gap: 24px;
 }
 .att-control-grid > * {
   min-width: 0;
 }
-.att-membership {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px 24px;
+.att-client-result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
-.att-schedule-bottom {
-  gap: 12px;
+.att-client-result > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Ficha del cliente: nombre, datos clave y estados en un solo bloque */
+.att-ficha {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #ece9e6;
+}
+.att-ficha-body {
+  min-width: 0;
+}
+.att-ficha-body h3 {
+  margin: 0;
+}
+.att-ficha-body > p {
+  margin: 2px 0 10px;
+}
+.att-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Cada horario es una fila: qué clase, cuándo y qué acción */
+.att-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 14px 16px;
+  border: 1px solid #e7e4e1;
+  border-radius: 12px;
+  background: #fff;
+}
+.att-row.is-today {
+  background: #fcfaf9;
+  border-color: #d9d3ce;
+}
+.att-row-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.att-row-title h4 {
+  margin: 0;
+}
+.att-row-main p {
+  margin: 2px 0 0;
+}
+.att-row-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+.att-row-times {
+  margin: 0;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.att-row-note {
+  grid-column: 1 / -1;
 }
 .att-schedule-toggle {
   display: block;
-  margin: 12px auto 0;
+  margin: 0 auto;
   padding: 8px 12px;
 }
 
@@ -696,35 +833,131 @@ onUnmounted(() => {
     min-height: 44px;
   }
   .att-search .att-button,
-  .att-schedule-bottom .att-button {
+  .att-row-action .att-button {
     width: 100%;
     justify-content: center;
   }
-  .att-client-card {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-  }
-  .att-client-card > div {
-    flex: 1 1 140px;
-    min-width: 0;
-  }
-  .att-membership {
+  .att-row {
     grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
   }
-  .att-schedule-bottom {
+  .att-row-action {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
   }
-  .att-visittimes {
-    display: flex;
-    justify-content: space-between;
+  .att-row-times {
+    white-space: normal;
   }
   .att-person-bottom {
     flex-wrap: wrap;
     gap: 8px;
   }
+}
+
+/* Más aire en el encabezado, las métricas y la barra de pestañas */
+.att-page-header {
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.att-metrics {
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.att-metric {
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+}
+.att-toolbar {
+  margin-bottom: 18px;
+}
+.att-panel {
+  padding: 20px;
+}
+
+/* Panel "Entradas sin salida": misma respiración que la ficha del cliente */
+.att-inside-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.att-person {
+  padding: 12px 14px;
+  border: 1px solid #ece9e6;
+  border-radius: 12px;
+}
+.att-person-bottom {
+  margin-top: 8px;
+}
+.att-aside-note {
+  margin-top: 16px;
+}
+
+/* Deslizamiento buscador <-> resultado.
+   El recorte se hace en .att-viewport (dentro del contenido del panel, sin su padding),
+   así la vista que sale nunca se asoma por los bordes. Cada vista mide exactamente
+   el 100% y no hay separación entre ellas. */
+.att-viewport {
+  overflow: hidden;
+  width: 100%;
+}
+.att-viewport .att-slider {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+  transform: none;
+  transition: transform 0.35s ease;
+}
+.att-viewport .att-slider.at-result {
+  transform: translateX(-100%);
+}
+.att-viewport .att-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 3px; /* deja espacio al anillo de foco de los campos */
+  box-sizing: border-box;
+  position: static;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .att-viewport .att-slider {
+    transition: none;
+  }
+}
+
+/* Estado de cada horario: se nota de un vistazo quién está dentro */
+.att-row.is-inside {
+  border-left: 3px solid #2f7d4f;
+}
+/* Confirmación visual en la fila que se acaba de guardar */
+.att-row.is-saved {
+  animation: att-saved 1.8s ease-out;
+}
+@keyframes att-saved {
+  from {
+    background: #e6f4ea;
+    box-shadow: 0 0 0 3px #b9dfc5;
+  }
+  to {
+    background: #fcfaf9;
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .att-row.is-saved {
+    animation: none;
+  }
+}
+/* Visitas de días anteriores: necesitan revisión */
+.att-person.is-overdue {
+  border-color: #f0c98f;
+  background: #fff9f0;
+}
+.att-elapsed {
+  font-variant-numeric: tabular-nums;
 }
 </style>
