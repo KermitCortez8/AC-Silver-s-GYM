@@ -13,18 +13,23 @@ from zoneinfo import ZoneInfo
 from utils.security import hash_password, verify_password
 
 
+_LIMA = ZoneInfo("America/Lima")
+
 # Ítems de INVENTARIO con este Tipo se venden en la tienda y comparten stock.
 TIPO_TIENDA = "Tienda"
 ESTADO_DESCONTINUADO = "Descontinuado"
+
 # Los movimientos automáticos de pedidos se reconocen por el inicio de su descripción.
 PREFIJO_VENTA = "Venta pedido #"
 PREFIJO_DEVOLUCION = "Devolución por cancelación del pedido #"
-_MOVIMIENTO_PEDIDO = re.compile(r"^(?:Venta pedido|Devolución por cancelación del pedido) #\d+")
+_MOVIMIENTO_PEDIDO = re.compile(
+    r"^(?:Venta pedido|Devolución por cancelación del pedido) #\d+"
+)
 
 
-# Procesa esta operación.
+# Fecha de hoy en Perú (el servidor puede estar en UTC).
 def _today_iso() -> str:
-    return datetime.now(timezone.utc).date().isoformat()
+    return datetime.now(_LIMA).date().isoformat()
 
 
 # Procesa esta operación.
@@ -34,7 +39,7 @@ def _now_iso() -> str:
 
 # Procesa esta operación.
 def _now_time() -> str:
-    return datetime.now().strftime("%H:%M")
+    return datetime.now(_LIMA).strftime("%H:%M")
 
 
 # Procesa esta operación.

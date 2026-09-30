@@ -37,6 +37,7 @@
           >Fecha de entrada<input
             v-model="form.fecha"
             required
+            autofocus
             type="date"
             :max="today"
         /></label>
@@ -71,11 +72,15 @@
           minlength="5"
           maxlength="500"
           rows="3"
+          :autofocus="annulling"
           placeholder="Explica qué ocurrió con este registro"
         />
       </label>
       <p class="att-muted att-small">
         Las horas corresponden a Perú. Se guardará quién realizó el cambio.
+      </p>
+      <p v-if="timeProblem" role="alert" class="att-message is-error">
+        {{ timeProblem }}
       </p>
       <p v-if="error" role="alert" class="att-message is-error">{{ error }}</p>
       <details v-if="record.auditoria?.length" class="att-audit">
@@ -113,7 +118,7 @@
           Cancelar</button
         ><button
           class="att-button att-primary"
-          :disabled="busy || form.motivo.trim().length < 5"
+          :disabled="busy || Boolean(timeProblem) || form.motivo.trim().length < 5"
         >
           {{
             busy
@@ -128,7 +133,7 @@
   </dialog>
 </template>
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import { useAuth } from '../../composables/useAuth';
 import {
@@ -166,6 +171,17 @@ const form = reactive({
     : '',
   motivo: '',
 });
+// Compara fecha+hora como texto ISO (completa "HH:MM" con segundos).
+const stamp = (date, time) =>
+  date && time ? `${date}T${time.length === 5 ? `${time}:00` : time}` : '';
+const timeProblem = computed(() => {
+  if (props.annulling) return '';
+  const start = stamp(form.fecha, form.hora_entrada);
+  const end = stamp(form.fecha_salida, form.hora_salida);
+  return start && end && end < start
+    ? 'La salida no puede ser anterior a la entrada.'
+    : '';
+});
 const close = () => {
   if (!busy.value) {
     dialog.value.close();
@@ -177,6 +193,7 @@ const cancel = (event) => {
   close();
 };
 const backdrop = (event) => {
+  if (form.motivo.trim()) return;
   if (event.target === dialog.value) {
     const rect = dialog.value.getBoundingClientRect();
     if (
@@ -206,7 +223,8 @@ const save = async () => {
     dialog.value.close();
     emit('close');
   } catch (err) {
-    error.value = err.message;
+    error.value =
+      err?.message || 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.';
   } finally {
     busy.value = false;
   }

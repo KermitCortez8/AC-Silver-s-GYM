@@ -98,7 +98,10 @@ class AttendanceService:
             raise ValueError("El horario no está disponible.")
         if schedule.get("dia") != DAYS[now.weekday()]:
             raise ValueError("Este horario no corresponde a hoy.")
-        start, end = time.fromisoformat(schedule["hora_inicio"]), time.fromisoformat(schedule["hora_fin"])
+        try:
+            start, end = time.fromisoformat(str(schedule["hora_inicio"])), time.fromisoformat(str(schedule["hora_fin"]))
+        except (ValueError, KeyError) as error:
+            raise ValueError("El horario tiene una hora inválida. Corrígela en el módulo de horarios.") from error
         if not start <= now.time() < end:
             raise ValueError(f"La entrada se habilita de {schedule['hora_inicio'][:5]} a {schedule['hora_fin'][:5]} (hora de Perú).")
         inside = [r for r in self.gym.state.get("asistencia", []) if not r.get("anulado") and not r.get("hora_salida")]
