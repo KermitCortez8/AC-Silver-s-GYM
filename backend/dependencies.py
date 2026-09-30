@@ -105,6 +105,20 @@ def get_current_user(
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 
+# Usuario interno que origina la operación (para MOV_INV.id_usuario); None si no hay sesión válida.
+def get_optional_actor_id(
+    authorization: str | None = Header(default=None),
+    gym_service: SupabaseGymService = Depends(get_gym_service),
+) -> str | None:
+    try:
+        user = get_current_user(authorization, gym_service)
+    except HTTPException:
+        return None
+    if user.role not in {"admin", "staff", "trainer"}:
+        return None
+    return user.id_usuario or None
+
+
 # Procesa esta operación.
 def require_roles(*roles: str):
     allowed_roles = {str(role).strip().lower() for role in roles}
@@ -137,6 +151,7 @@ __all__ = [
     "get_clients_service",
     "get_users_service",
     "get_current_user",
+    "get_optional_actor_id",
     "require_roles",
     "require_admin_or_staff",
     "require_internal_viewer",

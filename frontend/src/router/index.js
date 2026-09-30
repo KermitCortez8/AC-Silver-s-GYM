@@ -8,6 +8,7 @@ const TrainerDashboard = () => import('../views/TrainerDashboard.vue');
 const UserDashboard = () => import('../views/UserDashboard.vue');
 const LandingView = () => import('../views/LandingView.vue');
 const NosotrosView = () => import('../views/NosotrosView.vue');
+const PreguntasFrecuentesView = () => import('../views/PreguntasFrecuentesView.vue');
 const RegisterView = () => import('../views/RegisterView.vue');
 const PaymentView = () => import('../views/PaymentView.vue');
 const HomeView = () => import('../views/HomeView.vue');
@@ -17,7 +18,6 @@ const AttendanceView = () => import('../views/AttendanceView.vue');
 const ServiceSchedulesView = () => import('../views/ServiceSchedulesView.vue');
 const EnrollmentView = () => import('../views/EnrollmentView.vue');
 const InventoryView = () => import('../views/InventoryView.vue');
-const InventoryMovementsView = () => import('../views/InventoryMovementsView.vue');
 const GymSettingsView = () => import('../views/GymSettingsView.vue');
 const MembershipPlansView = () => import('../views/MembershipPlansView.vue');
 const PromotionsView = () => import('../views/PromotionsView.vue');
@@ -50,9 +50,21 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: '/tp-remix',
+    name: 'TpRemix',
+    component: () => import('../views/TpRemixView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
     path: '/nosotros',
     name: 'Nosotros',
     component: NosotrosView,
+    meta: { requiresAuth: false },
+  },
+    {
+    path: '/preguntas-frecuentes',
+    name: 'PreguntasFrecuentes',
+    component: PreguntasFrecuentesView,
     meta: { requiresAuth: false },
   },
   {
@@ -114,8 +126,7 @@ const routes = [
       },
       {
         path: 'inventory/movements',
-        name: 'InventoryMovements',
-        component: InventoryMovementsView,
+        redirect: { name: 'Inventory', query: { tab: 'movimientos' } },
       },
       {
         path: 'plans',

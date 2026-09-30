@@ -155,13 +155,13 @@ const normalizeStoreOrder = (order = {}) => ({
   total: Number(order.total || 0),
   items: Array.isArray(order.items)
     ? order.items.map((item) => ({
-        id_producto: Number(item.id_producto || 0),
-        nombre_producto: item.nombre_producto || item.nombre || 'Producto',
-        imagen_url: item.imagen_url || item.imageUrl || '',
-        cantidad: Number(item.cantidad || 1),
-        precio_unitario: Number(item.precio_unitario || item.precio || 0),
-        subtotal: Number(item.subtotal || Number(item.precio_unitario || item.precio || 0) * Number(item.cantidad || 1)),
-      }))
+      id_producto: Number(item.id_producto || 0),
+      nombre_producto: item.nombre_producto || item.nombre || 'Producto',
+      imagen_url: item.imagen_url || item.imageUrl || '',
+      cantidad: Number(item.cantidad || 1),
+      precio_unitario: Number(item.precio_unitario || item.precio || 0),
+      subtotal: Number(item.subtotal || Number(item.precio_unitario || item.precio || 0) * Number(item.cantidad || 1)),
+    }))
     : [],
 });
 
@@ -203,7 +203,11 @@ const normalizePromotionFromBackend = (promotion = {}) => {
     discountValue: Number(promotion.valor_descuento ?? promotion.discountValue ?? 0),
     startsAt: promotion.fecha_inicio || promotion.startsAt || '',
     validUntil: promotion.fecha_fin || promotion.validUntil || '',
+    icono_etiqueta: promotion.icono_etiqueta || promotion.badgeIcon || '🏷️',
+    palabra_clave: promotion.palabra_clave || promotion.badgeTag || '',
     appliesTo: plans,
+    limite_cupos: promotion.limite_cupos !== undefined && promotion.limite_cupos !== null && String(promotion.limite_cupos).trim() !== '' ? Number(promotion.limite_cupos) : null,
+    usos_actuales: Number(promotion.usos_actuales ?? promotion.usesCount ?? 0),
     active: promotion.activo !== false && promotion.active !== false,
   };
 };
@@ -240,16 +244,17 @@ const normalizeBackendClientToMember = (client = {}) => ({
   phone: client.telefono || client.phone || '',
   role: 'user',
   plan: client.plan || '',
-  promocion: client.promocion || '',
+  promocion: client.promocion || 'SIN PROMOCION',
+  id_promocion: client.id_promocion || (client.promocion && String(client.promocion).startsWith('promo-') ? Number(String(client.promocion).replace('promo-', '')) : null),
   planId: '',
   id_membresia: client.id_membresia || null,
   membershipStatus: client.membership_status || client.estado || '',
-  membershipStart: client.membership_start || client.fecha_registro || client.joinedAt || '',
-  membershipEnd: client.membership_end || '',
-  paymentStatus: client.payment_status || '',
-  paymentReference: client.payment_reference || '',
+  membershipStart: client.membership_start || client.fecha_inicio || client.fecha_registro || client.joinedAt || '',
+  membershipEnd: client.membership_end || client.fecha_fin || '',
+  paymentStatus: client.payment_status || client.estado_pago || '',
+  paymentReference: client.payment_reference || client.referencia_pago || '',
   hasPassword: Boolean(client.has_password ?? client.hasPassword),
-  membershipPrice: 0,
+  membershipPrice: Number(client.monto_pago ?? 0),
   status: String(client.estado || (client.estado === false ? 'INACTIVO' : 'ACTIVO')).toUpperCase(),
   joinedAt: client.fecha_registro || client.joinedAt || '',
   attendanceRate: 0,
@@ -559,9 +564,9 @@ export const useGymStore = defineStore('gym', () => {
       lowStockItems,
       attendanceRate: members.value.length
         ? Math.round(
-            members.value.reduce((sum, member) => sum + Number(member.attendanceRate || 0), 0) /
-              members.value.length,
-          )
+          members.value.reduce((sum, member) => sum + Number(member.attendanceRate || 0), 0) /
+          members.value.length,
+        )
         : 0,
     };
   });
@@ -599,7 +604,17 @@ export const useGymStore = defineStore('gym', () => {
   const activePlans = computed(() => planCatalog.value.filter((plan) => plan.active));
 
   const activePromotions = computed(() =>
-    promotions.value.filter((promotion) => promotion.active && (!promotion.validUntil || promotion.validUntil >= todayISO())),
+    promotions.value.filter((promotion) => {
+      if (!promotion.active) return false;
+      const today = todayISO();
+      if (promotion.validUntil && promotion.validUntil < today) return false;
+      const isCupoCumplido =
+        promotion.limite_cupos !== null &&
+        promotion.limite_cupos !== undefined &&
+        Number(promotion.usos_actuales || 0) >= Number(promotion.limite_cupos);
+      if (isCupoCumplido) return false;
+      return true;
+    }),
   );
 
   const membershipAlerts = computed(() =>
@@ -805,10 +820,14 @@ export const useGymStore = defineStore('gym', () => {
       valor_descuento: Number(payload.valor_descuento ?? payload.discountValue ?? 0),
       fecha_inicio: payload.fecha_inicio || payload.startsAt || '',
       fecha_fin: payload.fecha_fin || payload.validUntil || '',
+      icono_etiqueta: payload.icono_etiqueta || payload.badgeIcon || '🏷️',
+      palabra_clave: String(payload.palabra_clave || payload.badgeTag || '').trim().toUpperCase(),
       activo: payload.activo ?? payload.active ?? true,
       planes_aplicables: (payload.planes_aplicables || payload.appliesTo || [])
         .map((value) => Number(String(value).match(/(\d+)/)?.[1] || value))
         .filter(Boolean),
+      limite_cupos: payload.limite_cupos !== undefined && payload.limite_cupos !== null && String(payload.limite_cupos).trim() !== '' ? Number(payload.limite_cupos) : null,
+      usos_actuales: Number(payload.usos_actuales || 0),
     };
 
     if (apiBase) {
@@ -818,7 +837,8 @@ export const useGymStore = defineStore('gym', () => {
         body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo guardar la promocion'));
-      return mergePromotion(await response.json());
+      const saved = await response.json();
+      return mergePromotion({ ...body, ...(saved || {}) });
     }
 
     return mergePromotion({ ...body, id_promocion: idPromocion || Date.now() });
@@ -1005,7 +1025,8 @@ export const useGymStore = defineStore('gym', () => {
       const startDate = member.membershipEnd && member.membershipEnd > todayISO() ? member.membershipEnd : todayISO();
       const endDate = addMonthsISO(startDate, getPlanById(planId)?.durationMonths || 1);
 
-      const payload = { id_cliente, id_pm, fecha_inicio: startDate, fecha_fin: endDate };
+      const id_promocion = promotionId ? Number(String(promotionId).match(/(\d+)/)?.[1] || promotionId) : null;
+      const payload = { id_cliente, id_pm, fecha_inicio: startDate, fecha_fin: endDate, id_promocion };
       return fetch(`${apiBase}/membresias`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(payload) })
         .then((r) => {
           if (!r.ok) throw new Error('Error al asignar membresía en backend');
@@ -1460,7 +1481,7 @@ export const useGymStore = defineStore('gym', () => {
   const deleteMember = (id) => {
     if (apiBase && /^(?:cliente-|SGCLI)\d+$/i.test(id)) {
       const id_cliente = Number(String(id).replace(/^(?:cliente-|SGCLI)/i, ''));
-      fetch(`${apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => {});
+      fetch(`${apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => { });
     }
     members.value = members.value.filter((member) => member.id !== id);
     attendance.value = attendance.value.filter((entry) => entry.memberId !== id);
@@ -1590,7 +1611,8 @@ export const useGymStore = defineStore('gym', () => {
         const index = inventory.value.findIndex((entry) => entry.id === item.id);
         if (index >= 0) inventory.value[index] = item; else inventory.value.unshift(item);
         persist();
-        return item;
+        // El alta registra su entrada en MOV_INV y un item Tipo Tienda crea su producto.
+        return fetchFromBackend({ force: true }).catch(() => {}).then(() => item);
       });
     }
 
@@ -1684,13 +1706,24 @@ export const useGymStore = defineStore('gym', () => {
   /**
    * Elimina el registro indicado.
    */
-  const deleteInventoryItem = (id) => {
+  const deleteInventoryItem = async (id) => {
     if (apiBase && /^item-\d+$/.test(id)) {
       const id_item = Number(id.split('-')[1]);
-      fetch(`${apiBase}/inventario/${id_item}`, { method: 'DELETE', headers: _authHeaders() }).catch(() => {});
+      const response = await fetch(`${apiBase}/inventario/${id_item}`, { method: 'DELETE', headers: _authHeaders() });
+      if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo eliminar el articulo'));
+      // Con historial o producto en tienda el backend no borra: lo marca como Descontinuado.
+      const result = response.status === 204 ? null : await response.json();
+      if (result?.accion === 'descontinuado') {
+        const item = inventory.value.find((entry) => entry.id === id);
+        if (item) item.status = result.item?.estado || 'Descontinuado';
+        persist();
+        await fetchFromBackend({ force: true }).catch(() => {});
+        return result;
+      }
     }
     inventory.value = inventory.value.filter((item) => item.id !== id);
     persist();
+    return null;
   };
 
   // Funciones para productos de tienda
@@ -1717,16 +1750,16 @@ export const useGymStore = defineStore('gym', () => {
         ...producto,
         id_producto: producto.id_producto || undefined,
       };
-      
+
       const res = await fetch(`${apiBase}/tienda`, {
         method: 'POST',
         headers: _authHeaders(),
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error('Error al guardar producto en backend');
+      if (!res.ok) throw new Error(await readBackendError(res, 'Error al guardar producto en backend'));
       const saved = await res.json();
-      
+
       const id_producto = saved.id_producto || payload.id_producto || Date.now();
       const normalized = {
         id: `producto-${id_producto}`,
@@ -1749,8 +1782,10 @@ export const useGymStore = defineStore('gym', () => {
       } else {
         productos_tienda.value.unshift(normalized);
       }
-      
+
       persist();
+      // Un producto nuevo puede crear su item en Inventario y su entrada inicial.
+      await fetchFromBackend({ force: true }).catch(() => {});
       return normalized;
     }
 
@@ -1776,7 +1811,7 @@ export const useGymStore = defineStore('gym', () => {
     } else {
       productos_tienda.value.unshift(normalized);
     }
-    
+
     persist();
     return normalized;
   };
@@ -1795,7 +1830,7 @@ export const useGymStore = defineStore('gym', () => {
         console.error('Error al eliminar producto en backend:', error);
       }
     }
-    
+
     productos_tienda.value = productos_tienda.value.filter((p) => p.id_producto !== id_producto);
     persist();
   };
@@ -1806,7 +1841,7 @@ export const useGymStore = defineStore('gym', () => {
    */
   const addToCart = (producto, cantidad = 1) => {
     const existingItem = cart.value.find((item) => item.id_producto === producto.id_producto);
-    
+
     if (existingItem) {
       existingItem.cantidad += cantidad;
     } else {
@@ -1818,7 +1853,7 @@ export const useGymStore = defineStore('gym', () => {
         cantidad: Math.max(1, cantidad),
       });
     }
-    
+
     persist();
   };
 
@@ -1849,7 +1884,7 @@ export const useGymStore = defineStore('gym', () => {
     persist();
   };
 
- const cartTotal = computed(() => {
+  const cartTotal = computed(() => {
     const subtotal = cart.value.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
     const igv = subtotal * 0.18;
     const total = subtotal + igv;
@@ -1945,7 +1980,10 @@ export const useGymStore = defineStore('gym', () => {
         body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo actualizar el pedido'));
-      return mergeStoreOrder(await response.json());
+      const saved = mergeStoreOrder(await response.json());
+      // Cancelar devuelve el stock: refresca Inventario, Tienda y Movimientos.
+      if (body.estado_pedido === 'CANCELADO') await fetchFromBackend({ force: true }).catch(() => {});
+      return saved;
     }
     const order = storeOrders.value.find((entry) => Number(entry.id_pedido) === Number(idPedido));
     if (!order) throw new Error('Pedido no encontrado');
@@ -1986,7 +2024,7 @@ export const useGymStore = defineStore('gym', () => {
 
       const saved = mergeStoreOrder(await response.json());
       clearCart();
-      await refreshStoreProductsFromBackend().catch(() => {});
+      await refreshStoreProductsFromBackend().catch(() => { });
       return saved;
     }
 
@@ -2302,7 +2340,7 @@ export const useGymStore = defineStore('gym', () => {
     };
     const index = routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
     if (index >= 0) routines.value[index] = normalized; else routines.value.unshift(normalized);
-    await fetchTrainerOverview().catch(() => {});
+    await fetchTrainerOverview().catch(() => { });
     persist();
     return normalized;
   };
@@ -2324,7 +2362,7 @@ export const useGymStore = defineStore('gym', () => {
     const index = enrollments.value.findIndex((entry) => Number(entry.id_matricula) === Number(saved.id_matricula));
     if (index >= 0) enrollments.value[index] = { ...enrollments.value[index], ...saved };
     else enrollments.value.unshift(saved);
-    await fetchTrainerOverview().catch(() => {});
+    await fetchTrainerOverview().catch(() => { });
     persist();
     return saved;
   };
@@ -2386,7 +2424,7 @@ export const useGymStore = defineStore('gym', () => {
     } else {
       enrollments.value.unshift(saved);
     }
-    await refreshServiceSchedulesFromBackend().catch(() => {});
+    await refreshServiceSchedulesFromBackend().catch(() => { });
     persist();
     return saved;
   };
@@ -2407,7 +2445,7 @@ export const useGymStore = defineStore('gym', () => {
     enrollments.value = enrollments.value.map((entry) =>
       Number(entry.id_matricula) === Number(idMatricula) ? { ...entry, estado: 'CANCELADA' } : entry,
     );
-    await refreshServiceSchedulesFromBackend().catch(() => {});
+    await refreshServiceSchedulesFromBackend().catch(() => { });
     persist();
   };
 
@@ -2420,7 +2458,7 @@ export const useGymStore = defineStore('gym', () => {
     if (syncPromise) {
       if (syncScope === scope && !force) return syncPromise;
       // Un refresco tras guardar debe consultar después de la carga anterior.
-      return syncPromise.catch(() => {}).then(() => fetchFromBackend({ force }));
+      return syncPromise.catch(() => { }).then(() => fetchFromBackend({ force }));
     }
     if (!force && lastSyncScope === scope && Date.now() - lastSyncAt < 30_000) return Promise.resolve();
     syncScope = scope;
@@ -2466,13 +2504,13 @@ export const useGymStore = defineStore('gym', () => {
           observations: i.observaciones || '',
         }));
       }],
-      ['Movimientos', refreshInventoryMovementsFromBackend],
-      ['Productos', refreshStoreProductsFromBackend],
-      ['Pedidos', refreshStoreOrdersFromBackend],
-      ['Planes', async () => {
-        planCatalog.value = (await getList('/planes-membresia')).map(normalizePlanFromBackend);
-      }],
-      ['Promociones', refreshPromotionsFromBackend]);
+        ['Movimientos', refreshInventoryMovementsFromBackend],
+        ['Productos', refreshStoreProductsFromBackend],
+        ['Pedidos', refreshStoreOrdersFromBackend],
+        ['Planes', async () => {
+          planCatalog.value = (await getList('/planes-membresia')).map(normalizePlanFromBackend);
+        }],
+        ['Promociones', refreshPromotionsFromBackend]);
 
       if (internal) {
         tasks.push(['Configuración', refreshGymSettingsFromBackend], ['Horarios', async () => {
@@ -2491,7 +2529,7 @@ export const useGymStore = defineStore('gym', () => {
       if (role === 'trainer') tasks.push(['Supervisión', fetchTrainerOverview]);
       if (role === 'admin' || role === 'user') tasks.push(['Asistencias', async () => {
         // La normalización de asistencias necesita los nombres de clientes.
-        await clientsReady.catch(() => {});
+        await clientsReady.catch(() => { });
         await refreshAttendanceFromBackend();
       }]);
 
@@ -2528,13 +2566,47 @@ export const useGymStore = defineStore('gym', () => {
       dni: String(payload.dni || existingClient?.dni || '').trim(),
       password: String(payload.password || payload.contrasena || '').trim(),
       plan: String(payload.plan || existingClient?.plan || 'MENSUAL').trim() || 'MENSUAL',
-      promocion: String(payload.promocion || existingClient?.promocion || 'SIN PROMOCION').trim() || 'SIN PROMOCION',
+      // id_promocion NO va dentro del objeto cliente — va en la raíz del payload de registro
+      promocion: 'SIN PROMOCION',
       estado: String(payload.estado || existingClient?.status || 'ACTIVO').trim().toUpperCase() || 'ACTIVO',
     };
 
     if (apiBase) {
-      const saved = await upsertClienteToServer(clientPayload);
+      let saved;
+      const isNewClient = !payload.id_usuario;
+
+      if (isNewClient) {
+        // Clientes NUEVOS: siempre usar registro-cliente-membresia para crear cliente + membresía juntos
+        const planObj = planCatalog.value.find(p => p.name === clientPayload.plan) || planCatalog.value[0];
+        const numericPm = planObj ? Number(planObj.id_pm || planObj.id || 1) : 1;
+
+        const d = new Date();
+        const startDate = d.toISOString().split('T')[0];
+        const durationDays = clientPayload.plan === 'ANUAL' ? 365 : (clientPayload.plan === '3 MESES' ? 90 : 30);
+        d.setDate(d.getDate() + durationDays);
+        const endDate = d.toISOString().split('T')[0];
+
+        const promoId = Number(payload.id_promocion) > 0 ? Number(payload.id_promocion) : null;
+        const regPayload = {
+          cliente: clientPayload,
+          id_pm: numericPm,
+          fecha_inicio: startDate,
+          fecha_fin: endDate,
+          id_promocion: promoId,
+        };
+        const res = await registerClienteMembresiaToServer(regPayload);
+        saved = { ...res.cliente, ...res.membresia };
+      } else {
+        // EDICIÓN: solo actualizar datos del cliente
+        saved = await upsertClienteToServer(clientPayload);
+      }
+
+      // Resolver nombre real de la promoción usando el catálogo local
       const numericId = Number(saved.id_cliente || 0) || Number(String(saved.id_usuario || '').replace(/^SGCLI/i, '')) || Number(existingClient?.id_cliente || 0) || Date.now();
+      const savedPromoId = saved.id_promocion || (payload.id_promocion && Number(payload.id_promocion) > 0 ? Number(payload.id_promocion) : null);
+      const promoObj = savedPromoId ? promotions.value.find(p => Number(p.id_promocion) === Number(savedPromoId)) : null;
+      const promoName = promoObj ? (promoObj.name || promoObj.nombre || `promo-${savedPromoId}`) : 'SIN PROMOCION';
+
       const normalized = {
         id: saved.id_usuario || `SGCLI${String(numericId).padStart(3, '0')}`,
         id_cliente: numericId,
@@ -2545,15 +2617,17 @@ export const useGymStore = defineStore('gym', () => {
         phone: saved.telefono || clientPayload.telefono,
         role: 'user',
         plan: saved.plan || clientPayload.plan,
+        promocion: promoName,
+        id_promocion: savedPromoId,
         planId: '',
         id_membresia: saved.id_membresia || existingClient?.id_membresia || null,
-        membershipStatus: saved.membership_status || existingClient?.membershipStatus || saved.estado || clientPayload.estado,
-        membershipStart: saved.membership_start || existingClient?.membershipStart || '',
-        membershipEnd: saved.membership_end || existingClient?.membershipEnd || '',
-        paymentStatus: saved.payment_status || existingClient?.paymentStatus || '',
-        paymentReference: saved.payment_reference || existingClient?.paymentReference || '',
+        membershipStatus: saved.membership_status || saved.estado || existingClient?.membershipStatus || clientPayload.estado,
+        membershipStart: saved.membership_start || saved.fecha_inicio || existingClient?.membershipStart || '',
+        membershipEnd: saved.membership_end || saved.fecha_fin || existingClient?.membershipEnd || '',
+        paymentStatus: saved.payment_status || saved.estado_pago || existingClient?.paymentStatus || '',
+        paymentReference: saved.payment_reference || saved.referencia_pago || existingClient?.paymentReference || '',
         hasPassword: Boolean(saved.has_password ?? saved.hasPassword ?? existingClient?.hasPassword),
-        membershipPrice: Number(existingClient?.membershipPrice ?? 0),
+        membershipPrice: Number(saved.monto_pago ?? existingClient?.membershipPrice ?? 0),
         status: saved.estado || clientPayload.estado,
         joinedAt: existingClient?.joinedAt || '',
         attendanceRate: Number(existingClient?.attendanceRate ?? 0),
@@ -2562,6 +2636,7 @@ export const useGymStore = defineStore('gym', () => {
         schedules: Array.isArray(existingClient?.schedules) ? existingClient.schedules : [],
       };
 
+
       const index = members.value.findIndex((entry) => String(entry.id) === String(normalized.id));
       if (index >= 0) {
         members.value[index] = normalized;
@@ -2569,6 +2644,7 @@ export const useGymStore = defineStore('gym', () => {
         members.value.unshift(normalized);
       }
       persist();
+      fetchFromBackend({ force: true }).catch(() => {});
       return normalized;
     }
 
@@ -2717,7 +2793,35 @@ export const useGymStore = defineStore('gym', () => {
       payment_status: membership.estado_pago,
       payment_reference: membership.referencia_pago,
     });
+    await fetchFromBackend({ force: true }).catch(() => {});
     return { ...client, notification: saved.notification || null };
+  };
+
+  /**
+   * Gestiona el pago manual en efectivo.
+   */
+  const confirmarPagoEfectivo = async (idCliente) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const res = await fetch(`${apiBase}/clientes/${idCliente}/confirmar-pago-manual`, {
+      method: 'POST',
+      headers: _authHeaders(),
+    });
+    if (!res.ok) throw new Error(await readBackendError(res, 'No se pudo confirmar el pago manual'));
+
+    const data = await res.json();
+    const saved = data.data;
+    const membership = saved.membresia || {};
+    const client = mergeClient({
+      ...(saved.cliente || {}),
+      id_membresia: membership.id_membresia,
+      membership_status: membership.estado,
+      membership_start: membership.fecha_inicio,
+      membership_end: membership.fecha_fin,
+      payment_status: membership.estado_pago,
+      payment_reference: membership.referencia_pago,
+    });
+    await fetchFromBackend({ force: true }).catch(() => {});
+    return client;
   };
 
   /**
@@ -2868,6 +2972,19 @@ export const useGymStore = defineStore('gym', () => {
     if (!res.ok) throw new Error(await readBackendError(res, 'Error al crear movimiento de inventario'));
     const saved = await res.json();
     if (saved?.movimiento) inventoryMovements.value.unshift(saved.movimiento);
+    await fetchFromBackend({ force: true }).catch(() => { });
+    persist();
+    return saved;
+  };
+
+  /**
+   * Corrige un movimiento; el backend recalcula el stock compartido de Inventario y Tienda.
+   */
+  const updateInventoryMovement = async (idMov, payload) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+    const res = await fetch(`${apiBase}/inventario/movimientos/${idMov}`, { method: 'PUT', headers: _authHeaders(), body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error(await readBackendError(res, 'No se pudo actualizar el movimiento'));
+    const saved = await res.json();
     await fetchFromBackend({ force: true }).catch(() => {});
     persist();
     return saved;
@@ -2979,5 +3096,7 @@ export const useGymStore = defineStore('gym', () => {
     upsertUserToServer,
     deleteUserFromServer,
     registrarMovimientoToServer,
+    confirmarPagoEfectivo,
+    updateInventoryMovement,
   };
 });

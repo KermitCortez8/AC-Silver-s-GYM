@@ -6,12 +6,7 @@
           Silver Gym Surco
         </router-link>
 
-        <nav class="hidden items-center gap-6 text-sm font-bold uppercase tracking-[0.04em] text-slate-700 lg:flex">
-          <router-link :to="{ path: '/', hash: '#servicios' }" class="transition hover:text-orange-600">Servicios</router-link>
-          <router-link to="/nosotros" class="text-orange-600">Nosotros</router-link>
-          <router-link :to="{ path: '/', hash: '#membresias' }" class="transition hover:text-orange-600">Membresias</router-link>
-          <router-link :to="{ path: '/', hash: '#ubicacion' }" class="transition hover:text-orange-600">Ubicacion</router-link>
-        </nav>
+        <LandingNavigation />
 
         <div class="flex items-center gap-2">
           <router-link to="/registro" class="btn-cta rounded-full bg-orange-500 px-4 py-2 text-sm text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600">
@@ -62,12 +57,12 @@
               <span class="h-[2px] w-[18px] bg-orange-300"></span>
               Historia
             </span>
-            <h2 class="mt-3 text-3xl font-black leading-tight sm:text-4xl">Sed do eiusmod tempor incididunt.</h2>
+            <h2 class="mt-3 text-3xl font-black leading-tight sm:text-4xl">Más de 10 años formando mejores versiones de ti.</h2>
             <p class="mt-4 text-sm leading-7 text-white/65">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+              Silver Gym Surco nació con la idea de ofrecer un espacio donde el entrenamiento serio se combine con una comunidad cercana. Desde nuestros inicios en Surco, hemos crecido junto a cientos de socios que confían en nosotros para alcanzar sus objetivos físicos.
             </p>
             <p class="mt-4 text-sm leading-7 text-white/65">
-              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                Hoy contamos con equipos modernos, entrenadores certificados y un ambiente pensado para que cada visita al gimnasio sea motivadora, segura y efectiva.
             </p>
           </div>
         </div>
@@ -81,9 +76,9 @@
               <span class="h-[2px] w-[18px] bg-orange-500"></span>
               Mision
             </span>
-            <h2 class="mt-3 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">Lorem ipsum dolor sit amet.</h2>
+            <h2 class="mt-3 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">Impulsar el bienestar de cada socio.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+              Brindamos un espacio moderno, seguro y motivador donde cada persona pueda alcanzar sus metas físicas, acompañados por entrenadores capacitados y una comunidad que impulsa la superación constante.
             </p>
           </div>
           <div class="rounded-2xl border border-orange-100 bg-white p-8 shadow-[0_18px_40px_rgba(127,29,29,0.08)]">
@@ -91,9 +86,9 @@
               <span class="h-[2px] w-[18px] bg-orange-500"></span>
               Vision
             </span>
-            <h2 class="mt-3 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">Consectetur adipiscing elit.</h2>
+            <h2 class="mt-3 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">Ser el gimnasio líder de Surco.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
-              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+              Aspiramos a ser reconocidos como el gimnasio de referencia en Surco, destacando por la calidad de nuestro servicio, la innovación en nuestros programas y el compromiso genuino con la salud de nuestros socios.
             </p>
           </div>
         </div>
@@ -140,7 +135,7 @@
           <span class="h-[2px] w-[18px] bg-orange-500"></span>
           Resenas
         </span>
-        <h2 class="mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">Ut enim ad minim veniam.</h2>
+        <h2 class="mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">Lo que dicen nuestros socios.</h2>
 
         <div class="mt-8 grid gap-5 md:grid-cols-3">
           <div
@@ -209,6 +204,7 @@
 </template>
 
 <script setup>
+import LandingNavigation from '../components/LandingNavigation.vue';
 import { serviceImages } from '../config/serviceImages';
 import heroBanner from '../assets/hero-banner.png';
 
@@ -241,22 +237,22 @@ const values = [
 
 const reviews = [
   {
-    name: 'Lorem Ipsum',
-    initial: 'L',
-    role: 'Socio desde 2024',
-    quote: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.',
+    name: 'Carlos Ramirez',
+    initial: 'C',
+    role: 'Socio desde 2023',
+    quote: 'Desde que entreno aquí noté un cambio real, los profesores siempre están pendientes de tu técnica.',
   },
   {
-    name: 'Dolor Sit',
-    initial: 'D',
-    role: 'Socia desde 2023',
-    quote: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo.',
+    name: 'Valeria Torres',
+    initial: 'V',
+    role: 'Socia desde 2024',
+    quote: 'El ambiente es muy familiar y los equipos siempre están en buen estado. Totalmente recomendado.',
   },
   {
-    name: 'Amet Consectetur',
-    initial: 'A',
+    name: 'Jorge Quispe',
+    initial: 'J',
     role: 'Socio desde 2025',
-    quote: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+    quote: 'Lo que más me gusta es la flexibilidad de horarios, siempre encuentro un momento para entrenar.',
   },
 ];
 </script>

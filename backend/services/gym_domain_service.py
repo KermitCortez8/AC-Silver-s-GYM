@@ -15,6 +15,17 @@ from utils.security import hash_password, verify_password
 
 _LIMA = ZoneInfo("America/Lima")
 
+# Ítems de INVENTARIO con este Tipo se venden en la tienda y comparten stock.
+TIPO_TIENDA = "Tienda"
+ESTADO_DESCONTINUADO = "Descontinuado"
+
+# Los movimientos automáticos de pedidos se reconocen por el inicio de su descripción.
+PREFIJO_VENTA = "Venta pedido #"
+PREFIJO_DEVOLUCION = "Devolución por cancelación del pedido #"
+_MOVIMIENTO_PEDIDO = re.compile(
+    r"^(?:Venta pedido|Devolución por cancelación del pedido) #\d+"
+)
+
 
 # Fecha de hoy en Perú (el servidor puede estar en UTC).
 def _today_iso() -> str:
@@ -47,6 +58,10 @@ def _days_until(date_value: Any, today: str) -> int | None:
 
 
 class GymDomainService:
+    # Los servicios concretos (SupabaseGymService, LocalGymService) crean el estado y su bloqueo.
+    state: dict[str, Any]
+    lock: threading.Lock
+
     # Inicializa la clase.
     def __init__(self, db_file: Any | None = None) -> None:
         raise RuntimeError("GymDomainService solo contiene reglas de negocio. Usa SupabaseGymService para persistencia.")
@@ -203,7 +218,7 @@ class GymDomainService:
         return raw
 
     # Procesa esta operación.
-    def _next_usuario_code(self, state: dict[str, Any]) -> str:
+    def _next_usuario_code(self, state: dict[str, Any]) -> int:
         numbers: list[int] = []
         for row in state.get("usuario", []):
             usuario_id = str(row.get("id_usuario") or "").strip().upper()
@@ -494,6 +509,13 @@ class GymDomainService:
         raw_plans = row.get("planes_aplicables") or []
         if isinstance(raw_plans, str):
             raw_plans = [part.strip() for part in raw_plans.split(",") if part.strip()]
+        
+        limite = row.get("limite_cupos")
+        limite_cupos = int(limite) if limite is not None and str(limite).strip() != "" else None
+
+        usos = row.get("usos_actuales")
+        usos_actuales = max(0, int(usos or 0))
+
         return {
             "id_promocion": int(row.get("id_promocion") or fallback_id),
             "nombre": str(row.get("nombre") or "Promocion").strip(),
@@ -502,8 +524,12 @@ class GymDomainService:
             "valor_descuento": max(0.0, float(row.get("valor_descuento") or 0)),
             "fecha_inicio": str(row.get("fecha_inicio") or ""),
             "fecha_fin": str(row.get("fecha_fin") or ""),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️").strip() or "🏷️",
+            "palabra_clave": str(row.get("palabra_clave") or "").strip().upper(),
             "activo": bool(row.get("activo", True)),
             "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
+            "limite_cupos": limite_cupos,
+            "usos_actuales": usos_actuales,
         }
 
     # Procesa esta operación.
@@ -546,7 +572,7 @@ class GymDomainService:
             "fecha_fin": end,
             "estado": "Activa",
             "id_cliente": id_cliente,
-            "id_pm": int(plan.get("id_pm")),
+            "id_pm": int(plan["id_pm"]),
         }
         state.setdefault("membresia", []).insert(0, membership)
         return membership
@@ -565,14 +591,16 @@ class GymDomainService:
                     "telefono": row["telefono"],
                     "dni": row["dni"],
                     "plan": row["plan"],
-                    "promocion": row["promocion"],
+                    "promocion": f"promo-{membership.get('id_promocion')}" if membership.get("id_promocion") else row.get("promocion", "SIN PROMOCION"),
                     "estado": row["estado"],
                     "id_membresia": membership.get("id_membresia"),
+                    "id_promocion": membership.get("id_promocion"),
                     "membership_status": membership.get("estado") or row["estado"],
                     "membership_start": membership.get("fecha_inicio", ""),
                     "membership_end": membership.get("fecha_fin", ""),
                     "payment_status": membership.get("estado_pago", ""),
                     "payment_reference": membership.get("referencia_pago", ""),
+                    "monto_pago": membership.get("monto_pago"),
                     "has_password": bool(row.get("password_hash")),
                 }
             )
@@ -778,9 +806,49 @@ class GymDomainService:
 
         self._mutate(_fn)
 
+    def _persist_promocion_usos(self, id_promocion: int | None, usos: int) -> None:
+        pass
+
+    def _get_usos_promocion(self, state: dict[str, Any], promo: dict[str, Any]) -> int:
+        promo_id = int(promo.get("id_promocion", 0) or 0)
+        usos_registrados = int(promo.get("usos_actuales") or 0)
+        if not promo_id:
+            return usos_registrados
+        
+        clientes_promo = set()
+        for m in state.get("membresia", []):
+            if int(m.get("id_promocion", 0) or 0) == promo_id:
+                cliente_id = m.get("id_cliente")
+                if cliente_id:
+                    clientes_promo.add(int(cliente_id))
+        for c in state.get("clientes", []):
+            c_promo_id = int(c.get("id_promocion", 0) or 0)
+            c_promo_str = str(c.get("promocion", "")).strip().lower()
+            if c_promo_id == promo_id or c_promo_str == f"promo-{promo_id}":
+                cliente_id = c.get("id_cliente")
+                if cliente_id:
+                    clientes_promo.add(int(cliente_id))
+
+        usos_membresia = sum(
+            1
+            for m in state.get("membresia", [])
+            if int(m.get("id_promocion", 0) or 0) == promo_id
+        )
+        usos_calculados = len(clientes_promo) if clientes_promo else usos_membresia
+        return max(usos_registrados, usos_calculados)
+
     # Procesa esta operación.
     def promociones(self) -> list[dict[str, Any]]:
-        return self.state.get("promociones", [])
+        result = []
+        for p in self.state.get("promociones", []):
+            item = dict(p)
+            calculated_usos = self._get_usos_promocion(self.state, p)
+            if calculated_usos != p.get("usos_actuales"):
+                p["usos_actuales"] = calculated_usos
+                self._persist_promocion_usos(p.get("id_promocion"), calculated_usos)
+            item["usos_actuales"] = calculated_usos
+            result.append(item)
+        return result
 
     # Actualiza el registro correspondiente.
     def upsert_promocion(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -794,9 +862,51 @@ class GymDomainService:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state.setdefault("promociones", [])
+            item_id = int(payload.get("id_promocion") or 0)
+            if item_id > 0:
+                existing_promo = next((p for p in state["promociones"] if int(p.get("id_promocion", 0)) == item_id), None)
+                if existing_promo:
+                    today = _today_iso()
+                    limite = existing_promo.get("limite_cupos")
+                    usos = self._get_usos_promocion(state, existing_promo)
+                    valid_until = str(existing_promo.get("fecha_fin") or "")
+                    is_finished = (limite is not None and limite > 0 and usos >= limite) or (valid_until and valid_until < today)
+                    if is_finished:
+                        raise ValueError("Una promoción terminada no se puede editar, sólo se puede eliminar.")
+
             item = self._normalize_promocion({**payload, "tipo_descuento": tipo, "valor_descuento": valor}, self._next_int_id_in_state(state, "promociones", "id_promocion"))
             item_id = int(payload.get("id_promocion") or item["id_promocion"])
             item["id_promocion"] = item_id
+
+            if item.get("activo", True):
+                s1 = str(item.get("fecha_inicio") or "")
+                e1 = str(item.get("fecha_fin") or "")
+                plans1 = item.get("planes_aplicables") or []
+                today = _today_iso()
+                for existing in state["promociones"]:
+                    if int(existing.get("id_promocion", 0)) == item_id:
+                        continue
+                    if not existing.get("activo", True):
+                        continue
+                    limite = existing.get("limite_cupos")
+                    usos = self._get_usos_promocion(state, existing)
+                    e2 = str(existing.get("fecha_fin") or "")
+                    if (limite is not None and limite > 0 and usos >= limite) or (e2 and e2 < today):
+                        continue
+
+                    s2 = str(existing.get("fecha_inicio") or "")
+                    date_overlap = True
+                    if e2 and s1 and s1 > e2:
+                        date_overlap = False
+                    if e1 and s2 and s2 > e1:
+                        date_overlap = False
+                    if not date_overlap:
+                        continue
+                    plans2 = existing.get("planes_aplicables") or []
+                    plan_overlap = not plans1 or not plans2 or bool(set(plans1) & set(plans2))
+                    if plan_overlap:
+                        raise ValueError("Ya existe una promoción vigente para uno o más de estos planes en ese rango de fechas.")
+
             idx = next((i for i, row in enumerate(state["promociones"]) if int(row.get("id_promocion", 0)) == item_id), -1)
             if idx >= 0:
                 state["promociones"][idx] = item
@@ -816,6 +926,110 @@ class GymDomainService:
                 raise ValueError("Promocion no encontrada")
 
         self._mutate(_fn)
+
+    def get_promocion_vigente_para_plan(self, state: dict[str, Any], id_pm: int) -> dict[str, Any] | None:
+        today = _today_iso()
+        for p in state.get("promociones", []):
+            if not p.get("activo", True):
+                continue
+            limite = p.get("limite_cupos")
+            usos = self._get_usos_promocion(state, p)
+            if limite is not None and limite > 0 and usos >= limite:
+                continue
+            fecha_inicio = str(p.get("fecha_inicio") or "")
+            if fecha_inicio and fecha_inicio > today:
+                continue
+            fecha_fin = str(p.get("fecha_fin") or "")
+            if fecha_fin and fecha_fin < today:
+                continue
+            planes = p.get("planes_aplicables") or []
+            if not planes or int(id_pm) in planes:
+                return p
+        return None
+
+    def promociones_vigentes_publicas(self) -> list[dict[str, Any]]:
+        today = _today_iso()
+        result = []
+        for p in self.state.get("promociones", []):
+            if not p.get("activo", True):
+                continue
+            limite = p.get("limite_cupos")
+            usos = self._get_usos_promocion(self.state, p)
+            if limite is not None and limite > 0 and usos >= limite:
+                continue
+            fecha_inicio = str(p.get("fecha_inicio") or "")
+            if fecha_inicio and fecha_inicio > today:
+                continue
+            fecha_fin = str(p.get("fecha_fin") or "")
+            if fecha_fin and fecha_fin < today:
+                continue
+            result.append({
+                "id_promocion": int(p.get("id_promocion") or 0),
+                "nombre": str(p.get("nombre") or "Promoción"),
+                "tipo_descuento": str(p.get("tipo_descuento") or "porcentaje"),
+                "valor_descuento": float(p.get("valor_descuento") or 0),
+                "icono_etiqueta": str(p.get("icono_etiqueta") or "🏷️"),
+                "palabra_clave": str(p.get("palabra_clave") or ""),
+                "planes_aplicables": [int(x) for x in (p.get("planes_aplicables") or [])],
+                "limite_cupos": p.get("limite_cupos"),
+                "usos_actuales": usos,
+            })
+        return result
+
+    def _apply_promocion_discount(self, state: dict[str, Any], id_pm: int, id_promocion: int | None) -> float:
+        plan = next((p for p in state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == int(id_pm)), None)
+        if not plan:
+            return 0.0
+        
+        precio_base = float(plan.get("precio", 0) or 0)
+        
+        if not id_promocion:
+            return precio_base
+
+        promocion = next((p for p in state.get("promociones", []) if int(p.get("id_promocion", 0)) == int(id_promocion)), None)
+        if not promocion:
+            return precio_base
+            
+        if not promocion.get("activo", True):
+            return precio_base
+
+        limite = promocion.get("limite_cupos")
+        usos = self._get_usos_promocion(state, promocion)
+        if limite is not None and limite > 0 and usos >= limite:
+            return precio_base
+
+        today = _today_iso()
+        fecha_inicio = str(promocion.get("fecha_inicio") or "")
+        if fecha_inicio and fecha_inicio > today:
+            return precio_base
+            
+        fecha_fin = str(promocion.get("fecha_fin") or "")
+        if fecha_fin and fecha_fin < today:
+            return precio_base
+            
+        planes_aplicables = promocion.get("planes_aplicables") or []
+        if planes_aplicables and int(id_pm) not in planes_aplicables:
+            return precio_base
+            
+        valor = float(promocion.get("valor_descuento") or 0)
+        tipo = str(promocion.get("tipo_descuento") or "porcentaje").strip().lower()
+        
+        if tipo == "monto":
+            return max(0.0, round(precio_base - valor, 2))
+        else:
+            return max(0.0, round(precio_base - (precio_base * valor / 100), 2))
+
+    def _increment_promocion_usos(self, state: dict[str, Any], id_promocion: int | None) -> None:
+        if not id_promocion:
+            return
+        promocion = next(
+            (p for p in state.get("promociones", []) if int(p.get("id_promocion", 0)) == int(id_promocion)),
+            None,
+        )
+        if promocion:
+            usos = int(promocion.get("usos_actuales") or 0) + 1
+            promocion["usos_actuales"] = usos
+            self._persist_promocion_usos(id_promocion, usos)
 
     # Procesa esta operación.
     def membresias(self) -> list[dict[str, Any]]:
@@ -837,6 +1051,7 @@ class GymDomainService:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
+            id_promocion = item.get("id_promocion")
             item_id = item.get("id_membresia")
             if item_id is None:
                 item_id = self._next_int_id("membresia", "id_membresia")
@@ -846,6 +1061,14 @@ class GymDomainService:
             item["fecha_inicio"] = _safe_date(item.get("fecha_inicio", ""))
             item["fecha_fin"] = _safe_date(item.get("fecha_fin", ""))
             item["estado"] = item.get("estado", "Activa")
+            item["monto_pago"] = self._apply_promocion_discount(state, id_pm, id_promocion)
+            item["estado_pago"] = "PENDIENTE"
+            item["metodo_pago"] = "stripe"
+            item["referencia_pago"] = ""
+            
+            if id_promocion:
+                self._increment_promocion_usos(state, id_promocion)
+            
             idx = next((i for i, row in enumerate(state["membresia"]) if int(row.get("id_membresia", 0)) == int(item_id)), -1)
             if idx >= 0:
                 state["membresia"][idx] = item
@@ -856,13 +1079,37 @@ class GymDomainService:
         return self._mutate(_fn)
 
     # Procesa esta operación.
+    def _calcular_monto_con_descuento(self, id_pm: int, id_promocion: int | None) -> float:
+        """Calcula el monto a pagar aplicando el descuento de la promoción al precio base del plan."""
+        plan = next(
+            (p for p in self.state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == id_pm),
+            None,
+        )
+        precio_base = float(plan.get("precio", 0) if plan else 0)
+        if not id_promocion:
+            return precio_base
+        promo = next(
+            (p for p in self.state.get("promociones", []) if int(p.get("id_promocion", 0)) == int(id_promocion)),
+            None,
+        )
+        if not promo:
+            return precio_base
+        tipo = str(promo.get("tipo_descuento") or "porcentaje")
+        valor = float(promo.get("valor_descuento") or 0)
+        if tipo == "porcentaje":
+            return round(precio_base * (1 - valor / 100), 2)
+        return max(0.0, round(precio_base - valor, 2))
+
+    # Procesa esta operación.
     def registrar_cliente_con_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         cliente_payload = payload["cliente"]
         id_pm = int(payload["id_pm"])
         fecha_inicio = payload["fecha_inicio"]
         fecha_fin = payload["fecha_fin"]
+        id_promocion = int(payload.get("id_promocion") or 0) or None
 
         cliente = self.upsert_cliente(cliente_payload)
+        monto_pago = self._calcular_monto_con_descuento(id_pm, id_promocion)
         membresia = self.crear_membresia(
             {
                 "id_cliente": int(cliente["id_cliente"]),
@@ -870,6 +1117,9 @@ class GymDomainService:
                 "fecha_inicio": fecha_inicio,
                 "fecha_fin": fecha_fin,
                 "estado": "Activa",
+                "id_promocion": id_promocion,
+                "monto_pago": monto_pago,
+                "estado_pago": "PENDIENTE",
             }
         )
         return {"cliente": cliente, "membresia": membresia}
@@ -906,6 +1156,11 @@ class GymDomainService:
         def _fn(state: dict[str, Any]):
             plan = self._ensure_plan_for_client(state, plan_name)
             id_cliente = self._next_int_id_in_state(state, "clientes", "id_cliente")
+            id_pm = int(plan.get("id_pm"))
+            promo_active = self.get_promocion_vigente_para_plan(state, id_pm)
+            id_promocion = int(promo_active.get("id_promocion")) if promo_active else None
+            monto_final = self._apply_promocion_discount(state, id_pm, id_promocion)
+
             cliente = {
                 "id_cliente": id_cliente,
                 "id_usuario": f"SGCLI{id_cliente:03d}",
@@ -914,7 +1169,7 @@ class GymDomainService:
                 "telefono": telefono,
                 "dni": dni,
                 "plan": plan_name,
-                "promocion": str(payload.get("promocion") or "SIN PROMOCION").strip() or "SIN PROMOCION",
+                "promocion": str(promo_active.get("nombre") if promo_active else (payload.get("promocion") or "SIN PROMOCION")).strip() or "SIN PROMOCION",
                 "estado": "PENDIENTE_PAGO",
                 "password_hash": hash_password(password),
                 "google_sub": google_sub,
@@ -925,12 +1180,15 @@ class GymDomainService:
                 "fecha_fin": "",
                 "estado": "PENDIENTE_PAGO",
                 "id_cliente": id_cliente,
-                "id_pm": int(plan.get("id_pm")),
-                "monto_pago": float(plan.get("precio", 0) or 0),
+                "id_pm": id_pm,
+                "id_promocion": id_promocion,
+                "monto_pago": monto_final,
                 "estado_pago": "PENDIENTE",
                 "metodo_pago": "stripe",
                 "referencia_pago": "",
             }
+            if id_promocion:
+                self._increment_promocion_usos(state, id_promocion)
             state["clientes"].insert(0, cliente)
             state["membresia"].insert(0, membresia)
             return {"cliente": cliente, "membresia": membresia, "plan": plan}
@@ -1001,6 +1259,34 @@ class GymDomainService:
             membresia["metodo_pago"] = str(payload.get("metodo_pago") or membresia.get("metodo_pago") or "pasarela")
             membresia["referencia_pago"] = payment_reference
             membresia["monto_pago"] = expected_amount
+            membresia["fecha_pago"] = _today_iso()
+            return {"cliente": cliente, "membresia": membresia}
+
+        return self._mutate(_fn)
+
+    # Procesa esta operación de pago manual
+    def confirmar_pago_manual_cliente(self, id_cliente: int) -> dict[str, Any]:
+        id_cliente = int(id_cliente)
+
+        def _fn(state: dict[str, Any]):
+            cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            
+            membresia = self._latest_membership_for_cliente(state, id_cliente)
+            if not membresia:
+                raise ValueError("Membresia no encontrada")
+                
+            current_payment_status = str(membresia.get("estado_pago") or "").strip().upper()
+            if current_payment_status == "PAGADO":
+                raise ValueError("La membresía ya tiene un pago confirmado")
+
+            if str(cliente.get("estado") or "").strip().upper() not in {"ACTIVO", "ACTIVA"}:
+                cliente["estado"] = "EN_TRAMITE"
+            membresia["estado"] = "EN_TRAMITE"
+            membresia["estado_pago"] = "PAGADO"
+            membresia["metodo_pago"] = "efectivo"
+            membresia["referencia_pago"] = f"MANUAL-{id_cliente}-{_today_iso().replace('-', '')}"
             membresia["fecha_pago"] = _today_iso()
             return {"cliente": cliente, "membresia": membresia}
 
@@ -1481,6 +1767,7 @@ class GymDomainService:
 
     # Procesa esta operación.
     def registrar_asistencia_por_dni(self, dni: str) -> dict[str, Any]:
+        payload: dict[str, Any]
         if isinstance(dni, dict):
             payload = dni
             dni_val = str(payload.get("dni") or "").strip()
@@ -1502,43 +1789,170 @@ class GymDomainService:
     def get_item_inventario(self, id_item: int) -> dict[str, Any] | None:
         return next((i for i in self.state["inventario"] if int(i.get("id_item", 0)) == int(id_item)), None)
 
+    # Indica si el ítem pertenece a la tienda (comparte stock con TIENDA_PRODUCTOS).
+    @staticmethod
+    def _es_item_tienda(item: dict[str, Any] | None) -> bool:
+        return bool(item) and str(item.get("tipo") or "").strip().lower() == TIPO_TIENDA.lower()
+
+    # Obtiene el ítem de inventario dentro del estado indicado.
+    @staticmethod
+    def _find_item_in_state(state: dict[str, Any], id_item: Any) -> dict[str, Any] | None:
+        if not id_item:
+            return None
+        return next((i for i in state.get("inventario", []) if int(i.get("id_item", 0) or 0) == int(id_item)), None)
+
+    # Siguiente número de activo libre.
+    @staticmethod
+    def _next_n_activo(state: dict[str, Any]) -> int:
+        return max((int(i.get("n_activo") or 0) for i in state.get("inventario", [])), default=0) + 1
+
+    # Devuelve el usuario interno que origina la operación, o None si no existe.
+    def _actor_usuario_id(self, actor: Any) -> str | None:
+        usuario = self.get_usuario(actor) if actor else None
+        return self._normalize_usuario_id(usuario.get("id_usuario")) if usuario else None
+
+    # Único punto que cambia el stock de un ítem: actualiza INVENTARIO y registra el movimiento en MOV_INV.
+    def _aplicar_movimiento(
+        self,
+        state: dict[str, Any],
+        item: dict[str, Any],
+        tipo: str,
+        cantidad: int,
+        descripcion: str,
+        id_usuario: str | None = None,
+        fecha: str = "",
+    ) -> dict[str, Any]:
+        tipo = str(tipo or "").lower()
+        if tipo not in {"entrada", "salida", "ajuste"}:
+            raise ValueError("Tipo de movimiento inválido")
+        cantidad = max(1, int(cantidad or 1))
+        stock_actual = int(item.get("cantidad_stock", 0) or 0)
+        if tipo == "entrada":
+            nuevo_stock = stock_actual + cantidad
+        elif tipo == "salida":
+            if stock_actual < cantidad:
+                raise ValueError(f"Stock insuficiente para {item.get('nombre_item') or 'el ítem'}")
+            nuevo_stock = stock_actual - cantidad
+        else:
+            nuevo_stock = cantidad
+
+        item["cantidad_stock"] = nuevo_stock
+        mov = {
+            "id_mov": self._next_int_id_in_state(state, "mov_inv", "id_mov"),
+            "id_item": int(item["id_item"]),
+            "id_usuario": id_usuario,
+            "tipo_movimiento": tipo,
+            "fecha_movimiento": _safe_date(fecha),
+            "descripcion": descripcion,
+            "cantidad": cantidad,
+        }
+        state["mov_inv"].insert(0, mov)
+        return mov
+
+    # Copia el stock del ítem en su producto y calcula si la tienda puede venderlo.
+    # TIENDA_PRODUCTOS.cantidad_stock es solo una copia: el stock real vive en INVENTARIO.
+    def _sincronizar_productos_tienda(self, state: dict[str, Any]) -> None:
+        for producto in state.get("productos_tienda", []):
+            if not producto.get("id_item"):
+                # Producto aún sin vincular (antes de la migración 008): conserva su propio stock.
+                producto["estado"] = "Disponible" if int(producto.get("cantidad_stock") or 0) > 0 else "Agotado"
+                continue
+            item = self._find_item_in_state(state, producto["id_item"])
+            stock = int(item.get("cantidad_stock", 0) or 0) if item else 0
+            producto["cantidad_stock"] = stock
+            vendible = (
+                item is not None
+                and self._es_item_tienda(item)
+                and str(item.get("estado") or "") != ESTADO_DESCONTINUADO
+                and float(producto.get("precio_venta") or 0) > 0
+            )
+            if not vendible:
+                producto["estado"] = "Descatalogado"
+            else:
+                producto["estado"] = "Disponible" if stock > 0 else "Agotado"
+
+    # Crea el producto de tienda (oculto hasta tener precio) para un ítem Tipo 'Tienda' sin producto.
+    def _crear_producto_para_item(self, state: dict[str, Any], item: dict[str, Any]) -> None:
+        productos = state.setdefault("productos_tienda", [])
+        if any(int(p.get("id_item") or 0) == int(item["id_item"]) for p in productos):
+            return
+        productos.insert(
+            0,
+            {
+                "id_producto": self._next_int_id_in_state(state, "productos_tienda", "id_producto"),
+                "id_item": int(item["id_item"]),
+                "nombre_producto": str(item.get("nombre_item") or "Sin nombre"),
+                "descripcion": "",
+                "categoria": "General",
+                "unidad_venta": str(item.get("unidad_venta") or "unidad"),
+                "precio_venta": 0.0,
+                "cantidad_stock": int(item.get("cantidad_stock", 0) or 0),
+                "stock_minimo": 5,
+                "estado": "Descatalogado",
+                "imagen_url": "",
+            },
+        )
+
     # Actualiza el registro correspondiente.
-    def upsert_inventario(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def upsert_inventario(self, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
+        id_usuario = self._actor_usuario_id(actor)
+
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
             item_id = item.get("id_item")
+            idx = -1
+            if item_id is not None:
+                idx = next((i for i, row in enumerate(state["inventario"]) if int(row.get("id_item", 0)) == int(item_id)), -1)
             if item_id is None:
-                item_id = self._next_int_id("inventario", "id_item")
+                item_id = self._next_int_id_in_state(state, "inventario", "id_item")
             item["id_item"] = int(item_id)
-            item["cantidad_stock"] = max(0, int(item.get("cantidad_stock") or 0))
+            if str(item.get("tipo") or "").strip().lower() == TIPO_TIENDA.lower():
+                item["tipo"] = TIPO_TIENDA
+            stock_inicial = max(0, int(item.get("cantidad_stock") or 0))
             item["stock_minimo"] = max(0, int(item.get("stock_minimo") or 1))
             item["unidad_venta"] = str(item.get("unidad_venta") or "unidad")
             item["precio_venta"] = float(item.get("precio_venta") or 0)
             item["ubicacion"] = str(item.get("ubicacion") or "Almacén")
             item["observaciones"] = str(item.get("observaciones") or "")
-            idx = next((i for i, row in enumerate(state["inventario"]) if int(row.get("id_item", 0)) == int(item_id)), -1)
             if idx >= 0:
-                item["n_activo"] = int(item.get("n_activo") or state["inventario"][idx].get("n_activo") or self._next_n_activo(state))
+                previo = state["inventario"][idx]
+                # El stock solo cambia mediante movimientos; editar el ítem no lo modifica.
+                item["cantidad_stock"] = int(previo.get("cantidad_stock", 0) or 0)
+                item["n_activo"] = int(item.get("n_activo") or previo.get("n_activo") or self._next_n_activo(state))
                 state["inventario"][idx] = item
             else:
+                item["cantidad_stock"] = 0
                 item["n_activo"] = int(item.get("n_activo") or self._next_n_activo(state))
                 state["inventario"].insert(0, item)
+                if stock_inicial > 0:
+                    self._aplicar_movimiento(
+                        state, item, "entrada", stock_inicial, "Alta de ítem: saldo inicial", id_usuario=id_usuario
+                    )
+            if self._es_item_tienda(item):
+                self._crear_producto_para_item(state, item)
+            self._sincronizar_productos_tienda(state)
             return item
 
         return self._mutate(_fn)
 
-    # Elimina el registro indicado.
-    def delete_inventario(self, id_item: int) -> None:
+    # Elimina el ítem; si ya tiene historial o producto en tienda, lo marca como Descontinuado.
+    def delete_inventario(self, id_item: int) -> dict[str, Any] | None:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
+            item = self._find_item_in_state(state, id_item)
+            if not item:
+                raise ValueError("Item de inventario no encontrado")
+            tiene_movimientos = any(int(m.get("id_item", 0) or 0) == int(id_item) for m in state["mov_inv"])
+            tiene_producto = any(int(p.get("id_item") or 0) == int(id_item) for p in state.get("productos_tienda", []))
+            if tiene_movimientos or tiene_producto:
+                item["estado"] = ESTADO_DESCONTINUADO
+                self._sincronizar_productos_tienda(state)
+                return item
             state["inventario"] = [i for i in state["inventario"] if int(i.get("id_item", 0)) != int(id_item)]
-            state["mov_inv"] = [m for m in state["mov_inv"] if int(m.get("id_item", 0)) != int(id_item)]
-            for producto in state.get("productos_tienda", []):
-                if int(producto.get("id_item") or 0) == int(id_item):
-                    producto["id_item"] = None
+            return None
 
-        self._mutate(_fn)
+        return self._mutate(_fn)
 
     # Procesa esta operación.
     def movimientos_inventario(self) -> list[dict[str, Any]]:
@@ -1548,7 +1962,6 @@ class GymDomainService:
     def registrar_movimiento_inventario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_item = int(payload.get("id_item", 0))
         id_usuario = self._normalize_usuario_id(payload.get("id_usuario"))
-        cantidad = max(1, int(payload.get("cantidad", 1)))
         tipo = str(payload.get("tipo_movimiento", "")).lower()
 
         if not self.get_item_inventario(id_item):
@@ -1560,31 +1973,99 @@ class GymDomainService:
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
-            item = next((i for i in state["inventario"] if int(i.get("id_item", 0)) == id_item), None)
+            item = self._find_item_in_state(state, id_item)
             if not item:
                 raise ValueError("Item de inventario no encontrado")
-            stock_actual = int(item.get("cantidad_stock", 0))
-            if tipo == "entrada":
-                nuevo_stock = stock_actual + cantidad
-            elif tipo == "salida":
-                if stock_actual < cantidad:
-                    raise ValueError("Stock insuficiente para salida")
-                nuevo_stock = stock_actual - cantidad
-            else:
-                nuevo_stock = cantidad
+            mov = self._aplicar_movimiento(
+                state,
+                item,
+                tipo,
+                int(payload.get("cantidad", 1) or 1),
+                str(payload.get("descripcion") or ""),
+                id_usuario=id_usuario,
+                fecha=str(payload.get("fecha_movimiento") or ""),
+            )
+            self._sincronizar_productos_tienda(state)
+            return {"movimiento": mov, "stock_actual": item["cantidad_stock"]}
 
-            item["cantidad_stock"] = nuevo_stock
-            mov = {
-                "id_mov": self._next_int_id("mov_inv", "id_mov"),
-                "id_item": id_item,
-                "id_usuario": id_usuario,
-                "tipo_movimiento": tipo,
-                "fecha_movimiento": _safe_date(payload.get("fecha_movimiento", "")),
-                "descripcion": payload.get("descripcion", ""),
-                "cantidad": cantidad,
-            }
-            state["mov_inv"].insert(0, mov)
-            return {"movimiento": mov, "stock_actual": nuevo_stock}
+        return self._mutate(_fn)
+
+    # Corrige un movimiento. Cambiar cantidad, tipo o ítem recalcula el stock por la diferencia;
+    # los movimientos generados por pedidos solo admiten cambios de fecha y descripción.
+    def actualizar_movimiento_inventario(self, id_mov: int, payload: dict[str, Any]) -> dict[str, Any]:
+        # Procesa esta operación.
+        def _fn(state: dict[str, Any]):
+            mov = next((m for m in state["mov_inv"] if int(m.get("id_mov", 0) or 0) == int(id_mov)), None)
+            if not mov:
+                raise ValueError("Movimiento no encontrado")
+
+            tipo_actual = str(mov.get("tipo_movimiento") or "").lower()
+            cantidad_actual = max(1, int(mov.get("cantidad") or 1))
+            item_actual = int(mov.get("id_item") or 0)
+            nuevo_tipo = str(payload.get("tipo_movimiento") or tipo_actual).lower()
+            nueva_cantidad = max(1, int(payload.get("cantidad") or cantidad_actual))
+            nuevo_item = int(payload.get("id_item") or item_actual)
+            if nuevo_tipo not in {"entrada", "salida", "ajuste"}:
+                raise ValueError("Tipo de movimiento inválido")
+
+            descripcion_actual = str(mov.get("descripcion") or "")
+            descripcion = descripcion_actual if payload.get("descripcion") is None else str(payload["descripcion"]).strip()
+            fecha = str(payload.get("fecha_movimiento") or mov.get("fecha_movimiento") or "")
+            cambia_stock = (nuevo_tipo, nueva_cantidad, nuevo_item) != (tipo_actual, cantidad_actual, item_actual)
+
+            origen_pedido = _MOVIMIENTO_PEDIDO.match(descripcion_actual)
+            if origen_pedido:
+                if cambia_stock:
+                    raise ValueError("Los movimientos de un pedido solo permiten cambiar la fecha y la descripción")
+                # Conserva la referencia al pedido aunque se reescriba la descripción.
+                prefijo = origen_pedido.group(0)
+                if not descripcion.startswith(prefijo):
+                    descripcion = f"{prefijo} - {descripcion}" if descripcion else prefijo
+
+            nuevos_stocks: list[tuple[dict[str, Any], int]] = []
+            if cambia_stock:
+                item_viejo = self._find_item_in_state(state, item_actual)
+                item_nuevo = self._find_item_in_state(state, nuevo_item)
+                if not item_nuevo:
+                    raise ValueError("Item de inventario no encontrado")
+                if "ajuste" in (tipo_actual, nuevo_tipo):
+                    # Un ajuste fija el stock exacto: solo se corrige si sigue siendo el último movimiento del ítem.
+                    if tipo_actual == "ajuste" and nuevo_tipo != "ajuste":
+                        raise ValueError("Un ajuste solo puede corregirse con otro ajuste")
+                    if nuevo_item != item_actual:
+                        raise ValueError("Un ajuste no puede cambiar de item")
+                    ultimo = max(int(m.get("id_mov", 0) or 0) for m in state["mov_inv"] if int(m.get("id_item") or 0) == item_actual)
+                    if int(mov["id_mov"]) != ultimo:
+                        raise ValueError("Solo se puede corregir un ajuste si es el último movimiento del item; registra un nuevo ajuste")
+                    nuevos_stocks.append((item_nuevo, nueva_cantidad))
+                else:
+                    def efecto(tipo: str, cantidad: int) -> int:
+                        return cantidad if tipo == "entrada" else -cantidad
+
+                    stocks = {int(i["id_item"]): int(i.get("cantidad_stock", 0) or 0) for i in (item_viejo, item_nuevo) if i}
+                    if item_viejo:
+                        stocks[item_actual] -= efecto(tipo_actual, cantidad_actual)
+                    stocks[nuevo_item] += efecto(nuevo_tipo, nueva_cantidad)
+                    for item in (item_viejo, item_nuevo):
+                        if item and stocks[int(item["id_item"])] < 0:
+                            raise ValueError(f"El cambio dejaría stock negativo en {item.get('nombre_item') or 'el item'}")
+                    nuevos_stocks = [(item, stocks[int(item["id_item"])]) for item in (item_viejo, item_nuevo) if item]
+
+            # Todo validado: se aplican los cambios.
+            for item, stock in nuevos_stocks:
+                item["cantidad_stock"] = stock
+            mov.update(
+                {
+                    "tipo_movimiento": nuevo_tipo,
+                    "cantidad": nueva_cantidad,
+                    "id_item": nuevo_item,
+                    "fecha_movimiento": _safe_date(fecha),
+                    "descripcion": descripcion,
+                }
+            )
+            self._sincronizar_productos_tienda(state)
+            item_final = self._find_item_in_state(state, nuevo_item)
+            return {"movimiento": mov, "stock_actual": int(item_final.get("cantidad_stock", 0) or 0) if item_final else None}
 
         return self._mutate(_fn)
 
@@ -1850,7 +2331,7 @@ class GymDomainService:
             cliente = self.get_cliente_by_dni(str(dni).strip())
             if not cliente:
                 raise ValueError("Cliente no encontrado")
-            resolved_id = int(cliente.get("id_cliente"))
+            resolved_id = int(cliente["id_cliente"])
 
         result = []
         for enrollment in self.state.get("matriculas_horario", []):
@@ -2275,38 +2756,87 @@ class GymDomainService:
         return next((p for p in self.state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)), None)
 
     # Actualiza el registro correspondiente.
-    def upsert_producto_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def upsert_producto_tienda(self, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
+        id_usuario = self._actor_usuario_id(actor)
+
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
-            state.setdefault("productos_tienda", [])
+            productos = state.setdefault("productos_tienda", [])
             producto = {**payload}
             producto_id = producto.get("id_producto")
+            idx = -1
+            if producto_id is not None:
+                idx = next((i for i, row in enumerate(productos) if int(row.get("id_producto", 0)) == int(producto_id)), -1)
             if producto_id is None:
-                producto_id = self._next_int_id("productos_tienda", "id_producto")
+                producto_id = self._next_int_id_in_state(state, "productos_tienda", "id_producto")
+            previo = productos[idx] if idx >= 0 else None
             producto["id_producto"] = int(producto_id)
-            producto["id_item"] = int(producto["id_item"]) if producto.get("id_item") else None
             producto["unidad_venta"] = str(producto.get("unidad_venta") or "unidad")
             producto["precio_venta"] = float(producto.get("precio_venta") or 0)
-            producto["cantidad_stock"] = max(0, int(producto.get("cantidad_stock") or 0))
             producto["stock_minimo"] = max(0, int(producto.get("stock_minimo") or 0))
+            stock_solicitado = max(0, int(producto.get("cantidad_stock") or 0))
 
-            if producto["id_item"]:
-                item = next((i for i in state.get("inventario", []) if int(i.get("id_item", 0)) == producto["id_item"]), None)
+            id_item = int(producto["id_item"]) if producto.get("id_item") else None
+            if previo and previo.get("id_item"):
+                # El vínculo producto-ítem es 1:1 y no cambia al editar.
+                id_item = int(previo["id_item"])
+
+            item = None
+            if id_item:
+                item = self._find_item_in_state(state, id_item)
                 if not item:
                     raise ValueError("Item de almacén no encontrado")
+                if not self._es_item_tienda(item):
+                    raise ValueError("Solo los ítems con Tipo 'Tienda' pueden venderse en la tienda")
+                otro = next(
+                    (
+                        p for p in productos
+                        if int(p.get("id_item") or 0) == id_item and int(p.get("id_producto", 0)) != producto["id_producto"]
+                    ),
+                    None,
+                )
+                if otro:
+                    raise ValueError(f"El ítem ya está vinculado al producto {otro.get('nombre_producto') or otro.get('id_producto')}")
+            elif previo is None:
+                # Producto nuevo sin ítem: se crea en INVENTARIO y su saldo inicial entra por MOV_INV.
+                item = {
+                    "id_item": self._next_int_id_in_state(state, "inventario", "id_item"),
+                    "nombre_item": str(producto.get("nombre_producto") or "Sin nombre"),
+                    "tipo": TIPO_TIENDA,
+                    "cantidad_stock": 0,
+                    "estado": "Disponible",
+                    "n_activo": self._next_n_activo(state),
+                    "unidad_venta": producto["unidad_venta"],
+                    "precio_venta": producto["precio_venta"],
+                    "stock_minimo": producto["stock_minimo"],
+                    "ubicacion": "Almacén",
+                    "observaciones": "",
+                }
+                state["inventario"].insert(0, item)
+                if stock_solicitado > 0:
+                    self._aplicar_movimiento(
+                        state, item, "entrada", stock_solicitado, "Alta desde Tienda: saldo inicial", id_usuario=id_usuario
+                    )
+                id_item = int(item["id_item"])
+            producto["id_item"] = id_item
+
+            if item:
                 # Almacén -> precio de venta y unidad de venta para tienda.
                 item["unidad_venta"] = producto["unidad_venta"]
                 item["precio_venta"] = producto["precio_venta"]
                 if not producto.get("nombre_producto"):
                     producto["nombre_producto"] = item.get("nombre_item", "Sin nombre")
-                if producto["cantidad_stock"] == 0:
-                    producto["cantidad_stock"] = int(item.get("cantidad_stock", 0) or 0)
-
-            idx = next((i for i, row in enumerate(state["productos_tienda"]) if int(row.get("id_producto", 0)) == int(producto_id)), -1)
-            if idx >= 0:
-                state["productos_tienda"][idx] = producto
+                # El stock lo manda INVENTARIO; el valor enviado desde el formulario se ignora.
+                producto["cantidad_stock"] = int(item.get("cantidad_stock", 0) or 0)
             else:
-                state["productos_tienda"].insert(0, producto)
+                # Producto antiguo aún sin vincular: conserva su propio stock hasta la migración 008.
+                producto["cantidad_stock"] = stock_solicitado
+
+            if idx >= 0:
+                productos[idx] = producto
+            else:
+                productos.insert(0, producto)
+            self._sincronizar_productos_tienda(state)
             return producto
 
         return self._mutate(_fn)
@@ -2334,10 +2864,11 @@ class GymDomainService:
         def _fn(state: dict[str, Any]):
             state.setdefault("pedidos_tienda", [])
             state.setdefault("productos_tienda", [])
+            self._sincronizar_productos_tienda(state)
 
-            items: list[dict[str, Any]] = []
-            subtotal = 0.0
-
+            # Valida el pedido completo antes de tocar el stock.
+            lineas: list[tuple[dict[str, Any], int]] = []
+            solicitado: dict[int, int] = {}
             for raw_item in raw_items:
                 id_producto = int(raw_item.get("id_producto") or 0)
                 cantidad = max(1, int(raw_item.get("cantidad") or 1))
@@ -2355,30 +2886,37 @@ class GymDomainService:
                 if str(producto.get("estado") or "Disponible") != "Disponible":
                     raise ValueError(f"Producto no disponible: {producto.get('nombre_producto', id_producto)}")
 
-                stock = int(producto.get("cantidad_stock") or 0)
-                if stock < cantidad:
+                solicitado[id_producto] = solicitado.get(id_producto, 0) + cantidad
+                if int(producto.get("cantidad_stock") or 0) < solicitado[id_producto]:
                     raise ValueError(f"Stock insuficiente para {producto.get('nombre_producto', 'producto')}")
+                lineas.append((producto, cantidad))
 
+            id_pedido = self._next_int_id_in_state(state, "pedidos_tienda", "id_pedido")
+            cliente_nombre = str(payload.get("cliente_nombre") or "Cliente")
+            items: list[dict[str, Any]] = []
+            subtotal = 0.0
+
+            for producto, cantidad in lineas:
                 precio = float(producto.get("precio_venta") or 0)
                 item_subtotal = round(precio * cantidad, 2)
                 subtotal += item_subtotal
 
-                producto["cantidad_stock"] = stock - cantidad
-                if producto.get("id_item"):
-                    linked_item = next(
-                        (
-                            row
-                            for row in state.get("inventario", [])
-                            if int(row.get("id_item", 0) or 0) == int(producto.get("id_item") or 0)
-                        ),
-                        None,
+                linked_item = self._find_item_in_state(state, producto.get("id_item"))
+                if linked_item:
+                    # La venta sale del stock compartido y queda registrada en MOV_INV.
+                    self._aplicar_movimiento(
+                        state,
+                        linked_item,
+                        "salida",
+                        cantidad,
+                        f"{PREFIJO_VENTA}{id_pedido} ({cliente_nombre})",
                     )
-                    if linked_item:
-                        linked_item["cantidad_stock"] = max(0, int(linked_item.get("cantidad_stock") or 0) - cantidad)
+                else:
+                    producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) - cantidad
 
                 items.append(
                     {
-                        "id_producto": id_producto,
+                        "id_producto": int(producto.get("id_producto") or 0),
                         "nombre_producto": str(producto.get("nombre_producto") or "Producto"),
                         "cantidad": cantidad,
                         "precio_unitario": precio,
@@ -2386,13 +2924,14 @@ class GymDomainService:
                     }
                 )
 
+            self._sincronizar_productos_tienda(state)
             subtotal = round(subtotal, 2)
             igv = round(subtotal * 0.18, 2)
             total = round(subtotal + igv, 2)
             pedido = {
-                "id_pedido": self._next_int_id_in_state(state, "pedidos_tienda", "id_pedido"),
+                "id_pedido": id_pedido,
                 "id_cliente": int(payload.get("id_cliente") or 0) or None,
-                "cliente_nombre": str(payload.get("cliente_nombre") or "Cliente"),
+                "cliente_nombre": cliente_nombre,
                 "cliente_correo": str(payload.get("cliente_correo") or ""),
                 "cliente_dni": str(payload.get("cliente_dni") or ""),
                 "fecha_pedido": _now_iso(),
@@ -2412,17 +2951,64 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
+    # Devuelve al stock las unidades de un pedido cancelado.
+    def _devolver_stock_pedido(self, state: dict[str, Any], pedido: dict[str, Any], id_usuario: str | None) -> None:
+        id_pedido = int(pedido.get("id_pedido", 0) or 0)
+        for linea in pedido.get("items", []):
+            producto = next(
+                (
+                    row
+                    for row in state.get("productos_tienda", [])
+                    if int(row.get("id_producto", 0) or 0) == int(linea.get("id_producto") or 0)
+                ),
+                None,
+            )
+            if not producto:
+                continue
+            cantidad = max(1, int(linea.get("cantidad") or 1))
+            linked_item = self._find_item_in_state(state, producto.get("id_item"))
+            if linked_item:
+                # Solo se devuelve lo que salió de INVENTARIO: un pedido anterior al enlace no tiene su salida.
+                venta = re.compile(rf"^{re.escape(PREFIJO_VENTA)}{id_pedido}(?!\d)")
+                salio_de_inventario = any(
+                    int(m.get("id_item") or 0) == int(linked_item["id_item"])
+                    and str(m.get("tipo_movimiento") or "").lower() == "salida"
+                    and venta.match(str(m.get("descripcion") or ""))
+                    for m in state["mov_inv"]
+                )
+                if not salio_de_inventario:
+                    continue
+                self._aplicar_movimiento(
+                    state,
+                    linked_item,
+                    "entrada",
+                    cantidad,
+                    f"{PREFIJO_DEVOLUCION}{id_pedido}",
+                    id_usuario=id_usuario,
+                )
+            else:
+                producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) + cantidad
+        self._sincronizar_productos_tienda(state)
+
     # Procesa esta operación.
-    def actualizar_pedido_tienda(self, id_pedido: int, payload: dict[str, Any]) -> dict[str, Any]:
+    def actualizar_pedido_tienda(self, id_pedido: int, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
         estado = str(payload.get("estado_pedido") or "").strip().upper()
         if estado not in {"PENDIENTE", "CONFIRMADO", "ENTREGADO", "CANCELADO"}:
             raise ValueError("Estado de pedido invalido")
+        id_usuario = self._actor_usuario_id(actor)
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             pedido = next((row for row in state.get("pedidos_tienda", []) if int(row.get("id_pedido", 0) or 0) == int(id_pedido)), None)
             if not pedido:
                 raise ValueError("Pedido no encontrado")
+            actual = str(pedido.get("estado_pedido") or "").strip().upper()
+            if actual == "CANCELADO" and estado != "CANCELADO":
+                raise ValueError("Un pedido cancelado no puede cambiar de estado")
+            if estado == "CANCELADO" and actual != "CANCELADO":
+                if actual != "PENDIENTE":
+                    raise ValueError("Solo se pueden cancelar pedidos en estado PENDIENTE")
+                self._devolver_stock_pedido(state, pedido, id_usuario)
             pedido["estado_pedido"] = estado
             pedido["observacion_admin"] = str(payload.get("observacion_admin") or "")
             pedido["fecha_actualizacion"] = _now_iso()
