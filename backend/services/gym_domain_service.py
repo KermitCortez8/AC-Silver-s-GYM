@@ -11,6 +11,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from utils.security import hash_password, verify_password
+from services.membership_lifecycle import apply_membership_expiration, membership_expired, normalize_membership_status
 
 
 _LIMA = ZoneInfo("America/Lima")
@@ -133,6 +134,9 @@ class GymDomainService:
 
         merged["usuario"] = [self._normalize_usuario_record(row) for row in merged.get("usuario", []) if isinstance(row, dict)]
         merged["clientes"] = [self._normalize_cliente_record(row, index) for index, row in enumerate(merged.get("clientes", []), start=1) if isinstance(row, dict)]
+
+        for membership in merged.get("membresia", []):
+            membership["estado"] = normalize_membership_status(membership.get("estado"))
 
         # Migración de inventario: cada item debe tener número de activo único y datos comerciales.
         used_assets: set[int] = set()
@@ -268,6 +272,18 @@ class GymDomainService:
             self._save()
             return result
 
+    def expire_memberships(self) -> bool:
+        today = _today_iso()
+        # Evita escrituras y cambios en el TTL cuando el estado ya está actualizado.
+        with self.lock:
+            preview = {
+                key: [dict(row) for row in self.state.get(key, [])]
+                for key in ("clientes", "membresia")
+            }
+        if not apply_membership_expiration(preview, today):
+            return False
+        return self._mutate(lambda state: apply_membership_expiration(state, today))
+
     # Procesa esta operación.
     def _next_int_id(self, table: str, key: str) -> int:
         rows = self.state[table]
@@ -281,7 +297,7 @@ class GymDomainService:
         for memb in state["membresia"]:
             if int(memb.get("id_cliente", 0)) != int(id_cliente):
                 continue
-            if str(memb.get("estado", "")).lower() != "activa":
+            if normalize_membership_status(memb.get("estado")) != "ACTIVO":
                 continue
             inicio = str(memb.get("fecha_inicio", ""))
             fin = str(memb.get("fecha_fin", ""))
@@ -441,6 +457,7 @@ class GymDomainService:
             "estado": estado.upper() if estado else "ACTIVO",
             "password_hash": password_hash,
             "google_sub": str(row.get("google_sub") or ""),
+            "origen_registro": str(row.get("origen_registro") or ""),
         }
 
     # Procesa esta operación.
@@ -563,6 +580,11 @@ class GymDomainService:
         if current:
             return current
 
+        # Editar o cargar un cliente no renueva ni activa su membresía anterior.
+        latest = self._latest_membership_for_cliente(state, id_cliente)
+        if latest:
+            return latest
+
         plan = self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
         start = _today_iso()
         end = (datetime.fromisoformat(start) + timedelta(days=self._plan_duration_days(plan.get("nombre_plan", "MENSUAL")))).date().isoformat()
@@ -570,15 +592,18 @@ class GymDomainService:
             "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),
             "fecha_inicio": start,
             "fecha_fin": end,
-            "estado": "Activa",
+            "estado": "EN_TRAMITE",
+            "estado_pago": "PENDIENTE",
             "id_cliente": id_cliente,
             "id_pm": int(plan["id_pm"]),
         }
         state.setdefault("membresia", []).insert(0, membership)
+        cliente["estado"] = "EN_TRAMITE"
         return membership
 
     # Procesa esta operación.
     def clientes_normalized(self) -> list[dict[str, Any]]:
+        self.expire_memberships()
         result = []
         for row in self.state.get("clientes", []):
             membership = self._latest_membership_for_cliente(self.state, int(row.get("id_cliente", 0) or 0)) or {}
@@ -595,12 +620,13 @@ class GymDomainService:
                     "estado": row["estado"],
                     "id_membresia": membership.get("id_membresia"),
                     "id_promocion": membership.get("id_promocion"),
-                    "membership_status": membership.get("estado") or row["estado"],
+                    "membership_status": normalize_membership_status(membership.get("estado") or row["estado"]),
                     "membership_start": membership.get("fecha_inicio", ""),
                     "membership_end": membership.get("fecha_fin", ""),
                     "payment_status": membership.get("estado_pago", ""),
                     "payment_reference": membership.get("referencia_pago", ""),
                     "monto_pago": membership.get("monto_pago"),
+                    "origen_registro": row.get("origen_registro", ""),
                     "has_password": bool(row.get("password_hash")),
                 }
             )
@@ -621,6 +647,8 @@ class GymDomainService:
                     item_id = None
             elif str(raw_id or "").isdigit():
                 item_id = int(str(raw_id))
+            elif id_usuario.upper().startswith("SGCLI"):
+                item_id = self._parse_cliente_id(id_usuario)
 
             if item_id is None:
                 item_id = self._next_int_id("clientes", "id_cliente")
@@ -661,6 +689,7 @@ class GymDomainService:
                 raise ValueError("La contraseña debe tener al menos 6 caracteres")
             item["password_hash"] = hash_password(password) if password else str(existing.get("password_hash") or "")
             item["google_sub"] = str(existing.get("google_sub") or "")
+            item["origen_registro"] = str(existing.get("origen_registro") or "") if existing else "ADMIN"
             if idx >= 0:
                 state["clientes"][idx] = item
             else:
@@ -1033,11 +1062,11 @@ class GymDomainService:
 
     # Procesa esta operación.
     def membresias(self) -> list[dict[str, Any]]:
-        return self.state["membresia"]
+        return [{**m, "estado": normalize_membership_status(m.get("estado"))} for m in self.state["membresia"]]
 
     # Procesa esta operación.
     def membresias_por_cliente(self, id_cliente: int) -> list[dict[str, Any]]:
-        return [m for m in self.state["membresia"] if int(m.get("id_cliente", 0)) == int(id_cliente)]
+        return [m for m in self.membresias() if int(m.get("id_cliente", 0)) == int(id_cliente)]
 
     # Procesa esta operación.
     def crear_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1060,7 +1089,7 @@ class GymDomainService:
             item["id_pm"] = id_pm
             item["fecha_inicio"] = _safe_date(item.get("fecha_inicio", ""))
             item["fecha_fin"] = _safe_date(item.get("fecha_fin", ""))
-            item["estado"] = item.get("estado", "Activa")
+            item["estado"] = "EN_TRAMITE"  # Una nueva membresía necesita pago y activación.
             item["monto_pago"] = self._apply_promocion_discount(state, id_pm, id_promocion)
             item["estado_pago"] = "PENDIENTE"
             item["metodo_pago"] = "stripe"
@@ -1116,7 +1145,7 @@ class GymDomainService:
                 "id_pm": id_pm,
                 "fecha_inicio": fecha_inicio,
                 "fecha_fin": fecha_fin,
-                "estado": "Activa",
+                "estado": "EN_TRAMITE",
                 "id_promocion": id_promocion,
                 "monto_pago": monto_pago,
                 "estado_pago": "PENDIENTE",
@@ -1125,7 +1154,7 @@ class GymDomainService:
         return {"cliente": cliente, "membresia": membresia}
 
     # Procesa esta operación.
-    def registrar_cliente_publico(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def registrar_cliente_publico(self, payload: dict[str, Any], *, origen_registro: str = "PUBLICO") -> dict[str, Any]:
         nombre = str(payload.get("nombre") or "").strip()
         correo = str(payload.get("correo") or "").strip().lower()
         telefono = str(payload.get("telefono") or "").strip()
@@ -1158,6 +1187,15 @@ class GymDomainService:
             id_cliente = self._next_int_id_in_state(state, "clientes", "id_cliente")
             id_pm = int(plan.get("id_pm"))
             promo_active = self.get_promocion_vigente_para_plan(state, id_pm)
+            if origen_registro == "ADMIN":
+                selected_id = int(payload.get("id_promocion") or 0)
+                promo_active = next((p for p in state.get("promociones", []) if int(p.get("id_promocion", 0)) == selected_id), None)
+                if selected_id and not any(
+                    int(p["id_promocion"]) == selected_id
+                    and (not p["planes_aplicables"] or id_pm in p["planes_aplicables"])
+                    for p in self.promociones_vigentes_publicas()
+                ):
+                    raise ValueError("La promoción seleccionada no está disponible para este plan")
             id_promocion = int(promo_active.get("id_promocion")) if promo_active else None
             monto_final = self._apply_promocion_discount(state, id_pm, id_promocion)
 
@@ -1170,15 +1208,16 @@ class GymDomainService:
                 "dni": dni,
                 "plan": plan_name,
                 "promocion": str(promo_active.get("nombre") if promo_active else (payload.get("promocion") or "SIN PROMOCION")).strip() or "SIN PROMOCION",
-                "estado": "PENDIENTE_PAGO",
+                "estado": "EN_TRAMITE",
                 "password_hash": hash_password(password),
                 "google_sub": google_sub,
+                "origen_registro": origen_registro,
             }
             membresia = {
                 "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),
                 "fecha_inicio": "",
                 "fecha_fin": "",
-                "estado": "PENDIENTE_PAGO",
+                "estado": "EN_TRAMITE",
                 "id_cliente": id_cliente,
                 "id_pm": id_pm,
                 "id_promocion": id_promocion,
@@ -1246,6 +1285,7 @@ class GymDomainService:
                 if current_reference == payment_reference:
                     if (
                         latest_membership is membresia
+                        and str(membresia.get("estado") or "").strip().upper() == "EN_TRAMITE"
                         and str(cliente.get("estado") or "").strip().upper() not in {"ACTIVO", "ACTIVA"}
                     ):
                         cliente["estado"] = "EN_TRAMITE"
@@ -1294,6 +1334,8 @@ class GymDomainService:
 
     # Procesa esta operación.
     def activar_membresia_cliente(self, id_cliente: int) -> dict[str, Any]:
+        self.ensure_fresh()
+        self.expire_memberships()
         id_cliente = int(id_cliente)
 
         # Procesa esta operación.
@@ -1305,10 +1347,13 @@ class GymDomainService:
             membresia = self._latest_membership_for_cliente(state, id_cliente)
             if not membresia:
                 raise ValueError("Membresia no encontrada")
+            if membership_expired(membresia, _today_iso()):
+                raise ValueError("La membresía está vencida. Registra una nueva membresía y confirma su pago para renovar el acceso.")
             if str(membresia.get("estado_pago") or "").strip().upper() != "PAGADO":
                 raise ValueError("No se puede activar una membresía sin pago confirmado")
             if str(membresia.get("estado") or "").strip().upper() in {"ACTIVA", "ACTIVO"}:
                 cliente["estado"] = "ACTIVO"
+                membresia["estado"] = "ACTIVO"
                 return {"cliente": cliente, "membresia": membresia}
 
             plan = self.get_plan_membresia(int(membresia.get("id_pm", 0) or 0)) or self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
@@ -1316,7 +1361,7 @@ class GymDomainService:
             start = _today_iso()
             end = (datetime.fromisoformat(start) + timedelta(days=self._plan_duration_days(plan.get("nombre_plan", cliente.get("plan", "MENSUAL"))))).date().isoformat()
             cliente["estado"] = "ACTIVO"
-            membresia["estado"] = "Activa"
+            membresia["estado"] = "ACTIVO"
             membresia["fecha_inicio"] = start
             membresia["fecha_fin"] = end
             membresia["estado_pago"] = membresia.get("estado_pago") or "PAGADO"

@@ -90,6 +90,22 @@ test('server rejection on revalidation clears the previously valid session', asy
   assert.equal(localStorage.getItem('gym_auth_token'), null);
 });
 
+test('membership expiration closes an existing session and keeps the reason for the login notice', async () => {
+  localStorage.setItem('gym_auth_token', token);
+  globalThis.fetch = async () => json({ ...profile, role: 'user', id_cliente: 1 });
+  await auth.initializeAuth();
+  assert.equal(auth.isAuthenticated, true);
+  globalThis.fetch = async () => json({ detail: { code: 'membership_expired', message: 'Tu membresía está vencida' } }, 403);
+  await auth.initializeAuth({ force: true });
+  assert.equal(auth.isAuthenticated, false);
+  assert.equal(auth.sessionErrorCode, 'membership_expired');
+  assert.equal(localStorage.getItem('gym_auth_token'), null);
+  await auth.initializeAuth();
+  assert.equal(auth.sessionErrorCode, 'membership_expired');
+  await auth.signIn(token, profile);
+  assert.equal(auth.sessionErrorCode, '');
+});
+
 test('section changes reuse synced data; refresh and a new session fetch it again', async () => {
   auth.token = token;
   auth.userRole = 'admin';
@@ -172,4 +188,102 @@ test('attendance waits for client names and forced refresh runs after the pendin
   assert.equal(clientRequests, 2);
   assert.equal(attendanceRequests, 2);
   assert.equal(gym.attendance[0].memberName, 'Cliente Demo');
+});
+
+test('admin registration sends the payment choice and keeps the saved membership amount and origin', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options });
+    return json({
+      cliente: { id_cliente: 12, id_usuario: 'SGCLI012', nombre: 'Cliente', plan: 'MENSUAL', estado: 'PENDIENTE_PAGO', origen_registro: 'ADMIN' },
+      membresia: { id_membresia: 34, estado: 'PENDIENTE_PAGO', estado_pago: 'PENDIENTE', monto_pago: 69, id_promocion: 5 },
+      payment: { checkout_url: 'https://checkout.stripe.com/test', amount: 69 },
+    });
+  };
+  const saved = await gym.upsertClient({ nombre: 'Cliente', correo: 'cliente@example.com', password: 'secreto', dni: '12345678', id_promocion: 5, pagar_con_stripe: true });
+  assert.equal(requests.length, 1);
+  assert.ok(requests[0].url.endsWith('/clientes/registro-admin'));
+  assert.equal(requests[0].options.headers.Authorization, `Bearer ${token}`);
+  const payload = JSON.parse(requests[0].options.body);
+  assert.equal(payload.pagar_con_stripe, true);
+  assert.equal(payload.id_promocion, 5);
+  assert.equal(saved.registrationOrigin, 'ADMIN');
+  assert.equal(saved.membershipPrice, 69);
+  assert.equal(saved.id_membresia, 34);
+  assert.equal(saved.paymentStatus, 'PENDIENTE');
+  assert.equal(saved.payment.checkout_url, 'https://checkout.stripe.com/test');
+  assert.equal(gym.members[0].registrationOrigin, 'ADMIN');
+});
+
+test('each admin section loads only its resources and shares them with the dashboard', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const paths = [];
+  globalThis.fetch = async (url) => { paths.push(new URL(url, 'http://local').pathname); return json([]); };
+  await gym.fetchFromBackend({ section: 'users' });
+  assert.deepEqual(paths, ['/api/usuarios']);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'plans' });
+  assert.deepEqual(paths, ['/api/planes-membresia']);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'clients' });
+  assert.ok(paths.includes('/api/clientes'));
+  assert.equal(paths.some(path => /inventario|tienda|asistencia/.test(path)), false);
+  assert.equal(paths.includes('/api/planes-membresia'), false);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'schedules' });
+  assert.equal(paths.length, 2);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'dashboard' });
+  assert.equal(paths.includes('/api/clientes'), false);
+  assert.equal(paths.some(path => /usuarios|tienda|planes-membresia|rutinas/.test(path)), false);
+  paths.length = 0;
+  await Promise.all(['users', 'plans', 'clients', 'schedules', 'dashboard'].map(section => gym.fetchFromBackend({ section })));
+  assert.deepEqual(paths, []);
+  await gym.fetchFromBackend({ section: 'users', force: true });
+  assert.deepEqual(paths, ['/api/usuarios']);
+});
+
+test('switching to users is not delayed by a pending client list', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const clients = deferred();
+  globalThis.fetch = async url => {
+    if (url.endsWith('/clientes')) await clients.promise;
+    return json([]);
+  };
+  const clientLoad = gym.fetchFromBackend({ section: 'clients' });
+  await flush();
+  await gym.fetchFromBackend({ section: 'users' });
+  assert.equal(gym.isSyncing, true);
+  clients.resolve();
+  await clientLoad;
+  assert.equal(gym.isSyncing, false);
+});
+
+test('a new session waits for previous data responses so they cannot overwrite its clients', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const oldResponse = deferred();
+  let clientRequests = 0;
+  globalThis.fetch = async url => {
+    if (url.endsWith('/clientes')) {
+      const request = ++clientRequests;
+      if (request === 1) await oldResponse.promise;
+      return json([{ id_cliente: request, nombre: `Sesión ${request}` }]);
+    }
+    return json([]);
+  };
+  const oldLoad = gym.fetchFromBackend({ section: 'clients' });
+  await flush();
+  auth.token = 'new-session-token';
+  const newLoad = gym.fetchFromBackend({ section: 'clients' });
+  await flush();
+  assert.equal(clientRequests, 1);
+  oldResponse.resolve();
+  await Promise.all([oldLoad, newLoad]);
+  assert.equal(clientRequests, 2);
+  assert.equal(gym.members[0].name, 'Sesión 2');
 });

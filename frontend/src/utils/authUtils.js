@@ -166,7 +166,7 @@ export const decodeJWT = (token) => {
 };
 
 export const createDefaultMembership = (user) => ({
-  membershipStatus: user?.role === 'admin' ? 'Administrador' : 'Activa',
+  membershipStatus: user?.role === 'admin' ? 'Administrador' : 'EN_TRAMITE',
   plan: user?.role === 'admin' ? 'Acceso total' : 'Mensual',
   validity: user?.role === 'admin' ? 'Sin vencimiento' : '30 días',
 });

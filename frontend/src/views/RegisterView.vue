@@ -7,10 +7,7 @@
       <div
         class="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
       >
-        <router-link
-          to="/"
-          class="text-xl font-black italic text-orange-600"
-        >
+        <router-link to="/" class="text-xl font-black italic text-orange-600">
           Silver Gym Surco
         </router-link>
 
@@ -74,9 +71,9 @@
         >
           <p>
             Cuenta de Google verificada:
-            <strong>{{ form.correo }}</strong>.
-            Completa tus datos y elige un plan.
-            Podrás ingresar con Google cuando el administrador active tu cuenta.
+            <strong>{{ form.correo }}</strong
+            >. Completa tus datos y elige un plan. Podrás ingresar con Google
+            cuando el administrador active tu cuenta.
           </p>
 
           <button
@@ -90,10 +87,7 @@
         </div>
 
         <!-- FORMULARIO -->
-        <form
-          class="mt-6 space-y-4"
-          @submit.prevent="submitRegistration"
-        >
+        <form class="mt-6 space-y-4" @submit.prevent="submitRegistration">
           <!-- NOMBRE -->
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">
@@ -111,9 +105,7 @@
 
           <!-- CORREO -->
           <label class="block space-y-2">
-            <span class="text-sm font-semibold text-slate-700">
-              Correo
-            </span>
+            <span class="text-sm font-semibold text-slate-700"> Correo </span>
 
             <!--
               MERGE DE RESEND + DEVELOP
@@ -139,10 +131,7 @@
           </label>
 
           <!-- CONTRASEÑA -->
-          <label
-            v-if="!googleCredential"
-            class="block space-y-2"
-          >
+          <label v-if="!googleCredential" class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">
               Contraseña
             </span>
@@ -161,9 +150,7 @@
           <!-- DNI + TELEFONO -->
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="block space-y-2">
-              <span class="text-sm font-semibold text-slate-700">
-                DNI
-              </span>
+              <span class="text-sm font-semibold text-slate-700"> DNI </span>
 
               <input
                 v-model.trim="form.dni"
@@ -200,31 +187,21 @@
           <button
             type="submit"
             class="btn-cta w-full rounded-full bg-orange-500 px-5 py-4 text-sm text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="
-              isSubmitting ||
-              googleProcessing ||
-              !planOptions.length
-            "
+            :disabled="isSubmitting || googleProcessing || !planOptions.length"
           >
             {{
-              isSubmitting
-                ? 'Preparando pago seguro...'
-                : 'Pagar con Stripe'
+              isSubmitting ? 'Preparando pago seguro...' : 'Pagar con Stripe'
             }}
           </button>
 
-          <p
-            class="text-center text-xs leading-5 text-slate-500"
-          >
-            Serás redirigido a Stripe Checkout.
-            Silver Gym no recibe ni almacena los datos de tu tarjeta.
+          <p class="text-center text-xs leading-5 text-slate-500">
+            Serás redirigido a Stripe Checkout. Silver Gym no recibe ni almacena
+            los datos de tu tarjeta.
           </p>
 
-          <p
-            class="text-center text-sm leading-5 text-slate-600"
-          >
-            Después del pago, tu cuenta quedará pendiente de
-            activación por el administrador.
+          <p class="text-center text-sm leading-5 text-slate-600">
+            Después del pago, tu cuenta quedará pendiente de activación por el
+            administrador.
           </p>
         </form>
 
@@ -293,9 +270,7 @@
               </p>
             </div>
 
-            <p
-              class="text-2xl font-black tabular-nums text-orange-600"
-            >
+            <p class="text-2xl font-black tabular-nums text-orange-600">
               S/ {{ plan.price }}
             </p>
           </div>
@@ -304,7 +279,11 @@
             <span
               v-for="tag in plan.tags"
               :key="tag"
-              :class="tag === plan.promoTag ? 'bg-white border border-slate-300 text-slate-950 font-black shadow-sm' : 'bg-slate-100 text-slate-600 font-bold'"
+              :class="
+                tag === plan.promoTag
+                  ? 'bg-white border border-slate-300 text-slate-950 font-black shadow-sm'
+                  : 'bg-slate-100 text-slate-600 font-bold'
+              "
               class="rounded-full px-3.5 py-1 text-xs uppercase tracking-[0.06em]"
             >
               {{ tag }}
@@ -327,13 +306,11 @@
             {{ registeredClient.name }}
           </p>
 
-          <p class="mt-1 text-sm">
-            Código: {{ registeredClient.id }}
-          </p>
+          <p class="mt-1 text-sm">Código: {{ registeredClient.id }}</p>
 
           <p class="text-sm">
             Estado de membresía:
-            {{ registeredClient.membershipStatus }}
+            {{ clientMembershipLabel(registeredClient) }}
           </p>
         </div>
       </section>
@@ -342,25 +319,18 @@
 </template>
 
 <script setup>
-import {
-  computed,
-  onMounted,
-  reactive,
-  ref,
-} from 'vue';
+import { clientMembershipLabel } from '../utils/clientDirectory.js';
+import { computed, onMounted, reactive, ref } from 'vue';
 
 import { useRoute } from 'vue-router';
 
 import GoogleSignInButton from '../components/GoogleSignInButton.vue';
 
-import {
-  getVerifiedGoogleProfile,
-} from '../services/authService';
+import { getVerifiedGoogleProfile } from '../services/authService';
 
 import { apiGet } from '../services/apiClient';
 
 import { useGymStore } from '../stores/gymStore';
-
 
 /* -------------------------------------------------------------------------- */
 /* INSTANCIAS                                                                 */
@@ -369,7 +339,6 @@ import { useGymStore } from '../stores/gymStore';
 const route = useRoute();
 
 const gymStore = useGymStore();
-
 
 /* -------------------------------------------------------------------------- */
 /* ESTADOS                                                                    */
@@ -390,7 +359,6 @@ const isSubmitting = ref(false);
 const registeredClient = ref(null);
 
 const backendPlans = ref([]);
-
 
 /* -------------------------------------------------------------------------- */
 /* PLANES POR DEFECTO                                                         */
@@ -425,7 +393,6 @@ const defaultPlans = [
   },
 ];
 
-
 /* -------------------------------------------------------------------------- */
 /* UTILIDADES PLANES                                                          */
 /* -------------------------------------------------------------------------- */
@@ -435,15 +402,10 @@ const normalizePlanName = (value) =>
     .trim()
     .toUpperCase();
 
-
 const formatPlanLabel = (value) =>
   normalizePlanName(value)
     .toLowerCase()
-    .replace(
-      /\b\w/g,
-      (letter) => letter.toUpperCase()
-    );
-
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const activePromotions = ref([]);
 
@@ -452,33 +414,14 @@ const activePromotions = ref([]);
 /* -------------------------------------------------------------------------- */
 
 const planOptions = computed(() =>
-  (
-    backendPlans.value.length
-      ? backendPlans.value
-      : defaultPlans
-  )
-    .filter(
-      (plan) =>
-        plan.activo ??
-        plan.active ??
-        true
-    )
+  (backendPlans.value.length ? backendPlans.value : defaultPlans)
+    .filter((plan) => plan.activo ?? plan.active ?? true)
     .map((plan) => {
-      const name = normalizePlanName(
-        plan.nombre_plan || plan.name
-      );
+      const name = normalizePlanName(plan.nombre_plan || plan.name);
 
-      const duration = String(
-        plan.duracion ||
-        plan.description ||
-        ''
-      ).trim();
+      const duration = String(plan.duracion || plan.description || '').trim();
 
-      const originalPrice = Number(
-        plan.precio ??
-        plan.price ??
-        0
-      );
+      const originalPrice = Number(plan.precio ?? plan.price ?? 0);
       const idPm = Number(plan.id_pm || 0);
 
       const promo = activePromotions.value.find((p) => {
@@ -497,7 +440,10 @@ const planOptions = computed(() =>
           finalPrice = Math.max(0, originalPrice - valor);
           promoTag = `${icon} -S/${valor} ${tagWord}`.trim();
         } else {
-          finalPrice = Math.max(0, Math.round(originalPrice * (1 - valor / 100) * 100) / 100);
+          finalPrice = Math.max(
+            0,
+            Math.round(originalPrice * (1 - valor / 100) * 100) / 100,
+          );
           promoTag = `${icon} -${valor}% ${tagWord}`.trim();
         }
       }
@@ -526,9 +472,8 @@ const planOptions = computed(() =>
         tags,
       };
     })
-    .filter((plan) => plan.id)
+    .filter((plan) => plan.id),
 );
-
 
 /* -------------------------------------------------------------------------- */
 /* FORMULARIO                                                                 */
@@ -545,9 +490,7 @@ const form = reactive({
 
   password: '',
 
-  plan: normalizePlanName(
-    route.query.plan
-  ),
+  plan: normalizePlanName(route.query.plan),
 });
 
 const updateTelefono = (event) => {
@@ -555,7 +498,6 @@ const updateTelefono = (event) => {
   event.target.value = telefono;
   form.telefono = telefono;
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* SINCRONIZAR PLAN SELECCIONADO                                              */
@@ -567,18 +509,12 @@ const syncSelectedPlan = () => {
     return;
   }
 
-  const planExists =
-    planOptions.value.some(
-      (plan) =>
-        plan.id === form.plan
-    );
+  const planExists = planOptions.value.some((plan) => plan.id === form.plan);
 
   if (!planExists) {
-    form.plan =
-      planOptions.value[0].id;
+    form.plan = planOptions.value[0].id;
   }
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* CARGAR PLANES                                                              */
@@ -586,31 +522,21 @@ const syncSelectedPlan = () => {
 
 const loadPlans = async () => {
   try {
-    const list = await apiGet(
-      '/planes-membresia'
-    );
+    const list = await apiGet('/planes-membresia');
 
-    backendPlans.value =
-      Array.isArray(list)
-        ? list
-        : [];
+    backendPlans.value = Array.isArray(list) ? list : [];
   } catch (error) {
-    console.error(
-      'No se pudieron cargar los planes:',
-      error
-    );
+    console.error('No se pudieron cargar los planes:', error);
 
     /*
      * Mantiene la funcionalidad original:
      * si falla el backend, se utilizan los planes locales.
      */
-    backendPlans.value =
-      defaultPlans;
+    backendPlans.value = defaultPlans;
   } finally {
     syncSelectedPlan();
   }
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* LIMPIAR CUENTA GOOGLE                                                      */
@@ -630,24 +556,17 @@ const clearGoogleAccount = () => {
   form.password = '';
 };
 
-
 /* -------------------------------------------------------------------------- */
 /* SELECCIONAR CUENTA GOOGLE                                                  */
 /* -------------------------------------------------------------------------- */
 
-const selectGoogleAccount = async (
-  credential
-) => {
-  if (
-    isSubmitting.value ||
-    googleProcessing.value
-  ) {
+const selectGoogleAccount = async (credential) => {
+  if (isSubmitting.value || googleProcessing.value) {
     return;
   }
 
   if (!credential) {
-    googleError.value =
-      'Google no devolvió una credencial válida.';
+    googleError.value = 'Google no devolvió una credencial válida.';
 
     return;
   }
@@ -663,23 +582,15 @@ const selectGoogleAccount = async (
   googleCredential.value = '';
 
   try {
-    const profile =
-      await getVerifiedGoogleProfile(
-        credential
-      );
+    const profile = await getVerifiedGoogleProfile(credential);
 
     if (!profile?.email) {
-      throw new Error(
-        'Google no devolvió un correo válido.'
-      );
+      throw new Error('Google no devolvió un correo válido.');
     }
 
-    form.nombre =
-      profile.name ||
-      form.nombre;
+    form.nombre = profile.name || form.nombre;
 
-    form.correo =
-      profile.email;
+    form.correo = profile.email;
 
     /*
      * Cuando esto tiene valor:
@@ -687,8 +598,7 @@ const selectGoogleAccount = async (
      * - contraseña desaparece
      * - credential se manda al backend.
      */
-    googleCredential.value =
-      credential;
+    googleCredential.value = credential;
 
     /*
      * No necesitamos contraseña local cuando
@@ -699,23 +609,18 @@ const selectGoogleAccount = async (
     googleCredential.value = '';
 
     googleError.value =
-      error?.message ||
-      'No se pudo verificar tu cuenta de Google';
+      error?.message || 'No se pudo verificar tu cuenta de Google';
   } finally {
     googleProcessing.value = false;
   }
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* ENVIAR REGISTRO                                                           */
 /* -------------------------------------------------------------------------- */
 
 const submitRegistration = async () => {
-  if (
-    isSubmitting.value ||
-    googleProcessing.value
-  ) {
+  if (isSubmitting.value || googleProcessing.value) {
     return;
   }
 
@@ -725,12 +630,9 @@ const submitRegistration = async () => {
 
   registeredClient.value = null;
 
-
   try {
     if (!form.plan) {
-      throw new Error(
-        'No hay planes configurados para registrar clientes.'
-      );
+      throw new Error('No hay planes configurados para registrar clientes.');
     }
 
     /*
@@ -742,24 +644,15 @@ const submitRegistration = async () => {
      * Registro Google:
      * google_credential = credencial Google
      */
-    const result =
-      await gymStore.registerPublicClient({
-        ...form,
+    const result = await gymStore.registerPublicClient({
+      ...form,
 
-        google_credential:
-          googleCredential.value,
-      });
+      google_credential: googleCredential.value,
+    });
 
+    const { client, payment } = result;
 
-    const {
-      client,
-      payment,
-    } = result;
-
-
-    registeredClient.value =
-      client;
-
+    registeredClient.value = client;
 
     /*
      * Verificar que Stripe haya generado
@@ -768,39 +661,30 @@ const submitRegistration = async () => {
     if (!payment?.checkout_url) {
       throw new Error(
         payment?.message ||
-        'Stripe no está configurado. Contacta al administrador.'
+          'Stripe no está configurado. Contacta al administrador.',
       );
     }
 
-
-    feedbackTone.value =
-      'success';
-
+    feedbackTone.value = 'success';
 
     feedback.value =
       'Preregistro creado. Abriendo el checkout seguro de Stripe. Tu cuenta requerirá activación por el administrador.';
 
-
     /*
      * Redirección a Stripe Checkout.
      */
-    window.location.assign(
-      payment.checkout_url
-    );
+    window.location.assign(payment.checkout_url);
   } catch (error) {
-    feedbackTone.value =
-      'error';
+    feedbackTone.value = 'error';
 
     feedback.value =
       error instanceof Error
         ? error.message
         : 'No se pudo completar el registro.';
   } finally {
-    isSubmitting.value =
-      false;
+    isSubmitting.value = false;
   }
 };
-
 
 const loadPromotions = async () => {
   try {
@@ -810,7 +694,6 @@ const loadPromotions = async () => {
     activePromotions.value = [];
   }
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* INICIALIZACIÓN                                                             */
@@ -824,20 +707,13 @@ onMounted(() => {
 
 <style scoped>
 .register-page {
-  font-family:
-    'Manrope',
-    'Segoe UI',
-    'Trebuchet MS',
-    sans-serif;
+  font-family: 'Manrope', 'Segoe UI', 'Trebuchet MS', sans-serif;
 }
 
 .register-page h1,
 .register-page h2,
 .register-page h3 {
-  font-family:
-    'Anton',
-    'Manrope',
-    sans-serif;
+  font-family: 'Anton', 'Manrope', sans-serif;
 
   font-weight: 400;
 
@@ -845,10 +721,7 @@ onMounted(() => {
 }
 
 .register-page .btn-cta {
-  font-family:
-    'Anton',
-    'Manrope',
-    sans-serif;
+  font-family: 'Anton', 'Manrope', sans-serif;
 
   font-weight: 400;
 

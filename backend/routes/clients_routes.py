@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, s
 
 from config import Settings, get_settings
 from dependencies import get_clients_service, get_current_user, require_admin_or_staff
-from models.gym import ClienteInput, RegistroPublicoClienteInput
+from models.gym import ClienteInput, RegistroAdminClienteInput, RegistroPublicoClienteInput
 from models.auth import UserProfile
 from services.clients_service import ClientsService
 from services.stripe_service import StripeService
@@ -153,6 +153,50 @@ def registro_publico(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
     except RuntimeError as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
+
+
+@router.post("/clientes/registro-admin", status_code=status.HTTP_201_CREATED)
+def registro_admin(
+    payload: RegistroAdminClienteInput,
+    clients_service: ClientsService = Depends(get_clients_service),
+    settings: Settings = Depends(get_settings),
+    _current_user=Depends(require_admin_or_staff),
+):
+    gateway = StripeService(settings)
+    try:
+        if payload.pagar_con_stripe:
+            gateway.validate_configuration()
+        result = clients_service.register_admin_client(payload.model_dump())
+        payment = None
+        if payload.pagar_con_stripe:
+            try:
+                payment = gateway.create_membership_checkout(result, admin=True)
+            except (RuntimeError, ValueError) as error:
+                # El registro ya existe: permite retomar el pago sin duplicar al cliente.
+                payment = {"configured": gateway.configured, "message": str(error)}
+        return {**result, "payment": payment}
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@router.post("/clientes/{id_cliente}/pago-stripe")
+def pago_stripe_admin(
+    id_cliente: int,
+    clients_service: ClientsService = Depends(get_clients_service),
+    settings: Settings = Depends(get_settings),
+    _current_user=Depends(require_admin_or_staff),
+):
+    try:
+        result = clients_service.get_admin_payment_registration(id_cliente)
+        gateway = StripeService(settings)
+        gateway.validate_configuration()
+        return gateway.create_membership_checkout(result, admin=True)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 @router.post("/pagos/stripe/webhook", status_code=status.HTTP_200_OK)

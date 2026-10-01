@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 import re
@@ -16,6 +17,7 @@ from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 from services.gym_domain_service import GymDomainService, _now_iso, _today_iso
+from services.membership_lifecycle import apply_membership_expiration, normalize_membership_status
 
 
 class SupabaseRestClient:
@@ -135,6 +137,9 @@ class SupabaseRestClient:
 
 
 class SupabaseGymService(GymDomainService):
+    def validate_admin_registration_schema(self) -> None:
+        self._filter_remote_columns("CLIENTES", {"origen_registro": "ADMIN"})
+
     REFRESH_TTL_SECONDS = 5.0
     PAYMENT_COLUMNS = {
         "estado_pago",
@@ -218,6 +223,19 @@ class SupabaseGymService(GymDomainService):
     # Procesa esta operación.
     def _filter_remote_columns(self, table: str, body: dict[str, Any]) -> dict[str, Any]:
         columns = self.remote_columns.get(table)
+        if table == "CLIENTES" and (not columns or "origen_registro" not in columns):
+            if body.get("origen_registro") == "ADMIN":
+                try:
+                    self.supabase.validate_columns(table, {"origen_registro"})
+                except RuntimeError as error:
+                    raise RuntimeError(
+                        "No se pudo guardar el origen del cliente. Comprueba la conexión y ejecuta "
+                        "backend/migrations/009_admin_client_stripe.sql en Supabase."
+                    ) from error
+                if columns:
+                    columns.add("origen_registro")
+            else:
+                body = {key: value for key, value in body.items() if key != "origen_registro"}
         if body.get("google_sub") and (not columns or "google_sub" not in columns):
             try:
                 self.supabase.validate_columns(table, {"google_sub"})
@@ -239,24 +257,39 @@ class SupabaseGymService(GymDomainService):
     def _refresh_remote_state(self) -> None:
         remote_state = self._seed()
 
-        plans = self._select_required("PLANES_MEMBRESIA", order="id_PM.asc")
-        clients = self.supabase.select_all("CLIENTES", order="id_cliente.asc")
-        memberships = self.supabase.select_all("MEMBRESIA", order="id_membresia.asc")
-        users = self._select_required("USUARIO", order="id_usuario.asc")
-        inventory = self._select_required("INVENTARIO", order="id_item.asc")
-        inventory_moves = self._select_optional("MOV_INV", order="id_mov.desc")
-        products = self._select_required("TIENDA_PRODUCTOS", order="id_producto.asc")
-        sales = self._select_required("VENTAS", order="id_venta.desc")
-        sale_details = self._select_required("DETALLE_VENTA", order="id_detalle.asc")
-        routines = self._select_required("CATALOGO_RUTINA", order="id_rutina.asc")
-        schedules = self._select_required("HORARIO", order="id_horario.asc")
-        service_schedules = self._select_optional("HORARIOS_SERVICIO", order="id_horario_servicio.asc")
-        promotions = self._select_optional("PROMOCIONES", order="id_promocion.desc")
-        enrollments = self.supabase.select_all("MATRICULAS_HORARIO", order="id_matricula.asc")
-        routine_progress = self._select_optional("RUTINA_PROGRESO", order="fecha.desc")
-        tickets = self._select_optional("TICKETS_ATENCION", order="id_ticket.desc")
-        config_rows = self._select_optional("CONFIGURACION_GIMNASIO", order="id_config.asc")
-        attendance = self.supabase.select_all("ASISTENCIA", order="id_asistencia.asc")
+        # Las lecturas son independientes; el estado se sustituye solo cuando todas terminan.
+        # Se conserva el bloqueo de refresh/mutaciones y un límite de conexiones a Supabase.
+        queries = [
+            ("plans", self._select_required, "PLANES_MEMBRESIA", "id_PM.asc"),
+            ("clients", self.supabase.select_all, "CLIENTES", "id_cliente.asc"),
+            ("memberships", self.supabase.select_all, "MEMBRESIA", "id_membresia.asc"),
+            ("users", self._select_required, "USUARIO", "id_usuario.asc"),
+            ("inventory", self._select_required, "INVENTARIO", "id_item.asc"),
+            ("inventory_moves", self._select_optional, "MOV_INV", "id_mov.desc"),
+            ("products", self._select_required, "TIENDA_PRODUCTOS", "id_producto.asc"),
+            ("sales", self._select_required, "VENTAS", "id_venta.desc"),
+            ("sale_details", self._select_required, "DETALLE_VENTA", "id_detalle.asc"),
+            ("routines", self._select_required, "CATALOGO_RUTINA", "id_rutina.asc"),
+            ("schedules", self._select_required, "HORARIO", "id_horario.asc"),
+            ("service_schedules", self._select_optional, "HORARIOS_SERVICIO", "id_horario_servicio.asc"),
+            ("promotions", self._select_optional, "PROMOCIONES", "id_promocion.desc"),
+            ("enrollments", self.supabase.select_all, "MATRICULAS_HORARIO", "id_matricula.asc"),
+            ("routine_progress", self._select_optional, "RUTINA_PROGRESO", "fecha.desc"),
+            ("tickets", self._select_optional, "TICKETS_ATENCION", "id_ticket.desc"),
+            ("config_rows", self._select_optional, "CONFIGURACION_GIMNASIO", "id_config.asc"),
+            ("attendance", self.supabase.select_all, "ASISTENCIA", "id_asistencia.asc"),
+        ]
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            pending = {key: pool.submit(load, table, order=order) for key, load, table, order in queries}
+            rows = {key: future.result() for key, future in pending.items()}
+
+        plans, clients, memberships = rows["plans"], rows["clients"], rows["memberships"]
+        users, inventory, inventory_moves = rows["users"], rows["inventory"], rows["inventory_moves"]
+        products, sales, sale_details = rows["products"], rows["sales"], rows["sale_details"]
+        routines, schedules, service_schedules = rows["routines"], rows["schedules"], rows["service_schedules"]
+        promotions, enrollments = rows["promotions"], rows["enrollments"]
+        routine_progress, tickets = rows["routine_progress"], rows["tickets"]
+        config_rows, attendance = rows["config_rows"], rows["attendance"]
 
         product_names = {
             int(row.get("id_producto", 0) or 0): str(row.get("nombre_Producto") or "")
@@ -284,6 +317,12 @@ class SupabaseGymService(GymDomainService):
         remote_state["tickets_atencion"] = [self._map_ticket(row) for row in tickets]
         remote_state["configuracion_gimnasio"] = self._map_config(config_rows[0] if config_rows else {})
         remote_state["asistencia"] = [self._map_attendance(row) for row in attendance]
+        # Recupera la etiqueta derivada sin volver a escribir Estado=false en cada lectura.
+        # Los cambios de vigencia de MEMBRESIA se persisten después en ensure_fresh.
+        apply_membership_expiration({
+            "clientes": [row for row in remote_state["clientes"] if row["estado"] == "INACTIVO"],
+            "membresia": [dict(row) for row in remote_state["membresia"]],
+        }, _today_iso())
         self._recount_schedule_cupos(remote_state)
         self._sincronizar_productos_tienda(remote_state)
         self.state = remote_state
@@ -298,6 +337,7 @@ class SupabaseGymService(GymDomainService):
     def ensure_fresh(self) -> None:
         with self.lock:
             self._refresh_remote_state_if_stale()
+        self.expire_memberships()
 
     # Procesa esta operación.
     def _mutation_snapshot(self) -> dict[str, Any]:
@@ -646,7 +686,7 @@ class SupabaseGymService(GymDomainService):
 
     # Procesa esta operación.
     def _bool_to_status(self, value: Any) -> str:
-        return "ACTIVO" if bool(value) else "PENDIENTE_PAGO"
+        return "ACTIVO" if bool(value) else "EN_TRAMITE"
 
     # Procesa esta operación.
     def _date_or_today(self, value: Any) -> str:
@@ -764,6 +804,7 @@ class SupabaseGymService(GymDomainService):
             "password_hash": str(row.get("password_hash") or row.get("Password_Hash") or ""),
             "google_sub": str(row.get("google_sub") or ""),
             "fecha_registro": str(row.get("Fecha_Registro") or ""),
+            "origen_registro": str(row.get("origen_registro") or ""),
         }
 
     # Procesa esta operación.
@@ -783,6 +824,7 @@ class SupabaseGymService(GymDomainService):
             "Plan": str(row.get("plan") or "MENSUAL").strip().upper(),
             "password_hash": str(row.get("password_hash") or ""),
             "google_sub": str(row.get("google_sub") or "") or None,
+            "origen_registro": str(row.get("origen_registro") or "") or None,
         }
 
     # Procesa esta operación.
@@ -797,7 +839,7 @@ class SupabaseGymService(GymDomainService):
             "id_membresia": int(row.get("id_membresia", 0) or 0),
             "fecha_inicio": str(row.get("Fecha_Inicio") or ""),
             "fecha_fin": str(row.get("Fecha_Fin") or ""),
-            "estado": membership_status,
+            "estado": normalize_membership_status(membership_status),
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_pm": int(row.get("id_PM", 0) or 0),
             "monto_pago": float(row.get("monto_pago", 0) or 0),
@@ -814,7 +856,7 @@ class SupabaseGymService(GymDomainService):
             "id_membresia": int(row.get("id_membresia", 0) or 0),
             "Fecha_Inicio": self._date_or_today(row.get("fecha_inicio")),
             "Fecha_Fin": self._date_or_today(row.get("fecha_fin")),
-            "Estado": str(row.get("estado") or "PENDIENTE_PAGO"),
+            "Estado": normalize_membership_status(row.get("estado")),
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_PM": int(row.get("id_pm", 0) or 0) or None,
             "monto_pago": float(row.get("monto_pago", 0) or 0) or None,

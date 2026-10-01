@@ -30,7 +30,7 @@ def google_auth(payload: AuthGoogleRequest, gym_service: GymDomainService = Depe
     except GoogleLinkRequired as error:
         raise HTTPException(status_code=409, detail={"code": "google_link_required", "message": str(error)}) from error
     except ClientActivationRequired as error:
-        raise HTTPException(status_code=403, detail={"code": "account_pending_activation", "message": str(error)}) from error
+        raise HTTPException(status_code=403, detail={"code": error.code, "message": str(error)}) from error
     except ValueError as error:
         raise HTTPException(status_code=401, detail=str(error)) from error
     except RuntimeError as error:
@@ -42,7 +42,7 @@ def password_auth(payload: AuthPasswordRequest, gym_service: GymDomainService = 
     try:
         return AuthService(gym_service).password_auth(payload)
     except ClientActivationRequired as error:
-        raise HTTPException(status_code=403, detail={"code": "account_pending_activation", "message": str(error)}) from error
+        raise HTTPException(status_code=403, detail={"code": error.code, "message": str(error)}) from error
     except ValueError as error:
         raise HTTPException(status_code=401, detail=str(error)) from error
     except RuntimeError as error:

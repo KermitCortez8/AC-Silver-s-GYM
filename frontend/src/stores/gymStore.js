@@ -1,9 +1,11 @@
+import { normalizeMembershipStatus, clientMembershipGroup } from '../utils/clientDirectory.js';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { APP_CONFIG } from '../config/appConfig';
-import { apiGet } from '../services/apiClient';
+import { apiGet, apiPost } from '../services/apiClient';
 import { parseError } from '../services/apiResponse.js';
 import { syncResources } from '../services/syncResources.js';
+import { createResourceCache } from '../services/resourceCache.js';
 import { useAuthStore } from './authStore';
 
 const PASS_EXPIRY_MINUTES = 10;
@@ -248,9 +250,10 @@ const normalizeBackendClientToMember = (client = {}) => ({
   id_promocion: client.id_promocion || (client.promocion && String(client.promocion).startsWith('promo-') ? Number(String(client.promocion).replace('promo-', '')) : null),
   planId: '',
   id_membresia: client.id_membresia || null,
-  membershipStatus: client.membership_status || client.estado || '',
+  membershipStatus: normalizeMembershipStatus(client.membership_status || client.estado),
   membershipStart: client.membership_start || client.fecha_inicio || client.fecha_registro || client.joinedAt || '',
   membershipEnd: client.membership_end || client.fecha_fin || '',
+  registrationOrigin: client.origen_registro || '',
   paymentStatus: client.payment_status || client.estado_pago || '',
   paymentReference: client.payment_reference || client.referencia_pago || '',
   hasPassword: Boolean(client.has_password ?? client.hasPassword),
@@ -517,10 +520,12 @@ export const useGymStore = defineStore('gym', () => {
   const gymSettings = ref(initialState.gymSettings);
   const syncError = ref('');
   const isSyncing = ref(false);
-  let syncPromise = null;
+  const resourceCache = createResourceCache();
+  const pendingSyncs = new Set();
   let syncScope = '';
-  let lastSyncScope = '';
-  let lastSyncAt = -Infinity;
+  let activeSyncs = 0;
+  let errorScope = '';
+  const resourceErrors = new Map();
 
   /**
    * Gestiona esta acción de la vista.
@@ -558,7 +563,7 @@ export const useGymStore = defineStore('gym', () => {
 
     return {
       totalMembers: members.value.length,
-      activeMembers: members.value.filter((member) => member.status === 'Activa').length,
+      activeMembers: members.value.filter((member) => clientMembershipGroup(member) === 'active').length,
       attendanceToday: attendance.value.filter((entry) => entry.date === today).length,
       inventoryItems: inventory.value.length,
       lowStockItems,
@@ -619,7 +624,7 @@ export const useGymStore = defineStore('gym', () => {
 
   const membershipAlerts = computed(() =>
     members.value
-      .filter((member) => member.status === 'Activa' && member.membershipEnd)
+      .filter((member) => clientMembershipGroup(member) === 'active' && member.membershipEnd)
       .map((member) => ({
         ...member,
         daysUntilExpiry: daysUntilISO(member.membershipEnd),
@@ -1034,7 +1039,7 @@ export const useGymStore = defineStore('gym', () => {
         })
         .then((memb) => {
           // actualizar estado local mínimo
-          members.value[index] = { ...member, plan: getPlanById(planId)?.name || member.plan, planId, membershipStart: startDate, membershipEnd: endDate, membershipPrice: memb.precio || member.membershipPrice, status: 'Activa' };
+          members.value[index] = { ...member, plan: getPlanById(planId)?.name || member.plan, planId, membershipStart: startDate, membershipEnd: endDate, membershipPrice: memb.monto_pago ?? member.membershipPrice, id_membresia: memb.id_membresia, paymentStatus: memb.estado_pago || 'PENDIENTE', membershipStatus: normalizeMembershipStatus(memb.estado) };
           logMemberEvent(memberId, { action: memb.id_membresia ? 'Asignación' : 'Renovación', fields: ['plan', 'planId', 'membershipStart', 'membershipEnd', 'membershipPrice', 'status'], note });
           persist();
           return members.value[index];
@@ -1068,7 +1073,9 @@ export const useGymStore = defineStore('gym', () => {
       membershipStart: startDate,
       membershipEnd: endDate,
       membershipPrice: finalPrice,
-      status: member.status === 'Bloqueada' ? member.status : 'Activa',
+      status: 'EN_TRAMITE',
+      membershipStatus: 'EN_TRAMITE',
+      paymentStatus: 'PENDIENTE',
       membershipHistory: [historyEntry, ...(member.membershipHistory || [])].slice(0, 20),
     };
 
@@ -1412,7 +1419,8 @@ export const useGymStore = defineStore('gym', () => {
         existingMember?.membershipEnd ||
         addMonthsISO(baseMembershipStart, planDurationById(resolvedPlanId)),
       membershipPrice: Number(payload.membershipPrice ?? existingMember?.membershipPrice ?? 0),
-      status: payload.status || existingMember?.status || 'Activa',
+      status: normalizeMembershipStatus(payload.status || existingMember?.status),
+      membershipStatus: normalizeMembershipStatus(payload.membershipStatus || existingMember?.membershipStatus || payload.status),
       joinedAt: payload.joinedAt || existingMember?.joinedAt || todayISO(),
       attendanceRate: Number(payload.attendanceRate ?? existingMember?.attendanceRate ?? 0),
       membershipHistory: Array.isArray(payload.membershipHistory) ? payload.membershipHistory : existingMember?.membershipHistory || [],
@@ -2452,21 +2460,23 @@ export const useGymStore = defineStore('gym', () => {
   /**
    * Consulta los datos del servidor.
    */
-  const fetchFromBackend = ({ force = false } = {}) => {
+  const fetchFromBackend = ({ force = false, section = 'all' } = {}) => {
     if (!authStore.token) return Promise.resolve();
     const scope = `${authStore.token}|${authStore.userRole}`;
-    if (syncPromise) {
-      if (syncScope === scope && !force) return syncPromise;
-      // Un refresco tras guardar debe consultar después de la carga anterior.
-      return syncPromise.catch(() => { }).then(() => fetchFromBackend({ force }));
+    if (syncScope !== scope && pendingSyncs.size) {
+      // Una sesión nueva espera las respuestas anteriores antes de llenar sus propios datos.
+      return Promise.allSettled([...pendingSyncs]).then(() => fetchFromBackend({ force, section }));
     }
-    if (!force && lastSyncScope === scope && Date.now() - lastSyncAt < 30_000) return Promise.resolve();
     syncScope = scope;
-    lastSyncAt = -Infinity;
+    if (scope !== errorScope) {
+      errorScope = scope;
+      resourceErrors.clear();
+      syncError.value = '';
+    }
+    activeSyncs += 1;
     isSyncing.value = true;
-    syncError.value = '';
 
-    syncPromise = (async () => {
+    const sync = (async () => {
       const role = authStore.userRole || authStore.user?.role;
       const internal = ['admin', 'staff'].includes(role);
       const getList = async (path) => {
@@ -2533,14 +2543,35 @@ export const useGymStore = defineStore('gym', () => {
         await refreshAttendanceFromBackend();
       }]);
 
-      await syncResources(tasks, (message) => { syncError.value = message; });
-      lastSyncScope = scope;
-      lastSyncAt = Date.now();
+      const sectionResources = {
+        clients: ['Clientes', 'Mi perfil', 'Planes', 'Promociones'],
+        users: ['Usuarios'],
+        plans: ['Planes'],
+        schedules: ['Horarios por servicio', 'Rutinas'],
+        dashboard: ['Clientes', 'Mi perfil', 'Inventario', 'Horarios por servicio', 'Matrículas', 'Asistencias'],
+      };
+      const labels = sectionResources[section];
+      if (section !== 'all' && !labels) throw new Error('Sección de datos desconocida.');
+      const selectedTasks = labels ? tasks.filter(([label]) => labels.includes(label) &&
+        !(section === 'dashboard' && label === 'Inventario' && !internal)) : tasks;
+      await syncResources(selectedTasks.map(([label, load]) => [label, async () => {
+        try {
+          await resourceCache.load(scope, label, load, { force });
+          if (scope === errorScope) resourceErrors.delete(label);
+        } catch (error) {
+          if (scope === errorScope) resourceErrors.set(label, `${label}: ${error.message || 'No se pudieron cargar los datos.'}`);
+          throw error;
+        } finally {
+          if (scope === errorScope) syncError.value = [...resourceErrors.values()].join(' ');
+        }
+      }]));
     })().finally(() => {
-      isSyncing.value = false;
-      syncPromise = null;
+      activeSyncs -= 1;
+      isSyncing.value = activeSyncs > 0;
+      pendingSyncs.delete(sync);
     });
-    return syncPromise;
+    pendingSyncs.add(sync);
+    return sync;
   };
 
   /**
@@ -2576,26 +2607,24 @@ export const useGymStore = defineStore('gym', () => {
       const isNewClient = !payload.id_usuario;
 
       if (isNewClient) {
-        // Clientes NUEVOS: siempre usar registro-cliente-membresia para crear cliente + membresía juntos
-        const planObj = planCatalog.value.find(p => p.name === clientPayload.plan) || planCatalog.value[0];
-        const numericPm = planObj ? Number(planObj.id_pm || planObj.id || 1) : 1;
-
-        const d = new Date();
-        const startDate = d.toISOString().split('T')[0];
-        const durationDays = clientPayload.plan === 'ANUAL' ? 365 : (clientPayload.plan === '3 MESES' ? 90 : 30);
-        d.setDate(d.getDate() + durationDays);
-        const endDate = d.toISOString().split('T')[0];
-
-        const promoId = Number(payload.id_promocion) > 0 ? Number(payload.id_promocion) : null;
-        const regPayload = {
-          cliente: clientPayload,
-          id_pm: numericPm,
-          fecha_inicio: startDate,
-          fecha_fin: endDate,
-          id_promocion: promoId,
-        };
-        const res = await registerClienteMembresiaToServer(regPayload);
-        saved = { ...res.cliente, ...res.membresia };
+        const result = await apiPost('/clientes/registro-admin', {
+          ...clientPayload,
+          id_promocion: Number(payload.id_promocion) || null,
+          pagar_con_stripe: Boolean(payload.pagar_con_stripe),
+        }, useAuthStore().token);
+        const membership = result.membresia || {};
+        const client = mergeClient({
+          ...result.cliente,
+          id_membresia: membership.id_membresia,
+          id_promocion: membership.id_promocion,
+          membership_status: membership.estado,
+          membership_start: membership.fecha_inicio,
+          membership_end: membership.fecha_fin,
+          payment_status: membership.estado_pago,
+          payment_reference: membership.referencia_pago,
+          monto_pago: membership.monto_pago,
+        });
+        return { ...client, payment: result.payment };
       } else {
         // EDICIÓN: solo actualizar datos del cliente
         saved = await upsertClienteToServer(clientPayload);
@@ -2621,9 +2650,10 @@ export const useGymStore = defineStore('gym', () => {
         id_promocion: savedPromoId,
         planId: '',
         id_membresia: saved.id_membresia || existingClient?.id_membresia || null,
-        membershipStatus: saved.membership_status || saved.estado || existingClient?.membershipStatus || clientPayload.estado,
+        membershipStatus: normalizeMembershipStatus(saved.membership_status || saved.estado || existingClient?.membershipStatus || clientPayload.estado),
         membershipStart: saved.membership_start || saved.fecha_inicio || existingClient?.membershipStart || '',
         membershipEnd: saved.membership_end || saved.fecha_fin || existingClient?.membershipEnd || '',
+        registrationOrigin: saved.origen_registro || existingClient?.registrationOrigin || '',
         paymentStatus: saved.payment_status || saved.estado_pago || existingClient?.paymentStatus || '',
         paymentReference: saved.payment_reference || saved.referencia_pago || existingClient?.paymentReference || '',
         hasPassword: Boolean(saved.has_password ?? saved.hasPassword ?? existingClient?.hasPassword),
@@ -2644,7 +2674,7 @@ export const useGymStore = defineStore('gym', () => {
         members.value.unshift(normalized);
       }
       persist();
-      fetchFromBackend({ force: true }).catch(() => {});
+      fetchFromBackend({ section: 'clients', force: true }).catch(() => {});
       return normalized;
     }
 
@@ -2661,7 +2691,7 @@ export const useGymStore = defineStore('gym', () => {
       plan: clientPayload.plan,
       planId: '',
       id_membresia: null,
-      membershipStatus: clientPayload.estado,
+      membershipStatus: normalizeMembershipStatus(clientPayload.estado),
       membershipStart: '',
       membershipEnd: '',
       paymentStatus: '',
@@ -2714,13 +2744,15 @@ export const useGymStore = defineStore('gym', () => {
       promocion: client.promocion || 'SIN PROMOCION',
       planId: '',
       id_membresia: client.id_membresia || null,
-      membershipStatus: client.membership_status || client.estado || '',
+      membershipStatus: normalizeMembershipStatus(client.membership_status || client.estado),
       membershipStart: client.membership_start || '',
       membershipEnd: client.membership_end || '',
+      registrationOrigin: client.origen_registro || '',
+      id_promocion: client.id_promocion || null,
       paymentStatus: client.payment_status || '',
       paymentReference: client.payment_reference || '',
       hasPassword: Boolean(client.has_password ?? client.hasPassword),
-      membershipPrice: 0,
+      membershipPrice: Number(client.monto_pago ?? 0),
       status: String(client.estado || 'EN_TRAMITE').toUpperCase(),
       joinedAt: client.fecha_registro || '',
       attendanceRate: 0,
@@ -2767,6 +2799,8 @@ export const useGymStore = defineStore('gym', () => {
       membership_end: membership.fecha_fin,
       payment_status: membership.estado_pago,
       payment_reference: membership.referencia_pago,
+      monto_pago: membership.monto_pago,
+      id_promocion: membership.id_promocion,
     });
     return { client, payment: saved.payment || null };
   };
@@ -2792,8 +2826,10 @@ export const useGymStore = defineStore('gym', () => {
       membership_end: membership.fecha_fin,
       payment_status: membership.estado_pago,
       payment_reference: membership.referencia_pago,
+      monto_pago: membership.monto_pago,
+      id_promocion: membership.id_promocion,
     });
-    await fetchFromBackend({ force: true }).catch(() => {});
+    await fetchFromBackend({ section: 'clients', force: true }).catch(() => {});
     return { ...client, notification: saved.notification || null };
   };
 
@@ -2819,8 +2855,10 @@ export const useGymStore = defineStore('gym', () => {
       membership_end: membership.fecha_fin,
       payment_status: membership.estado_pago,
       payment_reference: membership.referencia_pago,
+      monto_pago: membership.monto_pago,
+      id_promocion: membership.id_promocion,
     });
-    await fetchFromBackend({ force: true }).catch(() => {});
+    await fetchFromBackend({ section: 'clients', force: true }).catch(() => {});
     return client;
   };
 
