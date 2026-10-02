@@ -35,9 +35,14 @@ RUN npm run build
 
 FROM nginx:1.27-alpine
 
-COPY --chown=nginx:nginx nginx-main.conf /etc/nginx/nginx.conf
-COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
-COPY --chown=nginx:nginx --from=build /app/dist /usr/share/nginx/html
+# nginx puede leer la configuracion y la web, pero solo root puede modificarlas.
+COPY --chown=root:root --chmod=644 nginx-main.conf /etc/nginx/nginx.conf
+COPY --chown=root:root --chmod=644 nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chown=root:root --from=build /app/dist /usr/share/nginx/html
+
+# Permitir leer archivos y acceder a carpetas sin conceder escritura a nginx.
+RUN find /usr/share/nginx/html -type d -exec chmod 755 {} + \
+    && find /usr/share/nginx/html -type f -exec chmod 644 {} +
 
 USER nginx
 
