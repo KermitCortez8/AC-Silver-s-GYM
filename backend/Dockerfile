@@ -13,12 +13,17 @@ RUN pip install --upgrade pip \
 RUN useradd --create-home --uid 10001 appuser \
     && install -d --owner=appuser --group=appuser /app/db/store-images
 
-COPY --chown=appuser:appuser config.py dependencies.py ./
-COPY --chown=appuser:appuser app/*.py ./app/
-COPY --chown=appuser:appuser models/*.py ./models/
-COPY --chown=appuser:appuser routes/*.py ./routes/
-COPY --chown=appuser:appuser services/*.py ./services/
-COPY --chown=appuser:appuser utils/*.py ./utils/
+# appuser puede leer el codigo, pero solo root puede modificarlo.
+# Los archivos subidos conservan escritura en /app/db/store-images.
+COPY --chown=root:root --chmod=644 config.py dependencies.py ./
+COPY --chown=root:root --chmod=644 app/*.py ./app/
+COPY --chown=root:root --chmod=644 models/*.py ./models/
+COPY --chown=root:root --chmod=644 routes/*.py ./routes/
+COPY --chown=root:root --chmod=644 services/*.py ./services/
+COPY --chown=root:root --chmod=644 utils/*.py ./utils/
+
+# Los directorios necesitan permiso de acceso, sin permitir escritura a appuser.
+RUN chmod 755 /app/app /app/models /app/routes /app/services /app/utils
 
 USER appuser
 
