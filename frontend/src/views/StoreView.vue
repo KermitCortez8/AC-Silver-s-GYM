@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="workspace-view space-y-6">
 
     <!-- ═══════════════════════════════════════════════
          HEADER
@@ -235,7 +235,7 @@
                   <p class="font-bold" :class="isProductLowStock(producto) ? 'text-rose-300' : 'text-white'">
                     {{ producto.cantidad }} {{ producto.unidad_venta || 'unidad' }}
                   </p>
-                  <div class="mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
+                  <div class="mt-1.5 h-1.5 w-24 overflow-hidden rounded-full ws-inset">
                     <div class="h-full rounded-full transition-all" :class="isProductLowStock(producto) ? 'bg-rose-500' : 'bg-green-500'" :style="{ width: stockBarWidth(producto) + '%' }"></div>
                   </div>
                   <p class="mt-1 text-xs text-slate-400">Minimo: {{ producto.minimo || 0 }}</p>
@@ -659,7 +659,7 @@
                   <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Stock minimo</span>
                   <input v-model.number="form.minimo" type="number" min="0" class="field-input" />
                 </label>
-                <div class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50 sm:col-span-2">
+                <div class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-slate-200 sm:col-span-2">
                   <p v-if="stockEditable">El stock inicial se registrara como una entrada en los movimientos de Inventario.</p>
                   <p v-else class="font-bold">El stock se comparte entre Inventario y Tienda. Para modificarlo registra un movimiento en Inventario &rarr; Movimientos.</p>
                   <p class="mt-1">El estado se calcula solo: <span class="font-bold">Disponible</span> con stock, <span class="font-bold">Agotado</span> sin stock y <span class="font-bold">Descatalogado</span> (oculto a clientes) si no tiene precio o el item ya no es Tipo Tienda o esta Descontinuado.</p>
