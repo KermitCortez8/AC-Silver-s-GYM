@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-6 relative">
-    <!-- POP-UP / TOAST NOTIFICATION CONTAINER (FLOTANTE EN ESQUINA SUPERIOR DERECHA) -->
+    <!-- POP-UP / TOAST NOTIFICATION CONTAINER (FLOTANTE EN ESQUINA INFERIOR DERECHA) -->
     <Teleport to="body">
-      <div v-if="toast.show" class="fixed top-5 right-5 z-50 flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl transition-all animate-bounce-short" :class="toast.type === 'error' ? 'border-rose-500/40 bg-slate-900/95 text-rose-200 shadow-rose-950/50' : 'border-emerald-500/40 bg-slate-900/95 text-emerald-200 shadow-emerald-950/50'">
+      <div v-if="toast.show" class="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-xl transition-all animate-bounce-short" :class="toast.type === 'error' ? 'border-rose-500/40 bg-slate-900/95 text-rose-200 shadow-rose-950/50' : 'border-emerald-500/40 bg-slate-900/95 text-emerald-200 shadow-emerald-950/50'">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-lg" :class="toast.type === 'error' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'">
           {{ toast.type === 'error' ? '⚠️' : '✓' }}
         </div>
@@ -60,8 +60,26 @@
       </div>
     </section>
 
-    <!-- Panel de información del Cliente (Basado en la Plantilla de la foto) -->
-    <section v-if="clientData?.cliente" class="space-y-6">
+    <!-- Estado 1: ANIMACIÓN DE CARGA GIRATORIA CUANDO ESTÁ BUSCANDO -->
+    <section v-if="isSearching" class="rounded-2xl border border-white/10 bg-slate-900/80 p-16 text-center backdrop-blur shadow-2xl space-y-4">
+      <div class="flex flex-col items-center justify-center gap-4">
+        <div class="relative flex h-20 w-20 items-center justify-center">
+          <!-- Anillo exterior giratorio en cyan -->
+          <div class="absolute h-20 w-20 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent shadow-lg shadow-cyan-400/40"></div>
+          <!-- Icono interior de lupa -->
+          <svg class="w-8 h-8 text-cyan-300 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <div class="space-y-1">
+          <p class="text-lg font-black text-white">Consultando información del cliente...</p>
+          <p class="text-xs text-slate-400">Buscando DNI <span class="font-mono font-bold text-cyan-300">{{ dni }}</span> y cargando rutinas asignadas</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Estado 2: Panel de información del Cliente (Basado en la Plantilla de la foto) -->
+    <section v-else-if="clientData?.cliente" class="space-y-6">
       <!-- BARRA SUPERIOR DE DATOS DEL CLIENTE (Plantilla) -->
       <div class="rounded-2xl border border-white/10 bg-slate-900/90 p-4 backdrop-blur shadow-lg">
         <div class="flex flex-wrap items-center justify-between gap-4 text-sm font-semibold text-slate-200">
@@ -83,6 +101,17 @@
             <span class="text-slate-400">Código ID:</span>
             <span class="text-slate-300">{{ clientData.cliente.id_usuario }}</span>
           </div>
+
+          <!-- BOTÓN INTEGRADO DE ACCIÓN: + ASIGNAR RUTINA PERSONALIZADA -->
+          <button
+            class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 text-xs font-extrabold text-white hover:from-purple-500 hover:to-indigo-500 transition shadow-lg shadow-purple-900/30"
+            @click="openAssignModal"
+          >
+            <svg class="w-4 h-4 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Asignar rutina personalizada</span>
+          </button>
         </div>
       </div>
 
@@ -152,20 +181,20 @@
         </article>
       </div>
 
-      <!-- BOTÓN "+ Asignar nueva rutina personalizada" (Plantilla) -->
-      <div class="border-t border-dashed border-white/20 pt-4">
-        <button
-          class="flex items-center gap-2 text-base font-bold text-purple-300 hover:text-purple-200 transition"
-          @click="openAssignModal"
-        >
-          <span class="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/20 text-purple-300 font-bold text-lg">+</span>
-          Asignar nueva rutina personalizada
-        </button>
-      </div>
-
       <p v-if="!clientData.matriculas.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-6 text-center text-slate-400">
         El cliente no tiene matrículas activas.
       </p>
+    </section>
+
+    <!-- Estado 3: ESTADO VACÍO PREVIO A LA BÚSQUEDA -->
+    <section v-else class="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-12 text-center">
+      <div class="mx-auto max-w-sm space-y-3">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300 font-bold text-2xl border border-cyan-400/20">
+          🔍
+        </div>
+        <h3 class="text-lg font-bold text-white">Consulta y Asignación de Alumnos</h3>
+        <p class="text-xs text-slate-400">Ingresa el número de DNI del alumno arriba y haz clic en "Buscar Cliente" para consultar sus rutinas y registrar progresos.</p>
+      </div>
     </section>
 
     <!-- MODAL: Asignar Nueva Rutina Personalizada (Plantilla) -->
@@ -448,14 +477,21 @@ onUnmounted(() => {
   pauseTimer();
 });
 
+const isSearching = ref(false);
+
 const searchClient = async () => {
+  if (!dni.value.trim()) return;
   try {
+    isSearching.value = true;
+    clientData.value = null;
     await gymStore.fetchTrainerOverview();
     clientData.value = await gymStore.fetchTrainerClientRoutines(dni.value);
     showToast(`Cliente ${clientData.value.cliente.nombre} cargado exitosamente.`, 'success');
   } catch (error) {
     clientData.value = null;
     showToast(error instanceof Error ? error.message : 'No se pudo buscar el cliente.', 'error');
+  } finally {
+    isSearching.value = false;
   }
 };
 
