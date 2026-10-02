@@ -11,6 +11,26 @@ y guardar la informacion del sistema.
 - Docker Desktop o Docker Engine con Docker Compose 2.17 o superior, si se usara Docker
 - Credenciales de Supabase para el backend
 
+## Integración continua y despliegue
+
+Al fusionar un PR hacia `main`, GitHub Actions ejecuta esta secuencia:
+
+1. Construye las imágenes Docker del backend y frontend, arranca ambos
+   contenedores y verifica el backend, la web y el proxy de Nginx.
+2. Ejecuta las pruebas existentes de Python, Node.js y Deno en paralelo.
+3. Si todas pasan, despliega el frontend en Vercel y solicita el despliegue
+   del mismo commit en Render.
+
+Si falla Docker o alguna prueba, los despliegues no se ejecutan. La validación
+usa `docker-compose.ci.yml`, sin archivos `.env` ni credenciales de producción.
+Comprueba el arranque y el proxy; no comprueba una conexión real a Supabase.
+El endpoint `/api/health` devuelve el 503 esperado por falta de credenciales.
+
+Los despliegues conservan sus mecanismos actuales: Vercel compila el frontend
+y Render recibe su Deploy Hook. Este workflow no publica imágenes Docker ni
+cambia la configuración del servicio en Render. La aceptación del hook no
+confirma que Render haya terminado el despliegue.
+
 ## Activacion Manual
 
 ### Backend
@@ -68,45 +88,7 @@ Para los pagos, configura también las variables de Stripe de `backend/.env`.
 Los archivos `.env` reales no se incluyen en Git; cada Codespace necesita sus
 credenciales. No sobrescribas los archivos si ya los configuraste.
 
-Para el cobro de membresías desde administración, ejecuta también
-`backend/migrations/009_admin_client_stripe.sql` en el SQL Editor de Supabase.
-En **Clientes > Nuevo cliente**, marca **Realizar el pago con Stripe al registrar**
-para abrir Checkout, o registra sin marcarla y paga después desde los detalles.
-Al volver de Stripe, el backend verifica el pago y permite activar la membresía.
-El cobro desde el panel solo se ofrece para clientes con origen `ADMIN` y pago
-pendiente. Los registros anteriores conservan su origen desconocido; esta
-migración no los clasifica automáticamente.
 
-Para el vencimiento automático, ejecuta
-`backend/migrations/010_expire_memberships.sql` en el SQL Editor de Supabase.
-La migración instala una tarea de Supabase Cron que revisa las membresías cada
-minuto, cambia su estado a `VENCIDA` y deshabilita la cuenta si no tiene otra
-membresía pagada y vigente. La fecha de fin incluye todo ese día en hora de Perú.
-El backend también comprueba la vigencia en cada petición autenticada de un
-cliente y bloquea el acceso al vencer, incluso con un token todavía válido.
-La interfaz revalida las sesiones de clientes cada 30 segundos y al volver a la
-pestaña, cierra la sesión vencida y muestra el motivo. Administración dispone
-del filtro **Vencida**. Una membresía vencida requiere renovación; volver a
-activar su pago histórico no extiende su vigencia.
-
-Clientes, Usuarios, Planes, Horarios e Inicio cargan los recursos necesarios para
-su sección y comparten respuestas recientes durante 30 segundos. El botón de
-actualización fuerza una nueva consulta. Las lecturas del estado de Supabase
-se ejecutan con un máximo de seis conexiones simultáneas; el estado anterior
-se conserva si falla una tabla obligatoria. Las validaciones de acceso y de
-vencimiento siguen aplicándose en el backend.
-
-Inicio muestra las membresías activas, en trámite y vencidas, y los
-pagos de la última membresía de cada cliente según su origen de registro.
-Los enlaces del resumen abren Clientes con el filtro seleccionado. Los pagos
-confirmados pendientes de activación se cuentan por separado de los pagos
-pendientes; los registros antiguos sin origen o pago conocido no se clasifican
-como pagados.
-
-Para ejecutar las pruebas del backend, instala `backend/requirements-dev.txt`
-y ejecuta `python -m pytest backend/tests` desde la raíz, con una
-`AUTH_SECRET_KEY` de prueba de al menos 32 bytes. En `frontend`, ejecuta
-`npm test` y `npm run build`.
 
 Construir e iniciar frontend y backend:
 
@@ -149,15 +131,4 @@ docker compose up -d --no-build
 docker compose ps
 ```
 
-### Estados de membresía y dashboard
-
-Las membresías tienen únicamente `ACTIVO`, `VENCIDA` y `EN_TRAMITE` (mostrados como
-Activo, Vencida y En trámite). El pago permanece separado como pagado o pendiente.
-Registrar o renovar una membresía la deja en trámite; el pago confirmado permite
-activarla y el vencimiento bloquea el acceso conservando el historial del pago.
-El dashboard del administrador muestra tres KPI y gráficos con estos tres estados.
-
-Después de la migración 010, ejecutar `backend/migrations/011_membership_states.sql`
-en el SQL Editor de Supabase para normalizar los datos anteriores, restringir los
-estados y actualizar la función de vencimiento programado. La migración conserva
-los datos de pago y no activa cuentas pendientes.
+ 
