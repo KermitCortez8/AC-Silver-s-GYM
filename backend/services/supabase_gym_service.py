@@ -351,9 +351,14 @@ class SupabaseGymService(GymDomainService):
             raise ValueError("Cliente sin membresia activa") from error
         if "horario no disponible" in normalized or "23503" in normalized:
             raise ValueError("Horario no disponible") from error
-        raise error
+    def asignar_rutina_matricula(self, id_matricula: int, id_rutina: int) -> dict[str, Any]:
+        try:
+            return super().asignar_rutina_matricula(id_matricula, id_rutina)
+        except RuntimeError as error:
+            self._raise_schedule_enrollment_error(error)
 
     def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
+
         """Crea la matrícula y usa la operación atómica cuando 002 está aplicada."""
         with self.lock:
             # Una matrícula siempre parte del estado remoto más reciente, incluso
@@ -1017,12 +1022,21 @@ class SupabaseGymService(GymDomainService):
 
     # Procesa esta operación.
     def _map_routine(self, row: dict[str, Any]) -> dict[str, Any]:
+        ejercicios = row.get("ejercicios")
+        if isinstance(ejercicios, str):
+            try:
+                ejercicios = json.loads(ejercicios)
+            except Exception:
+                ejercicios = []
+        elif not isinstance(ejercicios, list):
+            ejercicios = []
         return {
             "id_rutina": int(row.get("id_rutina", 0) or 0),
             "servicio": str(row.get("servicio") or "fitness").strip().lower(),
             "nombre_rutina": str(row.get("Nombre_rutina") or ""),
             "zonas_musculares": str(row.get("Zonas_musculares") or ""),
             "color": str(row.get("Color") or "Azul"),
+            "ejercicios": ejercicios,
         }
 
     # Procesa esta operación.
@@ -1033,7 +1047,9 @@ class SupabaseGymService(GymDomainService):
             "Nombre_rutina": str(row.get("nombre_rutina") or ""),
             "Zonas_musculares": str(row.get("zonas_musculares") or ""),
             "Color": str(row.get("color") or "Azul"),
+            "ejercicios": row.get("ejercicios") if isinstance(row.get("ejercicios"), list) else [],
         }
+
 
     # Procesa esta operación.
     def _map_schedule(self, row: dict[str, Any]) -> dict[str, Any]:
@@ -1112,6 +1128,14 @@ class SupabaseGymService(GymDomainService):
 
     # Procesa esta operación.
     def _map_routine_progress(self, row: dict[str, Any]) -> dict[str, Any]:
+        ejercicios_detalle = row.get("ejercicios_detalle")
+        if isinstance(ejercicios_detalle, str):
+            try:
+                ejercicios_detalle = json.loads(ejercicios_detalle)
+            except Exception:
+                ejercicios_detalle = []
+        elif not isinstance(ejercicios_detalle, list):
+            ejercicios_detalle = []
         return {
             "id_progreso": int(row.get("id_progreso", 0) or 0),
             "id_matricula": int(row.get("id_matricula", 0) or 0),
@@ -1120,6 +1144,7 @@ class SupabaseGymService(GymDomainService):
             "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
             "observacion": str(row.get("observacion") or ""),
             "id_usuario": row.get("id_usuario"),
+            "ejercicios_detalle": ejercicios_detalle,
         }
 
     # Procesa esta operación.
@@ -1132,7 +1157,9 @@ class SupabaseGymService(GymDomainService):
             "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
             "observacion": str(row.get("observacion") or ""),
             "id_usuario": self._remote_user_id_or_none(row.get("id_usuario")),
+            "ejercicios_detalle": row.get("ejercicios_detalle") if isinstance(row.get("ejercicios_detalle"), list) else [],
         }
+
 
     # Procesa esta operación.
     def _map_ticket(self, row: dict[str, Any]) -> dict[str, Any]:

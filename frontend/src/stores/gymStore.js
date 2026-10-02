@@ -2321,6 +2321,7 @@ export const useGymStore = defineStore('gym', () => {
       nombre_rutina: String(payload.nombre_rutina || '').trim(),
       zonas_musculares: String(payload.zonas_musculares || '').trim(),
       color: payload.color || 'Azul',
+      ejercicios: Array.isArray(payload.ejercicios) ? payload.ejercicios : [],
     };
     const response = await fetch(`${apiBase}/trainer/rutinas`, {
       method: 'POST',
@@ -2337,6 +2338,7 @@ export const useGymStore = defineStore('gym', () => {
       nombre_rutina: saved.nombre_rutina || body.nombre_rutina,
       zonas_musculares: saved.zonas_musculares || body.zonas_musculares,
       color: saved.color || body.color,
+      ejercicios: saved.ejercicios || body.ejercicios,
     };
     const index = routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
     if (index >= 0) routines.value[index] = normalized; else routines.value.unshift(normalized);
@@ -2390,8 +2392,10 @@ export const useGymStore = defineStore('gym', () => {
       headers: _authHeaders(),
       body: JSON.stringify({
         fecha: payload.fecha || todayISO(),
+        estado: payload.estado || 'REALIZADO',
         observacion: payload.observacion || '',
         id_usuario: getCurrentRegistrarId(authStore) || undefined,
+        ejercicios_detalle: Array.isArray(payload.ejercicios_detalle) ? payload.ejercicios_detalle : [],
       }),
     });
     if (!response.ok) {
@@ -2399,6 +2403,7 @@ export const useGymStore = defineStore('gym', () => {
     }
     return response.json();
   };
+
 
   /**
    * Gestiona esta acción de la vista.
