@@ -16,7 +16,64 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  docker-ci:
+    name: Validar construcción y arranque de Docker
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: gym-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      DOCKER_CONTAINER_PREFIX: gym-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      BACKEND_ENV_FILE: ${{ runner.temp }}/gym-ci-backend.env
+      DOCKER_CHECK_DATABASE: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+      - name: Preparar configuración Docker sin credenciales de producción
+        run: |
+          printf '%s\n' 'AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef' > "$BACKEND_ENV_FILE"
+      - name: Construir imágenes de frontend y backend
+        run: docker compose -f docker-compose.yml build
+      - name: Arrancar y esperar ambos contenedores
+        run: docker compose -f docker-compose.yml up --detach --wait --wait-timeout 120
+      - name: Comprobar backend, frontend y proxy de Nginx
+        run: |
+          python3 - <<'PY'
+          import json
+          import urllib.error
+          import urllib.request
+
+          def request(url):
+              try:
+                  response = urllib.request.urlopen(url, timeout=10)
+              except urllib.error.HTTPError as error:
+                  response = error
+              with response:
+                  return response.code, response.read()
+
+          status, body = request('http://127.0.0.1:8000/')
+          assert status == 200 and json.loads(body)['status'] == 'ok'
+          status, body = request('http://127.0.0.1:5173/')
+          assert status == 200 and b'<html' in body.lower()
+          # Sin credenciales, /api/health debe devolver el 503 del backend.
+          # Comparar la respuesta directa y por Nginx verifica el proxy.
+          direct = request('http://127.0.0.1:8000/api/health')
+          proxied = request('http://127.0.0.1:5173/api/health')
+          assert direct[0] == 503 and 'detail' in json.loads(direct[1])
+          assert proxied == direct, (proxied, direct)
+          print('Backend, frontend y proxy verificados sin credenciales de producción.')
+          PY
+      - name: Mostrar logs si falla la validación
+        if: failure()
+        run: docker compose -f docker-compose.yml logs --no-color
+      - name: Limpiar contenedores
+        if: always()
+        run: docker compose -f docker-compose.yml down --volumes --remove-orphans
+
   schedule-emails-ci:
+    needs: [docker-ci]
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -34,6 +91,7 @@ jobs:
         run: deno test supabase/tests/
 
   backend-ci:
+    needs: [docker-ci]
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -60,6 +118,7 @@ jobs:
         run: python -m pytest tests/ -q
 
   frontend-ci:
+    needs: [docker-ci]
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 10
