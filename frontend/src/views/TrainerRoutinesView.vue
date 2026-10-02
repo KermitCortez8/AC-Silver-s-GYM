@@ -1,21 +1,23 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 text-white">
     <!-- Header principal -->
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-slate-950 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-cyan-300/80">Catálogo de Rutinas</p>
+          <p class="text-xs uppercase tracking-[0.35em] text-red-500 font-extrabold flex items-center gap-2">
+            <i class="fa-solid fa-dumbbell"></i>
+            Catálogo de Rutinas
+          </p>
           <h1 class="mt-1 text-3xl font-black text-white">Supervisión & Gestión de Rutinas</h1>
-          <p class="mt-1 text-sm text-slate-300">Diseña, edita y organiza las rutinas personalizadas del catálogo para los servicios del gimnasio.</p>
+          <p class="mt-1 text-sm text-slate-400">Diseña, edita y organiza las rutinas personalizadas del catálogo para los servicios del gimnasio.</p>
         </div>
         <div class="flex flex-wrap gap-3">
-          <button class="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-extrabold text-white transition hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/20" @click="openCreateModal">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+          <button class="flex items-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-red-500 shadow-lg shadow-red-600/20" @click="openCreateModal">
+            <i class="fa-solid fa-plus"></i>
             Crear nueva rutina
           </button>
-          <button class="rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800" @click="refresh">
+          <button class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800" @click="refresh">
+            <i class="fa-solid fa-rotate-right"></i>
             Actualizar
           </button>
         </div>
@@ -24,61 +26,53 @@
 
     <!-- Tarjetas KPI -->
     <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div class="rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur">
+      <div class="rounded-2xl border border-white/10 bg-slate-950 p-5 backdrop-blur">
         <div class="flex items-center justify-between">
           <p class="text-xs uppercase tracking-wider font-semibold text-slate-400">Total Rutinas</p>
-          <span class="rounded-full bg-cyan-400/10 p-2 text-cyan-300 border border-cyan-400/20">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+          <span class="rounded-full bg-red-600/10 p-2.5 text-red-400 border border-red-600/20">
+            <i class="fa-solid fa-list-check text-base"></i>
           </span>
         </div>
         <p class="mt-3 text-3xl font-black text-white">{{ routines.length }}</p>
         <p class="mt-1 text-xs text-slate-400">Rutinas en el catálogo general</p>
       </div>
 
-      <div class="rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur">
+      <div class="rounded-2xl border border-white/10 bg-slate-950 p-5 backdrop-blur">
         <div class="flex items-center justify-between">
           <p class="text-xs uppercase tracking-wider font-semibold text-slate-400">Con Ejercicios</p>
-          <span class="rounded-full bg-emerald-400/10 p-2 text-emerald-300 border border-emerald-400/20">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <span class="rounded-full bg-emerald-500/10 p-2.5 text-emerald-400 border border-emerald-500/20">
+            <i class="fa-solid fa-circle-check text-base"></i>
           </span>
         </div>
-        <p class="mt-3 text-3xl font-black text-emerald-300">{{ routinesWithExercisesCount }}</p>
+        <p class="mt-3 text-3xl font-black text-emerald-400">{{ routinesWithExercisesCount }}</p>
         <p class="mt-1 text-xs text-slate-400">Listas para ser asignadas a clientes</p>
       </div>
 
-      <div class="rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur">
+      <div class="rounded-2xl border border-white/10 bg-slate-950 p-5 backdrop-blur">
         <div class="flex items-center justify-between">
           <p class="text-xs uppercase tracking-wider font-semibold text-slate-400">Promedio Ejercicios</p>
-          <span class="rounded-full bg-blue-400/10 p-2 text-blue-300 border border-blue-400/20">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+          <span class="rounded-full bg-red-600/10 p-2.5 text-red-400 border border-red-600/20">
+            <i class="fa-solid fa-bolt text-base"></i>
           </span>
         </div>
-        <p class="mt-3 text-3xl font-black text-blue-300">{{ averageExercisesPerRoutine }}</p>
+        <p class="mt-3 text-3xl font-black text-red-400">{{ averageExercisesPerRoutine }}</p>
         <p class="mt-1 text-xs text-slate-400">Ejercicios promedio por rutina</p>
       </div>
 
-      <div class="rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur">
+      <div class="rounded-2xl border border-white/10 bg-slate-950 p-5 backdrop-blur">
         <div class="flex items-center justify-between">
           <p class="text-xs uppercase tracking-wider font-semibold text-slate-400">Servicios Cubiertos</p>
-          <span class="rounded-full bg-purple-400/10 p-2 text-purple-300 border border-purple-400/20">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
+          <span class="rounded-full bg-red-600/10 p-2.5 text-red-400 border border-red-600/20">
+            <i class="fa-solid fa-layer-group text-base"></i>
           </span>
         </div>
-        <p class="mt-3 text-3xl font-black text-purple-300">{{ activeServicesCount }} / {{ serviceOptions.length }}</p>
+        <p class="mt-3 text-3xl font-black text-white">{{ activeServicesCount }} / {{ serviceOptions.length }}</p>
         <p class="mt-1 text-xs text-slate-400">Categorías con rutinas creadas</p>
       </div>
     </section>
 
     <!-- Sección de Filtros y Tabla -->
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur space-y-4">
+    <section class="rounded-2xl border border-white/10 bg-slate-950 p-6 backdrop-blur space-y-4">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Catálogo Registrado</p>
@@ -86,24 +80,39 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-          <!-- Buscador con icono perfectamente alineado -->
-          <div class="relative w-full sm:w-72">
-            <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input v-model="searchQuery" type="text" placeholder="Buscar por nombre o zonas..." class="field-input search-input text-xs pr-4 py-2.5" />
+          <!-- Selector de cantidad de filas por página (5, 7, 10) -->
+          <div class="flex items-center gap-2 text-xs font-bold text-slate-400">
+            <span>Ver:</span>
+            <div class="flex items-center gap-1 rounded-xl bg-slate-900 p-1 border border-white/10">
+              <button
+                v-for="size in [5, 7, 10]"
+                :key="size"
+                type="button"
+                class="px-2.5 py-1 rounded-lg font-black text-xs transition"
+                :class="itemsPerPage === size ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
+                @click="setItemsPerPage(size)"
+              >
+                {{ size }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Buscador -->
+          <div class="relative w-full sm:w-64">
+            <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input v-model="searchQuery" type="text" placeholder="Buscar por nombre o zonas..." class="field-input search-input text-xs pr-4 py-2.5" @input="currentPage = 1" />
           </div>
         </div>
       </div>
 
       <!-- Filtros por servicio -->
       <div class="flex flex-wrap gap-2 border-b border-white/10 pb-4">
-        <button class="rounded-xl px-3.5 py-2 text-xs font-bold transition" :class="selectedServiceFilter === 'todos' ? 'bg-cyan-400 text-slate-950 shadow-md shadow-cyan-400/20' : 'bg-slate-900/80 text-slate-300 border border-white/10 hover:bg-slate-800'" @click="selectedServiceFilter = 'todos'">
+        <button class="rounded-xl px-3.5 py-2 text-xs font-bold transition" :class="selectedServiceFilter === 'todos' ? 'bg-red-600 text-white shadow-md shadow-red-600/20' : 'bg-slate-900 text-slate-300 border border-white/10 hover:bg-slate-800'" @click="setServiceFilter('todos')">
           Todos ({{ routines.length }})
         </button>
-        <button v-for="service in serviceOptions" :key="service.value" class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5" :class="selectedServiceFilter === service.value ? 'bg-cyan-400 text-slate-950 shadow-md shadow-cyan-400/20' : 'bg-slate-900/80 text-slate-300 border border-white/10 hover:bg-slate-800'" @click="selectedServiceFilter = service.value">
+        <button v-for="service in serviceOptions" :key="service.value" class="rounded-xl px-3.5 py-2 text-xs font-bold transition flex items-center gap-1.5" :class="selectedServiceFilter === service.value ? 'bg-red-600 text-white shadow-md shadow-red-600/20' : 'bg-slate-900 text-slate-300 border border-white/10 hover:bg-slate-800'" @click="setServiceFilter(service.value)">
           <span>{{ service.label }}</span>
-          <span class="rounded-full px-2 py-0.5 text-[10px] font-extrabold" :class="selectedServiceFilter === service.value ? 'bg-slate-950/20 text-slate-950' : 'bg-white/10 text-slate-300'">
+          <span class="rounded-full px-2 py-0.5 text-[10px] font-extrabold" :class="selectedServiceFilter === service.value ? 'bg-black/40 text-white' : 'bg-white/10 text-slate-300'">
             {{ routinesForService(service.value).length }}
           </span>
         </button>
@@ -112,7 +121,7 @@
       <!-- Tabla de Rutinas Registradas -->
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-slate-300">
-          <thead class="bg-slate-950/60 text-xs uppercase text-slate-400 tracking-wider">
+          <thead class="bg-black/60 text-xs uppercase text-slate-400 tracking-wider">
             <tr>
               <th class="p-3.5 rounded-l-xl">Servicio</th>
               <th class="p-3.5">Nombre de la Rutina</th>
@@ -122,9 +131,9 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
-            <tr v-for="routine in filteredRoutines" :key="routine.id_rutina" class="transition hover:bg-white/[0.03]">
+            <tr v-for="routine in paginatedRoutines" :key="routine.id_rutina" class="transition hover:bg-white/[0.03]">
               <td class="p-3.5">
-                <span class="inline-block rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-300">
+                <span class="inline-block rounded-full border border-red-600/30 bg-red-600/10 px-3 py-1 text-xs font-bold text-red-400">
                   {{ serviceLabel(routine.servicio) }}
                 </span>
               </td>
@@ -132,18 +141,19 @@
                 <p class="font-bold text-white text-base">{{ routine.nombre_rutina || 'Sin nombre' }}</p>
               </td>
               <td class="p-3.5">
-                <span class="text-xs text-slate-300 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-white/5 inline-block">
+                <span class="text-xs text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-white/5 inline-block">
                   {{ routine.zonas_musculares || 'General' }}
                 </span>
               </td>
               <td class="p-3.5 text-center">
-                <span class="rounded-full px-2.5 py-1 text-xs font-black" :class="(routine.ejercicios || []).length ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30' : 'bg-slate-800 text-slate-400'">
+                <span class="rounded-full px-2.5 py-1 text-xs font-black" :class="(routine.ejercicios || []).length ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'">
                   {{ (routine.ejercicios || []).length }} ej.
                 </span>
               </td>
               <td class="p-3.5 text-right">
-                <button class="rounded-xl border border-white/10 bg-cyan-400/10 px-4 py-2 text-xs font-extrabold text-cyan-200 transition hover:bg-cyan-400 hover:text-slate-950" @click="editRoutine(routine)">
-                  Editar rutina
+                <button class="rounded-xl border border-white/10 bg-slate-900 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-red-600 hover:border-red-600 flex items-center gap-1.5 ml-auto" @click="editRoutine(routine)">
+                  <i class="fa-solid fa-pen-to-square text-xs text-red-400"></i>
+                  <span>Editar rutina</span>
                 </button>
               </td>
             </tr>
@@ -156,24 +166,63 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Paginación Inferior de la Tabla -->
+      <div v-if="filteredRoutines.length > 0" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-white/10 pt-4 text-xs font-bold text-slate-400">
+        <p>
+          Mostrando <span class="text-white font-black">{{ showingStart }}</span> a <span class="text-white font-black">{{ showingEnd }}</span> de <span class="text-white font-black">{{ filteredRoutines.length }}</span> rutinas
+        </p>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="rounded-xl border border-white/10 bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5"
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+          >
+            <i class="fa-solid fa-chevron-left text-[10px]"></i>
+            <span>Anterior</span>
+          </button>
+
+          <div class="flex items-center gap-1">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              type="button"
+              class="h-7 w-7 rounded-lg text-xs font-black transition flex items-center justify-center"
+              :class="currentPage === page ? 'bg-red-600 text-white shadow-sm shadow-red-600/30' : 'bg-slate-900 text-slate-400 border border-white/10 hover:bg-slate-800 hover:text-white'"
+              @click="currentPage = page"
+            >
+              {{ page }}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="rounded-xl border border-white/10 bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1.5"
+            :disabled="currentPage >= totalPages"
+            @click="currentPage++"
+          >
+            <span>Siguiente</span>
+            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          </button>
+        </div>
+      </div>
     </section>
 
     <!-- MODAL DE CREACIÓN / EDICIÓN DE RUTINA (TELEPORTED TO BODY FOR FULLSCREEN OVERLAY) -->
     <Teleport to="body">
-      <div v-if="showRoutineModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md overflow-y-auto">
-        <div class="relative w-full max-w-3xl rounded-3xl border border-white/15 bg-slate-900 p-6 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto">
+      <div v-if="showRoutineModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md overflow-y-auto">
+        <div class="relative w-full max-w-3xl rounded-3xl border border-white/15 bg-slate-950 p-6 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto">
           <!-- Encabezado Modal -->
           <div class="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
-              <p class="text-xs uppercase tracking-widest text-cyan-300">Configuración de Catálogo</p>
+              <p class="text-xs uppercase tracking-widest text-red-500 font-extrabold">Configuración de Catálogo</p>
               <h2 class="text-2xl font-black text-white">
                 {{ routineForm.id_rutina ? 'Editar Rutina Registrada' : 'Crear Nueva Rutina' }}
               </h2>
             </div>
-            <button class="rounded-full bg-white/10 p-2 text-slate-300 hover:bg-white/20 hover:text-white transition" @click="closeRoutineModal">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+            <button class="rounded-full bg-white/10 p-2 text-slate-400 hover:bg-white/20 hover:text-white transition" @click="closeRoutineModal">
+              <i class="fa-solid fa-xmark text-base"></i>
             </button>
           </div>
 
@@ -197,23 +246,28 @@
             </label>
 
             <!-- CONSTRUCTOR DE EJERCICIOS CON SELECTOR CLARO DE MODO DE REPETICIÓN -->
-            <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-4 space-y-4">
+            <div class="rounded-2xl border border-white/10 bg-black p-4 space-y-4">
               <div class="flex items-center justify-between border-b border-white/10 pb-3">
                 <div>
-                  <h3 class="font-bold text-cyan-200 text-sm">Lista de Ejercicios</h3>
+                  <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-dumbbell text-red-500"></i>
+                    Lista de Ejercicios
+                  </h3>
                   <p class="text-xs text-slate-400">Agrega los ejercicios detallando series, tipo de repeticiones, descanso y peso sugerido.</p>
                 </div>
-                <button type="button" class="rounded-xl bg-cyan-400/20 px-3.5 py-1.5 text-xs font-bold text-cyan-200 hover:bg-cyan-400 hover:text-slate-950 transition" @click="addExercise">
-                  + Agregar Ejercicio
+                <button type="button" class="flex items-center gap-1.5 rounded-xl bg-red-600/20 border border-red-600/30 px-3.5 py-1.5 text-xs font-bold text-red-400 hover:bg-red-600 hover:text-white transition" @click="addExercise">
+                  <i class="fa-solid fa-plus text-xs"></i>
+                  <span>Agregar Ejercicio</span>
                 </button>
               </div>
 
               <div v-if="routineForm.ejercicios.length" class="space-y-4">
                 <div v-for="(ex, index) in routineForm.ejercicios" :key="index" class="rounded-2xl border border-white/10 bg-slate-900/90 p-4 space-y-3 shadow-inner">
                   <div class="flex items-center justify-between border-b border-white/5 pb-2">
-                    <span class="text-xs font-black text-cyan-400">Ejercicio #{{ index + 1 }}</span>
-                    <button type="button" class="text-xs font-bold text-rose-400 hover:text-rose-300 hover:underline" @click="removeExercise(index)">
-                      Eliminar
+                    <span class="text-xs font-black text-red-400">Ejercicio #{{ index + 1 }}</span>
+                    <button type="button" class="text-xs font-bold text-red-400 hover:text-red-300 hover:underline flex items-center gap-1" @click="removeExercise(index)">
+                      <i class="fa-solid fa-trash text-xs"></i>
+                      <span>Eliminar</span>
                     </button>
                   </div>
 
@@ -246,7 +300,7 @@
                         <button 
                           type="button" 
                           class="flex-1 rounded-lg py-1 text-[11px] font-bold transition"
-                          :class="ex.rep_modo === 'fijo' ? 'bg-cyan-400 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
+                          :class="ex.rep_modo === 'fijo' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                           @click="setRepMode(ex, 'fijo')"
                         >
                           Número Fijo
@@ -254,7 +308,7 @@
                         <button 
                           type="button" 
                           class="flex-1 rounded-lg py-1 text-[11px] font-bold transition"
-                          :class="ex.rep_modo === 'rango' ? 'bg-cyan-400 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
+                          :class="ex.rep_modo === 'rango' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                           @click="setRepMode(ex, 'rango')"
                         >
                           Rango (ej. 10-12)
@@ -262,7 +316,7 @@
                         <button 
                           type="button" 
                           class="flex-1 rounded-lg py-1 text-[11px] font-bold transition"
-                          :class="ex.rep_modo === 'fallo' ? 'bg-cyan-400 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
+                          :class="ex.rep_modo === 'fallo' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                           @click="setRepMode(ex, 'fallo')"
                         >
                           Al Fallo
@@ -302,8 +356,9 @@
                       </div>
 
                       <div v-else-if="ex.rep_modo === 'fallo'" class="pt-1">
-                        <div class="rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-center text-xs font-bold text-rose-300">
-                          🔥 Repeticiones hasta el fallo (AMRAP)
+                        <div class="rounded-xl border border-red-500/40 bg-red-950/40 px-3 py-2 text-center text-xs font-bold text-red-300 flex items-center justify-center gap-2">
+                          <i class="fa-solid fa-fire text-red-500"></i>
+                          <span>Repeticiones hasta el fallo (AMRAP)</span>
                         </div>
                       </div>
                     </div>
@@ -339,11 +394,12 @@
 
             <!-- Botones de Acción Modal -->
             <div class="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
-              <button type="button" class="rounded-2xl border border-white/10 bg-slate-800 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-700" @click="closeRoutineModal">
+              <button type="button" class="rounded-2xl border border-white/10 bg-slate-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800" @click="closeRoutineModal">
                 Cancelar
               </button>
-              <button class="rounded-2xl bg-cyan-400 px-6 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-cyan-300 shadow-lg shadow-cyan-400/20 disabled:opacity-60" :disabled="isSaving">
-                {{ isSaving ? 'Guardando...' : (routineForm.id_rutina ? 'Actualizar Rutina' : 'Guardar Rutina') }}
+              <button class="flex items-center gap-2 rounded-2xl bg-red-600 px-6 py-2.5 text-xs font-extrabold text-white transition hover:bg-red-500 shadow-lg shadow-red-600/20 disabled:opacity-60" :disabled="isSaving">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>{{ isSaving ? 'Guardando...' : (routineForm.id_rutina ? 'Actualizar Rutina' : 'Guardar Rutina') }}</span>
               </button>
             </div>
           </form>
@@ -354,14 +410,10 @@
     <!-- TOAST DE NOTIFICACIÓN FLOTANTE (TELEPORTED TO BODY) -->
     <Teleport to="body">
       <div v-if="toastMessage" class="fixed bottom-6 right-6 z-50 max-w-sm animate-bounce-short">
-        <div class="flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md" :class="toastType === 'error' ? 'border-rose-400/30 bg-rose-950/90 text-rose-100' : 'border-emerald-400/30 bg-emerald-950/90 text-emerald-100'">
-          <span class="rounded-full p-1" :class="toastType === 'error' ? 'bg-rose-400/20 text-rose-300' : 'bg-emerald-400/20 text-emerald-300'">
-            <svg v-if="toastType === 'error'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
+        <div class="flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md" :class="toastType === 'error' ? 'border-red-500/40 bg-slate-950 text-red-200 shadow-red-950/50' : 'border-emerald-500/40 bg-slate-950 text-emerald-200 shadow-emerald-950/50'">
+          <span class="rounded-full p-1" :class="toastType === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'">
+            <i v-if="toastType === 'error'" class="fa-solid fa-circle-exclamation text-base"></i>
+            <i v-else class="fa-solid fa-circle-check text-base"></i>
           </span>
           <p class="text-xs font-bold">{{ toastMessage }}</p>
         </div>
@@ -379,6 +431,20 @@ const isSaving = ref(false);
 const showRoutineModal = ref(false);
 const searchQuery = ref('');
 const selectedServiceFilter = ref('todos');
+
+// Paginación de la Tabla
+const itemsPerPage = ref(5);
+const currentPage = ref(1);
+
+const setItemsPerPage = (size) => {
+  itemsPerPage.value = size;
+  currentPage.value = 1;
+};
+
+const setServiceFilter = (service) => {
+  selectedServiceFilter.value = service;
+  currentPage.value = 1;
+};
 
 // Toasts flotantes
 const toastMessage = ref('');
@@ -439,6 +505,24 @@ const filteredRoutines = computed(() => {
     const matchesSearch = !query || String(r.nombre_rutina || '').toLowerCase().includes(query) || String(r.zonas_musculares || '').toLowerCase().includes(query);
     return matchesService && matchesSearch;
   });
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredRoutines.value.length / itemsPerPage.value) || 1;
+});
+
+const paginatedRoutines = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return filteredRoutines.value.slice(start, start + itemsPerPage.value);
+});
+
+const showingStart = computed(() => {
+  if (!filteredRoutines.value.length) return 0;
+  return (currentPage.value - 1) * itemsPerPage.value + 1;
+});
+
+const showingEnd = computed(() => {
+  return Math.min(currentPage.value * itemsPerPage.value, filteredRoutines.value.length);
 });
 
 // Ayudantes de parsing y sincronización de modos de repetición
@@ -589,16 +673,28 @@ onMounted(refresh);
 <style scoped>
 .field-input {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.1));
   border-radius: 1rem;
-  background: rgba(2, 6, 23, 0.72);
+  background: var(--app-input, rgba(2, 6, 23, 0.72));
   padding: 0.75rem 1rem;
-  color: white;
+  color: var(--app-text, white);
   outline: none;
 }
 
+[data-theme="light"] .field-input,
+[data-theme="light"] select.field-input {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] select.field-input option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
 .field-input::placeholder {
-  color: #64748b;
+  color: var(--app-text-faint, #64748b);
 }
 
 .search-input {

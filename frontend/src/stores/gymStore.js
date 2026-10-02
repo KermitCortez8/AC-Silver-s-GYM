@@ -2302,12 +2302,17 @@ export const useGymStore = defineStore('gym', () => {
    */
   const fetchTrainerOverview = async () => {
     if (!apiBase) throw new Error('No hay backend configurado');
-    const response = await fetch(`${apiBase}/trainer/overview`, { headers: _authHeaders() });
-    if (!response.ok) {
-      throw new Error(await readBackendError(response, 'Error al cargar supervision del trainer'));
+    try {
+      isSyncing.value = true;
+      const response = await fetch(`${apiBase}/trainer/overview`, { headers: _authHeaders() });
+      if (!response.ok) {
+        throw new Error(await readBackendError(response, 'Error al cargar supervision del trainer'));
+      }
+      trainerOverview.value = await response.json();
+      return trainerOverview.value;
+    } finally {
+      isSyncing.value = false;
     }
-    trainerOverview.value = await response.json();
-    return trainerOverview.value;
   };
 
   /**
@@ -2374,12 +2379,17 @@ export const useGymStore = defineStore('gym', () => {
    */
   const fetchTrainerClientRoutines = async (dni) => {
     if (!apiBase) throw new Error('No hay backend configurado');
-    const params = new URLSearchParams({ dni: String(dni || '').trim() });
-    const response = await fetch(`${apiBase}/trainer/clientes-rutinas?${params.toString()}`, { headers: _authHeaders() });
-    if (!response.ok) {
-      throw new Error(await readBackendError(response, 'No se pudo cargar el cliente'));
+    try {
+      isSyncing.value = true;
+      const params = new URLSearchParams({ dni: String(dni || '').trim() });
+      const response = await fetch(`${apiBase}/trainer/clientes-rutinas?${params.toString()}`, { headers: _authHeaders() });
+      if (!response.ok) {
+        throw new Error(await readBackendError(response, 'No se pudo cargar el cliente'));
+      }
+      return await response.json();
+    } finally {
+      isSyncing.value = false;
     }
-    return response.json();
   };
 
   /**
@@ -2465,7 +2475,7 @@ export const useGymStore = defineStore('gym', () => {
       // Un refresco tras guardar debe consultar después de la carga anterior.
       return syncPromise.catch(() => { }).then(() => fetchFromBackend({ force }));
     }
-    if (!force && lastSyncScope === scope && Date.now() - lastSyncAt < 30_000) return Promise.resolve();
+    if (!force && lastSyncScope === scope && Date.now() - lastSyncAt < 300_000) return Promise.resolve();
     syncScope = scope;
     lastSyncAt = -Infinity;
     isSyncing.value = true;
