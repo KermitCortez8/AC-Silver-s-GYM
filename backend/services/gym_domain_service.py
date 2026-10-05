@@ -1912,7 +1912,10 @@ class GymDomainService:
             stock_inicial = max(0, int(item.get("cantidad_stock") or 0))
             item["stock_minimo"] = max(0, int(item.get("stock_minimo") or 1))
             item["unidad_venta"] = str(item.get("unidad_venta") or "unidad")
-            item["precio_venta"] = float(item.get("precio_venta") or 0)
+            precio_enviado = item.get("precio_venta")
+            if precio_enviado is None and idx >= 0:
+                precio_enviado = state["inventario"][idx].get("precio_venta")
+            item["precio_venta"] = max(0.0, float(precio_enviado or 0))
             item["ubicacion"] = str(item.get("ubicacion") or "Almacén")
             item["observaciones"] = str(item.get("observaciones") or "")
             if idx >= 0:
@@ -1931,6 +1934,10 @@ class GymDomainService:
                     )
             if self._es_item_tienda(item):
                 self._crear_producto_para_item(state, item)
+                for producto in state.get("productos_tienda", []):
+                    if int(producto.get("id_item") or 0) == int(item["id_item"]):
+                        producto["precio_venta"] = item["precio_venta"]
+                        producto["unidad_venta"] = item["unidad_venta"]
             self._sincronizar_productos_tienda(state)
             return item
 
