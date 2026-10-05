@@ -274,6 +274,7 @@ class SupabaseGymService(GymDomainService):
         remote_state["inventario"] = [self._map_inventory(row) for row in inventory]
         remote_state["mov_inv"] = [self._map_inventory_move(row) for row in inventory_moves]
         remote_state["productos_tienda"] = [self._map_product(row) for row in products]
+        self._restaurar_precios_inventario(remote_state)
         remote_state["pedidos_tienda"] = [self._map_sale(row, details_by_sale.get(int(row.get("id_venta", 0) or 0), [])) for row in sales]
         remote_state["catalogo_rutina"] = [self._map_routine(row) for row in routines]
         remote_state["horario"] = [self._map_schedule(row) for row in schedules]
@@ -872,6 +873,16 @@ class SupabaseGymService(GymDomainService):
         }
 
     # Procesa esta operación.
+    def _restaurar_precios_inventario(self, state: dict[str, Any]) -> None:
+        # El esquema remoto guarda el precio comercial en TIENDA_PRODUCTOS.
+        # Reconstruye su copia en Inventario al iniciar y en cada recarga.
+        items = {int(i["id_item"]): i for i in state.get("inventario", [])}
+        for producto in state.get("productos_tienda", []):
+            item = items.get(int(producto.get("id_item") or 0))
+            if item is not None:
+                item["precio_venta"] = producto["precio_venta"]
+                item["unidad_venta"] = producto["unidad_venta"]
+
     def _map_inventory(self, row: dict[str, Any]) -> dict[str, Any]:
         return {
             "id_item": int(row.get("id_item", 0) or 0),
