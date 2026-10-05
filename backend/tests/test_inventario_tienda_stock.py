@@ -385,3 +385,49 @@ def test_fallo_de_supabase_revierte_stock_remoto_y_local() -> None:
     assert restaurado[-1]["Cantidad_Stock_E"] == 10
     # MOV_INV se guarda antes que VENTAS: si falla, la venta nunca llega a Supabase.
     assert not any(kind == "insert" and table == "VENTAS" for kind, table, _ in fake.calls)
+
+
+def test_ajustar_precio_desde_inventario_actualiza_la_tienda() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service)
+    producto = _publicar(service, item["id_item"])
+    service.upsert_inventario({**item, "precio_venta": 40.50})
+    assert _producto_de(service, item["id_item"])["precio_venta"] == 40.50
+    pedido = _vender(service, producto["id_producto"], 2)
+    assert pedido["items"][0]["precio_unitario"] == 40.50
+
+
+def test_editar_item_sin_enviar_precio_conserva_el_precio_publicado() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service)
+    _publicar(service, item["id_item"])
+    payload = {**item, "nombre_item": "Toalla deportiva"}
+    payload.pop("precio_venta")
+    service.upsert_inventario(payload)
+    assert _producto_de(service, item["id_item"])["precio_venta"] == 25.0
+    assert _producto_de(service, item["id_item"])["estado"] == "Disponible"
+    service.upsert_inventario({**payload, "precio_venta": None})
+    assert service.get_item_inventario(item["id_item"])["precio_venta"] == 25.0
+
+
+def test_precio_cero_explicito_oculta_producto() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service)
+    _publicar(service, item["id_item"])
+    service.upsert_inventario({**item, "precio_venta": 0})
+    assert _producto_de(service, item["id_item"])["estado"] == "Descatalogado"
+
+
+def test_precio_desde_inventario_se_guarda_en_supabase_y_se_recupera() -> None:
+    fake = FakeSupabase()
+    service = _supabase_service(fake)
+    item = service.state["inventario"][0]
+    service.upsert_inventario({**item, "precio_venta": 40.50})
+    updates = [body for kind, table, (_, body) in [c for c in fake.calls if c[0] == "update"] if table == "TIENDA_PRODUCTOS"]
+    assert updates[-1]["precio_Venta"] == 40.50
+    state = {
+        "inventario": [service._map_inventory(service._inventory_to_remote(item))],
+        "productos_tienda": [service._map_product(updates[-1])],
+    }
+    service._restaurar_precios_inventario(state)
+    assert state["inventario"][0]["precio_venta"] == 40.50
