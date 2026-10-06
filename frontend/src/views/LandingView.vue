@@ -654,6 +654,7 @@ onMounted(() => {
 
 <style scoped>
 .landing-page {
+  color-scheme: light;
   font-family: 'Manrope', 'Segoe UI', 'Trebuchet MS', sans-serif;
 }
 .landing-page h1,
