@@ -185,24 +185,12 @@ class TicketAtencionInput(BaseModel):
     fecha_cierre: str = ""
 
 
-class EjercicioInput(BaseModel):
-    id_ejercicio: int | str | None = None
-    nombre_ejercicio: str = ""
-    series: int = 3
-    repeticiones: str = "10-12"
-    descanso_segundos: int = 60
-    peso_sugerido_kg: float | None = None
-    grupo_muscular: str = ""
-    notas: str = ""
-
-
 class CatalogoRutinaInput(BaseModel):
     id_rutina: int | None = None
     servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
     nombre_rutina: str
     zonas_musculares: str
     color: str = "Azul"
-    ejercicios: list[EjercicioInput] = Field(default_factory=list)
 
 
 class HorarioInput(BaseModel):
@@ -238,23 +226,10 @@ class MatriculaRutinaInput(BaseModel):
     id_rutina: int
 
 
-class EjercicioProgresoInput(BaseModel):
-    id_ejercicio: int | str | None = None
-    nombre_ejercicio: str = ""
-    completado: bool = True
-    series_completadas: int = 3
-    repeticiones_logradas: str = ""
-    peso_utilizado_kg: float | None = None
-    observaciones: str = ""
-
-
 class RutinaProgresoInput(BaseModel):
     fecha: str = ""
-    estado: str = "REALIZADO"
     observacion: str = ""
     id_usuario: str | int | None = None
-    ejercicios_detalle: list[EjercicioProgresoInput] = Field(default_factory=list)
-
 
 
 class AsistenciaInput(BaseModel):
