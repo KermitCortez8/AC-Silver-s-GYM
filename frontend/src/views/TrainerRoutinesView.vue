@@ -16,9 +16,9 @@
             <i class="fa-solid fa-plus"></i>
             Crear nueva rutina
           </button>
-          <button class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800" @click="refresh">
-            <i class="fa-solid fa-rotate-right"></i>
-            Actualizar
+          <button class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60" :disabled="isLoading" @click="refresh()">
+            <i class="fa-solid fa-rotate-right" :class="{ 'fa-spin': isLoading }"></i>
+            {{ isLoading ? 'Actualizando...' : 'Actualizar' }}
           </button>
         </div>
       </div>
@@ -97,10 +97,17 @@
             </div>
           </div>
 
+          <!-- Orden -->
+          <select v-model="sortBy" class="field-input !w-auto text-xs py-2.5" aria-label="Ordenar rutinas">
+            <option value="nombre">A-Z</option>
+            <option value="ejercicios">Más ejercicios</option>
+            <option value="asignados">Más asignadas</option>
+          </select>
+
           <!-- Buscador -->
           <div class="relative w-full sm:w-64">
             <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-            <input v-model="searchQuery" type="text" placeholder="Buscar por nombre o zonas..." class="field-input search-input text-xs pr-4 py-2.5" @input="currentPage = 1" />
+            <input v-model="searchQuery" type="text" placeholder="Buscar por nombre, zona o ejercicio..." class="field-input search-input text-xs pr-4 py-2.5" />
           </div>
         </div>
       </div>
@@ -139,6 +146,9 @@
               </td>
               <td class="p-3.5">
                 <p class="font-bold text-white text-base">{{ routine.nombre_rutina || 'Sin nombre' }}</p>
+                <p v-if="Number(routine.clientes_asignados || 0) > 0" class="mt-0.5 text-xs text-slate-400">
+                  {{ routine.clientes_asignados }} {{ Number(routine.clientes_asignados) === 1 ? 'cliente asignado' : 'clientes asignados' }}
+                </p>
               </td>
               <td class="p-3.5">
                 <span class="text-xs text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-white/5 inline-block">
@@ -160,7 +170,11 @@
 
             <tr v-if="!filteredRoutines.length">
               <td colspan="5" class="py-8 text-center text-slate-400">
-                <p class="text-sm">No se encontraron rutinas registradas en esta categoría o búsqueda.</p>
+                <p v-if="!routines.length" class="text-sm">Aún no hay rutinas registradas.</p>
+                <template v-else>
+                  <p class="text-sm">Ninguna rutina coincide con los filtros.</p>
+                  <button type="button" class="mt-3 text-xs font-bold text-red-400 underline hover:text-red-300" @click="clearFilters">Limpiar filtros</button>
+                </template>
               </td>
             </tr>
           </tbody>
@@ -221,29 +235,60 @@
                 {{ routineForm.id_rutina ? 'Editar Rutina Registrada' : 'Crear Nueva Rutina' }}
               </h2>
             </div>
-            <button class="rounded-full bg-white/10 p-2 text-slate-400 hover:bg-white/20 hover:text-white transition" @click="closeRoutineModal">
+            <button class="rounded-full bg-white/10 p-2 text-slate-400 hover:bg-white/20 hover:text-white transition" @click="requestCloseModal">
               <i class="fa-solid fa-xmark text-base"></i>
             </button>
           </div>
 
-          <form class="space-y-5" @submit.prevent="saveRoutine">
+          <!-- Aviso de edición -->
+          <div v-if="routineForm.id_rutina" class="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-50">
+            <p class="font-bold">Editando: {{ editingName || 'Rutina' }}</p>
+            <p v-if="editingAssignedCount > 0" class="mt-1 text-amber-100/80">
+              Esta rutina está asignada a {{ editingAssignedCount }} {{ editingAssignedCount === 1 ? 'cliente' : 'clientes' }}. Los cambios los afectarán.
+            </p>
+          </div>
+
+          <form class="space-y-5" novalidate @submit.prevent="saveRoutine">
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="space-y-1.5">
                 <span class="text-xs font-bold text-slate-300">Servicio Asociado</span>
-                <select v-model="routineForm.servicio" class="field-input text-sm">
+                <select v-model="routineForm.servicio" class="field-input text-sm" :class="{ 'field-error': fieldError('servicio') }">
                   <option v-for="service in serviceOptions" :key="service.value" :value="service.value">{{ service.label }}</option>
                 </select>
+                <span v-if="fieldError('servicio')" class="block text-xs text-rose-300">{{ fieldError('servicio') }}</span>
               </label>
               <label class="space-y-1.5">
-                <span class="text-xs font-bold text-slate-300">Nombre de la Rutina</span>
-                <input v-model="routineForm.nombre_rutina" class="field-input text-sm" placeholder="Ej. Hipertrofia Tren Superior" required />
+                <span class="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <span>Nombre de la Rutina</span>
+                  <span class="font-normal" :class="routineForm.nombre_rutina.length > MAX_NOMBRE ? 'text-rose-300' : 'text-slate-500'">{{ routineForm.nombre_rutina.length }}/{{ MAX_NOMBRE }}</span>
+                </span>
+                <input v-model="routineForm.nombre_rutina" class="field-input text-sm" :class="{ 'field-error': fieldError('nombre_rutina') }" placeholder="Ej. Hipertrofia Tren Superior" @blur="touched.nombre_rutina = true" />
+                <span v-if="fieldError('nombre_rutina')" class="block text-xs text-rose-300">{{ fieldError('nombre_rutina') }}</span>
               </label>
             </div>
 
             <label class="block space-y-1.5">
-              <span class="text-xs font-bold text-slate-300">Zonas Musculares Trabajadas</span>
-              <input v-model="routineForm.zonas_musculares" class="field-input text-sm" placeholder="Ej. Pecho, Espalda, Hombros, Tríceps" />
+              <span class="flex items-center justify-between text-xs font-bold text-slate-300">
+                <span>Zonas Musculares Trabajadas</span>
+                <span class="font-normal" :class="routineForm.zonas_musculares.length > MAX_ZONAS ? 'text-rose-300' : 'text-slate-500'">{{ routineForm.zonas_musculares.length }}/{{ MAX_ZONAS }}</span>
+              </span>
+              <input v-model="routineForm.zonas_musculares" class="field-input text-sm" :class="{ 'field-error': fieldError('zonas_musculares') }" placeholder="Ej. Pecho, Espalda, Hombros, Tríceps" @blur="touched.zonas_musculares = true" />
+              <span v-if="fieldError('zonas_musculares')" class="block text-xs text-rose-300">{{ fieldError('zonas_musculares') }}</span>
             </label>
+
+            <!-- Atajos para zonas comunes -->
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="zone in quickZones"
+                :key="zone"
+                type="button"
+                class="rounded-full border px-3 py-1 text-[11px] font-bold transition"
+                :class="zoneActive(zone) ? 'border-red-600 bg-red-600 text-white' : 'border-white/10 text-slate-300 hover:bg-red-600/20'"
+                @click="toggleZone(zone)"
+              >
+                {{ zone }}
+              </button>
+            </div>
 
             <!-- CONSTRUCTOR DE EJERCICIOS CON SELECTOR CLARO DE MODO DE REPETICIÓN -->
             <div class="rounded-2xl border border-white/10 bg-black p-4 space-y-4">
@@ -261,6 +306,8 @@
                 </button>
               </div>
 
+              <p v-if="submitted && errors.ejercicios" class="rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-100">{{ errors.ejercicios }}</p>
+
               <div v-if="routineForm.ejercicios.length" class="space-y-4">
                 <div v-for="(ex, index) in routineForm.ejercicios" :key="index" class="rounded-2xl border border-white/10 bg-slate-900/90 p-4 space-y-3 shadow-inner">
                   <div class="flex items-center justify-between border-b border-white/5 pb-2">
@@ -275,7 +322,8 @@
                   <div class="grid gap-3 sm:grid-cols-2">
                     <label class="space-y-1">
                       <span class="text-[11px] font-bold text-slate-300">Nombre del Ejercicio</span>
-                      <input v-model="ex.nombre_ejercicio" class="field-input text-xs" placeholder="Ej. Press de Banca Plano" required />
+                      <input v-model="ex.nombre_ejercicio" class="field-input text-xs" :class="{ 'field-error': exError(index, 'nombre') }" placeholder="Ej. Press de Banca Plano" />
+                      <span v-if="exError(index, 'nombre')" class="block text-[11px] text-rose-300">{{ exError(index, 'nombre') }}</span>
                     </label>
                     <label class="space-y-1">
                       <span class="text-[11px] font-bold text-slate-300">Músculo Objetivo (opcional)</span>
@@ -288,7 +336,8 @@
                     <!-- Series -->
                     <label class="space-y-1">
                       <span class="text-[11px] font-bold text-slate-300">Series</span>
-                      <input v-model.number="ex.series" type="number" min="1" max="20" class="field-input text-xs" />
+                      <input v-model.number="ex.series" type="number" min="1" max="20" class="field-input text-xs" :class="{ 'field-error': exError(index, 'series') }" />
+                      <span v-if="exError(index, 'series')" class="block text-[11px] text-rose-300">{{ exError(index, 'series') }}</span>
                     </label>
 
                     <!-- Selector de Modo de Repetición (Fijo / Rango / Al fallo) -->
@@ -361,6 +410,7 @@
                           <span>Repeticiones hasta el fallo (AMRAP)</span>
                         </div>
                       </div>
+                      <span v-if="exError(index, 'reps')" class="block text-[11px] text-rose-300">{{ exError(index, 'reps') }}</span>
                     </div>
 
                     <!-- Descanso -->
@@ -378,11 +428,12 @@
                   </div>
 
                   <!-- Peso sugerido (kg) -->
-                  <div class="pt-2 border-t border-white/5 flex items-center justify-between">
+                  <div class="pt-2 border-t border-white/5 flex flex-col gap-1">
                     <label class="flex items-center gap-3 w-full sm:w-1/2">
                       <span class="text-[11px] font-bold text-slate-300 whitespace-nowrap">Peso sug. (kg):</span>
-                      <input v-model.number="ex.peso_sugerido_kg" type="number" step="0.5" min="0" class="field-input text-xs" placeholder="Opcional (ej. 60)" />
+                      <input v-model.number="ex.peso_sugerido_kg" type="number" step="0.5" min="0" class="field-input text-xs" :class="{ 'field-error': exError(index, 'peso') }" placeholder="Opcional (ej. 60)" />
                     </label>
+                    <span v-if="exError(index, 'peso')" class="block text-[11px] text-rose-300">{{ exError(index, 'peso') }}</span>
                   </div>
                 </div>
               </div>
@@ -394,10 +445,11 @@
 
             <!-- Botones de Acción Modal -->
             <div class="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
-              <button type="button" class="rounded-2xl border border-white/10 bg-slate-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800" @click="closeRoutineModal">
+              <p v-if="routineForm.id_rutina && !hasChanges" class="mr-auto text-xs text-slate-500">No hay cambios por guardar.</p>
+              <button type="button" class="rounded-2xl border border-white/10 bg-slate-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800" :disabled="isSaving" @click="requestCloseModal">
                 Cancelar
               </button>
-              <button class="flex items-center gap-2 rounded-2xl bg-red-600 px-6 py-2.5 text-xs font-extrabold text-white transition hover:bg-red-500 shadow-lg shadow-red-600/20 disabled:opacity-60" :disabled="isSaving">
+              <button class="flex items-center gap-2 rounded-2xl bg-red-600 px-6 py-2.5 text-xs font-extrabold text-white transition hover:bg-red-500 shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isSaving || (routineForm.id_rutina && !hasChanges)">
                 <i class="fa-solid fa-floppy-disk"></i>
                 <span>{{ isSaving ? 'Guardando...' : (routineForm.id_rutina ? 'Actualizar Rutina' : 'Guardar Rutina') }}</span>
               </button>
@@ -423,14 +475,21 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
+
+const MAX_NOMBRE = 60;
+const MAX_ZONAS = 300;
+const MAX_EJERCICIO = 80;
+
 const isSaving = ref(false);
+const isLoading = ref(false);
 const showRoutineModal = ref(false);
 const searchQuery = ref('');
 const selectedServiceFilter = ref('todos');
+const sortBy = ref('nombre');
 
 // Paginación de la Tabla
 const itemsPerPage = ref(5);
@@ -467,6 +526,8 @@ const serviceOptions = [
   { value: 'baile', label: 'Baile' },
 ];
 
+const quickZones = ['Pierna', 'Glúteos', 'Core', 'Pecho', 'Espalda', 'Hombro', 'Brazos', 'Cardio'];
+
 const routineForm = reactive({
   id_rutina: null,
   servicio: 'fitness',
@@ -476,8 +537,24 @@ const routineForm = reactive({
   ejercicios: [],
 });
 
+// Estado de validación / edición
+const touched = reactive({ nombre_rutina: false, zonas_musculares: false });
+const submitted = ref(false);
+const baselineSignature = ref(''); // "foto" del formulario al abrir el modal
+const editingName = ref(''); // nombre original de la rutina en edición
+
 const overview = computed(() => gymStore.trainerOverview || {});
 const routines = computed(() => overview.value.routines || []);
+
+/**
+ * Normaliza texto para comparar (minúsculas, sin tildes, sin espacios extra).
+ */
+const norm = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
 // Métricas KPI
 const routinesWithExercisesCount = computed(() => routines.value.filter((r) => Array.isArray(r.ejercicios) && r.ejercicios.length > 0).length);
@@ -488,28 +565,40 @@ const averageExercisesPerRoutine = computed(() => {
   return (totalEx / routines.value.length).toFixed(1);
 });
 
-const activeServicesCount = computed(() => {
-  const serviceSet = new Set(routines.value.map((r) => String(r.servicio || '').toLowerCase()));
-  return serviceSet.size;
-});
+const activeServicesCount = computed(() => new Set(routines.value.map((r) => norm(r.servicio))).size);
 
-// Filtros y búsqueda
+// Filtros, búsqueda y orden
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculación', cardio: 'Cardio', baile: 'Baile' })[service] || service || 'Servicio';
 
-const routinesForService = (service) => routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(service || '').toLowerCase());
+const routinesForService = (service) => routines.value.filter((routine) => norm(routine.servicio) === norm(service));
+
+const exerciseCount = (routine) => (Array.isArray(routine.ejercicios) ? routine.ejercicios.length : 0);
 
 const filteredRoutines = computed(() => {
-  return routines.value.filter((r) => {
-    const matchesService = selectedServiceFilter.value === 'todos' || String(r.servicio || '').toLowerCase() === String(selectedServiceFilter.value).toLowerCase();
-    const query = searchQuery.value.toLowerCase().trim();
-    const matchesSearch = !query || String(r.nombre_rutina || '').toLowerCase().includes(query) || String(r.zonas_musculares || '').toLowerCase().includes(query);
+  const query = norm(searchQuery.value);
+  const list = routines.value.filter((r) => {
+    const matchesService = selectedServiceFilter.value === 'todos' || norm(r.servicio) === selectedServiceFilter.value;
+    const matchesSearch =
+      !query ||
+      norm(r.nombre_rutina).includes(query) ||
+      norm(r.zonas_musculares).includes(query) ||
+      (Array.isArray(r.ejercicios) && r.ejercicios.some((ex) => norm(ex.nombre_ejercicio).includes(query)));
     return matchesService && matchesSearch;
+  });
+
+  return [...list].sort((a, b) => {
+    if (sortBy.value === 'asignados') return Number(b.clientes_asignados || 0) - Number(a.clientes_asignados || 0);
+    if (sortBy.value === 'ejercicios') return exerciseCount(b) - exerciseCount(a);
+    return String(a.nombre_rutina || '').localeCompare(String(b.nombre_rutina || ''), 'es');
   });
 });
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredRoutines.value.length / itemsPerPage.value) || 1;
-});
+const clearFilters = () => {
+  searchQuery.value = '';
+  selectedServiceFilter.value = 'todos';
+};
+
+const totalPages = computed(() => Math.ceil(filteredRoutines.value.length / itemsPerPage.value) || 1);
 
 const paginatedRoutines = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value;
@@ -521,8 +610,14 @@ const showingStart = computed(() => {
   return (currentPage.value - 1) * itemsPerPage.value + 1;
 });
 
-const showingEnd = computed(() => {
-  return Math.min(currentPage.value * itemsPerPage.value, filteredRoutines.value.length);
+const showingEnd = computed(() => Math.min(currentPage.value * itemsPerPage.value, filteredRoutines.value.length));
+
+// Al cambiar búsqueda u orden vuelve a la página 1; si la página actual ya no existe (p. ej. tras guardar), se ajusta
+watch([searchQuery, sortBy], () => {
+  currentPage.value = 1;
+});
+watch(totalPages, (pages) => {
+  if (currentPage.value > pages) currentPage.value = pages;
 });
 
 // Ayudantes de parsing y sincronización de modos de repetición
@@ -550,6 +645,19 @@ const parseRepeticiones = (repStr) => {
   };
 };
 
+/**
+ * Construye el texto de repeticiones según el modo (sin modificar el ejercicio).
+ */
+const buildRepString = (ex) => {
+  if (ex.rep_modo === 'fijo') return String(ex.rep_fijo || '10');
+  if (ex.rep_modo === 'rango') return `${ex.rep_min || '10'}-${ex.rep_max || '12'}`;
+  return 'Al fallo';
+};
+
+const syncRepString = (ex) => {
+  ex.repeticiones = buildRepString(ex);
+};
+
 const setRepMode = (ex, mode) => {
   ex.rep_modo = mode;
   if (mode === 'fijo' && !ex.rep_fijo) ex.rep_fijo = '10';
@@ -560,31 +668,136 @@ const setRepMode = (ex, mode) => {
   syncRepString(ex);
 };
 
-const syncRepString = (ex) => {
-  if (ex.rep_modo === 'fijo') {
-    ex.repeticiones = String(ex.rep_fijo || '10');
-  } else if (ex.rep_modo === 'rango') {
-    const minVal = ex.rep_min || '10';
-    const maxVal = ex.rep_max || '12';
-    ex.repeticiones = `${minVal}-${maxVal}`;
-  } else if (ex.rep_modo === 'fallo') {
-    ex.repeticiones = 'Al fallo';
+/**
+ * Convierte un ejercicio del formulario al formato que se envía / compara.
+ */
+const buildExercise = (ex) => ({
+  nombre_ejercicio: String(ex.nombre_ejercicio || '').trim(),
+  grupo_muscular: String(ex.grupo_muscular || '').trim(),
+  series: Number(ex.series || 3),
+  repeticiones: buildRepString(ex),
+  descanso_segundos: Number(ex.descanso_segundos || 60),
+  peso_sugerido_kg: ex.peso_sugerido_kg !== null && ex.peso_sugerido_kg !== undefined && ex.peso_sugerido_kg !== '' ? Number(ex.peso_sugerido_kg) : null,
+  notas: ex.notas || '',
+});
+
+/**
+ * Datos del formulario ya limpios (los que se guardan).
+ */
+const buildPayload = () => ({
+  ...routineForm,
+  nombre_rutina: routineForm.nombre_rutina.trim(),
+  zonas_musculares: routineForm.zonas_musculares.trim(),
+  ejercicios: routineForm.ejercicios.map(buildExercise),
+});
+
+const buildSignature = () => {
+  const { servicio, nombre_rutina, zonas_musculares, ejercicios } = buildPayload();
+  return JSON.stringify({ servicio, nombre_rutina, zonas_musculares, ejercicios });
+};
+
+// ---------- Cambios sin guardar ----------
+const hasChanges = computed(() => buildSignature() !== baselineSignature.value);
+
+const editingAssignedCount = computed(() => {
+  const current = routines.value.find((r) => r.id_rutina === routineForm.id_rutina);
+  return Number(current?.clientes_asignados || 0);
+});
+
+// ---------- Validaciones (en vivo) ----------
+const exerciseErrors = computed(() =>
+  routineForm.ejercicios.map((ex) => {
+    const result = {};
+    const nombre = String(ex.nombre_ejercicio || '').trim();
+    const series = Number(ex.series);
+
+    if (!nombre) result.nombre = 'El nombre es obligatorio.';
+    else if (nombre.length > MAX_EJERCICIO) result.nombre = `Máximo ${MAX_EJERCICIO} caracteres.`;
+
+    if (!Number.isInteger(series) || series < 1 || series > 20) result.series = 'Entre 1 y 20.';
+
+    if (ex.rep_modo === 'fijo') {
+      const fijo = Number(ex.rep_fijo);
+      if (!Number.isInteger(fijo) || fijo < 1) result.reps = 'Indica un número de repeticiones válido.';
+    } else if (ex.rep_modo === 'rango') {
+      const min = Number(ex.rep_min);
+      const max = Number(ex.rep_max);
+      if (!Number.isInteger(min) || !Number.isInteger(max) || min < 1) result.reps = 'Indica un mínimo y un máximo válidos.';
+      else if (max <= min) result.reps = 'El máximo debe ser mayor que el mínimo.';
+    }
+
+    const peso = ex.peso_sugerido_kg;
+    if (peso !== null && peso !== undefined && peso !== '' && (!Number.isFinite(Number(peso)) || Number(peso) < 0)) {
+      result.peso = 'El peso no puede ser negativo.';
+    }
+    return result;
+  }),
+);
+
+const errors = computed(() => {
+  const result = {};
+  const nombre = routineForm.nombre_rutina.trim();
+  const zonas = routineForm.zonas_musculares.trim();
+
+  if (!serviceOptions.some((service) => service.value === routineForm.servicio)) {
+    result.servicio = 'Selecciona un servicio válido.';
   }
+
+  if (!nombre) {
+    result.nombre_rutina = 'El nombre es obligatorio.';
+  } else if (nombre.length < 3) {
+    result.nombre_rutina = 'Usa al menos 3 caracteres.';
+  } else if (nombre.length > MAX_NOMBRE) {
+    result.nombre_rutina = `Máximo ${MAX_NOMBRE} caracteres.`;
+  } else if (
+    routines.value.some(
+      (r) => r.id_rutina !== routineForm.id_rutina && norm(r.servicio) === routineForm.servicio && norm(r.nombre_rutina) === norm(nombre),
+    )
+  ) {
+    result.nombre_rutina = 'Ya existe una rutina con ese nombre en este servicio.';
+  }
+
+  if (!zonas) {
+    result.zonas_musculares = 'Indica al menos una zona muscular.';
+  } else if (zonas.length < 3) {
+    result.zonas_musculares = 'Describe las zonas con más detalle.';
+  } else if (zonas.length > MAX_ZONAS) {
+    result.zonas_musculares = `Máximo ${MAX_ZONAS} caracteres.`;
+  }
+
+  const badExercises = exerciseErrors.value.filter((e) => Object.keys(e).length).length;
+  if (badExercises) {
+    result.ejercicios = `Revisa ${badExercises} ${badExercises === 1 ? 'ejercicio' : 'ejercicios'} con datos incompletos o inválidos.`;
+  }
+
+  return result;
+});
+
+/**
+ * Muestra el error solo si el campo fue tocado o ya se intentó guardar.
+ */
+const fieldError = (field) => (submitted.value || touched[field] ? errors.value[field] : '');
+
+/**
+ * Error de un campo de un ejercicio (solo después de intentar guardar).
+ */
+const exError = (index, field) => (submitted.value ? exerciseErrors.value[index]?.[field] : '');
+
+// ---------- Zonas rápidas ----------
+const zoneActive = (zone) => routineForm.zonas_musculares.split(',').some((part) => norm(part) === norm(zone));
+
+const toggleZone = (zone) => {
+  const parts = routineForm.zonas_musculares.split(',').map((part) => part.trim()).filter(Boolean);
+  const index = parts.findIndex((part) => norm(part) === norm(zone));
+  if (index >= 0) parts.splice(index, 1);
+  else parts.push(zone);
+  routineForm.zonas_musculares = parts.join(', ');
+  touched.zonas_musculares = true;
 };
 
-// Métodos Modal & Ejercicios
-const openCreateModal = () => {
-  resetRoutineForm();
-  showRoutineModal.value = true;
-};
-
-const closeRoutineModal = () => {
-  showRoutineModal.value = false;
-  resetRoutineForm();
-};
-
+// ---------- Modal & ejercicios ----------
 const addExercise = () => {
-  const newEx = {
+  routineForm.ejercicios.push({
     nombre_ejercicio: '',
     series: 3,
     rep_modo: 'rango',
@@ -596,8 +809,7 @@ const addExercise = () => {
     peso_sugerido_kg: null,
     grupo_muscular: '',
     notas: '',
-  };
-  routineForm.ejercicios.push(newEx);
+  });
 };
 
 const removeExercise = (index) => {
@@ -611,9 +823,29 @@ const resetRoutineForm = () => {
   routineForm.zonas_musculares = '';
   routineForm.color = 'Azul';
   routineForm.ejercicios = [];
+  submitted.value = false;
+  touched.nombre_rutina = false;
+  touched.zonas_musculares = false;
+  editingName.value = '';
+};
+
+/**
+ * Abre el modal y guarda la "foto" inicial para detectar cambios.
+ */
+const openModal = () => {
+  baselineSignature.value = buildSignature();
+  showRoutineModal.value = true;
+};
+
+const openCreateModal = () => {
+  resetRoutineForm();
+  // Si hay un servicio filtrado, la rutina nueva se crea en ese servicio
+  if (selectedServiceFilter.value !== 'todos') routineForm.servicio = selectedServiceFilter.value;
+  openModal();
 };
 
 const editRoutine = (routine) => {
+  resetRoutineForm();
   routineForm.id_rutina = routine.id_rutina;
   routineForm.servicio = routine.servicio || 'fitness';
   routineForm.nombre_rutina = routine.nombre_rutina || '';
@@ -625,31 +857,38 @@ const editRoutine = (routine) => {
         ...parseRepeticiones(ex.repeticiones),
       }))
     : [];
-  showRoutineModal.value = true;
+  editingName.value = routineForm.nombre_rutina;
+  openModal();
+};
+
+/**
+ * Cierra el modal sin preguntar (después de guardar).
+ */
+const closeRoutineModal = () => {
+  showRoutineModal.value = false;
+  resetRoutineForm();
+};
+
+/**
+ * Cierra el modal pidiendo confirmación solo si hay cambios sin guardar.
+ */
+const requestCloseModal = () => {
+  if (hasChanges.value && !window.confirm('Tienes cambios sin guardar. ¿Descartarlos?')) return;
+  closeRoutineModal();
 };
 
 const saveRoutine = async () => {
+  submitted.value = true;
+  if (Object.keys(errors.value).length) {
+    showToast('Revisa los campos marcados antes de guardar.', 'error');
+    return;
+  }
+
+  const wasEditing = Boolean(routineForm.id_rutina);
   try {
     isSaving.value = true;
-    // Asegurar que cada ejercicio tenga la cadena repeticiones formateada
-    const cleanEjercicios = routineForm.ejercicios.map((ex) => {
-      syncRepString(ex);
-      return {
-        nombre_ejercicio: ex.nombre_ejercicio,
-        grupo_muscular: ex.grupo_muscular || '',
-        series: Number(ex.series || 3),
-        repeticiones: String(ex.repeticiones || '10-12'),
-        descanso_segundos: Number(ex.descanso_segundos || 60),
-        peso_sugerido_kg: ex.peso_sugerido_kg !== null && ex.peso_sugerido_kg !== '' ? Number(ex.peso_sugerido_kg) : null,
-        notas: ex.notas || '',
-      };
-    });
-
-    await gymStore.upsertTrainerRoutine({
-      ...routineForm,
-      ejercicios: cleanEjercicios,
-    });
-    showToast(routineForm.id_rutina ? 'Rutina actualizada exitosamente.' : 'Nueva rutina creada exitosamente.', 'success');
+    await gymStore.upsertTrainerRoutine(buildPayload());
+    showToast(wasEditing ? 'Rutina actualizada exitosamente.' : 'Nueva rutina creada exitosamente.', 'success');
     closeRoutineModal();
   } catch (error) {
     showToast(error instanceof Error ? error.message : 'No se pudo guardar la rutina.', 'error');
@@ -658,16 +897,20 @@ const saveRoutine = async () => {
   }
 };
 
-const refresh = async () => {
+const refresh = async (notify = true) => {
   try {
+    isLoading.value = true;
     await gymStore.fetchTrainerOverview();
-    showToast('Datos del catálogo actualizados.', 'success');
+    if (notify) showToast('Datos del catálogo actualizados.', 'success');
   } catch (error) {
     showToast(error instanceof Error ? error.message : 'No se pudo cargar rutinas.', 'error');
+  } finally {
+    isLoading.value = false;
   }
 };
 
-onMounted(refresh);
+// Carga inicial silenciosa (sin toast de "actualizados")
+onMounted(() => refresh(false));
 </script>
 
 <style scoped>
@@ -695,6 +938,10 @@ onMounted(refresh);
 
 .field-input::placeholder {
   color: var(--app-text-faint, #64748b);
+}
+
+.field-error {
+  border-color: rgba(251, 113, 133, 0.7) !important;
 }
 
 .search-input {
