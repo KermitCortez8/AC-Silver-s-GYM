@@ -1,4 +1,4 @@
-# Módulo: supabase_gym_service.
+ # Módulo: supabase_gym_service.
 # Sincroniza el estado del gimnasio con las tablas de Supabase.
 # Convierte columnas remotas al formato utilizado por el dominio.
 # Aplica inserciones, cambios y eliminaciones mediante la API REST.
@@ -143,7 +143,8 @@ class SupabaseGymService(GymDomainService):
         "monto_pago",
         "referencia_pago",
     }
-
+    # Columnas que va a tener VENTA
+    STORE_PAYMENT_COLUMNS = {"estado_pago", "referencia_pago"}
     CORE_TABLES = {
         "planes_membresia": ("PLANES_MEMBRESIA", "id_pm", "id_PM"),
         "promociones": ("PROMOCIONES", "id_promocion", "id_promocion"),
@@ -172,6 +173,7 @@ class SupabaseGymService(GymDomainService):
         self.state = self._seed()
         self._last_refresh_at = 0.0
         self._validate_payment_schema()
+        self._validate_store_payment_schema()
         self._refresh_remote_state()
 
     def _validate_payment_schema(self) -> None:
@@ -190,6 +192,25 @@ class SupabaseGymService(GymDomainService):
                 ) from error
             raise
 
+    @staticmethod
+    def _is_missing_column_error(error: RuntimeError) -> bool:
+        message = str(error).lower()
+        return (
+            "pgrst204" in message
+            or ("could not find" in message and "column" in message)
+            or ("column" in message and "does not exist" in message)
+        )
+
+    def _validate_store_payment_schema(self) -> None:
+        """Falla al arrancar si falta la migración 009, en vez de perder datos en silencio."""
+        try:
+            self.supabase.validate_columns("VENTAS", self.STORE_PAYMENT_COLUMNS)
+        except RuntimeError as error:
+            if self._is_missing_column_error(error):
+                raise RuntimeError(
+                    "Falta ejecutar backend/migrations/009_add_store_order_payment_fields.sql en Supabase"
+                ) from error
+            raise
     # Procesa esta operación.
     def _remember_remote_columns(self, table: str, rows: list[dict[str, Any]]) -> None:
         if rows:
@@ -959,7 +980,7 @@ class SupabaseGymService(GymDomainService):
             "subtotal": float(row.get("Subtotal") or 0),
         }
 
-    # Procesa esta operación.
+    # Convierte una fila de VENTAS al formato de pedido que usa el dominio.
     def _map_sale(self, row: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, Any]:
         total = float(row.get("total_Venta") or 0)
         return {
@@ -969,10 +990,11 @@ class SupabaseGymService(GymDomainService):
             "cliente_correo": str(row.get("cliente_correo") or ""),
             "cliente_dni": str(row.get("cliente_dni") or ""),
             "fecha_pedido": str(row.get("Fecha_Venta") or _now_iso()),
+            "creado_en": str(row.get("created_at") or ""),
             "metodo_pago": str(row.get("metodo_Pago") or ""),
-            "referencia_pago": "",
+            "referencia_pago": str(row.get("referencia_pago") or ""),
             "observacion_admin": str(row.get("observacion_admin") or ""),
-            "estado_pago": "PAGADO",
+            "estado_pago": str(row.get("estado_pago") or "PAGADO").strip().upper(),
             "estado_pedido": str(row.get("estado_pedido") or "COMPLETADO"),
             "fecha_actualizacion": str(row.get("fecha_actualizacion") or row.get("Fecha_Venta") or _now_iso()),
             "subtotal": total,
@@ -981,7 +1003,7 @@ class SupabaseGymService(GymDomainService):
             "items": items,
         }
 
-    # Procesa esta operación.
+    # Convierte un pedido del dominio a una fila de VENTAS.
     def _sale_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
         return {
             "id_venta": int(row.get("id_pedido", 0) or 0),
@@ -992,6 +1014,7 @@ class SupabaseGymService(GymDomainService):
             "Fecha_Venta": self._date_or_today(row.get("fecha_pedido")),
             "total_Venta": float(row.get("total") or row.get("subtotal") or 0),
             "metodo_Pago": str(row.get("metodo_pago") or "tarjeta"),
+            "referencia_pago": str(row.get("referencia_pago") or ""),
             "estado_pedido": str(row.get("estado_pedido") or "PENDIENTE"),
             "estado_pago": str(row.get("estado_pago") or "PAGADO"),
             "observacion_admin": str(row.get("observacion_admin") or ""),

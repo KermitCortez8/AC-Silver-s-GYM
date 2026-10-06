@@ -12,6 +12,8 @@ from zoneinfo import ZoneInfo
 
 from utils.security import hash_password, verify_password
 
+_LIMA = ZoneInfo("America/Lima")
+
 
 # Ítems de INVENTARIO con este Tipo se venden en la tienda y comparten stock.
 TIPO_TIENDA = "Tienda"
@@ -20,10 +22,16 @@ ESTADO_DESCONTINUADO = "Descontinuado"
 ESTADO_DISPONIBLE = "Disponible"
 ESTADO_STOCK_BAJO = "Stock bajo"
 ESTADO_AGOTADO = "Agotado"
+
 # Los movimientos automáticos de pedidos se reconocen por el inicio de su descripción.
 PREFIJO_VENTA = "Venta pedido #"
 PREFIJO_DEVOLUCION = "Devolución por cancelación del pedido #"
-_MOVIMIENTO_PEDIDO = re.compile(r"^(?:Venta pedido|Devolución por cancelación del pedido) #\d+")
+ESTADO_PAGO_PAGADO = "PAGADO"
+ESTADO_PAGO_PENDIENTE = "PENDIENTE"
+ESTADO_PEDIDO_CANCELADO = "CANCELADO"
+_MOVIMIENTO_PEDIDO = re.compile(
+    r"^(?:Venta pedido|Devolución por cancelación del pedido) #\d+"
+)
 
 
 # Procesa esta operación.
@@ -55,6 +63,27 @@ def _days_until(date_value: Any, today: str) -> int | None:
     except Exception:
         return None
 
+# Indica si el pedido ya tiene el cobro confirmado. Los pedidos antiguos sin dato se consideran pagados.
+def _pedido_pagado(pedido: dict[str, Any]) -> bool:
+    return str(pedido.get("estado_pago") or ESTADO_PAGO_PAGADO).strip().upper() == ESTADO_PAGO_PAGADO
+
+
+# Convierte una fecha ISO (por ejemplo la created_at de Supabase) a datetime con zona horaria.
+def _parse_utc(value: Any) -> datetime | None:
+    text = str(value or "").strip().replace("Z", "+00:00")
+    if not text:
+        return None
+    # Supabase puede devolver de 1 a 9 decimales; fromisoformat (antes de Python 3.11) solo acepta 3 o 6.
+    text = re.sub(r"\.(\d+)", lambda m: "." + (m.group(1) + "000000")[:6], text, count=1)
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+class PedidoCanceladoConPagoError(ValueError):
+    """Llegó un pago para un pedido que ya estaba cancelado: requiere reembolso manual."""
 
 class GymDomainService:
     # Los servicios concretos (SupabaseGymService, LocalGymService) crean el estado y su bloqueo.
@@ -2459,9 +2488,18 @@ class GymDomainService:
             for item in self.state["inventario"]
             if int(item.get("cantidad_stock", 0)) <= int(item.get("stock_minimo", 0))
         ]
-        pedidos = self.state.get("pedidos_tienda", [])
+               # Solo cuentan los pedidos con el cobro confirmado; las ventas excluyen los cancelados.
+        pedidos = [p for p in self.state.get("pedidos_tienda", []) if _pedido_pagado(p)]
         pedidos_pendientes = len([p for p in pedidos if str(p.get("estado_pedido") or "").upper() == "PENDIENTE"])
-        ventas_mes = round(sum(float(p.get("total") or 0) for p in pedidos if str(p.get("fecha_pedido") or "")[:7] == today[:7]), 2)
+        ventas_mes = round(
+            sum(
+                float(p.get("total") or 0)
+                for p in pedidos
+                if str(p.get("estado_pedido") or "").upper() != ESTADO_PEDIDO_CANCELADO
+                and str(p.get("fecha_pedido") or "")[:7] == today[:7]
+            ),
+            2,
+        )
         vencimientos = [m for m in self.state["membresia"] if (days := _days_until(m.get("fecha_fin"), today)) is not None and 0 <= days <= 7]
         capacidad = self.configuracion_gimnasio()
 
@@ -2603,7 +2641,16 @@ class GymDomainService:
         return self.state.get("pedidos_tienda", [])
 
     # Procesa esta operación.
+    # Pedido pagado al instante (Yape, Plin, transferencia). Sin cambios de comportamiento.
     def crear_pedido_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return self._crear_pedido_tienda(payload, pago_pendiente=False)
+
+    # Pedido con tarjeta: reserva el stock y queda pendiente hasta que Stripe confirme el cobro.
+    def crear_pedido_tienda_pago_pendiente(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return self._crear_pedido_tienda(payload, pago_pendiente=True)
+
+    # Lógica común de creación de pedidos.
+    def _crear_pedido_tienda(self, payload: dict[str, Any], pago_pendiente: bool) -> dict[str, Any]:
         raw_items = payload.get("items") or []
         if not raw_items:
             raise ValueError("El pedido no tiene productos")
@@ -2652,6 +2699,7 @@ class GymDomainService:
                 linked_item = self._find_item_in_state(state, producto.get("id_item"))
                 if linked_item:
                     # La venta sale del stock compartido y queda registrada en MOV_INV.
+                    # Se conserva el prefijo "Venta pedido #N": la devolución por cancelación lo busca.
                     self._aplicar_movimiento(
                         state,
                         linked_item,
@@ -2676,19 +2724,22 @@ class GymDomainService:
             subtotal = round(subtotal, 2)
             igv = round(subtotal * 0.18, 2)
             total = round(subtotal + igv, 2)
+            ahora = _now_iso()
             pedido = {
                 "id_pedido": id_pedido,
                 "id_cliente": int(payload.get("id_cliente") or 0) or None,
                 "cliente_nombre": cliente_nombre,
                 "cliente_correo": str(payload.get("cliente_correo") or ""),
                 "cliente_dni": str(payload.get("cliente_dni") or ""),
-                "fecha_pedido": _now_iso(),
-                "metodo_pago": str(payload.get("metodo_pago") or "tarjeta"),
-                "referencia_pago": str(payload.get("referencia_pago") or f"PED-{datetime.now().strftime('%Y%m%d%H%M%S')}"),
-                "estado_pago": "PAGADO",
+                "fecha_pedido": ahora,
+                "creado_en": ahora,
+                "metodo_pago": "tarjeta" if pago_pendiente else str(payload.get("metodo_pago") or "tarjeta"),
+                # Con tarjeta la referencia es el session_id de Stripe: se registra después de crear la sesión.
+                "referencia_pago": "" if pago_pendiente else str(payload.get("referencia_pago") or f"PED-{datetime.now().strftime('%Y%m%d%H%M%S')}"),
+                "estado_pago": ESTADO_PAGO_PENDIENTE if pago_pendiente else ESTADO_PAGO_PAGADO,
                 "estado_pedido": "PENDIENTE",
                 "observacion_admin": "",
-                "fecha_actualizacion": _now_iso(),
+                "fecha_actualizacion": ahora,
                 "subtotal": subtotal,
                 "igv": igv,
                 "total": total,
@@ -2738,7 +2789,116 @@ class GymDomainService:
                 producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) + cantidad
         self._sincronizar_productos_tienda(state)
 
-    # Procesa esta operación.
+    # Busca un pedido dentro del estado indicado.
+    @staticmethod
+    def _find_pedido_in_state(state: dict[str, Any], id_pedido: Any) -> dict[str, Any] | None:
+        return next(
+            (row for row in state.get("pedidos_tienda", []) if int(row.get("id_pedido", 0) or 0) == int(id_pedido)),
+            None,
+        )
+
+    # Obtiene un pedido de tienda por su id.
+    def get_pedido_tienda(self, id_pedido: int) -> dict[str, Any] | None:
+        return self._find_pedido_in_state(self.state, id_pedido)
+
+    # Pedidos con tarjeta que siguen esperando el cobro (no pagados y no cancelados).
+    def pedidos_pago_pendiente(self) -> list[dict[str, Any]]:
+        return [
+            dict(pedido)
+            for pedido in self.state.get("pedidos_tienda", [])
+            if not _pedido_pagado(pedido)
+            and str(pedido.get("estado_pedido") or "").strip().upper() != ESTADO_PEDIDO_CANCELADO
+        ]
+
+    # Minutos transcurridos desde que se creó el pedido (None si no hay fecha).
+    @staticmethod
+    def minutos_desde_creacion(pedido: dict[str, Any]) -> float | None:
+        creado = _parse_utc(pedido.get("creado_en"))
+        if creado is None:
+            return None
+        return (datetime.now(timezone.utc) - creado).total_seconds() / 60
+
+    # Guarda el session_id de Stripe en el pedido pendiente de pago.
+    def registrar_sesion_pago_pedido(self, id_pedido: int, session_id: str) -> dict[str, Any]:
+        session_id = str(session_id or "").strip()
+        if not session_id:
+            raise ValueError("Sesión de pago inválida")
+
+        # Procesa esta operación.
+        def _fn(state: dict[str, Any]):
+            pedido = self._find_pedido_in_state(state, id_pedido)
+            if not pedido:
+                raise ValueError("Pedido no encontrado")
+            if _pedido_pagado(pedido) or str(pedido.get("estado_pedido") or "").strip().upper() == ESTADO_PEDIDO_CANCELADO:
+                raise ValueError("El pedido ya no está pendiente de pago")
+            pedido["referencia_pago"] = session_id
+            pedido["fecha_actualizacion"] = _now_iso()
+            return pedido
+
+        return self._mutate(_fn)
+
+    # Marca el pedido como pagado. Es idempotente: confirmar dos veces la misma sesión no hace nada.
+    def confirmar_pago_pedido_tienda(self, id_pedido: int, payload: dict[str, Any]) -> dict[str, Any]:
+        id_pedido = int(id_pedido)
+        amount = round(float(payload.get("monto_pago", 0) or 0), 2)
+        payment_reference = str(payload.get("referencia_pago") or "").strip()
+        if id_pedido <= 0:
+            raise ValueError("Pedido de pago inválido")
+        if amount <= 0:
+            raise ValueError("Importe de pago inválido")
+        if not payment_reference:
+            raise ValueError("Referencia de pago inválida")
+
+        # Procesa esta operación.
+        def _fn(state: dict[str, Any]):
+            pedido = self._find_pedido_in_state(state, id_pedido)
+            if not pedido:
+                raise ValueError("Pedido no encontrado")
+
+            expected_amount = round(float(pedido.get("total") or 0), 2)
+            if expected_amount <= 0 or abs(expected_amount - amount) >= 0.01:
+                raise ValueError("El importe del pago no coincide con el pedido")
+
+            current_reference = str(pedido.get("referencia_pago") or "").strip()
+            if _pedido_pagado(pedido):
+                if current_reference == payment_reference:
+                    return pedido
+                raise ValueError("El pedido ya tiene otro pago confirmado")
+            if current_reference and current_reference != payment_reference:
+                raise ValueError("La sesión de pago no corresponde a este pedido")
+            if str(pedido.get("estado_pedido") or "").strip().upper() == ESTADO_PEDIDO_CANCELADO:
+                raise PedidoCanceladoConPagoError(
+                    f"El pedido #{id_pedido} estaba cancelado cuando llegó el pago; requiere reembolso"
+                )
+
+            pedido["estado_pago"] = ESTADO_PAGO_PAGADO
+            pedido["metodo_pago"] = str(payload.get("metodo_pago") or "tarjeta")
+            pedido["referencia_pago"] = payment_reference
+            pedido["fecha_actualizacion"] = _now_iso()
+            return pedido
+
+        return self._mutate(_fn)
+
+    # Cancela un pedido que nunca se pagó y devuelve el stock reservado. Es idempotente.
+    def cancelar_pedido_pago_pendiente(self, id_pedido: int, observacion: str = "") -> dict[str, Any]:
+        # Procesa esta operación.
+        def _fn(state: dict[str, Any]):
+            pedido = self._find_pedido_in_state(state, id_pedido)
+            if not pedido:
+                raise ValueError("Pedido no encontrado")
+            if _pedido_pagado(pedido):
+                raise ValueError("El pedido ya fue pagado")
+            if str(pedido.get("estado_pedido") or "").strip().upper() == ESTADO_PEDIDO_CANCELADO:
+                return pedido
+            self._devolver_stock_pedido(state, pedido, None)
+            pedido["estado_pedido"] = ESTADO_PEDIDO_CANCELADO
+            pedido["observacion_admin"] = str(observacion or "Pago no completado: pedido cancelado y stock devuelto")
+            pedido["fecha_actualizacion"] = _now_iso()
+            return pedido
+
+        return self._mutate(_fn)
+
+        # Procesa esta operación.
     def actualizar_pedido_tienda(self, id_pedido: int, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
         estado = str(payload.get("estado_pedido") or "").strip().upper()
         if estado not in {"PENDIENTE", "CONFIRMADO", "ENTREGADO", "CANCELADO"}:
@@ -2750,6 +2910,8 @@ class GymDomainService:
             pedido = next((row for row in state.get("pedidos_tienda", []) if int(row.get("id_pedido", 0) or 0) == int(id_pedido)), None)
             if not pedido:
                 raise ValueError("Pedido no encontrado")
+            if estado in {"CONFIRMADO", "ENTREGADO"} and not _pedido_pagado(pedido):
+                raise ValueError("No se puede confirmar ni entregar un pedido sin pago confirmado")
             actual = str(pedido.get("estado_pedido") or "").strip().upper()
             if actual == "CANCELADO" and estado != "CANCELADO":
                 raise ValueError("Un pedido cancelado no puede cambiar de estado")
