@@ -11,7 +11,7 @@
           <h1 class="mt-1 text-3xl font-black text-white">Supervisión de Horarios y Asistencias</h1>
           <p class="mt-1 text-sm text-slate-400">Monitorea matrículas activas, cupos y asistencia reciente de los clientes del gimnasio.</p>
         </div>
-        <button class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800" @click="refresh">
+        <button class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800" @click="refresh()">
           <i class="fa-solid fa-rotate-right text-xs"></i>
           <span>Actualizar</span>
         </button>
@@ -210,16 +210,16 @@ const attendanceLabel = (item) => {
   return `Última: ${last.fecha || last.Fecha || 'fecha'} ${last.hora_entrada || last.hora || last.Hora || ''}`.trim();
 };
 
-const refresh = async () => {
+const refresh = async (force = true) => {
   try {
     errorMessage.value = '';
-    await gymStore.fetchTrainerOverview();
+    await gymStore.fetchTrainerOverview({ force });
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'No se pudo cargar la supervisión.';
   }
 };
 
-onMounted(refresh);
+onMounted(() => refresh(false));
 </script>
 
 <style scoped>

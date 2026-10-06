@@ -187,6 +187,9 @@
           class="app-main flex-1 px-3 py-4 pb-24 backdrop-blur-sm sm:px-5 sm:py-5 lg:px-6 lg:pb-8 xl:px-8 2xl:px-10"
         >
           <div class="mx-auto w-full max-w-[1800px]">
+            <p v-if="gymStore.isSyncing && !isNavigatingModule" role="status" class="mb-3 text-sm text-slate-400">
+              Actualizando datos…
+            </p>
             <slot />
           </div>
         </main>
@@ -264,7 +267,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import {
@@ -287,6 +290,7 @@ import { useAuth } from '../composables/useAuth';
 import { useTheme } from '../composables/useTheme';
 import { APP_CONFIG } from '../config/appConfig';
 import { useGymStore } from '../stores/gymStore';
+import { createModuleLoader, sectionForPath } from '../services/moduleNavigation.js';
 
 const props = defineProps({
   mode: {
@@ -508,8 +512,12 @@ const revealActiveMobileLink = async () => {
 const gymStore = useGymStore();
 const isNavigatingModule = ref(false);
 const targetModuleName = ref('');
-let navigationTimer = null;
-let minTimerPassed = false;
+const moduleLoader = createModuleLoader({ onChange: (active) => { isNavigatingModule.value = active; } });
+let navigationRevision;
+let navigationTarget;
+let removeBeforeEach;
+let removeAfterEach;
+let removeErrorHandler;
 
 const moduleNamesMap = {
   '/trainer/dashboard': 'Supervisión de Horarios',
@@ -533,80 +541,61 @@ const moduleNamesMap = {
   '/user/attendance': 'Mi Registro de Asistencia',
 };
 
-let maxSafetyTimer = null;
+const loadActiveSection = (force = false) => gymStore.fetchFromBackend({
+  force,
+  section: sectionForPath(route.path),
+});
 
-const finishModuleLoadingIfReady = () => {
-  if (!gymStore.isSyncing && minTimerPassed) {
-    isNavigatingModule.value = false;
-    if (maxSafetyTimer) clearTimeout(maxSafetyTimer);
+watch(() => gymStore.isSyncing, (syncing) => moduleLoader.setSyncing(syncing), { immediate: true });
+
+let lastInactiveTimestamp = Date.now();
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    lastInactiveTimestamp = Date.now();
+    return;
+  }
+  if (Date.now() - lastInactiveTimestamp >= 5000) {
+    targetModuleName.value = moduleNamesMap[route.path] || 'Actualizando Datos';
+    const current = moduleLoader.start();
+    // Refresca únicamente los recursos de la sección visible.
+    void loadActiveSection(true).catch(() => {}).finally(() => moduleLoader.complete(current));
+  } else {
+    void loadActiveSection().catch(() => {});
   }
 };
 
-router.beforeEach((to, from) => {
-  if (from.path && to.path !== from.path) {
-    targetModuleName.value = moduleNamesMap[to.path] || activeLink.value?.label || 'Módulo Digital';
-    isNavigatingModule.value = true;
-    minTimerPassed = false;
-    if (navigationTimer) clearTimeout(navigationTimer);
-    if (maxSafetyTimer) clearTimeout(maxSafetyTimer);
-
-    // Mínimo de 350ms para suavizar la animación sin retener la pantalla innecesariamente
-    navigationTimer = setTimeout(() => {
-      minTimerPassed = true;
-      finishModuleLoadingIfReady();
-    }, 350);
-
-    // Límite de seguridad: máximo 3.5s si la red/API tarda en responder
-    maxSafetyTimer = setTimeout(() => {
-      isNavigatingModule.value = false;
-    }, 3500);
-  }
-});
-
-router.afterEach(() => {
-  revealActiveMobileLink();
-  finishModuleLoadingIfReady();
-});
-
-watch(() => gymStore.isSyncing, (syncing) => {
-  if (!syncing) {
-    finishModuleLoadingIfReady();
-  }
-});
-
-let lastInactiveTimestamp = Date.now();
-
 onMounted(() => {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      lastInactiveTimestamp = Date.now();
-    } else if (document.visibilityState === 'visible') {
-      const inactiveDuration = Date.now() - lastInactiveTimestamp;
-      // Si la pestaña estuvo inactiva por más de 5 segundos, activar la pantalla de carga al regresar
-      if (inactiveDuration >= 5000) {
-        targetModuleName.value = moduleNamesMap[route.path] || activeLink.value?.label || 'Actualizando Datos';
-        isNavigatingModule.value = true;
-        minTimerPassed = false;
-        if (navigationTimer) clearTimeout(navigationTimer);
-        if (maxSafetyTimer) clearTimeout(maxSafetyTimer);
-
-        navigationTimer = setTimeout(() => {
-          minTimerPassed = true;
-          finishModuleLoadingIfReady();
-        }, 400);
-
-        maxSafetyTimer = setTimeout(() => {
-          isNavigatingModule.value = false;
-        }, 3500);
-
-        gymStore.fetchFromBackend({ force: true }).catch(() => {}).finally(() => {
-          finishModuleLoadingIfReady();
-        });
-      } else {
-        gymStore.fetchFromBackend({ force: false }).catch(() => {});
-      }
+  revealActiveMobileLink();
+  removeBeforeEach = router.beforeEach((to, from) => {
+    if (from.path && to.path !== from.path) {
+      targetModuleName.value = moduleNamesMap[to.path] || 'Módulo Digital';
+      navigationTarget = to.fullPath;
+      navigationRevision = moduleLoader.start();
     }
   });
+  removeAfterEach = router.afterEach(async (to, _from, failure) => {
+    if (to.fullPath !== navigationTarget) return;
+    const current = navigationRevision;
+    if (failure) {
+      moduleLoader.stop();
+      return;
+    }
+    // Espera el montaje, donde cada vista inicia sus consultas de datos.
+    await nextTick();
+    revealActiveMobileLink();
+    moduleLoader.setSyncing(gymStore.isSyncing);
+    moduleLoader.complete(current);
+  });
+  removeErrorHandler = router.onError(() => moduleLoader.stop());
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+});
+
+onBeforeUnmount(() => {
+  removeBeforeEach?.();
+  removeAfterEach?.();
+  removeErrorHandler?.();
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  moduleLoader.dispose();
 });
 
 /**

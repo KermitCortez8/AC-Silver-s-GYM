@@ -59,13 +59,21 @@ const revalidateClientSession = () => {
   }
 };
 watch(
-  () => authStore.isAuthenticated,
-  (authenticated) => {
-    if (!authenticated && authStore.sessionErrorCode === 'membership_expired') {
+  () => [authStore.isAuthenticated, authStore.userRole],
+  ([authenticated]) => {
+    const meta = router.currentRoute.value.meta;
+    // Una revalidación en segundo plano revoca el acceso también a admin y trainer.
+    if (!authenticated && (meta.requiresAuth || authStore.sessionErrorCode === 'membership_expired')) {
       void router.replace({
         name: 'Login',
-        query: { reason: 'membership_expired' },
+        query: authStore.sessionErrorCode === 'membership_expired' ? { reason: 'membership_expired' } : {},
       });
+    } else if (authenticated && (
+      (meta.requiresAdmin && !authStore.isAdmin) ||
+      (meta.requiresTrainer && !authStore.isTrainer) ||
+      (meta.requiresAdministrator && authStore.userRole !== 'admin')
+    )) {
+      void router.replace(authStore.dashboardPath);
     }
   },
 );

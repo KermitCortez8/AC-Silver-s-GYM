@@ -78,7 +78,7 @@ const save = async () => {
   }
 };
 
-onMounted(() => gymStore.fetchFromBackend?.().catch(() => {}));
+onMounted(() => gymStore.fetchFromBackend?.({ section: 'settings' }).catch(() => {}));
 </script>
 
 <style scoped>

@@ -7,7 +7,7 @@
           <h1 class="mt-2 text-3xl font-black text-white">Pedidos de tienda</h1>
           <p class="mt-2 text-slate-300">Compras generadas desde la tienda del cliente.</p>
         </div>
-        <button class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10" @click="refresh">
+        <button class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10" @click="refresh()">
           Actualizar
         </button>
       </div>
@@ -208,10 +208,10 @@ const formatDate = (value) => {
 /**
  * Actualiza los datos actuales.
  */
-const refresh = async () => {
+const refresh = async (force = true) => {
   feedback.value = '';
   try {
-    await gymStore.refreshStoreOrdersFromBackend?.();
+    await gymStore.fetchFromBackend({ section: 'orders', force });
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'No se pudieron cargar los pedidos.';
   }
@@ -238,11 +238,7 @@ const updateOrder = async (order) => {
   }
 };
 
-onMounted(() => {
-  // Los datos de los clientes (members) se usan para mostrar nombre, correo y DNI de cada pedido.
-  gymStore.fetchFromBackend?.().catch(() => {});
-  refresh();
-});
+onMounted(() => refresh(false));
 </script>
 
 <style scoped>

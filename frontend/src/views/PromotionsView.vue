@@ -787,7 +787,7 @@ const confirmDelete = async () => {
   }
 };
 
-onMounted(() => gymStore.fetchFromBackend?.({ force: true }).catch(() => {}));
+onMounted(() => gymStore.fetchFromBackend?.({ section: 'promotions' }).catch(() => {}));
 </script>
 
 <style scoped>

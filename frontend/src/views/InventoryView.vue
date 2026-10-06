@@ -558,7 +558,7 @@ const deleteItem = async (id) => {
 };
 
 onMounted(() => {
-  gymStore.fetchFromBackend?.().catch((error) => console.warn('No se pudo refrescar inventario:', error));
+  gymStore.fetchFromBackend?.({ section: 'inventory' }).catch((error) => console.warn('No se pudo refrescar inventario:', error));
 });
 </script>
 

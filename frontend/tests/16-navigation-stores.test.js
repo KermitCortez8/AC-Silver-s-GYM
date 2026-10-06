@@ -341,6 +341,68 @@ test('trainer requests keep the loading indicator until concurrent section loads
   await userLoad;
   assert.equal(gym.isSyncing, false);
   globalThis.fetch = async () => json({ detail: 'No se pudo cargar el catálogo' }, 503);
-  await assert.rejects(gym.fetchTrainerOverview, /No se pudo cargar el catálogo/);
+  await assert.rejects(() => gym.fetchTrainerOverview({ force: true }), /No se pudo cargar el catálogo/);
+  assert.equal(gym.isSyncing, false);
+});
+
+
+test('inventory, orders, promotions and settings load only their own data', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const paths = [];
+  globalThis.fetch = async url => {
+    const path = new URL(url, 'http://local').pathname;
+    paths.push(path);
+    return json(path.endsWith('/configuracion') ? {} : []);
+  };
+  await gym.fetchFromBackend({ section: 'inventory' });
+  assert.deepEqual(paths.sort(), ['/api/inventario', '/api/inventario/movimientos']);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'orders' });
+  assert.deepEqual(paths.sort(), ['/api/clientes', '/api/tienda/pedidos']);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'promotions' });
+  assert.deepEqual(paths.sort(), ['/api/planes-membresia', '/api/promociones']);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'settings' });
+  assert.deepEqual(paths.sort(), ['/api/asistencia', '/api/gym/configuracion']);
+});
+
+test('admin store shares its resources with inventory and orders', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const paths = [];
+  globalThis.fetch = async url => { paths.push(new URL(url, 'http://local').pathname); return json([]); };
+  await gym.fetchFromBackend({ section: 'store' });
+  assert.deepEqual(paths.sort(), ['/api/clientes', '/api/inventario', '/api/tienda', '/api/tienda/pedidos']);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'orders' });
+  assert.deepEqual(paths, []);
+});
+
+test('trainer views share the pending overview and refresh explicitly after navigation', async () => {
+  auth.token = token;
+  auth.userRole = 'trainer';
+  const pending = deferred();
+  let calls = 0;
+  globalThis.fetch = async url => {
+    assert.ok(url.endsWith('/trainer/overview'));
+    calls++;
+    if (calls === 1) return pending.promise;
+    return json({ routines: [{ id_rutina: 2 }] });
+  };
+  const first = gym.fetchTrainerOverview();
+  const second = gym.fetchTrainerOverview();
+  await flush();
+  assert.equal(calls, 1);
+  pending.resolve(json({ routines: [{ id_rutina: 1 }] }));
+  await Promise.all([first, second]);
+  await gym.fetchTrainerOverview();
+  assert.equal(calls, 1);
+  await gym.fetchFromBackend({ section: 'trainer' });
+  assert.equal(calls, 1);
+  await gym.fetchFromBackend({ section: 'trainer', force: true });
+  assert.equal(calls, 2);
+  assert.equal(gym.trainerOverview.routines[0].id_rutina, 2);
   assert.equal(gym.isSyncing, false);
 });

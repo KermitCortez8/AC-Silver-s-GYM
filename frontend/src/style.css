@@ -524,6 +524,10 @@ video {
   transition: opacity 220ms ease, transform 220ms ease;
 }
 
+.module-loading-fade-leave-active {
+  pointer-events: none;
+}
+
 .module-loading-fade-enter-from,
 .module-loading-fade-leave-to {
   opacity: 0;

@@ -910,7 +910,7 @@ const refresh = async (notify = true) => {
   try {
     isLoading.value = true;
     errorMessage.value = '';
-    await gymStore.fetchTrainerOverview();
+    await gymStore.fetchTrainerOverview({ force: notify });
     if (notify) showToast('Datos del catálogo actualizados.', 'success');
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'No se pudo cargar rutinas.';

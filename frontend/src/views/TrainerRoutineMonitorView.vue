@@ -738,8 +738,11 @@ const searchClient = async () => {
   try {
     isSearching.value = true;
     clientData.value = null;
-    await gymStore.fetchTrainerOverview();
-    clientData.value = await gymStore.fetchTrainerClientRoutines(dni.value);
+    const [, client] = await Promise.all([
+      gymStore.fetchTrainerOverview(),
+      gymStore.fetchTrainerClientRoutines(dni.value),
+    ]);
+    clientData.value = client;
     showToast(`Cliente ${clientData.value.cliente.nombre} cargado exitosamente.`, 'success');
   } catch (error) {
     clientData.value = null;

@@ -521,6 +521,7 @@ export const useGymStore = defineStore('gym', () => {
   const syncError = ref('');
   const isSyncing = ref(false);
   const resourceCache = createResourceCache();
+  const trainerOverviewCache = createResourceCache();
   const pendingSyncs = new Set();
   let syncScope = '';
   let activeSyncs = 0;
@@ -2414,16 +2415,21 @@ export const useGymStore = defineStore('gym', () => {
   /**
    * Consulta los datos del servidor.
    */
-  const fetchTrainerOverview = async () => {
+  const fetchTrainerOverview = async ({ force = false } = {}) => {
     if (!apiBase) throw new Error('No hay backend configurado');
+    const scope = `${authStore.token}|${authStore.userRole}`;
     try {
       activeSyncs += 1;
       isSyncing.value = true;
-      const response = await fetch(`${apiBase}/trainer/overview`, { headers: _authHeaders() });
-      if (!response.ok) {
-        throw new Error(await readBackendError(response, 'Error al cargar supervision del trainer'));
-      }
-      trainerOverview.value = await response.json();
+      await trainerOverviewCache.load(scope, 'overview', async () => {
+        const response = await fetch(`${apiBase}/trainer/overview`, { headers: _authHeaders() });
+        if (!response.ok) {
+          throw new Error(await readBackendError(response, 'Error al cargar supervision del trainer'));
+        }
+        const data = await response.json();
+        if (scope !== `${authStore.token}|${authStore.userRole}`) throw new Error('La sesión ha cambiado.');
+        trainerOverview.value = data;
+      }, { force });
       return trainerOverview.value;
     } finally {
       activeSyncs -= 1;
@@ -2463,7 +2469,7 @@ export const useGymStore = defineStore('gym', () => {
     };
     const index = routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
     if (index >= 0) routines.value[index] = normalized; else routines.value.unshift(normalized);
-    await fetchTrainerOverview().catch(() => { });
+    await fetchTrainerOverview({ force: true }).catch(() => { });
     persist();
     return normalized;
   };
@@ -2485,7 +2491,7 @@ export const useGymStore = defineStore('gym', () => {
     const index = enrollments.value.findIndex((entry) => Number(entry.id_matricula) === Number(saved.id_matricula));
     if (index >= 0) enrollments.value[index] = { ...enrollments.value[index], ...saved };
     else enrollments.value.unshift(saved);
-    await fetchTrainerOverview().catch(() => { });
+    await fetchTrainerOverview({ force: true }).catch(() => { });
     persist();
     return saved;
   };
@@ -2661,7 +2667,7 @@ export const useGymStore = defineStore('gym', () => {
           ['Matrículas', refreshEnrollmentsFromBackend]);
       }
       if (internal || role === 'trainer') tasks.push(['Rutinas', refreshRoutinesFromBackend]);
-      if (role === 'trainer') tasks.push(['Supervisión', fetchTrainerOverview]);
+      if (role === 'trainer') tasks.push(['Supervisión', () => fetchTrainerOverview({ force })]);
       if (role === 'admin' || role === 'user') tasks.push(['Asistencias', async () => {
         // La normalización de asistencias necesita los nombres de clientes.
         await clientsReady.catch(() => { });
@@ -2673,12 +2679,20 @@ export const useGymStore = defineStore('gym', () => {
         users: ['Usuarios'],
         plans: ['Planes'],
         schedules: ['Horarios por servicio', 'Rutinas'],
+        inventory: ['Inventario', 'Movimientos'],
+        store: ['Productos', 'Inventario', 'Pedidos', 'Clientes'],
+        orders: ['Pedidos', 'Clientes'],
+        promotions: ['Promociones', 'Planes', 'Clientes'],
+        settings: ['Configuración', 'Asistencias'],
+        enrollment: ['Clientes', 'Mi perfil', 'Horarios por servicio', 'Matrículas'],
+        attendance: ['Clientes', 'Matrículas', 'Asistencias'],
+        trainer: ['Supervisión'],
         dashboard: ['Clientes', 'Mi perfil', 'Inventario', 'Horarios por servicio', 'Matrículas', 'Asistencias'],
       };
       const labels = sectionResources[section];
       if (section !== 'all' && !labels) throw new Error('Sección de datos desconocida.');
       const selectedTasks = labels ? tasks.filter(([label]) => labels.includes(label) &&
-        !(section === 'dashboard' && label === 'Inventario' && !internal)) : tasks;
+        !(['dashboard', 'store'].includes(section) && label === 'Inventario' && !internal)) : tasks;
       await syncResources(selectedTasks.map(([label, load]) => [label, async () => {
         try {
           await resourceCache.load(scope, label, load, { force });
