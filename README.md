@@ -155,3 +155,4 @@ docker compose build --pull --no-cache
 docker compose up -d --no-build
 docker compose ps
 ```
+Para 2026
