@@ -39,8 +39,16 @@
           </div>
 
           <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
-            <select class="field-input" :value="item.id_rutina || 0" @change="assignRoutine(item, $event.target.value)">
+            <select
+              class="field-input"
+              :value="item.id_rutina || 0"
+              :disabled="!isEnrollmentActive(item)"
+              @change="assignRoutine(item, $event.target.value)"
+            >
               <option :value="0" disabled>Rutina de {{ serviceLabel(item.servicio) }}</option>
+              <option v-if="!routinesForService(item.servicio).length" disabled>
+                No hay rutinas disponibles para este servicio
+              </option>
               <option v-for="routine in routinesForService(item.servicio)" :key="routine.id_rutina" :value="routine.id_rutina">
                 {{ routine.nombre_rutina }}
               </option>
@@ -102,6 +110,7 @@ const dayLabel = (day) => ({ lunes: 'Lunes', martes: 'Martes', miercoles: 'Mierc
  * Gestiona esta acción de la vista.
  */
 const routinesForService = (service) => routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(service || '').toLowerCase());
+const isEnrollmentActive = (item) => String(item.estado || '').trim().toUpperCase() === 'ACTIVA';
 
 /**
  * Gestiona esta acción de la vista.
@@ -131,6 +140,11 @@ const reloadClient = async () => {
  */
 const assignRoutine = async (item, idRutina) => {
   if (!Number(idRutina || 0)) return;
+  if (!isEnrollmentActive(item)) {
+    feedbackTone.value = 'error';
+    feedback.value = 'Solo se puede asignar una rutina a una matrícula ACTIVA.';
+    return;
+  }
   try {
     feedback.value = '';
     await gymStore.assignTrainerRoutine(item.id_matricula, idRutina);
