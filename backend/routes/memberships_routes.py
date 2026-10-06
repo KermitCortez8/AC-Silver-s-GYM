@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import get_gym_service
+from dependencies import get_gym_service, require_admin_or_staff
 from models.gym import MembresiaInput, PlanMembresiaInput, RegistrarClienteMembresiaInput
 from services.gym_domain_service import GymDomainService
 
@@ -65,7 +65,11 @@ def membresias_por_cliente(id_cliente: int, gym_service: GymDomainService = Depe
 
 @router.post("/registro-cliente-membresia")
 # Procesa esta operación.
-def registrar_cliente_membresia(payload: RegistrarClienteMembresiaInput, gym_service: GymDomainService = Depends(get_gym_service)):
+def registrar_cliente_membresia(
+    payload: RegistrarClienteMembresiaInput,
+    gym_service: GymDomainService = Depends(get_gym_service),
+    _current_user=Depends(require_admin_or_staff),
+):
     try:
         return gym_service.registrar_cliente_con_membresia(payload.model_dump())
     except ValueError as error:

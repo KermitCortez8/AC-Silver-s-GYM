@@ -1,230 +1,384 @@
 <template>
-  <div class="space-y-6">
-    <section
-      class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
-    >
-      <div
-        class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between"
-      >
-        <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-            Administracion
-          </p>
-          <h1 class="mt-2 text-3xl font-black text-white">
-            Clientes del sistema
-          </h1>
-          <p class="mt-2 text-slate-300">
-            Gestiona clientes, datos de contacto y activacion de membresias.
-          </p>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-3">
-          <div
-            class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300"
-          >
-            <p class="text-slate-400">Total</p>
-            <p class="text-xl font-black text-white">{{ clients.length }}</p>
-          </div>
-
-          <div
-            class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300"
-          >
-            <p class="text-slate-400">Activos</p>
-            <p class="text-xl font-black text-white">{{ activeClients }}</p>
-          </div>
-
-          <div
-            class="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300"
-          >
-            <p class="text-slate-400">En tramite</p>
-            <p class="text-xl font-black text-white">{{ pendingClients }}</p>
-          </div>
-        </div>
+  <div class="workspace-view clients-view space-y-5">
+    <header class="ws-panel ws-hero ws-toolbar">
+      <div>
+        <p class="ws-eyebrow">Administración · Clientes</p>
+        <h1 class="ws-title">Tu comunidad, en un solo lugar</h1>
+        <p class="ws-description">
+          Encuentra a cada cliente y gestiona sus pagos y membresías.
+        </p>
       </div>
+      <button type="button" class="ws-btn ws-primary" @click="openNewClient">
+        <Plus :size="18" aria-hidden="true" /> Nuevo cliente
+      </button>
+    </header>
+
+    <section class="client-metrics" aria-label="Resumen de clientes">
+      <article class="ws-metric">
+        <span class="client-metric-icon ws-info ws-tint-info"
+          ><Users :size="19" aria-hidden="true"
+        /></span>
+        <p class="ws-muted text-sm">Clientes registrados</p>
+        <p class="ws-metric-value">{{ clients.length }}</p>
+        <p class="ws-muted text-xs">Tu comunidad Silver Gym</p>
+      </article>
+      <article class="ws-metric">
+        <span class="client-metric-icon ws-success ws-tint-success"
+          ><BadgeCheck :size="19" aria-hidden="true"
+        /></span>
+        <p class="ws-muted text-sm">Membresías activas</p>
+        <p class="ws-metric-value ws-success">{{ activeClients }}</p>
+        <p class="ws-muted text-xs">Listos para entrenar</p>
+      </article>
+      <article class="ws-metric">
+        <span class="client-metric-icon ws-warning ws-tint-warning"
+          ><Clock3 :size="19" aria-hidden="true"
+        /></span>
+        <p class="ws-muted text-sm">Por activar</p>
+        <p class="ws-metric-value ws-warning">{{ readyToActivateClients }}</p>
+        <p class="ws-muted text-xs">Pago confirmado, activación pendiente</p>
+      </article>
+      <article class="ws-metric">
+        <span class="client-metric-icon ws-info ws-tint-info"
+          ><CreditCard :size="19" aria-hidden="true"
+        /></span>
+        <p class="ws-muted text-sm">Pagos pendientes</p>
+        <p class="ws-metric-value">{{ unpaidClients }}</p>
+        <p class="ws-muted text-xs">Membresías por cobrar</p>
+      </article>
     </section>
 
-    <section
-      class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+    <p
+      v-if="feedbackMessage && !isEditorOpen"
+      role="status"
+      class="ws-notice"
+      :class="feedbackToneClass"
     >
-      <div
-        class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
-      >
+      <CircleCheck
+        v-if="feedbackTone === 'success'"
+        :size="18"
+        aria-hidden="true"
+      />
+      <Info v-else :size="18" aria-hidden="true" />
+      {{ feedbackMessage }}
+    </p>
+
+    <section class="ws-panel client-directory" :aria-busy="isLoading">
+      <div class="ws-toolbar">
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">
-            Lista
+          <h2 class="ws-heading">Clientes registrados</h2>
+          <p class="ws-muted text-sm mt-1">
+            {{
+              sortOrder === 'recent'
+                ? 'Los más recientes primero'
+                : sortOrder === 'oldest'
+                  ? 'Los más antiguos primero'
+                  : 'Orden alfabético'
+            }}
+            · 7 clientes por página
           </p>
-          <h2 class="mt-2 text-2xl font-black text-white">
-            Clientes registrados
-          </h2>
         </div>
-
-        <div class="flex flex-col gap-3 sm:flex-row">
-          <input
-            v-model="search"
-            class="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none"
-            placeholder="Buscar por ID, nombre, DNI o correo..."
+        <button
+          type="button"
+          class="ws-btn"
+          :disabled="isLoading"
+          @click="refreshClients(true)"
+        >
+          <RefreshCw
+            :size="16"
+            :class="{ 'ws-spin': isLoading }"
+            aria-hidden="true"
           />
-
-          <button
-            class="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-slate-950"
-            @click="openNewClient"
-          >
-            Nuevo cliente
-          </button>
-        </div>
+          {{ isLoading ? 'Actualizando…' : 'Actualizar' }}
+        </button>
       </div>
 
-      <p
-        v-if="feedbackMessage"
-        class="mt-4 rounded-2xl border px-4 py-3 text-sm"
-        :class="feedbackToneClass"
-      >
-        {{ feedbackMessage }}
-      </p>
-
-      <div class="mt-5 overflow-x-auto">
-        <table class="w-full min-w-[960px] text-left text-sm">
-          <thead
-            class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400"
+      <div class="client-filter-bar">
+        <label class="ws-search client-search">
+          <span class="sr-only"
+            >Buscar clientes por nombre, DNI, correo o ID</span
           >
+          <Search :size="18" aria-hidden="true" />
+          <input
+            v-model="search"
+            type="search"
+            class="ws-input"
+            placeholder="Nombre, DNI, correo o ID…"
+          />
+        </label>
+        <label>
+          <span id="client-plan-label" class="ws-field-label">Plan</span>
+          <select
+            v-model="planFilter"
+            aria-labelledby="client-plan-label"
+            class="ws-input"
+          >
+            <option value="">Todos los planes</option>
+            <option v-for="plan in planOptions" :key="plan" :value="plan">
+              {{ plan }}
+            </option>
+          </select>
+        </label>
+        <label>
+          <span id="client-payment-label" class="ws-field-label">Pago</span>
+          <select
+            v-model="paymentFilter"
+            aria-labelledby="client-payment-label"
+            class="ws-input"
+          >
+            <option value="">Todos los pagos</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="PAGADO">Pagado</option>
+            <option value="UNKNOWN">Sin registro</option>
+          </select>
+        </label>
+        <label>
+          <span id="client-sort-label" class="ws-field-label">Ordenar por</span>
+          <select
+            v-model="sortOrder"
+            aria-labelledby="client-sort-label"
+            class="ws-input"
+          >
+            <option value="recent">Más recientes</option>
+            <option value="oldest">Más antiguos</option>
+            <option value="name">Nombre: A–Z</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="client-status-bar">
+        <div
+          class="flex flex-wrap gap-2"
+          role="group"
+          aria-label="Filtrar por estado de membresía"
+        >
+          <button
+            v-for="filter in statusFilters"
+            :key="filter.value"
+            type="button"
+            class="ws-chip"
+            :aria-pressed="statusFilter === filter.value"
+            @click="statusFilter = filter.value"
+          >
+            {{ filter.label }}
+            <span class="client-filter-count">{{ filter.count }}</span>
+          </button>
+        </div>
+        <button
+          v-if="hasFilters"
+          type="button"
+          class="client-reset"
+          @click="resetFilters"
+        >
+          <X :size="14" aria-hidden="true" /> Limpiar filtros
+        </button>
+      </div>
+
+      <div class="client-page-bar">
+        <p class="ws-muted text-sm" role="status" aria-live="polite">
+          <strong class="ws-text"
+            >{{ pagination.start }}–{{ pagination.end }}</strong
+          >
+          de {{ pagination.total }} {{ hasFilters ? 'resultados' : 'clientes' }}
+        </p>
+        <nav class="client-pagination" aria-label="Páginas de clientes">
+          <button
+            type="button"
+            class="client-page-arrow"
+            aria-label="Página anterior"
+            :disabled="pagination.page === 1"
+            @click="currentPage--"
+          >
+            <ChevronLeft :size="18" aria-hidden="true" />
+          </button>
+          <template v-for="page in pagination.pages" :key="page">
+            <button
+              v-if="typeof page === 'number'"
+              type="button"
+              class="client-page-number"
+              :aria-current="page === pagination.page ? 'page' : undefined"
+              :aria-label="`Ir a la página ${page}`"
+              @click="currentPage = page"
+            >
+              {{ page }}
+            </button>
+            <span v-else class="client-page-gap" aria-hidden="true">…</span>
+          </template>
+          <button
+            type="button"
+            class="client-page-arrow"
+            aria-label="Página siguiente"
+            :disabled="pagination.page === pagination.totalPages"
+            @click="currentPage++"
+          >
+            <ChevronRight :size="18" aria-hidden="true" />
+          </button>
+        </nav>
+      </div>
+
+      <div v-if="isLoading && !clients.length" class="ws-empty" role="status">
+        <LoaderCircle :size="28" class="ws-spin ws-info" aria-hidden="true" />
+        <h3>Cargando clientes…</h3>
+        <p>Estamos preparando tu lista.</p>
+      </div>
+      <div v-else-if="!pagination.total" class="ws-empty">
+        <SearchX v-if="hasFilters" :size="32" aria-hidden="true" />
+        <Users v-else :size="32" aria-hidden="true" />
+        <h3>
+          {{
+            hasFilters
+              ? 'No encontramos coincidencias'
+              : 'Tu comunidad empieza aquí'
+          }}
+        </h3>
+        <p>
+          {{
+            hasFilters
+              ? 'Prueba otra búsqueda o ajusta los filtros.'
+              : 'Registra a tu primer cliente para gestionar su membresía.'
+          }}
+        </p>
+        <button
+          type="button"
+          class="ws-btn mt-4"
+          @click="hasFilters ? resetFilters() : openNewClient()"
+        >
+          {{ hasFilters ? 'Limpiar filtros' : 'Nuevo cliente' }}
+        </button>
+      </div>
+      <div v-else class="ws-table-wrap client-table-wrap">
+        <table class="ws-table client-table">
+          <caption class="sr-only">
+            Clientes registrados, planes, pagos y acciones. Página
+            {{
+              pagination.page
+            }}
+            de
+            {{
+              pagination.totalPages
+            }}.
+          </caption>
+          <thead>
             <tr>
-              <th class="px-5 py-4 font-bold">ID</th>
-              <th class="px-5 py-4 font-bold">Cliente</th>
-              <th class="px-5 py-4 font-bold">Plan</th>
-              <th class="px-5 py-4 font-bold">Membresia</th>
-              <th class="px-5 py-4 font-bold">Vigencia</th>
-              <th class="px-5 py-4 font-bold">Acciones</th>
+              <th scope="col">Cliente</th>
+              <th scope="col">Plan</th>
+              <th scope="col">Membresía</th>
+              <th scope="col">Pago</th>
+              <th scope="col" class="client-actions-heading">Acciones</th>
             </tr>
           </thead>
-
-          <tbody class="divide-y divide-white/10">
-            <tr
-              v-for="client in filteredClients"
-              :key="client.id"
-              class="transition hover:bg-white/[0.04]"
-            >
-              <td class="px-5 py-4 align-top">
-                <span
-                  class="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-cyan-100"
-                >
-                  {{ client.id }}
-                </span>
-              </td>
-
-              <td class="px-5 py-4 align-top font-bold text-white">
-                {{ client.name || 'Sin nombre' }}
-              </td>
-
-              <td class="px-5 py-4 align-top text-slate-300">
-                {{ client.plan || 'MENSUAL' }}
-              </td>
-
-              <td class="px-5 py-4 align-top">
-                <span :class="statusClass(displayMembershipStatus(client))">
-                  {{ displayMembershipStatus(client) }}
-                </span>
-              </td>
-
-              <td class="px-5 py-4 align-top text-slate-400">
-                {{ client.membershipStart || 'por activar' }}
-                -
-                {{ client.membershipEnd || 'por activar' }}
-              </td>
-
-              <td class="px-5 py-4 align-top">
-                <div class="flex shrink-0 flex-wrap gap-2">
-                  <button
-                    type="button"
-                    class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-white hover:bg-white/5"
-                    title="Ver detalles"
-                    aria-label="Ver detalles"
-                    @click="openDetails(client)"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      class="h-4 w-4"
+          <tbody>
+            <tr v-for="client in pagination.items" :key="client.id">
+              <td class="client-identity-cell">
+                <div class="client-identity">
+                  <span class="ws-avatar" aria-hidden="true">{{
+                    initials(client.name)
+                  }}</span>
+                  <div class="min-w-0">
+                    <button
+                      type="button"
+                      class="client-name"
+                      @click="openDetails(client)"
                     >
-                      <circle cx="12" cy="12" r="9" />
-                      <line x1="12" y1="11" x2="12" y2="16" />
-                      <circle
-                        cx="12"
-                        cy="7.5"
-                        r="0.75"
-                        fill="currentColor"
-                        stroke="none"
-                      />
-                    </svg>
-                  </button>
-
+                      {{ client.name || 'Sin nombre' }}
+                    </button>
+                    <p class="ws-muted client-contact">
+                      {{ client.email || 'Sin correo' }}
+                    </p>
+                    <p class="ws-muted client-id">
+                      {{ client.id }}
+                      <span v-if="client.dni">· DNI {{ client.dni }}</span>
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Plan">
+                <span class="client-plan">{{ client.plan || 'Sin plan' }}</span>
+              </td>
+              <td data-label="Membresía">
+                <span class="ws-badge" :class="membershipBadgeClass(client)"
+                  ><span class="client-status-dot" aria-hidden="true"></span
+                  >{{ clientMembershipLabel(client) }}</span
+                >
+              </td>
+              <td data-label="Pago">
+                <span
+                  class="ws-badge"
+                  :class="
+                    client.paymentStatus === 'PAGADO'
+                      ? 'ws-success ws-tint-success'
+                      : client.paymentStatus === 'PENDIENTE'
+                        ? 'ws-warning ws-tint-warning'
+                        : 'ws-muted ws-inset'
+                  "
+                  ><CircleCheck
+                    v-if="client.paymentStatus === 'PAGADO'"
+                    :size="13"
+                    aria-hidden="true"
+                  />{{
+                    client.paymentStatus === 'PAGADO'
+                      ? 'Pagado'
+                      : client.paymentStatus === 'PENDIENTE'
+                        ? 'Pendiente'
+                        : 'Sin registro'
+                  }}</span
+                >
+              </td>
+              <td class="client-actions-cell">
+                <div class="client-actions">
                   <button
-                    v-if="isPendingMembership(client)"
+                    v-if="
+                      isPendingMembership(client) &&
+                      client.paymentStatus === 'PAGADO'
+                    "
                     type="button"
-                    class="rounded-xl bg-emerald-400 px-3 py-2 text-xs font-bold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-                    :disabled="activatingClientId === client.id"
+                    class="client-action-primary ws-success ws-tint-success"
+                    :disabled="Boolean(activatingClientId)"
                     @click="requestActivation(client)"
                   >
-                    {{
+                    <BadgeCheck :size="15" aria-hidden="true" />{{
                       activatingClientId === client.id
-                        ? 'Activando...'
+                        ? 'Activando…'
                         : 'Activar'
                     }}
                   </button>
-
                   <button
-                    v-if="
-                      isActiveStatus(client.status) &&
-                      isActiveStatus(client.membershipStatus)
-                    "
+                    v-if="canPayClientWithStripe(client)"
                     type="button"
-                    class="rounded-xl border border-white/20 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
-                    :disabled="Boolean(notifyingClientId)"
-                    @click="retryActivationEmail(client)"
+                    class="client-action-primary ws-info ws-tint-info"
+                    :disabled="Boolean(payingClientId)"
+                    @click="payWithStripe(client)"
                   >
-                    {{
-                      notifyingClientId === client.id
-                        ? 'Enviando...'
-                        : 'Notificar activación'
+                    <CreditCard :size="15" aria-hidden="true" />{{
+                      payingClientId === client.id ? 'Abriendo…' : 'Pagar'
                     }}
                   </button>
-
                   <button
                     type="button"
-                    class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-white hover:bg-white/5"
-                    title="Editar"
+                    class="client-icon-button"
+                    title="Ver detalles"
+                    :aria-label="`Ver detalles de ${client.name || client.id}`"
+                    @click="openDetails(client)"
+                  >
+                    <Info :size="17" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    class="client-icon-button"
+                    title="Editar cliente"
+                    :aria-label="`Editar a ${client.name || client.id}`"
                     @click="editClient(client)"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      class="h-4 w-4"
-                    >
-                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                    </svg>
+                    <Pencil :size="16" aria-hidden="true" />
                   </button>
-
                   <button
                     type="button"
-                    class="grid h-9 w-9 place-items-center rounded-xl border border-rose-400/30 text-rose-100 hover:bg-rose-400/10"
-                    title="Eliminar"
+                    class="client-icon-button client-delete"
+                    title="Eliminar cliente"
+                    :aria-label="`Eliminar a ${client.name || client.id}`"
                     @click="confirmDelete(client)"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      class="h-4 w-4"
-                    >
-                      <path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" />
-                    </svg>
+                    <Trash2 :size="16" aria-hidden="true" />
                   </button>
                 </div>
               </td>
@@ -232,27 +386,29 @@
           </tbody>
         </table>
       </div>
-
-      <p
-        v-if="!filteredClients.length"
-        class="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-400"
-      >
-        No hay clientes para mostrar.
+      <p v-if="pagination.total" class="ws-muted text-xs client-directory-note">
+        Página {{ pagination.page }} de {{ pagination.totalPages }} · Consulta
+        la vigencia y los datos completos en los detalles del cliente.
       </p>
     </section>
 
     <WorkspaceDialog
       :open="isEditorOpen"
+      :busy="savingClient"
       :title="editingId ? 'Editar cliente' : 'Nuevo cliente'"
       @close="closeEditor"
     >
       <form @submit.prevent="handleSubmit">
-        <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <fieldset
+          :disabled="savingClient"
+          class="mt-6 grid gap-4 sm:grid-cols-2"
+        >
           <label class="space-y-2 sm:col-span-2">
             <span class="text-sm ws-soft">Nombre</span>
 
             <input
               v-model="form.nombre"
+              required
               class="ws-input"
               placeholder="Jose Perez"
             />
@@ -263,6 +419,7 @@
 
             <input
               v-model="form.correo"
+              required
               type="email"
               class="ws-input"
               placeholder="cliente@correo.com"
@@ -274,10 +431,16 @@
 
             <input
               v-model="form.password"
+              :required="!editingId"
+              minlength="6"
               type="password"
               autocomplete="new-password"
               class="ws-input"
-              :placeholder="editingId ? 'Dejar vacio para conservar la actual' : 'Minimo 6 caracteres'"
+              :placeholder="
+                editingId
+                  ? 'Dejar vacio para conservar la actual'
+                  : 'Minimo 6 caracteres'
+              "
             />
           </label>
 
@@ -292,7 +455,12 @@
 
           <label class="space-y-2">
             <span class="text-sm ws-soft">DNI</span>
-            <input v-model="form.dni" class="ws-input" placeholder="12345678" />
+            <input
+              v-model="form.dni"
+              required
+              class="ws-input"
+              placeholder="12345678"
+            />
           </label>
 
           <label class="space-y-2">
@@ -327,27 +495,50 @@
             </p>
           </label>
 
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm ws-soft">Estado</span>
-            <select v-model="form.estado" class="ws-input">
-              <option value="EN_TRAMITE">EN_TRAMITE</option>
-              <option value="ACTIVO" :disabled="editingNeedsActivation">
-                ACTIVO
-              </option>
-              <option value="INACTIVO">INACTIVO</option>
-            </select>
+          <label v-if="editingId" class="space-y-2 sm:col-span-2">
+            <span class="text-sm ws-soft">Estado de membresía</span>
+            <p class="ws-input">{{ editingMembershipLabel }}</p>
             <p v-if="editingNeedsActivation" class="text-xs ws-muted">
               La preinscripción se activa desde «Activar», después de confirmar
               el pago.
             </p>
+            <p v-if="editingExpired" class="text-xs ws-danger">
+              La membresía está vencida. Se necesita una nueva membresía pagada
+              y activada para recuperar el acceso.
+            </p>
           </label>
-        </div>
+
+          <label v-if="!editingId" class="space-y-2 sm:col-span-2">
+            <span class="flex items-center gap-3 text-sm ws-text">
+              <input v-model="form.pagar_con_stripe" type="checkbox" />
+              Realizar el pago con Stripe al registrar
+            </span>
+            <p class="text-xs ws-muted">
+              El cliente quedará en trámite, con pago pendiente. Puedes pagar
+              ahora o después desde sus detalles. La membresía se activa después
+              de confirmar el pago.
+            </p>
+          </label>
+        </fieldset>
+
+        <p v-if="submitError" role="alert" class="mt-4 text-sm ws-warning">
+          {{ submitError }}
+        </p>
 
         <button
           type="submit"
-          class="mt-6 w-full rounded-2xl ws-primary px-4 py-3 font-bold transition"
+          :disabled="savingClient"
+          class="mt-6 w-full rounded-2xl ws-primary px-4 py-3 font-bold transition disabled:opacity-50"
         >
-          {{ editingId ? 'Guardar cambios' : 'Registrar cliente' }}
+          {{
+            savingClient
+              ? 'Guardando...'
+              : editingId
+                ? 'Guardar cambios'
+                : form.pagar_con_stripe
+                  ? 'Registrar y pagar con Stripe'
+                  : 'Registrar cliente'
+          }}
         </button>
       </form>
     </WorkspaceDialog>
@@ -392,14 +583,8 @@
             <dd>
               <span
                 class="ws-badge"
-                :class="
-                  isActiveStatus(displayMembershipStatus(viewingClient))
-                    ? 'ws-success ws-tint-success'
-                    : isPendingStatus(displayMembershipStatus(viewingClient))
-                      ? 'ws-warning ws-tint-warning'
-                      : 'ws-soft ws-inset'
-                "
-                >{{ displayMembershipStatus(viewingClient) }}</span
+                :class="membershipBadgeClass(viewingClient)"
+                >{{ clientMembershipLabel(viewingClient) }}</span
               >
             </dd>
           </div>
@@ -432,7 +617,8 @@
           <div
             v-if="
               Number(viewingClient.membershipPrice || 0) > 0 &&
-              getPlanPrice(viewingClient.plan) > Number(viewingClient.membershipPrice || 0)
+              getPlanPrice(viewingClient.plan) >
+                Number(viewingClient.membershipPrice || 0)
             "
             class="client-detail-wide"
           >
@@ -440,14 +626,62 @@
             <dd>
               Precio base: S/. {{ getPlanPrice(viewingClient.plan).toFixed(2) }}
               <span class="block ws-success text-sm mt-1">
-                Pagado: S/. {{ Number(viewingClient.membershipPrice || 0).toFixed(2) }}
-                · Ahorro: S/. {{ (getPlanPrice(viewingClient.plan) - Number(viewingClient.membershipPrice || 0)).toFixed(2) }}
+                Pagado: S/.
+                {{ Number(viewingClient.membershipPrice || 0).toFixed(2) }} ·
+                Ahorro: S/.
+                {{
+                  (
+                    getPlanPrice(viewingClient.plan) -
+                    Number(viewingClient.membershipPrice || 0)
+                  ).toFixed(2)
+                }}
               </span>
             </dd>
           </div>
         </dl>
 
+        <p
+          v-if="clientMembershipGroup(viewingClient) === 'expired'"
+          class="mt-6 rounded-xl ws-tint-danger ws-danger p-4 text-sm"
+          role="status"
+        >
+          Acceso bloqueado por membresía vencida. Para recuperar el acceso, el
+          cliente necesita una nueva membresía pagada y activada.
+        </p>
+
         <div class="mt-6 flex flex-col gap-3">
+          <button
+            v-if="
+              isActiveStatus(viewingClient.status) &&
+              isActiveStatus(viewingClient.membershipStatus)
+            "
+            type="button"
+            class="ws-btn"
+            :disabled="Boolean(notifyingClientId)"
+            @click="retryActivationEmail(viewingClient)"
+          >
+            <Mail :size="17" aria-hidden="true" />{{
+              notifyingClientId === viewingClient.id
+                ? 'Enviando…'
+                : 'Notificar activación'
+            }}
+          </button>
+          <p v-if="paymentError" role="alert" class="text-sm ws-warning">
+            {{ paymentError }}
+          </p>
+          <button
+            v-if="canPayClientWithStripe(viewingClient)"
+            type="button"
+            class="w-full rounded-xl ws-primary px-4 py-3 font-bold disabled:opacity-50"
+            :disabled="Boolean(payingClientId)"
+            @click="payWithStripe(viewingClient)"
+          >
+            {{
+              payingClientId
+                ? 'Abriendo Stripe...'
+                : `Pagar S/. ${Number(viewingClient.membershipPrice || 0).toFixed(2)} con Stripe`
+            }}
+          </button>
           <button
             v-if="viewingClient.paymentStatus === 'PENDIENTE'"
             type="button"
@@ -457,7 +691,10 @@
             Confirmar Pago (Manual/Efectivo)
           </button>
           <button
-            v-if="viewingClient.paymentStatus === 'PAGADO' && !isActiveStatus(viewingClient.status)"
+            v-if="
+              viewingClient.paymentStatus === 'PAGADO' &&
+              clientMembershipGroup(viewingClient) === 'pending'
+            "
             type="button"
             class="w-full rounded-xl border ws-border-success ws-tint-success px-4 py-3 font-bold ws-success transition ws-hover"
             @click="requestActivation(viewingClient)"
@@ -481,20 +718,63 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import WorkspaceDialog from '../components/WorkspaceDialog.vue';
 import { useGymStore } from '../stores/gymStore';
 import { useAuthStore } from '../stores/authStore';
 import { apiPost } from '../services/apiClient';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
+import { canPayClientWithStripe } from '../utils/adminClientPayment.js';
+import {
+  clientMembershipGroup,
+  clientMembershipLabel,
+  filterClientDirectory,
+  paginateClients,
+} from '../utils/clientDirectory.js';
+import {
+  BadgeCheck,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  Clock3,
+  CreditCard,
+  Info,
+  LoaderCircle,
+  Mail,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  SearchX,
+  Trash2,
+  Users,
+  X,
+} from 'lucide-vue-next';
 
 const gymStore = useGymStore();
 const authStore = useAuthStore();
+const route = useRoute();
+const router = useRouter();
 
 const clients = computed(() => gymStore.members);
 
 const search = ref('');
+const statusFilter = ref(
+  ['active', 'pending', 'expired'].includes(route.query.status)
+    ? route.query.status
+    : '',
+);
+const planFilter = ref('');
+const paymentFilter = ref(
+  ['PAGADO', 'PENDIENTE', 'UNKNOWN'].includes(route.query.payment)
+    ? route.query.payment
+    : '',
+);
+const sortOrder = ref('recent');
+const currentPage = ref(1);
+const isLoading = ref(true);
 const editingId = ref('');
 const isEditorOpen = ref(false);
 const isDetailsOpen = ref(false);
@@ -505,13 +785,27 @@ const activatingClientId = ref('');
 const pendingActivation = ref(null);
 const activationError = ref('');
 const notifyingClientId = ref('');
-const editingNeedsActivation = computed(() => {
+const savingClient = ref(false);
+const payingClientId = ref('');
+const paymentError = ref('');
+const submitError = ref('');
+const editingClient = computed(() =>
+  clients.value.find((entry) => entry.id === editingId.value),
+);
+const editingMembershipLabel = computed(() =>
+  clientMembershipLabel(editingClient.value || {}),
+);
+const editingNeedsActivation = computed(
+  () =>
+    editingClient.value &&
+    clientMembershipGroup(editingClient.value) === 'pending',
+);
+const editingExpired = computed(() => {
   const client = clients.value.find((entry) => entry.id === editingId.value);
   return (
     client &&
-    ['EN_TRAMITE', 'PENDIENTE_PAGO'].includes(
-      normalizeStatus(client.membershipStatus),
-    )
+    (clientMembershipGroup(client) === 'expired' ||
+      normalizeStatus(client.status) === 'VENCIDA')
   );
 });
 
@@ -564,6 +858,7 @@ const form = reactive({
   plan: 'MENSUAL',
   id_promocion: 0,
   estado: 'EN_TRAMITE',
+  pagar_con_stripe: false,
 });
 
 /**
@@ -587,31 +882,10 @@ const isActiveStatus = (value) =>
   ['ACTIVO', 'ACTIVA'].includes(normalizeStatus(value));
 
 /**
- * Valida si el estado corresponde a una membresía en trámite.
- */
-const isPendingStatus = (value) => normalizeStatus(value).includes('TRAMITE');
-
-/**
  * Valida si la membresía del cliente se encuentra pendiente.
  */
 const isPendingMembership = (client) =>
-  isPendingStatus(displayMembershipStatus(client)) ||
-  isPendingStatus(client.status);
-
-/**
- * Obtiene las clases visuales correspondientes al estado.
- */
-const statusClass = (value) => {
-  if (isActiveStatus(value)) {
-    return 'font-semibold text-emerald-300';
-  }
-
-  if (isPendingStatus(value)) {
-    return 'font-semibold text-amber-300';
-  }
-
-  return 'font-semibold text-slate-300';
-};
+  clientMembershipGroup(client) === 'pending';
 
 const getPlanPrice = (planName) => {
   const plan = gymStore.planCatalog.find((p) => p.name === planName);
@@ -621,8 +895,15 @@ const getPlanPrice = (planName) => {
 const availablePromotions = computed(() => {
   const active = gymStore.activePromotions;
   if (form.id_promocion) {
-    const current = gymStore.promotions.find(p => Number(p.id_promocion) === Number(form.id_promocion));
-    if (current && !active.some(p => Number(p.id_promocion) === Number(current.id_promocion))) {
+    const current = gymStore.promotions.find(
+      (p) => Number(p.id_promocion) === Number(form.id_promocion),
+    );
+    if (
+      current &&
+      !active.some(
+        (p) => Number(p.id_promocion) === Number(current.id_promocion),
+      )
+    ) {
       return [...active, current];
     }
   }
@@ -631,62 +912,140 @@ const availablePromotions = computed(() => {
 
 const estimatedCharge = computed(() => {
   try {
-    const plan = gymStore.planCatalog.find((p) => p.name === form.plan) || gymStore.planCatalog[0];
+    const plan =
+      gymStore.planCatalog.find((p) => p.name === form.plan) ||
+      gymStore.planCatalog[0];
     if (!plan) return { finalPrice: 0, discountAmount: 0 };
-    return gymStore.calculatePlanCharge(plan.id, form.id_promocion ? `promo-${form.id_promocion}` : '');
+    return gymStore.calculatePlanCharge(
+      plan.id,
+      form.id_promocion ? `promo-${form.id_promocion}` : '',
+    );
   } catch (e) {
     return { finalPrice: 0, discountAmount: 0 };
   }
 });
 
-const filteredClients = computed(() => {
-  const query = search.value.trim().toLowerCase();
-
-  if (!query) {
-    return clients.value;
-  }
-
-  return clients.value.filter((client) =>
-    [
-      client.id,
-      client.name,
-      client.email,
-      client.phone,
-      client.dni,
-      client.plan,
-      client.promocion,
-      client.status,
-      client.membershipStatus,
-      client.paymentReference,
-    ]
-      .join(' ')
-      .toLowerCase()
-      .includes(query),
-  );
-});
-
+const filteredClients = computed(() =>
+  filterClientDirectory(clients.value, {
+    search: search.value,
+    status: statusFilter.value,
+    plan: planFilter.value,
+    payment: paymentFilter.value,
+    sort: sortOrder.value,
+  }),
+);
+const pagination = computed(() =>
+  paginateClients(filteredClients.value, currentPage.value),
+);
+const hasFilters = computed(() =>
+  Boolean(
+    search.value.trim() ||
+    statusFilter.value ||
+    planFilter.value ||
+    paymentFilter.value,
+  ),
+);
+const planOptions = computed(() =>
+  [
+    ...new Set(
+      [
+        ...gymStore.planCatalog.map((plan) => plan.name),
+        ...clients.value.map((client) => client.plan),
+      ].filter(Boolean),
+    ),
+  ].sort(),
+);
 const activeClients = computed(
   () =>
-    clients.value.filter((client) =>
-      isActiveStatus(displayMembershipStatus(client)),
+    clients.value.filter((client) => clientMembershipGroup(client) === 'active')
+      .length,
+);
+const readyToActivateClients = computed(
+  () =>
+    clients.value.filter(
+      (client) =>
+        clientMembershipGroup(client) === 'pending' &&
+        client.paymentStatus === 'PAGADO',
     ).length,
 );
-
-const pendingClients = computed(
-  () => clients.value.filter((client) => isPendingMembership(client)).length,
+const unpaidClients = computed(
+  () =>
+    clients.value.filter((client) => client.paymentStatus === 'PENDIENTE')
+      .length,
 );
-
-const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success') {
-    return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
+const statusFilters = computed(() => [
+  { value: '', label: 'Todos', count: clients.value.length },
+  { value: 'active', label: 'Activo', count: activeClients.value },
+  {
+    value: 'pending',
+    label: 'En trámite',
+    count: clients.value.filter(
+      (client) => clientMembershipGroup(client) === 'pending',
+    ).length,
+  },
+  {
+    value: 'expired',
+    label: 'Vencida',
+    count: clients.value.filter(
+      (client) => clientMembershipGroup(client) === 'expired',
+    ).length,
+  },
+]);
+const resetFilters = () => {
+  search.value = '';
+  statusFilter.value = '';
+  planFilter.value = '';
+  paymentFilter.value = '';
+  currentPage.value = 1;
+};
+watch(
+  [search, statusFilter, planFilter, paymentFilter, sortOrder],
+  () => {
+    currentPage.value = 1;
+  },
+  { flush: 'sync' },
+);
+watch(
+  () => pagination.value.page,
+  (page) => {
+    currentPage.value = page;
+  },
+);
+const membershipBadgeClass = (client) =>
+  ({
+    active: 'ws-success ws-tint-success',
+    pending: 'ws-warning ws-tint-warning',
+    expired: 'ws-danger ws-tint-danger',
+  })[clientMembershipGroup(client)];
+const initials = (name) =>
+  String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase() || '?';
+const feedbackToneClass = computed(() =>
+  feedbackTone.value === 'success'
+    ? 'ws-tint-success ws-success'
+    : feedbackTone.value === 'error'
+      ? 'ws-tint-danger ws-danger'
+      : 'ws-tint-info ws-info',
+);
+const refreshClients = async (force = false) => {
+  isLoading.value = true;
+  try {
+    await gymStore.fetchFromBackend({ section: 'clients', force });
+  } catch (error) {
+    feedbackTone.value = 'error';
+    feedbackMessage.value =
+      error.message ||
+      'No se pudo actualizar la lista de clientes. Inténtalo nuevamente.';
+  } finally {
+    isLoading.value = false;
   }
-
-  if (feedbackTone.value === 'error') {
-    return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
-  }
-
-  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
-});
+};
 
 /**
  * Restablece los datos del formulario.
@@ -702,6 +1061,8 @@ const resetForm = () => {
   form.plan = 'MENSUAL';
   form.id_promocion = 0;
   form.estado = 'EN_TRAMITE';
+  form.pagar_con_stripe = false;
+  submitError.value = '';
 };
 
 /**
@@ -717,6 +1078,7 @@ const openNewClient = () => {
  * Cierra el formulario de creación o edición.
  */
 const closeEditor = () => {
+  if (savingClient.value) return;
   isEditorOpen.value = false;
   resetForm();
 };
@@ -725,6 +1087,7 @@ const closeEditor = () => {
  * Carga los datos de un cliente en el formulario de edición.
  */
 const editClient = (client) => {
+  submitError.value = '';
   editingId.value = client.id;
 
   form.nombre = client.name || '';
@@ -744,6 +1107,7 @@ const editClient = (client) => {
  * Abre el modal con los detalles del cliente seleccionado.
  */
 const openDetails = (client) => {
+  paymentError.value = '';
   viewingClient.value = client;
   isDetailsOpen.value = true;
 };
@@ -788,9 +1152,16 @@ const confirmDelete = async (client) => {
  * Marca la membresía como pagada en efectivo manualmente.
  */
 const markAsPaidManual = async (client) => {
-  if (!client || !window.confirm(`¿Confirmas que recibiste el pago en efectivo para la membresía de ${client.name}?`)) return;
-  const idCliente = client.id_cliente || Number(String(client.id || '').replace(/^SGCLI/i, ''));
-  
+  if (
+    !client ||
+    !window.confirm(
+      `¿Confirmas que recibiste el pago en efectivo para la membresía de ${client.name}?`,
+    )
+  )
+    return;
+  const idCliente =
+    client.id_cliente || Number(String(client.id || '').replace(/^SGCLI/i, ''));
+
   if (!idCliente) return;
 
   try {
@@ -802,7 +1173,8 @@ const markAsPaidManual = async (client) => {
     feedbackMessage.value = `Pago de ${saved.id} confirmado correctamente. Ya puedes activar la membresía.`;
   } catch (error) {
     feedbackTone.value = 'error';
-    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo registrar el pago.';
+    feedbackMessage.value =
+      error instanceof Error ? error.message : 'No se pudo registrar el pago.';
   }
 };
 
@@ -850,6 +1222,10 @@ const activateMembership = async (client) => {
  * Registra o actualiza los datos de un cliente.
  */
 const handleSubmit = async () => {
+  if (savingClient.value) return;
+  savingClient.value = true;
+  const isNewClient = !editingId.value;
+  submitError.value = '';
   try {
     const saved = await gymStore.upsertClient({
       id_usuario: editingId.value || undefined,
@@ -869,29 +1245,410 @@ const handleSubmit = async () => {
       id_promocion: form.id_promocion || undefined,
 
       estado: form.estado,
+      pagar_con_stripe: !editingId.value && form.pagar_con_stripe,
     });
 
+    if (isNewClient) {
+      resetFilters();
+      sortOrder.value = 'recent';
+    }
+    savingClient.value = false;
     closeEditor();
 
     feedbackTone.value = 'success';
 
     feedbackMessage.value = `Cliente ${saved.id} guardado con estado ${saved.status || form.estado}.`;
+    if (saved.payment?.checkout_url) {
+      window.location.assign(saved.payment.checkout_url);
+    } else if (saved.payment?.message) {
+      feedbackTone.value = 'info';
+      feedbackMessage.value = `Cliente ${saved.id} registrado. ${saved.payment.message}. Puedes retomar el pago desde sus detalles.`;
+      openDetails(saved);
+      paymentError.value = saved.payment.message;
+    }
   } catch (error) {
     feedbackTone.value = 'error';
 
     feedbackMessage.value =
       error instanceof Error ? error.message : 'No se pudo guardar el cliente.';
+    submitError.value = feedbackMessage.value;
+  } finally {
+    savingClient.value = false;
   }
 };
 
-onMounted(() => {
-  gymStore
-    .fetchFromBackend?.()
-    .catch((error) => console.warn('No se pudo refrescar clientes:', error));
+const payWithStripe = async (client) => {
+  if (payingClientId.value || !canPayClientWithStripe(client)) return;
+  payingClientId.value = client.id;
+  paymentError.value = '';
+  try {
+    const payment = await apiPost(
+      `/clientes/${client.id_cliente}/pago-stripe`,
+      {},
+      authStore.token,
+    );
+    if (!payment.checkout_url)
+      throw new Error(payment.message || 'No se pudo abrir Stripe.');
+    window.location.assign(payment.checkout_url);
+  } catch (error) {
+    paymentError.value = error.message || 'No se pudo iniciar el pago.';
+    feedbackTone.value = 'error';
+    feedbackMessage.value = paymentError.value;
+  } finally {
+    payingClientId.value = '';
+  }
+};
+
+onMounted(async () => {
+  const stripeResult = route.query.stripe_result;
+  if (stripeResult) {
+    try {
+      if (stripeResult === 'success') {
+        if (!route.query.session_id)
+          throw new Error('Falta la sesión de Stripe para verificar el pago.');
+        const result = await apiPost(
+          `/pagos/stripe/confirmar-retorno?session_id=${encodeURIComponent(route.query.session_id)}`,
+          {},
+          authStore.token,
+        );
+        feedbackTone.value = result.confirmed ? 'success' : 'info';
+        feedbackMessage.value = result.confirmed
+          ? `Pago de SGCLI${String(result.id_cliente).padStart(3, '0')} confirmado. Ya puedes activar su membresía.`
+          : 'Stripe todavía no confirmó el pago. Actualiza la lista en unos momentos.';
+      } else {
+        feedbackTone.value = 'info';
+        feedbackMessage.value =
+          'Pago cancelado. El cliente sigue registrado y puedes retomar el pago desde sus detalles.';
+      }
+      const { stripe_result, session_id, ...query } = route.query;
+      await router.replace({ path: route.path, query });
+    } catch (error) {
+      feedbackTone.value = 'error';
+      feedbackMessage.value = `${error.message || 'No se pudo verificar el pago.'} Recarga esta página para volver a comprobarlo.`;
+    }
+  }
+  await refreshClients(Boolean(stripeResult));
 });
 </script>
 
 <style scoped>
+.client-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+.client-metrics .ws-metric {
+  position: relative;
+  padding: 1.1rem;
+}
+.clients-view > header {
+  padding: 1.25rem 1.75rem;
+}
+.clients-view > header .ws-title {
+  font-size: clamp(1.5rem, 2.5vw, 1.9rem);
+}
+.client-metrics .ws-metric > p:first-of-type {
+  padding-right: 2rem;
+}
+.client-metric-icon {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+.client-directory {
+  display: grid;
+  gap: 1rem;
+}
+.client-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(230px, 2fr) repeat(3, minmax(140px, 1fr));
+  gap: 0.85rem;
+  align-items: end;
+}
+.client-search {
+  min-width: 0;
+}
+.client-status-bar,
+.client-page-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.client-filter-count {
+  border-radius: 999px;
+  background: var(--ws-inset);
+  color: var(--ws-soft);
+  padding: 0.1rem 0.45rem;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.client-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--ws-muted);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+.client-reset:hover {
+  color: var(--ws-text);
+  background: var(--ws-hover);
+}
+.client-page-bar {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 5;
+  border: 1px solid var(--ws-border);
+  background: var(--ws-inset);
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.85rem;
+}
+.client-pagination {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.client-page-number,
+.client-page-arrow,
+.client-page-gap {
+  display: grid;
+  place-items: center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 750;
+  color: var(--ws-muted);
+}
+.client-page-arrow {
+  border: 1px solid var(--ws-border);
+  background: var(--ws-panel);
+}
+.client-page-number:hover,
+.client-page-arrow:not(:disabled):hover {
+  background: var(--ws-hover);
+  color: var(--ws-text);
+}
+.client-page-number[aria-current='page'] {
+  background: var(--ws-info-bg);
+  color: var(--ws-info);
+  box-shadow: inset 0 0 0 1px var(--ws-info);
+}
+.client-table {
+  min-width: 800px;
+}
+.client-table td {
+  padding: 0.65rem 1rem;
+  vertical-align: middle;
+}
+.client-table .client-identity-cell {
+  width: 36%;
+}
+.client-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.client-name {
+  text-align: left;
+  font-weight: 750;
+  color: var(--ws-text);
+  border-radius: 0.3rem;
+}
+.client-name:hover {
+  color: var(--ws-info);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.client-contact {
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+  overflow-wrap: anywhere;
+}
+.client-id {
+  font-size: 0.65rem;
+  margin-top: 0.15rem;
+}
+.client-plan {
+  font-size: 0.75rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.client-status-dot {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+.client-actions-heading {
+  text-align: right;
+}
+.client-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+.client-icon-button {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--ws-border);
+  border-radius: 0.65rem;
+  background: var(--ws-panel);
+  color: var(--ws-soft);
+  flex-shrink: 0;
+}
+.client-icon-button:hover {
+  background: var(--ws-hover);
+  color: var(--ws-info);
+}
+.client-delete:hover {
+  color: var(--ws-danger);
+  background: var(--ws-danger-bg);
+  border-color: var(--ws-danger);
+}
+.client-action-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.client-action-primary:hover {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.client-directory-note {
+  line-height: 1.5;
+}
+@media (max-width: 1100px) {
+  .client-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .client-filter-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .client-search {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 1023px) {
+  .client-page-bar {
+    top: 4.5rem;
+  }
+}
+@media (max-width: 700px) {
+  .client-metrics {
+    gap: 0.65rem;
+  }
+  .client-metrics .ws-metric {
+    padding: 0.85rem;
+  }
+  .client-metric-icon {
+    display: none;
+  }
+  .clients-view > header {
+    padding: 1rem;
+  }
+  .client-metrics .ws-metric > p:first-of-type {
+    padding-right: 0;
+  }
+  .client-metrics .ws-metric-value {
+    margin: 0.3rem 0;
+  }
+  .client-filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .client-filter-bar > label:last-child {
+    grid-column: 1 / -1;
+  }
+  .client-page-bar {
+    justify-content: center;
+  }
+  .client-page-bar > p {
+    width: 100%;
+    text-align: center;
+  }
+  .client-pagination {
+    gap: 0.15rem;
+  }
+  .client-page-number,
+  .client-page-arrow,
+  .client-page-gap {
+    min-width: 2rem;
+  }
+  .client-table-wrap {
+    border: none;
+    overflow: visible;
+  }
+  .client-table {
+    min-width: 0;
+    display: block;
+  }
+  .client-table thead {
+    display: none;
+  }
+  .client-table tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .client-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid var(--ws-border);
+    border-radius: 1rem;
+    padding: 0.9rem;
+    gap: 0.8rem;
+  }
+  .client-table td {
+    display: block;
+    border: none;
+    padding: 0;
+  }
+  .client-table .client-identity-cell {
+    grid-column: 1 / -1;
+    width: auto;
+    border-bottom: 1px solid var(--ws-border);
+    padding-bottom: 0.8rem;
+  }
+  .client-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--ws-muted);
+    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+  }
+  .client-table .ws-badge {
+    max-width: 100%;
+    white-space: normal;
+  }
+  .client-actions-cell {
+    grid-column: 1 / -1;
+  }
+  .client-actions {
+    justify-content: flex-end;
+    border-top: 1px solid var(--ws-border);
+    padding-top: 0.8rem;
+  }
+  .client-actions .client-action-primary {
+    margin-right: auto;
+  }
+}
 .client-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -915,19 +1672,5 @@ onMounted(() => {
   .client-detail-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-}
-
-.field-input {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  background: rgba(2, 6, 23, 0.72);
-  padding: 0.75rem 1rem;
-  color: white;
-  outline: none;
-}
-
-.field-input::placeholder {
-  color: #64748b;
 }
 </style>

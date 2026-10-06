@@ -1,8 +1,9 @@
-from app.main import get_gym_service
 import asyncio
 import json
 
 async def test():
+    from app.main import get_gym_service
+
     svc = get_gym_service()
     
     # Simular la creacion de cliente
@@ -34,4 +35,9 @@ async def test():
         import traceback
         traceback.print_exc()
 
-asyncio.run(test())
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    asyncio.run(test())
