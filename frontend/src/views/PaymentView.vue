@@ -1,5 +1,5 @@
 <template>
-  <div class="payment-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(220,38,38,0.06),transparent_45%),radial-gradient(circle_at_88%_92%,rgba(15,23,42,0.04),transparent_45%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] text-slate-950">
+  <div class="public-page payment-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(220,38,38,0.06),transparent_45%),radial-gradient(circle_at_88%_92%,rgba(15,23,42,0.04),transparent_45%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] text-slate-950">
     <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
       <div class="mx-auto flex max-w-[1100px] items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <router-link to="/" class="text-lg font-black italic text-orange-600">Silver Gym Surco</router-link>
