@@ -17,12 +17,15 @@ Al fusionar un PR hacia `main`, GitHub Actions ejecuta esta secuencia:
 
 1. Construye las imágenes Docker del backend y frontend, arranca ambos
    contenedores y verifica el backend, la web y el proxy de Nginx.
-2. Ejecuta las pruebas existentes de Python, Node.js y Deno en paralelo.
+2. Ejecuta las pruebas de Python y Node.js dentro de los targets `test` de sus
+   Dockerfiles, y las pruebas de Deno en paralelo. Las imágenes de producción
+   no incluyen las dependencias ni los archivos exclusivos de pruebas.
 3. Si todas pasan, despliega el frontend en Vercel y solicita el despliegue
    del mismo commit en Render.
 
 Si falla Docker o alguna prueba, los despliegues no se ejecutan. La validación
-usa `docker-compose.ci.yml`, sin archivos `.env` ni credenciales de producción.
+usa `docker-compose.yml` con un archivo temporal de CI y una clave de prueba,
+sin credenciales de producción.
 Comprueba el arranque y el proxy; no comprueba una conexión real a Supabase.
 El endpoint `/api/health` devuelve el 503 esperado por falta de credenciales.
 
@@ -30,6 +33,16 @@ Los despliegues conservan sus mecanismos actuales: Vercel compila el frontend
 y Render recibe su Deploy Hook. Este workflow no publica imágenes Docker ni
 cambia la configuración del servicio en Render. La aceptación del hook no
 confirma que Render haya terminado el despliegue.
+
+GitHub Actions necesita únicamente los secretos de despliegue
+`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` y
+`RENDER_DEPLOY_HOOK_URL`. Las variables de la aplicación se configuran en
+Vercel (Production) y Render. Antes de compilar, `vercel pull` recupera la
+configuración y las variables de producción de Vercel; el hook de Render
+conserva las variables del servicio y solicita el mismo commit probado.
+El proyecto de Vercel debe tener `Root Directory` en `frontend`.
+Mantén desactivados los despliegues automáticos por Git en ambas plataformas
+para que las publicaciones dependan de este workflow.
 
 ## Activacion Manual
 
@@ -66,18 +79,6 @@ python -m pytest tests/ -q
 python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 ```
 
-### Ejercicios y seguimiento de rutinas
-
-Antes de usar estas funciones, ejecutar
-[`backend/migrations/012_trainer_exercises.sql`](backend/migrations/012_trainer_exercises.sql)
-en el SQL Editor de Supabase. Agrega las columnas JSONB `ejercicios` del catálogo
-y `ejercicios_detalle` del progreso sin borrar datos. Puede ejecutarse de nuevo
-si esas columnas ya existen. Esta preparación del código no ejecuta la migración.
-
-El catálogo permite editar los ejercicios de cada rutina; el seguimiento registra
-series, repeticiones, peso y observaciones por ejercicio. Se conservan las
-validaciones del catálogo, la búsqueda, el orden y la confirmación al descartar
-cambios de `develop`.
 
 ### Frontend
  
