@@ -385,3 +385,70 @@ def test_fallo_de_supabase_revierte_stock_remoto_y_local() -> None:
     assert restaurado[-1]["Cantidad_Stock_E"] == 10
     # MOV_INV se guarda antes que VENTAS: si falla, la venta nunca llega a Supabase.
     assert not any(kind == "insert" and table == "VENTAS" for kind, table, _ in fake.calls)
+
+
+
+def _estado(service: LocalGymService, id_item: int) -> str:
+    item = service.get_item_inventario(id_item)
+    assert item is not None
+    return item["estado"]
+
+
+def test_estado_automatico_de_items_tienda() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
+    producto = _publicar(service, item["id_item"])
+    service.upsert_producto_tienda({**producto, "stock_minimo": 4})
+    assert _estado(service, item["id_item"]) == "Disponible"
+
+    _vender(service, producto["id_producto"], 6)  # quedan 4 = minimo
+    assert _estado(service, item["id_item"]) == "Stock bajo"
+
+    _vender(service, producto["id_producto"], 4)  # quedan 0
+    assert _estado(service, item["id_item"]) == "Agotado"
+
+    service.registrar_movimiento_inventario({"id_item": item["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "entrada", "cantidad": 20})
+    assert _estado(service, item["id_item"]) == "Disponible"
+
+
+def test_cambiar_minimo_recalcula_estado() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
+    producto = _publicar(service, item["id_item"])
+
+    service.upsert_producto_tienda({**producto, "stock_minimo": 12})
+
+    assert _estado(service, item["id_item"]) == "Stock bajo"
+
+
+def test_descontinuado_es_manual_y_se_respeta() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
+    _publicar(service, item["id_item"])
+
+    service.upsert_inventario({**service.get_item_inventario(item["id_item"]), "estado": "Descontinuado"})  # type: ignore[dict-item]
+    service.registrar_movimiento_inventario({"id_item": item["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "salida", "cantidad": 10})
+    assert _estado(service, item["id_item"]) == "Descontinuado"
+
+    # Quitar la marca vuelve al estado calculado.
+    service.upsert_inventario({**service.get_item_inventario(item["id_item"]), "estado": "Disponible"})  # type: ignore[dict-item]
+    assert _estado(service, item["id_item"]) == "Agotado"
+
+
+def test_equipo_del_gimnasio_conserva_su_estado_manual() -> None:
+    service = _service()
+    equipo = service.upsert_inventario({"nombre_item": "Banca", "tipo": "Equipo de fuerza", "cantidad_stock": 0, "estado": "En mantenimiento"})
+
+    assert _estado(service, equipo["id_item"]) == "En mantenimiento"
+
+
+def test_estados_calculados_se_guardan_en_supabase_al_leer() -> None:
+    fake = FakeSupabase()
+    service = _supabase_service(fake)
+    item = service.state["inventario"][0]
+    item["estado"] = "Stock bajo"
+    rows = [{"id_item": item["id_item"], "Estado": "Disponible"}]
+
+    service._guardar_estados_automaticos(rows, service.state)
+
+    assert ("update", "INVENTARIO", (item["id_item"], {"Estado": "Stock bajo"})) in fake.calls

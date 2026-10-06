@@ -12,12 +12,16 @@ from zoneinfo import ZoneInfo
 
 from utils.security import hash_password, verify_password
 
-
 _LIMA = ZoneInfo("America/Lima")
+
 
 # Ítems de INVENTARIO con este Tipo se venden en la tienda y comparten stock.
 TIPO_TIENDA = "Tienda"
 ESTADO_DESCONTINUADO = "Descontinuado"
+# Estados que el backend calcula solo para ítems Tipo 'Tienda' (Descontinuado es la única marca manual).
+ESTADO_DISPONIBLE = "Disponible"
+ESTADO_STOCK_BAJO = "Stock bajo"
+ESTADO_AGOTADO = "Agotado"
 
 # Los movimientos automáticos de pedidos se reconocen por el inicio de su descripción.
 PREFIJO_VENTA = "Venta pedido #"
@@ -30,9 +34,9 @@ _MOVIMIENTO_PEDIDO = re.compile(
 )
 
 
-# Fecha de hoy en Perú (el servidor puede estar en UTC).
+# Procesa esta operación.
 def _today_iso() -> str:
-    return datetime.now(_LIMA).date().isoformat()
+    return datetime.now(timezone.utc).date().isoformat()
 
 
 # Procesa esta operación.
@@ -42,7 +46,7 @@ def _now_iso() -> str:
 
 # Procesa esta operación.
 def _now_time() -> str:
-    return datetime.now(_LIMA).strftime("%H:%M")
+    return datetime.now().strftime("%H:%M")
 
 
 # Procesa esta operación.
@@ -58,7 +62,7 @@ def _days_until(date_value: Any, today: str) -> int | None:
         return (datetime.fromisoformat(str(date_value)[:10]) - datetime.fromisoformat(today)).days
     except Exception:
         return None
-    
+
 # Indica si el pedido ya tiene el cobro confirmado. Los pedidos antiguos sin dato se consideran pagados.
 def _pedido_pagado(pedido: dict[str, Any]) -> bool:
     return str(pedido.get("estado_pago") or ESTADO_PAGO_PAGADO).strip().upper() == ESTADO_PAGO_PAGADO
@@ -533,13 +537,6 @@ class GymDomainService:
         raw_plans = row.get("planes_aplicables") or []
         if isinstance(raw_plans, str):
             raw_plans = [part.strip() for part in raw_plans.split(",") if part.strip()]
-        
-        limite = row.get("limite_cupos")
-        limite_cupos = int(limite) if limite is not None and str(limite).strip() != "" else None
-
-        usos = row.get("usos_actuales")
-        usos_actuales = max(0, int(usos or 0))
-
         return {
             "id_promocion": int(row.get("id_promocion") or fallback_id),
             "nombre": str(row.get("nombre") or "Promocion").strip(),
@@ -548,12 +545,8 @@ class GymDomainService:
             "valor_descuento": max(0.0, float(row.get("valor_descuento") or 0)),
             "fecha_inicio": str(row.get("fecha_inicio") or ""),
             "fecha_fin": str(row.get("fecha_fin") or ""),
-            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️").strip() or "🏷️",
-            "palabra_clave": str(row.get("palabra_clave") or "").strip().upper(),
             "activo": bool(row.get("activo", True)),
             "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
-            "limite_cupos": limite_cupos,
-            "usos_actuales": usos_actuales,
         }
 
     # Procesa esta operación.
@@ -615,16 +608,14 @@ class GymDomainService:
                     "telefono": row["telefono"],
                     "dni": row["dni"],
                     "plan": row["plan"],
-                    "promocion": f"promo-{membership.get('id_promocion')}" if membership.get("id_promocion") else row.get("promocion", "SIN PROMOCION"),
+                    "promocion": row["promocion"],
                     "estado": row["estado"],
                     "id_membresia": membership.get("id_membresia"),
-                    "id_promocion": membership.get("id_promocion"),
                     "membership_status": membership.get("estado") or row["estado"],
                     "membership_start": membership.get("fecha_inicio", ""),
                     "membership_end": membership.get("fecha_fin", ""),
                     "payment_status": membership.get("estado_pago", ""),
                     "payment_reference": membership.get("referencia_pago", ""),
-                    "monto_pago": membership.get("monto_pago"),
                     "has_password": bool(row.get("password_hash")),
                 }
             )
@@ -830,49 +821,9 @@ class GymDomainService:
 
         self._mutate(_fn)
 
-    def _persist_promocion_usos(self, id_promocion: int | None, usos: int) -> None:
-        pass
-
-    def _get_usos_promocion(self, state: dict[str, Any], promo: dict[str, Any]) -> int:
-        promo_id = int(promo.get("id_promocion", 0) or 0)
-        usos_registrados = int(promo.get("usos_actuales") or 0)
-        if not promo_id:
-            return usos_registrados
-        
-        clientes_promo = set()
-        for m in state.get("membresia", []):
-            if int(m.get("id_promocion", 0) or 0) == promo_id:
-                cliente_id = m.get("id_cliente")
-                if cliente_id:
-                    clientes_promo.add(int(cliente_id))
-        for c in state.get("clientes", []):
-            c_promo_id = int(c.get("id_promocion", 0) or 0)
-            c_promo_str = str(c.get("promocion", "")).strip().lower()
-            if c_promo_id == promo_id or c_promo_str == f"promo-{promo_id}":
-                cliente_id = c.get("id_cliente")
-                if cliente_id:
-                    clientes_promo.add(int(cliente_id))
-
-        usos_membresia = sum(
-            1
-            for m in state.get("membresia", [])
-            if int(m.get("id_promocion", 0) or 0) == promo_id
-        )
-        usos_calculados = len(clientes_promo) if clientes_promo else usos_membresia
-        return max(usos_registrados, usos_calculados)
-
     # Procesa esta operación.
     def promociones(self) -> list[dict[str, Any]]:
-        result = []
-        for p in self.state.get("promociones", []):
-            item = dict(p)
-            calculated_usos = self._get_usos_promocion(self.state, p)
-            if calculated_usos != p.get("usos_actuales"):
-                p["usos_actuales"] = calculated_usos
-                self._persist_promocion_usos(p.get("id_promocion"), calculated_usos)
-            item["usos_actuales"] = calculated_usos
-            result.append(item)
-        return result
+        return self.state.get("promociones", [])
 
     # Actualiza el registro correspondiente.
     def upsert_promocion(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -886,51 +837,9 @@ class GymDomainService:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state.setdefault("promociones", [])
-            item_id = int(payload.get("id_promocion") or 0)
-            if item_id > 0:
-                existing_promo = next((p for p in state["promociones"] if int(p.get("id_promocion", 0)) == item_id), None)
-                if existing_promo:
-                    today = _today_iso()
-                    limite = existing_promo.get("limite_cupos")
-                    usos = self._get_usos_promocion(state, existing_promo)
-                    valid_until = str(existing_promo.get("fecha_fin") or "")
-                    is_finished = (limite is not None and limite > 0 and usos >= limite) or (valid_until and valid_until < today)
-                    if is_finished:
-                        raise ValueError("Una promoción terminada no se puede editar, sólo se puede eliminar.")
-
             item = self._normalize_promocion({**payload, "tipo_descuento": tipo, "valor_descuento": valor}, self._next_int_id_in_state(state, "promociones", "id_promocion"))
             item_id = int(payload.get("id_promocion") or item["id_promocion"])
             item["id_promocion"] = item_id
-
-            if item.get("activo", True):
-                s1 = str(item.get("fecha_inicio") or "")
-                e1 = str(item.get("fecha_fin") or "")
-                plans1 = item.get("planes_aplicables") or []
-                today = _today_iso()
-                for existing in state["promociones"]:
-                    if int(existing.get("id_promocion", 0)) == item_id:
-                        continue
-                    if not existing.get("activo", True):
-                        continue
-                    limite = existing.get("limite_cupos")
-                    usos = self._get_usos_promocion(state, existing)
-                    e2 = str(existing.get("fecha_fin") or "")
-                    if (limite is not None and limite > 0 and usos >= limite) or (e2 and e2 < today):
-                        continue
-
-                    s2 = str(existing.get("fecha_inicio") or "")
-                    date_overlap = True
-                    if e2 and s1 and s1 > e2:
-                        date_overlap = False
-                    if e1 and s2 and s2 > e1:
-                        date_overlap = False
-                    if not date_overlap:
-                        continue
-                    plans2 = existing.get("planes_aplicables") or []
-                    plan_overlap = not plans1 or not plans2 or bool(set(plans1) & set(plans2))
-                    if plan_overlap:
-                        raise ValueError("Ya existe una promoción vigente para uno o más de estos planes en ese rango de fechas.")
-
             idx = next((i for i, row in enumerate(state["promociones"]) if int(row.get("id_promocion", 0)) == item_id), -1)
             if idx >= 0:
                 state["promociones"][idx] = item
@@ -950,110 +859,6 @@ class GymDomainService:
                 raise ValueError("Promocion no encontrada")
 
         self._mutate(_fn)
-
-    def get_promocion_vigente_para_plan(self, state: dict[str, Any], id_pm: int) -> dict[str, Any] | None:
-        today = _today_iso()
-        for p in state.get("promociones", []):
-            if not p.get("activo", True):
-                continue
-            limite = p.get("limite_cupos")
-            usos = self._get_usos_promocion(state, p)
-            if limite is not None and limite > 0 and usos >= limite:
-                continue
-            fecha_inicio = str(p.get("fecha_inicio") or "")
-            if fecha_inicio and fecha_inicio > today:
-                continue
-            fecha_fin = str(p.get("fecha_fin") or "")
-            if fecha_fin and fecha_fin < today:
-                continue
-            planes = p.get("planes_aplicables") or []
-            if not planes or int(id_pm) in planes:
-                return p
-        return None
-
-    def promociones_vigentes_publicas(self) -> list[dict[str, Any]]:
-        today = _today_iso()
-        result = []
-        for p in self.state.get("promociones", []):
-            if not p.get("activo", True):
-                continue
-            limite = p.get("limite_cupos")
-            usos = self._get_usos_promocion(self.state, p)
-            if limite is not None and limite > 0 and usos >= limite:
-                continue
-            fecha_inicio = str(p.get("fecha_inicio") or "")
-            if fecha_inicio and fecha_inicio > today:
-                continue
-            fecha_fin = str(p.get("fecha_fin") or "")
-            if fecha_fin and fecha_fin < today:
-                continue
-            result.append({
-                "id_promocion": int(p.get("id_promocion") or 0),
-                "nombre": str(p.get("nombre") or "Promoción"),
-                "tipo_descuento": str(p.get("tipo_descuento") or "porcentaje"),
-                "valor_descuento": float(p.get("valor_descuento") or 0),
-                "icono_etiqueta": str(p.get("icono_etiqueta") or "🏷️"),
-                "palabra_clave": str(p.get("palabra_clave") or ""),
-                "planes_aplicables": [int(x) for x in (p.get("planes_aplicables") or [])],
-                "limite_cupos": p.get("limite_cupos"),
-                "usos_actuales": usos,
-            })
-        return result
-
-    def _apply_promocion_discount(self, state: dict[str, Any], id_pm: int, id_promocion: int | None) -> float:
-        plan = next((p for p in state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == int(id_pm)), None)
-        if not plan:
-            return 0.0
-        
-        precio_base = float(plan.get("precio", 0) or 0)
-        
-        if not id_promocion:
-            return precio_base
-
-        promocion = next((p for p in state.get("promociones", []) if int(p.get("id_promocion", 0)) == int(id_promocion)), None)
-        if not promocion:
-            return precio_base
-            
-        if not promocion.get("activo", True):
-            return precio_base
-
-        limite = promocion.get("limite_cupos")
-        usos = self._get_usos_promocion(state, promocion)
-        if limite is not None and limite > 0 and usos >= limite:
-            return precio_base
-
-        today = _today_iso()
-        fecha_inicio = str(promocion.get("fecha_inicio") or "")
-        if fecha_inicio and fecha_inicio > today:
-            return precio_base
-            
-        fecha_fin = str(promocion.get("fecha_fin") or "")
-        if fecha_fin and fecha_fin < today:
-            return precio_base
-            
-        planes_aplicables = promocion.get("planes_aplicables") or []
-        if planes_aplicables and int(id_pm) not in planes_aplicables:
-            return precio_base
-            
-        valor = float(promocion.get("valor_descuento") or 0)
-        tipo = str(promocion.get("tipo_descuento") or "porcentaje").strip().lower()
-        
-        if tipo == "monto":
-            return max(0.0, round(precio_base - valor, 2))
-        else:
-            return max(0.0, round(precio_base - (precio_base * valor / 100), 2))
-
-    def _increment_promocion_usos(self, state: dict[str, Any], id_promocion: int | None) -> None:
-        if not id_promocion:
-            return
-        promocion = next(
-            (p for p in state.get("promociones", []) if int(p.get("id_promocion", 0)) == int(id_promocion)),
-            None,
-        )
-        if promocion:
-            usos = int(promocion.get("usos_actuales") or 0) + 1
-            promocion["usos_actuales"] = usos
-            self._persist_promocion_usos(id_promocion, usos)
 
     # Procesa esta operación.
     def membresias(self) -> list[dict[str, Any]]:
@@ -1075,7 +880,6 @@ class GymDomainService:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             item = {**payload}
-            id_promocion = item.get("id_promocion")
             item_id = item.get("id_membresia")
             if item_id is None:
                 item_id = self._next_int_id("membresia", "id_membresia")
@@ -1085,14 +889,6 @@ class GymDomainService:
             item["fecha_inicio"] = _safe_date(item.get("fecha_inicio", ""))
             item["fecha_fin"] = _safe_date(item.get("fecha_fin", ""))
             item["estado"] = item.get("estado", "Activa")
-            item["monto_pago"] = self._apply_promocion_discount(state, id_pm, id_promocion)
-            item["estado_pago"] = "PENDIENTE"
-            item["metodo_pago"] = "stripe"
-            item["referencia_pago"] = ""
-            
-            if id_promocion:
-                self._increment_promocion_usos(state, id_promocion)
-            
             idx = next((i for i, row in enumerate(state["membresia"]) if int(row.get("id_membresia", 0)) == int(item_id)), -1)
             if idx >= 0:
                 state["membresia"][idx] = item
@@ -1103,37 +899,13 @@ class GymDomainService:
         return self._mutate(_fn)
 
     # Procesa esta operación.
-    def _calcular_monto_con_descuento(self, id_pm: int, id_promocion: int | None) -> float:
-        """Calcula el monto a pagar aplicando el descuento de la promoción al precio base del plan."""
-        plan = next(
-            (p for p in self.state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == id_pm),
-            None,
-        )
-        precio_base = float(plan.get("precio", 0) if plan else 0)
-        if not id_promocion:
-            return precio_base
-        promo = next(
-            (p for p in self.state.get("promociones", []) if int(p.get("id_promocion", 0)) == int(id_promocion)),
-            None,
-        )
-        if not promo:
-            return precio_base
-        tipo = str(promo.get("tipo_descuento") or "porcentaje")
-        valor = float(promo.get("valor_descuento") or 0)
-        if tipo == "porcentaje":
-            return round(precio_base * (1 - valor / 100), 2)
-        return max(0.0, round(precio_base - valor, 2))
-
-    # Procesa esta operación.
     def registrar_cliente_con_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         cliente_payload = payload["cliente"]
         id_pm = int(payload["id_pm"])
         fecha_inicio = payload["fecha_inicio"]
         fecha_fin = payload["fecha_fin"]
-        id_promocion = int(payload.get("id_promocion") or 0) or None
 
         cliente = self.upsert_cliente(cliente_payload)
-        monto_pago = self._calcular_monto_con_descuento(id_pm, id_promocion)
         membresia = self.crear_membresia(
             {
                 "id_cliente": int(cliente["id_cliente"]),
@@ -1141,9 +913,6 @@ class GymDomainService:
                 "fecha_inicio": fecha_inicio,
                 "fecha_fin": fecha_fin,
                 "estado": "Activa",
-                "id_promocion": id_promocion,
-                "monto_pago": monto_pago,
-                "estado_pago": "PENDIENTE",
             }
         )
         return {"cliente": cliente, "membresia": membresia}
@@ -1180,11 +949,6 @@ class GymDomainService:
         def _fn(state: dict[str, Any]):
             plan = self._ensure_plan_for_client(state, plan_name)
             id_cliente = self._next_int_id_in_state(state, "clientes", "id_cliente")
-            id_pm = int(plan.get("id_pm"))
-            promo_active = self.get_promocion_vigente_para_plan(state, id_pm)
-            id_promocion = int(promo_active.get("id_promocion")) if promo_active else None
-            monto_final = self._apply_promocion_discount(state, id_pm, id_promocion)
-
             cliente = {
                 "id_cliente": id_cliente,
                 "id_usuario": f"SGCLI{id_cliente:03d}",
@@ -1193,7 +957,7 @@ class GymDomainService:
                 "telefono": telefono,
                 "dni": dni,
                 "plan": plan_name,
-                "promocion": str(promo_active.get("nombre") if promo_active else (payload.get("promocion") or "SIN PROMOCION")).strip() or "SIN PROMOCION",
+                "promocion": str(payload.get("promocion") or "SIN PROMOCION").strip() or "SIN PROMOCION",
                 "estado": "PENDIENTE_PAGO",
                 "password_hash": hash_password(password),
                 "google_sub": google_sub,
@@ -1204,15 +968,12 @@ class GymDomainService:
                 "fecha_fin": "",
                 "estado": "PENDIENTE_PAGO",
                 "id_cliente": id_cliente,
-                "id_pm": id_pm,
-                "id_promocion": id_promocion,
-                "monto_pago": monto_final,
+                "id_pm": int(plan["id_pm"]),
+                "monto_pago": float(plan.get("precio", 0) or 0),
                 "estado_pago": "PENDIENTE",
                 "metodo_pago": "stripe",
                 "referencia_pago": "",
             }
-            if id_promocion:
-                self._increment_promocion_usos(state, id_promocion)
             state["clientes"].insert(0, cliente)
             state["membresia"].insert(0, membresia)
             return {"cliente": cliente, "membresia": membresia, "plan": plan}
@@ -1283,34 +1044,6 @@ class GymDomainService:
             membresia["metodo_pago"] = str(payload.get("metodo_pago") or membresia.get("metodo_pago") or "pasarela")
             membresia["referencia_pago"] = payment_reference
             membresia["monto_pago"] = expected_amount
-            membresia["fecha_pago"] = _today_iso()
-            return {"cliente": cliente, "membresia": membresia}
-
-        return self._mutate(_fn)
-
-    # Procesa esta operación de pago manual
-    def confirmar_pago_manual_cliente(self, id_cliente: int) -> dict[str, Any]:
-        id_cliente = int(id_cliente)
-
-        def _fn(state: dict[str, Any]):
-            cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
-            if not cliente:
-                raise ValueError("Cliente no encontrado")
-            
-            membresia = self._latest_membership_for_cliente(state, id_cliente)
-            if not membresia:
-                raise ValueError("Membresia no encontrada")
-                
-            current_payment_status = str(membresia.get("estado_pago") or "").strip().upper()
-            if current_payment_status == "PAGADO":
-                raise ValueError("La membresía ya tiene un pago confirmado")
-
-            if str(cliente.get("estado") or "").strip().upper() not in {"ACTIVO", "ACTIVA"}:
-                cliente["estado"] = "EN_TRAMITE"
-            membresia["estado"] = "EN_TRAMITE"
-            membresia["estado_pago"] = "PAGADO"
-            membresia["metodo_pago"] = "efectivo"
-            membresia["referencia_pago"] = f"MANUAL-{id_cliente}-{_today_iso().replace('-', '')}"
             membresia["fecha_pago"] = _today_iso()
             return {"cliente": cliente, "membresia": membresia}
 
@@ -1881,6 +1614,7 @@ class GymDomainService:
     # Copia el stock del ítem en su producto y calcula si la tienda puede venderlo.
     # TIENDA_PRODUCTOS.cantidad_stock es solo una copia: el stock real vive en INVENTARIO.
     def _sincronizar_productos_tienda(self, state: dict[str, Any]) -> None:
+        self._actualizar_estados_items_tienda(state)
         for producto in state.get("productos_tienda", []):
             if not producto.get("id_item"):
                 # Producto aún sin vincular (antes de la migración 008): conserva su propio stock.
@@ -1899,6 +1633,25 @@ class GymDomainService:
                 producto["estado"] = "Descatalogado"
             else:
                 producto["estado"] = "Disponible" if stock > 0 else "Agotado"
+
+    # Estado automático de los ítems Tipo 'Tienda': Agotado (0), Stock bajo (hasta el mínimo de su
+    # producto en TIENDA_PRODUCTOS) o Disponible. Un ítem Descontinuado conserva su marca manual.
+    def _actualizar_estados_items_tienda(self, state: dict[str, Any]) -> None:
+        minimos = {
+            int(p["id_item"]): int(p.get("stock_minimo") or 0)
+            for p in state.get("productos_tienda", [])
+            if p.get("id_item")
+        }
+        for item in state.get("inventario", []):
+            if not self._es_item_tienda(item) or str(item.get("estado") or "") == ESTADO_DESCONTINUADO:
+                continue
+            stock = int(item.get("cantidad_stock", 0) or 0)
+            if stock <= 0:
+                item["estado"] = ESTADO_AGOTADO
+            elif stock <= minimos.get(int(item["id_item"]), 0):
+                item["estado"] = ESTADO_STOCK_BAJO
+            else:
+                item["estado"] = ESTADO_DISPONIBLE
 
     # Crea el producto de tienda (oculto hasta tener precio) para un ítem Tipo 'Tienda' sin producto.
     def _crear_producto_para_item(self, state: dict[str, Any], item: dict[str, Any]) -> None:
