@@ -17,14 +17,13 @@ concurrency:
 
 jobs:
   docker-ci:
-    name: Validar construcción y arranque de Docker
+    name: Validar construcción, arranque y proxy en Docker
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       COMPOSE_PROJECT_NAME: gym-ci-${{ github.run_id }}-${{ github.run_attempt }}
       DOCKER_CONTAINER_PREFIX: gym-ci-${{ github.run_id }}-${{ github.run_attempt }}
-      BACKEND_ENV_FILE: ${{ runner.temp }}/gym-ci-backend.env
       DOCKER_CHECK_DATABASE: 'false'
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +32,8 @@ jobs:
           persist-credentials: false
       - name: Preparar configuración Docker sin credenciales de producción
         run: |
+          export BACKEND_ENV_FILE="$RUNNER_TEMP/gym-ci-backend.env"
+          echo "BACKEND_ENV_FILE=$BACKEND_ENV_FILE" >> "$GITHUB_ENV"
           printf '%s\n' 'AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef' > "$BACKEND_ENV_FILE"
       - name: Construir imágenes de frontend y backend
         run: docker compose -f docker-compose.yml build
@@ -95,52 +96,33 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: |
-            backend/requirements.txt
-            backend/requirements-dev.txt
-      - name: Instalar dependencias
-        run: python -m pip install -r requirements-dev.txt
-      - name: Detectar errores de Python
-        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      - name: Pruebas del backend
-        env:
-          AUTH_SECRET_KEY: ci-only-test-key-not-for-production-0123456789abcdef
-        run: python -m pytest tests/ -q
+      - name: Construir imagen de pruebas del backend
+        run: docker build --target test --tag gym-backend-test ./backend
+      - name: Detectar errores de Python y ejecutar pruebas en Docker
+        run: >-
+          docker run --rm --network none
+          --env AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef
+          gym-backend-test
 
   frontend-ci:
     needs: [docker-ci]
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: frontend
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - name: Instalar dependencias
-        run: npm ci
-      - name: Pruebas del frontend
-        run: npm test
+      - name: Construir imagen de pruebas del frontend
+        run: docker build --target test --tag gym-frontend-test ./frontend
+      - name: Ejecutar pruebas del frontend en Docker
+        run: docker run --rm --network none gym-frontend-test
 
   deploy-vercel:
     needs: [backend-ci, frontend-ci, schedule-emails-ci]

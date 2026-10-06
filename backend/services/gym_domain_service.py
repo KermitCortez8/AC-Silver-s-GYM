@@ -37,7 +37,7 @@ _MOVIMIENTO_PEDIDO = re.compile(
 
 # Procesa esta operación.
 def _today_iso() -> str:
-    return datetime.now(timezone.utc).date().isoformat()
+    return datetime.now(_LIMA).date().isoformat()
 
 
 # Procesa esta operación.
@@ -1221,6 +1221,12 @@ class GymDomainService:
             if idx >= 0:
                 state["membresia"][idx] = item
             else:
+                # Una nueva membresía requiere pago y activación explícitos.
+                item.update(
+                    estado="EN_TRAMITE", estado_pago="PENDIENTE",
+                    fecha_inicio="", fecha_fin="", fecha_pago="",
+                    referencia_pago="",
+                )
                 if id_promocion:
                     self._increment_promocion_usos(state, id_promocion)
                 state["membresia"].insert(0, item)
@@ -1456,6 +1462,36 @@ class GymDomainService:
             membresia["referencia_pago"] = payment_reference
             membresia["monto_pago"] = expected_amount
             membresia["fecha_pago"] = _today_iso()
+            return {"cliente": cliente, "membresia": membresia}
+
+        return self._mutate(_fn)
+
+    def confirmar_pago_manual_cliente(self, id_cliente: int) -> dict[str, Any]:
+        """Registra el cobro en caja; la activación sigue siendo independiente."""
+        id_cliente = int(id_cliente)
+
+        def _fn(state: dict[str, Any]):
+            cliente = next((row for row in state.get("clientes", []) if int(row.get("id_cliente", 0) or 0) == id_cliente), None)
+            if not cliente:
+                raise ValueError("Cliente no encontrado")
+            membresia = self._latest_membership_for_cliente(state, id_cliente)
+            if not membresia:
+                raise ValueError("Membresía no encontrada")
+            if membership_expired(membresia, _today_iso()):
+                raise ValueError("La membresía está vencida. Registra una nueva membresía para renovar el acceso.")
+            if str(membresia.get("estado_pago") or "").strip().upper() == "PAGADO":
+                return {"cliente": cliente, "membresia": membresia}
+            amount = float(membresia.get("monto_pago", 0) or 0)
+            if amount <= 0:
+                raise ValueError("El importe del pago debe ser mayor que cero")
+            membresia.update(
+                estado="EN_TRAMITE", estado_pago="PAGADO", metodo_pago="efectivo",
+                referencia_pago=f"manual:{membresia['id_membresia']}",
+                fecha_pago=_today_iso(),
+            )
+            # El cobro de una renovación no desbloquea una cuenta vencida.
+            if str(cliente.get("estado") or "").strip().upper() != "VENCIDA":
+                cliente["estado"] = "EN_TRAMITE"
             return {"cliente": cliente, "membresia": membresia}
 
         return self._mutate(_fn)

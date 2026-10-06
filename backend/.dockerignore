@@ -25,3 +25,8 @@ tests/
 .git/
 .gitignore
 README.md
+
+# Incluir las pruebas automatizadas para el target test (sin scripts manuales).
+!tests/
+!tests/test*.py
+!tests/conftest.py

@@ -129,6 +129,54 @@ def test_panel_rejects_paid_membership(api):
     assert calls == []
 
 
+def test_manual_payment_endpoint_records_cash_without_activating_membership(api):
+    client, gym, service, _, calls = api
+    result = service.register_admin_client(PAYLOAD)
+    client_id = result["cliente"]["id_cliente"]
+    response = client.post(f"/clientes/{client_id}/confirmar-pago-manual")
+    assert response.status_code == 200
+    saved = response.json()["data"]
+    assert "password_hash" not in saved["cliente"]
+    membership = gym.state["membresia"][0]
+    assert membership["estado_pago"] == "PAGADO"
+    assert membership["metodo_pago"] == "efectivo"
+    assert membership["monto_pago"] == 79
+    assert membership["referencia_pago"]
+    assert membership["fecha_pago"]
+    assert membership["estado"] == "EN_TRAMITE"
+    assert membership["fecha_inicio"] == membership["fecha_fin"] == ""
+    assert gym.state["clientes"][0]["estado"] == "EN_TRAMITE"
+    assert calls == []
+
+
+def test_repeated_manual_confirmation_preserves_verified_stripe_payment(api):
+    _, gym, service, _, _ = api
+    result = service.register_admin_client(PAYLOAD)
+    client_id = result["cliente"]["id_cliente"]
+    membership = gym.state["membresia"][0]
+    gym.confirmar_pago_cliente_publico(client_id, {
+        "id_membresia": membership["id_membresia"], "monto_pago": 79,
+        "referencia_pago": "cs_verified", "metodo_pago": "stripe",
+    })
+    service.activate_client_membership(client_id)
+    original = dict(membership)
+    service.confirm_manual_payment(client_id)
+    assert membership == original
+    assert gym.state["clientes"][0]["estado"] == "ACTIVO"
+
+
+@pytest.mark.parametrize("role", ["user", "trainer"])
+def test_manual_payment_endpoint_rejects_non_staff(api, role):
+    client, gym, service, _, _ = api
+    result = service.register_admin_client(PAYLOAD)
+    client.app.dependency_overrides[get_current_user] = lambda: UserProfile(
+        id="USER1", name="User", email="user@example.com", role=role,
+    )
+    response = client.post(f"/clientes/{result['cliente']['id_cliente']}/confirmar-pago-manual")
+    assert response.status_code == 403
+    assert gym.state["membresia"][0]["estado_pago"] == "PENDIENTE"
+
+
 def test_verified_admin_payment_allows_activation_and_blocks_another_checkout(api, monkeypatch):
     client, _, service, _, calls = api
     result = service.register_admin_client(PAYLOAD)
