@@ -41,7 +41,7 @@ confirma que Render haya terminado el despliegue.
 cd backend
 py -m venv .venv
 .\.venv\Scripts\Activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m app.main
 ```
 
@@ -51,8 +51,19 @@ En Linux/macOS:
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m app.main
+```
+
+`requirements.txt` contiene las dependencias de ejecución usadas por Docker y
+Render. `requirements-dev.txt` incluye esas dependencias y añade pytest, httpx y
+flake8 para desarrollo y CI.
+
+Para ejecutar las pruebas y la comprobación de errores desde `backend/`:
+
+```bash
+python -m pytest tests/ -q
+python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 ```
 
 ### Frontend
@@ -130,5 +141,3 @@ docker compose build --pull --no-cache
 docker compose up -d --no-build
 docker compose ps
 ```
-
- 

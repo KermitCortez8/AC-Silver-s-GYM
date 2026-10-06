@@ -107,9 +107,11 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
       - name: Instalar dependencias
-        run: python -m pip install -r requirements.txt flake8 pytest
+        run: python -m pip install -r requirements-dev.txt
       - name: Detectar errores de Python
         run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
       - name: Pruebas del backend
