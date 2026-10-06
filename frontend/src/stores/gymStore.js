@@ -2416,17 +2416,12 @@ export const useGymStore = defineStore('gym', () => {
    */
   const fetchTrainerOverview = async () => {
     if (!apiBase) throw new Error('No hay backend configurado');
-    try {
-      isSyncing.value = true;
-      const response = await fetch(`${apiBase}/trainer/overview`, { headers: _authHeaders() });
-      if (!response.ok) {
-        throw new Error(await readBackendError(response, 'Error al cargar supervision del trainer'));
-      }
-      trainerOverview.value = await response.json();
-      return trainerOverview.value;
-    } finally {
-      isSyncing.value = false;
+    const response = await fetch(`${apiBase}/trainer/overview`, { headers: _authHeaders() });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'Error al cargar supervision del trainer'));
     }
+    trainerOverview.value = await response.json();
+    return trainerOverview.value;
   };
 
   /**
@@ -2440,7 +2435,6 @@ export const useGymStore = defineStore('gym', () => {
       nombre_rutina: String(payload.nombre_rutina || '').trim(),
       zonas_musculares: String(payload.zonas_musculares || '').trim(),
       color: payload.color || 'Azul',
-      ejercicios: Array.isArray(payload.ejercicios) ? payload.ejercicios : [],
     };
     const response = await fetch(`${apiBase}/trainer/rutinas`, {
       method: 'POST',
@@ -2457,7 +2451,6 @@ export const useGymStore = defineStore('gym', () => {
       nombre_rutina: saved.nombre_rutina || body.nombre_rutina,
       zonas_musculares: saved.zonas_musculares || body.zonas_musculares,
       color: saved.color || body.color,
-      ejercicios: saved.ejercicios || body.ejercicios,
     };
     const index = routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
     if (index >= 0) routines.value[index] = normalized; else routines.value.unshift(normalized);
@@ -2493,17 +2486,12 @@ export const useGymStore = defineStore('gym', () => {
    */
   const fetchTrainerClientRoutines = async (dni) => {
     if (!apiBase) throw new Error('No hay backend configurado');
-    try {
-      isSyncing.value = true;
-      const params = new URLSearchParams({ dni: String(dni || '').trim() });
-      const response = await fetch(`${apiBase}/trainer/clientes-rutinas?${params.toString()}`, { headers: _authHeaders() });
-      if (!response.ok) {
-        throw new Error(await readBackendError(response, 'No se pudo cargar el cliente'));
-      }
-      return await response.json();
-    } finally {
-      isSyncing.value = false;
+    const params = new URLSearchParams({ dni: String(dni || '').trim() });
+    const response = await fetch(`${apiBase}/trainer/clientes-rutinas?${params.toString()}`, { headers: _authHeaders() });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'No se pudo cargar el cliente'));
     }
+    return response.json();
   };
 
   /**
@@ -2516,10 +2504,8 @@ export const useGymStore = defineStore('gym', () => {
       headers: _authHeaders(),
       body: JSON.stringify({
         fecha: payload.fecha || todayISO(),
-        estado: payload.estado || 'REALIZADO',
         observacion: payload.observacion || '',
         id_usuario: getCurrentRegistrarId(authStore) || undefined,
-        ejercicios_detalle: Array.isArray(payload.ejercicios_detalle) ? payload.ejercicios_detalle : [],
       }),
     });
     if (!response.ok) {
@@ -2527,7 +2513,6 @@ export const useGymStore = defineStore('gym', () => {
     }
     return response.json();
   };
-
 
   /**
    * Gestiona esta acción de la vista.
