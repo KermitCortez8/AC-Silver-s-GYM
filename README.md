@@ -66,6 +66,19 @@ python -m pytest tests/ -q
 python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 ```
 
+### Ejercicios y seguimiento de rutinas
+
+Antes de usar estas funciones, ejecutar
+[`backend/migrations/012_trainer_exercises.sql`](backend/migrations/012_trainer_exercises.sql)
+en el SQL Editor de Supabase. Agrega las columnas JSONB `ejercicios` del catálogo
+y `ejercicios_detalle` del progreso sin borrar datos. Puede ejecutarse de nuevo
+si esas columnas ya existen. Esta preparación del código no ejecuta la migración.
+
+El catálogo permite editar los ejercicios de cada rutina; el seguimiento registra
+series, repeticiones, peso y observaciones por ejercicio. Se conservan las
+validaciones del catálogo, la búsqueda, el orden y la confirmación al descartar
+cambios de `develop`.
+
 ### Frontend
  
 
