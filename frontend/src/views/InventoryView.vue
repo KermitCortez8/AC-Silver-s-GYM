@@ -89,7 +89,7 @@
           type="button"
           class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
           :class="selectedCategory === 'all' ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
-          @click="selectedCategory = 'all'"
+          @click="selectedCategory = 'all'; paginaActual = 1"
         >
           Todas las categorias <span :class="selectedCategory === 'all' ? 'text-slate-900/70' : 'text-slate-500'">{{ inventory.length }}</span>
         </button>
@@ -99,7 +99,7 @@
           type="button"
           class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
           :class="selectedCategory === entry.name ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
-          @click="selectedCategory = entry.name"
+          @click="selectedCategory = entry.name; paginaActual = 1"
         >
           <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ background: categoryDotColor(entry.name) }"></span>
           {{ entry.name }} <span :class="selectedCategory === entry.name ? 'text-slate-900/70' : 'text-slate-500'">{{ entry.count }}</span>
@@ -111,13 +111,13 @@
       <div class="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr]">
         <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
           <Search :size="16" class="shrink-0 text-slate-500" />
-          <input v-model="searchQuery" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar por codigo, nombre o marca..." />
+          <input v-model="searchQuery" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar por codigo, nombre o marca..." @input="paginaActual = 1" />
         </div>
-        <select v-model="selectedLocation" class="field-input">
+        <select v-model="selectedLocation" class="field-input" @change="paginaActual = 1">
           <option value="all">Todas las ubicaciones</option>
           <option v-for="loc in locationOptions" :key="loc" :value="loc">{{ loc }}</option>
         </select>
-        <select v-model="selectedStatus" class="field-input">
+        <select v-model="selectedStatus" class="field-input" @change="paginaActual = 1">
           <option value="all">Todos los estados</option>
           <option>Operativo</option>
           <option>Disponible</option>
@@ -148,7 +148,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-white/10">
-              <tr v-for="item in filteredInventory" :key="item.id" class="transition hover:bg-white/[0.04]">
+              <tr v-for="item in inventoryPaginado" :key="item.id" class="transition hover:bg-white/[0.04]">
                 <td class="max-w-sm px-5 py-4 align-top">
                   <div class="flex items-start gap-3">
                     <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-200">
@@ -195,6 +195,32 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Paginacion -->
+      <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between text-sm text-slate-400">
+        <p>Mostrando {{ paginaInicio + 1 }} a {{ paginaFin }} de <span class="font-bold text-white">{{ filteredInventory.length }}</span> articulos</p>
+        <div class="flex items-center gap-2">
+          <button
+            class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
+            :disabled="paginaActual === 1"
+            @click="paginaActual--"
+          >Anterior</button>
+          <button
+            v-for="p in totalPages"
+            :key="p"
+            class="h-9 w-9 rounded-xl border text-sm font-bold transition"
+            :class="p === paginaActual
+              ? 'border-amber-400/40 bg-amber-400/20 text-amber-300'
+              : 'border-white/10 text-white hover:bg-white/5'"
+            @click="paginaActual = p"
+          >{{ p }}</button>
+          <button
+            class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
+            :disabled="paginaActual === totalPages"
+            @click="paginaActual++"
+          >Siguiente</button>
         </div>
       </div>
 
@@ -378,6 +404,14 @@ const filteredInventory = computed(() => {
     return matchesQuery && matchesCategory && matchesLocation && matchesStatus;
   });
 });
+
+// Paginacion (sobre la lista filtrada).
+const paginaActual = ref(1);
+const porPagina = 10;
+const totalPages = computed(() => Math.ceil(filteredInventory.value.length / porPagina));
+const paginaInicio = computed(() => (paginaActual.value - 1) * porPagina);
+const paginaFin = computed(() => Math.min(paginaInicio.value + porPagina, filteredInventory.value.length));
+const inventoryPaginado = computed(() => filteredInventory.value.slice(paginaInicio.value, paginaFin.value));
 
 // Derivados de inventory, solo lectura.
 const operationalPercent = computed(() => {
