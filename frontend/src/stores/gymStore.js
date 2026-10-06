@@ -2064,6 +2064,112 @@ export const useGymStore = defineStore('gym', () => {
     return saved;
   };
 
+    /**
+   * Inicia el pago con tarjeta: el backend crea el pedido pendiente (reserva el stock) y la sesión de Stripe.
+   * Devuelve { pedido, payment }; payment.checkout_url es la dirección del checkout.
+   */
+  const createStoreCheckout = async (payload = {}) => {
+    const items = Array.isArray(payload.items) && payload.items.length ? payload.items : cart.value;
+    if (!items.length) {
+      throw new Error('El carrito esta vacio');
+    }
+    if (!apiBase) throw new Error('No hay backend configurado');
+
+    const response = await fetch(`${apiBase}/tienda/pedidos/checkout`, {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({
+        cliente_nombre: payload.cliente_nombre || payload.customerName || '',
+        cliente_correo: payload.cliente_correo || payload.customerEmail || '',
+        cliente_dni: payload.cliente_dni || payload.dni || '',
+        items: items.map((item) => ({
+          id_producto: Number(item.id_producto),
+          cantidad: Math.max(1, Number(item.cantidad || 1)),
+        })),
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'No se pudo iniciar el pago con tarjeta'));
+    }
+
+    const saved = await response.json();
+    if (!saved?.payment?.checkout_url) {
+      throw new Error('No se recibió el enlace de pago de Stripe.');
+    }
+    return saved;
+  };
+
+  /**
+   * El cliente volvió de Stripe: el backend consulta a Stripe y marca el pedido como pagado si corresponde.
+   * Devuelve { confirmed, id_pedido, total, ... }.
+   */
+  const confirmStoreCheckoutReturn = async (sessionId) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+
+    const response = await fetch(`${apiBase}/pagos/stripe/confirmar-retorno?session_id=${encodeURIComponent(sessionId)}`, {
+      method: 'POST',
+      headers: _authHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'No se pudo verificar el pago'));
+    }
+
+    const result = await response.json();
+    if (result.confirmed) {
+      // El pago ya está registrado: el carrito debe quedar vacío y el stock mostrado debe actualizarse.
+      clearCart();
+      await refreshStoreProductsFromBackend().catch(() => { });
+    }
+    return result;
+  };
+
+  /**
+   * El cliente canceló en Stripe: el backend cancela el pedido pendiente y devuelve sus productos.
+   * Aquí se reconstruye el carrito con esos productos (precios y stock actuales).
+   * Devuelve { cancelled, paid, already_cancelled, restored, skipped, ... }.
+   */
+  const cancelStoreCheckout = async (idPedido) => {
+    if (!apiBase) throw new Error('No hay backend configurado');
+
+    const response = await fetch(`${apiBase}/tienda/pedidos/${Number(idPedido)}/cancelar-pago`, {
+      method: 'POST',
+      headers: _authHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, 'No se pudo cancelar el pago'));
+    }
+
+    const result = await response.json();
+    const restored = [];
+    const skipped = [];
+
+    // El stock ya volvió: se recarga el catálogo para dejar el carrito con datos actuales.
+    await refreshStoreProductsFromBackend().catch(() => { });
+
+    if (result.cancelled && !result.already_cancelled) {
+      clearCart();
+      for (const line of result.items || []) {
+        const product = productos_tienda.value.find((entry) => Number(entry.id_producto) === Number(line.id_producto));
+        const requested = Number(line.cantidad || 0);
+        const available = product && String(product.estado || 'Disponible') === 'Disponible' ? Number(product.cantidad || 0) : 0;
+        const quantity = Math.min(requested, available);
+        if (quantity > 0) {
+          addToCart(product, quantity);
+          restored.push({ id_producto: product.id_producto, nombre: product.nombre, cantidad: quantity });
+        }
+        if (quantity < requested) {
+          skipped.push({
+            id_producto: Number(line.id_producto),
+            nombre: product?.nombre || `Producto #${line.id_producto}`,
+            solicitado: requested,
+            disponible: available,
+          });
+        }
+      }
+    }
+    return { ...result, restored, skipped };
+  };
+
   /**
    * Actualiza los datos actuales.
    */
@@ -3098,5 +3204,9 @@ export const useGymStore = defineStore('gym', () => {
     registrarMovimientoToServer,
     confirmarPagoEfectivo,
     updateInventoryMovement,
+    createStoreOrder,
+    createStoreCheckout,
+    confirmStoreCheckoutReturn,
+    cancelStoreCheckout,
   };
 });

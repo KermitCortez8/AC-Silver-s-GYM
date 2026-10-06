@@ -155,6 +155,13 @@ class PedidoTiendaInput(BaseModel):
     referencia_pago: str = ""
     items: list[PedidoTiendaItemInput] = Field(default_factory=list)
 
+class PedidoTiendaCheckoutInput(BaseModel):
+    # Los datos del cliente son solo informativos: el id_cliente siempre sale del token de sesión.
+    cliente_nombre: str = ""
+    cliente_correo: str = ""
+    cliente_dni: str = ""
+    items: list[PedidoTiendaItemInput] = Field(min_length=1)
+
 
 class MovimientoInventarioInput(BaseModel):
     id_mov: int | None = None

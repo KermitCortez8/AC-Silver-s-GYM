@@ -3,34 +3,44 @@
 # Inicia Stripe Checkout y recibe confirmaciones firmadas del pago.
 # Protege las operaciones internas con permisos de usuario.
 from __future__ import annotations
-
+import logging
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 
 from config import Settings, get_settings
-from dependencies import get_clients_service, get_current_user, require_admin_or_staff
+from dependencies import get_clients_service, get_current_user, get_gym_service, require_admin_or_staff
 from models.gym import ClienteInput, RegistroPublicoClienteInput
 from models.auth import UserProfile
+from services.gym_domain_service import GymDomainService, PedidoCanceladoConPagoError
 from services.clients_service import ClientsService
 from services.stripe_service import StripeService
 from services.membership_notifications import notify_membership
+from services.store_checkout_service import (
+    cancelar_por_sesion_expirada,
+    confirmar_sesion_tienda,
+)
 
 router = APIRouter(tags=["clientes"])
-
+logger = logging.getLogger(__name__)
 
 def _value(item, key: str, default=None):
     if isinstance(item, dict):
         return item.get(key, default)
     return getattr(item, key, default)
 
+# Indica si la sesión de Stripe corresponde a un pedido de tienda (y no a una membresía).
+def _is_store_checkout(checkout) -> bool:
+    return str(_value(_value(checkout, "metadata", {}) or {}, "purpose", "") or "") == "store"
 
 def _confirm_verified_checkout(
     session_id: str,
     clients_service: ClientsService,
     settings: Settings,
+    checkout= None,
 ) -> dict:
     """Consulta Stripe y persiste únicamente una sesión completa y pagada."""
     gateway = StripeService(settings)
-    checkout = gateway.get_checkout_session(session_id)
+    if checkout is None:
+        checkout = gateway.get_checkout_session(session_id)
     expected_live_mode = str(getattr(settings, "stripe_mode", "test") or "test").lower() == "live"
     if bool(_value(checkout, "livemode", False)) != expected_live_mode:
         raise ValueError("La sesión de Stripe no corresponde al modo configurado")
@@ -160,6 +170,7 @@ async def stripe_webhook(
     request: Request,
     stripe_signature: str = Header(default="", alias="Stripe-Signature"),
     clients_service: ClientsService = Depends(get_clients_service),
+    gym_service: GymDomainService = Depends(get_gym_service),
     settings: Settings = Depends(get_settings),
 ):
     payload = await request.body()
@@ -167,13 +178,33 @@ async def stripe_webhook(
     try:
         event = gateway.construct_webhook_event(payload, stripe_signature)
         event_type = str(_value(event, "type", "") or "")
-        if event_type not in {"checkout.session.completed", "checkout.session.async_payment_succeeded"}:
+        if event_type not in {
+            "checkout.session.completed",
+            "checkout.session.async_payment_succeeded",
+            "checkout.session.expired",
+        }:
             return {"received": True}
         event_data = _value(event, "data", {}) or {}
         checkout = _value(event_data, "object", {}) or {}
         session_id = str(_value(checkout, "id", "") or "")
         if not session_id:
             raise ValueError("El webhook de Stripe no contiene una sesión")
+
+        if _is_store_checkout(checkout):
+            if event_type == "checkout.session.expired":
+                cancelar_por_sesion_expirada(checkout, gym_service)
+            else:
+                try:
+                    confirmar_sesion_tienda(gateway.get_checkout_session(session_id), gym_service, settings)
+                except PedidoCanceladoConPagoError as error:
+                    # Se responde 200: reintentar no lo arregla. Hay que reembolsar el pago a mano en Stripe.
+                    logger.error("REEMBOLSO MANUAL REQUERIDO (sesión %s): %s", session_id, error)
+            return {"received": True}
+
+        if event_type == "checkout.session.expired":
+            # Las membresías no usan este evento.
+            return {"received": True}
+
         result = _confirm_verified_checkout(session_id, clients_service, settings)
         if (result.get("notification") or {}).get("status") == "error":
             # Stripe reintenta si no se pudo persistir el correo; el pago es idempotente.
@@ -189,11 +220,17 @@ async def stripe_webhook(
 def confirmar_retorno_stripe(
     session_id: str = Query(min_length=1),
     clients_service: ClientsService = Depends(get_clients_service),
+    gym_service: GymDomainService = Depends(get_gym_service),
     settings: Settings = Depends(get_settings),
 ):
     """Confirma el pago al volver del checkout sin confiar en los parámetros del navegador."""
     try:
-        return _confirm_verified_checkout(session_id, clients_service, settings)
+        checkout = StripeService(settings).get_checkout_session(session_id)
+        if _is_store_checkout(checkout):
+            return confirmar_sesion_tienda(checkout, gym_service, settings)
+        return _confirm_verified_checkout(session_id, clients_service, settings, checkout)
+    except PedidoCanceladoConPagoError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
     except RuntimeError as error:
