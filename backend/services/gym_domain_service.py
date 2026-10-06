@@ -1536,6 +1536,9 @@ class GymDomainService:
 
     # Procesa esta operación.
     def _normalize_rutina_progreso(self, row: dict[str, Any], fallback_index: int) -> dict[str, Any]:
+        ejercicios_detalle = row.get("ejercicios_detalle")
+        if not isinstance(ejercicios_detalle, list):
+            ejercicios_detalle = []
         return {
             "id_progreso": int(row.get("id_progreso", 0) or fallback_index),
             "id_matricula": int(row.get("id_matricula", 0) or 0),
@@ -1544,7 +1547,9 @@ class GymDomainService:
             "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
             "observacion": str(row.get("observacion") or "").strip(),
             "id_usuario": self._normalize_usuario_id(row.get("id_usuario")) if row.get("id_usuario") else None,
+            "ejercicios_detalle": ejercicios_detalle,
         }
+
 
     # Procesa esta operación.
     def _recount_schedule_cupos(self, state: dict[str, Any]) -> None:
@@ -2145,7 +2150,13 @@ class GymDomainService:
             item["nombre_rutina"] = str(item.get("nombre_rutina") or "").strip()
             item["zonas_musculares"] = str(item.get("zonas_musculares") or "").strip()
             item["color"] = str(item.get("color") or "Azul").strip() or "Azul"
+            raw_ejercicios = item.get("ejercicios")
+            if isinstance(raw_ejercicios, list):
+                item["ejercicios"] = raw_ejercicios
+            else:
+                item["ejercicios"] = []
             idx = next((i for i, row in enumerate(state["catalogo_rutina"]) if int(row.get("id_rutina", 0)) == int(item_id)), -1)
+
             if idx >= 0:
                 state["catalogo_rutina"][idx] = item
             else:
@@ -2537,15 +2548,20 @@ class GymDomainService:
                 ),
                 -1,
             )
+            ejercicios_detalle = payload.get("ejercicios_detalle")
+            if not isinstance(ejercicios_detalle, list):
+                ejercicios_detalle = []
             item = {
                 "id_progreso": int(state["rutina_progreso"][existing_idx].get("id_progreso", 0) or 0) if existing_idx >= 0 else self._next_int_id_in_state(state, "rutina_progreso", "id_progreso"),
                 "id_matricula": int(id_matricula),
                 "id_rutina": id_rutina,
                 "fecha": fecha,
-                "estado": "REALIZADO",
+                "estado": str(payload.get("estado") or "REALIZADO").strip().upper(),
                 "observacion": observacion,
                 "id_usuario": id_usuario,
+                "ejercicios_detalle": ejercicios_detalle,
             }
+
             if existing_idx >= 0:
                 state["rutina_progreso"][existing_idx] = item
             else:
