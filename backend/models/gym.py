@@ -82,7 +82,7 @@ class MembresiaInput(BaseModel):
     id_membresia: int | None = None
     fecha_inicio: str
     fecha_fin: str
-    estado: str = "Activa"
+    estado: Literal["ACTIVO", "VENCIDA", "EN_TRAMITE"] = "EN_TRAMITE"
     id_cliente: int
     id_pm: int
     id_promocion: int | None = None
@@ -94,6 +94,11 @@ class RegistrarClienteMembresiaInput(BaseModel):
     fecha_inicio: str
     fecha_fin: str
     id_promocion: int | None = None
+
+
+class RegistroAdminClienteInput(ClienteInput):
+    id_promocion: int | None = Field(default=None, gt=0)
+    pagar_con_stripe: bool = False
 
 
 class RegistroPublicoClienteInput(BaseModel):
@@ -155,6 +160,13 @@ class PedidoTiendaInput(BaseModel):
     referencia_pago: str = ""
     items: list[PedidoTiendaItemInput] = Field(default_factory=list)
 
+class PedidoTiendaCheckoutInput(BaseModel):
+    # Los datos del cliente son solo informativos: el id_cliente siempre sale del token de sesión.
+    cliente_nombre: str = ""
+    cliente_correo: str = ""
+    cliente_dni: str = ""
+    items: list[PedidoTiendaItemInput] = Field(min_length=1)
+
 
 class MovimientoInventarioInput(BaseModel):
     id_mov: int | None = None
@@ -185,12 +197,24 @@ class TicketAtencionInput(BaseModel):
     fecha_cierre: str = ""
 
 
+class EjercicioInput(BaseModel):
+    id_ejercicio: int | str | None = None
+    nombre_ejercicio: str = ""
+    series: int = 3
+    repeticiones: str = "10-12"
+    descanso_segundos: int = 60
+    peso_sugerido_kg: float | None = None
+    grupo_muscular: str = ""
+    notas: str = ""
+
+
 class CatalogoRutinaInput(BaseModel):
     id_rutina: int | None = None
     servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
     nombre_rutina: str
     zonas_musculares: str
     color: str = "Azul"
+    ejercicios: list[EjercicioInput] = Field(default_factory=list)
 
 
 class HorarioInput(BaseModel):
@@ -226,10 +250,23 @@ class MatriculaRutinaInput(BaseModel):
     id_rutina: int
 
 
+class EjercicioProgresoInput(BaseModel):
+    id_ejercicio: int | str | None = None
+    nombre_ejercicio: str = ""
+    completado: bool = True
+    series_completadas: int = 3
+    repeticiones_logradas: str = ""
+    peso_utilizado_kg: float | None = None
+    observaciones: str = ""
+
+
 class RutinaProgresoInput(BaseModel):
     fecha: str = ""
+    estado: str = "REALIZADO"
     observacion: str = ""
     id_usuario: str | int | None = None
+    ejercicios_detalle: list[EjercicioProgresoInput] = Field(default_factory=list)
+
 
 
 class AsistenciaInput(BaseModel):

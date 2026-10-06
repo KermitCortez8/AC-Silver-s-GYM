@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/authStore';
+import { prepareNavigationSession } from '../services/moduleNavigation.js';
 
 // Cada vista se descarga una vez, cuando se necesita.
 const LoginView = () => import('../views/LoginView.vue');
@@ -236,16 +237,10 @@ const router = createRouter({
 });
 
 // Guard de rutas
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
   const authStore = useAuthStore();
 
-  // Valida al entrar y reutiliza la comprobación durante 30 segundos.
-  // El backend sigue comprobando la sesión y los permisos en cada operación.
-  const needsSessionCheck = authStore.isAuthenticated &&
-    (to.meta.requiresAuth || to.path === '/' || to.path === '/login');
-  if (!authStore.isInitialized || needsSessionCheck) {
-    await authStore.initializeAuth();
-  }
+  await prepareNavigationSession(authStore, to, from);
 
   if (to.path === '/' && authStore.isAuthenticated) {
     return authStore.dashboardPath;
@@ -253,6 +248,9 @@ router.beforeEach(async (to) => {
 
   // Verificar si la ruta requiere autenticación
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    if (authStore.sessionErrorCode === 'membership_expired') {
+      return { name: 'Login', query: { reason: 'membership_expired' } };
+    }
     return '/login';
   }
 

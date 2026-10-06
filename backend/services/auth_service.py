@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, UserProfile
 from services.google_auth_service import verify_google_credential
-from services.gym_domain_service import GymDomainService
+from services.gym_domain_service import GymDomainService, _today_iso
+from services.membership_lifecycle import membership_current, membership_expired
 from utils.security import create_local_token, get_auth_secret, normalize_profile, verify_password
 
 
@@ -12,9 +13,29 @@ class GoogleLinkRequired(ValueError):
 
 
 class ClientActivationRequired(ValueError):
+    code = "account_pending_activation"
+
     def __init__(self) -> None:
         super().__init__(
             "Tu cuenta aún no está activa. Debe ser activada por el administrador para poder ingresar."
+        )
+
+
+class ClientMembershipExpired(ClientActivationRequired):
+    code = "membership_expired"
+
+    def __init__(self) -> None:
+        ValueError.__init__(
+            self, "Tu membresía está vencida y tu cuenta está bloqueada. Contacta con administración para renovarla."
+        )
+
+
+class ClientMembershipRequired(ClientActivationRequired):
+    code = "membership_required"
+
+    def __init__(self) -> None:
+        ValueError.__init__(
+            self, "Tu cuenta necesita una membresía activa, pagada y vigente. Contacta con administración."
         )
 
 
@@ -38,11 +59,26 @@ class AuthService:
         )
         return UserProfile(**profile)
 
-    @staticmethod
-    def _require_active_client(client: dict | None) -> None:
+    def _require_active_client(self, client: dict | None) -> None:
+        self.gym_service.ensure_fresh()
+        self.gym_service.expire_memberships()
+        if client:
+            client = self.gym_service.get_cliente(int(client["id_cliente"]))
+        memberships = [
+            row
+            for row in self.gym_service.state.get("membresia", [])
+            if client and int(row.get("id_cliente") or 0) == int(client["id_cliente"])
+        ]
+        today = _today_iso()
+        current = any(membership_current(row, today) for row in memberships)
+        expired = any(membership_expired(row, today) for row in memberships)
+        if not current and (expired or (client and str(client.get("estado") or "").strip().upper() == "VENCIDA")):
+            raise ClientMembershipExpired()
         # CLIENTES.Estado se habilita en la activación administrativa, no al pagar.
         if not client or str(client.get("estado") or "").strip().upper() not in {"ACTIVO", "ACTIVA"}:
             raise ClientActivationRequired()
+        if not current:
+            raise ClientMembershipRequired()
 
     def session_for_user(self, user: UserProfile) -> AuthResponse:
         if user.id_cliente is not None:

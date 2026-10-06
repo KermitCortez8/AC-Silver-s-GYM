@@ -98,7 +98,7 @@ def get_current_user(
             raise ValueError("La sesión es inválida o venció. Inicia sesión nuevamente.")
         return AuthService(gym_service).user_from_payload(payload)
     except ClientActivationRequired as error:
-        raise HTTPException(status_code=403, detail={"code": "account_pending_activation", "message": str(error)}) from error
+        raise HTTPException(status_code=403, detail={"code": error.code, "message": str(error)}) from error
     except ValueError as error:
         raise HTTPException(status_code=401, detail=str(error)) from error
     except RuntimeError as error:

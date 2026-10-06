@@ -1,7 +1,8 @@
-from app.main import get_gym_service
 import asyncio
 
 async def test():
+    from app.main import get_gym_service
+
     svc = get_gym_service()
     try:
         # Hacer fetch manual usando _request
@@ -10,4 +11,9 @@ async def test():
     except Exception as e:
         print('Error:', e)
 
-asyncio.run(test())
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    asyncio.run(test())

@@ -11,6 +11,26 @@ y guardar la informacion del sistema.
 - Docker Desktop o Docker Engine con Docker Compose 2.17 o superior, si se usara Docker
 - Credenciales de Supabase para el backend
 
+## Integración continua y despliegue
+
+Al fusionar un PR hacia `main`, GitHub Actions ejecuta esta secuencia:
+
+1. Construye las imágenes Docker del backend y frontend, arranca ambos
+   contenedores y verifica el backend, la web y el proxy de Nginx.
+2. Ejecuta las pruebas existentes de Python, Node.js y Deno en paralelo.
+3. Si todas pasan, despliega el frontend en Vercel y solicita el despliegue
+   del mismo commit en Render.
+
+Si falla Docker o alguna prueba, los despliegues no se ejecutan. La validación
+usa `docker-compose.ci.yml`, sin archivos `.env` ni credenciales de producción.
+Comprueba el arranque y el proxy; no comprueba una conexión real a Supabase.
+El endpoint `/api/health` devuelve el 503 esperado por falta de credenciales.
+
+Los despliegues conservan sus mecanismos actuales: Vercel compila el frontend
+y Render recibe su Deploy Hook. Este workflow no publica imágenes Docker ni
+cambia la configuración del servicio en Render. La aceptación del hook no
+confirma que Render haya terminado el despliegue.
+
 ## Activacion Manual
 
 ### Backend
@@ -21,7 +41,7 @@ y guardar la informacion del sistema.
 cd backend
 py -m venv .venv
 .\.venv\Scripts\Activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m app.main
 ```
 
@@ -31,9 +51,33 @@ En Linux/macOS:
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m app.main
 ```
+
+`requirements.txt` contiene las dependencias de ejecución usadas por Docker y
+Render. `requirements-dev.txt` incluye esas dependencias y añade pytest, httpx y
+flake8 para desarrollo y CI.
+
+Para ejecutar las pruebas y la comprobación de errores desde `backend/`:
+
+```bash
+python -m pytest tests/ -q
+python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+```
+
+### Ejercicios y seguimiento de rutinas
+
+Antes de usar estas funciones, ejecutar
+[`backend/migrations/012_trainer_exercises.sql`](backend/migrations/012_trainer_exercises.sql)
+en el SQL Editor de Supabase. Agrega las columnas JSONB `ejercicios` del catálogo
+y `ejercicios_detalle` del progreso sin borrar datos. Puede ejecutarse de nuevo
+si esas columnas ya existen. Esta preparación del código no ejecuta la migración.
+
+El catálogo permite editar los ejercicios de cada rutina; el seguimiento registra
+series, repeticiones, peso y observaciones por ejercicio. Se conservan las
+validaciones del catálogo, la búsqueda, el orden y la confirmación al descartar
+cambios de `develop`.
 
 ### Frontend
  
@@ -67,6 +111,8 @@ proyecto. La clave privada se configura únicamente en `backend/.env`.
 Para los pagos, configura también las variables de Stripe de `backend/.env`.
 Los archivos `.env` reales no se incluyen en Git; cada Codespace necesita sus
 credenciales. No sobrescribas los archivos si ya los configuraste.
+
+
 
 Construir e iniciar frontend y backend:
 
@@ -108,4 +154,3 @@ docker compose build --pull --no-cache
 docker compose up -d --no-build
 docker compose ps
 ```
-

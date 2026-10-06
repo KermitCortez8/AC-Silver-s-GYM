@@ -1213,7 +1213,7 @@ const goToCheckout = () => {
 
 onMounted(() => {
   gymStore
-    .fetchFromBackend?.()
+    .fetchFromBackend?.({ section: 'store' })
     .catch((error) => console.warn('No se pudo refrescar tienda:', error));
 });
 </script>

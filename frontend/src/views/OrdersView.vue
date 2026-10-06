@@ -7,7 +7,7 @@
           <h1 class="mt-2 text-3xl font-black text-white">Pedidos de tienda</h1>
           <p class="mt-2 text-slate-300">Compras generadas desde la tienda del cliente.</p>
         </div>
-        <button class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10" @click="refresh">
+        <button class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10" @click="refresh()">
           Actualizar
         </button>
       </div>
@@ -53,8 +53,8 @@
                 <span class="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-100">{{ order.estado_pago }}</span>
                 <span class="rounded-full bg-amber-400/15 px-3 py-1 text-xs font-black text-amber-100">{{ order.estado_pedido }}</span>
               </div>
-              <p class="mt-2 text-sm text-slate-300">{{ order.cliente_nombre }} - {{ order.cliente_correo || 'Sin correo' }}</p>
-              <p class="mt-1 text-xs text-slate-500">DNI: {{ order.cliente_dni || 'No registrado' }} | {{ formatDate(order.fecha_pedido) }}</p>
+              <p class="mt-2 text-sm text-slate-300">{{ clientOf(order).name || 'Sin registrar' }} - {{ clientOf(order).email || 'Sin correo' }}</p>
+              <p class="mt-1 text-xs text-slate-500">DNI: {{ clientOf(order).dni || 'No registrado' }} | {{ formatDate(order.fecha_pedido) }}</p>
             </div>
 
             <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right">
@@ -119,28 +119,58 @@ const search = ref('');
 const feedback = ref('');
 const orderDrafts = reactive({});
 
-const orders = computed(() => [...gymStore.storeOrders].sort((a, b) => String(b.fecha_pedido || '').localeCompare(String(a.fecha_pedido || ''))));
-const pendingOrders = computed(() => orders.value.filter((order) => String(order.estado_pedido || '').toUpperCase() === 'PENDIENTE'));
-const totalSales = computed(() => orders.value.reduce((sum, order) => sum + Number(order.total || 0), 0));
+const orderStatus = (order) => String(order.estado_pedido || '').toUpperCase();
+const isCancelled = (order) => orderStatus(order) === 'CANCELADO';
+const canCancel = (order) => ['PENDIENTE', 'CANCELADO'].includes(orderStatus(order));
+
+/**
+ * Un pedido con tarjeta que aún no se cobró (o se abandonó) no se muestra: solo cuentan los pagados.
+ */
+const isPaid = (order) => String(order.estado_pago || 'PAGADO').toUpperCase() === 'PAGADO';
+
+/**
+ * Obtiene el cliente del pedido por su id_cliente (o DNI), con los datos del pedido como respaldo.
+ */
+const clientOf = (order) => {
+  const dni = String(order.cliente_dni || '').trim();
+  const member = (gymStore.members || []).find((entry) =>
+    (order.id_cliente && Number(entry.id_cliente) === Number(order.id_cliente)) || (dni && entry.dni === dni));
+  const savedName = order.cliente_nombre && order.cliente_nombre !== 'Cliente' ? order.cliente_nombre : '';
+  return {
+    name: member?.name || savedName,
+    email: member?.email || order.cliente_correo || '',
+    dni: dni || member?.dni || '',
+  };
+};
+
+const orders = computed(() => (gymStore.storeOrders || [])
+  .filter(isPaid)
+  .sort((a, b) => String(b.fecha_pedido || '').localeCompare(String(a.fecha_pedido || ''))));
+const pendingOrders = computed(() => orders.value.filter((order) => orderStatus(order) === 'PENDIENTE'));
+// Las ventas son los pedidos cobrados que no se cancelaron.
+const totalSales = computed(() => orders.value
+  .filter((order) => !isCancelled(order))
+  .reduce((sum, order) => sum + Number(order.total || 0), 0));
 
 const normalizedSearch = computed(() => search.value.trim().toLowerCase());
 const filteredOrders = computed(() => {
   if (!normalizedSearch.value) return orders.value;
 
-  return orders.value.filter((order) =>
-    [
+  return orders.value.filter((order) => {
+    const client = clientOf(order);
+    return [
       order.id_pedido,
-      order.cliente_nombre,
-      order.cliente_correo,
-      order.cliente_dni,
+      client.name,
+      client.email,
+      client.dni,
       order.estado_pago,
       order.estado_pedido,
       ...(order.items || []).map((item) => item.nombre_producto),
     ]
       .join(' ')
       .toLowerCase()
-      .includes(normalizedSearch.value),
-  );
+      .includes(normalizedSearch.value);
+  });
 });
 
 /**
@@ -178,21 +208,14 @@ const formatDate = (value) => {
 /**
  * Actualiza los datos actuales.
  */
-const refresh = async () => {
+const refresh = async (force = true) => {
   feedback.value = '';
   try {
-    await gymStore.refreshStoreOrdersFromBackend?.();
+    await gymStore.fetchFromBackend({ section: 'orders', force });
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'No se pudieron cargar los pedidos.';
   }
 };
-
-/**
- * Actualiza los datos actuales.
- */
-const orderStatus = (order) => String(order.estado_pedido || '').toUpperCase();
-const isCancelled = (order) => orderStatus(order) === 'CANCELADO';
-const canCancel = (order) => ['PENDIENTE', 'CANCELADO'].includes(orderStatus(order));
 
 const updateOrder = async (order) => {
   feedback.value = '';
@@ -215,7 +238,7 @@ const updateOrder = async (order) => {
   }
 };
 
-onMounted(refresh);
+onMounted(() => refresh(false));
 </script>
 
 <style scoped>
