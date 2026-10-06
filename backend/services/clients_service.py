@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from services.gym_domain_service import GymDomainService
+from services.gym_domain_service import GymDomainService, _today_iso
+from services.membership_lifecycle import membership_expired
 from services.google_auth_service import verify_google_credential
 from utils.security import get_auth_secret, verify_password
 
@@ -63,6 +64,10 @@ class ClientsService:
         if item["id_usuario"] and item["estado"] in {"ACTIVO", "ACTIVA"}:
             self.gym.ensure_fresh()
             existing = self.gym.get_cliente(self.gym._parse_cliente_id(item["id_usuario"]))
+            if existing:
+                membership = self.gym._latest_membership_for_cliente(self.gym.state, existing["id_cliente"])
+                if membership and membership_expired(membership, _today_iso()):
+                    raise ValueError("La membresía está vencida. Renueva la membresía antes de activar la cuenta.")
             if existing and str(existing.get("estado") or "").upper() not in {"ACTIVO", "ACTIVA"}:
                 membership = self.gym._latest_membership_for_cliente(self.gym.state, existing["id_cliente"])
                 if membership and str(membership.get("estado") or "").upper() in {"EN_TRAMITE", "PENDIENTE_PAGO"}:
@@ -82,6 +87,7 @@ class ClientsService:
             "promocion": str(saved.get("promocion") or payload.get("promocion") or "").strip(),
             "estado": str(saved.get("estado") or payload.get("estado") or "ACTIVO").strip().upper() or "ACTIVO",
             "has_password": bool(saved.get("password_hash")),
+            "origen_registro": saved.get("origen_registro", ""),
         }
         return normalized
 
@@ -134,6 +140,30 @@ class ClientsService:
     # Procesa esta operación.
     def confirm_public_payment(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
         return self._safe_registration_result(self.gym.confirmar_pago_cliente_publico(id_cliente, payload))
+
+    def register_admin_client(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if payload.get("id_usuario"):
+            raise ValueError("Este registro solo permite crear clientes nuevos")
+        self.gym.ensure_fresh()
+        validate_schema = getattr(self.gym, "validate_admin_registration_schema", None)
+        if validate_schema:
+            validate_schema()
+        return self._safe_registration_result(
+            self.gym.registrar_cliente_publico(payload, origen_registro="ADMIN")
+        )
+
+    def get_admin_payment_registration(self, id_cliente: int) -> dict[str, Any]:
+        self.gym.ensure_fresh()
+        client = self.gym.get_cliente(id_cliente)
+        if not client:
+            raise ValueError("Cliente no encontrado")
+        if client.get("origen_registro") != "ADMIN":
+            raise ValueError("Solo se puede cobrar desde el panel a clientes registrados por administración")
+        membership = self.gym._latest_membership_for_cliente(self.gym.state, id_cliente)
+        if not membership or str(membership.get("estado_pago") or "").upper() != "PENDIENTE":
+            raise ValueError("El cliente no tiene una membresía pendiente de pago")
+        plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0))) or {}
+        return self._safe_registration_result({"cliente": client, "membresia": membership, "plan": plan})
 
     # Confirma el pago de manera manual (efectivo/caja)
     def confirm_manual_payment(self, id_cliente: int) -> dict[str, Any]:

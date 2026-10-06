@@ -57,7 +57,7 @@ class StripeService:
             raise ValueError("El precio de la membresía debe ser mayor que cero")
         return cents
 
-    def create_membership_checkout(self, result: dict[str, Any]) -> dict[str, Any]:
+    def create_membership_checkout(self, result: dict[str, Any], *, admin: bool = False) -> dict[str, Any]:
         if not self.configured:
             return {"configured": False, "message": "Stripe no está configurado"}
         self.validate_configuration()
@@ -70,8 +70,15 @@ class StripeService:
         if not client_id:
             raise ValueError("No se pudo determinar el cliente de la membresía")
 
-        amount_in_cents = self._amount_in_cents(membership.get("monto_pago") or plan.get("precio"))
+        amount = membership.get("monto_pago")
+        amount_in_cents = self._amount_in_cents(amount if amount is not None else plan.get("precio"))
         return_url = f"{self.settings.frontend_public_url}/registro/pago/{client_id}"
+        success_url = f"{return_url}?result=success&session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{return_url}?result=failure"
+        if admin:
+            return_url = f"{self.settings.frontend_public_url}/admin/clients"
+            success_url = f"{return_url}?stripe_result=success&session_id={{CHECKOUT_SESSION_ID}}"
+            cancel_url = f"{return_url}?stripe_result=failure"
         metadata = {
             "purpose": "membership",
             "client_id": str(client_id),
@@ -99,8 +106,8 @@ class StripeService:
             }],
             metadata=metadata,
             payment_intent_data={"metadata": metadata},
-            success_url=f"{return_url}?result=success&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{return_url}?result=failure",
+            success_url=success_url,
+            cancel_url=cancel_url,
             locale="es",
             submit_type="pay",
         )

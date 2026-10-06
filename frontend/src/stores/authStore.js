@@ -40,10 +40,14 @@ export const useAuthStore = defineStore('auth', () => {
   const userRole = ref(null);
   const isSignout = ref(false);
   const isInitialized = ref(false);
+  const sessionErrorCode = ref('');
   let sessionRevision = 0;
   const sessionValidator = createSessionValidator(async (storedToken) => {
-    const sessionUser = normalizeStoredUser(await apiGet('/auth/me', storedToken));
-    if (!sessionUser || !isValidUser(sessionUser)) throw new Error('Sesión inválida');
+    const sessionUser = normalizeStoredUser(
+      await apiGet('/auth/me', storedToken),
+    );
+    if (!sessionUser || !isValidUser(sessionUser))
+      throw new Error('Sesión inválida');
     return sessionUser;
   });
 
@@ -69,7 +73,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (storedToken && APP_CONFIG.authApiBaseUrl) {
         try {
-          const sessionUser = await sessionValidator.validate(storedToken, { force });
+          const sessionUser = await sessionValidator.validate(storedToken, {
+            force,
+          });
           // Una respuesta anterior no debe restaurar una sesión cerrada o sustituida.
           if (revision !== sessionRevision) return;
           if (getAuthSession().token !== storedToken) return initializeAuth();
@@ -79,12 +85,14 @@ export const useAuthStore = defineStore('auth', () => {
             token.value = storedToken;
             userRole.value = sessionUser.role || 'user';
             isSignout.value = false;
+            sessionErrorCode.value = '';
             saveAuthSession(sessionUser, storedToken);
             return;
           }
         } catch (error) {
           if (revision !== sessionRevision) return;
           if (getAuthSession().token !== storedToken) return initializeAuth();
+          sessionErrorCode.value = error.code || '';
           clearAuthStorage();
         }
       }
@@ -126,6 +134,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       sessionRevision += 1;
+      sessionErrorCode.value = '';
       sessionValidator.clear();
       user.value = formattedUser;
       token.value = idToken;
@@ -160,6 +169,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       sessionRevision += 1;
+      sessionErrorCode.value = '';
       sessionValidator.clear();
       user.value = formattedUser;
       token.value = idToken;
@@ -181,6 +191,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const signOut = async () => {
     sessionRevision += 1;
+    sessionErrorCode.value = '';
     sessionValidator.clear();
     try {
       isLoading.value = true;
@@ -205,6 +216,7 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     isSignout,
     isInitialized,
+    sessionErrorCode,
     // Getters
     isAuthenticated,
     isAdmin,

@@ -82,7 +82,7 @@ class MembresiaInput(BaseModel):
     id_membresia: int | None = None
     fecha_inicio: str
     fecha_fin: str
-    estado: str = "Activa"
+    estado: Literal["ACTIVO", "VENCIDA", "EN_TRAMITE"] = "EN_TRAMITE"
     id_cliente: int
     id_pm: int
     id_promocion: int | None = None
@@ -94,6 +94,11 @@ class RegistrarClienteMembresiaInput(BaseModel):
     fecha_inicio: str
     fecha_fin: str
     id_promocion: int | None = None
+
+
+class RegistroAdminClienteInput(ClienteInput):
+    id_promocion: int | None = Field(default=None, gt=0)
+    pagar_con_stripe: bool = False
 
 
 class RegistroPublicoClienteInput(BaseModel):

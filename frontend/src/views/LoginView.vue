@@ -274,7 +274,7 @@ import {
   ref,
 } from 'vue';
 
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useAuth } from '../composables/useAuth';
 
@@ -290,6 +290,7 @@ import { landingImageUrl } from '../config/publicStorage';
 
 
 const router = useRouter();
+const route = useRoute();
 
 const {
   signIn,
@@ -303,7 +304,9 @@ const {
 /* ESTADOS                                                                    */
 /* -------------------------------------------------------------------------- */
 
-const googleError = ref('');
+const googleError = ref(route.query.reason === 'membership_expired'
+  ? 'Tu membresía ha vencido y tu acceso está bloqueado. Contacta al administrador para renovar.'
+  : '');
 
 const linkCredential = ref('');
 

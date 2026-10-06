@@ -3,11 +3,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ac-silvers-gym-backend
+    container_name: ${DOCKER_CONTAINER_PREFIX:-ac-silvers-gym}-backend
     # Usa docker0, cuya salida ya administra Docker en Codespaces y Docker Desktop.
     network_mode: bridge
     env_file:
-      - ./backend/.env
+      # CI proporciona un archivo temporal con una clave de prueba.
+      - ${BACKEND_ENV_FILE:-./backend/.env}
     environment:
       SUPABASE_ANON_KEY: "${VITE_SUPABASE_ANON_KEY:-}"
     restart: unless-stopped
@@ -22,7 +23,8 @@ services:
         - CMD
         - python
         - -c
-        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
+        # En CI se comprueba el arranque; normalmente se comprueba también Supabase.
+        - "import urllib.request; path = '/' if '${DOCKER_CHECK_DATABASE:-true}' == 'false' else '/health'; urllib.request.urlopen('http://127.0.0.1:8000' + path, timeout=4)"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,7 +45,7 @@ services:
         VITE_SUPABASE_LANDING_BUCKET: "${VITE_SUPABASE_LANDING_BUCKET:-imageneslandingpage}"
         VITE_SUPABASE_LANDING_FOLDER: "${VITE_SUPABASE_LANDING_FOLDER:-landingpage}"
         VITE_SUPABASE_ANON_KEY: "${VITE_SUPABASE_ANON_KEY:-}"
-    container_name: ac-silvers-gym-frontend
+    container_name: ${DOCKER_CONTAINER_PREFIX:-ac-silvers-gym}-frontend
     network_mode: service:backend
     restart: unless-stopped
     depends_on:
@@ -51,7 +53,8 @@ services:
         condition: service_healthy
         restart: true
     healthcheck:
-      test: ["CMD-SHELL", "wget -T 2 -qO- http://127.0.0.1:8080/ > /dev/null && wget -T 4 -qO- http://127.0.0.1:8080/api/health > /dev/null"]
+      # CI verifica el proxy por separado, incluyendo el 503 sin credenciales.
+      test: ["CMD-SHELL", "wget -T 2 -qO- http://127.0.0.1:8080/ > /dev/null && { [ '${DOCKER_CHECK_DATABASE:-true}' = 'false' ] || wget -T 4 -qO- http://127.0.0.1:8080/api/health > /dev/null; }"]
       interval: 10s
       timeout: 8s
       retries: 5

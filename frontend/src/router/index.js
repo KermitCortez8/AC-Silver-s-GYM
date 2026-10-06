@@ -253,6 +253,9 @@ router.beforeEach(async (to) => {
 
   // Verificar si la ruta requiere autenticación
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    if (authStore.sessionErrorCode === 'membership_expired') {
+      return { name: 'Login', query: { reason: 'membership_expired' } };
+    }
     return '/login';
   }
 
