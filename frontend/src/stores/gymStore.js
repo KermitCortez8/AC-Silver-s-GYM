@@ -2417,6 +2417,7 @@ export const useGymStore = defineStore('gym', () => {
   const fetchTrainerOverview = async () => {
     if (!apiBase) throw new Error('No hay backend configurado');
     try {
+      activeSyncs += 1;
       isSyncing.value = true;
       const response = await fetch(`${apiBase}/trainer/overview`, { headers: _authHeaders() });
       if (!response.ok) {
@@ -2425,7 +2426,8 @@ export const useGymStore = defineStore('gym', () => {
       trainerOverview.value = await response.json();
       return trainerOverview.value;
     } finally {
-      isSyncing.value = false;
+      activeSyncs -= 1;
+      isSyncing.value = activeSyncs > 0;
     }
   };
 
@@ -2494,6 +2496,7 @@ export const useGymStore = defineStore('gym', () => {
   const fetchTrainerClientRoutines = async (dni) => {
     if (!apiBase) throw new Error('No hay backend configurado');
     try {
+      activeSyncs += 1;
       isSyncing.value = true;
       const params = new URLSearchParams({ dni: String(dni || '').trim() });
       const response = await fetch(`${apiBase}/trainer/clientes-rutinas?${params.toString()}`, { headers: _authHeaders() });
@@ -2502,7 +2505,8 @@ export const useGymStore = defineStore('gym', () => {
       }
       return await response.json();
     } finally {
-      isSyncing.value = false;
+      activeSyncs -= 1;
+      isSyncing.value = activeSyncs > 0;
     }
   };
 

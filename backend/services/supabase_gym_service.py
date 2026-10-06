@@ -244,6 +244,15 @@ class SupabaseGymService(GymDomainService):
     # Procesa esta operación.
     def _filter_remote_columns(self, table: str, body: dict[str, Any]) -> dict[str, Any]:
         columns = self.remote_columns.get(table)
+        exercise_column = {
+            "CATALOGO_RUTINA": "ejercicios",
+            "RUTINA_PROGRESO": "ejercicios_detalle",
+        }.get(table)
+        if columns and exercise_column and exercise_column not in columns and body.get(exercise_column):
+            raise RuntimeError(
+                "No se pudieron guardar los ejercicios. Ejecuta "
+                "backend/migrations/012_trainer_exercises.sql en Supabase."
+            )
         if table == "CLIENTES" and (not columns or "origen_registro" not in columns):
             if body.get("origen_registro") == "ADMIN":
                 try:
@@ -429,6 +438,8 @@ class SupabaseGymService(GymDomainService):
             raise ValueError("Cliente sin membresia activa") from error
         if "horario no disponible" in normalized or "23503" in normalized:
             raise ValueError("Horario no disponible") from error
+        raise error
+
     def asignar_rutina_matricula(self, id_matricula: int, id_rutina: int) -> dict[str, Any]:
         try:
             return super().asignar_rutina_matricula(id_matricula, id_rutina)

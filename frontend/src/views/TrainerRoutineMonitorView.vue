@@ -143,7 +143,7 @@
                 <p><strong class="text-slate-400">Día:</strong> {{ dayLabel(item.dia) }}</p>
                 <p><strong class="text-slate-400">Hora:</strong> {{ item.hora_inicio }} - {{ item.hora_fin }}</p>
                 <p class="sm:col-span-2"><strong class="text-slate-400">Zonas musculares:</strong> {{ item.zonas_musculares || 'General / Fuerza' }}</p>
-                <p class="sm:col-span-2"><strong class="text-slate-400">Estado:</strong> 
+                <p class="sm:col-span-2"><strong class="text-slate-400">Estado:</strong>
                   <span class="font-bold ml-1" :class="item.id_rutina ? 'text-emerald-400' : 'text-amber-400'">
                     {{ item.id_rutina ? 'En progreso' : 'Pendiente asignación' }}
                   </span>
@@ -279,7 +279,7 @@
     <Teleport to="body">
       <div v-if="showExercisesModal && selectedMatriculaItem" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-3 sm:p-6 backdrop-blur-md overflow-y-auto">
         <div class="relative w-full max-w-6xl rounded-3xl border border-white/15 bg-slate-950 p-5 sm:p-6 shadow-2xl space-y-3 text-white my-auto max-h-[95vh] overflow-y-auto">
-          
+
           <!-- Header del Modal -->
           <div class="flex items-center justify-between border-b border-white/10 pb-3">
             <div>
@@ -392,7 +392,7 @@
 
               <!-- CONTROLES HORIZONTALES COMPACTOS (3 COLUMNAS SIN ROLLO ROJO Y NEGRO) -->
               <div class="grid gap-3 md:grid-cols-3">
-                
+
                 <!-- Control 1: Series Completadas -->
                 <div class="routine-subbox space-y-1 bg-slate-950/80 p-2.5 rounded-xl border border-white/5">
                   <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">

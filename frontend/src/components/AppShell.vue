@@ -235,7 +235,7 @@
             <div class="relative flex h-28 w-28 items-center justify-center">
               <!-- Anillo exterior giratorio -->
               <div class="absolute inset-0 rounded-full border-4 border-red-600/20 border-t-red-600 border-r-red-500 animate-spin shadow-lg shadow-red-600/30"></div>
-              
+
               <!-- Anillo de pulso interno -->
               <div class="absolute inset-2 rounded-full bg-red-600/10 animate-ping"></div>
 

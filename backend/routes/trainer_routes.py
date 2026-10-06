@@ -80,4 +80,3 @@ def trainer_rutina_progreso(
         if "sin membresia activa" in detail.lower():
             detail = "El cliente no cuenta con una membresía activa para registrar progresos."
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from error
-

@@ -24,6 +24,8 @@
       </div>
     </section>
 
+    <p v-if="errorMessage" class="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-50">{{ errorMessage }}</p>
+
     <!-- Tarjetas KPI -->
     <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div class="rounded-2xl border border-white/10 bg-slate-950 p-5 backdrop-blur">
@@ -103,7 +105,6 @@
             <option value="ejercicios">Más ejercicios</option>
             <option value="asignados">Más asignadas</option>
           </select>
-
           <!-- Buscador -->
           <div class="relative w-full sm:w-64">
             <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -134,6 +135,7 @@
               <th class="p-3.5">Nombre de la Rutina</th>
               <th class="p-3.5">Zonas Musculares</th>
               <th class="p-3.5 text-center">N° Ejercicios</th>
+              <th class="p-3.5 text-center">Clientes asignados</th>
               <th class="p-3.5 text-right rounded-r-xl">Acción</th>
             </tr>
           </thead>
@@ -160,6 +162,7 @@
                   {{ (routine.ejercicios || []).length }} ej.
                 </span>
               </td>
+              <td class="p-3.5 text-center">{{ routine.clientes_asignados || 0 }}</td>
               <td class="p-3.5 text-right">
                 <button class="rounded-xl border border-white/10 bg-slate-900 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-red-600 hover:border-red-600 flex items-center gap-1.5 ml-auto" @click="editRoutine(routine)">
                   <i class="fa-solid fa-pen-to-square text-xs text-red-400"></i>
@@ -169,7 +172,7 @@
             </tr>
 
             <tr v-if="!filteredRoutines.length">
-              <td colspan="5" class="py-8 text-center text-slate-400">
+              <td colspan="6" class="py-8 text-center text-slate-400">
                 <p v-if="!routines.length" class="text-sm">Aún no hay rutinas registradas.</p>
                 <template v-else>
                   <p class="text-sm">Ninguna rutina coincide con los filtros.</p>
@@ -343,27 +346,27 @@
                     <!-- Selector de Modo de Repetición (Fijo / Rango / Al fallo) -->
                     <div class="space-y-1 sm:col-span-2">
                       <span class="text-[11px] font-bold text-slate-300">Repeticiones</span>
-                      
+
                       <!-- Pestañas de modo -->
                       <div class="flex items-center gap-1 rounded-xl bg-slate-950/80 p-1 border border-white/10">
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           class="flex-1 rounded-lg py-1 text-[11px] font-bold transition"
                           :class="ex.rep_modo === 'fijo' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                           @click="setRepMode(ex, 'fijo')"
                         >
                           Número Fijo
                         </button>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           class="flex-1 rounded-lg py-1 text-[11px] font-bold transition"
                           :class="ex.rep_modo === 'rango' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                           @click="setRepMode(ex, 'rango')"
                         >
                           Rango (ej. 10-12)
                         </button>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           class="flex-1 rounded-lg py-1 text-[11px] font-bold transition"
                           :class="ex.rep_modo === 'fallo' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'"
                           @click="setRepMode(ex, 'fallo')"
@@ -374,31 +377,31 @@
 
                       <!-- Input dinámico según modo -->
                       <div v-if="ex.rep_modo === 'fijo'" class="pt-1">
-                        <input 
-                          v-model="ex.rep_fijo" 
-                          type="number" 
-                          min="1" 
-                          placeholder="Ej. 10 o 12" 
+                        <input
+                          v-model="ex.rep_fijo"
+                          type="number"
+                          min="1"
+                          placeholder="Ej. 10 o 12"
                           class="field-input text-xs"
                           @input="syncRepString(ex)"
                         />
                       </div>
 
                       <div v-else-if="ex.rep_modo === 'rango'" class="flex items-center gap-2 pt-1">
-                        <input 
-                          v-model="ex.rep_min" 
-                          type="number" 
-                          min="1" 
-                          placeholder="Mín (ej. 10)" 
+                        <input
+                          v-model="ex.rep_min"
+                          type="number"
+                          min="1"
+                          placeholder="Mín (ej. 10)"
                           class="field-input text-xs"
                           @input="syncRepString(ex)"
                         />
                         <span class="text-xs text-slate-400 font-bold">a</span>
-                        <input 
-                          v-model="ex.rep_max" 
-                          type="number" 
-                          min="1" 
-                          placeholder="Máx (ej. 12)" 
+                        <input
+                          v-model="ex.rep_max"
+                          type="number"
+                          min="1"
+                          placeholder="Máx (ej. 12)"
                           class="field-input text-xs"
                           @input="syncRepString(ex)"
                         />
@@ -449,11 +452,12 @@
               <button type="button" class="rounded-2xl border border-white/10 bg-slate-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800" :disabled="isSaving" @click="requestCloseModal">
                 Cancelar
               </button>
-              <button class="flex items-center gap-2 rounded-2xl bg-red-600 px-6 py-2.5 text-xs font-extrabold text-white transition hover:bg-red-500 shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isSaving || (routineForm.id_rutina && !hasChanges)">
+              <button class="flex items-center gap-2 rounded-2xl bg-red-600 px-6 py-2.5 text-xs font-extrabold text-white transition hover:bg-red-500 shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isSaving || (routineForm.id_rutina !== null && !hasChanges)">
                 <i class="fa-solid fa-floppy-disk"></i>
                 <span>{{ isSaving ? 'Guardando...' : (routineForm.id_rutina ? 'Actualizar Rutina' : 'Guardar Rutina') }}</span>
               </button>
             </div>
+            <p v-if="routineForm.id_rutina !== null && !hasChanges" class="text-xs text-slate-400">No hay cambios por guardar.</p>
           </form>
         </div>
       </div>
@@ -475,7 +479,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
@@ -486,6 +490,7 @@ const MAX_EJERCICIO = 80;
 
 const isSaving = ref(false);
 const isLoading = ref(false);
+const errorMessage = ref('');
 const showRoutineModal = ref(false);
 const searchQuery = ref('');
 const selectedServiceFilter = ref('todos');
@@ -595,7 +600,7 @@ const filteredRoutines = computed(() => {
 
 const clearFilters = () => {
   searchQuery.value = '';
-  selectedServiceFilter.value = 'todos';
+  setServiceFilter('todos');
 };
 
 const totalPages = computed(() => Math.ceil(filteredRoutines.value.length / itemsPerPage.value) || 1);
@@ -672,6 +677,7 @@ const setRepMode = (ex, mode) => {
  * Convierte un ejercicio del formulario al formato que se envía / compara.
  */
 const buildExercise = (ex) => ({
+  id_ejercicio: ex.id_ejercicio ?? null,
   nombre_ejercicio: String(ex.nombre_ejercicio || '').trim(),
   grupo_muscular: String(ex.grupo_muscular || '').trim(),
   series: Number(ex.series || 3),
@@ -827,6 +833,7 @@ const resetRoutineForm = () => {
   touched.nombre_rutina = false;
   touched.zonas_musculares = false;
   editingName.value = '';
+  baselineSignature.value = buildSignature();
 };
 
 /**
@@ -884,7 +891,8 @@ const saveRoutine = async () => {
     return;
   }
 
-  const wasEditing = Boolean(routineForm.id_rutina);
+  if (isSaving.value) return;
+  const wasEditing = routineForm.id_rutina !== null;
   try {
     isSaving.value = true;
     await gymStore.upsertTrainerRoutine(buildPayload());
@@ -898,12 +906,15 @@ const saveRoutine = async () => {
 };
 
 const refresh = async (notify = true) => {
+  if (isLoading.value) return;
   try {
     isLoading.value = true;
+    errorMessage.value = '';
     await gymStore.fetchTrainerOverview();
     if (notify) showToast('Datos del catálogo actualizados.', 'success');
   } catch (error) {
-    showToast(error instanceof Error ? error.message : 'No se pudo cargar rutinas.', 'error');
+    errorMessage.value = error instanceof Error ? error.message : 'No se pudo cargar rutinas.';
+    showToast(errorMessage.value, 'error');
   } finally {
     isLoading.value = false;
   }
@@ -911,9 +922,13 @@ const refresh = async (notify = true) => {
 
 // Carga inicial silenciosa (sin toast de "actualizados")
 onMounted(() => refresh(false));
+onUnmounted(() => {
+  if (toastTimer) clearTimeout(toastTimer);
+});
 </script>
 
 <style scoped>
+.field-error { border-color: rgb(251, 113, 133) !important; }
 .field-input {
   width: 100%;
   border: 1px solid var(--app-border, rgba(255, 255, 255, 0.1));
