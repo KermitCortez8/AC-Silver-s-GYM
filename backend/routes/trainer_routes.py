@@ -31,7 +31,7 @@ def upsert_trainer_rutina(
 ):
     try:
         return gym_service.upsert_rutina(payload.model_dump())
-    except (ValueError, RuntimeError) as error:
+    except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
 
@@ -45,11 +45,8 @@ def assign_trainer_rutina(
 ):
     try:
         return gym_service.asignar_rutina_matricula(id_matricula, payload.id_rutina)
-    except (ValueError, RuntimeError) as error:
-        detail = str(error)
-        if "sin membresia activa" in detail.lower():
-            detail = "El cliente no cuenta con una membresía activa para asignarle rutinas."
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 
 
 @router.get("/clientes-rutinas")
@@ -61,7 +58,7 @@ def trainer_cliente_rutinas(
 ):
     try:
         return gym_service.trainer_rutinas_cliente(dni)
-    except (ValueError, RuntimeError) as error:
+    except ValueError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
@@ -75,9 +72,5 @@ def trainer_rutina_progreso(
 ):
     try:
         return gym_service.registrar_progreso_rutina(id_matricula, payload.model_dump())
-    except (ValueError, RuntimeError) as error:
-        detail = str(error)
-        if "sin membresia activa" in detail.lower():
-            detail = "El cliente no cuenta con una membresía activa para registrar progresos."
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from error
-
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
