@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-slate-950 text-slate-50">
+  <div class="public-page flex min-h-screen items-center justify-center bg-slate-950 text-slate-50">
     <div class="text-center">
       <div class="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-white/10 border-t-cyan-400"></div>
       <h2 class="text-2xl font-semibold text-white mb-2">Procesando autenticación...</h2>
