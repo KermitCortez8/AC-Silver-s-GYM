@@ -222,6 +222,44 @@
         </nav>
       </div>
     </div>
+
+    <!-- OVERLAY ANIMADO DE CAMBIO DE MÓDULO CON RELOJ Y ÍCONOS DE GIMNASIO -->
+    <Teleport to="body">
+      <Transition name="module-loading-fade">
+        <div
+          v-if="isNavigatingModule"
+          class="module-loader-overlay fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 backdrop-blur-2xl transition-all"
+        >
+          <div class="relative flex flex-col items-center space-y-5 text-center">
+            <!-- Reloj y Anillo de Energía en Rojo -->
+            <div class="relative flex h-28 w-28 items-center justify-center">
+              <!-- Anillo exterior giratorio -->
+              <div class="absolute inset-0 rounded-full border-4 border-red-600/20 border-t-red-600 border-r-red-500 animate-spin shadow-lg shadow-red-600/30"></div>
+              
+              <!-- Anillo de pulso interno -->
+              <div class="absolute inset-2 rounded-full bg-red-600/10 animate-ping"></div>
+
+              <!-- Ícono central de Reloj/Cronómetro -->
+              <div class="relative z-10 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-600 text-white shadow-xl shadow-red-600/40 animate-pulse">
+                <i class="fa-solid fa-stopwatch text-3xl"></i>
+              </div>
+            </div>
+
+            <!-- Información del Módulo -->
+            <div class="space-y-1">
+              <p class="text-xs uppercase tracking-[0.35em] text-red-500 font-extrabold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrows-rotate animate-spin text-[10px]"></i>
+                <span>Cargando Módulo</span>
+              </p>
+              <h3 class="text-2xl font-black tracking-tight text-white light-module-title">
+                {{ targetModuleName }}
+              </h3>
+              <p class="text-xs text-slate-400 font-bold">Módulo Digital AC Silver's Gym</p>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -248,6 +286,7 @@ import {
 import { useAuth } from '../composables/useAuth';
 import { useTheme } from '../composables/useTheme';
 import { APP_CONFIG } from '../config/appConfig';
+import { useGymStore } from '../stores/gymStore';
 
 const props = defineProps({
   mode: {
@@ -465,8 +504,110 @@ const revealActiveMobileLink = async () => {
     navigation.scrollLeft = active.offsetLeft - navigation.clientWidth / 2 + active.clientWidth / 2;
   }
 };
-onMounted(revealActiveMobileLink);
-watch(() => route.path, revealActiveMobileLink);
+// Transición de Carga al Cambiar de Módulo
+const gymStore = useGymStore();
+const isNavigatingModule = ref(false);
+const targetModuleName = ref('');
+let navigationTimer = null;
+let minTimerPassed = false;
+
+const moduleNamesMap = {
+  '/trainer/dashboard': 'Supervisión de Horarios',
+  '/trainer/routines': 'Catálogo de Rutinas',
+  '/trainer/routine-monitor': 'Seguimiento & Monitoreo',
+  '/admin/dashboard': 'Panel de Control',
+  '/admin/clients': 'Gestión de Clientes',
+  '/admin/users': 'Gestión de Usuarios',
+  '/admin/plans': 'Planes de Membresía',
+  '/admin/promotions': 'Promociones & Descuentos',
+  '/admin/service-schedules': 'Horarios de Servicios',
+  '/admin/enrollment': 'Matrículas & Registros',
+  '/admin/attendance': 'Control de Asistencias',
+  '/admin/inventory': 'Inventario General',
+  '/admin/store': 'Tienda Gimnasio',
+  '/admin/orders': 'Pedidos & Ventas',
+  '/admin/settings': 'Configuración de Sistema',
+  '/user/dashboard': 'Mi Panel Principal',
+  '/user/store': 'Tienda Virtual',
+  '/user/schedule': 'Mis Horarios',
+  '/user/attendance': 'Mi Registro de Asistencia',
+};
+
+let maxSafetyTimer = null;
+
+const finishModuleLoadingIfReady = () => {
+  if (!gymStore.isSyncing && minTimerPassed) {
+    isNavigatingModule.value = false;
+    if (maxSafetyTimer) clearTimeout(maxSafetyTimer);
+  }
+};
+
+router.beforeEach((to, from) => {
+  if (from.path && to.path !== from.path) {
+    targetModuleName.value = moduleNamesMap[to.path] || activeLink.value?.label || 'Módulo Digital';
+    isNavigatingModule.value = true;
+    minTimerPassed = false;
+    if (navigationTimer) clearTimeout(navigationTimer);
+    if (maxSafetyTimer) clearTimeout(maxSafetyTimer);
+
+    // Mínimo de 350ms para suavizar la animación sin retener la pantalla innecesariamente
+    navigationTimer = setTimeout(() => {
+      minTimerPassed = true;
+      finishModuleLoadingIfReady();
+    }, 350);
+
+    // Límite de seguridad: máximo 3.5s si la red/API tarda en responder
+    maxSafetyTimer = setTimeout(() => {
+      isNavigatingModule.value = false;
+    }, 3500);
+  }
+});
+
+router.afterEach(() => {
+  revealActiveMobileLink();
+  finishModuleLoadingIfReady();
+});
+
+watch(() => gymStore.isSyncing, (syncing) => {
+  if (!syncing) {
+    finishModuleLoadingIfReady();
+  }
+});
+
+let lastInactiveTimestamp = Date.now();
+
+onMounted(() => {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      lastInactiveTimestamp = Date.now();
+    } else if (document.visibilityState === 'visible') {
+      const inactiveDuration = Date.now() - lastInactiveTimestamp;
+      // Si la pestaña estuvo inactiva por más de 5 segundos, activar la pantalla de carga al regresar
+      if (inactiveDuration >= 5000) {
+        targetModuleName.value = moduleNamesMap[route.path] || activeLink.value?.label || 'Actualizando Datos';
+        isNavigatingModule.value = true;
+        minTimerPassed = false;
+        if (navigationTimer) clearTimeout(navigationTimer);
+        if (maxSafetyTimer) clearTimeout(maxSafetyTimer);
+
+        navigationTimer = setTimeout(() => {
+          minTimerPassed = true;
+          finishModuleLoadingIfReady();
+        }, 400);
+
+        maxSafetyTimer = setTimeout(() => {
+          isNavigatingModule.value = false;
+        }, 3500);
+
+        gymStore.fetchFromBackend({ force: true }).catch(() => {}).finally(() => {
+          finishModuleLoadingIfReady();
+        });
+      } else {
+        gymStore.fetchFromBackend({ force: false }).catch(() => {});
+      }
+    }
+  });
+});
 
 /**
  * Obtiene una versión corta de algunas etiquetas
