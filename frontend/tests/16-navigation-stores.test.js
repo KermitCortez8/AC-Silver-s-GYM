@@ -287,3 +287,60 @@ test('a new session waits for previous data responses so they cannot overwrite i
   assert.equal(clientRequests, 2);
   assert.equal(gym.members[0].name, 'Sesión 2');
 });
+
+test('trainer routine requests preserve exercises when saving and refreshing the catalog', async () => {
+  auth.token = token;
+  auth.userRole = 'trainer';
+  const exercises = [{ id_ejercicio: 'press', nombre_ejercicio: 'Press', series: 4, repeticiones: '8-12', descanso_segundos: 90, peso_sugerido_kg: 30 }];
+  let sent;
+  globalThis.fetch = async (url, options) => {
+    if (url.endsWith('/trainer/rutinas')) {
+      sent = JSON.parse(options.body);
+      return json({ ...sent, id_rutina: 15 });
+    }
+    assert.ok(url.endsWith('/trainer/overview'));
+    return json({ routines: [{ ...sent, id_rutina: 15, clientes_asignados: 2 }] });
+  };
+  const saved = await gym.upsertTrainerRoutine({ nombre_rutina: ' Fuerza ', zonas_musculares: ' Pecho ', servicio: 'musculacion', ejercicios: exercises });
+  assert.equal(sent.nombre_rutina, 'Fuerza');
+  assert.deepEqual(sent.ejercicios, exercises);
+  assert.deepEqual(saved.ejercicios, exercises);
+  assert.deepEqual(gym.trainerOverview.routines[0].ejercicios, exercises);
+});
+
+test('trainer progress requests preserve state and exercise performance', async () => {
+  auth.token = token;
+  auth.userRole = 'trainer';
+  const details = [{ nombre_ejercicio: 'Press', completado: true, series_completadas: 4, repeticiones_logradas: '10', peso_utilizado_kg: 30 }];
+  globalThis.fetch = async (url, options) => {
+    assert.ok(url.endsWith('/trainer/matriculas/10/progreso'));
+    const body = JSON.parse(options.body);
+    assert.equal(body.estado, 'REALIZADO');
+    assert.equal(body.fecha, '2026-10-01');
+    assert.deepEqual(body.ejercicios_detalle, details);
+    return json({ ...body, id_matricula: 10 });
+  };
+  const result = await gym.markTrainerRoutineProgress(10, { fecha: '2026-10-01', estado: 'REALIZADO', ejercicios_detalle: details });
+  assert.deepEqual(result.ejercicios_detalle, details);
+});
+
+test('trainer requests keep the loading indicator until concurrent section loads finish', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const users = deferred();
+  globalThis.fetch = async url => {
+    if (url.endsWith('/usuarios')) return users.promise;
+    if (url.endsWith('/trainer/overview')) return json({ routines: [] });
+    throw new Error(`Unexpected request: ${url}`);
+  };
+  const userLoad = gym.fetchFromBackend({ section: 'users' });
+  await flush();
+  await gym.fetchTrainerOverview();
+  assert.equal(gym.isSyncing, true);
+  users.resolve(json([]));
+  await userLoad;
+  assert.equal(gym.isSyncing, false);
+  globalThis.fetch = async () => json({ detail: 'No se pudo cargar el catálogo' }, 503);
+  await assert.rejects(gym.fetchTrainerOverview, /No se pudo cargar el catálogo/);
+  assert.equal(gym.isSyncing, false);
+});
