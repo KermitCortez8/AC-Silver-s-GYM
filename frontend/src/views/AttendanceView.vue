@@ -52,6 +52,15 @@
         </div>
       </article>
     </div>
+    <div v-if="summary" class="att-capacity" :class="{ 'is-full': !summary.disponibles }">
+      <div class="att-capacity-label">
+        <Users :size="17" />
+        <span><strong>{{ summary.disponibles ? `${summary.disponibles} lugares disponibles` : 'Aforo completo' }}</strong>
+          <small>{{ summary.dentro }} de {{ summary.capacidad }} personas · Incluye visitas generales y por horario</small>
+        </span>
+      </div>
+      <progress :value="summary.dentro" :max="summary.capacidad" aria-label="Ocupación del gimnasio" />
+    </div>
     <div class="att-toolbar">
       <div
         class="att-tabs"
@@ -60,23 +69,16 @@
         @keydown="handleTabKey"
       >
         <button
-          id="today-tab"
-          :aria-selected="tab === 'today'"
-          :tabindex="tab === 'today' ? 0 : -1"
+          v-for="item in attendanceTabs"
+          :id="`${item.key}-tab`"
+          :key="item.key"
+          :aria-selected="tab === item.key"
+          :tabindex="tab === item.key ? 0 : -1"
           role="tab"
-          aria-controls="today-panel"
-          @click="tab = 'today'"
+          :aria-controls="item.key === 'history' ? 'history-panel' : 'control-panel'"
+          @click="tab = item.key"
         >
-          <ScanLine :size="16" />Control de hoy</button
-        ><button
-          id="history-tab"
-          :aria-selected="tab === 'history'"
-          :tabindex="tab === 'history' ? 0 : -1"
-          role="tab"
-          aria-controls="history-panel"
-          @click="tab = 'history'"
-        >
-          <History :size="16" />Historial
+          <component :is="item.icon" :size="16" />{{ item.label }}
         </button>
       </div>
       <span class="att-muted att-small"
@@ -88,17 +90,18 @@
       {{ feedback }}
     </p>
     <div
-      v-show="tab === 'today'"
-      id="today-panel"
+      v-show="tab !== 'history'"
+      id="control-panel"
       role="tabpanel"
-      aria-labelledby="today-tab"
+      :aria-labelledby="`${tab}-tab`"
       class="att-control-grid"
     >
       <section class="att-panel att-lookup-panel">
         <div class="att-heading-row">
           <div>
-            <p class="att-eyebrow">Registrar una visita</p>
+            <p class="att-eyebrow">{{ isGeneral ? 'Gimnasio general' : 'Asistencia por horario' }}</p>
             <h2>{{ clientData ? 'Registrar visita' : 'Buscar cliente' }}</h2>
+            <p class="att-muted att-small">{{ isGeneral ? 'Registra el acceso al gimnasio con una membresía vigente.' : 'Registra la asistencia a una clase matriculada.' }}</p>
           </div>
           <span class="att-soft-icon"><UserSearch :size="22" /></span>
         </div>
@@ -142,8 +145,7 @@
               <span class="att-empty-illustration"><ScanLine :size="38" /></span>
               <h3>Todo comienza con el DNI</h3>
               <p>
-                Encuentra al cliente, revisa su membresía<br />y registra la
-                visita en su horario.
+                Encuentra al cliente, revisa su membresía<br />y {{ isGeneral ? 'registra su entrada al gimnasio.' : 'registra la visita en su horario.' }}
               </p>
               <span class="att-muted att-small"
                 ><Clock3 :size="14" />Fecha y hora de Perú</span
@@ -152,6 +154,7 @@
           </div>
           <div class="att-slide att-slide-result" :inert="!clientData">
             <button
+              ref="resultBack"
               type="button"
               class="att-back"
               @click="backToSearch"
@@ -202,6 +205,35 @@
                 <strong>No se puede registrar la entrada.</strong>
                 {{ clientBlock }}
               </p>
+              <div v-if="isGeneral" class="att-general-visit">
+                <div class="att-heading-row">
+                  <div>
+                    <h3>{{ openVisit ? 'El cliente ya está dentro' : 'Una visita a su ritmo' }}</h3>
+                    <p class="att-muted att-small">{{ openVisit ? 'Registra su salida antes de abrir otra visita.' : 'Acceso general sin seleccionar un horario. La hora se guarda automáticamente.' }}</p>
+                  </div>
+                  <span class="att-soft-icon"><Users :size="22" /></span>
+                </div>
+                <article v-if="openVisit" class="att-row is-inside" :class="{ 'is-saved': savedKey === `exit-${openVisit.id_asistencia}` }">
+                  <div class="att-row-main">
+                    <h4>{{ services[openVisit.servicio] || openVisit.servicio }}</h4>
+                    <p class="att-muted">Entrada {{ shortTime(openVisit.hora_entrada || openVisit.hora) }} · {{ dateLabel(openVisit.fecha) }}</p>
+                    <span class="att-badge dentro">Dentro del gimnasio</span>
+                  </div>
+                  <button class="att-button att-primary" :disabled="Boolean(busy)" @click="exitRecord(openVisit)">
+                    <LogOut :size="16" />{{ busy === `exit-${openVisit.id_asistencia}` ? 'Guardando…' : 'Registrar salida' }}
+                  </button>
+                </article>
+                <template v-else>
+                  <p v-if="clientData.general?.motivo && !clientBlock" class="att-blocked-reason" role="status">
+                    <Info :size="16" />{{ clientData.general.motivo }}
+                  </p>
+                  <button class="att-button att-primary att-general-entry" :disabled="!clientData.general?.puede_entrar || Boolean(busy)" @click="enterGeneral">
+                    <LogIn :size="17" />{{ busy === 'general-entry' ? 'Guardando…' : 'Registrar entrada al gimnasio' }}
+                  </button>
+                  <p class="att-muted att-small">Puedes registrar otra visita el mismo día después de cerrar la anterior.</p>
+                </template>
+              </div>
+              <template v-else>
               <div class="att-heading-row att-schedule-heading">
                 <h3>
                   {{
@@ -305,6 +337,7 @@
                   >Ir a matrículas <ArrowRight :size="15"
                 /></router-link>
               </div>
+              </template>
             </div>
           </div>
         </div>
@@ -314,10 +347,10 @@
         <div class="att-heading-row">
           <div>
             <p class="att-eyebrow">En este momento</p>
-            <h2>Entradas sin salida</h2>
+            <h2>{{ isGeneral ? 'Visitas generales sin salida' : 'Horarios sin salida' }}</h2>
           </div>
           <span class="att-count">{{
-            summary?.pendientes?.length ?? '—'
+            summary ? pendingSorted.length : '—'
           }}</span>
         </div>
         <p class="att-muted att-small">
@@ -331,7 +364,7 @@
           <p>No pudimos cargar la actividad.</p>
           <button class="att-link" @click="refresh">Reintentar</button>
         </div>
-        <div v-else-if="!summary.pendientes.length" class="att-empty">
+        <div v-else-if="!pendingSorted.length" class="att-empty">
           <CircleCheck :size="30" />
           <h3>Todo al día</h3>
           <p>No hay entradas pendientes de salida.</p>
@@ -354,7 +387,7 @@
             </div>
             <div class="att-person-bottom">
               <span
-                >{{ services[record.servicio]
+                >{{ services[record.servicio] || record.servicio
                 }}<small
                   >Entrada {{ shortTime(record.hora_entrada || record.hora)
                   }}<span
@@ -384,8 +417,7 @@
         <div class="att-aside-note">
           <ShieldCheck :size="18" />
           <p>
-            Las entradas requieren cuenta activada, membresía vigente y horario
-            habilitado.
+            {{ isGeneral ? 'Las visitas generales requieren cuenta activada y membresía pagada y vigente.' : 'Las entradas por horario requieren cuenta activada, membresía vigente y horario habilitado.' }}
           </p>
         </div>
       </aside>
@@ -424,6 +456,7 @@ import {
   attendanceEntry,
   attendanceExit,
   attendanceGet,
+  generalAttendanceEntry,
 } from '../services/attendanceService';
 import {
   dateLabel,
@@ -437,6 +470,11 @@ import {
 import AttendanceHistory from '../components/attendance/AttendanceHistory.vue';
 import '../styles/attendance.css';
 const { token } = useAuth();
+const attendanceTabs = [
+  { key: 'today', label: 'Por horarios', icon: ScanLine },
+  { key: 'general', label: 'Gimnasio general', icon: Users },
+  { key: 'history', label: 'Historial', icon: History },
+];
 const tab = ref('today'),
   summary = ref(null),
   dni = ref(''),
@@ -444,6 +482,9 @@ const tab = ref('today'),
   lookupError = ref(''),
   error = ref(''),
   feedback = ref('');
+const isGeneral = computed(() => tab.value === 'general');
+const openVisit = computed(() => clientData.value?.general?.asistencia_abierta);
+const generalRequests = new Map();
 const searching = ref(false),
   refreshing = ref(false),
   busy = ref('');
@@ -492,18 +533,16 @@ const handleTabKey = async (event) => {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
   event.preventDefault();
   const tablist = event.currentTarget;
-  tab.value =
-    event.key === 'Home'
-      ? 'today'
-      : event.key === 'End'
-        ? 'history'
-        : tab.value === 'today'
-          ? 'history'
-          : 'today';
+  const keys = attendanceTabs.map((item) => item.key);
+  const index = keys.indexOf(tab.value);
+  tab.value = event.key === 'Home' ? keys[0]
+    : event.key === 'End' ? keys.at(-1)
+    : keys[(index + (event.key === 'ArrowRight' ? 1 : -1) + keys.length) % keys.length];
   await nextTick();
   tablist.querySelector('[aria-selected="true"]')?.focus();
 };
 const dniInput = ref(null);
+const resultBack = ref(null);
 const savedKey = ref('');
 const now = ref(Date.now());
 const clearClient = () => {
@@ -542,7 +581,13 @@ const lookupClient = async ({ silent = false } = {}) => {
   }
   try {
     const data = await attendanceGet('/cliente', { dni: query }, token.value);
-    if (request === searchNumber) clientData.value = data;
+    if (request === searchNumber) {
+      clientData.value = data;
+      if (!silent) {
+        await nextTick();
+        resultBack.value?.focus();
+      }
+    }
   } catch (err) {
     if (request === searchNumber) {
       const text = err?.message || 'No se pudo consultar al cliente.';
@@ -613,7 +658,9 @@ const isSaved = (item) =>
 // Entradas sin salida: primero las más antiguas (las más urgentes de revisar).
 const pendingSorted = computed(() => {
   const at = (r) => `${r.fecha}${r.hora_entrada || r.hora || ''}`;
-  return [...(summary.value?.pendientes || [])].sort((a, b) =>
+  return (summary.value?.pendientes || []).filter((r) =>
+    isGeneral.value ? r.tipo === 'general' : r.tipo !== 'general',
+  ).sort((a, b) =>
     at(a).localeCompare(at(b)),
   );
 });
@@ -635,10 +682,23 @@ const enter = (item) =>
     () => attendanceEntry(item.id_matricula, token.value),
     'Entrada registrada correctamente.',
   );
+const enterGeneral = () => {
+  const clientDni = clientData.value?.cliente.dni;
+  if (!clientDni || !clientData.value?.general?.puede_entrar) return;
+  if (!generalRequests.has(clientDni)) generalRequests.set(clientDni, crypto.randomUUID());
+  return mutate('general-entry', async () => {
+    await generalAttendanceEntry(clientDni, generalRequests.get(clientDni), token.value);
+    generalRequests.delete(clientDni);
+  }, 'Entrada general registrada correctamente. ¡Buen entrenamiento!');
+};
 const exitRecord = (record) =>
   mutate(
     `exit-${record.id_asistencia}`,
-    () => attendanceExit(record.id_asistencia, token.value),
+    async () => {
+      await attendanceExit(record.id_asistencia, token.value);
+      // Una visita cerrada permite iniciar un nuevo intento de entrada.
+      if (record.tipo === 'general') generalRequests.delete(record.cliente_dni);
+    },
     'Salida registrada correctamente.',
   );
 onMounted(() => {
@@ -670,10 +730,10 @@ onUnmounted(() => {
   gap: 8px;
   margin: 0;
   padding: 10px 12px;
-  border: 1px solid #f0c98f;
+  border: 1px solid var(--att-warm);
   border-radius: 10px;
-  background: #fff6e8;
-  color: #7a4b00;
+  background: var(--att-warm-bg);
+  color: var(--att-warm);
   font-size: 0.9rem;
   line-height: 1.4;
 }
@@ -705,7 +765,7 @@ onUnmounted(() => {
   align-items: flex-start;
   gap: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #ece9e6;
+  border-bottom: 1px solid var(--app-border);
 }
 .att-ficha-body {
   min-width: 0;
@@ -729,13 +789,13 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px 16px;
   padding: 14px 16px;
-  border: 1px solid #e7e4e1;
+  border: 1px solid var(--app-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--app-surface);
 }
 .att-row.is-today {
-  background: #fcfaf9;
-  border-color: #d9d3ce;
+  background: var(--app-surface-soft);
+  border-color: var(--app-border-strong);
 }
 .att-row-title {
   display: flex;
@@ -815,11 +875,16 @@ onUnmounted(() => {
   .att-tabs {
     display: flex;
     width: 100%;
+    overflow-x: auto;
   }
   .att-tabs button {
     flex: 1;
     justify-content: center;
     min-height: 44px;
+    white-space: nowrap;
+    padding: 10px;
+    font-size: 11px;
+    gap: 5px;
   }
   .att-search {
     display: grid;
@@ -884,7 +949,7 @@ onUnmounted(() => {
 }
 .att-person {
   padding: 12px 14px;
-  border: 1px solid #ece9e6;
+  border: 1px solid var(--app-border);
   border-radius: 12px;
 }
 .att-person-bottom {
@@ -931,7 +996,7 @@ onUnmounted(() => {
 
 /* Estado de cada horario: se nota de un vistazo quién está dentro */
 .att-row.is-inside {
-  border-left: 3px solid #2f7d4f;
+  border-left: 3px solid var(--att-good);
 }
 /* Confirmación visual en la fila que se acaba de guardar */
 .att-row.is-saved {
@@ -939,11 +1004,11 @@ onUnmounted(() => {
 }
 @keyframes att-saved {
   from {
-    background: #e6f4ea;
-    box-shadow: 0 0 0 3px #b9dfc5;
+    background: var(--att-good-bg);
+    box-shadow: 0 0 0 3px var(--att-good);
   }
   to {
-    background: #fcfaf9;
+    background: var(--app-surface);
     box-shadow: 0 0 0 0 transparent;
   }
 }
@@ -954,10 +1019,92 @@ onUnmounted(() => {
 }
 /* Visitas de días anteriores: necesitan revisión */
 .att-person.is-overdue {
-  border-color: #f0c98f;
-  background: #fff9f0;
+  border-color: var(--att-warm);
+  background: var(--att-warm-bg);
 }
 .att-elapsed {
   font-variant-numeric: tabular-nums;
+}
+.att-general-visit {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: var(--app-surface-soft);
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+}
+.att-general-entry {
+  width: 100%;
+}
+.att-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+.att-capacity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+  border-radius: 12px;
+}
+.att-capacity-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.att-capacity small {
+  display: block;
+  color: var(--app-text-muted);
+  font-size: 11px;
+  margin-top: 3px;
+}
+.att-capacity progress {
+  width: 160px;
+  height: 8px;
+  accent-color: var(--att-good);
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  appearance: none;
+  background: var(--app-surface-strong);
+}
+.att-capacity progress::-webkit-progress-bar {
+  background: var(--app-surface-strong);
+}
+.att-capacity progress::-webkit-progress-value {
+  background: var(--att-good);
+  border-radius: 8px;
+}
+.att-capacity progress::-moz-progress-bar {
+  background: var(--att-good);
+}
+.att-capacity.is-full {
+  border-color: var(--att-warm);
+}
+.att-capacity.is-full progress {
+  accent-color: var(--att-warm);
+}
+.att-capacity.is-full progress::-webkit-progress-value {
+  background: var(--att-warm);
+}
+.att-capacity.is-full progress::-moz-progress-bar {
+  background: var(--att-warm);
+}
+@media (max-width: 480px) {
+  .att-tabs button svg { display: none; }
+  .att-capacity progress { width: 100%; }
 }
 </style>

@@ -156,3 +156,19 @@ docker compose up -d --no-build
 docker compose ps
 ```
 Para 2026
+
+## Asistencia general del gimnasio
+
+La vista de Asistencias incluye «Por horarios», «Gimnasio general» e «Historial».
+Las visitas generales requieren una cuenta activada y una membresía pagada y
+vigente, y permiten registrar nuevas visitas el mismo día al cerrar la anterior.
+Ambos tipos de asistencia comparten el aforo y la regla de una sola entrada
+abierta por cliente. El cliente consulta sus visitas en su calendario e historial.
+
+Antes de usar el registro general, ejecuta
+[`backend/migrations/013_general_attendance.sql`](backend/migrations/013_general_attendance.sql)
+en el SQL Editor de Supabase, después de la migración `005_harden_attendance.sql`.
+No se crea una tabla nueva: se reutiliza `ASISTENCIA`, con `servicio = 'gimnasio'`
+y matrícula/horario nulos. La migración actualiza la función `guardar_asistencia`
+y conserva los registros, la auditoría y los permisos existentes. Puede ejecutarse
+de nuevo sin duplicar datos. Luego publica el backend y frontend actualizados.
