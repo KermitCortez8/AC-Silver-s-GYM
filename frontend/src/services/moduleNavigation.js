@@ -1,8 +1,8 @@
 export const MAX_MODULE_WAIT_MS = 3_000;
 const MODULE_FADE_OUT_MS = 220;
 
-// La espera visual termina al cargar la vista y sus datos, o al alcanzar el límite.
-// Las consultas lentas continúan; el temporizador nunca cancela ni oculta errores.
+// La navegación termina al montar la vista. Sus datos tienen indicadores propios;
+// una consulta pendiente en otra sección no debe bloquear la pantalla actual.
 export const createModuleLoader = ({
   onChange,
   schedule = setTimeout,
@@ -10,8 +10,6 @@ export const createModuleLoader = ({
 } = {}) => {
   let timer = null;
   let active = false;
-  let ready = false;
-  let syncing = false;
   let revision = 0;
 
   const stop = () => {
@@ -20,16 +18,11 @@ export const createModuleLoader = ({
     if (active) onChange(false);
     active = false;
   };
-  const finish = () => {
-    if (ready && !syncing) stop();
-  };
-
   return {
     start() {
       if (timer !== null) cancel(timer);
       const current = ++revision;
       active = true;
-      ready = false;
       onChange(true);
       // Reserva la animación de salida para que la espera completa no exceda 3s.
       timer = schedule(() => {
@@ -39,12 +32,7 @@ export const createModuleLoader = ({
     },
     complete(current) {
       if (current !== revision) return;
-      ready = true;
-      finish();
-    },
-    setSyncing(value) {
-      syncing = value;
-      finish();
+      stop();
     },
     stop,
     dispose() {
