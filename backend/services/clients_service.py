@@ -26,6 +26,34 @@ class ClientsService:
     def list_clients(self) -> list[dict[str, Any]]:
         return self.gym.clientes_normalized()
 
+    def list_membership_payments(self) -> list[dict[str, Any]]:
+        """Consulta el historial completo usando los cobros guardados en cada membresía."""
+        self.gym.ensure_fresh()
+        state = self.gym.state
+        clients = {int(c["id_cliente"]): c for c in state.get("clientes", [])}
+        plans = {int(p["id_pm"]): p for p in state.get("planes_membresia", [])}
+        payments = []
+        for membership in state.get("membresia", []):
+            client_id = int(membership.get("id_cliente", 0) or 0)
+            client = clients.get(client_id, {})
+            plan = plans.get(int(membership.get("id_pm", 0) or 0), {})
+            # Solo se exponen los campos necesarios, nunca credenciales del cliente.
+            payments.append({
+                "id_membresia": membership["id_membresia"],
+                "id_cliente": client_id,
+                "id_usuario": client.get("id_usuario") or f"SGCLI{client_id:03d}",
+                "nombre": client.get("nombre") or "Cliente no disponible",
+                "correo": client.get("correo") or "",
+                "dni": client.get("dni") or "",
+                "plan": plan.get("nombre_plan") or "Plan no disponible",
+                "monto_pago": float(membership.get("monto_pago", 0) or 0),
+                "estado_pago": str(membership.get("estado_pago") or "SIN_REGISTRO").upper(),
+                "metodo_pago": str(membership.get("metodo_pago") or "").lower(),
+                "referencia_pago": membership.get("referencia_pago") or "",
+                "fecha_pago": membership.get("fecha_pago") or "",
+            })
+        return sorted(payments, key=lambda p: int(p["id_membresia"]), reverse=True)
+
     # Obtiene los datos necesarios.
     def get_client(self, id_usuario: str) -> dict[str, Any] | None:
         normalized = str(id_usuario or "").strip().upper()

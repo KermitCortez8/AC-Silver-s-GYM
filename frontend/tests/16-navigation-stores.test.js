@@ -123,6 +123,25 @@ test('section changes reuse synced data; refresh and a new session fetch it agai
   assert.equal(calls, initialCalls * 3);
 });
 
+test('payments section fetches membership history and refreshes confirmed Stripe payments', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const calls = [];
+  let status = 'PENDIENTE';
+  globalThis.fetch = async (url) => {
+    calls.push(url);
+    assert.ok(url.endsWith('/pagos/membresias'));
+    return json([{ id_membresia: 1, estado_pago: status, metodo_pago: 'stripe' }]);
+  };
+  await gym.fetchFromBackend({ section: 'payments' });
+  assert.equal(calls.length, 1);
+  assert.equal(gym.membershipPayments[0].estado_pago, 'PENDIENTE');
+  status = 'PAGADO';
+  await gym.fetchFromBackend({ section: 'payments', force: true });
+  assert.equal(calls.length, 2);
+  assert.equal(gym.membershipPayments[0].estado_pago, 'PAGADO');
+});
+
 test('synced data expires after thirty seconds', async (t) => {
   let now = 0;
   t.mock.method(Date, 'now', () => now);
@@ -346,7 +365,7 @@ test('trainer requests keep the loading indicator until concurrent section loads
 });
 
 
-test('inventory, orders, promotions and settings load only their own data', async () => {
+test('inventory, orders, promotions and payments load only their own data', async () => {
   auth.token = token;
   auth.userRole = 'admin';
   const paths = [];
@@ -364,8 +383,8 @@ test('inventory, orders, promotions and settings load only their own data', asyn
   await gym.fetchFromBackend({ section: 'promotions' });
   assert.deepEqual(paths.sort(), ['/api/planes-membresia', '/api/promociones']);
   paths.length = 0;
-  await gym.fetchFromBackend({ section: 'settings' });
-  assert.deepEqual(paths.sort(), ['/api/asistencia', '/api/gym/configuracion']);
+  await gym.fetchFromBackend({ section: 'payments' });
+  assert.deepEqual(paths.sort(), ['/api/pagos/membresias']);
 });
 
 test('admin store shares its resources with inventory and orders', async () => {

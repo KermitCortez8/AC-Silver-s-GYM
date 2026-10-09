@@ -79,7 +79,7 @@ export const sectionForPath = (path) => {
   if (panel === 'admin') return ({
     dashboard: 'dashboard', clients: 'clients', users: 'users',
     plans: 'plans', promotions: 'promotions', inventory: 'inventory',
-    store: 'store', orders: 'orders', settings: 'settings',
+    store: 'store', orders: 'orders', payments: 'payments', settings: 'payments',
     'service-schedules': 'schedules', enrollment: 'enrollment',
     attendance: 'attendance',
   })[section] || 'dashboard';
