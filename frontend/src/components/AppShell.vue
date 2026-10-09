@@ -277,7 +277,7 @@ import {
   Dumbbell,
   Home,
   Package,
-  Settings,
+  CreditCard,
   ShoppingBag,
   Tags,
   TicketCheck,
@@ -404,9 +404,9 @@ const navigationLinks = computed(() => {
         icon: ClipboardList,
       },
       {
-        label: 'Config',
-        to: '/admin/settings',
-        icon: Settings,
+        label: 'Pagos',
+        to: '/admin/payments',
+        icon: CreditCard,
       },
     ];
   }
@@ -535,7 +535,7 @@ const moduleNamesMap = {
   '/admin/inventory': 'Inventario General',
   '/admin/store': 'Tienda Gimnasio',
   '/admin/orders': 'Pedidos & Ventas',
-  '/admin/settings': 'Configuración de Sistema',
+  '/admin/payments': 'Pagos de Membresías',
   '/user/dashboard': 'Mi Panel Principal',
   '/user/store': 'Tienda Virtual',
   '/user/schedule': 'Mis Horarios',

@@ -10,6 +10,8 @@ export const attendanceGet = (path, params, token) => {
 };
 export const attendanceEntry = (id, token) =>
   apiPost('/asistencia/entrada', { id_matricula: id }, token);
+export const generalAttendanceEntry = (dni, requestId, token) =>
+  apiPost('/asistencia/general/entrada', { dni, request_id: requestId }, token);
 export const attendanceExit = (id, token) =>
   apiPost('/asistencia/salida', { id_asistencia: id }, token);
 export const attendanceCorrect = (id, payload, token) =>
