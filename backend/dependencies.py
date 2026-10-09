@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 import logging
+import re
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
@@ -19,8 +20,8 @@ from utils.security import verify_session_token
 
 logger = logging.getLogger(__name__)
 
-# Datos usados por cada consulta. Las operaciones de usuarios solo usan USUARIO;
-# las demás escrituras y rutas nuevas validan el estado completo del gimnasio.
+# Datos usados por cada consulta. Las escrituras de personal y stock se acotan
+# a sus tablas; las demás escrituras y rutas nuevas validan el estado completo.
 READ_RESOURCES = {
     "/auth/me": (),
     "/clientes": ("clientes", "membresia"),
@@ -65,6 +66,14 @@ def _resources_for_request(request: Request | None):
         request.method == "DELETE" and path.startswith("/usuarios/")
     ):
         resources = ("usuario",)
+    elif (
+        (request.method == "POST" and path in {"/inventario", "/inventario/movimientos", "/tienda"})
+        or (request.method == "PUT" and re.fullmatch(r"/inventario/movimientos/\d+", path))
+        or (request.method == "DELETE" and re.fullmatch(r"/(?:inventario|tienda)/\d+", path))
+    ):
+        resources = ("inventario", "productos_tienda", "mov_inv", "usuario")
+    elif request.method == "PUT" and re.fullmatch(r"/tienda/pedidos/\d+", path):
+        resources = ("pedidos_tienda", "inventario", "productos_tienda", "mov_inv", "usuario")
     elif request.method == "GET":
         resources = READ_RESOURCES.get(path)
         if path.startswith("/clientes/") and path.endswith("/membresias"):

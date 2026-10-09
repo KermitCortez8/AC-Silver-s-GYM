@@ -15,7 +15,7 @@
       </article>
     </section>
 
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
@@ -39,7 +39,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-white/10">
-              <tr v-for="movement in filteredMovements" :key="movement.key" :class="movement.isCancelled ? 'opacity-60' : ''">
+              <tr v-for="movement in pageItems" :key="movement.key" :class="movement.isCancelled ? 'opacity-60' : ''">
                 <td class="px-4 py-3 text-slate-300">{{ formatDate(movement.fecha) }}</td>
                 <td class="px-4 py-3 font-bold text-white">{{ movement.producto }}</td>
                 <td class="px-4 py-3 text-amber-200">-{{ movement.cantidad }}</td>
@@ -58,24 +58,28 @@
         </div>
       </div>
       <p v-else class="mt-5 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">Sin ventas registradas en la tienda.</p>
+      <TablePagination v-model:page="page" :page-count="pageCount" :total="filteredMovements.length" />
     </section>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
+import TablePagination from '../TablePagination.vue';
+import { useTablePagination } from '../../composables/useTablePagination.js';
 import { useGymStore } from '../../stores/gymStore';
 
 const gymStore = useGymStore();
 const search = ref('');
+const clientsById = computed(() => new Map((gymStore.members || []).map((member) => [Number(member.id_cliente), member])));
+const clientsByDni = computed(() => new Map((gymStore.members || []).filter((member) => member.dni).map((member) => [member.dni, member])));
 
 /**
  * Obtiene el cliente del pedido, completando sus datos con la lista de clientes.
  */
 const orderClient = (order) => {
   const dni = String(order.cliente_dni || '').trim();
-  const member = (gymStore.members || []).find((entry) =>
-    (order.id_cliente && Number(entry.id_cliente) === Number(order.id_cliente)) || (dni && entry.dni === dni));
+  const member = (order.id_cliente && clientsById.value.get(Number(order.id_cliente))) || (dni && clientsByDni.value.get(dni));
   const savedName = order.cliente_nombre && order.cliente_nombre !== 'Cliente' ? order.cliente_nombre : '';
   return { name: member?.name || savedName, dni: dni || member?.dni || '' };
 };
@@ -108,13 +112,16 @@ const filteredMovements = computed(() => {
   if (!query) return movements.value;
   return movements.value.filter((movement) => [movement.producto, movement.cliente, movement.clienteDni, movement.idPedido, movement.estado].join(' ').toLowerCase().includes(query));
 });
+const { page, pageCount, pageItems } = useTablePagination(filteredMovements);
 
 /**
  * Formatea el valor para mostrarlo.
  */
+const dateFormatter = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
 const formatDate = (value) => {
   if (!value) return 'Sin fecha';
-  return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Sin fecha' : dateFormatter.format(date);
 };
 
 /**

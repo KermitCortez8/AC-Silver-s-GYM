@@ -39,10 +39,13 @@ def _gateway(settings: Any) -> StripeService:
 
 
 # Con Supabase, recarga el estado si la caché ya venció (los pedidos pueden venir de otra petición).
-def _refrescar(gym: GymDomainService) -> None:
+def _refrescar(gym: GymDomainService, resources=None) -> None:
     ensure_fresh = getattr(gym, "ensure_fresh", None)
     if callable(ensure_fresh):
-        ensure_fresh()
+        if resources is None:
+            ensure_fresh()
+        else:
+            ensure_fresh(resources=resources)
 
 
 def _cliente_de(clients_service: Any, usuario: Any) -> dict[str, Any] | None:
@@ -208,7 +211,7 @@ def cancelar_por_sesion_expirada(checkout: Any, gym: GymDomainService) -> None:
 
 def cerrar_sesion_si_pago_pendiente(gym: GymDomainService, settings: Any, id_pedido: int) -> None:
     """Antes de que un admin cancele un pedido sin cobrar, cierra su sesión de Stripe para que nadie lo pague después."""
-    _refrescar(gym)
+    _refrescar(gym, resources=("pedidos_tienda", "inventario", "productos_tienda", "mov_inv", "usuario"))
     pedido = gym.get_pedido_tienda(id_pedido)
     if not pedido or _esta_pagado(pedido) or _esta_cancelado(pedido):
         return

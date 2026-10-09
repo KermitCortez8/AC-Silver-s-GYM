@@ -61,9 +61,14 @@ export const prepareNavigationSession = async (auth, to, from) => {
   }
 };
 
-export const sectionForPath = (path) => {
+export const sectionForPath = (path, query = {}) => {
   const [, panel, section] = path.split('/');
   if (panel === 'trainer') return 'trainer';
+  if (panel === 'admin' && section === 'inventory')
+    return query.tab === 'movimientos' ? 'inventory' : 'inventory-items';
+  if (panel === 'admin' && section === 'store')
+    return query.tab === 'movimientos' ? 'store-movements' : 'store-products';
+  if (panel === 'user' && section === 'store') return 'store-products';
   if (panel === 'admin') return ({
     dashboard: 'dashboard', clients: 'clients', users: 'users',
     plans: 'plans', promotions: 'promotions', inventory: 'inventory',

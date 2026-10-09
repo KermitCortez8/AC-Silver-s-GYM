@@ -384,6 +384,12 @@ class GymDomainService:
     def _mutate_users(self, fn):
         return self._mutate(fn)
 
+    def _mutate_stock(self, fn):
+        return self._mutate(fn)
+
+    def _mutate_orders(self, fn):
+        return self._mutate(fn)
+
     # Actualiza el registro correspondiente.
     def upsert_usuario(self, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
@@ -2076,12 +2082,13 @@ class GymDomainService:
     # TIENDA_PRODUCTOS.cantidad_stock es solo una copia: el stock real vive en INVENTARIO.
     def _sincronizar_productos_tienda(self, state: dict[str, Any]) -> None:
         self._actualizar_estados_items_tienda(state)
+        items_by_id = {int(item["id_item"]): item for item in state.get("inventario", [])}
         for producto in state.get("productos_tienda", []):
             if not producto.get("id_item"):
                 # Producto aún sin vincular (antes de la migración 008): conserva su propio stock.
                 producto["estado"] = "Disponible" if int(producto.get("cantidad_stock") or 0) > 0 else "Agotado"
                 continue
-            item = self._find_item_in_state(state, producto["id_item"])
+            item = items_by_id.get(int(producto["id_item"]))
             stock = int(item.get("cantidad_stock", 0) or 0) if item else 0
             producto["cantidad_stock"] = stock
             vendible = (
@@ -2177,7 +2184,7 @@ class GymDomainService:
             self._sincronizar_productos_tienda(state)
             return item
 
-        return self._mutate(_fn)
+        return self._mutate_stock(_fn)
 
     # Elimina el ítem; si ya tiene historial o producto en tienda, lo marca como Descontinuado.
     def delete_inventario(self, id_item: int) -> dict[str, Any] | None:
@@ -2195,7 +2202,7 @@ class GymDomainService:
             state["inventario"] = [i for i in state["inventario"] if int(i.get("id_item", 0)) != int(id_item)]
             return None
 
-        return self._mutate(_fn)
+        return self._mutate_stock(_fn)
 
     # Procesa esta operación.
     def movimientos_inventario(self) -> list[dict[str, Any]]:
@@ -2231,7 +2238,7 @@ class GymDomainService:
             self._sincronizar_productos_tienda(state)
             return {"movimiento": mov, "stock_actual": item["cantidad_stock"]}
 
-        return self._mutate(_fn)
+        return self._mutate_stock(_fn)
 
     # Corrige un movimiento. Cambiar cantidad, tipo o ítem recalcula el stock por la diferencia;
     # los movimientos generados por pedidos solo admiten cambios de fecha y descripción.
@@ -2310,7 +2317,7 @@ class GymDomainService:
             item_final = self._find_item_in_state(state, nuevo_item)
             return {"movimiento": mov, "stock_actual": int(item_final.get("cantidad_stock", 0) or 0) if item_final else None}
 
-        return self._mutate(_fn)
+        return self._mutate_stock(_fn)
 
     # Procesa esta operación.
     def tickets(self) -> list[dict[str, Any]]:
@@ -3102,7 +3109,7 @@ class GymDomainService:
             self._sincronizar_productos_tienda(state)
             return producto
 
-        return self._mutate(_fn)
+        return self._mutate_stock(_fn)
 
     # Elimina el registro indicado.
     def delete_producto_tienda(self, id_producto: int) -> None:
@@ -3111,7 +3118,7 @@ class GymDomainService:
             if "productos_tienda" in state:
                 state["productos_tienda"] = [p for p in state["productos_tienda"] if int(p.get("id_producto", 0)) != int(id_producto)]
 
-        self._mutate(_fn)
+        self._mutate_stock(_fn)
 
     # Procesa esta operación.
     def pedidos_tienda(self) -> list[dict[str, Any]]:
@@ -3401,4 +3408,4 @@ class GymDomainService:
             pedido["fecha_actualizacion"] = _now_iso()
             return pedido
 
-        return self._mutate(_fn)
+        return self._mutate_orders(_fn)

@@ -1623,7 +1623,7 @@ export const useGymStore = defineStore('gym', () => {
         if (index >= 0) inventory.value[index] = item; else inventory.value.unshift(item);
         persist();
         // El alta registra su entrada en MOV_INV y un item Tipo Tienda crea su producto.
-        return fetchFromBackend({ force: true }).catch(() => {}).then(() => item);
+        return fetchFromBackend({ section: 'stock', force: true }).catch(() => {}).then(() => item);
       });
     }
 
@@ -1728,7 +1728,7 @@ export const useGymStore = defineStore('gym', () => {
         const item = inventory.value.find((entry) => entry.id === id);
         if (item) item.status = result.item?.estado || 'Descontinuado';
         persist();
-        await fetchFromBackend({ force: true }).catch(() => {});
+        await fetchFromBackend({ section: 'stock', force: true }).catch(() => {});
         return result;
       }
     }
@@ -1796,7 +1796,7 @@ export const useGymStore = defineStore('gym', () => {
 
       persist();
       // Un producto nuevo puede crear su item en Inventario y su entrada inicial.
-      await fetchFromBackend({ force: true }).catch(() => {});
+      await fetchFromBackend({ section: 'stock', force: true }).catch(() => {});
       return normalized;
     }
 
@@ -1993,7 +1993,7 @@ export const useGymStore = defineStore('gym', () => {
       if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo actualizar el pedido'));
       const saved = mergeStoreOrder(await response.json());
       // Cancelar devuelve el stock: refresca Inventario, Tienda y Movimientos.
-      if (body.estado_pedido === 'CANCELADO') await fetchFromBackend({ force: true }).catch(() => {});
+      if (body.estado_pedido === 'CANCELADO') await fetchFromBackend({ section: 'stock', force: true }).catch(() => {});
       return saved;
     }
     const order = storeOrders.value.find((entry) => Number(entry.id_pedido) === Number(idPedido));
@@ -2683,7 +2683,11 @@ export const useGymStore = defineStore('gym', () => {
         plans: ['Planes'],
         schedules: ['Horarios por servicio', 'Rutinas'],
         inventory: ['Inventario', 'Movimientos'],
+        'inventory-items': ['Inventario'],
+        stock: ['Inventario', 'Movimientos', 'Productos'],
         store: ['Productos', 'Inventario', 'Pedidos', 'Clientes'],
+        'store-products': ['Productos', 'Inventario'],
+        'store-movements': ['Pedidos', 'Clientes'],
         orders: ['Pedidos', 'Clientes'],
         promotions: ['Promociones', 'Planes', 'Clientes'],
         settings: ['Configuración', 'Asistencias'],
@@ -2695,7 +2699,7 @@ export const useGymStore = defineStore('gym', () => {
       const labels = sectionResources[section];
       if (section !== 'all' && !labels) throw new Error('Sección de datos desconocida.');
       const selectedTasks = labels ? tasks.filter(([label]) => labels.includes(label) &&
-        !(['dashboard', 'store'].includes(section) && label === 'Inventario' && !internal)) : tasks;
+        !(['dashboard', 'store', 'store-products'].includes(section) && label === 'Inventario' && !internal)) : tasks;
       await syncResources(selectedTasks.map(([label, load]) => [label, async () => {
         try {
           await resourceCache.load(scope, label, load, { force });
@@ -3153,7 +3157,7 @@ export const useGymStore = defineStore('gym', () => {
     if (!res.ok) throw new Error(await readBackendError(res, 'Error al crear movimiento de inventario'));
     const saved = await res.json();
     if (saved?.movimiento) inventoryMovements.value.unshift(saved.movimiento);
-    await fetchFromBackend({ force: true }).catch(() => { });
+    await fetchFromBackend({ section: 'stock', force: true }).catch(() => { });
     persist();
     return saved;
   };
@@ -3166,7 +3170,7 @@ export const useGymStore = defineStore('gym', () => {
     const res = await fetch(`${apiBase}/inventario/movimientos/${idMov}`, { method: 'PUT', headers: _authHeaders(), body: JSON.stringify(payload) });
     if (!res.ok) throw new Error(await readBackendError(res, 'No se pudo actualizar el movimiento'));
     const saved = await res.json();
-    await fetchFromBackend({ force: true }).catch(() => {});
+    await fetchFromBackend({ section: 'stock', force: true }).catch(() => {});
     persist();
     return saved;
   };

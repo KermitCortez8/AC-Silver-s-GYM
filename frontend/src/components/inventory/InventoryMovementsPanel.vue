@@ -3,7 +3,7 @@
     <p v-if="feedback" class="rounded-2xl border px-4 py-3 text-sm" :class="feedbackClass">{{ feedback }}</p>
 
     <section class="grid gap-5 xl:grid-cols-[420px_1fr]">
-      <form class="h-fit rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="save">
+      <form class="h-fit rounded-2xl border border-white/10 bg-white/5 p-6" @submit.prevent="save">
         <p class="text-sm uppercase tracking-[0.35em] text-slate-400">{{ editingMovement ? 'Edicion' : 'Registro' }}</p>
         <h2 class="mt-2 text-2xl font-black text-white">{{ editingMovement ? `Editar movimiento #${editingMovement.id_mov}` : 'Nuevo movimiento' }}</h2>
         <div class="mt-5 space-y-4">
@@ -39,7 +39,7 @@
         </button>
       </form>
 
-      <div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-6">
         <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
@@ -62,7 +62,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/10">
-                <tr v-for="movement in filteredMovements" :key="movement.id_mov" :class="editingMovement?.id_mov === movement.id_mov ? 'bg-amber-400/5' : ''">
+                <tr v-for="movement in pageItems" :key="movement.id_mov" :class="editingMovement?.id_mov === movement.id_mov ? 'bg-amber-400/5' : ''">
                   <td class="px-4 py-3 text-slate-300">{{ movement.fecha_movimiento || 'Sin fecha' }}</td>
                   <td class="px-4 py-3 font-bold text-white">
                     {{ itemName(movement.id_item) }}
@@ -83,6 +83,7 @@
           </div>
         </div>
         <p v-else class="mt-5 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">Sin movimientos registrados.</p>
+        <TablePagination v-model:page="page" :page-count="pageCount" :total="filteredMovements.length" />
       </div>
     </section>
   </div>
@@ -91,6 +92,8 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../../stores/authStore';
+import TablePagination from '../TablePagination.vue';
+import { useTablePagination } from '../../composables/useTablePagination.js';
 import { useGymStore } from '../../stores/gymStore';
 
 // Mismo criterio que el backend para reconocer los movimientos generados por pedidos.
@@ -109,9 +112,10 @@ const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, 
 const form = reactive(emptyForm());
 
 const itemNumber = (item) => Number(String(item.id).replace('item-', ''));
+const itemsById = computed(() => new Map(inventory.value.map((item) => [itemNumber(item), item])));
 const orderNumber = (movement) => String(movement?.descripcion || '').match(ORDER_MOVEMENT)?.[1] || '';
 const lockedByOrder = computed(() => Boolean(editingMovement.value && orderNumber(editingMovement.value)));
-const selectedItem = computed(() => inventory.value.find((item) => itemNumber(item) === Number(form.id_item)) || null);
+const selectedItem = computed(() => itemsById.value.get(Number(form.id_item)) || null);
 const isSelectedTienda = computed(() => String(selectedItem.value?.category || '').trim().toLowerCase() === 'tienda');
 
 const effect = (tipo, cantidad) => (tipo === 'entrada' ? cantidad : -cantidad);
@@ -130,7 +134,7 @@ const projectedStock = computed(() => {
 /**
  * Gestiona esta acción de la vista.
  */
-const itemName = (idItem) => inventory.value.find((item) => itemNumber(item) === Number(idItem))?.name || `Item #${idItem}`;
+const itemName = (idItem) => itemsById.value.get(Number(idItem))?.name || `Item #${idItem}`;
 /**
  * Gestiona esta acción de la vista.
  */
@@ -140,6 +144,7 @@ const filteredMovements = computed(() => {
   if (!query) return movements.value;
   return movements.value.filter((movement) => [itemName(movement.id_item), movement.tipo_movimiento, movement.descripcion].join(' ').toLowerCase().includes(query));
 });
+const { page, pageCount, pageItems } = useTablePagination(filteredMovements);
 
 /**
  * Vuelve el formulario al registro de un movimiento nuevo.

@@ -433,6 +433,14 @@ class SupabaseGymService(GymDomainService):
         # Crear, editar y eliminar personal solo modifica USUARIO.
         return self._mutate(fn, resources=("usuario",))
 
+    def _mutate_stock(self, fn):
+        # Ítems, productos y movimientos comparten el mismo saldo de almacén.
+        return self._mutate(fn, resources=("inventario", "productos_tienda", "mov_inv", "usuario"))
+
+    def _mutate_orders(self, fn):
+        # Cambiar un pedido puede devolver stock y registrar movimientos.
+        return self._mutate(fn, resources=("pedidos_tienda", "inventario", "productos_tienda", "mov_inv", "usuario"))
+
     # Procesa esta operación.
     def _mutate(self, fn, resources=None):
         with self.lock:
@@ -720,8 +728,12 @@ class SupabaseGymService(GymDomainService):
                 if inserted_rows is not None:
                     inserted_rows.append(("VENTAS", "id_venta", sale_id))
 
-            self.supabase.delete_where("DETALLE_VENTA", "id_venta", sale_id)
             detail_rows = [self._sale_detail_to_remote(sale_id, item) for item in row.get("items", [])]
+            previous_details = [self._sale_detail_to_remote(sale_id, item) for item in (previous or {}).get("items", [])]
+            # Estado y observación solo actualizan VENTAS; las líneas se conservan.
+            if previous is not None and detail_rows == previous_details:
+                continue
+            self.supabase.delete_where("DETALLE_VENTA", "id_venta", sale_id)
             if detail_rows:
                 self.supabase.insert("DETALLE_VENTA", detail_rows)
 

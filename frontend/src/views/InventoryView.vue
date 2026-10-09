@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p class="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Recursos &middot; Gestion de inventario</p>
@@ -30,7 +30,7 @@
 
     <InventoryMovementsPanel v-if="activeTab === 'movimientos'" />
 
-    <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
@@ -148,7 +148,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-white/10">
-              <tr v-for="item in filteredInventory" :key="item.id" class="transition hover:bg-white/[0.04]">
+              <tr v-for="item in pageItems" :key="item.id" class="transition hover:bg-white/[0.04]">
                 <td class="max-w-sm px-5 py-4 align-top">
                   <div class="flex items-start gap-3">
                     <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-200">
@@ -198,13 +198,15 @@
         </div>
       </div>
 
+      <TablePagination v-model:page="page" :page-count="pageCount" :total="filteredInventory.length" />
+
       <p v-if="!filteredInventory.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">
         {{ inventory.length ? 'Ningun articulo coincide con los filtros aplicados.' : 'No hay articulos en inventario. Usa "Ingresar Nuevo Articulo" para registrar el primero.' }}
       </p>
     </section>
 
     <Teleport to="body">
-      <div v-if="isEditorOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+      <div v-if="isEditorOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
         <form class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl" @submit.prevent="handleSubmit">
           <div class="flex items-start justify-between gap-4">
             <div>
@@ -317,9 +319,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { CheckCircle2, Package, Search, Tag, TrendingDown, Wrench } from 'lucide-vue-next';
+import TablePagination from '../components/TablePagination.vue';
+import { useTablePagination } from '../composables/useTablePagination.js';
 import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import { useGymStore } from '../stores/gymStore';
 
@@ -378,6 +382,8 @@ const filteredInventory = computed(() => {
     return matchesQuery && matchesCategory && matchesLocation && matchesStatus;
   });
 });
+
+const { page, pageCount, pageItems } = useTablePagination(filteredInventory);
 
 // Derivados de inventory, solo lectura.
 const operationalPercent = computed(() => {
@@ -557,9 +563,9 @@ const deleteItem = async (id) => {
   }
 };
 
-onMounted(() => {
-  gymStore.fetchFromBackend?.({ section: 'inventory' }).catch((error) => console.warn('No se pudo refrescar inventario:', error));
-});
+watch(() => activeTab.value === 'movimientos' ? 'inventory' : 'inventory-items', (section) => {
+  gymStore.fetchFromBackend({ section }).catch((error) => console.warn('No se pudo refrescar el módulo:', error));
+}, { immediate: true });
 </script>
 
 <style scoped>

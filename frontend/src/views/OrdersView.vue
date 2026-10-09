@@ -1,14 +1,14 @@
 <template>
   <div class="space-y-6">
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Pedidos</p>
           <h1 class="mt-2 text-3xl font-black text-white">Pedidos de tienda</h1>
           <p class="mt-2 text-slate-300">Compras generadas desde la tienda del cliente.</p>
         </div>
-        <button class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10" @click="refresh()">
-          Actualizar
+        <button class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50" :disabled="isRefreshing" @click="refresh()">
+          {{ isRefreshing ? 'Actualizando…' : 'Actualizar' }}
         </button>
       </div>
     </section>
@@ -28,7 +28,7 @@
       </article>
     </section>
 
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
@@ -45,7 +45,7 @@
       </p>
 
       <div v-if="filteredOrders.length" class="mt-5 space-y-4">
-        <article v-for="order in filteredOrders" :key="order.id_pedido" class="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+        <article v-for="order in pageItems" :key="order.id_pedido" class="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
           <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
@@ -66,7 +66,7 @@
           <div class="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[180px_1fr_auto] md:items-end">
             <label class="space-y-2">
               <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Estado</span>
-              <select v-model="ensureDraft(order).estado_pedido" class="field-input" :disabled="isCancelled(order)">
+              <select v-model="ensureDraft(order).estado_pedido" class="field-input" :disabled="isCancelled(order) || savingOrders.has(order.id_pedido)">
                 <option>PENDIENTE</option>
                 <option>CONFIRMADO</option>
                 <option>ENTREGADO</option>
@@ -77,10 +77,10 @@
             </label>
             <label class="space-y-2">
               <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Observacion</span>
-              <input v-model="ensureDraft(order).observacion_admin" class="field-input" placeholder="Entrega, recojo, incidencia o anulacion" />
+              <input v-model="ensureDraft(order).observacion_admin" class="field-input" :disabled="savingOrders.has(order.id_pedido)" placeholder="Entrega, recojo, incidencia o anulacion" />
             </label>
-            <button class="rounded-2xl bg-amber-400 px-4 py-3 font-black text-slate-950" @click="updateOrder(order)">
-              Guardar
+            <button class="rounded-2xl bg-amber-400 px-4 py-3 font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" :disabled="savingOrders.has(order.id_pedido)" @click="updateOrder(order)">
+              {{ savingOrders.has(order.id_pedido) ? 'Guardando…' : 'Guardar' }}
             </button>
           </div>
 
@@ -106,18 +106,25 @@
       <p v-else class="mt-6 rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-slate-400">
         No hay pedidos para mostrar.
       </p>
+      <TablePagination v-model:page="page" :page-count="pageCount" :total="filteredOrders.length" />
     </section>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
+import TablePagination from '../components/TablePagination.vue';
+import { useTablePagination } from '../composables/useTablePagination.js';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
 const search = ref('');
 const feedback = ref('');
 const orderDrafts = reactive({});
+const isRefreshing = ref(false);
+const savingOrders = reactive(new Set());
+const clientsById = computed(() => new Map((gymStore.members || []).map((member) => [Number(member.id_cliente), member])));
+const clientsByDni = computed(() => new Map((gymStore.members || []).filter((member) => member.dni).map((member) => [member.dni, member])));
 
 const orderStatus = (order) => String(order.estado_pedido || '').toUpperCase();
 const isCancelled = (order) => orderStatus(order) === 'CANCELADO';
@@ -133,8 +140,7 @@ const isPaid = (order) => String(order.estado_pago || 'PAGADO').toUpperCase() ==
  */
 const clientOf = (order) => {
   const dni = String(order.cliente_dni || '').trim();
-  const member = (gymStore.members || []).find((entry) =>
-    (order.id_cliente && Number(entry.id_cliente) === Number(order.id_cliente)) || (dni && entry.dni === dni));
+  const member = (order.id_cliente && clientsById.value.get(Number(order.id_cliente))) || (dni && clientsByDni.value.get(dni));
   const savedName = order.cliente_nombre && order.cliente_nombre !== 'Cliente' ? order.cliente_nombre : '';
   return {
     name: member?.name || savedName,
@@ -153,25 +159,23 @@ const totalSales = computed(() => orders.value
   .reduce((sum, order) => sum + Number(order.total || 0), 0));
 
 const normalizedSearch = computed(() => search.value.trim().toLowerCase());
+// Los nombres y textos de búsqueda se preparan al cambiar los datos, no por tecla.
+const searchableOrders = computed(() => orders.value.map((order) => {
+  const client = clientOf(order);
+  return {
+    order,
+    text: [
+      order.id_pedido, client.name, client.email, client.dni,
+      order.estado_pago, order.estado_pedido,
+      ...(order.items || []).map((item) => item.nombre_producto),
+    ].join(' ').toLowerCase(),
+  };
+}));
 const filteredOrders = computed(() => {
   if (!normalizedSearch.value) return orders.value;
-
-  return orders.value.filter((order) => {
-    const client = clientOf(order);
-    return [
-      order.id_pedido,
-      client.name,
-      client.email,
-      client.dni,
-      order.estado_pago,
-      order.estado_pedido,
-      ...(order.items || []).map((item) => item.nombre_producto),
-    ]
-      .join(' ')
-      .toLowerCase()
-      .includes(normalizedSearch.value);
-  });
+  return searchableOrders.value.filter(({ text }) => text.includes(normalizedSearch.value)).map(({ order }) => order);
 });
+const { page, pageCount, pageItems } = useTablePagination(filteredOrders, 10);
 
 /**
  * Gestiona esta acción de la vista.
@@ -186,38 +190,34 @@ const ensureDraft = (order) => {
   return orderDrafts[order.id_pedido];
 };
 
-watch(orders, (list) => {
-  list.forEach((order) => {
-    if (!orderDrafts[order.id_pedido]) {
-      orderDrafts[order.id_pedido] = {
-        estado_pedido: order.estado_pedido || 'PENDIENTE',
-        observacion_admin: order.observacion_admin || '',
-      };
-    }
-  });
-}, { immediate: true });
-
 /**
  * Formatea el valor para mostrarlo.
  */
+const dateFormatter = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
 const formatDate = (value) => {
   if (!value) return 'Sin fecha';
-  return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Sin fecha' : dateFormatter.format(date);
 };
 
 /**
  * Actualiza los datos actuales.
  */
 const refresh = async (force = true) => {
+  if (isRefreshing.value) return;
+  isRefreshing.value = true;
   feedback.value = '';
   try {
     await gymStore.fetchFromBackend({ section: 'orders', force });
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'No se pudieron cargar los pedidos.';
+  } finally {
+    isRefreshing.value = false;
   }
 };
 
 const updateOrder = async (order) => {
+  if (savingOrders.has(order.id_pedido)) return;
   feedback.value = '';
   const draft = ensureDraft(order);
   if (draft.estado_pedido === 'CANCELADO' && !isCancelled(order)) {
@@ -231,10 +231,13 @@ const updateOrder = async (order) => {
       return;
     }
   }
+  savingOrders.add(order.id_pedido);
   try {
     await gymStore.updateStoreOrderStatus(order.id_pedido, draft);
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'No se pudo actualizar el pedido.';
+  } finally {
+    savingOrders.delete(order.id_pedido);
   }
 };
 

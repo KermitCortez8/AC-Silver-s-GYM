@@ -9,6 +9,8 @@ from routes.auth_routes import router as auth_router
 from routes.attendance_routes import router as attendance_router
 from routes.clients_routes import router as clients_router
 from routes.gym_routes import router as gym_router
+from routes.inventory_routes import router as inventory_router
+from routes.store_routes import router as store_router
 from routes.users_routes import router as users_router
 from services.supabase_gym_service import SupabaseGymService
 from utils.security import create_local_token
@@ -212,7 +214,7 @@ def scoped_api(monkeypatch):
     service = service_with_remote(remote)
     monkeypatch.setattr('dependencies._get_supabase_gym_service', lambda *_args: service)
     app = FastAPI()
-    for router in (auth_router, attendance_router, clients_router, gym_router, users_router):
+    for router in (auth_router, attendance_router, clients_router, gym_router, users_router, inventory_router, store_router):
         app.include_router(router, prefix='/api')
     token = create_local_token({'id': 'SGADM001', 'role': 'admin'})
     return TestClient(app, headers={'Authorization': f'Bearer {token}'}), remote, service
@@ -337,5 +339,65 @@ def test_failed_user_update_restores_account_without_discarding_other_sections()
     with pytest.raises(RuntimeError, match='Update failed'):
         service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Otro nombre', 'rol': 'admin'})
     assert service.state['usuario'][0]['nombre'] == 'Admin'
+    assert service.state['asistencia'] is history
+    assert service._resource_refreshed_at == {}
+
+
+def test_stock_writes_load_only_stock_tables_and_keep_inventory_product_balances(scoped_api):
+    client, remote, service = scoped_api
+    response = client.post('/api/tienda', json={
+        'nombre_producto': 'Agua', 'precio_venta': 3, 'cantidad_stock': 10,
+    })
+    assert response.status_code == 200
+    product = response.json()
+    assert set(remote.calls) == {'USUARIO', 'INVENTARIO', 'TIENDA_PRODUCTOS', 'MOV_INV'}
+    assert len(remote.calls) == 4
+    assert {write[1] for write in remote.writes} == {'INVENTARIO', 'TIENDA_PRODUCTOS', 'MOV_INV'}
+    assert service.movimientos_inventario()[0]['id_usuario'] == 'SGADM001'
+
+    response = client.post('/api/inventario/movimientos', json={
+        'id_item': product['id_item'], 'id_usuario': 'SGADM001',
+        'tipo_movimiento': 'salida', 'cantidad': 3,
+    })
+    assert response.status_code == 200
+    movement = response.json()['movimiento']
+    assert service.inventario()[0]['cantidad_stock'] == 7
+    assert service.productos_tienda()[0]['cantidad_stock'] == 7
+
+    response = client.put(f"/api/inventario/movimientos/{movement['id_mov']}", json={'cantidad': 2})
+    assert response.status_code == 200
+    assert service.inventario()[0]['cantidad_stock'] == 8
+    assert service.productos_tienda()[0]['cantidad_stock'] == 8
+
+    response = client.delete(f"/api/inventario/{product['id_item']}")
+    assert response.json()['accion'] == 'descontinuado'
+    assert service.productos_tienda()[0]['estado'] == 'Descatalogado'
+    assert len(remote.calls) == 4
+    assert service._last_refresh_at == 0
+
+
+def test_failed_stock_write_rolls_back_shared_balances_without_copying_unrelated_history():
+    class UnrelatedHistory:
+        def __deepcopy__(self, _memo):
+            pytest.fail('A stock mutation copied attendance history')
+
+    remote = RecordingRemote()
+    service = service_with_remote(remote)
+    history = [UnrelatedHistory()]
+    service.state['asistencia'] = history
+    service.upsert_producto_tienda({'nombre_producto': 'Agua', 'precio_venta': 3, 'cantidad_stock': 10})
+    previous_inventory = [dict(item) for item in service.inventario()]
+    previous_products = [dict(product) for product in service.productos_tienda()]
+    previous_movements = [dict(movement) for movement in service.movimientos_inventario()]
+
+    def fail(*_args):
+        raise RuntimeError('Update failed')
+
+    remote.update = fail
+    with pytest.raises(RuntimeError, match='Update failed'):
+        service.actualizar_movimiento_inventario(previous_movements[0]['id_mov'], {'cantidad': 12})
+    assert service.inventario() == previous_inventory
+    assert service.productos_tienda() == previous_products
+    assert service.movimientos_inventario() == previous_movements
     assert service.state['asistencia'] is history
     assert service._resource_refreshed_at == {}

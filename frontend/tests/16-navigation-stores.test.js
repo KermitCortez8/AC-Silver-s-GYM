@@ -412,6 +412,48 @@ test('admin store shares its resources with inventory and orders', async () => {
   assert.deepEqual(paths, []);
 });
 
+test('catalog tabs do not fetch histories until movements is opened', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const paths = [];
+  globalThis.fetch = async url => { paths.push(new URL(url, 'http://local').pathname); return json([]); };
+  await gym.fetchFromBackend({ section: 'store-products' });
+  assert.deepEqual(paths.sort(), ['/api/inventario', '/api/tienda']);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'inventory-items' });
+  assert.deepEqual(paths, []);
+  await gym.fetchFromBackend({ section: 'inventory' });
+  assert.deepEqual(paths, ['/api/inventario/movimientos']);
+  paths.length = 0;
+  await gym.fetchFromBackend({ section: 'store-movements' });
+  assert.deepEqual(paths.sort(), ['/api/clientes', '/api/tienda/pedidos']);
+});
+
+test('saving a product or correcting a movement refreshes shared stock without unrelated modules', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const calls = [];
+  let quantity = 10;
+  globalThis.fetch = async (url, options) => {
+    const path = new URL(url, 'http://local').pathname;
+    const method = options?.method || 'GET';
+    calls.push(`${method} ${path}`);
+    if (method === 'POST') return json({ id_producto: 1, id_item: 2, nombre_producto: 'Agua', cantidad_stock: quantity });
+    if (method === 'PUT') { quantity = 8; return json({ movimiento: { id_mov: 3 }, stock_actual: quantity }); }
+    if (path === '/api/inventario') return json([{ id_item: 2, nombre_item: 'Agua', cantidad_stock: quantity }]);
+    if (path === '/api/tienda') return json([{ id_producto: 1, id_item: 2, nombre_producto: 'Agua', cantidad_stock: quantity }]);
+    if (path === '/api/inventario/movimientos') return json([{ id_mov: 3, id_item: 2, cantidad: 2 }]);
+    throw new Error(`Unexpected request: ${method} ${path}`);
+  };
+  await gym.upsertProductoTienda({ nombre: 'Agua', precio: 3, cantidad: 10 });
+  assert.deepEqual(calls.sort(), ['GET /api/inventario', 'GET /api/inventario/movimientos', 'GET /api/tienda', 'POST /api/tienda']);
+  calls.length = 0;
+  await gym.updateInventoryMovement(3, { cantidad: 2 });
+  assert.deepEqual(calls.sort(), ['GET /api/inventario', 'GET /api/inventario/movimientos', 'GET /api/tienda', 'PUT /api/inventario/movimientos/3']);
+  assert.equal(gym.inventory[0].quantity, 8);
+  assert.equal(gym.productos_tienda[0].cantidad, 8);
+});
+
 test('trainer views share the pending overview and refresh explicitly after navigation', async () => {
   auth.token = token;
   auth.userRole = 'trainer';

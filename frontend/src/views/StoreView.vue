@@ -4,7 +4,7 @@
     <!-- ═══════════════════════════════════════════════
          HEADER
     ════════════════════════════════════════════════ -->
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <p class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
@@ -84,7 +84,7 @@
     </p>
     <StoreMovementsPanel v-if="isAdmin && activeTab === 'movimientos'" />
 
-    <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">Estado</p>
@@ -558,7 +558,7 @@
          MODAL — INGRESAR / EDITAR PRODUCTO
     ════════════════════════════════════════════════ -->
     <Teleport to="body">
-      <div v-if="isAdmin && isProductEditorOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm">
+      <div v-if="isAdmin && isProductEditorOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4">
         <form
           class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 shadow-2xl"
           @submit.prevent="handleSubmit"
@@ -788,7 +788,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { Package, Search } from 'lucide-vue-next';
 import { useRoute, useRouter } from 'vue-router';
 import StoreMovementsPanel from '../components/store/StoreMovementsPanel.vue';
@@ -1211,11 +1211,9 @@ const goToCheckout = () => {
   router.push('/user/store/payment');
 };
 
-onMounted(() => {
-  gymStore
-    .fetchFromBackend?.({ section: 'store' })
-    .catch((error) => console.warn('No se pudo refrescar tienda:', error));
-});
+watch(() => isAdmin.value && activeTab.value === 'movimientos' ? 'store-movements' : 'store-products', (section) => {
+  gymStore.fetchFromBackend({ section }).catch((error) => console.warn('No se pudo refrescar el módulo:', error));
+}, { immediate: true });
 </script>
 
 <style scoped>
