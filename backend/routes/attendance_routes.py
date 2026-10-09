@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from dependencies import get_gym_service, require_roles
-from models.attendance import AttendanceAnnulment, AttendanceCorrection, AttendanceFilters
+from models.attendance import AttendanceAnnulment, AttendanceCorrection, AttendanceFilters, GeneralAttendanceEntry
 from models.gym import AsistenciaEntradaInput, AsistenciaSalidaInput, CheckinAsistenciaDniInput, CheckinAsistenciaInput
 from services.attendance_service import AttendanceService, AttendanceConflict, DAYS
 
@@ -29,7 +29,7 @@ def run(action):
     except (RuntimeError, OSError) as error:
         # Deja en el log la causa real (RPC inexistente, tipo de dato, conexión…).
         logger.exception("Fallo al guardar o leer asistencia")
-        raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y que se haya ejecutado backend/migrations/005_harden_attendance.sql en Supabase.") from error
+        raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y las migraciones de asistencia 005 y 013 en Supabase.") from error
 
 
 @router.get("")
@@ -82,12 +82,18 @@ def week(inicio: date | None = None, user=Depends(require_roles("user")), attend
         items.append({**schedule, "id_matricula": enrollment["id_matricula"], "fecha": day, "asistencia": record})
     return {"inicio": start.isoformat(), "fin": end.isoformat(), "hoy": attendance.now().date().isoformat(),
             "horarios": sorted(items, key=lambda i: (i["fecha"], i["hora_inicio"])), "visitas": len(rows),
+            "generales": [row for row in rows if row["tipo"] == "general"],
             "visitas_por_fecha": dict(Counter(row["fecha"] for row in rows))}
 
 
 @router.post("/entrada")
 def entry(payload: AsistenciaEntradaInput, user=Depends(administrator), attendance=Depends(service)):
     return run(lambda: attendance.enter(payload.model_dump(), user))
+
+
+@router.post("/general/entrada")
+def general_entry(payload: GeneralAttendanceEntry, user=Depends(administrator), attendance=Depends(service)):
+    return run(lambda: attendance.enter_general(payload.dni, str(payload.request_id), user))
 
 
 @router.post("/checkin")

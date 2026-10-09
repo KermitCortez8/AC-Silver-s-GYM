@@ -665,6 +665,9 @@
 .att-week-event > strong {
   font-size: 12px;
 }
+.att-week-general {
+  border-top: 1px solid var(--app-border);
+}
 .att-week-event > p {
   margin: 5px 0 10px;
   font-size: 10px;

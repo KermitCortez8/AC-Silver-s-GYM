@@ -3,6 +3,7 @@ export const services = {
   musculacion: 'Musculación',
   cardio: 'Cardio',
   baile: 'Baile',
+  gimnasio: 'Gimnasio general',
 };
 export const days = {
   lunes: 'Lunes',

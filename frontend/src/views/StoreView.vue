@@ -163,7 +163,7 @@
       <!-- Tabla -->
       <div v-if="productos.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
-          <table class="ws-table store-admin-table">
+          <table class="w-full ws-table store-admin-table">
             <thead
               class="border-b ws-border ws-inset text-xs uppercase tracking-[0.16em] ws-muted"
             >
@@ -870,7 +870,7 @@ const productosFiltrados = computed(() => {
 
 // Paginación (sobre lista filtrada)
 const paginaActual = ref(1);
-const porPagina = 7;
+const porPagina = 10;
 const totalPages = computed(() => Math.ceil(productosFiltrados.value.length / porPagina));
 const paginaInicio = computed(() => (paginaActual.value - 1) * porPagina);
 const paginaFin = computed(() => Math.min(paginaInicio.value + porPagina, productosFiltrados.value.length));

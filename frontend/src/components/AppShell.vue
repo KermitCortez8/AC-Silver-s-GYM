@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell min-h-screen text-slate-50">
     <div class="relative flex min-h-screen w-full">
-      <aside class="app-sidebar hidden w-64 flex-col border-r backdrop-blur-xl lg:flex 2xl:w-72">
+      <aside class="app-sidebar hidden w-64 flex-col border-r lg:flex 2xl:w-72">
         <div class="border-b border-red-500/20 p-5 2xl:p-6">
           <p class="text-xs uppercase tracking-[0.38em] text-red-400">
             {{ APP_CONFIG.appName }}
@@ -132,7 +132,7 @@
 
       <div class="flex min-w-0 flex-1 flex-col">
         <header
-          class="app-mobile-header sticky top-0 z-20 border-b backdrop-blur-xl lg:hidden"
+          class="app-mobile-header sticky top-0 z-20 border-b lg:hidden"
         >
           <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
             <div class="min-w-0">
@@ -184,10 +184,10 @@
         </header>
 
         <main
-          class="app-main flex-1 px-3 py-4 pb-24 backdrop-blur-sm sm:px-5 sm:py-5 lg:px-6 lg:pb-8 xl:px-8 2xl:px-10"
+          class="app-main flex-1 px-3 py-4 pb-24 sm:px-5 sm:py-5 lg:px-6 lg:pb-8 xl:px-8 2xl:px-10"
         >
           <div class="mx-auto w-full max-w-[1800px]">
-            <p v-if="gymStore.isSyncing && !isNavigatingModule" role="status" class="mb-3 text-sm text-slate-400">
+            <p v-if="isActiveSectionSyncing && !isNavigatingModule" role="status" class="mb-3 text-sm text-slate-400">
               Actualizando datos…
             </p>
             <slot />
@@ -195,7 +195,7 @@
         </main>
 
         <nav
-          class="app-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t px-2 py-2 backdrop-blur-xl lg:hidden"
+          class="app-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t px-2 py-2 lg:hidden"
         >
           <div
             ref="mobileNavigation"
@@ -231,7 +231,7 @@
       <Transition name="module-loading-fade">
         <div
           v-if="isNavigatingModule"
-          class="module-loader-overlay fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 backdrop-blur-2xl transition-all"
+          class="module-loader-overlay fixed inset-0 z-[100] flex flex-col items-center justify-center p-4"
         >
           <div class="relative flex flex-col items-center space-y-5 text-center">
             <!-- Reloj y Anillo de Energía en Rojo -->
@@ -267,7 +267,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import {
@@ -277,7 +277,7 @@ import {
   Dumbbell,
   Home,
   Package,
-  Settings,
+  CreditCard,
   ShoppingBag,
   Tags,
   TicketCheck,
@@ -404,9 +404,9 @@ const navigationLinks = computed(() => {
         icon: ClipboardList,
       },
       {
-        label: 'Config',
-        to: '/admin/settings',
-        icon: Settings,
+        label: 'Pagos',
+        to: '/admin/payments',
+        icon: CreditCard,
       },
     ];
   }
@@ -510,6 +510,7 @@ const revealActiveMobileLink = async () => {
 };
 // Transición de Carga al Cambiar de Módulo
 const gymStore = useGymStore();
+const isActiveSectionSyncing = computed(() => gymStore.isSectionSyncing(sectionForPath(route.path)));
 const isNavigatingModule = ref(false);
 const targetModuleName = ref('');
 const moduleLoader = createModuleLoader({ onChange: (active) => { isNavigatingModule.value = active; } });
@@ -534,7 +535,7 @@ const moduleNamesMap = {
   '/admin/inventory': 'Inventario General',
   '/admin/store': 'Tienda Gimnasio',
   '/admin/orders': 'Pedidos & Ventas',
-  '/admin/settings': 'Configuración de Sistema',
+  '/admin/payments': 'Pagos de Membresías',
   '/user/dashboard': 'Mi Panel Principal',
   '/user/store': 'Tienda Virtual',
   '/user/schedule': 'Mis Horarios',
@@ -546,22 +547,14 @@ const loadActiveSection = (force = false) => gymStore.fetchFromBackend({
   section: sectionForPath(route.path),
 });
 
-watch(() => gymStore.isSyncing, (syncing) => moduleLoader.setSyncing(syncing), { immediate: true });
-
 let lastInactiveTimestamp = Date.now();
 const handleVisibilityChange = () => {
   if (document.hidden) {
     lastInactiveTimestamp = Date.now();
     return;
   }
-  if (Date.now() - lastInactiveTimestamp >= 5000) {
-    targetModuleName.value = moduleNamesMap[route.path] || 'Actualizando Datos';
-    const current = moduleLoader.start();
-    // Refresca únicamente los recursos de la sección visible.
-    void loadActiveSection(true).catch(() => {}).finally(() => moduleLoader.complete(current));
-  } else {
-    void loadActiveSection().catch(() => {});
-  }
+  // Volver a la pestaña actualiza los datos sin tapar una vista ya disponible.
+  void loadActiveSection(Date.now() - lastInactiveTimestamp >= 5000).catch(() => {});
 };
 
 onMounted(() => {
@@ -580,10 +573,9 @@ onMounted(() => {
       moduleLoader.stop();
       return;
     }
-    // Espera el montaje, donde cada vista inicia sus consultas de datos.
+    // Al montar la vista se puede interactuar; los datos muestran su estado dentro del módulo.
     await nextTick();
     revealActiveMobileLink();
-    moduleLoader.setSyncing(gymStore.isSyncing);
     moduleLoader.complete(current);
   });
   removeErrorHandler = router.onError(() => moduleLoader.stop());
