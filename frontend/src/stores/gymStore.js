@@ -521,6 +521,8 @@ export const useGymStore = defineStore('gym', () => {
   const membershipPayments = ref([]);
   const syncError = ref('');
   const isSyncing = ref(false);
+  const sectionSyncs = ref({});
+  const isSectionSyncing = (section) => Boolean(sectionSyncs.value[section] || sectionSyncs.value.all);
   const resourceCache = createResourceCache();
   const trainerOverviewCache = createResourceCache();
   const pendingSyncs = new Set();
@@ -2606,6 +2608,7 @@ export const useGymStore = defineStore('gym', () => {
       syncError.value = '';
     }
     activeSyncs += 1;
+    sectionSyncs.value[section] = (sectionSyncs.value[section] || 0) + 1;
     isSyncing.value = true;
 
     const sync = (async () => {
@@ -2709,6 +2712,7 @@ export const useGymStore = defineStore('gym', () => {
       }]));
     })().finally(() => {
       activeSyncs -= 1;
+      sectionSyncs.value[section] -= 1;
       isSyncing.value = activeSyncs > 0;
       pendingSyncs.delete(sync);
     });
@@ -3173,6 +3177,7 @@ export const useGymStore = defineStore('gym', () => {
   return {
     syncError,
     isSyncing,
+    isSectionSyncing,
     members,
     users,
     attendance,
