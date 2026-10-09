@@ -123,6 +123,38 @@ test('section changes reuse synced data; refresh and a new session fetch it agai
   assert.equal(calls, initialCalls * 3);
 });
 
+test('users finish loading while a previous section still has pending requests', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const clients = deferred();
+  globalThis.fetch = async (url) => {
+    if (url.endsWith('/clientes')) await clients.promise;
+    return json([]);
+  };
+  const previous = gym.fetchFromBackend({ section: 'clients' });
+  await flush();
+  assert.equal(gym.isSyncing, true);
+  assert.equal(gym.isSectionSyncing('clients'), true);
+  assert.equal(gym.isSectionSyncing('users'), false);
+  await gym.fetchFromBackend({ section: 'users' });
+  assert.equal(gym.isSyncing, true);
+  assert.equal(gym.isSectionSyncing('users'), false);
+  clients.resolve();
+  await previous;
+  assert.equal(gym.isSyncing, false);
+  assert.equal(gym.isSectionSyncing('clients'), false);
+});
+
+test('a failed users request clears only its section loading status', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  globalThis.fetch = async () => json({ detail: 'Sin conexión' }, 503);
+  await assert.rejects(gym.fetchFromBackend({ section: 'users' }), /Sin conexión/);
+  assert.equal(gym.isSectionSyncing('users'), false);
+  assert.equal(gym.isSyncing, false);
+  assert.match(gym.syncError, /Usuarios/);
+});
+
 test('synced data expires after thirty seconds', async (t) => {
   let now = 0;
   t.mock.method(Date, 'now', () => now);

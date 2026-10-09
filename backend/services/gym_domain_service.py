@@ -381,6 +381,9 @@ class GymDomainService:
             for row in self.state.get("usuario", [])
         ]
 
+    def _mutate_users(self, fn):
+        return self._mutate(fn)
+
     # Actualiza el registro correspondiente.
     def upsert_usuario(self, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
@@ -430,7 +433,7 @@ class GymDomainService:
                 state["usuario"].insert(0, item)
             return item
 
-        return self._mutate(_fn)
+        return self._mutate_users(_fn)
 
     # Elimina el registro indicado.
     def delete_usuario(self, id_usuario: Any) -> None:
@@ -440,7 +443,7 @@ class GymDomainService:
         def _fn(state: dict[str, Any]):
             state["usuario"] = [u for u in state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) != usuario_id]
 
-        self._mutate(_fn)
+        self._mutate_users(_fn)
 
     # Procesa esta operación.
     def clientes(self) -> list[dict[str, Any]]:
@@ -632,9 +635,15 @@ class GymDomainService:
     # Procesa esta operación.
     def clientes_normalized(self) -> list[dict[str, Any]]:
         self.expire_memberships()
+        latest_by_client = {}
+        for membership in self.state.get("membresia", []):
+            client_id = int(membership.get("id_cliente", 0) or 0)
+            latest = latest_by_client.get(client_id)
+            if latest is None or int(membership.get("id_membresia", 0) or 0) > int(latest.get("id_membresia", 0) or 0):
+                latest_by_client[client_id] = membership
         result = []
         for row in self.state.get("clientes", []):
-            membership = self._latest_membership_for_cliente(self.state, int(row.get("id_cliente", 0) or 0)) or {}
+            membership = latest_by_client.get(int(row.get("id_cliente", 0) or 0), {})
             result.append(
                 {
                     "id_cliente": row["id_cliente"],

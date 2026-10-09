@@ -168,6 +168,13 @@ class SupabaseGymService(GymDomainService):
         "asistencia": ("ASISTENCIA", "id_asistencia", "id_asistencia"),
     }
     SYNC_STATE_KEYS = tuple(CORE_TABLES.keys()) + ("pedidos_tienda",)
+    READ_STATE_KEYS = SYNC_STATE_KEYS + ("configuracion_gimnasio",)
+    # Estos pares se publican juntos: vigencia, stock y cupos usan ambas tablas.
+    RELATED_READS = (
+        frozenset(("clientes", "membresia")),
+        frozenset(("inventario", "productos_tienda")),
+        frozenset(("horarios_servicio", "matriculas_horario")),
+    )
 
     # Inicializa la clase.
     def __init__(self, supabase_url: str, supabase_key: str) -> None:
@@ -177,9 +184,9 @@ class SupabaseGymService(GymDomainService):
         self.missing_remote_tables: set[str] = set()
         self.state = self._seed()
         self._last_refresh_at = 0.0
+        self._resource_refreshed_at: dict[str, float] = {}
         self._validate_payment_schema()
         self._validate_store_payment_schema()
-        self._refresh_remote_state()
 
     def _validate_payment_schema(self) -> None:
         try:
@@ -284,80 +291,97 @@ class SupabaseGymService(GymDomainService):
         return {key: value for key, value in body.items() if key in columns}
 
     # Actualiza el registro correspondiente.
-    def _refresh_remote_state(self) -> None:
-        remote_state = self._seed()
+    def _read_resources(self, resources=None) -> set[str]:
+        selected = set(self.READ_STATE_KEYS if resources is None else resources)
+        if selected - set(self.READ_STATE_KEYS):
+            raise ValueError("Recurso de lectura desconocido")
+        if "pedidos_tienda" in selected:
+            selected.update(("inventario", "productos_tienda"))
+        for related in self.RELATED_READS:
+            if selected & related:
+                selected.update(related)
+        return selected
+
+    def _refresh_remote_state(self, resources=None) -> None:
+        selected = self._read_resources(resources)
+        # Una lectura parcial conserva las secciones cargadas anteriormente.
+        remote_state = dict(self.state)
 
         # Las lecturas son independientes; el estado se sustituye solo cuando todas terminan.
         # Se conserva el bloqueo de refresh/mutaciones y un límite de conexiones a Supabase.
         queries = [
-            ("plans", self._select_required, "PLANES_MEMBRESIA", "id_PM.asc"),
-            ("clients", self.supabase.select_all, "CLIENTES", "id_cliente.asc"),
-            ("memberships", self.supabase.select_all, "MEMBRESIA", "id_membresia.asc"),
-            ("users", self._select_required, "USUARIO", "id_usuario.asc"),
-            ("inventory", self._select_required, "INVENTARIO", "id_item.asc"),
-            ("inventory_moves", self._select_optional, "MOV_INV", "id_mov.desc"),
-            ("products", self._select_required, "TIENDA_PRODUCTOS", "id_producto.asc"),
-            ("sales", self._select_required, "VENTAS", "id_venta.desc"),
+            ("planes_membresia", self._select_required, "PLANES_MEMBRESIA", "id_PM.asc"),
+            ("clientes", self.supabase.select_all, "CLIENTES", "id_cliente.asc"),
+            ("membresia", self.supabase.select_all, "MEMBRESIA", "id_membresia.asc"),
+            ("usuario", self._select_required, "USUARIO", "id_usuario.asc"),
+            ("inventario", self._select_required, "INVENTARIO", "id_item.asc"),
+            ("mov_inv", self._select_optional, "MOV_INV", "id_mov.desc"),
+            ("productos_tienda", self._select_required, "TIENDA_PRODUCTOS", "id_producto.asc"),
+            ("pedidos_tienda", self._select_required, "VENTAS", "id_venta.desc"),
             ("sale_details", self._select_required, "DETALLE_VENTA", "id_detalle.asc"),
-            ("routines", self._select_required, "CATALOGO_RUTINA", "id_rutina.asc"),
-            ("schedules", self._select_required, "HORARIO", "id_horario.asc"),
-            ("service_schedules", self._select_optional, "HORARIOS_SERVICIO", "id_horario_servicio.asc"),
-            ("promotions", self._select_optional, "PROMOCIONES", "id_promocion.desc"),
-            ("enrollments", self.supabase.select_all, "MATRICULAS_HORARIO", "id_matricula.asc"),
-            ("routine_progress", self._select_optional, "RUTINA_PROGRESO", "fecha.desc"),
-            ("tickets", self._select_optional, "TICKETS_ATENCION", "id_ticket.desc"),
-            ("config_rows", self._select_optional, "CONFIGURACION_GIMNASIO", "id_config.asc"),
-            ("attendance", self.supabase.select_all, "ASISTENCIA", "id_asistencia.asc"),
+            ("catalogo_rutina", self._select_required, "CATALOGO_RUTINA", "id_rutina.asc"),
+            ("horario", self._select_required, "HORARIO", "id_horario.asc"),
+            ("horarios_servicio", self._select_optional, "HORARIOS_SERVICIO", "id_horario_servicio.asc"),
+            ("promociones", self._select_optional, "PROMOCIONES", "id_promocion.desc"),
+            ("matriculas_horario", self.supabase.select_all, "MATRICULAS_HORARIO", "id_matricula.asc"),
+            ("rutina_progreso", self._select_optional, "RUTINA_PROGRESO", "fecha.desc"),
+            ("tickets_atencion", self._select_optional, "TICKETS_ATENCION", "id_ticket.desc"),
+            ("configuracion_gimnasio", self._select_optional, "CONFIGURACION_GIMNASIO", "id_config.asc"),
+            ("asistencia", self.supabase.select_all, "ASISTENCIA", "id_asistencia.asc"),
         ]
+        queries = [query for query in queries if query[0] in selected or
+                   (query[0] == "sale_details" and "pedidos_tienda" in selected)]
         with ThreadPoolExecutor(max_workers=6) as pool:
             pending = {key: pool.submit(load, table, order=order) for key, load, table, order in queries}
             rows = {key: future.result() for key, future in pending.items()}
 
-        plans, clients, memberships = rows["plans"], rows["clients"], rows["memberships"]
-        users, inventory, inventory_moves = rows["users"], rows["inventory"], rows["inventory_moves"]
-        products, sales, sale_details = rows["products"], rows["sales"], rows["sale_details"]
-        routines, schedules, service_schedules = rows["routines"], rows["schedules"], rows["service_schedules"]
-        promotions, enrollments = rows["promotions"], rows["enrollments"]
-        routine_progress, tickets = rows["routine_progress"], rows["tickets"]
-        config_rows, attendance = rows["config_rows"], rows["attendance"]
-
-        product_names = {
-            int(row.get("id_producto", 0) or 0): str(row.get("nombre_Producto") or "")
-            for row in products
+        mappers = {
+            "planes_membresia": self._map_plan, "clientes": self._map_client,
+            "membresia": self._map_membership, "usuario": self._map_user,
+            "inventario": self._map_inventory, "mov_inv": self._map_inventory_move,
+            "productos_tienda": self._map_product, "catalogo_rutina": self._map_routine,
+            "horario": self._map_schedule, "horarios_servicio": self._map_service_schedule,
+            "promociones": self._map_promotion, "matriculas_horario": self._map_schedule_enrollment,
+            "rutina_progreso": self._map_routine_progress, "tickets_atencion": self._map_ticket,
+            "asistencia": self._map_attendance,
         }
-        details_by_sale: dict[int, list[dict[str, Any]]] = {}
-        for detail in sale_details:
-            sale_id = int(detail.get("id_venta", 0) or 0)
-            details_by_sale.setdefault(sale_id, []).append(self._map_sale_detail(detail, product_names))
-
-        remote_state["planes_membresia"] = [self._map_plan(row) for row in plans]
-        remote_state["clientes"] = [self._map_client(row) for row in clients]
-        remote_state["membresia"] = [self._map_membership(row) for row in memberships]
-        remote_state["usuario"] = [self._map_user(row) for row in users]
-        remote_state["inventario"] = [self._map_inventory(row) for row in inventory]
-        remote_state["mov_inv"] = [self._map_inventory_move(row) for row in inventory_moves]
-        remote_state["productos_tienda"] = [self._map_product(row) for row in products]
-        remote_state["pedidos_tienda"] = [self._map_sale(row, details_by_sale.get(int(row.get("id_venta", 0) or 0), [])) for row in sales]
-        remote_state["catalogo_rutina"] = [self._map_routine(row) for row in routines]
-        remote_state["horario"] = [self._map_schedule(row) for row in schedules]
-        remote_state["horarios_servicio"] = [self._map_service_schedule(row) for row in service_schedules]
-        remote_state["promociones"] = [self._map_promotion(row) for row in promotions]
-        remote_state["matriculas_horario"] = [self._map_schedule_enrollment(row) for row in enrollments]
-        remote_state["rutina_progreso"] = [self._map_routine_progress(row) for row in routine_progress]
-        remote_state["tickets_atencion"] = [self._map_ticket(row) for row in tickets]
-        remote_state["configuracion_gimnasio"] = self._map_config(config_rows[0] if config_rows else {})
-        remote_state["asistencia"] = [self._map_attendance(row) for row in attendance]
+        for key, mapper in mappers.items():
+            if key in selected:
+                remote_state[key] = [mapper(row) for row in rows[key]]
+        if "pedidos_tienda" in selected:
+            product_names = {int(row.get("id_producto", 0) or 0): str(row.get("nombre_Producto") or "")
+                             for row in rows["productos_tienda"]}
+            details_by_sale: dict[int, list[dict[str, Any]]] = {}
+            for detail in rows["sale_details"]:
+                sale_id = int(detail.get("id_venta", 0) or 0)
+                details_by_sale.setdefault(sale_id, []).append(self._map_sale_detail(detail, product_names))
+            remote_state["pedidos_tienda"] = [
+                self._map_sale(row, details_by_sale.get(int(row.get("id_venta", 0) or 0), []))
+                for row in rows["pedidos_tienda"]
+            ]
+        if "configuracion_gimnasio" in selected:
+            config_rows = rows["configuracion_gimnasio"]
+            remote_state["configuracion_gimnasio"] = self._map_config(config_rows[0] if config_rows else {})
         # Recupera la etiqueta derivada sin volver a escribir Estado=false en cada lectura.
         # Los cambios de vigencia de MEMBRESIA se persisten después en ensure_fresh.
-        apply_membership_expiration({
-            "clientes": [row for row in remote_state["clientes"] if row["estado"] == "INACTIVO"],
-            "membresia": [dict(row) for row in remote_state["membresia"]],
-        }, _today_iso())
-        self._recount_schedule_cupos(remote_state)
-        self._sincronizar_productos_tienda(remote_state)
-        self._guardar_estados_automaticos(inventory, remote_state)
+        if "clientes" in selected:
+            apply_membership_expiration({
+                "clientes": [row for row in remote_state["clientes"] if row["estado"] == "INACTIVO"],
+                "membresia": [dict(row) for row in remote_state["membresia"]],
+            }, _today_iso())
+        if "horarios_servicio" in selected:
+            self._recount_schedule_cupos(remote_state)
+        if "inventario" in selected:
+            self._sincronizar_productos_tienda(remote_state)
+            self._guardar_estados_automaticos(rows["inventario"], remote_state)
         self.state = remote_state
-        self._last_refresh_at = time.monotonic()
+        refreshed_at = time.monotonic()
+        if not hasattr(self, "_resource_refreshed_at"):
+            self._resource_refreshed_at = {}
+        self._resource_refreshed_at.update(dict.fromkeys(selected, refreshed_at))
+        # El reloj global solo acredita una carga completa, nunca una lectura parcial.
+        if selected == set(self.READ_STATE_KEYS):
+            self._last_refresh_at = refreshed_at
 
     # Guarda en INVENTARIO.Estado los estados automáticos que difieren de Supabase (por ejemplo,
     # tras cambiar un stock mínimo o al arrancar). Si falla, la lectura sigue y se reintenta luego.
@@ -376,29 +400,44 @@ class SupabaseGymService(GymDomainService):
                 item["estado"] = remotos[id_item]
 
     # Actualiza el registro correspondiente.
-    def _refresh_remote_state_if_stale(self) -> None:
-        if time.monotonic() - self._last_refresh_at >= self.REFRESH_TTL_SECONDS:
-            self._refresh_remote_state()
+    def _refresh_remote_state_if_stale(self, resources=None) -> None:
+        if resources is None:
+            if time.monotonic() - self._last_refresh_at >= self.REFRESH_TTL_SECONDS:
+                self._refresh_remote_state()
+            return
+        selected = self._read_resources(resources)
+        now = time.monotonic()
+        timestamps = getattr(self, "_resource_refreshed_at", {})
+        stale = {key for key in selected
+                 if now - timestamps.get(key, 0.0) >= self.REFRESH_TTL_SECONDS}
+        if stale:
+            self._refresh_remote_state(stale)
 
     # Procesa esta operación.
-    def ensure_fresh(self) -> None:
+    def ensure_fresh(self, resources=None) -> None:
         with self.lock:
-            self._refresh_remote_state_if_stale()
-        self.expire_memberships()
+            self._refresh_remote_state_if_stale(resources)
+        if resources is None or "clientes" in self._read_resources(resources):
+            self.expire_memberships()
 
     # Procesa esta operación.
-    def _mutation_snapshot(self) -> dict[str, Any]:
-        return {key: deepcopy(self.state.get(key, [])) for key in self.SYNC_STATE_KEYS}
+    def _mutation_snapshot(self, resources=None) -> dict[str, Any]:
+        selected = self._read_resources(resources)
+        return {key: deepcopy(self.state.get(key, [])) for key in self.SYNC_STATE_KEYS if key in selected}
 
     # Procesa esta operación.
     def _changed_state_keys(self, previous: dict[str, Any], current: dict[str, Any]) -> list[str]:
-        return [key for key in self.SYNC_STATE_KEYS if previous.get(key, []) != current.get(key, [])]
+        return [key for key in previous if previous[key] != current.get(key, [])]
+
+    def _mutate_users(self, fn):
+        # Crear, editar y eliminar personal solo modifica USUARIO.
+        return self._mutate(fn, resources=("usuario",))
 
     # Procesa esta operación.
-    def _mutate(self, fn):
+    def _mutate(self, fn, resources=None):
         with self.lock:
-            self._refresh_remote_state_if_stale()
-            previous = self._mutation_snapshot()
+            self._refresh_remote_state_if_stale(resources)
+            previous = self._mutation_snapshot(resources)
             try:
                 result = fn(self.state)
             except Exception:
@@ -423,8 +462,15 @@ class SupabaseGymService(GymDomainService):
                     except RuntimeError:
                         pass
                 self._last_refresh_at = 0.0
+                getattr(self, "_resource_refreshed_at", {}).clear()
                 raise
-            self._last_refresh_at = time.monotonic()
+            changed_at = time.monotonic()
+            if resources is None:
+                self._last_refresh_at = changed_at
+            # Las tablas no modificadas conservan su vencimiento original.
+            getattr(self, "_resource_refreshed_at", {}).update(
+                dict.fromkeys(changed_keys, changed_at)
+            )
             return result
 
     @staticmethod
@@ -523,6 +569,7 @@ class SupabaseGymService(GymDomainService):
             # La siguiente petición recarga también las matrículas creadas por
             # cualquier otra instancia del backend.
             self._last_refresh_at = 0.0
+            getattr(self, "_resource_refreshed_at", {}).clear()
 
             result = next(
                 row
@@ -551,7 +598,9 @@ class SupabaseGymService(GymDomainService):
             else:
                 self.supabase.insert("CONFIGURACION_GIMNASIO", {"id_config": 1, **body})
             self.state["configuracion_gimnasio"] = self._map_config(body)
-            self._last_refresh_at = time.monotonic()
+            getattr(self, "_resource_refreshed_at", {}).update(
+                configuracion_gimnasio=time.monotonic()
+            )
             return self.configuracion_gimnasio()
 
     # Actualiza el registro correspondiente.
