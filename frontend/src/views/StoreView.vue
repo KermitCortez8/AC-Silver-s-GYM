@@ -30,17 +30,21 @@
         </button>
       </div>
 
-      <nav v-if="isAdmin" class="mt-5 flex gap-2 border-t border-white/10 pt-5" aria-label="Secciones de tienda">
+      <nav v-if="isAdmin" class="mt-5 flex border-b border-white/10" aria-label="Secciones de tienda">
         <button
           v-for="tab in tabs"
           :key="tab.value"
           type="button"
-          class="rounded-xl px-4 py-2 text-sm font-bold transition"
-          :class="activeTab === tab.value ? 'bg-amber-400 text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/5'"
+          class="relative px-5 py-3 text-sm font-bold transition-colors duration-200"
+          :class="activeTab === tab.value ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'"
           :aria-current="activeTab === tab.value ? 'page' : undefined"
           @click="activeTab = tab.value"
         >
           {{ tab.label }}
+          <span
+            v-if="activeTab === tab.value"
+            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-400"
+          ></span>
         </button>
       </nav>
     </section>
