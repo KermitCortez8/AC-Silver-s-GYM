@@ -224,7 +224,7 @@ const updateOrder = async (order) => {
     const unidades = (order.items || []).reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
     const detalle = (order.items || []).map((item) => `- ${item.nombre_producto}: ${item.cantidad}`).join('\n');
     const ok = window.confirm(
-      `Cancelar el pedido #${order.id_pedido}?\n\nSe devolveran ${unidades} unidades al stock compartido de Inventario y Tienda:\n${detalle}\n\nUn pedido cancelado ya no puede cambiar de estado.`,
+      `Cancelar el pedido #${order.id_pedido}?\n\nSe devolveran ${unidades} unidades al stock de la Tienda:\n${detalle}\n\nUn pedido cancelado ya no puede cambiar de estado.`,
     );
     if (!ok) {
       draft.estado_pedido = order.estado_pedido || 'PENDIENTE';

@@ -34,7 +34,13 @@ def _producto_de(service: LocalGymService, id_item: int) -> dict[str, Any]:
 
 def _publicar(service: LocalGymService, id_item: int, precio: float = 25.0) -> dict[str, Any]:
     producto = _producto_de(service, id_item)
-    return service.upsert_producto_tienda({**producto, "precio_venta": precio, "categoria": "Accesorios"}, actor=ADMIN)
+    return service.upsert_producto_tienda({**producto, "precio_venta": precio, "categoria": "Accesorios"})
+
+
+def _reponer(service: LocalGymService, id_item: int, cantidad: int) -> dict[str, Any]:
+    return service.registrar_movimiento_inventario(
+        {"id_item": id_item, "id_usuario": ADMIN, "tipo_movimiento": "salida", "cantidad": cantidad, "destino": "TIENDA"}
+    )
 
 
 def _vender(service: LocalGymService, id_producto: int, cantidad: int) -> dict[str, Any]:
@@ -49,49 +55,95 @@ def _stock(service: LocalGymService, id_item: int) -> int:
     return item["cantidad_stock"]
 
 
-def test_alta_de_item_tienda_registra_entrada_y_crea_producto_oculto() -> None:
+def _stock_tienda(service: LocalGymService, id_item: int) -> int:
+    return _producto_de(service, id_item)["cantidad_stock"]
+
+
+def test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
 
     assert _stock(service, item["id_item"]) == 10
     [mov] = service.movimientos_inventario()
-    assert (mov["tipo_movimiento"], mov["cantidad"], mov["id_usuario"]) == ("entrada", 10, ADMIN)
+    assert (mov["tipo_movimiento"], mov["cantidad"], mov["id_usuario"], mov["destino"]) == ("entrada", 10, ADMIN, None)
 
     producto = _producto_de(service, item["id_item"])
-    assert producto["cantidad_stock"] == 10
+    assert producto["cantidad_stock"] == 0  # la reserva no pasa sola a la tienda
     assert producto["estado"] == "Descatalogado"  # sin precio todavía no se vende
 
 
-def test_producto_con_precio_se_publica_con_el_stock_del_inventario() -> None:
+def test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
+    _publicar(service, item["id_item"])
+
+    resultado = _reponer(service, item["id_item"], 4)
+
+    assert _stock(service, item["id_item"]) == 6
+    assert _stock_tienda(service, item["id_item"]) == 4
+    assert resultado["stock_tienda"] == 4
+    mov = resultado["movimiento"]
+    assert (mov["tipo_movimiento"], mov["cantidad"], mov["destino"]) == ("salida", 4, "TIENDA")
+    assert _producto_de(service, item["id_item"])["estado"] == "Disponible"
+
+
+def test_reponer_sin_reserva_suficiente_no_cambia_nada() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=3)
+    antes = deepcopy(service.state)
+
+    with pytest.raises(ValueError, match="Stock insuficiente"):
+        _reponer(service, item["id_item"], 5)
+
+    assert service.state["inventario"] == antes["inventario"]
+    assert service.state["productos_tienda"] == antes["productos_tienda"]
+    assert service.state["mov_inv"] == antes["mov_inv"]
+
+
+def test_reponer_exige_producto_enlazado() -> None:
+    service = _service()
+    equipo = service.upsert_inventario({"nombre_item": "Mancuerna", "tipo": "Equipo de fuerza", "cantidad_stock": 4})
+
+    with pytest.raises(ValueError, match="producto de Tienda enlazado"):
+        _reponer(service, equipo["id_item"], 1)
+    assert _stock(service, equipo["id_item"]) == 4
+
+
+def test_destino_solo_aplica_a_salidas() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
 
-    producto = _publicar(service, item["id_item"])
+    entrada = service.registrar_movimiento_inventario(
+        {"id_item": item["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "entrada", "cantidad": 2, "destino": "TIENDA"}
+    )
+    assert entrada["movimiento"]["destino"] is None
+    assert _stock_tienda(service, item["id_item"]) == 0
 
-    assert producto["estado"] == "Disponible"
-    assert producto["cantidad_stock"] == 10
+    with pytest.raises(ValueError, match="Destino inválido"):
+        service.registrar_movimiento_inventario(
+            {"id_item": item["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "salida", "cantidad": 1, "destino": "VENTA"}
+        )
 
 
-def test_venta_descuenta_stock_compartido_y_registra_salida() -> None:
+def test_venta_solo_descuenta_el_stock_de_la_tienda() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
+    _reponer(service, item["id_item"], 5)
+    movimientos = len(service.movimientos_inventario())
 
-    pedido = _vender(service, producto["id_producto"], 3)
+    _vender(service, producto["id_producto"], 3)
 
-    assert _stock(service, item["id_item"]) == 7
-    assert _producto_de(service, item["id_item"])["cantidad_stock"] == 7
-    salida = service.movimientos_inventario()[0]
-    assert salida["tipo_movimiento"] == "salida"
-    assert salida["cantidad"] == 3
-    assert salida["descripcion"].startswith(f"Venta pedido #{pedido['id_pedido']}")
-    assert salida["id_usuario"] is None
+    assert _stock_tienda(service, item["id_item"]) == 2
+    assert _stock(service, item["id_item"]) == 5
+    assert len(service.movimientos_inventario()) == movimientos
 
 
 def test_venta_sin_stock_suficiente_no_cambia_nada() -> None:
     service = _service()
-    item = _nuevo_item_tienda(service, stock=5)
+    item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
+    _reponer(service, item["id_item"], 5)
     antes = deepcopy(service.state)
 
     with pytest.raises(ValueError, match="Stock insuficiente"):
@@ -100,56 +152,40 @@ def test_venta_sin_stock_suficiente_no_cambia_nada() -> None:
             {"items": [{"id_producto": producto["id_producto"], "cantidad": 3}, {"id_producto": producto["id_producto"], "cantidad": 3}]}
         )
 
-    assert service.state["inventario"] == antes["inventario"]
-    assert service.state["mov_inv"] == antes["mov_inv"]
+    assert service.state["productos_tienda"] == antes["productos_tienda"]
     assert service.state["pedidos_tienda"] == []
 
 
-def test_cancelar_pedido_pendiente_devuelve_stock_como_entrada() -> None:
+def test_cancelar_pedido_pendiente_devuelve_stock_a_la_tienda() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
+    _reponer(service, item["id_item"], 6)
     pedido = _vender(service, producto["id_producto"], 4)
+    movimientos = len(service.movimientos_inventario())
 
-    service.actualizar_pedido_tienda(pedido["id_pedido"], {"estado_pedido": "CANCELADO"}, actor=ADMIN)
+    service.actualizar_pedido_tienda(pedido["id_pedido"], {"estado_pedido": "CANCELADO"})
 
-    assert _stock(service, item["id_item"]) == 10
-    devolucion = service.movimientos_inventario()[0]
-    assert (devolucion["tipo_movimiento"], devolucion["cantidad"]) == ("entrada", 4)
-    assert devolucion["descripcion"] == f"Devolución por cancelación del pedido #{pedido['id_pedido']}"
-    assert devolucion["id_usuario"] == ADMIN
+    assert _stock_tienda(service, item["id_item"]) == 6
+    assert _stock(service, item["id_item"]) == 4
+    assert len(service.movimientos_inventario()) == movimientos
 
     # Guardar de nuevo el pedido cancelado no devuelve stock dos veces.
     service.actualizar_pedido_tienda(pedido["id_pedido"], {"estado_pedido": "CANCELADO", "observacion_admin": "nota"})
-    assert _stock(service, item["id_item"]) == 10
-
-
-def test_cancelar_pedido_anterior_al_enlace_no_infla_el_inventario() -> None:
-    service = _service()
-    item = _nuevo_item_tienda(service, stock=10)
-    producto = _publicar(service, item["id_item"])
-    # Pedido registrado antes de enlazar: descontó el stock propio de la tienda, no el de INVENTARIO.
-    service.state["pedidos_tienda"] = [
-        {"id_pedido": 1, "estado_pedido": "PENDIENTE", "items": [{"id_producto": producto["id_producto"], "cantidad": 2}]}
-    ]
-    _vender(service, producto["id_producto"], 1)  # pedido #2, ya con salida en MOV_INV
-
-    service.actualizar_pedido_tienda(1, {"estado_pedido": "CANCELADO"})
-
-    assert _stock(service, item["id_item"]) == 9
-    assert not any(m["descripcion"].startswith("Devolución") for m in service.movimientos_inventario())
+    assert _stock_tienda(service, item["id_item"]) == 6
 
 
 def test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
+    _reponer(service, item["id_item"], 10)
     confirmado = _vender(service, producto["id_producto"], 1)
     service.actualizar_pedido_tienda(confirmado["id_pedido"], {"estado_pedido": "CONFIRMADO"})
 
     with pytest.raises(ValueError, match="PENDIENTE"):
         service.actualizar_pedido_tienda(confirmado["id_pedido"], {"estado_pedido": "CANCELADO"})
-    assert _stock(service, item["id_item"]) == 9
+    assert _stock_tienda(service, item["id_item"]) == 9
 
     cancelado = _vender(service, producto["id_producto"], 1)
     service.actualizar_pedido_tienda(cancelado["id_pedido"], {"estado_pedido": "CANCELADO"})
@@ -167,21 +203,29 @@ def test_editar_item_no_modifica_el_stock() -> None:
     assert len(service.movimientos_inventario()) == 1
 
 
-def test_producto_nuevo_desde_tienda_crea_su_item_en_inventario() -> None:
+def test_producto_nuevo_desde_tienda_crea_su_reserva_vacia() -> None:
     service = _service()
 
     producto = service.upsert_producto_tienda(
-        {"nombre_producto": "Barra proteica", "categoria": "Snacks", "precio_venta": 3.9, "cantidad_stock": 48},
-        actor=ADMIN,
+        {"nombre_producto": "Barra proteica", "categoria": "Snacks", "precio_venta": 3.9, "cantidad_stock": 48}
     )
 
     item = service.get_item_inventario(producto["id_item"])
     assert item is not None
-    assert (item["tipo"], item["cantidad_stock"]) == ("Tienda", 48)
-    assert producto["categoria"] == "Snacks"
+    assert (item["tipo"], item["cantidad_stock"]) == ("Tienda", 0)
+    assert producto["cantidad_stock"] == 48
     assert producto["estado"] == "Disponible"
-    [mov] = service.movimientos_inventario()
-    assert (mov["tipo_movimiento"], mov["cantidad"], mov["id_item"]) == ("entrada", 48, item["id_item"])
+    assert service.movimientos_inventario() == []
+
+
+def test_editar_producto_no_cambia_su_stock() -> None:
+    service = _service()
+    producto = service.upsert_producto_tienda({"nombre_producto": "Shaker", "precio_venta": 15, "cantidad_stock": 8})
+
+    editado = service.upsert_producto_tienda({**producto, "precio_venta": 18, "cantidad_stock": 99})
+
+    assert editado["cantidad_stock"] == 8
+    assert editado["precio_venta"] == 18
 
 
 def test_solo_items_tienda_y_un_producto_por_item() -> None:
@@ -233,7 +277,7 @@ def test_editar_entrada_recalcula_stock_por_la_diferencia() -> None:
 
     service.actualizar_movimiento_inventario(entrada["id_mov"], {"cantidad": 12, "descripcion": "Compra corregida"})
     assert _stock(service, item["id_item"]) == 12
-    assert _producto_de(service, item["id_item"])["cantidad_stock"] == 12
+    assert _stock_tienda(service, item["id_item"]) == 0
 
     service.registrar_movimiento_inventario({"id_item": item["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "entrada", "cantidad": 5})
     manual = service.movimientos_inventario()[0]
@@ -264,20 +308,70 @@ def test_editar_movimiento_puede_cambiar_de_item() -> None:
     assert _stock(service, shaker["id_item"]) == 4
 
 
-def test_movimientos_de_pedido_solo_editan_fecha_y_descripcion() -> None:
+def test_editar_reposicion_corrige_ambos_stocks() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
-    pedido = _vender(service, producto["id_producto"], 2)
-    salida = service.movimientos_inventario()[0]
+    mov = _reponer(service, item["id_item"], 4)["movimiento"]
+
+    service.actualizar_movimiento_inventario(mov["id_mov"], {"cantidad": 6})
+    assert (_stock(service, item["id_item"]), _stock_tienda(service, item["id_item"])) == (4, 6)
+
+    _vender(service, producto["id_producto"], 5)  # en tienda queda 1
+    with pytest.raises(ValueError, match="ya vendió"):
+        service.actualizar_movimiento_inventario(mov["id_mov"], {"cantidad": 2})
+    assert (_stock(service, item["id_item"]), _stock_tienda(service, item["id_item"])) == (4, 1)
+
+    with pytest.raises(ValueError, match="ya vendió"):
+        service.actualizar_movimiento_inventario(mov["id_mov"], {"destino": ""})
+
+    # Quitar el destino: la salida sigue en INVENTARIO, pero esas unidades salen de la tienda.
+    otra = _reponer(service, item["id_item"], 2)["movimiento"]
+    service.actualizar_movimiento_inventario(otra["id_mov"], {"destino": ""})
+    assert (_stock(service, item["id_item"]), _stock_tienda(service, item["id_item"])) == (2, 1)
+
+
+def test_salida_normal_puede_convertirse_en_reposicion() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
+    _publicar(service, item["id_item"])
+    service.registrar_movimiento_inventario({"id_item": item["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "salida", "cantidad": 3})
+    mov = service.movimientos_inventario()[0]
+
+    resultado = service.actualizar_movimiento_inventario(mov["id_mov"], {"destino": "TIENDA"})
+
+    assert resultado["movimiento"]["destino"] == "TIENDA"
+    assert (_stock(service, item["id_item"]), _stock_tienda(service, item["id_item"])) == (7, 3)
+
+
+def test_movimientos_de_pedido_solo_editan_fecha_y_descripcion() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
+    # Movimiento registrado cuando el stock estaba compartido (la migración 014 le pone destino VENTA).
+    service.state["mov_inv"].insert(
+        0,
+        {
+            "id_mov": 50,
+            "id_item": item["id_item"],
+            "id_usuario": None,
+            "tipo_movimiento": "salida",
+            "fecha_movimiento": "2026-09-01",
+            "descripcion": "Venta pedido #7 (Ana)",
+            "cantidad": 2,
+            "destino": "VENTA",
+        },
+    )
 
     with pytest.raises(ValueError, match="fecha y la descripción"):
-        service.actualizar_movimiento_inventario(salida["id_mov"], {"cantidad": 5})
+        service.actualizar_movimiento_inventario(50, {"cantidad": 5})
+    with pytest.raises(ValueError, match="fecha y la descripción"):
+        service.actualizar_movimiento_inventario(50, {"destino": "TIENDA"})
 
-    resultado = service.actualizar_movimiento_inventario(salida["id_mov"], {"descripcion": "Entregado en recepcion", "fecha_movimiento": "2026-09-20"})
-    assert resultado["movimiento"]["descripcion"] == f"Venta pedido #{pedido['id_pedido']} - Entregado en recepcion"
+    resultado = service.actualizar_movimiento_inventario(50, {"descripcion": "Entregado en recepcion", "fecha_movimiento": "2026-09-20"})
+    assert resultado["movimiento"]["descripcion"] == "Venta pedido #7 - Entregado en recepcion"
     assert resultado["movimiento"]["fecha_movimiento"] == "2026-09-20"
-    assert _stock(service, item["id_item"]) == 8
+    assert resultado["movimiento"]["destino"] == "VENTA"
+    assert _stock(service, item["id_item"]) == 10
 
 
 def test_ajuste_solo_se_corrige_si_es_el_ultimo_movimiento() -> None:
@@ -298,7 +392,7 @@ def test_ajuste_solo_se_corrige_si_es_el_ultimo_movimiento() -> None:
     assert _stock(service, item["id_item"]) == 7
 
 
-def test_producto_sin_vincular_mantiene_su_stock_hasta_la_migracion() -> None:
+def test_producto_sin_vincular_vende_con_su_propio_stock() -> None:
     service = _service()
     service.state["productos_tienda"] = [
         {"id_producto": 1, "id_item": None, "nombre_producto": "Antiguo", "precio_venta": 5.0, "cantidad_stock": 4, "stock_minimo": 1}
@@ -333,10 +427,12 @@ class FakeSupabase:
         self.calls.append(("delete_where", table, value))
 
 
-def _supabase_service(fake: FakeSupabase) -> SupabaseGymService:
+def _supabase_service(fake: FakeSupabase, en_tienda: int = 0) -> SupabaseGymService:
     local = _service()
     item = _nuevo_item_tienda(local, stock=10)
     _publicar(local, item["id_item"])
+    if en_tienda:
+        _reponer(local, item["id_item"], en_tienda)
 
     service = object.__new__(SupabaseGymService)
     service.supabase = fake  # type: ignore[assignment]
@@ -348,44 +444,61 @@ def _supabase_service(fake: FakeSupabase) -> SupabaseGymService:
     return service
 
 
-def test_mapeo_remoto_guarda_vinculo_con_inventario() -> None:
+def _actualizaciones(fake: FakeSupabase, tabla: str) -> list[dict[str, Any]]:
+    return [call[2][1] for call in fake.calls if call[0] == "update" and call[1] == tabla]
+
+
+def test_mapeo_remoto_guarda_vinculo_y_destino() -> None:
     service = object.__new__(SupabaseGymService)
 
     assert service._product_to_remote({"id_producto": 1, "id_item": 8})["id_item"] == 8
     assert service._map_product({"id_producto": 1, "id_item": 8})["id_item"] == 8
     assert service._map_product({"id_producto": 1, "id_item": None})["id_item"] is None
+    assert service._inventory_move_to_remote({"id_mov": 1, "id_item": 2, "tipo_movimiento": "salida", "destino": "tienda"})["destino"] == "TIENDA"
+    assert service._map_inventory_move({"id_mov": 1, "id_item": 2, "destino": None})["destino"] is None
 
 
-def test_venta_guarda_stock_compartido_y_salida() -> None:
+def test_reposicion_guarda_inventario_tienda_y_movimiento() -> None:
     fake = FakeSupabase()
     service = _supabase_service(fake)
+    item = service.state["inventario"][0]
+
+    _reponer(service, item["id_item"], 3)  # type: ignore[arg-type]
+
+    insertadas = {table: body for kind, table, body in fake.calls if kind == "insert"}
+    assert (insertadas["MOV_INV"]["tipo_movimiento"], insertadas["MOV_INV"]["destino"]) == ("salida", "TIENDA")
+    assert _actualizaciones(fake, "INVENTARIO")[-1]["Cantidad_Stock_E"] == 7
+    assert _actualizaciones(fake, "TIENDA_PRODUCTOS")[-1]["cantidad_stock"] == 3
+
+
+def test_venta_solo_actualiza_la_tienda_en_supabase() -> None:
+    fake = FakeSupabase()
+    service = _supabase_service(fake, en_tienda=5)
     producto = service.state["productos_tienda"][0]
 
     _vender(service, producto["id_producto"], 2)  # type: ignore[arg-type]
 
-    insertadas = {table: body for kind, table, body in fake.calls if kind == "insert"}
-    assert insertadas["MOV_INV"]["tipo_movimiento"] == "salida"
-    assert insertadas["MOV_INV"]["id_usuario"] is None
-    actualizaciones = {table: body for kind, table, (_, body) in [c for c in fake.calls if c[0] == "update"]}
-    assert actualizaciones["INVENTARIO"]["Cantidad_Stock_E"] == 8
-    assert actualizaciones["TIENDA_PRODUCTOS"]["cantidad_stock"] == 8
+    assert _actualizaciones(fake, "TIENDA_PRODUCTOS")[-1]["cantidad_stock"] == 3
+    assert not any(table == "INVENTARIO" and "Cantidad_Stock_E" in body for body, table in ((c[2][1], c[1]) for c in fake.calls if c[0] == "update"))
+    assert not any(kind == "insert" and table == "MOV_INV" for kind, table, _ in fake.calls)
 
 
-def test_fallo_de_supabase_revierte_stock_remoto_y_local() -> None:
+def test_fallo_de_supabase_revierte_la_reposicion() -> None:
     fake = FakeSupabase(fail_insert_on="MOV_INV")
     service = _supabase_service(fake)
-    producto = service.state["productos_tienda"][0]
-    antes = deepcopy(service.state["inventario"])
+    item = service.state["inventario"][0]
+    antes = deepcopy({k: service.state[k] for k in ("inventario", "productos_tienda", "mov_inv")})
 
     with pytest.raises(RuntimeError):
-        _vender(service, producto["id_producto"], 2)  # type: ignore[arg-type]
+        _reponer(service, item["id_item"], 3)  # type: ignore[arg-type]
 
-    assert service.state["inventario"] == antes
-    restaurado = [body for kind, table, (_, body) in [c for c in fake.calls if c[0] == "update"] if table == "INVENTARIO"]
-    assert restaurado[-1]["Cantidad_Stock_E"] == 10
-    # MOV_INV se guarda antes que VENTAS: si falla, la venta nunca llega a Supabase.
-    assert not any(kind == "insert" and table == "VENTAS" for kind, table, _ in fake.calls)
-
+    assert {k: service.state[k] for k in antes} == antes
+    inventario = _actualizaciones(fake, "INVENTARIO")
+    tienda = _actualizaciones(fake, "TIENDA_PRODUCTOS")
+    if inventario:
+        assert inventario[-1]["Cantidad_Stock_E"] == 10
+    if tienda:
+        assert tienda[-1]["cantidad_stock"] == 0
 
 
 def _estado(service: LocalGymService, id_item: int) -> str:
@@ -394,17 +507,20 @@ def _estado(service: LocalGymService, id_item: int) -> str:
     return item["estado"]
 
 
-def test_estado_automatico_de_items_tienda() -> None:
+def test_estado_automatico_sigue_la_reserva_del_inventario() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
     service.upsert_producto_tienda({**producto, "stock_minimo": 4})
     assert _estado(service, item["id_item"]) == "Disponible"
 
-    _vender(service, producto["id_producto"], 6)  # quedan 4 = minimo
+    _reponer(service, item["id_item"], 6)  # quedan 4 = minimo
     assert _estado(service, item["id_item"]) == "Stock bajo"
 
-    _vender(service, producto["id_producto"], 4)  # quedan 0
+    _vender(service, producto["id_producto"], 6)  # vender en tienda no toca la reserva
+    assert _estado(service, item["id_item"]) == "Stock bajo"
+
+    _reponer(service, item["id_item"], 4)  # quedan 0
     assert _estado(service, item["id_item"]) == "Agotado"
 
     service.registrar_movimiento_inventario({"id_item": item["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "entrada", "cantidad": 20})

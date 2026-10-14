@@ -29,6 +29,7 @@
     </section>
 
     <InventoryMovementsPanel v-if="activeTab === 'movimientos'" />
+    <InventoryDestinationPanel v-else-if="activeTab === 'destino'" />
 
     <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -277,11 +278,11 @@
             <div class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50 sm:col-span-2">
               <template v-if="editingId">
                 El stock no se edita aqui. Para cambiarlo registra una entrada, salida o ajuste en la pestaña Movimientos.
-                <span v-if="isTiendaForm" class="font-bold">Este articulo se vende en Tienda: el cambio afectara el stock de Inventario y de Tienda.</span>
+                <span v-if="isTiendaForm" class="font-bold">Este articulo es la reserva de Tienda: para pasar unidades a la Tienda registra una salida con destino Tienda.</span>
               </template>
               <template v-else>
                 El stock inicial se registra como una entrada en Movimientos.
-                <span v-if="isTiendaForm" class="font-bold">Al ser Tipo "Tienda" se creara su producto en la tienda, oculto hasta que le asignes precio.</span>
+                <span v-if="isTiendaForm" class="font-bold">Al ser Tipo "Tienda" se creara su producto en la tienda, sin stock y oculto hasta que le asignes precio. Lo repones desde Movimientos.</span>
               </template>
             </div>
             <label class="space-y-2">
@@ -310,7 +311,7 @@
                   Marcar como Descontinuado
                 </label>
                 <span class="block text-[11px] text-slate-500">
-                  Los articulos de Tienda cambian solos a Disponible, Stock bajo o Agotado segun su stock y el minimo de su producto.
+                  Los articulos de Tienda cambian solos a Disponible, Stock bajo o Agotado segun su reserva en Inventario y el minimo de su producto.
                 </span>
               </template>
               <select v-else v-model="form.status" class="field-input">
@@ -346,6 +347,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { CheckCircle2, Package, Search, Tag, TrendingDown, Wrench } from 'lucide-vue-next';
+import InventoryDestinationPanel from '../components/inventory/InventoryDestinationPanel.vue';
 import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import { useGymStore } from '../stores/gymStore';
 
@@ -355,14 +357,14 @@ const gymStore = useGymStore();
 const tabs = [
   { value: 'articulos', label: 'Articulos' },
   { value: 'movimientos', label: 'Movimientos' },
+  { value: 'destino', label: 'Destino' },
 ];
 const activeTab = computed({
-  get: () => (route.query.tab === 'movimientos' ? 'movimientos' : 'articulos'),
+  get: () => (tabs.some((tab) => tab.value === route.query.tab) ? route.query.tab : 'articulos'),
   set: (tab) => router.replace({ query: { ...route.query, tab } }),
 });
 const inventory = computed(() => gymStore.inventory);
-// Productos de Tienda cuya cantidad llego o bajo su stock minimo (TIENDA_PRODUCTOS.stock_minimo), mismo criterio que la vista Tienda.
-// Articulos de Tienda con estado automatico "Stock bajo" (sin contar los agotados).
+// Articulos de Inventario en estado "Stock bajo" (sin contar los agotados). En los de Tienda se mide su reserva.
 const lowStock = computed(() => inventory.value.filter((item) => item.status === 'Stock bajo'));
 const maintenanceItems = computed(() => inventory.value.filter((item) => item.status === 'En mantenimiento').length);
 

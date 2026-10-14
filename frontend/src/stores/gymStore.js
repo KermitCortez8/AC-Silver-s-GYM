@@ -518,8 +518,11 @@ export const useGymStore = defineStore('gym', () => {
   const enrollments = ref(initialState.enrollments);
   const trainerOverview = ref(initialState.trainerOverview);
   const gymSettings = ref(initialState.gymSettings);
+  const membershipPayments = ref([]);
   const syncError = ref('');
   const isSyncing = ref(false);
+  const sectionSyncs = ref({});
+  const isSectionSyncing = (section) => Boolean(sectionSyncs.value[section] || sectionSyncs.value.all);
   const resourceCache = createResourceCache();
   const trainerOverviewCache = createResourceCache();
   const pendingSyncs = new Set();
@@ -1793,7 +1796,7 @@ export const useGymStore = defineStore('gym', () => {
       }
 
       persist();
-      // Un producto nuevo puede crear su item en Inventario y su entrada inicial.
+      // Un producto nuevo puede crear su reserva (vacia) en Inventario.
       await fetchFromBackend({ force: true }).catch(() => {});
       return normalized;
     }
@@ -1990,7 +1993,7 @@ export const useGymStore = defineStore('gym', () => {
       });
       if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo actualizar el pedido'));
       const saved = mergeStoreOrder(await response.json());
-      // Cancelar devuelve el stock: refresca Inventario, Tienda y Movimientos.
+      // Cancelar devuelve el stock a la Tienda.
       if (body.estado_pedido === 'CANCELADO') await fetchFromBackend({ force: true }).catch(() => {});
       return saved;
     }
@@ -2605,6 +2608,7 @@ export const useGymStore = defineStore('gym', () => {
       syncError.value = '';
     }
     activeSyncs += 1;
+    sectionSyncs.value[section] = (sectionSyncs.value[section] || 0) + 1;
     isSyncing.value = true;
 
     const sync = (async () => {
@@ -2654,7 +2658,9 @@ export const useGymStore = defineStore('gym', () => {
         ['Promociones', refreshPromotionsFromBackend]);
 
       if (internal) {
-        tasks.push(['Configuración', refreshGymSettingsFromBackend], ['Horarios', async () => {
+        tasks.push(['Pagos de membresías', async () => {
+          membershipPayments.value = await getList('/pagos/membresias');
+        }], ['Configuración', refreshGymSettingsFromBackend], ['Horarios', async () => {
           schedule.value = (await getList('/gym/horarios')).map((h) => ({
             ...h,
             capacidad_maxima: Number(h.capacidad_maxima ?? 1),
@@ -2683,7 +2689,7 @@ export const useGymStore = defineStore('gym', () => {
         store: ['Productos', 'Inventario', 'Pedidos', 'Clientes'],
         orders: ['Pedidos', 'Clientes'],
         promotions: ['Promociones', 'Planes', 'Clientes'],
-        settings: ['Configuración', 'Asistencias'],
+        payments: ['Pagos de membresías'],
         enrollment: ['Clientes', 'Mi perfil', 'Horarios por servicio', 'Matrículas'],
         attendance: ['Clientes', 'Matrículas', 'Asistencias'],
         trainer: ['Supervisión'],
@@ -2706,6 +2712,7 @@ export const useGymStore = defineStore('gym', () => {
       }]));
     })().finally(() => {
       activeSyncs -= 1;
+      sectionSyncs.value[section] -= 1;
       isSyncing.value = activeSyncs > 0;
       pendingSyncs.delete(sync);
     });
@@ -3155,7 +3162,7 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   /**
-   * Corrige un movimiento; el backend recalcula el stock compartido de Inventario y Tienda.
+   * Corrige un movimiento; el backend recalcula el stock de Inventario y, si es una reposicion, el de Tienda.
    */
   const updateInventoryMovement = async (idMov, payload) => {
     if (!apiBase) throw new Error('No hay backend configurado');
@@ -3170,6 +3177,7 @@ export const useGymStore = defineStore('gym', () => {
   return {
     syncError,
     isSyncing,
+    isSectionSyncing,
     members,
     users,
     attendance,
@@ -3187,6 +3195,7 @@ export const useGymStore = defineStore('gym', () => {
     enrollments,
     trainerOverview,
     gymSettings,
+    membershipPayments,
     stats,
     recentAttendance,
     attendanceAnalytics,
