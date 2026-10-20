@@ -178,14 +178,25 @@
               <i class="fa-solid fa-clock-rotate-left text-xs text-red-500"></i>
               Avance reciente registrado
             </p>
-            <div v-if="(item.progreso || []).length" class="mt-2 space-y-2 max-h-36 overflow-y-auto pr-1">
-              <div v-for="progress in item.progreso || []" :key="progress.id_progreso" class="rounded-xl bg-black/80 p-3 text-xs space-y-1 border border-white/5">
-                <div class="flex items-center justify-between text-slate-300">
-                  <span class="font-bold text-red-400">{{ progress.fecha }}</span>
-                  <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">{{ progress.estado }}</span>
+<div v-if="sortedProgress(item.progreso).length" class="mt-3 space-y-3 max-h-72 overflow-y-auto pr-1">
+              <div v-for="progress in sortedProgress(item.progreso)" :key="progress.id_progreso" class="rounded-xl bg-black/80 p-4 text-xs space-y-2 border border-white/10">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="flex items-center gap-1.5 font-bold text-red-400">
+                    <i class="fa-regular fa-calendar text-[11px]"></i>
+                    {{ formatProgressDate(progress.fecha) }}
+                  </span>
+                  <span v-if="isCompleted(progress.estado)" class="rounded-full bg-emerald-500/20 px-3 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">
+                    <i class="fa-solid fa-check mr-1 text-[9px]"></i>Rutina completada
+                  </span>
+                  <span v-else class="rounded-full bg-amber-500/20 px-3 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+                    Pendiente
+                  </span>
                 </div>
-                <p v-if="progress.observacion" class="text-slate-400">{{ progress.observacion }}</p>
-                <div v-if="(progress.ejercicios_detalle || []).length" class="mt-1 space-y-1 border-t border-white/5 pt-1">
+                <p class="text-slate-300">
+                  <strong class="text-slate-400">Observación:</strong>
+                  {{ progress.observacion || 'Sin observación registrada' }}
+                </p>
+                <div v-if="(progress.ejercicios_detalle || []).length" class="mt-1 space-y-1 border-t border-white/5 pt-2">
                   <div v-for="(exDet, detIdx) in progress.ejercicios_detalle" :key="detIdx" class="text-[11px] text-slate-300 flex justify-between">
                     <span>
                       <i v-if="exDet.completado" class="fa-solid fa-check text-emerald-400 mr-1 text-[10px]"></i>
@@ -196,7 +207,9 @@
                 </div>
               </div>
             </div>
-            <p v-else class="mt-2 text-xs text-slate-500">Sin checks de avance registrados aún.</p>
+            <div v-else class="mt-3 rounded-xl border border-dashed border-white/10 p-4 text-center text-xs text-slate-500">
+              Aún no hay progreso registrado
+            </div>
           </div>
         </article>
       </div>
@@ -611,6 +624,23 @@ const routines = computed(() => overview.value.routines || []);
 
 const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculación', cardio: 'Cardio', baile: 'Baile' })[service] || service || 'Servicio';
 const dayLabel = (day) => ({ lunes: 'Lunes, Miércoles, Viernes', martes: 'Martes, Jueves', miercoles: 'Miércoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo' })[day] || day || 'Día';
+
+const sortedProgress = (list) =>
+  [...(list || [])].sort((a, b) => {
+    const diff = new Date(b.fecha) - new Date(a.fecha);
+    if (!Number.isNaN(diff) && diff !== 0) return diff;
+    return Number(b.id_progreso || 0) - Number(a.id_progreso || 0);
+  });
+
+const formatProgressDate = (value) => {
+  if (!value) return 'Fecha no registrada';
+  const text = String(value);
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00:00` : text);
+  if (Number.isNaN(date.getTime())) return text;
+  return date.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+
+const isCompleted = (estado) => String(estado || '').toUpperCase() === 'REALIZADO';
 
 const hasActiveMembership = computed(() => {
   const m = clientData.value?.matriculas || [];
