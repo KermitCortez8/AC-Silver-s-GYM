@@ -372,7 +372,7 @@ class SupabaseGymService(GymDomainService):
         if "horarios_servicio" in selected:
             self._recount_schedule_cupos(remote_state)
         if "inventario" in selected:
-            self._sincronizar_productos_tienda(remote_state)
+            self._actualizar_estados_tienda(remote_state)
             self._guardar_estados_automaticos(rows["inventario"], remote_state)
         self.state = remote_state
         refreshed_at = time.monotonic()
@@ -1031,6 +1031,7 @@ class SupabaseGymService(GymDomainService):
             "fecha_movimiento": str(row.get("fecha_movimiento") or ""),
             "descripcion": str(row.get("descripcion") or ""),
             "cantidad": int(row.get("cantidad", 1) or 1),
+            "destino": str(row.get("destino") or "").strip().upper() or None,
         }
 
     # Procesa esta operación.
@@ -1043,6 +1044,7 @@ class SupabaseGymService(GymDomainService):
             "fecha_movimiento": self._date_or_today(row.get("fecha_movimiento")),
             "descripcion": str(row.get("descripcion") or ""),
             "cantidad": max(1, int(row.get("cantidad", 1) or 1)),
+            "destino": str(row.get("destino") or "").strip().upper() or None,
         }
 
     # Procesa esta operación.
@@ -1070,7 +1072,7 @@ class SupabaseGymService(GymDomainService):
             "nombre_Producto": str(row.get("nombre_producto") or ""),
             "categoria": str(row.get("categoria") or "General"),
             "precio_Venta": float(row.get("precio_venta") or 0),
-            # Copia del stock de INVENTARIO: el backend la escribe pero nunca la usa como fuente.
+            # Stock propio de la tienda: sube con reposiciones desde INVENTARIO y baja con ventas.
             "cantidad_stock": int(row.get("cantidad_stock", 0) or 0),
             "stock_minimo": int(row.get("stock_minimo", 5) or 5),
             "imagen_url": str(row.get("imagen_url") or ""),

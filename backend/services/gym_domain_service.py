@@ -16,23 +16,23 @@ from services.membership_lifecycle import apply_membership_expiration, membershi
 _LIMA = ZoneInfo("America/Lima")
 
 
-# Ítems de INVENTARIO con este Tipo se venden en la tienda y comparten stock.
+# Ítems de INVENTARIO con este Tipo son la reserva de la tienda. Cada tabla tiene su propio stock:
+# las unidades solo pasan a TIENDA_PRODUCTOS con una salida de MOV_INV con destino TIENDA.
 TIPO_TIENDA = "Tienda"
 ESTADO_DESCONTINUADO = "Descontinuado"
 # Estados que el backend calcula solo para ítems Tipo 'Tienda' (Descontinuado es la única marca manual).
 ESTADO_DISPONIBLE = "Disponible"
 ESTADO_STOCK_BAJO = "Stock bajo"
 ESTADO_AGOTADO = "Agotado"
-
-# Los movimientos automáticos de pedidos se reconocen por el inicio de su descripción.
-PREFIJO_VENTA = "Venta pedido #"
-PREFIJO_DEVOLUCION = "Devolución por cancelación del pedido #"
+# Destino de las salidas de MOV_INV. VENTA solo aparece en los movimientos de pedidos registrados
+# mientras el stock estuvo compartido (migración 014); ya no se generan.
+DESTINO_TIENDA = "TIENDA"
+DESTINO_VENTA = "VENTA"
+# Movimientos de pedidos de esa etapa, reconocidos por el inicio de su descripción.
+_MOVIMIENTO_PEDIDO = re.compile(r"^(?:Venta pedido|Devolución por cancelación del pedido) #\d+")
 ESTADO_PAGO_PAGADO = "PAGADO"
 ESTADO_PAGO_PENDIENTE = "PENDIENTE"
 ESTADO_PEDIDO_CANCELADO = "CANCELADO"
-_MOVIMIENTO_PEDIDO = re.compile(
-    r"^(?:Venta pedido|Devolución por cancelación del pedido) #\d+"
-)
 
 
 # Procesa esta operación.
@@ -2012,7 +2012,7 @@ class GymDomainService:
     def get_item_inventario(self, id_item: int) -> dict[str, Any] | None:
         return next((i for i in self.state["inventario"] if int(i.get("id_item", 0)) == int(id_item)), None)
 
-    # Indica si el ítem pertenece a la tienda (comparte stock con TIENDA_PRODUCTOS).
+    # Indica si el ítem es reserva de la tienda.
     @staticmethod
     def _es_item_tienda(item: dict[str, Any] | None) -> bool:
         return bool(item) and str(item.get("tipo") or "").strip().lower() == TIPO_TIENDA.lower()
@@ -2044,6 +2044,7 @@ class GymDomainService:
         descripcion: str,
         id_usuario: str | None = None,
         fecha: str = "",
+        destino: str | None = None,
     ) -> dict[str, Any]:
         tipo = str(tipo or "").lower()
         if tipo not in {"entrada", "salida", "ajuste"}:
@@ -2068,35 +2069,48 @@ class GymDomainService:
             "fecha_movimiento": _safe_date(fecha),
             "descripcion": descripcion,
             "cantidad": cantidad,
+            "destino": destino if tipo == "salida" else None,
         }
         state["mov_inv"].insert(0, mov)
         return mov
 
-    # Copia el stock del ítem en su producto y calcula si la tienda puede venderlo.
-    # TIENDA_PRODUCTOS.cantidad_stock es solo una copia: el stock real vive en INVENTARIO.
-    def _sincronizar_productos_tienda(self, state: dict[str, Any]) -> None:
+    # Producto de tienda enlazado al ítem (vínculo 1:1 por TIENDA_PRODUCTOS.id_item).
+    @staticmethod
+    def _producto_de_item(state: dict[str, Any], id_item: Any) -> dict[str, Any] | None:
+        if not id_item:
+            return None
+        return next((p for p in state.get("productos_tienda", []) if int(p.get("id_item") or 0) == int(id_item)), None)
+
+    # Solo las salidas tienen destino, y el único que se registra a mano es TIENDA.
+    @staticmethod
+    def _normalizar_destino(tipo: str, destino: Any) -> str | None:
+        valor = str(destino or "").strip().upper()
+        if tipo != "salida" or not valor:
+            return None
+        if valor != DESTINO_TIENDA:
+            raise ValueError("Destino inválido: una salida solo puede tener destino TIENDA")
+        return valor
+
+    # Recalcula los estados automáticos de ítems y productos. No copia stock entre tablas.
+    def _actualizar_estados_tienda(self, state: dict[str, Any]) -> None:
         self._actualizar_estados_items_tienda(state)
         for producto in state.get("productos_tienda", []):
-            if not producto.get("id_item"):
-                # Producto aún sin vincular (antes de la migración 008): conserva su propio stock.
-                producto["estado"] = "Disponible" if int(producto.get("cantidad_stock") or 0) > 0 else "Agotado"
-                continue
-            item = self._find_item_in_state(state, producto["id_item"])
-            stock = int(item.get("cantidad_stock", 0) or 0) if item else 0
-            producto["cantidad_stock"] = stock
-            vendible = (
-                item is not None
-                and self._es_item_tienda(item)
-                and str(item.get("estado") or "") != ESTADO_DESCONTINUADO
-                and float(producto.get("precio_venta") or 0) > 0
-            )
-            if not vendible:
-                producto["estado"] = "Descatalogado"
-            else:
-                producto["estado"] = "Disponible" if stock > 0 else "Agotado"
+            stock = int(producto.get("cantidad_stock") or 0)
+            if producto.get("id_item"):
+                item = self._find_item_in_state(state, producto["id_item"])
+                vendible = (
+                    item is not None
+                    and self._es_item_tienda(item)
+                    and str(item.get("estado") or "") != ESTADO_DESCONTINUADO
+                    and float(producto.get("precio_venta") or 0) > 0
+                )
+                if not vendible:
+                    producto["estado"] = "Descatalogado"
+                    continue
+            producto["estado"] = "Disponible" if stock > 0 else "Agotado"
 
-    # Estado automático de los ítems Tipo 'Tienda': Agotado (0), Stock bajo (hasta el mínimo de su
-    # producto en TIENDA_PRODUCTOS) o Disponible. Un ítem Descontinuado conserva su marca manual.
+    # Estado automático de los ítems Tipo 'Tienda' según su reserva: Agotado (0), Stock bajo (hasta el
+    # mínimo de su producto en TIENDA_PRODUCTOS) o Disponible. Un ítem Descontinuado conserva su marca manual.
     def _actualizar_estados_items_tienda(self, state: dict[str, Any]) -> None:
         minimos = {
             int(p["id_item"]): int(p.get("stock_minimo") or 0)
@@ -2114,7 +2128,7 @@ class GymDomainService:
             else:
                 item["estado"] = ESTADO_DISPONIBLE
 
-    # Crea el producto de tienda (oculto hasta tener precio) para un ítem Tipo 'Tienda' sin producto.
+    # Crea el producto de tienda (oculto hasta tener precio y sin stock) para un ítem Tipo 'Tienda' sin producto.
     def _crear_producto_para_item(self, state: dict[str, Any], item: dict[str, Any]) -> None:
         productos = state.setdefault("productos_tienda", [])
         if any(int(p.get("id_item") or 0) == int(item["id_item"]) for p in productos):
@@ -2129,7 +2143,7 @@ class GymDomainService:
                 "categoria": "General",
                 "unidad_venta": str(item.get("unidad_venta") or "unidad"),
                 "precio_venta": 0.0,
-                "cantidad_stock": int(item.get("cantidad_stock", 0) or 0),
+                "cantidad_stock": 0,
                 "stock_minimo": 5,
                 "estado": "Descatalogado",
                 "imagen_url": "",
@@ -2174,7 +2188,7 @@ class GymDomainService:
                     )
             if self._es_item_tienda(item):
                 self._crear_producto_para_item(state, item)
-            self._sincronizar_productos_tienda(state)
+            self._actualizar_estados_tienda(state)
             return item
 
         return self._mutate(_fn)
@@ -2190,7 +2204,7 @@ class GymDomainService:
             tiene_producto = any(int(p.get("id_item") or 0) == int(id_item) for p in state.get("productos_tienda", []))
             if tiene_movimientos or tiene_producto:
                 item["estado"] = ESTADO_DESCONTINUADO
-                self._sincronizar_productos_tienda(state)
+                self._actualizar_estados_tienda(state)
                 return item
             state["inventario"] = [i for i in state["inventario"] if int(i.get("id_item", 0)) != int(id_item)]
             return None
@@ -2219,6 +2233,10 @@ class GymDomainService:
             item = self._find_item_in_state(state, id_item)
             if not item:
                 raise ValueError("Item de inventario no encontrado")
+            destino = self._normalizar_destino(tipo, payload.get("destino"))
+            producto = self._producto_de_item(state, id_item) if destino == DESTINO_TIENDA else None
+            if destino == DESTINO_TIENDA and not producto:
+                raise ValueError("El ítem no tiene un producto de Tienda enlazado para reponer")
             mov = self._aplicar_movimiento(
                 state,
                 item,
@@ -2227,14 +2245,23 @@ class GymDomainService:
                 str(payload.get("descripcion") or ""),
                 id_usuario=id_usuario,
                 fecha=str(payload.get("fecha_movimiento") or ""),
+                destino=destino,
             )
-            self._sincronizar_productos_tienda(state)
-            return {"movimiento": mov, "stock_actual": item["cantidad_stock"]}
+            if producto:
+                # Reposición: las unidades salen de la reserva y entran al stock de la tienda.
+                producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) + int(mov["cantidad"])
+            self._actualizar_estados_tienda(state)
+            return {
+                "movimiento": mov,
+                "stock_actual": item["cantidad_stock"],
+                "stock_tienda": int(producto["cantidad_stock"]) if producto else None,
+            }
 
         return self._mutate(_fn)
 
-    # Corrige un movimiento. Cambiar cantidad, tipo o ítem recalcula el stock por la diferencia;
-    # los movimientos generados por pedidos solo admiten cambios de fecha y descripción.
+    # Corrige un movimiento. Cambiar cantidad, tipo, ítem o destino recalcula el stock por la diferencia,
+    # también el de la tienda si era o pasa a ser una reposición. Los movimientos de pedidos (destino
+    # VENTA) solo admiten cambios de fecha y descripción.
     def actualizar_movimiento_inventario(self, id_mov: int, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
@@ -2245,6 +2272,7 @@ class GymDomainService:
             tipo_actual = str(mov.get("tipo_movimiento") or "").lower()
             cantidad_actual = max(1, int(mov.get("cantidad") or 1))
             item_actual = int(mov.get("id_item") or 0)
+            destino_actual = str(mov.get("destino") or "").strip().upper() or None
             nuevo_tipo = str(payload.get("tipo_movimiento") or tipo_actual).lower()
             nueva_cantidad = max(1, int(payload.get("cantidad") or cantidad_actual))
             nuevo_item = int(payload.get("id_item") or item_actual)
@@ -2254,18 +2282,32 @@ class GymDomainService:
             descripcion_actual = str(mov.get("descripcion") or "")
             descripcion = descripcion_actual if payload.get("descripcion") is None else str(payload["descripcion"]).strip()
             fecha = str(payload.get("fecha_movimiento") or mov.get("fecha_movimiento") or "")
-            cambia_stock = (nuevo_tipo, nueva_cantidad, nuevo_item) != (tipo_actual, cantidad_actual, item_actual)
 
-            origen_pedido = _MOVIMIENTO_PEDIDO.match(descripcion_actual)
-            if origen_pedido:
+            prefijo_pedido = _MOVIMIENTO_PEDIDO.match(descripcion_actual)
+            es_de_pedido = destino_actual == DESTINO_VENTA or prefijo_pedido is not None
+            if es_de_pedido:
+                # Su destino no se toca: si llega otro, se detecta como cambio y se rechaza abajo.
+                nuevo_destino = str(payload.get("destino", destino_actual) or "").strip().upper() or None
+            else:
+                nuevo_destino = self._normalizar_destino(nuevo_tipo, payload.get("destino", destino_actual))
+            cambia_stock = (nuevo_tipo, nueva_cantidad, nuevo_item, nuevo_destino) != (
+                tipo_actual,
+                cantidad_actual,
+                item_actual,
+                destino_actual,
+            )
+
+            if es_de_pedido:
                 if cambia_stock:
                     raise ValueError("Los movimientos de un pedido solo permiten cambiar la fecha y la descripción")
-                # Conserva la referencia al pedido aunque se reescriba la descripción.
-                prefijo = origen_pedido.group(0)
-                if not descripcion.startswith(prefijo):
-                    descripcion = f"{prefijo} - {descripcion}" if descripcion else prefijo
+                if prefijo_pedido:
+                    # Conserva la referencia al pedido aunque se reescriba la descripción.
+                    prefijo = prefijo_pedido.group(0)
+                    if not descripcion.startswith(prefijo):
+                        descripcion = f"{prefijo} - {descripcion}" if descripcion else prefijo
 
             nuevos_stocks: list[tuple[dict[str, Any], int]] = []
+            nuevos_stocks_tienda: list[tuple[dict[str, Any], int]] = []
             if cambia_stock:
                 item_viejo = self._find_item_in_state(state, item_actual)
                 item_nuevo = self._find_item_in_state(state, nuevo_item)
@@ -2294,9 +2336,36 @@ class GymDomainService:
                             raise ValueError(f"El cambio dejaría stock negativo en {item.get('nombre_item') or 'el item'}")
                     nuevos_stocks = [(item, stocks[int(item["id_item"])]) for item in (item_viejo, item_nuevo) if item]
 
+                # Reposiciones: se quita lo que entró a la tienda y se suma lo nuevo.
+                tienda: dict[int, tuple[dict[str, Any], int]] = {}
+                cambios = (
+                    (item_actual, -cantidad_actual if tipo_actual == "salida" and destino_actual == DESTINO_TIENDA else 0),
+                    (nuevo_item, nueva_cantidad if nuevo_tipo == "salida" and nuevo_destino == DESTINO_TIENDA else 0),
+                )
+                for id_item, delta in cambios:
+                    if not delta:
+                        continue
+                    producto = self._producto_de_item(state, id_item)
+                    if not producto:
+                        if delta > 0:
+                            raise ValueError("El ítem no tiene un producto de Tienda enlazado para reponer")
+                        continue
+                    clave = int(producto["id_producto"])
+                    previo = tienda[clave][1] if clave in tienda else int(producto.get("cantidad_stock") or 0)
+                    tienda[clave] = (producto, previo + delta)
+                for producto, stock in tienda.values():
+                    if stock < 0:
+                        raise ValueError(
+                            f"La tienda ya vendió esas unidades de {producto.get('nombre_producto') or 'el producto'}; "
+                            "no se puede reducir la reposición"
+                        )
+                nuevos_stocks_tienda = list(tienda.values())
+
             # Todo validado: se aplican los cambios.
             for item, stock in nuevos_stocks:
                 item["cantidad_stock"] = stock
+            for producto, stock in nuevos_stocks_tienda:
+                producto["cantidad_stock"] = stock
             mov.update(
                 {
                     "tipo_movimiento": nuevo_tipo,
@@ -2304,9 +2373,10 @@ class GymDomainService:
                     "id_item": nuevo_item,
                     "fecha_movimiento": _safe_date(fecha),
                     "descripcion": descripcion,
+                    "destino": nuevo_destino,
                 }
             )
-            self._sincronizar_productos_tienda(state)
+            self._actualizar_estados_tienda(state)
             item_final = self._find_item_in_state(state, nuevo_item)
             return {"movimiento": mov, "stock_actual": int(item_final.get("cantidad_stock", 0) or 0) if item_final else None}
 
@@ -3019,9 +3089,8 @@ class GymDomainService:
         return next((p for p in self.state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)), None)
 
     # Actualiza el registro correspondiente.
+    # `actor` se mantiene por compatibilidad con las rutas: el alta de productos ya no registra movimientos.
     def upsert_producto_tienda(self, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
-        id_usuario = self._actor_usuario_id(actor)
-
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             productos = state.setdefault("productos_tienda", [])
@@ -3061,7 +3130,7 @@ class GymDomainService:
                 if otro:
                     raise ValueError(f"El ítem ya está vinculado al producto {otro.get('nombre_producto') or otro.get('id_producto')}")
             elif previo is None:
-                # Producto nuevo sin ítem: se crea en INVENTARIO y su saldo inicial entra por MOV_INV.
+                # Producto nuevo sin ítem: se crea su reserva en INVENTARIO, vacía.
                 item = {
                     "id_item": self._next_int_id_in_state(state, "inventario", "id_item"),
                     "nombre_item": str(producto.get("nombre_producto") or "Sin nombre"),
@@ -3076,10 +3145,6 @@ class GymDomainService:
                     "observaciones": "",
                 }
                 state["inventario"].insert(0, item)
-                if stock_solicitado > 0:
-                    self._aplicar_movimiento(
-                        state, item, "entrada", stock_solicitado, "Alta desde Tienda: saldo inicial", id_usuario=id_usuario
-                    )
                 id_item = int(item["id_item"])
             producto["id_item"] = id_item
 
@@ -3089,17 +3154,15 @@ class GymDomainService:
                 item["precio_venta"] = producto["precio_venta"]
                 if not producto.get("nombre_producto"):
                     producto["nombre_producto"] = item.get("nombre_item", "Sin nombre")
-                # El stock lo manda INVENTARIO; el valor enviado desde el formulario se ignora.
-                producto["cantidad_stock"] = int(item.get("cantidad_stock", 0) or 0)
-            else:
-                # Producto antiguo aún sin vincular: conserva su propio stock hasta la migración 008.
-                producto["cantidad_stock"] = stock_solicitado
+            # El stock de la tienda solo se fija al crear el producto; después sube con reposiciones
+            # desde INVENTARIO y baja con las ventas.
+            producto["cantidad_stock"] = int(previo.get("cantidad_stock") or 0) if previo else stock_solicitado
 
             if idx >= 0:
                 productos[idx] = producto
             else:
                 productos.insert(0, producto)
-            self._sincronizar_productos_tienda(state)
+            self._actualizar_estados_tienda(state)
             return producto
 
         return self._mutate(_fn)
@@ -3122,7 +3185,7 @@ class GymDomainService:
     def crear_pedido_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
         return self._crear_pedido_tienda(payload, pago_pendiente=False)
 
-    # Pedido con tarjeta: reserva el stock y queda pendiente hasta que Stripe confirme el cobro.
+    # Pedido con tarjeta: reserva el stock de la tienda y queda pendiente hasta que Stripe confirme el cobro.
     def crear_pedido_tienda_pago_pendiente(self, payload: dict[str, Any]) -> dict[str, Any]:
         return self._crear_pedido_tienda(payload, pago_pendiente=True)
 
@@ -3136,7 +3199,7 @@ class GymDomainService:
         def _fn(state: dict[str, Any]):
             state.setdefault("pedidos_tienda", [])
             state.setdefault("productos_tienda", [])
-            self._sincronizar_productos_tienda(state)
+            self._actualizar_estados_tienda(state)
 
             # Valida el pedido completo antes de tocar el stock.
             lineas: list[tuple[dict[str, Any], int]] = []
@@ -3173,19 +3236,8 @@ class GymDomainService:
                 item_subtotal = round(precio * cantidad, 2)
                 subtotal += item_subtotal
 
-                linked_item = self._find_item_in_state(state, producto.get("id_item"))
-                if linked_item:
-                    # La venta sale del stock compartido y queda registrada en MOV_INV.
-                    # Se conserva el prefijo "Venta pedido #N": la devolución por cancelación lo busca.
-                    self._aplicar_movimiento(
-                        state,
-                        linked_item,
-                        "salida",
-                        cantidad,
-                        f"{PREFIJO_VENTA}{id_pedido} ({cliente_nombre})",
-                    )
-                else:
-                    producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) - cantidad
+                # La venta solo descuenta el stock de la tienda; la reserva de INVENTARIO no cambia.
+                producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) - cantidad
 
                 items.append(
                     {
@@ -3197,7 +3249,7 @@ class GymDomainService:
                     }
                 )
 
-            self._sincronizar_productos_tienda(state)
+            self._actualizar_estados_tienda(state)
             subtotal = round(subtotal, 2)
             igv = round(subtotal * 0.18, 2)
             total = round(subtotal + igv, 2)
@@ -3227,9 +3279,8 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
-    # Devuelve al stock las unidades de un pedido cancelado.
-    def _devolver_stock_pedido(self, state: dict[str, Any], pedido: dict[str, Any], id_usuario: str | None) -> None:
-        id_pedido = int(pedido.get("id_pedido", 0) or 0)
+    # Devuelve al stock de la tienda las unidades de un pedido cancelado.
+    def _devolver_stock_pedido(self, state: dict[str, Any], pedido: dict[str, Any]) -> None:
         for linea in pedido.get("items", []):
             producto = next(
                 (
@@ -3239,32 +3290,9 @@ class GymDomainService:
                 ),
                 None,
             )
-            if not producto:
-                continue
-            cantidad = max(1, int(linea.get("cantidad") or 1))
-            linked_item = self._find_item_in_state(state, producto.get("id_item"))
-            if linked_item:
-                # Solo se devuelve lo que salió de INVENTARIO: un pedido anterior al enlace no tiene su salida.
-                venta = re.compile(rf"^{re.escape(PREFIJO_VENTA)}{id_pedido}(?!\d)")
-                salio_de_inventario = any(
-                    int(m.get("id_item") or 0) == int(linked_item["id_item"])
-                    and str(m.get("tipo_movimiento") or "").lower() == "salida"
-                    and venta.match(str(m.get("descripcion") or ""))
-                    for m in state["mov_inv"]
-                )
-                if not salio_de_inventario:
-                    continue
-                self._aplicar_movimiento(
-                    state,
-                    linked_item,
-                    "entrada",
-                    cantidad,
-                    f"{PREFIJO_DEVOLUCION}{id_pedido}",
-                    id_usuario=id_usuario,
-                )
-            else:
-                producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) + cantidad
-        self._sincronizar_productos_tienda(state)
+            if producto:
+                producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) + max(1, int(linea.get("cantidad") or 1))
+        self._actualizar_estados_tienda(state)
 
     # Busca un pedido dentro del estado indicado.
     @staticmethod
@@ -3356,7 +3384,7 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
-    # Cancela un pedido que nunca se pagó y devuelve el stock reservado. Es idempotente.
+    # Cancela un pedido que nunca se pagó y devuelve a la tienda el stock reservado. Es idempotente.
     def cancelar_pedido_pago_pendiente(self, id_pedido: int, observacion: str = "") -> dict[str, Any]:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
@@ -3367,7 +3395,7 @@ class GymDomainService:
                 raise ValueError("El pedido ya fue pagado")
             if str(pedido.get("estado_pedido") or "").strip().upper() == ESTADO_PEDIDO_CANCELADO:
                 return pedido
-            self._devolver_stock_pedido(state, pedido, None)
+            self._devolver_stock_pedido(state, pedido)
             pedido["estado_pedido"] = ESTADO_PEDIDO_CANCELADO
             pedido["observacion_admin"] = str(observacion or "Pago no completado: pedido cancelado y stock devuelto")
             pedido["fecha_actualizacion"] = _now_iso()
@@ -3375,12 +3403,12 @@ class GymDomainService:
 
         return self._mutate(_fn)
 
-        # Procesa esta operación.
+    # Procesa esta operación.
+    # `actor` se mantiene por compatibilidad con las rutas: cancelar ya no registra movimientos.
     def actualizar_pedido_tienda(self, id_pedido: int, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
         estado = str(payload.get("estado_pedido") or "").strip().upper()
         if estado not in {"PENDIENTE", "CONFIRMADO", "ENTREGADO", "CANCELADO"}:
             raise ValueError("Estado de pedido invalido")
-        id_usuario = self._actor_usuario_id(actor)
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
@@ -3395,7 +3423,7 @@ class GymDomainService:
             if estado == "CANCELADO" and actual != "CANCELADO":
                 if actual != "PENDIENTE":
                     raise ValueError("Solo se pueden cancelar pedidos en estado PENDIENTE")
-                self._devolver_stock_pedido(state, pedido, id_usuario)
+                self._devolver_stock_pedido(state, pedido)
             pedido["estado_pedido"] = estado
             pedido["observacion_admin"] = str(payload.get("observacion_admin") or "")
             pedido["fecha_actualizacion"] = _now_iso()
