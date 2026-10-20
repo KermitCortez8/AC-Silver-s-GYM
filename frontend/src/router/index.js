@@ -19,7 +19,7 @@ const AttendanceView = () => import('../views/AttendanceView.vue');
 const ServiceSchedulesView = () => import('../views/ServiceSchedulesView.vue');
 const EnrollmentView = () => import('../views/EnrollmentView.vue');
 const InventoryView = () => import('../views/InventoryView.vue');
-const GymSettingsView = () => import('../views/GymSettingsView.vue');
+const MembershipPaymentsView = () => import('../views/MembershipPaymentsView.vue');
 const MembershipPlansView = () => import('../views/MembershipPlansView.vue');
 const PromotionsView = () => import('../views/PromotionsView.vue');
 const StoreView = () => import('../views/StoreView.vue');
@@ -142,7 +142,12 @@ const routes = [
       {
         path: 'settings',
         name: 'GymSettings',
-        component: GymSettingsView,
+        redirect: '/admin/payments',
+      },
+      {
+        path: 'payments',
+        name: 'MembershipPayments',
+        component: MembershipPaymentsView,
       },
       {
         path: 'store',

@@ -59,7 +59,7 @@
               >Hoy</span
             >
           </header>
-          <div v-if="!day.items.length" class="att-muted att-small">
+          <div v-if="!day.items.length && !day.generalVisits.length" class="att-muted att-small">
             Sin horario
           </div>
           <div
@@ -88,6 +88,11 @@
                 shortTime(item.asistencia.hora_entrada || item.asistencia.hora)
               }}<br />Salida {{ shortTime(item.asistencia.hora_salida) }}
             </p>
+          </div>
+          <div v-for="visit in day.generalVisits" :key="visit.id_asistencia" class="att-week-event att-week-general">
+            <strong>Gimnasio general</strong>
+            <p>Entrada {{ shortTime(visit.hora_entrada || visit.hora) }}<br />Salida {{ shortTime(visit.hora_salida) }}</p>
+            <span class="att-badge" :class="visit.estado">{{ states[visit.estado] }}</span>
           </div>
         </article>
       </div>
@@ -141,6 +146,7 @@ const weekDays = computed(() =>
       name,
       date,
       items: week.value.horarios.filter((item) => item.fecha === date),
+      generalVisits: (week.value.generales || []).filter((item) => item.fecha === date),
     };
   }).filter((day) => day.date >= visibleRange.value.from && day.date <= visibleRange.value.to),
 );

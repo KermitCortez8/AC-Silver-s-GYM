@@ -8,21 +8,28 @@ const deferred = () => {
   return { promise, resolve };
 };
 
-test('slow data stops blocking the view after three seconds without restarting the loader', t => {
+test('a slow route download stops blocking navigation after three seconds', t => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   let visible = false;
   const loader = createModuleLoader({ onChange: value => { visible = value; } });
-  loader.setSyncing(true);
   const navigation = loader.start();
-  loader.complete(navigation);
   t.mock.timers.tick(2779);
   assert.equal(visible, true);
   t.mock.timers.tick(1);
   assert.equal(visible, false);
   t.mock.timers.tick(220);
   assert.equal(visible, false);
-  loader.setSyncing(false);
+  loader.complete(navigation);
   t.mock.timers.tick(7000);
+  assert.equal(visible, false);
+});
+
+test('a mounted view is immediately available while its data is still loading', () => {
+  let visible = false;
+  const loader = createModuleLoader({ onChange: value => { visible = value; } });
+  const navigation = loader.start();
+  assert.equal(visible, true);
+  loader.complete(navigation);
   assert.equal(visible, false);
 });
 

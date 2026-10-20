@@ -760,7 +760,7 @@ const router = useRouter();
 
 const clients = computed(() => gymStore.members);
 
-const search = ref('');
+const search = ref(typeof route.query.search === 'string' ? route.query.search : '');
 const statusFilter = ref(
   ['active', 'pending', 'expired'].includes(route.query.status)
     ? route.query.status

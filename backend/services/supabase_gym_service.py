@@ -399,22 +399,6 @@ class SupabaseGymService(GymDomainService):
             except RuntimeError:
                 item["estado"] = remotos[id_item]
 
-    # Guarda en INVENTARIO.Estado los estados automáticos que difieren de Supabase (por ejemplo,
-    # tras cambiar un stock mínimo o al arrancar). Si falla, la lectura sigue y se reintenta luego.
-    def _guardar_estados_automaticos(self, rows: list[dict[str, Any]], state: dict[str, Any]) -> None:
-        if "INVENTARIO" in self.missing_remote_tables:
-            return
-        remotos = {int(row.get("id_item", 0) or 0): str(row.get("Estado") or "") for row in rows}
-        for item in state.get("inventario", []):
-            id_item = int(item.get("id_item", 0) or 0)
-            estado = str(item.get("estado") or "")
-            if not self._es_item_tienda(item) or id_item not in remotos or remotos[id_item] == estado:
-                continue
-            try:
-                self.supabase.update("INVENTARIO", "id_item", id_item, {"Estado": estado})
-            except RuntimeError:
-                item["estado"] = remotos[id_item]
-
     # Actualiza el registro correspondiente.
     def _refresh_remote_state_if_stale(self, resources=None) -> None:
         if resources is None:

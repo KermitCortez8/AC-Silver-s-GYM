@@ -187,6 +187,14 @@ def _confirm_verified_checkout(
     }
 
 
+@router.get("/pagos/membresias")
+def list_pagos_membresias(
+    clients_service: ClientsService = Depends(get_clients_service),
+    _current_user=Depends(require_admin_or_staff),
+):
+    return clients_service.list_membership_payments()
+
+
 @router.get("/clientes")
 # Obtiene los datos necesarios.
 def list_clientes(

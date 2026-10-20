@@ -28,18 +28,23 @@ class AttendanceService:
     def status(row):
         return "anulada" if row.get("anulado") else "completada" if row.get("hora_salida") else "dentro"
 
+    @staticmethod
+    def kind(row):
+        # Los registros históricos conservan su servicio; general usa el nuevo valor.
+        return "general" if row.get("servicio") == "gimnasio" else "horario"
+
     def present(self, row, admin=True, client=None):
         if client is None:
             client = self.gym.get_cliente(self.client_id(row)) or {}
         result = {**deepcopy(row), "cliente_nombre": client.get("nombre", "Cliente"),
                   "cliente_dni": client.get("dni", ""), "estado": self.status(row),
-                  "version": int(row.get("version") or 0)}
+                  "version": int(row.get("version") or 0), "tipo": self.kind(row)}
         if not admin:
             for key in ("auditoria", "id_usuario_registra"):
                 result.pop(key, None)
         return result
 
-    def records(self, user, desde=None, hasta=None, dni="", servicio="", estado=""):
+    def records(self, user, desde=None, hasta=None, dni="", servicio="", estado="", tipo=""):
         if desde and hasta and desde > hasta:
             raise ValueError("La fecha inicial no puede ser posterior a la final.")
         admin = user.role == "admin"
@@ -58,6 +63,8 @@ class AttendanceService:
                 continue
             if servicio and row.get("servicio") != servicio:
                 continue
+            if tipo and self.kind(row) != tipo:
+                continue
             if estado and self.status(row) != estado:
                 continue
             item = self.present(row, admin, clients.get(self.client_id(row), {}))
@@ -74,6 +81,8 @@ class AttendanceService:
                 "entradas": sum(r["fecha"] == today for r in rows),
                 "salidas": sum(bool(r.get("hora_salida")) and (r.get("fecha_salida") or r["fecha"]) == today for r in rows),
                 "dentro": len({self.client_id(r) for r in inside}), "pendientes": inside,
+                "capacidad": self.capacity(),
+                "disponibles": max(0, self.capacity() - len({self.client_id(r) for r in inside})),
                 "recientes": [r for r in rows if r["fecha"] == today][:8]}
 
     def membership(self, client_id, day):
@@ -83,14 +92,33 @@ class AttendanceService:
                      and str(m.get("estado_pago", "")).upper() == "PAGADO"
                      and str(m.get("fecha_inicio", ""))[:10] <= day <= str(m.get("fecha_fin", ""))[:10]), None)
 
-    def entry_context(self, enrollment, now):
-        client_id = int(enrollment.get("id_cliente") or 0)
+    def capacity(self):
+        return int(self.gym.state.get("configuracion_gimnasio", {}).get("capacidad_total") or 30)
+
+    def client_context(self, client_id, now):
         client = self.gym.get_cliente(client_id)
         if not client or str(client.get("estado", "")).upper() != "ACTIVO":
             raise ValueError("La cuenta debe estar activada por el administrador.")
         member = self.membership(client_id, now.date().isoformat())
         if not member:
             raise ValueError("El cliente necesita una membresía activa, pagada y vigente.")
+        return client, member
+
+    def check_occupancy(self, client_id):
+        inside = [r for r in self.gym.state.get("asistencia", []) if not r.get("anulado") and not r.get("hora_salida")]
+        if any(self.client_id(r) == client_id for r in inside):
+            raise ValueError("El cliente tiene una entrada sin salida. Registra su salida primero.")
+        if len({self.client_id(r) for r in inside}) >= self.capacity():
+            raise ValueError("El gimnasio alcanzó su aforo. Registra una salida antes de otra entrada.")
+
+    def general_context(self, client_id, now):
+        client, member = self.client_context(client_id, now)
+        self.check_occupancy(client_id)
+        return client, member
+
+    def entry_context(self, enrollment, now):
+        client_id = int(enrollment.get("id_cliente") or 0)
+        client, member = self.client_context(client_id, now)
         if enrollment.get("estado") != "ACTIVA":
             raise ValueError("La matrícula no está activa.")
         schedule = self.gym.get_horario_servicio(int(enrollment.get("id_horario_servicio") or 0))
@@ -104,12 +132,7 @@ class AttendanceService:
             raise ValueError("El horario tiene una hora inválida. Corrígela en el módulo de horarios.") from error
         if not start <= now.time() < end:
             raise ValueError(f"La entrada se habilita de {schedule['hora_inicio'][:5]} a {schedule['hora_fin'][:5]} (hora de Perú).")
-        inside = [r for r in self.gym.state.get("asistencia", []) if not r.get("anulado") and not r.get("hora_salida")]
-        if any(self.client_id(r) == client_id for r in inside):
-            raise ValueError("El cliente tiene una entrada sin salida. Registra su salida primero.")
-        capacity = int(self.gym.state.get("configuracion_gimnasio", {}).get("capacidad_total") or 30)
-        if len({self.client_id(r) for r in inside}) >= capacity:
-            raise ValueError("El gimnasio alcanzó su aforo. Registra una salida antes de otra entrada.")
+        self.check_occupancy(client_id)
         return client, member, schedule
 
     def lookup(self, dni):
@@ -136,9 +159,39 @@ class AttendanceService:
                               "puede_entrar": not record and not reason,
                               "motivo": "Asistencia de hoy completada." if record and record.get("hora_salida") else reason})
         schedules.sort(key=lambda s: (not s["hoy"], DAYS.index(s["dia"]) if s.get("dia") in DAYS else 7, s.get("hora_inicio", "")))
+        open_record = next((r for r in self.gym.state.get("asistencia", []) if self.client_id(r) == client_id
+                            and not r.get("anulado") and not r.get("hora_salida")), None)
+        reason = ""
+        try:
+            self.general_context(client_id, now)
+        except ValueError as error:
+            reason = str(error)
         return {"cliente": {k: client.get(k) for k in ("id_cliente", "nombre", "dni", "plan", "estado")},
                 "membresia": {k: member.get(k) for k in ("fecha_inicio", "fecha_fin", "estado", "estado_pago")} if member else None,
+                "general": {"puede_entrar": not reason, "motivo": reason,
+                            "asistencia_abierta": self.present(open_record) if open_record else None},
                 "horarios": schedules, "fecha": now.date().isoformat(), "server_now": now.isoformat()}
+
+    def general_retry(self, rows, client_id, request_id):
+        return next((r for r in rows if self.client_id(r) == client_id and self.kind(r) == "general"
+                     and any(e.get("request_id") == request_id for e in r.get("auditoria", []))), None)
+
+    def enter_general(self, dni, request_id, actor):
+        client = self.gym.get_cliente_by_dni(dni)
+        if not client:
+            raise ValueError("No se encontró un cliente con ese DNI.")
+        client_id = int(client["id_cliente"])
+        existing = self.general_retry(self.gym.state.get("asistencia", []), client_id, request_id)
+        if existing:
+            return self.present(existing)
+        now = self.now()
+        client, member = self.general_context(client_id, now)
+        row = {"id_cliente": client_id, "id_cliente_num": client_id, "id_membresia": member["id_membresia"],
+               "id_matricula": None, "id_horario_servicio": None, "servicio": "gimnasio",
+               "fecha": now.date().isoformat(), "hora": now.strftime("%H:%M:%S"),
+               "hora_entrada": now.strftime("%H:%M:%S"), "hora_salida": "", "fecha_salida": None,
+               "id_usuario_registra": actor.id_usuario or actor.id, "anulado": False}
+        return self.save(row, None, "entrada", actor, request_id=request_id)
 
     def existing(self, enrollment, day):
         return next((r for r in self.gym.state.get("asistencia", []) if not r.get("anulado")
@@ -221,9 +274,11 @@ class AttendanceService:
             # incluso si el horario o la membresía ya cambiaron después de ella.
         return self.save(row, expected, "anulacion" if annul else "correccion", actor, reason)
 
-    def save(self, row, expected, operation, actor, reason=""):
+    def save(self, row, expected, operation, actor, reason="", request_id=None):
         audit = {"accion": operation, "fecha": self.now().isoformat(), "actor_id": actor.id_usuario or actor.id,
                  "actor_nombre": actor.name, "motivo": reason}
+        if request_id:
+            audit["request_id"] = request_id
         if hasattr(self.gym, "save_attendance"):
             return self.present(self.gym.save_attendance(row, expected, audit))
 
@@ -231,12 +286,20 @@ class AttendanceService:
             rows = state.setdefault("asistencia", [])
             old = next((r for r in rows if r.get("id_asistencia") == row.get("id_asistencia")), None)
             if expected is None:
-                duplicate = next((r for r in rows if not r.get("anulado") and self.client_id(r) == self.client_id(row)
-                                  and r.get("id_matricula") == row.get("id_matricula") and r.get("fecha") == row["fecha"]), None)
+                if self.kind(row) == "general":
+                    duplicate = self.general_retry(rows, self.client_id(row), request_id)
+                else:
+                    duplicate = next((r for r in rows if not r.get("anulado")
+                                      and self.client_id(r) == self.client_id(row)
+                                      and r.get("id_matricula") == row.get("id_matricula")
+                                      and r.get("fecha") == row["fecha"]), None)
                 if duplicate:
                     return duplicate
-                enrollment = next(e for e in state["matriculas_horario"] if e["id_matricula"] == row["id_matricula"])
-                self.entry_context(enrollment, self.now())
+                if self.kind(row) == "general":
+                    self.general_context(self.client_id(row), self.now())
+                else:
+                    enrollment = next(e for e in state["matriculas_horario"] if e["id_matricula"] == row["id_matricula"])
+                    self.entry_context(enrollment, self.now())
                 row["id_asistencia"] = max((r["id_asistencia"] for r in rows), default=0) + 1
             elif not old or int(old.get("version") or 0) != expected:
                 if operation == "salida" and old and old.get("hora_salida") and not old.get("anulado"):
