@@ -176,6 +176,8 @@ class MovimientoInventarioInput(BaseModel):
     fecha_movimiento: str = ""
     descripcion: str = ""
     cantidad: int = 1
+    # Solo para salidas: "TIENDA" repone el stock del producto enlazado.
+    destino: str | None = None
 
 
 class MovimientoInventarioUpdateInput(BaseModel):
@@ -184,6 +186,8 @@ class MovimientoInventarioUpdateInput(BaseModel):
     fecha_movimiento: str | None = None
     descripcion: str | None = None
     cantidad: int | None = Field(default=None, ge=1)
+    # "TIENDA" para una reposición; "" quita el destino.
+    destino: str | None = None
 
 
 class TicketAtencionInput(BaseModel):

@@ -1796,7 +1796,7 @@ export const useGymStore = defineStore('gym', () => {
       }
 
       persist();
-      // Un producto nuevo puede crear su item en Inventario y su entrada inicial.
+      // Un producto nuevo puede crear su reserva (vacia) en Inventario.
       await fetchFromBackend({ force: true }).catch(() => {});
       return normalized;
     }
@@ -1993,7 +1993,7 @@ export const useGymStore = defineStore('gym', () => {
       });
       if (!response.ok) throw new Error(await readBackendError(response, 'No se pudo actualizar el pedido'));
       const saved = mergeStoreOrder(await response.json());
-      // Cancelar devuelve el stock: refresca Inventario, Tienda y Movimientos.
+      // Cancelar devuelve el stock a la Tienda.
       if (body.estado_pedido === 'CANCELADO') await fetchFromBackend({ force: true }).catch(() => {});
       return saved;
     }
@@ -3162,7 +3162,7 @@ export const useGymStore = defineStore('gym', () => {
   };
 
   /**
-   * Corrige un movimiento; el backend recalcula el stock compartido de Inventario y Tienda.
+   * Corrige un movimiento; el backend recalcula el stock de Inventario y, si es una reposicion, el de Tienda.
    */
   const updateInventoryMovement = async (idMov, payload) => {
     if (!apiBase) throw new Error('No hay backend configurado');
