@@ -4,7 +4,7 @@
       <div>
         <p class="att-eyebrow">Todas las visitas</p>
         <h2>Historial de asistencia</h2>
-        <p class="att-muted">Consulta por fecha, servicio y estado.</p>
+        <p class="att-muted">Consulta visitas generales y por horario en un solo lugar.</p>
       </div>
       <button
         class="att-button"
@@ -17,6 +17,11 @@
       </button>
     </div>
     <form class="att-filters" @submit.prevent="apply">
+      <label>Tipo de asistencia<select v-model="draft.tipo">
+        <option value="">Todas</option>
+        <option value="general">Gimnasio general</option>
+        <option value="horario">Por horario</option>
+      </select></label>
       <label v-if="admin"
         >DNI del cliente<input
           v-model="draft.dni"
@@ -93,6 +98,7 @@
             <td data-label="Fecha / servicio">
               <strong>{{ dateLabel(record.fecha) }}</strong
               ><small>{{ services[record.servicio] || record.servicio }}</small>
+              <small>{{ record.tipo === 'general' ? 'Visita general' : 'Por horario' }}</small>
             </td>
             <td class="att-time" data-label="Entrada">
               {{ shortTime(record.hora_entrada || record.hora) }}
@@ -203,6 +209,7 @@ const emptyFilters = () => ({
   hasta: '',
   servicio: '',
   estado: '',
+  tipo: '',
 });
 const draft = reactive(emptyFilters()),
   active = ref(emptyFilters());
@@ -285,6 +292,7 @@ const exportRecords = async () => {
           : {}),
         Fecha: r.fecha,
         Servicio: services[r.servicio] || r.servicio,
+        'Tipo de asistencia': r.tipo === 'general' ? 'Gimnasio general' : 'Por horario',
         Entrada: r.hora_entrada || r.hora,
         Salida: r.hora_salida || '',
         'Fecha de salida': r.hora_salida ? r.fecha_salida || r.fecha : '',
@@ -292,7 +300,7 @@ const exportRecords = async () => {
         'Zona horaria': 'America/Lima',
       })),
     );
-    sheet['!cols'] = Array(props.admin ? 9 : 7).fill({ wch: 24 });
+    sheet['!cols'] = Array(props.admin ? 10 : 8).fill({ wch: 24 });
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, 'Asistencias');
     XLSX.writeFile(workbook, 'asistencias.xlsx');

@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -30,3 +30,16 @@ USER appuser
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Herramientas y pruebas solo en la imagen de CI.
+FROM runtime AS test
+USER root
+COPY requirements-dev.txt ./
+RUN pip install -r requirements-dev.txt
+COPY --chown=root:root --chmod=644 tests/test*.py tests/conftest.py ./tests/
+RUN chmod 755 /app/tests
+USER appuser
+CMD ["sh", "-c", "flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics && python -m pytest tests/ -q -p no:cacheprovider"]
+
+# La construcción predeterminada conserva la imagen de producción.
+FROM runtime AS production

@@ -11,6 +11,39 @@ y guardar la informacion del sistema.
 - Docker Desktop o Docker Engine con Docker Compose 2.17 o superior, si se usara Docker
 - Credenciales de Supabase para el backend
 
+## Integración continua y despliegue
+
+Al fusionar un PR hacia `main`, GitHub Actions ejecuta esta secuencia:
+
+1. Construye las imágenes Docker del backend y frontend, arranca ambos
+   contenedores y verifica el backend, la web y el proxy de Nginx.
+2. Ejecuta las pruebas de Python y Node.js dentro de los targets `test` de sus
+   Dockerfiles, y las pruebas de Deno en paralelo. Las imágenes de producción
+   no incluyen las dependencias ni los archivos exclusivos de pruebas.
+3. Si todas pasan, despliega el frontend en Vercel y solicita el despliegue
+   del mismo commit en Render.
+
+Si falla Docker o alguna prueba, los despliegues no se ejecutan. La validación
+usa `docker-compose.yml` con un archivo temporal de CI y una clave de prueba,
+sin credenciales de producción.
+Comprueba el arranque y el proxy; no comprueba una conexión real a Supabase.
+El endpoint `/api/health` devuelve el 503 esperado por falta de credenciales.
+
+Los despliegues conservan sus mecanismos actuales: Vercel compila el frontend
+y Render recibe su Deploy Hook. Este workflow no publica imágenes Docker ni
+cambia la configuración del servicio en Render. La aceptación del hook no
+confirma que Render haya terminado el despliegue.
+
+GitHub Actions necesita únicamente los secretos de despliegue
+`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` y
+`RENDER_DEPLOY_HOOK_URL`. Las variables de la aplicación se configuran en
+Vercel (Production) y Render. Antes de compilar, `vercel pull` recupera la
+configuración y las variables de producción de Vercel; el hook de Render
+conserva las variables del servicio y solicita el mismo commit probado.
+El proyecto de Vercel debe tener `Root Directory` en `frontend`.
+Mantén desactivados los despliegues automáticos por Git en ambas plataformas
+para que las publicaciones dependan de este workflow.
+
 ## Activacion Manual
 
 ### Backend
@@ -21,7 +54,7 @@ y guardar la informacion del sistema.
 cd backend
 py -m venv .venv
 .\.venv\Scripts\Activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m app.main
 ```
 
@@ -31,9 +64,21 @@ En Linux/macOS:
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m app.main
 ```
+
+`requirements.txt` contiene las dependencias de ejecución usadas por Docker y
+Render. `requirements-dev.txt` incluye esas dependencias y añade pytest, httpx y
+flake8 para desarrollo y CI.
+
+Para ejecutar las pruebas y la comprobación de errores desde `backend/`:
+
+```bash
+python -m pytest tests/ -q
+python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+```
+
 
 ### Frontend
  
@@ -67,6 +112,8 @@ proyecto. La clave privada se configura únicamente en `backend/.env`.
 Para los pagos, configura también las variables de Stripe de `backend/.env`.
 Los archivos `.env` reales no se incluyen en Git; cada Codespace necesita sus
 credenciales. No sobrescribas los archivos si ya los configuraste.
+
+
 
 Construir e iniciar frontend y backend:
 
@@ -108,4 +155,20 @@ docker compose build --pull --no-cache
 docker compose up -d --no-build
 docker compose ps
 ```
+Para 2026
 
+## Asistencia general del gimnasio
+
+La vista de Asistencias incluye «Por horarios», «Gimnasio general» e «Historial».
+Las visitas generales requieren una cuenta activada y una membresía pagada y
+vigente, y permiten registrar nuevas visitas el mismo día al cerrar la anterior.
+Ambos tipos de asistencia comparten el aforo y la regla de una sola entrada
+abierta por cliente. El cliente consulta sus visitas en su calendario e historial.
+
+Antes de usar el registro general, ejecuta
+[`backend/migrations/013_general_attendance.sql`](backend/migrations/013_general_attendance.sql)
+en el SQL Editor de Supabase, después de la migración `005_harden_attendance.sql`.
+No se crea una tabla nueva: se reutiliza `ASISTENCIA`, con `servicio = 'gimnasio'`
+y matrícula/horario nulos. La migración actualiza la función `guardar_asistencia`
+y conserva los registros, la auditoría y los permisos existentes. Puede ejecutarse
+de nuevo sin duplicar datos. Luego publica el backend y frontend actualizados.

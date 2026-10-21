@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell min-h-screen text-slate-50">
     <div class="relative flex min-h-screen w-full">
-      <aside class="app-sidebar hidden w-64 flex-col border-r backdrop-blur-xl lg:flex 2xl:w-72">
+      <aside class="app-sidebar hidden w-64 flex-col border-r lg:flex 2xl:w-72">
         <div class="border-b border-red-500/20 p-5 2xl:p-6">
           <p class="text-xs uppercase tracking-[0.38em] text-red-400">
             {{ APP_CONFIG.appName }}
@@ -132,7 +132,7 @@
 
       <div class="flex min-w-0 flex-1 flex-col">
         <header
-          class="app-mobile-header sticky top-0 z-20 border-b backdrop-blur-xl lg:hidden"
+          class="app-mobile-header sticky top-0 z-20 border-b lg:hidden"
         >
           <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
             <div class="min-w-0">
@@ -184,15 +184,18 @@
         </header>
 
         <main
-          class="app-main flex-1 px-3 py-4 pb-24 backdrop-blur-sm sm:px-5 sm:py-5 lg:px-6 lg:pb-8 xl:px-8 2xl:px-10"
+          class="app-main flex-1 px-3 py-4 pb-24 sm:px-5 sm:py-5 lg:px-6 lg:pb-8 xl:px-8 2xl:px-10"
         >
           <div class="mx-auto w-full max-w-[1800px]">
+            <p v-if="isActiveSectionSyncing && !isNavigatingModule" role="status" class="mb-3 text-sm text-slate-400">
+              Actualizando datos…
+            </p>
             <slot />
           </div>
         </main>
 
         <nav
-          class="app-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t px-2 py-2 backdrop-blur-xl lg:hidden"
+          class="app-mobile-nav fixed inset-x-0 bottom-0 z-30 border-t px-2 py-2 lg:hidden"
         >
           <div
             ref="mobileNavigation"
@@ -222,11 +225,49 @@
         </nav>
       </div>
     </div>
+
+    <!-- OVERLAY ANIMADO DE CAMBIO DE MÓDULO CON RELOJ Y ÍCONOS DE GIMNASIO -->
+    <Teleport to="body">
+      <Transition name="module-loading-fade">
+        <div
+          v-if="isNavigatingModule"
+          class="module-loader-overlay fixed inset-0 z-[100] flex flex-col items-center justify-center p-4"
+        >
+          <div class="relative flex flex-col items-center space-y-5 text-center">
+            <!-- Reloj y Anillo de Energía en Rojo -->
+            <div class="relative flex h-28 w-28 items-center justify-center">
+              <!-- Anillo exterior giratorio -->
+              <div class="absolute inset-0 rounded-full border-4 border-red-600/20 border-t-red-600 border-r-red-500 animate-spin shadow-lg shadow-red-600/30"></div>
+
+              <!-- Anillo de pulso interno -->
+              <div class="absolute inset-2 rounded-full bg-red-600/10 animate-ping"></div>
+
+              <!-- Ícono central de Reloj/Cronómetro -->
+              <div class="relative z-10 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-600 text-white shadow-xl shadow-red-600/40 animate-pulse">
+                <i class="fa-solid fa-stopwatch text-3xl"></i>
+              </div>
+            </div>
+
+            <!-- Información del Módulo -->
+            <div class="space-y-1">
+              <p class="text-xs uppercase tracking-[0.35em] text-red-500 font-extrabold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrows-rotate animate-spin text-[10px]"></i>
+                <span>Cargando Módulo</span>
+              </p>
+              <h3 class="text-2xl font-black tracking-tight text-white light-module-title">
+                {{ targetModuleName }}
+              </h3>
+              <p class="text-xs text-slate-400 font-bold">Módulo Digital AC Silver's Gym</p>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import {
@@ -236,7 +277,7 @@ import {
   Dumbbell,
   Home,
   Package,
-  Settings,
+  CreditCard,
   ShoppingBag,
   Tags,
   TicketCheck,
@@ -248,6 +289,8 @@ import {
 import { useAuth } from '../composables/useAuth';
 import { useTheme } from '../composables/useTheme';
 import { APP_CONFIG } from '../config/appConfig';
+import { useGymStore } from '../stores/gymStore';
+import { createModuleLoader, sectionForPath } from '../services/moduleNavigation.js';
 
 const props = defineProps({
   mode: {
@@ -361,9 +404,9 @@ const navigationLinks = computed(() => {
         icon: ClipboardList,
       },
       {
-        label: 'Config',
-        to: '/admin/settings',
-        icon: Settings,
+        label: 'Pagos',
+        to: '/admin/payments',
+        icon: CreditCard,
       },
     ];
   }
@@ -465,8 +508,87 @@ const revealActiveMobileLink = async () => {
     navigation.scrollLeft = active.offsetLeft - navigation.clientWidth / 2 + active.clientWidth / 2;
   }
 };
-onMounted(revealActiveMobileLink);
-watch(() => route.path, revealActiveMobileLink);
+// Transición de Carga al Cambiar de Módulo
+const gymStore = useGymStore();
+const isActiveSectionSyncing = computed(() => gymStore.isSectionSyncing(sectionForPath(route.path)));
+const isNavigatingModule = ref(false);
+const targetModuleName = ref('');
+const moduleLoader = createModuleLoader({ onChange: (active) => { isNavigatingModule.value = active; } });
+let navigationRevision;
+let navigationTarget;
+let removeBeforeEach;
+let removeAfterEach;
+let removeErrorHandler;
+
+const moduleNamesMap = {
+  '/trainer/dashboard': 'Supervisión de Horarios',
+  '/trainer/routines': 'Catálogo de Rutinas',
+  '/trainer/routine-monitor': 'Seguimiento & Monitoreo',
+  '/admin/dashboard': 'Panel de Control',
+  '/admin/clients': 'Gestión de Clientes',
+  '/admin/users': 'Gestión de Usuarios',
+  '/admin/plans': 'Planes de Membresía',
+  '/admin/promotions': 'Promociones & Descuentos',
+  '/admin/service-schedules': 'Horarios de Servicios',
+  '/admin/enrollment': 'Matrículas & Registros',
+  '/admin/attendance': 'Control de Asistencias',
+  '/admin/inventory': 'Inventario General',
+  '/admin/store': 'Tienda Gimnasio',
+  '/admin/orders': 'Pedidos & Ventas',
+  '/admin/payments': 'Pagos de Membresías',
+  '/user/dashboard': 'Mi Panel Principal',
+  '/user/store': 'Tienda Virtual',
+  '/user/schedule': 'Mis Horarios',
+  '/user/attendance': 'Mi Registro de Asistencia',
+};
+
+const loadActiveSection = (force = false) => gymStore.fetchFromBackend({
+  force,
+  section: sectionForPath(route.path),
+});
+
+let lastInactiveTimestamp = Date.now();
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    lastInactiveTimestamp = Date.now();
+    return;
+  }
+  // Volver a la pestaña actualiza los datos sin tapar una vista ya disponible.
+  void loadActiveSection(Date.now() - lastInactiveTimestamp >= 5000).catch(() => {});
+};
+
+onMounted(() => {
+  revealActiveMobileLink();
+  removeBeforeEach = router.beforeEach((to, from) => {
+    if (from.path && to.path !== from.path) {
+      targetModuleName.value = moduleNamesMap[to.path] || 'Módulo Digital';
+      navigationTarget = to.fullPath;
+      navigationRevision = moduleLoader.start();
+    }
+  });
+  removeAfterEach = router.afterEach(async (to, _from, failure) => {
+    if (to.fullPath !== navigationTarget) return;
+    const current = navigationRevision;
+    if (failure) {
+      moduleLoader.stop();
+      return;
+    }
+    // Al montar la vista se puede interactuar; los datos muestran su estado dentro del módulo.
+    await nextTick();
+    revealActiveMobileLink();
+    moduleLoader.complete(current);
+  });
+  removeErrorHandler = router.onError(() => moduleLoader.stop());
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+});
+
+onBeforeUnmount(() => {
+  removeBeforeEach?.();
+  removeAfterEach?.();
+  removeErrorHandler?.();
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  moduleLoader.dispose();
+});
 
 /**
  * Obtiene una versión corta de algunas etiquetas

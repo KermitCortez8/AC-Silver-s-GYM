@@ -814,7 +814,7 @@ watch(feedback, (value) => {
 
 onBeforeUnmount(() => clearTimeout(feedbackTimeout));
 onMounted(() =>
-  gymStore.fetchFromBackend?.().catch(() => {
+  gymStore.fetchFromBackend?.({ section: 'inventory' }).catch(() => {
     feedbackTone.value = 'error';
     feedback.value =
       'No se pudo actualizar el inventario. Recarga la página para intentarlo de nuevo.';

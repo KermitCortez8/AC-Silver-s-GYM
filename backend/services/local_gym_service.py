@@ -17,7 +17,7 @@ class LocalGymService(GymDomainService):
         self.state = self._normalize(self._seed())
 
     # Procesa esta operación.
-    def ensure_fresh(self) -> None:
+    def ensure_fresh(self, resources=None) -> None:
         return None
 
     # Procesa esta operación.

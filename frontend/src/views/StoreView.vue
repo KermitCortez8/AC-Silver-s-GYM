@@ -30,17 +30,21 @@
         </button>
       </div>
 
-      <nav v-if="isAdmin" class="mt-5 flex gap-2 border-t border-white/10 pt-5" aria-label="Secciones de tienda">
+      <nav v-if="isAdmin" class="mt-5 flex border-b border-white/10" aria-label="Secciones de tienda">
         <button
           v-for="tab in tabs"
           :key="tab.value"
           type="button"
-          class="rounded-xl px-4 py-2 text-sm font-bold transition"
-          :class="activeTab === tab.value ? 'bg-amber-400 text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/5'"
+          class="relative px-5 py-3 text-sm font-bold transition-colors duration-200"
+          :class="activeTab === tab.value ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'"
           :aria-current="activeTab === tab.value ? 'page' : undefined"
           @click="activeTab = tab.value"
         >
           {{ tab.label }}
+          <span
+            v-if="activeTab === tab.value"
+            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-400"
+          ></span>
         </button>
       </nav>
     </section>
@@ -101,11 +105,18 @@
             <p class="mt-0.5 text-2xl font-black text-white">{{ productos.length }}</p>
             <span class="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-sky-400"></span>
           </div>
-          <div class="text-center">
+          <button
+            type="button"
+            class="rounded-xl px-2 text-center transition hover:bg-white/5"
+            :class="soloStockBajo ? 'ring-2 ring-rose-400/70' : ''"
+            :aria-pressed="soloStockBajo"
+            :title="soloStockBajo ? 'Quitar filtro de stock bajo' : 'Ver solo productos por reponer desde Inventario'"
+            @click="toggleStockBajo"
+          >
             <p class="text-xs text-slate-500">Stock bajo</p>
             <p class="mt-0.5 text-2xl font-black" :class="lowStockCount > 0 ? 'text-rose-300' : 'text-white'">{{ lowStockCount }}</p>
             <span class="mt-1 inline-block h-1.5 w-1.5 rounded-full" :class="lowStockCount > 0 ? 'bg-rose-400' : 'bg-slate-700'"></span>
-          </div>
+          </button>
           <div class="text-center">
             <p class="text-xs text-slate-500">Agotados</p>
             <p class="mt-0.5 text-2xl font-black" :class="agotadosCount > 0 ? 'text-amber-300' : 'text-white'">{{ agotadosCount }}</p>
@@ -163,7 +174,7 @@
       <!-- Tabla -->
       <div v-if="productos.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
-          <table class="ws-table store-admin-table">
+          <table class="w-full ws-table store-admin-table">
             <thead
               class="border-b ws-border ws-inset text-xs uppercase tracking-[0.16em] ws-muted"
             >
@@ -622,7 +633,7 @@
                   <select v-else v-model="form.id_item" class="field-input">
                     <option :value="null">{{ editingId ? 'Sin vincular' : 'Crear nuevo item en Inventario (Tipo Tienda)' }}</option>
                     <option v-for="item in availableTiendaItems" :key="item.id" :value="itemNumber(item)">
-                      {{ item.inventoryCode }} - {{ item.name }} ({{ item.quantity }})
+                      {{ item.inventoryCode }} - {{ item.name }} (reserva {{ item.quantity }})
                     </option>
                   </select>
                 </label>
@@ -644,7 +655,7 @@
                   <input v-model.number="form.precio" type="number" min="0" step="0.01" class="field-input" />
                 </label>
                 <label class="space-y-2">
-                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ stockEditable ? 'Stock inicial' : 'Stock (desde Inventario)' }}</span>
+                  <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ stockEditable ? 'Stock inicial en Tienda' : 'Stock en Tienda' }}</span>
                   <input v-if="stockEditable" v-model.number="form.cantidad" type="number" min="0" class="field-input" />
                   <input v-else :value="stockMostrado" type="number" class="field-input cursor-not-allowed opacity-70" readonly />
                 </label>
@@ -653,8 +664,8 @@
                   <input v-model.number="form.minimo" type="number" min="0" class="field-input" />
                 </label>
                 <div class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50 sm:col-span-2">
-                  <p v-if="stockEditable">El stock inicial se registrara como una entrada en los movimientos de Inventario.</p>
-                  <p v-else class="font-bold">El stock se comparte entre Inventario y Tienda. Para modificarlo registra un movimiento en Inventario &rarr; Movimientos.</p>
+                  <p v-if="stockEditable">El stock inicial queda en la Tienda; la reserva de Inventario no cambia.</p>
+                  <p v-else class="font-bold">La Tienda tiene su propio stock: baja con las ventas y sube cuando Inventario la repone (Inventario &rarr; Movimientos, salida con destino Tienda).</p>
                   <p class="mt-1">El estado se calcula solo: <span class="font-bold">Disponible</span> con stock, <span class="font-bold">Agotado</span> sin stock y <span class="font-bold">Descatalogado</span> (oculto a clientes) si no tiene precio o el item ya no es Tipo Tienda o esta Descontinuado.</p>
                 </div>
               </div>
@@ -851,8 +862,18 @@ const categoriasUnicas = computed(() => {
   return [...new Set(cats)].sort();
 });
 
+// Filtro de la tarjeta "Stock bajo": productos que hay que reponer desde Inventario.
+const soloStockBajo = ref(false);
+const toggleStockBajo = () => {
+  soloStockBajo.value = !soloStockBajo.value;
+  paginaActual.value = 1;
+};
+
 const productosFiltrados = computed(() => {
   let lista = productos.value;
+  if (soloStockBajo.value) {
+    lista = lista.filter((p) => isProductLowStock(p));
+  }
   if (categoriaActiva.value) {
     lista = lista.filter((p) => (p.categoria || 'General') === categoriaActiva.value);
   }
@@ -870,7 +891,7 @@ const productosFiltrados = computed(() => {
 
 // Paginación (sobre lista filtrada)
 const paginaActual = ref(1);
-const porPagina = 7;
+const porPagina = 10;
 const totalPages = computed(() => Math.ceil(productosFiltrados.value.length / porPagina));
 const paginaInicio = computed(() => (paginaActual.value - 1) * porPagina);
 const paginaFin = computed(() => Math.min(paginaInicio.value + porPagina, productosFiltrados.value.length));
@@ -949,12 +970,9 @@ const linkedItemLabel = computed(() => {
   const item = findItem(form.id_item);
   return item ? `${item.inventoryCode} - ${item.name}` : `Item #${form.id_item}`;
 });
-// Solo un producto nuevo que crea su propio item acepta stock inicial.
-const stockEditable = computed(() => !editingId.value && !form.id_item);
-const stockMostrado = computed(() => {
-  const item = findItem(form.id_item);
-  return item ? Number(item.quantity || 0) : Number(form.cantidad || 0);
-});
+// Solo un producto nuevo acepta stock inicial; despues cambia con ventas y reposiciones.
+const stockEditable = computed(() => !editingId.value);
+const stockMostrado = computed(() => Number(form.cantidad || 0));
 
 const isProductLowStock = (producto) => Number(producto.cantidad || 0) <= Number(producto.minimo || 0);
 
@@ -1213,7 +1231,7 @@ const goToCheckout = () => {
 
 onMounted(() => {
   gymStore
-    .fetchFromBackend?.()
+    .fetchFromBackend?.({ section: 'store' })
     .catch((error) => console.warn('No se pudo refrescar tienda:', error));
 });
 </script>

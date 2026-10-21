@@ -626,7 +626,7 @@ const handleSubmit = async () => {
 onMounted(async () => {
   isLoading.value = true;
   try {
-    await gymStore.fetchFromBackend?.();
+    await gymStore.fetchFromBackend?.({ section: 'users' });
   } catch {
     feedbackTone.value = 'error';
     feedbackMessage.value =

@@ -33,6 +33,10 @@ ENV VITE_APP_NAME=$VITE_APP_NAME \
 
 RUN npm run build
 
+FROM build AS test
+COPY tests ./tests
+CMD ["npm", "test"]
+
 FROM nginx:1.27-alpine
 
 # nginx puede leer la configuracion y la web, pero solo root puede modificarlas.
