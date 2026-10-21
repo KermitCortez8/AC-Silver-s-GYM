@@ -28,21 +28,81 @@
           <h1 class="mt-1 text-3xl font-black text-white">Supervisión y Seguimiento de Rutinas</h1>
           <p class="mt-1 text-sm text-slate-400">Consulta alumnos matriculados, asigna nuevas rutinas personalizadas y registra el progreso de ejercicios.</p>
         </div>
+        <!-- Búsqueda con autocompletado: integra ambos cambios del conflicto. -->
         <form class="flex flex-col gap-3 sm:flex-row" @submit.prevent="searchClient">
-          <div class="relative min-w-64">
+          <div class="relative min-w-64 sm:w-80">
             <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-            <input v-model="dni" class="field-input search-input text-xs" placeholder="Ingresa DNI del cliente" required />
+            <input
+              v-model="dni"
+              class="field-input search-input text-xs"
+              type="text"
+              inputmode="numeric"
+              maxlength="8"
+              autocomplete="off"
+              placeholder="Ingresa DNI del cliente"
+              aria-label="DNI del cliente"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls="dni-suggestions"
+              :aria-expanded="showSuggestions"
+              :aria-activedescendant="activeIndex >= 0 && showSuggestions ? `dni-option-${activeIndex}` : undefined"
+              @input="onDniInput"
+              @focus="openSuggestions"
+              @blur="open = false"
+              @keydown.down.prevent="moveActive(1)"
+              @keydown.up.prevent="moveActive(-1)"
+              @keydown.enter="onEnter"
+              @keydown.esc="open = false"
+            />
+            <ul
+              v-if="showSuggestions"
+              id="dni-suggestions"
+              role="listbox"
+              class="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-white/10 bg-slate-950 p-1 shadow-xl"
+              @mousedown.prevent
+            >
+              <li
+                v-for="(client, index) in suggestions"
+                :id="`dni-option-${index}`"
+                :key="client.dni"
+                role="option"
+                :aria-selected="index === activeIndex"
+                class="cursor-pointer rounded-xl px-3 py-2 text-sm"
+                :class="index === activeIndex ? 'bg-red-600/25 text-white' : 'text-slate-200 hover:bg-white/10'"
+                @mousedown.prevent="pickClient(client.dni)"
+                @mouseenter="activeIndex = index"
+              >
+                <span class="font-bold text-red-400">{{ client.dni.slice(0, dni.length) }}</span>{{ client.dni.slice(dni.length) }}
+                <span class="ml-2 text-slate-400">· {{ client.nombre }}</span>
+              </li>
+              <li v-if="!suggestions.length" class="px-3 py-2 text-sm text-slate-400" role="option" aria-disabled="true" aria-selected="false">
+                Ningún cliente con matrícula activa empieza con {{ dni }}. Puedes buscar ese DNI directamente.
+              </li>
+            </ul>
           </div>
-          <button class="flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-3 text-xs font-black text-white hover:bg-red-500 transition shadow-lg shadow-red-600/20">
+          <button
+            type="submit"
+            class="flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-3 text-xs font-black text-white hover:bg-red-500 transition shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="searching"
+          >
             <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Buscar Cliente</span>
+            <span>{{ searching ? 'Buscando…' : 'Buscar Cliente' }}</span>
           </button>
         </form>
       </div>
     </section>
 
+    <p
+      v-if="feedback"
+      role="status"
+      class="rounded-2xl border px-4 py-3 text-sm"
+      :class="feedbackTone === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50'"
+    >
+      {{ feedback }}
+    </p>
+
     <!-- Visual Rest Timer (Flotante en Vista Principal - ROJO Y NEGRO) -->
-    <section v-if="timerActive || timerSeconds > 0" class="rounded-2xl border border-red-500/40 bg-black/90 p-4 shadow-xl transition-all">
+    <section v-if="timerActive || timerSeconds > 0 || timerFinished" class="rounded-2xl border border-red-500/40 bg-black/90 p-4 shadow-xl transition-all">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20 text-red-400 font-black">
@@ -57,7 +117,7 @@
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button v-if="!timerActive" class="rounded-xl bg-red-600 px-4 py-2 font-black text-white text-xs hover:bg-red-500 transition flex items-center gap-1.5" @click="startTimer">
+          <button v-if="!timerActive" class="rounded-xl bg-red-600 px-4 py-2 font-black text-white text-xs hover:bg-red-500 transition flex items-center gap-1.5" @click="timerSeconds > 0 ? startTimer() : setRestTimer(timerInitialSeconds)">
             <i class="fa-solid fa-play text-xs"></i>
             <span>{{ timerSeconds > 0 ? 'Reanudar' : 'Iniciar' }}</span>
           </button>
@@ -115,7 +175,9 @@
 
           <!-- BOTÓN INTEGRADO DE ACCIÓN: + ASIGNAR RUTINA PERSONALIZADA (ROJO SÓLIDO) -->
           <button
-            class="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-black text-white hover:bg-red-500 transition shadow-lg shadow-red-600/20"
+            type="button"
+            class="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-black text-white hover:bg-red-500 transition shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="!hasActiveMembership"
             @click="openAssignModal"
           >
             <i class="fa-solid fa-plus text-xs"></i>
@@ -123,6 +185,14 @@
           </button>
         </div>
       </div>
+
+      <p
+        v-if="!hasActiveMembership"
+        class="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100"
+        role="alert"
+      >
+        {{ clientData.cliente.nombre }} no tiene una matrícula activa. Para asignar una rutina, primero debe matricularse en un horario.
+      </p>
 
       <!-- LISTADO DE RUTINAS ASIGNADAS -->
       <div class="space-y-4">
@@ -172,20 +242,83 @@
             </div>
           </div>
 
+          <!-- Indicadores conservados de la rama de asignación. -->
+          <div class="flex flex-wrap gap-2">
+            <span
+              class="rounded-full px-3 py-1 text-xs font-bold"
+              :class="isEnrollmentActive(item) ? 'bg-emerald-400/15 text-emerald-200' : 'bg-amber-400/15 text-amber-200'"
+            >
+              {{ isEnrollmentActive(item) ? 'Matrícula activa' : 'Matrícula no activa' }}
+            </span>
+            <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-200">
+              {{ item.rutina_origen === 'cliente' ? 'Rutina del cliente' : 'Rutina del servicio' }}
+            </span>
+          </div>
+
+          <!-- Asignación directa por matrícula, además del modal personalizado. -->
+          <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <select
+              class="field-input text-sm"
+              :value="selectedRoutine(item)"
+              :disabled="!canAssign(item) || assigningId === item.id_matricula"
+              :aria-label="`Rutina para ${serviceLabel(item.servicio)}`"
+              @change="selection[item.id_matricula] = Number($event.target.value)"
+            >
+              <option :value="0" disabled>Selecciona una rutina de {{ serviceLabel(item.servicio) }}</option>
+              <option v-for="routine in routinesForService(item.servicio)" :key="routine.id_rutina" :value="routine.id_rutina">
+                {{ routine.nombre_rutina }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black text-white disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+              :disabled="!canAssign(item) || !hasChange(item) || Boolean(assigningId)"
+              @click="assignRoutine(item)"
+            >
+              {{ assigningId === item.id_matricula ? 'Asignando…' : 'Asignar' }}
+            </button>
+          </div>
+          <button
+            type="button"
+            class="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-xs font-black text-slate-950 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+            :disabled="!item.id_rutina || !isEnrollmentActive(item) || markingId === item.id_matricula"
+            @click="markDone(item)"
+          >
+            {{ markingId === item.id_matricula ? 'Registrando…' : 'Check realizado' }}
+          </button>
+          <p
+            v-if="isEnrollmentActive(item) && !hasCompatibleRoutines(item)"
+            class="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100"
+            role="status"
+          >
+            No hay rutinas compatibles con el servicio {{ serviceLabel(item.servicio) }}. Crea una en la sección Rutinas para poder asignarla.
+          </p>
+
           <!-- Historial de avance reciente -->
           <div>
             <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400 flex items-center gap-1.5">
               <i class="fa-solid fa-clock-rotate-left text-xs text-red-500"></i>
               Avance reciente registrado
             </p>
-            <div v-if="(item.progreso || []).length" class="mt-2 space-y-2 max-h-36 overflow-y-auto pr-1">
-              <div v-for="progress in item.progreso || []" :key="progress.id_progreso" class="rounded-xl bg-black/80 p-3 text-xs space-y-1 border border-white/5">
-                <div class="flex items-center justify-between text-slate-300">
-                  <span class="font-bold text-red-400">{{ progress.fecha }}</span>
-                  <span class="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">{{ progress.estado }}</span>
+            <div v-if="sortedProgress(item.progreso).length" class="mt-3 space-y-3 max-h-72 overflow-y-auto pr-1">
+              <div v-for="progress in sortedProgress(item.progreso)" :key="progress.id_progreso" class="rounded-xl bg-black/80 p-4 text-xs space-y-2 border border-white/10">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="flex items-center gap-1.5 font-bold text-red-400">
+                    <i class="fa-regular fa-calendar text-[11px]"></i>
+                    {{ formatProgressDate(progress.fecha) }}
+                  </span>
+                  <span v-if="isCompleted(progress.estado)" class="rounded-full bg-emerald-500/20 px-3 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">
+                    <i class="fa-solid fa-check mr-1 text-[9px]"></i>Rutina completada
+                  </span>
+                  <span v-else class="rounded-full bg-amber-500/20 px-3 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+                    Pendiente
+                  </span>
                 </div>
-                <p v-if="progress.observacion" class="text-slate-400">{{ progress.observacion }}</p>
-                <div v-if="(progress.ejercicios_detalle || []).length" class="mt-1 space-y-1 border-t border-white/5 pt-1">
+                <p class="text-slate-300">
+                  <strong class="text-slate-400">Observación:</strong>
+                  {{ progress.observacion || 'Sin observación registrada' }}
+                </p>
+                <div v-if="(progress.ejercicios_detalle || []).length" class="mt-1 space-y-1 border-t border-white/5 pt-2">
                   <div v-for="(exDet, detIdx) in progress.ejercicios_detalle" :key="detIdx" class="text-[11px] text-slate-300 flex justify-between">
                     <span>
                       <i v-if="exDet.completado" class="fa-solid fa-check text-emerald-400 mr-1 text-[10px]"></i>
@@ -196,14 +329,13 @@
                 </div>
               </div>
             </div>
-            <p v-else class="mt-2 text-xs text-slate-500">Sin checks de avance registrados aún.</p>
+            <div v-else class="mt-3 rounded-xl border border-dashed border-white/10 p-4 text-center text-xs text-slate-500">
+              Aún no hay progreso registrado
+            </div>
           </div>
         </article>
       </div>
 
-      <p v-if="!clientData.matriculas.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-6 text-center text-slate-400">
-        El cliente no tiene matrículas activas.
-      </p>
     </section>
 
     <!-- Estado 3: ESTADO VACÍO PREVIO A LA BÚSQUEDA -->
@@ -237,8 +369,8 @@
                 <i class="fa-solid fa-dumbbell text-red-500/80"></i>
                 <span>Seleccionar servicio matriculado del cliente</span>
               </span>
-              <select v-model="assignForm.id_matricula" class="field-input text-sm cursor-pointer font-medium">
-                <option v-for="mat in clientData?.matriculas || []" :key="mat.id_matricula" :value="mat.id_matricula">
+              <select v-model="assignForm.id_matricula" class="field-input text-sm cursor-pointer font-medium" @change="assignForm.id_rutina = 0">
+                <option v-for="mat in (clientData?.matriculas || []).filter(isEnrollmentActive)" :key="mat.id_matricula" :value="mat.id_matricula">
                   {{ serviceLabel(mat.servicio) }} ({{ dayLabel(mat.dia) }} {{ mat.hora_inicio }} - {{ mat.hora_fin }})
                 </option>
               </select>
@@ -255,6 +387,9 @@
                   {{ routine.nombre_rutina }} ({{ (routine.ejercicios || []).length }} ejercicios)
                 </option>
               </select>
+              <p v-if="!availableRoutinesForSelectedMatricula.length" class="text-xs text-amber-300">
+                No hay rutinas compatibles con el servicio seleccionado.
+              </p>
             </label>
           </div>
 
@@ -264,11 +399,11 @@
             </button>
             <button
               class="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-2.5 text-xs font-black text-white hover:bg-red-500 transition shadow-lg shadow-red-600/30 disabled:bg-slate-800 disabled:text-slate-500 disabled:border disabled:border-white/10 disabled:shadow-none disabled:cursor-not-allowed"
-              :disabled="!assignForm.id_matricula || !assignForm.id_rutina"
+              :disabled="!canSubmitAssign || Boolean(assigningId)"
               @click="submitAssignRoutine"
             >
               <i class="fa-solid fa-check"></i>
-              <span>Guardar rutina</span>
+                <span>{{ assigningId ? 'Guardando…' : 'Guardar rutina' }}</span>
             </button>
           </div>
         </div>
@@ -305,7 +440,7 @@
           </div>
 
           <!-- WIDGET CRONÓMETRO DE DESCANSO EN TIEMPO REAL (Fondo Negro Oscuro + Rojo, Sin Gradientes) -->
-          <div v-if="timerActive || timerSeconds > 0" class="rounded-2xl border border-red-500/40 bg-black p-3 shadow-xl space-y-2">
+          <div v-if="timerActive || timerSeconds > 0 || timerFinished" class="rounded-2xl border border-red-500/40 bg-black p-3 shadow-xl space-y-2">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-red-600/20 text-red-400 font-black border border-red-600/30">
@@ -321,7 +456,7 @@
               </div>
 
               <div class="flex items-center gap-2">
-                <button v-if="!timerActive" class="rounded-xl bg-red-600 px-3.5 py-1.5 font-black text-white text-xs hover:bg-red-500 transition flex items-center gap-1.5" @click="startTimer">
+                <button v-if="!timerActive" class="rounded-xl bg-red-600 px-3.5 py-1.5 font-black text-white text-xs hover:bg-red-500 transition flex items-center gap-1.5" @click="timerSeconds > 0 ? startTimer() : setRestTimer(timerInitialSeconds)">
                   <i class="fa-solid fa-play text-[10px]"></i>
                   <span>{{ timerSeconds > 0 ? 'Reanudar' : 'Iniciar' }}</span>
                 </button>
@@ -426,7 +561,7 @@
                       type="button"
                       class="rounded px-2.5 py-0.5 text-[10px] font-bold transition"
                       :class="ex.series_completadas === s ? 'bg-red-600 text-white font-black' : 'bg-slate-900 text-slate-400 border border-white/5 hover:bg-slate-800'"
-                      @click="ex.series_completadas = s"
+                      @click="ex.series_completadas = s; onSeriesChanged(ex)"
                     >
                       {{ s }}
                     </button>
@@ -533,9 +668,9 @@
                 <i class="fa-solid fa-xmark text-xs"></i>
                 <span>Cerrar</span>
               </button>
-              <button class="flex items-center gap-2 rounded-2xl bg-red-600 px-6 py-2.5 text-xs font-black text-white hover:bg-red-500 transition shadow-lg shadow-red-600/30" @click="submitSaveProgress">
+              <button class="flex items-center gap-2 rounded-2xl bg-red-600 px-6 py-2.5 text-xs font-black text-white hover:bg-red-500 transition shadow-lg shadow-red-600/30 disabled:opacity-50" :disabled="isSavingProgress" @click="submitSaveProgress">
                 <i class="fa-solid fa-floppy-disk"></i>
-                <span>Guardar Progreso de Sesión</span>
+                <span>{{ isSavingProgress ? 'Guardando…' : 'Guardar Progreso de Sesión' }}</span>
               </button>
             </div>
           </div>
@@ -555,8 +690,8 @@
             <button class="rounded-xl bg-slate-900 border border-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800" @click="showConfirmModal = false">
               Cancelar
             </button>
-            <button class="rounded-xl bg-red-600 px-4 py-2 text-xs font-black text-white hover:bg-red-500 transition" @click="submitUnassign">
-              Desvincular
+            <button class="rounded-xl bg-red-600 px-4 py-2 text-xs font-black text-white hover:bg-red-500 transition disabled:opacity-50" :disabled="isUnassigning" @click="submitUnassign">
+              {{ isUnassigning ? 'Desvinculando…' : 'Desvincular' }}
             </button>
           </div>
         </div>
@@ -566,225 +701,371 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, onUnmounted } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useGymStore } from '../stores/gymStore';
 
 const gymStore = useGymStore();
 const dni = ref('');
 const clientData = ref(null);
+const searching = ref(false);
+const isSearching = computed(() => searching.value);
+const feedback = ref('');
+const feedbackTone = ref('success');
+const assigningId = ref(0);
+const markingId = ref(0);
+const isSavingProgress = ref(false);
+const isUnassigning = ref(false);
 
-// POP-UP TOAST SYSTEM
-const toast = reactive({
-  show: false,
-  message: '',
-  type: 'success',
-  timer: null,
-});
+// Sugerencias de clientes y selección directa de rutinas.
+const open = ref(false);
+const activeIndex = ref(-1);
+const selection = reactive({});
 
+// Notificaciones emergentes.
+const toast = reactive({ show: false, message: '', type: 'success' });
+let toastTimeout = null;
 const showToast = (message, type = 'success') => {
   toast.message = message;
   toast.type = type;
   toast.show = true;
-  if (toast.timer) clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => {
-    toast.show = false;
-  }, 4000);
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { toast.show = false; toastTimeout = null; }, 4000);
+};
+const setFeedback = (message, type = 'success') => {
+  feedbackTone.value = type;
+  feedback.value = message;
 };
 
-// Modales state
+// Ventanas de asignación, edición de ejercicios y desvinculación.
 const showAssignModal = ref(false);
 const showExercisesModal = ref(false);
 const showConfirmModal = ref(false);
 const selectedMatriculaItem = ref(null);
+const assignForm = reactive({ id_matricula: null, id_rutina: 0 });
 
-const assignForm = reactive({
-  id_matricula: null,
-  id_rutina: 0,
-});
-
-// Tracker maps
+// Datos temporales de la sesión de entrenamiento.
 const trackerMap = reactive({});
 const observationsMap = reactive({});
 
 const overview = computed(() => gymStore.trainerOverview || {});
 const routines = computed(() => overview.value.routines || []);
+const serviceLabel = (service) => ({
+  fitness: 'Fitness', musculacion: 'Musculación', cardio: 'Cardio', baile: 'Baile',
+})[service] || service || 'Servicio';
+const dayLabel = (day) => ({
+  lunes: 'Lunes, Miércoles, Viernes', martes: 'Martes, Jueves',
+  miercoles: 'Miércoles', jueves: 'Jueves', viernes: 'Viernes',
+  sabado: 'Sábado', domingo: 'Domingo',
+})[day] || day || 'Día';
 
-const serviceLabel = (service) => ({ fitness: 'Fitness', musculacion: 'Musculación', cardio: 'Cardio', baile: 'Baile' })[service] || service || 'Servicio';
-const dayLabel = (day) => ({ lunes: 'Lunes, Miércoles, Viernes', martes: 'Martes, Jueves', miercoles: 'Miércoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo' })[day] || day || 'Día';
-
-const hasActiveMembership = computed(() => {
-  const m = clientData.value?.matriculas || [];
-  return m.length > 0;
+const sortedProgress = (list) => [...(Array.isArray(list) ? list : [])].sort((a, b) => {
+  const diff = new Date(b.fecha) - new Date(a.fecha);
+  if (!Number.isNaN(diff) && diff !== 0) return diff;
+  return Number(b.id_progreso || 0) - Number(a.id_progreso || 0);
 });
+const formatProgressDate = (value) => {
+  if (!value) return 'Fecha no registrada';
+  const text = String(value);
+  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00:00` : text);
+  return Number.isNaN(date.getTime())
+    ? text
+    : date.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+const isCompleted = (estado) => String(estado || '').toUpperCase() === 'REALIZADO';
 
-const membershipLabel = computed(() => {
-  return hasActiveMembership.value ? 'Vigente' : 'Sin membresía activa';
+// El servicio de clientes del entrenador normalmente ya entrega matrículas activas.
+// Si el backend envía 'estado', se respeta para bloquear las inactivas.
+const isEnrollmentActive = (item) => {
+  const estado = String(item?.estado || '').trim().toUpperCase();
+  return !estado || ['ACTIVA', 'ACTIVO', 'VIGENTE'].includes(estado);
+};
+const hasActiveMembership = computed(() =>
+  (clientData.value?.matriculas || []).some(isEnrollmentActive));
+const membershipLabel = computed(() =>
+  hasActiveMembership.value ? 'Vigente' : 'Sin matrícula activa');
+
+const routinesForService = (service) => routines.value.filter((routine) =>
+  String(routine.servicio || '').toLowerCase() === String(service || '').toLowerCase());
+const hasCompatibleRoutines = (item) => routinesForService(item.servicio).length > 0;
+const canAssign = (item) => isEnrollmentActive(item) && hasCompatibleRoutines(item);
+const selectedRoutine = (item) => selection[item.id_matricula] ?? (item.id_rutina || 0);
+const hasChange = (item) => {
+  const chosen = Number(selection[item.id_matricula] || 0);
+  return chosen > 0 && chosen !== Number(item.id_rutina || 0);
+};
+
+// Clientes con matrícula activa para mostrar sugerencias mientras escriben el DNI.
+const activeClients = computed(() => {
+  const seen = new Map();
+  for (const row of overview.value.schedule_monitor || []) {
+    const clientDni = String(row.cliente_dni || '').trim();
+    if (clientDni && !seen.has(clientDni)) {
+      seen.set(clientDni, { dni: clientDni, nombre: row.cliente_nombre || 'Cliente' });
+    }
+  }
+  return [...seen.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
 });
+const suggestions = computed(() => {
+  const prefix = dni.value.trim();
+  return activeClients.value.filter((client) => client.dni.startsWith(prefix)).slice(0, 50);
+});
+const showSuggestions = computed(() =>
+  open.value && (suggestions.value.length > 0 || dni.value.length > 0));
 
-const routinesForService = (service) => routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(service || '').toLowerCase());
+const onDniInput = () => {
+  dni.value = dni.value.replace(/\D/g, '').slice(0, 8);
+  feedback.value = '';
+  open.value = true;
+  activeIndex.value = -1;
+};
+const openSuggestions = () => { open.value = true; activeIndex.value = -1; };
+const moveActive = (step) => {
+  open.value = true;
+  const total = suggestions.value.length;
+  if (!total) return;
+  activeIndex.value = activeIndex.value < 0
+    ? (step > 0 ? 0 : total - 1)
+    : (activeIndex.value + step + total) % total;
+  nextTick(() => document.getElementById(`dni-option-${activeIndex.value}`)?.scrollIntoView({ block: 'nearest' }));
+};
+const onEnter = (event) => {
+  if (showSuggestions.value && activeIndex.value >= 0 && suggestions.value[activeIndex.value]) {
+    event.preventDefault();
+    pickClient(suggestions.value[activeIndex.value].dni);
+  }
+};
+const pickClient = (value) => { dni.value = value; open.value = false; searchClient(); };
 
-const availableRoutinesForSelectedMatricula = computed(() => {
-  if (!assignForm.id_matricula) return routines.value;
-  const mat = clientData.value?.matriculas.find((m) => Number(m.id_matricula) === Number(assignForm.id_matricula));
-  return mat ? routinesForService(mat.servicio) : routines.value;
+const selectedAssignMatricula = computed(() =>
+  (clientData.value?.matriculas || []).find((m) =>
+    Number(m.id_matricula) === Number(assignForm.id_matricula)));
+const availableRoutinesForSelectedMatricula = computed(() =>
+  selectedAssignMatricula.value
+    ? routinesForService(selectedAssignMatricula.value.servicio)
+    : []);
+const canSubmitAssign = computed(() => {
+  const mat = selectedAssignMatricula.value;
+  return Boolean(mat && isEnrollmentActive(mat)
+    && availableRoutinesForSelectedMatricula.value.some((r) =>
+      Number(r.id_rutina) === Number(assignForm.id_rutina)));
 });
 
 const getRoutineExercises = (idRutina) => {
   const routine = routines.value.find((r) => Number(r.id_rutina) === Number(idRutina));
-  return routine && Array.isArray(routine.ejercicios) ? routine.ejercicios : [];
+  return Array.isArray(routine?.ejercicios) ? routine.ejercicios : [];
 };
-
 const getTracker = (idMatricula, idRutina) => {
   const key = `${idMatricula}_${idRutina}`;
   if (!trackerMap[key]) {
-    const rawExs = getRoutineExercises(idRutina);
-    trackerMap[key] = rawExs.map((ex, i) => ({
+    trackerMap[key] = getRoutineExercises(idRutina).map((ex, i) => ({
       id_ejercicio: ex.id_ejercicio || i + 1,
       nombre_ejercicio: ex.nombre_ejercicio || `Ejercicio #${i + 1}`,
-      series_meta: ex.series || 3,
-      series_completadas: ex.series || 3,
+      series_meta: Number(ex.series || 3),
+      series_completadas: 0,
       repeticiones_logradas: ex.repeticiones || '10-12',
-      peso_sugerido_kg: ex.peso_sugerido_kg || null,
-      peso_utilizado_kg: ex.peso_sugerido_kg || null,
-      descanso_segundos: ex.descanso_segundos || 60,
+      peso_sugerido_kg: ex.peso_sugerido_kg ?? null,
+      peso_utilizado_kg: ex.peso_sugerido_kg ?? null,
+      descanso_segundos: Number(ex.descanso_segundos || 60),
       notas: ex.notas || '',
-      completado: true,
+      completado: false,
       observaciones: '',
     }));
   }
   return trackerMap[key];
 };
-
-// Métodos de interacción táctil/sin teclado
+const onSeriesChanged = (ex) => {
+  ex.completado = Number(ex.series_completadas || 0) >= Number(ex.series_meta || 3);
+};
 const adjustSeries = (ex, delta) => {
   const meta = Number(ex.series_meta || 3);
-  const current = Number(ex.series_completadas || 0);
-  ex.series_completadas = Math.max(0, Math.min(meta, current + delta));
-  if (ex.series_completadas === meta) {
-    ex.completado = true;
-  }
+  ex.series_completadas = Math.max(0, Math.min(meta, Number(ex.series_completadas || 0) + delta));
+  onSeriesChanged(ex);
 };
-
 const adjustWeight = (ex, delta) => {
-  const current = Number(ex.peso_utilizado_kg || ex.peso_sugerido_kg || 0);
+  const current = Number(ex.peso_utilizado_kg ?? ex.peso_sugerido_kg ?? 0);
   ex.peso_utilizado_kg = Math.max(0, current + delta);
 };
-
 const setWeightToSuggested = (ex) => {
   if (ex.peso_sugerido_kg !== null && ex.peso_sugerido_kg !== undefined) {
     ex.peso_utilizado_kg = Number(ex.peso_sugerido_kg);
   }
 };
-
 const onToggleExerciseCompleted = (ex) => {
-  if (ex.completado) {
-    ex.series_completadas = Number(ex.series_meta || 3);
-  }
+  ex.series_completadas = ex.completado ? Number(ex.series_meta || 3) : 0;
 };
 
-// Temporizador visual
+// Temporizador de descansos; continúa visible al llegar a cero.
 const timerSeconds = ref(0);
 const timerInitialSeconds = ref(60);
 const timerActive = ref(false);
+const timerFinished = ref(false);
 let timerInterval = null;
-
-const setRestTimer = (seconds) => {
-  resetTimer();
-  timerInitialSeconds.value = seconds || 60;
-  timerSeconds.value = seconds || 60;
-  startTimer();
-};
-
-const startTimer = () => {
-  if (timerInterval) clearInterval(timerInterval);
-  if (timerSeconds.value <= 0) return;
-  timerActive.value = true;
-  timerInterval = setInterval(() => {
-    if (timerSeconds.value > 0) {
-      timerSeconds.value--;
-    } else {
-      pauseTimer();
-    }
-  }, 1000);
-};
-
 const pauseTimer = () => {
   timerActive.value = false;
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
+  if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
 };
-
 const resetTimer = () => {
   pauseTimer();
   timerSeconds.value = 0;
+  timerFinished.value = false;
 };
-
-const formatTimer = (totalSec) => {
-  const mins = Math.floor(totalSec / 60);
-  const secs = totalSec % 60;
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-};
-
-onUnmounted(() => {
+const startTimer = () => {
+  if (timerSeconds.value <= 0) return;
   pauseTimer();
-});
-
-const isSearching = ref(false);
+  timerFinished.value = false;
+  timerActive.value = true;
+  timerInterval = setInterval(() => {
+    if (timerSeconds.value > 0) timerSeconds.value -= 1;
+    if (timerSeconds.value <= 0) {
+      pauseTimer();
+      timerFinished.value = true;
+    }
+  }, 1000);
+};
+const setRestTimer = (seconds) => {
+  const duration = Math.max(1, Math.floor(Number(seconds) || 60));
+  resetTimer();
+  timerInitialSeconds.value = duration;
+  timerSeconds.value = duration;
+  startTimer();
+};
+const formatTimer = (totalSec) => {
+  const value = Math.max(0, Number(totalSec) || 0);
+  return `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+};
 
 const searchClient = async () => {
-  if (!dni.value.trim()) return;
+  if (searching.value) return;
+  open.value = false;
+  const query = dni.value.trim();
+  if (!/^\d{8}$/.test(query)) {
+    setFeedback('Ingresa un DNI válido de 8 dígitos o selecciona una sugerencia.', 'error');
+    return;
+  }
+  searching.value = true;
+  feedback.value = '';
+  clientData.value = null;
+  showAssignModal.value = false;
+  showExercisesModal.value = false;
+  showConfirmModal.value = false;
   try {
-    isSearching.value = true;
-    clientData.value = null;
     const [, client] = await Promise.all([
       gymStore.fetchTrainerOverview(),
-      gymStore.fetchTrainerClientRoutines(dni.value),
+      gymStore.fetchTrainerClientRoutines(query),
     ]);
+    if (!client?.cliente) throw new Error('No se encontró información del cliente.');
     clientData.value = client;
-    showToast(`Cliente ${clientData.value.cliente.nombre} cargado exitosamente.`, 'success');
+    Object.keys(selection).forEach((key) => { delete selection[key]; });
+    showToast(`Cliente ${client.cliente.nombre} cargado exitosamente.`);
   } catch (error) {
     clientData.value = null;
-    showToast(error instanceof Error ? error.message : 'No se pudo buscar el cliente.', 'error');
+    const message = error instanceof Error ? error.message : 'No se pudo buscar el cliente.';
+    setFeedback(message, 'error');
+    showToast(message, 'error');
   } finally {
-    isSearching.value = false;
+    searching.value = false;
   }
 };
 
 const reloadClient = async () => {
   if (!dni.value.trim()) return;
-  clientData.value = await gymStore.fetchTrainerClientRoutines(dni.value);
+  clientData.value = await gymStore.fetchTrainerClientRoutines(dni.value.trim());
 };
 
-const openAssignModal = () => {
-  if (clientData.value?.matriculas?.length) {
-    assignForm.id_matricula = clientData.value.matriculas[0].id_matricula;
+// Asignación directa (rama karinaTp3_AsignacionRutina).
+const assignRoutine = async (item) => {
+  const idRutina = Number(selection[item.id_matricula] || 0);
+  if (!idRutina || assigningId.value) return;
+  if (!isEnrollmentActive(item)) {
+    setFeedback('Solo se puede asignar una rutina a una matrícula activa.', 'error');
+    return;
   }
+  const routine = routinesForService(item.servicio).find((r) => Number(r.id_rutina) === idRutina);
+  if (!routine) {
+    setFeedback(`Esa rutina no corresponde al servicio ${serviceLabel(item.servicio)}.`, 'error');
+    return;
+  }
+  assigningId.value = item.id_matricula;
+  try {
+    feedback.value = '';
+    await gymStore.assignTrainerRoutine(item.id_matricula, idRutina);
+    delete selection[item.id_matricula];
+    await reloadClient();
+    const message = `Rutina «${routine.nombre_rutina}» asignada a ${serviceLabel(item.servicio)} (${dayLabel(item.dia)} ${item.hora_inicio} - ${item.hora_fin}).`;
+    setFeedback(message);
+    showToast('Rutina asignada exitosamente.');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'No se pudo asignar la rutina.';
+    setFeedback(message, 'error');
+    showToast(message, 'error');
+    await reloadClient().catch(() => {});
+  } finally {
+    assigningId.value = 0;
+  }
+};
+
+// Registro rápido de rutina realizada: opción de la rama de asignación.
+const markDone = async (item) => {
+  if (!item.id_rutina || !isEnrollmentActive(item) || markingId.value) return;
+  markingId.value = item.id_matricula;
+  try {
+    await gymStore.markTrainerRoutineProgress(item.id_matricula, {
+      estado: 'REALIZADO',
+      observacion: 'Rutina marcada como realizada por el entrenador.',
+      ejercicios_detalle: [],
+    });
+    await reloadClient();
+    setFeedback('Rutina marcada como realizada.');
+    showToast('Rutina completada correctamente.');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'No se pudo registrar la rutina como realizada.';
+    setFeedback(message, 'error');
+    showToast(message, 'error');
+  } finally {
+    markingId.value = 0;
+  }
+};
+
+// Asignación mediante modal (rama develop), con validación de compatibilidad.
+const openAssignModal = () => {
+  const first = (clientData.value?.matriculas || []).find(isEnrollmentActive);
+  if (!first) {
+    setFeedback('El cliente debe tener una matrícula activa para asignar rutinas.', 'error');
+    return;
+  }
+  assignForm.id_matricula = first.id_matricula;
   assignForm.id_rutina = 0;
   showAssignModal.value = true;
 };
-
 const submitAssignRoutine = async () => {
-  if (!assignForm.id_matricula || !assignForm.id_rutina) return;
+  if (!canSubmitAssign.value || assigningId.value) return;
+  assigningId.value = assignForm.id_matricula;
   try {
-    await gymStore.assignTrainerRoutine(assignForm.id_matricula, assignForm.id_rutina);
+    await gymStore.assignTrainerRoutine(assignForm.id_matricula, Number(assignForm.id_rutina));
+    delete selection[assignForm.id_matricula];
     await reloadClient();
     showAssignModal.value = false;
-    showToast('Rutina personalizada asignada exitosamente.', 'success');
+    setFeedback('Rutina personalizada asignada exitosamente.');
+    showToast('Rutina personalizada asignada exitosamente.');
   } catch (error) {
-    showToast(error instanceof Error ? error.message : 'No se pudo asignar la rutina.', 'error');
+    const message = error instanceof Error ? error.message : 'No se pudo asignar la rutina.';
+    setFeedback(message, 'error');
+    showToast(message, 'error');
+    await reloadClient().catch(() => {});
+  } finally {
+    assigningId.value = 0;
   }
 };
 
 const openExercisesModal = (item) => {
   selectedMatriculaItem.value = item;
+  getTracker(item.id_matricula, item.id_rutina);
   showExercisesModal.value = true;
 };
-
 const submitSaveProgress = async () => {
-  if (!selectedMatriculaItem.value) return;
   const item = selectedMatriculaItem.value;
+  if (!item || isSavingProgress.value) return;
+  isSavingProgress.value = true;
   try {
     const trackerExs = getTracker(item.id_matricula, item.id_rutina);
     const ejercicios_detalle = trackerExs.map((ex) => ({
@@ -793,23 +1074,28 @@ const submitSaveProgress = async () => {
       completado: Boolean(ex.completado),
       series_completadas: Number(ex.series_completadas || 0),
       repeticiones_logradas: String(ex.repeticiones_logradas || ''),
-      peso_utilizado_kg: ex.peso_utilizado_kg !== null && ex.peso_utilizado_kg !== '' ? Number(ex.peso_utilizado_kg) : null,
+      peso_utilizado_kg: ex.peso_utilizado_kg !== null && ex.peso_utilizado_kg !== ''
+        ? Number(ex.peso_utilizado_kg) : null,
       observaciones: String(ex.observaciones || ''),
     }));
-
     const observacion = observationsMap[item.id_matricula] || 'Sesión de entrenamiento realizada';
-
     await gymStore.markTrainerRoutineProgress(item.id_matricula, {
       estado: 'REALIZADO',
       observacion,
       ejercicios_detalle,
     });
-
     await reloadClient();
+    delete trackerMap[`${item.id_matricula}_${item.id_rutina}`];
+    delete observationsMap[item.id_matricula];
     showExercisesModal.value = false;
-    showToast('Progreso de rutina registrado en el sistema.', 'success');
+    setFeedback('Progreso de rutina registrado en el sistema.');
+    showToast('Progreso de rutina registrado en el sistema.');
   } catch (error) {
-    showToast(error instanceof Error ? error.message : 'No se pudo registrar el progreso.', 'error');
+    const message = error instanceof Error ? error.message : 'No se pudo registrar el progreso.';
+    setFeedback(message, 'error');
+    showToast(message, 'error');
+  } finally {
+    isSavingProgress.value = false;
   }
 };
 
@@ -817,18 +1103,32 @@ const confirmUnassign = (item) => {
   selectedMatriculaItem.value = item;
   showConfirmModal.value = true;
 };
-
 const submitUnassign = async () => {
-  if (!selectedMatriculaItem.value) return;
+  const item = selectedMatriculaItem.value;
+  if (!item || isUnassigning.value) return;
+  isUnassigning.value = true;
   try {
-    await gymStore.assignTrainerRoutine(selectedMatriculaItem.value.id_matricula, 0);
+    // Mantiene la interfaz que ya usa el proyecto para quitar la asignación.
+    await gymStore.assignTrainerRoutine(item.id_matricula, 0);
+    delete selection[item.id_matricula];
     await reloadClient();
     showConfirmModal.value = false;
-    showToast('Rutina desvinculada del servicio.', 'success');
+    setFeedback('Rutina desvinculada del servicio.');
+    showToast('Rutina desvinculada del servicio.');
   } catch (error) {
-    showToast(error instanceof Error ? error.message : 'No se pudo desvincular la rutina.', 'error');
+    const message = error instanceof Error ? error.message : 'No se pudo desvincular la rutina.';
+    setFeedback(message, 'error');
+    showToast(message, 'error');
+  } finally {
+    isUnassigning.value = false;
   }
 };
+
+onMounted(() => { gymStore.fetchTrainerOverview().catch(() => {}); });
+onUnmounted(() => {
+  pauseTimer();
+  if (toastTimeout) clearTimeout(toastTimeout);
+});
 </script>
 
 <style scoped>

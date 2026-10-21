@@ -2722,6 +2722,9 @@ class GymDomainService:
                 raise ValueError("Matricula no encontrada")
 
             enrollment = state["matriculas_horario"][idx]
+            if str(enrollment.get("estado") or "").strip().upper() != "ACTIVA":
+                raise ValueError("Solo se puede asignar una rutina a una matricula ACTIVA")
+
             schedule = next(
                 (
                     row
@@ -2732,6 +2735,8 @@ class GymDomainService:
             )
             if not schedule:
                 raise ValueError("Horario no encontrado")
+            if not schedule.get("activo", False):
+                raise ValueError("El horario de la matricula no esta activo")
 
             routine = next(
                 (
@@ -2767,7 +2772,7 @@ class GymDomainService:
         enrollments = [
             row
             for row in self.matriculas_horario(id_cliente=int(cliente.get("id_cliente", 0) or 0))
-            if str(row.get("estado") or "").upper() != "CANCELADA"
+            if str(row.get("estado") or "").strip().upper() == "ACTIVA"
         ]
         progress_by_enrollment: dict[int, list[dict[str, Any]]] = {}
         for row in self.state.get("rutina_progreso", []):
