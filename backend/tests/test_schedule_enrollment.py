@@ -119,6 +119,55 @@ class ScheduleEnrollmentDomainTests(unittest.TestCase):
         self.assertEqual(service.horarios_servicio()[0]["cupos_disponibles"], 1)
 
 
+class TrainerRoutineAssignmentTests(unittest.TestCase):
+    def _service_with_enrollment(self, *, estado="ACTIVA", schedule_id=10):
+        service = _schedule_service()
+        service.state["matriculas_horario"] = [
+            {
+                "id_matricula": 50,
+                "id_cliente": 1,
+                "id_horario_servicio": schedule_id,
+                "estado": estado,
+            }
+        ]
+        return service
+
+    def test_assigns_matching_routine_to_active_enrollment_and_schedule(self) -> None:
+        service = self._service_with_enrollment()
+
+        updated = service.asignar_rutina_matricula(50, 7)
+
+        self.assertEqual(updated["id_matricula"], 50)
+        self.assertEqual(updated["id_rutina"], 7)
+        self.assertEqual(updated["dia"], "lunes")
+        self.assertEqual(updated["hora_inicio"], "08:00")
+
+    def test_rejects_assignment_to_non_active_enrollment(self) -> None:
+        service = self._service_with_enrollment(estado="CANCELADA")
+
+        with self.assertRaisesRegex(ValueError, "matricula ACTIVA"):
+            service.asignar_rutina_matricula(50, 7)
+
+    def test_rejects_assignment_when_enrollment_schedule_is_inactive(self) -> None:
+        service = self._service_with_enrollment(schedule_id=11)
+
+        with self.assertRaisesRegex(ValueError, "horario.*no esta activo"):
+            service.asignar_rutina_matricula(50, 7)
+
+    def test_rejects_routine_for_a_different_service_than_enrollment_schedule(self) -> None:
+        service = self._service_with_enrollment()
+        service.state["catalogo_rutina"].append(
+            {
+                "id_rutina": 8,
+                "servicio": "cardio",
+                "nombre_rutina": "Cardio",
+            }
+        )
+
+        with self.assertRaisesRegex(ValueError, "no corresponde al servicio"):
+            service.asignar_rutina_matricula(50, 8)
+
+
 class _RouteService:
     def __init__(self) -> None:
         self.last_list = None
