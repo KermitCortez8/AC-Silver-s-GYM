@@ -225,6 +225,13 @@ def cerrar_sesion_si_pago_pendiente(gym: GymService, settings: Any, id_pedido: i
         raise RuntimeError("No se pudo cerrar la sesión de pago en Stripe. Inténtalo de nuevo.")
 
 
+def actualizar_estado_pedido(gym: GymService, settings: Any, id_pedido: int, payload: dict, actor=None) -> dict:
+    """Resuelve el cobro pendiente antes de permitir una cancelación administrativa."""
+    if payload.get("estado_pedido") == ESTADO_PEDIDO_CANCELADO:
+        cerrar_sesion_si_pago_pendiente(gym, settings, id_pedido)
+    return gym.actualizar_pedido_tienda(id_pedido, payload, actor=actor)
+
+
 # ---------------------------------------------------------------------------
 # Inicio y cancelación del checkout
 # ---------------------------------------------------------------------------

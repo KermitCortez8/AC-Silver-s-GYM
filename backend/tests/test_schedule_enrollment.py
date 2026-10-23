@@ -240,16 +240,15 @@ class _SupabaseWithoutScheduleRpc:
 class SupabaseScheduleCompatibilityTests(unittest.TestCase):
     def test_enrollment_requires_atomic_rpc_before_writing(self) -> None:
         local_service = _schedule_service()
-        service = SupabaseGymService.__new__(SupabaseGymService)
-        service.lock = threading.Lock()
-        service.state = local_service.state
-        service.supabase = _SupabaseWithoutScheduleRpc()
-        service._last_refresh_at = 0.0
-        service._refresh_remote_state = lambda: None
-
+        from types import SimpleNamespace
+        from infrastructure.repositories.gym_cache import GymCache
+        from infrastructure.repositories.schedule_enrollment_repository import ScheduleEnrollmentRepository
+        database = _SupabaseWithoutScheduleRpc()
+        enrollments = ScheduleEnrollmentRepository(database, GymCache(state=local_service.state), SimpleNamespace(load=lambda: None))
         with self.assertRaisesRegex(RuntimeError, "002_harden_schedule_enrollment.sql"):
-            service.matricular_cliente_horario({"id_cliente": 1, "id_horario_servicio": 10})
-        self.assertIsNone(service.supabase.inserted)
+            enrollments.enroll({"id_cliente": 1, "id_horario_servicio": 10})
+        self.assertIsNone(database.inserted)
+
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 """Reglas de inventory sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.errors import EntityNotFound
 from domain.validation import nonnegative, required_text
 
 from typing import Any
@@ -188,7 +189,7 @@ class InventoryRules:
         def _fn(state: dict[str, Any]):
             item = self._find_item_in_state(state, id_item)
             if not item:
-                raise ValueError("Item de inventario no encontrado")
+                raise EntityNotFound("Item de inventario no encontrado")
             tiene_movimientos = any(int(m.get("id_item", 0) or 0) == int(id_item) for m in state["mov_inv"])
             tiene_producto = any(int(p.get("id_item") or 0) == int(id_item) for p in state.get("productos_tienda", []))
             if tiene_movimientos or tiene_producto:
@@ -209,9 +210,9 @@ class InventoryRules:
         tipo = str(payload.get("tipo_movimiento", "")).lower()
 
         if not self.get_item_inventario(id_item):
-            raise ValueError("Item de inventario no encontrado")
+            raise EntityNotFound("Item de inventario no encontrado")
         if not self.get_usuario(id_usuario):
-            raise ValueError("Usuario no encontrado")
+            raise EntityNotFound("Usuario no encontrado")
         if tipo not in {"entrada", "salida", "ajuste"}:
             raise ValueError("Tipo de movimiento inválido")
 
@@ -219,7 +220,7 @@ class InventoryRules:
         def _fn(state: dict[str, Any]):
             item = self._find_item_in_state(state, id_item)
             if not item:
-                raise ValueError("Item de inventario no encontrado")
+                raise EntityNotFound("Item de inventario no encontrado")
             destino = self._normalizar_destino(tipo, payload.get("destino"))
             producto = self._producto_de_item(state, id_item) if destino == DESTINO_TIENDA else None
             if destino == DESTINO_TIENDA and not producto:
@@ -251,7 +252,7 @@ class InventoryRules:
         def _fn(state: dict[str, Any]):
             mov = next((m for m in state["mov_inv"] if int(m.get("id_mov", 0) or 0) == int(id_mov)), None)
             if not mov:
-                raise ValueError("Movimiento no encontrado")
+                raise EntityNotFound("Movimiento no encontrado")
 
             tipo_actual = str(mov.get("tipo_movimiento") or "").lower()
             cantidad_actual = max(1, int(mov.get("cantidad") or 1))
@@ -296,7 +297,7 @@ class InventoryRules:
                 item_viejo = self._find_item_in_state(state, item_actual)
                 item_nuevo = self._find_item_in_state(state, nuevo_item)
                 if not item_nuevo:
-                    raise ValueError("Item de inventario no encontrado")
+                    raise EntityNotFound("Item de inventario no encontrado")
                 if "ajuste" in (tipo_actual, nuevo_tipo):
                     # Un ajuste fija el stock exacto: solo se corrige si sigue siendo el último movimiento del ítem.
                     if tipo_actual == "ajuste" and nuevo_tipo != "ajuste":

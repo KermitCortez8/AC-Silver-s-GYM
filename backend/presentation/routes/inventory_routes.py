@@ -4,6 +4,8 @@
 # Mantiene las operaciones de almacén en rutas dedicadas.
 from __future__ import annotations
 
+from domain.errors import EntityNotFound
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from presentation.dependencies import get_gym_service, get_optional_actor_id, require_admin_or_staff
@@ -72,5 +74,5 @@ def actualizar_movimiento(id_mov: int, payload: MovimientoInventarioUpdateInput,
     try:
         return gym_service.actualizar_movimiento_inventario(id_mov, payload.model_dump(exclude_none=True))
     except ValueError as error:
-        status_code = status.HTTP_404_NOT_FOUND if "no encontrado" in str(error).lower() else status.HTTP_400_BAD_REQUEST
+        status_code = status.HTTP_404_NOT_FOUND if isinstance(error, EntityNotFound) else status.HTTP_400_BAD_REQUEST
         raise HTTPException(status_code=status_code, detail=str(error)) from error

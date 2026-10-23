@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
-from domain.validation import required_text, email_address, nonnegative, civil_date, clock_time, date_range, time_range
+from domain.validation import required_text, email_address, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
 
 
 class ValidatedInput(BaseModel):
@@ -23,10 +23,19 @@ class ValidatedInput(BaseModel):
     def valid_email(cls, value):
         return email_address(value)
 
-    @field_validator("precio", "precio_venta", "stock_minimo", "cantidad_stock", "valor_descuento", check_fields=False)
+    @field_validator("precio", "precio_venta", "stock_minimo", "cantidad_stock", "valor_descuento", "peso_sugerido_kg", "peso_utilizado_kg", check_fields=False)
     @classmethod
     def valid_nonnegative(cls, value):
         return nonnegative(value) if value is not None else value
+
+    @field_validator(
+        "id_usuario", "id_cliente", "id_pm", "id_promocion", "id_membresia", "id_item", "id_producto", "id_mov",
+        "id_ticket", "id_ejercicio", "id_rutina", "id_horario", "id_horario_servicio", "id_matricula", "id_asistencia",
+        check_fields=False, mode="before",
+    )
+    @classmethod
+    def positive_identifier(cls, value, info):
+        return identifier(value, client=info.field_name == "id_cliente")
 
     @field_validator("fecha_inicio", "fecha_fin", "fecha", "fecha_movimiento", "fecha_emitido", "fecha_cierre", check_fields=False)
     @classmethod
@@ -44,6 +53,8 @@ class ValidatedInput(BaseModel):
 
     @model_validator(mode="after")
     def valid_ranges(self):
+        if hasattr(self, "nombre_ejercicio"):
+            validate_exercises([self.model_dump()])
         date_range(getattr(self, "fecha_inicio", None), getattr(self, "fecha_fin", None))
         start, end = getattr(self, "hora_inicio", None), getattr(self, "hora_fin", None)
         time_range(start, end)

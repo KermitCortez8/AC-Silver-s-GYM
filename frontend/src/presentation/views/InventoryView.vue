@@ -477,7 +477,7 @@ const isLowStock = (item) => Number(item.quantity || 0) <= Number(item.minQuanti
  * Ancho de la barra de stock respecto al minimo (3x el minimo = 100%).
  */
 const stockBarPercent = (item) => {
-  const min = Number(item.minQuantity || 1);
+  const min = Number(item.minQuantity ?? 1);
   const qty = Number(item.quantity || 0);
   const reference = Math.max(min * 3, 1);
   return Math.min(100, Math.round((qty / reference) * 100));
@@ -554,7 +554,7 @@ const editItem = (item) => {
   form.name = item.name;
   form.category = item.category || 'General';
   form.quantity = Number(item.quantity || 0);
-  form.minQuantity = Number(item.minQuantity || 1);
+  form.minQuantity = Number(item.minQuantity ?? 1);
   form.unidad_venta = item.unidad_venta || 'unidad';
   form.precio_venta = Number(item.precio_venta || 0);
   form.location = item.location || 'Recepcion';

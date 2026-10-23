@@ -4,6 +4,9 @@
 # Entrega respuestas HTTP a partir del servicio de dominio.
 from __future__ import annotations
 
+from domain.errors import EnrollmentConflict, MembershipRequired
+from application.errors import SchemaNotReady
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from presentation.dependencies import get_settings
@@ -42,10 +45,9 @@ def _require_session_cliente_id(current_user) -> int:
 
 
 def _enrollment_error_status(error: ValueError) -> int:
-    message = str(error).lower()
-    if "ya esta matriculado" in message or "ya está matriculado" in message or "sin cupos" in message:
+    if isinstance(error, EnrollmentConflict):
         return status.HTTP_409_CONFLICT
-    if "sin membresia activa" in message or "sin membresía activa" in message:
+    if isinstance(error, MembershipRequired):
         return status.HTTP_403_FORBIDDEN
     return status.HTTP_400_BAD_REQUEST
 
@@ -162,11 +164,8 @@ def create_matricula(
     except ValueError as error:
         raise HTTPException(status_code=_enrollment_error_status(error), detail=str(error)) from error
     except (RuntimeError, OSError) as error:
-        detail = (
-            "Falta ejecutar backend/migrations/006_schedule_email_notifications.sql en Supabase."
-            if "006_schedule_email_notifications.sql" in str(error)
-            else "No se pudo guardar la matrícula. Comprueba la conexión e inténtalo de nuevo."
-        )
+        detail = str(error) if isinstance(error, SchemaNotReady) else (
+            "No se pudo guardar la matrícula. Comprueba la conexión e inténtalo de nuevo.")
         raise HTTPException(status_code=503, detail=detail) from error
 
 

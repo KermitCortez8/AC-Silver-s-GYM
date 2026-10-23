@@ -156,10 +156,10 @@ def test_supabase_exercise_data_survives_json_serialization_and_legacy_rows():
     ("RUTINA_PROGRESO", "ejercicios_detalle"),
 ])
 def test_missing_exercise_migration_does_not_silently_discard_data(table, column):
-    service = object.__new__(SupabaseGymService)
-    service.remote_columns = {table: {"id_rutina"}}
+    from infrastructure.repositories.gym_table_access import GymTableAccess, TableMetadata
+    tables = GymTableAccess(None, TableMetadata(columns={table: {"id_rutina"}}))
     with pytest.raises(RuntimeError, match="012_trainer_exercises.sql"):
-        service._filter_remote_columns(table, {column: [{"nombre_ejercicio": "Press"}]})
+        tables.prepare_write(table, {column: [{"nombre_ejercicio": "Press"}]})
 
 
 def test_assignment_does_not_swallow_unknown_database_errors(monkeypatch):

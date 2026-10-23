@@ -1034,7 +1034,7 @@ const stockBarWidth = (producto) => {
  */
 const stockBarColor = (producto) => {
   const cantidad = Number(producto.cantidad || 0);
-  const minimo = Number(producto.minimo || 1);
+  const minimo = Number(producto.minimo ?? 1);
   if (cantidad <= minimo) return 'bg-rose-400';
   if (cantidad <= minimo * 2) return 'bg-amber-400';
   return 'bg-emerald-400';
@@ -1090,7 +1090,7 @@ const editProducto = (producto) => {
   form.unidad_venta = producto.unidad_venta || 'unidad';
   form.precio = Number(producto.precio || 0);
   form.cantidad = Number(producto.cantidad || 0);
-  form.minimo = Number(producto.minimo || 5);
+  form.minimo = Number(producto.minimo ?? 5);
   form.estado = producto.estado || 'Disponible';
   form.imagen_url = producto.imagen_url || '';
   feedbackMessage.value = '';

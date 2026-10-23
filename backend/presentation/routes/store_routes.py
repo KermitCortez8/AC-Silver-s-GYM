@@ -24,7 +24,7 @@ from application.services.store_images_service import StoreImagesService, MAX_IM
 from starlette.concurrency import run_in_threadpool
 from application.services.store_checkout_service import (
     cancelar_checkout_tienda,
-    cerrar_sesion_si_pago_pendiente,
+    actualizar_estado_pedido,
     iniciar_checkout_tienda,
 )
 
@@ -114,9 +114,7 @@ def update_pedido(
     actor_id: str | None = Depends(get_optional_actor_id),
 ):
     try:
-        if payload.estado_pedido == "CANCELADO":
-            cerrar_sesion_si_pago_pendiente(gym_service, settings, id_pedido)
-        return gym_service.actualizar_pedido_tienda(id_pedido, payload.model_dump(), actor=actor_id)
+        return actualizar_estado_pedido(gym_service, settings, id_pedido, payload.model_dump(), actor=actor_id)
     except (ValueError, RuntimeError, PermissionError) as error:
         raise _http_error(error) from error
 

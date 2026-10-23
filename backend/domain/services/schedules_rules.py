@@ -1,6 +1,7 @@
 """Reglas de schedules sobre el agregado en memoria."""
 from __future__ import annotations
-from domain.errors import EntityNotFound, MembershipRequired
+from domain.validation import validate_exercises
+from domain.errors import EntityNotFound, MembershipRequired, EnrollmentConflict
 
 import re
 from datetime import datetime
@@ -223,6 +224,7 @@ class SchedulesRules:
         return self.state["catalogo_rutina"]
 
     def upsert_rutina(self, payload: dict[str, Any]) -> dict[str, Any]:
+        validate_exercises(payload.get("ejercicios"))
         servicio = str(payload.get("servicio") or "fitness").strip().lower()
         if servicio not in {"fitness", "musculacion", "cardio", "baile"}:
             raise ValueError("Servicio invalido para rutina")
@@ -592,6 +594,7 @@ class SchedulesRules:
         }
 
     def registrar_progreso_rutina(self, id_matricula: int, payload: dict[str, Any]) -> dict[str, Any]:
+        validate_exercises(payload.get("ejercicios_detalle"))
         fecha = str(payload.get("fecha") or self.today())[:10]
         observacion = str(payload.get("observacion") or "").strip()
         id_usuario = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
@@ -755,7 +758,7 @@ class SchedulesRules:
             and int(row.get("id_horario_servicio", 0) or 0) == id_horario
             for row in active_enrollments
         ):
-            raise ValueError("El cliente ya esta matriculado en este horario")
+            raise EnrollmentConflict("El cliente ya esta matriculado en este horario")
 
         used = sum(
             1
@@ -763,7 +766,7 @@ class SchedulesRules:
             if int(row.get("id_horario_servicio", 0) or 0) == id_horario
         )
         if used >= int(schedule.get("cupos", 1) or 1):
-            raise ValueError("Horario sin cupos disponibles")
+            raise EnrollmentConflict("Horario sin cupos disponibles")
 
     def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get("dni"):
