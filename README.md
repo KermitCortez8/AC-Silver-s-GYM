@@ -11,6 +11,11 @@ interfaz), `application` (coordinación y estado), `domain` (reglas y contratos)
 `infrastructure` (persistencia y servicios externos). Consulta la
 [distribución de archivos y el alcance de la separación](docs/arquitectura.md).
 
+La [auditoría de code smells](docs/auditoria-code-smells.md) documenta los 42
+hallazgos. El [seguimiento de los 12 prioritarios](docs/correcciones-prioritarias.md)
+explica las correcciones, sus pruebas y las migraciones 014 y 015 que deben
+aplicarse antes de desplegar este backend.
+
 ## Requisitos
 
 - Node.js 22 o superior

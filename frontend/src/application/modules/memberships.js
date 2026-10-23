@@ -1,6 +1,8 @@
+import { addDays } from '../../domain/utils/dates.js';
 /** Estado y operaciones del módulo memberships. */
-import { todayISO, daysUntilISO, MEMBER_ALERT_DAYS, normalizePlanFromBackend, normalizePromotionFromBackend, addMonthsISO, planDurationById, nowISO } from '../../domain/utils/gymRules.js';
+import { todayISO, daysUntilISO, MEMBER_ALERT_DAYS, normalizePlanFromBackend, normalizePromotionFromBackend, planDurationDays, nowISO } from '../../domain/utils/gymRules.js';
 import { computed } from 'vue';
+import { discountedPrice, toCents } from '../../domain/utils/money.js';
 import { clientMembershipGroup, normalizeMembershipStatus } from '../../domain/utils/clientDirectory.js';
 import { backendRequest } from '../services/backendGateway.js';
 
@@ -54,10 +56,12 @@ export const createMembershipsModule = (ctx) => {
     if (
       promotion &&
       promotion.active &&
+      (!promotion.startsAt || promotion.startsAt <= todayISO()) &&
+      (promotion.limite_cupos == null || Number(promotion.usos_actuales || 0) < Number(promotion.limite_cupos)) &&
       (!promotion.validUntil || promotion.validUntil >= todayISO()) &&
       (!promotion.appliesTo?.length || promotion.appliesTo.includes(planId))
     ) {
-      discountAmount = promotion.discountType === 'fixed' ? Number(promotion.discountValue || 0) : Math.round((Number(plan.price) * Number(promotion.discountValue || 0)) / 100);
+      discountAmount = (toCents(plan.price) - toCents(discountedPrice(plan.price, promotion.discountValue || 0, promotion.discountType))) / 100;
     }
 
     return {
@@ -65,7 +69,7 @@ export const createMembershipsModule = (ctx) => {
       promotion,
       basePrice: Number(plan.price || 0),
       discountAmount,
-      finalPrice: Math.max(0, Number(plan.price || 0) - discountAmount),
+      finalPrice: Math.max(0, toCents(plan.price || 0) - toCents(discountAmount)) / 100,
     };
   };
 
@@ -189,7 +193,7 @@ export const createMembershipsModule = (ctx) => {
       }
 
       const startDate = member.membershipEnd && member.membershipEnd > todayISO() ? member.membershipEnd : todayISO();
-      const endDate = addMonthsISO(startDate, getPlanById(planId)?.durationMonths || 1);
+      const endDate = addDays(startDate, planDurationDays(getPlanById(planId), planId));
 
       const id_promocion = promotionId ? Number(String(promotionId).match(/(\d+)/)?.[1] || promotionId) : null;
       const payload = { id_cliente, id_pm, fecha_inicio: startDate, fecha_fin: endDate, id_promocion };
@@ -209,7 +213,7 @@ export const createMembershipsModule = (ctx) => {
     // Fallback local
     const { plan, promotion, basePrice, discountAmount, finalPrice } = calculatePlanCharge(planId, promotionId);
     const startDate = member.membershipEnd && member.membershipEnd > todayISO() ? member.membershipEnd : todayISO();
-    const endDate = addMonthsISO(startDate, plan.durationMonths || planDurationById(planId));
+    const endDate = addDays(startDate, planDurationDays(plan, planId));
     const eventType = member.planId && member.membershipHistory?.length ? 'Renovación' : 'Asignación';
     const historyEntry = {
       id: `membership-${Date.now()}`,

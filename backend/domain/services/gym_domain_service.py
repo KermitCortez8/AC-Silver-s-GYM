@@ -188,15 +188,13 @@ class GymDomainService(
 
     def _next_int_id(self, table: str, key: str) -> int:
         rows = self.state[table]
-        if not rows:
-            return 1
-        return max(int(row.get(key, 0)) for row in rows) + 1
+        return max(int(self.state.get("_identity_floors", {}).get(table, 0)),
+                   max((int(row.get(key, 0) or 0) for row in rows), default=0)) + 1
 
     def _next_int_id_in_state(self, state: dict[str, Any], table: str, key: str) -> int:
         rows = state.setdefault(table, [])
-        if not rows:
-            return 1
-        return max(int(row.get(key, 0) or 0) for row in rows) + 1
+        return max(int(state.get("_identity_floors", {}).get(table, 0)),
+                   max((int(row.get(key, 0) or 0) for row in rows), default=0)) + 1
 
     def today(self):
         return _today_iso()

@@ -1,6 +1,7 @@
 import threading
 
 import pytest
+from tests.atomic_fake import AtomicFakeMixin, migrated_rows
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -87,7 +88,7 @@ def test_optional_missing_table_still_loads_other_sections():
     assert service.state['promociones'] == []
 
 
-class RecordingRemote:
+class RecordingRemote(AtomicFakeMixin):
     def __init__(self, rows=None):
         self.calls = []
         self.writes = []
@@ -98,7 +99,7 @@ class RecordingRemote:
         self.calls.append(table)
         if table == self.error_table:
             raise RuntimeError('Supabase unavailable')
-        return self.rows.get(table, [])
+        return migrated_rows(table, self.rows.get(table, []))
 
     select_all = select
 

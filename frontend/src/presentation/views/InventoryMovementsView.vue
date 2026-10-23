@@ -447,6 +447,7 @@
 </template>
 
 <script setup>
+import { limaDate } from '../../domain/utils/dates.js';
 import {
   computed,
   onBeforeUnmount,
@@ -501,7 +502,7 @@ const form = reactive({
   id_item: 0,
   tipo_movimiento: 'entrada',
   cantidad: 1,
-  fecha_movimiento: new Date().toISOString().slice(0, 10),
+  fecha_movimiento: limaDate(),
   descripcion: '',
 });
 
@@ -565,6 +566,7 @@ const formatDate = (value) => {
   const parsed = new Date(`${value}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString('es-PE', {
+    timeZone: 'UTC',
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -753,7 +755,7 @@ const exportCsv = () => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `movimientos-inventario-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = `movimientos-inventario-${limaDate()}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 };
@@ -784,7 +786,7 @@ const save = async () => {
       id_item: 0,
       tipo_movimiento: 'entrada',
       cantidad: 1,
-      fecha_movimiento: new Date().toISOString().slice(0, 10),
+      fecha_movimiento: limaDate(),
       descripcion: '',
     });
     visibleCount.value = pageSize;

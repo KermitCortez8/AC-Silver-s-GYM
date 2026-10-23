@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useSessionStore } from './sessionStore.js';
 import {
   saveAuthSession,
   getAuthSession,
@@ -41,7 +42,9 @@ export const useAuthStore = defineStore('auth', () => {
   const isSignout = ref(false);
   const isInitialized = ref(false);
   const sessionErrorCode = ref('');
-  let sessionRevision = 0;
+  const sessionRevision = ref(0);
+  const session = useSessionStore();
+  watch(() => [token.value, userRole.value, sessionRevision.value], () => session.invalidate(), { flush: 'sync' });
   const sessionValidator = createSessionValidator(async (storedToken) => {
     const sessionUser = normalizeStoredUser(
       await apiGet('/auth/me', storedToken),
@@ -66,7 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
    * Gestiona esta acción de la vista.
    */
   const initializeAuth = async ({ force = false } = {}) => {
-    const revision = sessionRevision;
+    const revision = sessionRevision.value;
     try {
       isLoading.value = true;
       const { token: storedToken } = getAuthSession();
@@ -77,7 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
             force,
           });
           // Una respuesta anterior no debe restaurar una sesión cerrada o sustituida.
-          if (revision !== sessionRevision) return;
+          if (revision !== sessionRevision.value) return;
           if (getAuthSession().token !== storedToken) return initializeAuth();
 
           if (sessionUser && isValidUser(sessionUser)) {
@@ -90,7 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
             return;
           }
         } catch (error) {
-          if (revision !== sessionRevision) return;
+          if (revision !== sessionRevision.value) return;
           if (getAuthSession().token !== storedToken) return initializeAuth();
           sessionErrorCode.value = error.code || '';
           clearAuthStorage();
@@ -133,7 +136,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Datos de usuario inválidos');
       }
 
-      sessionRevision += 1;
+      sessionRevision.value += 1;
       sessionErrorCode.value = '';
       sessionValidator.clear();
       user.value = formattedUser;
@@ -168,7 +171,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Datos de usuario inválidos');
       }
 
-      sessionRevision += 1;
+      sessionRevision.value += 1;
       sessionErrorCode.value = '';
       sessionValidator.clear();
       user.value = formattedUser;
@@ -190,20 +193,20 @@ export const useAuthStore = defineStore('auth', () => {
    * Gestiona esta acción de la vista.
    */
   const signOut = async () => {
-    sessionRevision += 1;
+    sessionRevision.value += 1;
     sessionErrorCode.value = '';
     sessionValidator.clear();
     try {
       isLoading.value = true;
       clearAuthStorage();
       disableGoogleAutoSelect();
+    } catch (error) {
+      console.error('Error en signOut:', error);
+    } finally {
       user.value = null;
       token.value = null;
       userRole.value = null;
       isSignout.value = true;
-    } catch (error) {
-      console.error('Error en signOut:', error);
-    } finally {
       isLoading.value = false;
     }
   };
@@ -217,6 +220,7 @@ export const useAuthStore = defineStore('auth', () => {
     isSignout,
     isInitialized,
     sessionErrorCode,
+    sessionRevision,
     // Getters
     isAuthenticated,
     isAdmin,

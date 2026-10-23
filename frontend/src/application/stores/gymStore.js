@@ -1,5 +1,6 @@
 /** Fachada estable del gimnasio; las operaciones se mantienen por módulo. */
 import { defineStore } from 'pinia';
+import { watch } from 'vue';
 import { createGymState } from '../modules/state.js';
 import { createAttendanceModule } from '../modules/attendance.js';
 import { createDashboardModule } from '../modules/dashboard.js';
@@ -24,6 +25,8 @@ export const useGymStore = defineStore('gym', () => {
   Object.assign(context, createUsersModule(context, repositories.users));
   Object.assign(context, createStoreModule(context));
   Object.assign(context, createSynchronizationModule(context));
+  watch(() => [context.authStore.token, context.authStore.userRole, context.authStore.sessionRevision],
+    () => context.resetState(), { flush: 'sync' });
   context.pruneExpiredAttendancePasses();
   return {
     syncError: context.syncError,

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from presentation.dependencies import get_gym_service, require_admin_or_staff
+from presentation.dependencies import get_gym_service, require_admin_or_staff, get_current_user
 from domain.models.gym import MembresiaInput, PlanMembresiaInput, RegistrarClienteMembresiaInput
 from application.services.gym_service import GymService
 
@@ -19,21 +19,27 @@ def list_planes_membresia(gym_service: GymService = Depends(get_gym_service)):
     return gym_service.planes_membresia()
 
 
-@router.post("/planes-membresia")
+@router.post("/planes-membresia", dependencies=[Depends(require_admin_or_staff)])
 # Actualiza el registro correspondiente.
 def upsert_plan_membresia(payload: PlanMembresiaInput, gym_service: GymService = Depends(get_gym_service)):
-    return gym_service.upsert_plan_membresia(payload.model_dump())
+    try:
+        return gym_service.upsert_plan_membresia(payload.model_dump())
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
-@router.put("/planes-membresia/{id_pm}")
+@router.put("/planes-membresia/{id_pm}", dependencies=[Depends(require_admin_or_staff)])
 # Actualiza el registro correspondiente.
 def update_plan_membresia(id_pm: int, payload: PlanMembresiaInput, gym_service: GymService = Depends(get_gym_service)):
     data = payload.model_dump()
     data["id_pm"] = id_pm
-    return gym_service.upsert_plan_membresia(data)
+    try:
+        return gym_service.upsert_plan_membresia(data)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
-@router.delete("/planes-membresia/{id_pm}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/planes-membresia/{id_pm}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin_or_staff)])
 # Elimina el registro indicado.
 def delete_plan_membresia(id_pm: int, gym_service: GymService = Depends(get_gym_service)):
     try:
@@ -44,11 +50,13 @@ def delete_plan_membresia(id_pm: int, gym_service: GymService = Depends(get_gym_
 
 @router.get("/membresias")
 # Obtiene los datos necesarios.
-def list_membresias(gym_service: GymService = Depends(get_gym_service)):
-    return gym_service.membresias()
+def list_membresias(gym_service: GymService = Depends(get_gym_service), user=Depends(get_current_user)):
+    if user.role in {"admin", "staff"}:
+        return gym_service.membresias()
+    return gym_service.membresias_por_cliente(user.id_cliente) if user.id_cliente else []
 
 
-@router.post("/membresias")
+@router.post("/membresias", dependencies=[Depends(require_admin_or_staff)])
 # Procesa esta operación.
 def crear_membresia(payload: MembresiaInput, gym_service: GymService = Depends(get_gym_service)):
     try:
@@ -59,7 +67,9 @@ def crear_membresia(payload: MembresiaInput, gym_service: GymService = Depends(g
 
 @router.get("/clientes/{id_cliente}/membresias")
 # Procesa esta operación.
-def membresias_por_cliente(id_cliente: int, gym_service: GymService = Depends(get_gym_service)):
+def membresias_por_cliente(id_cliente: int, gym_service: GymService = Depends(get_gym_service), user=Depends(get_current_user)):
+    if user.role not in {"admin", "staff"} and user.id_cliente != id_cliente:
+        raise HTTPException(status_code=403, detail="No tienes permisos para consultar estas membresías")
     return gym_service.membresias_por_cliente(id_cliente)
 
 

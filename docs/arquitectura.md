@@ -60,11 +60,20 @@ de acceder al estado, los bloqueos o los métodos privados de otro servicio.
 especializadas. `SupabaseGymRepository` y `MemoryGymRepository` implementan esas
 capacidades mediante composición; no heredan del dominio.
 
-Se conservan la caché y la sincronización diferencial existentes. Las matrículas
-y las asistencias mantienen las RPC que ya protegían sus operaciones en la base
-de datos. Las demás escrituras de Supabase conservan la compensación anterior:
-esta refactorización no convierte todas las operaciones sobre varias tablas en
-una única transacción SQL ni incorpora cambios de esquema.
+Se conservan la caché y la detección diferencial de cambios. Las matrículas y
+asistencias mantienen sus RPC específicas; una matrícula exige la RPC y nunca
+recurre a un INSERT sin sus locks. Las demás mutaciones se confirman mediante
+`commit_gym_transaction` (migración 015), incluyendo borrados y detalles de venta.
+La RPC bloquea las tablas de la instantánea, comprueba que no cambiaron y confirma
+todas las operaciones o ninguna. Ante un conflicto, el repositorio refresca y
+recalcula las reglas, hasta tres intentos. No se usan compensaciones HTTP.
+
+`gym_identity_floors` combina los IDs actuales, las secuencias y una marca creciente
+para evitar colisiones entre procesos y reutilización después de borrar. El código
+visible del usuario se persiste en `codigo_usuario` y no cambia al modificar su rol.
+Las RPC genéricas solo son ejecutables con `service_role`; no se exponen a usuarios
+anónimos ni autenticados directamente. La migración 014 conserva los campos de
+promociones, membresías, inventario y productos que ahora leen y escriben los mappers.
 
 ### Integraciones y compatibilidad
 
@@ -81,7 +90,9 @@ exponer los atributos internos antiguos, pero el ensamblaje de producción utili
 las reglas de negocio.
 
 Los modelos Pydantic siguen siendo contratos de datos compartidos, no modelos ORM.
-Las migraciones SQL y las pruebas permanecen en sus carpetas originales.
+Las migraciones SQL y las pruebas permanecen en sus carpetas originales. El
+procedimiento para las nuevas migraciones y la evidencia de las doce correcciones
+están en [correcciones-prioritarias.md](correcciones-prioritarias.md).
 
 ## Frontend
 
@@ -101,7 +112,10 @@ operaciones de catálogo, pagos, asistencia e imágenes.
 Las operaciones están separadas en `application/modules/`: clientes, membresías,
 asistencia, inventario, horarios, usuarios, tienda, panel y sincronización. Los
 módulos comparten un contexto de estado para conservar las mismas referencias
-reactivas y la coordinación existente entre secciones.
+reactivas y la coordinación existente entre secciones. Al cambiar o cerrar sesión
+se vacían los datos de negocio y las cachés. `sessionStore` aporta una generación
+independiente de HTTP y autenticación; los adaptadores de aplicación rechazan
+respuestas de una generación anterior antes de publicar datos.
 
 Usuarios y configuración del gimnasio reciben repositorios con operaciones que
 devuelven datos (`save`, `remove` y `load`). Su transporte HTTP está en

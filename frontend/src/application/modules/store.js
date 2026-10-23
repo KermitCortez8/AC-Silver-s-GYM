@@ -1,3 +1,4 @@
+import { orderTotals, toCents } from '../../domain/utils/money.js';
 /** Estado y operaciones del módulo store. */
 import { normalizeStoreOrder, normalizeStoreProductFromBackend, nowISO } from '../../domain/utils/gymRules.js';
 import { backendRequest } from '../services/backendGateway.js';
@@ -90,14 +91,10 @@ export const createStoreModule = (ctx) => {
 
   const deleteProductoTienda = async (id_producto) => {
     if (ctx.apiBase) {
-      try {
-        await backendRequest(`${ctx.apiBase}/tienda/${id_producto}`, {
-          method: 'DELETE',
-          headers: ctx._authHeaders(),
-        });
-      } catch (error) {
-        console.error('Error al eliminar producto en backend:', error);
-      }
+      const response = await backendRequest(`${ctx.apiBase}/tienda/${id_producto}`, {
+        method: 'DELETE', headers: ctx._authHeaders(),
+      });
+      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar el producto'));
     }
 
     ctx.productos_tienda.value = ctx.productos_tienda.value.filter((p) => p.id_producto !== id_producto);
@@ -134,12 +131,7 @@ export const createStoreModule = (ctx) => {
     ctx.cart.value = [];
   };
 
-  const cartTotal = computed(() => {
-    const subtotal = ctx.cart.value.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-    const igv = subtotal * 0.18;
-    const total = subtotal + igv;
-    return { subtotal, igv, total };
-  });
+  const cartTotal = computed(() => orderTotals(ctx.cart.value));
 
   const mergeStoreOrder = (order) => {
     const normalized = normalizeStoreOrder(order);
@@ -250,21 +242,18 @@ export const createStoreModule = (ctx) => {
         nombre_producto: product.nombre,
         cantidad: item.cantidad,
         precio_unitario: Number(product.precio || 0),
-        subtotal: Number(product.precio || 0) * item.cantidad,
+        subtotal: toCents(product.precio || 0) * item.cantidad / 100,
       };
     });
 
-    const subtotal = orderItems.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
-    const igv = subtotal * 0.18;
+    const totals = orderTotals(orderItems.map(item => ({ precio: item.precio_unitario, cantidad: item.cantidad })));
     const saved = mergeStoreOrder({
       id_pedido: Date.now(),
       ...body,
       fecha_pedido: nowISO(),
       estado_pago: 'PAGADO',
       estado_pedido: 'PENDIENTE',
-      subtotal,
-      igv,
-      total: subtotal + igv,
+      ...totals,
       items: orderItems,
     });
     clearCart();

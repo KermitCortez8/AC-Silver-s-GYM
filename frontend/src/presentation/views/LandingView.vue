@@ -398,6 +398,7 @@
 </template>
 
 <script setup>
+import { discountedPrice } from '../../domain/utils/money.js';
 import LandingNavigation from '../components/LandingNavigation.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -588,10 +589,10 @@ const plans = computed(() =>
         const icon = promo.icono_etiqueta || '🏷️';
         const tagText = promo.palabra_clave ? promo.palabra_clave : (promo.nombre || '');
         if (promo.tipo_descuento === 'monto') {
-          finalPrice = Math.max(0, originalPrice - valor);
+          finalPrice = discountedPrice(originalPrice, valor, 'fixed');
           promoBadge = `${icon} -S/${valor} ${tagText}`.trim();
         } else {
-          finalPrice = Math.max(0, Math.round(originalPrice * (1 - valor / 100) * 100) / 100);
+          finalPrice = discountedPrice(originalPrice, valor);
           promoBadge = `${icon} -${valor}% ${tagText}`.trim();
         }
       }

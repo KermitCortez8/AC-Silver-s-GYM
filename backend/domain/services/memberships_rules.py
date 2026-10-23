@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from domain.money import cents, discounted_price
 from datetime import datetime, timedelta
 from typing import Any
 from domain.services.membership_lifecycle import membership_expired, normalize_membership_status
@@ -39,6 +40,17 @@ class MembershipsRules:
         if "MES" in normalized:
             return 30 * amount
         return 30
+
+    def _duration_days(self, plan: dict[str, Any]) -> int:
+        value = str(plan.get("duracion") or "").strip().lower()
+        match = re.fullmatch(r"(\d+)\s*(dias?|días?|mes(?:es)?|años?|anos?)", value)
+        if not match:
+            raise ValueError("La duración del plan debe indicar días, meses o años")
+        amount = int(match.group(1))
+        if amount <= 0:
+            raise ValueError("La duración del plan debe ser mayor que cero")
+        unit = match.group(2)
+        return amount * (365 if unit.startswith(("año", "ano")) else 30 if unit.startswith("mes") else 1)
 
     def _normalize_promocion(self, row: dict[str, Any], fallback_id: int) -> dict[str, Any]:
         raw_plans = row.get("planes_aplicables") or []
@@ -103,7 +115,7 @@ class MembershipsRules:
 
         plan = self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
         start = self.today()
-        end = (datetime.fromisoformat(start) + timedelta(days=self._plan_duration_days(plan.get("nombre_plan", "MENSUAL")))).date().isoformat()
+        end = (datetime.fromisoformat(start) + timedelta(days=self._duration_days(plan))).date().isoformat()
         membership = {
             "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),
             "fecha_inicio": start,
@@ -134,6 +146,7 @@ class MembershipsRules:
             item["id_pm"] = int(item_id)
             item["nombre_plan"] = str(item.get("nombre_plan") or "MENSUAL").strip().upper()
             item["duracion"] = str(item.get("duracion") or "30 dias").strip()
+            self._duration_days(item)
             item["precio"] = int(item.get("precio") or 0)
             item["activo"] = bool(item.get("activo", True))
             idx = next((i for i, row in enumerate(state["planes_membresia"]) if int(row.get("id_pm", 0)) == int(item_id)), -1)
@@ -429,10 +442,7 @@ class MembershipsRules:
         valor = float(promocion.get("valor_descuento") or 0)
         tipo = str(promocion.get("tipo_descuento") or "porcentaje").strip().lower()
 
-        if tipo == "monto":
-            return max(0.0, round(precio_base - valor, 2))
-
-        return max(0.0, round(precio_base - (precio_base * valor / 100), 2))
+        return discounted_price(precio_base, valor, tipo)
 
     def _increment_promocion_usos(
         self,
@@ -712,7 +722,7 @@ class MembershipsRules:
                     None,
                 )
                 expected_amount = float((plan or {}).get("precio", 0) or 0)
-            if expected_amount <= 0 or abs(expected_amount - amount) >= 0.01:
+            if expected_amount <= 0 or cents(expected_amount) != cents(amount):
                 raise ValueError("El importe del pago no coincide con la membresía")
 
             current_payment_status = str(membresia.get("estado_pago") or "").strip().upper()
@@ -796,7 +806,7 @@ class MembershipsRules:
             plan = self.get_plan_membresia(int(membresia.get("id_pm", 0) or 0)) or self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
 
             start = self.today()
-            end = (datetime.fromisoformat(start) + timedelta(days=self._plan_duration_days(plan.get("nombre_plan", cliente.get("plan", "MENSUAL"))))).date().isoformat()
+            end = (datetime.fromisoformat(start) + timedelta(days=self._duration_days(plan))).date().isoformat()
             cliente["estado"] = "ACTIVO"
             membresia["estado"] = "ACTIVO"
             membresia["fecha_inicio"] = start

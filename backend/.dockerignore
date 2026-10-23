@@ -9,7 +9,6 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
-tests/
 *.log
 .env
 .env.*
@@ -26,7 +25,12 @@ tests/
 .gitignore
 README.md
 
-# Incluir las pruebas automatizadas para el target test (sin scripts manuales).
-!tests/
+# Incluir las pruebas automatizadas y sus dobles/fixtures, sin scripts manuales.
+tests/*
 !tests/test*.py
 !tests/conftest.py
+!tests/__init__.py
+!tests/atomic_fake.py
+!tests/fixtures/
+tests/fixtures/*
+!tests/fixtures/priority_schema.sql

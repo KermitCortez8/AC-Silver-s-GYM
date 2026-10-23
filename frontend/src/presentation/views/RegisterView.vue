@@ -319,6 +319,7 @@
 </template>
 
 <script setup>
+import { discountedPrice } from '../../domain/utils/money.js';
 import { clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
 import { computed, onMounted, reactive, ref } from 'vue';
 
@@ -437,13 +438,10 @@ const planOptions = computed(() =>
         const icon = promo.icono_etiqueta || '🏷️';
         const tagWord = promo.palabra_clave || promo.nombre || '';
         if (promo.tipo_descuento === 'monto') {
-          finalPrice = Math.max(0, originalPrice - valor);
+          finalPrice = discountedPrice(originalPrice, valor, 'fixed');
           promoTag = `${icon} -S/${valor} ${tagWord}`.trim();
         } else {
-          finalPrice = Math.max(
-            0,
-            Math.round(originalPrice * (1 - valor / 100) * 100) / 100,
-          );
+          finalPrice = discountedPrice(originalPrice, valor);
           promoTag = `${icon} -${valor}% ${tagWord}`.trim();
         }
       }

@@ -1,5 +1,6 @@
 /** Estado y operaciones del módulo users. */
 import { normalizeUser } from '../../domain/utils/gymRules.js';
+import { inCurrentSession } from '../services/sessionBoundary.js';
 
 /** usersRepository: save(payload, token) y remove(id, token) devuelven datos o lanzan un error. */
 export const createUsersModule = (ctx, usersRepository) => {
@@ -54,12 +55,12 @@ export const createUsersModule = (ctx, usersRepository) => {
 
   const upsertUserToServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    return usersRepository.save(payload, ctx.authStore.token);
+    return inCurrentSession(() => usersRepository.save(payload, ctx.authStore.token));
   };
 
   const deleteUserFromServer = async (idUsuario) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    return usersRepository.remove(idUsuario, ctx.authStore.token);
+    return inCurrentSession(() => usersRepository.remove(idUsuario, ctx.authStore.token));
   };
 
   return { upsertUser, deleteUser, upsertUserToServer, deleteUserFromServer };

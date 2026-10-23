@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import logging
 
+from starlette.concurrency import run_in_threadpool
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 
 from presentation.dependencies import Settings, get_settings
@@ -274,7 +276,12 @@ async def stripe_webhook(
     settings: Settings = Depends(get_settings),
 ):
     payload = await request.body()
+    return await run_in_threadpool(
+        _process_stripe_webhook, payload, stripe_signature, clients_service, gym_service, settings,
+    )
 
+
+def _process_stripe_webhook(payload, stripe_signature, clients_service, gym_service, settings):
     gateway = StripeService(settings)
 
     try:

@@ -238,7 +238,7 @@ class _SupabaseWithoutScheduleRpc:
 
 
 class SupabaseScheduleCompatibilityTests(unittest.TestCase):
-    def test_enrollment_falls_back_to_identity_insert_before_migration_002(self) -> None:
+    def test_enrollment_requires_atomic_rpc_before_writing(self) -> None:
         local_service = _schedule_service()
         service = SupabaseGymService.__new__(SupabaseGymService)
         service.lock = threading.Lock()
@@ -247,15 +247,9 @@ class SupabaseScheduleCompatibilityTests(unittest.TestCase):
         service._last_refresh_at = 0.0
         service._refresh_remote_state = lambda: None
 
-        created = service.matricular_cliente_horario(
-            {"id_cliente": 1, "id_horario_servicio": 10}
-        )
-
-        self.assertEqual(created["id_matricula"], 90)
-        table, body, returns_rows = service.supabase.inserted
-        self.assertEqual(table, "MATRICULAS_HORARIO")
-        self.assertNotIn("id_matricula", body)
-        self.assertTrue(returns_rows)
+        with self.assertRaisesRegex(RuntimeError, "002_harden_schedule_enrollment.sql"):
+            service.matricular_cliente_horario({"id_cliente": 1, "id_horario_servicio": 10})
+        self.assertIsNone(service.supabase.inserted)
 
 
 if __name__ == "__main__":

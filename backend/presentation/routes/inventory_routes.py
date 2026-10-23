@@ -6,11 +6,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from presentation.dependencies import get_gym_service, get_optional_actor_id
+from presentation.dependencies import get_gym_service, get_optional_actor_id, require_admin_or_staff
 from domain.models.gym import InventarioInput, MovimientoInventarioInput, MovimientoInventarioUpdateInput
 from application.services.gym_service import GymService
 
-router = APIRouter(prefix="/inventario", tags=["inventario"])
+router = APIRouter(prefix="/inventario", tags=["inventario"], dependencies=[Depends(require_admin_or_staff)])
 
 
 # GET /inventario: lista el inventario completo.
@@ -57,9 +57,10 @@ def list_movimientos(gym_service: GymService = Depends(get_gym_service)):
 # POST /inventario/movimientos: registra una entrada, salida o ajuste de stock.
 @router.post("/movimientos")
 # Procesa esta operación.
-def registrar_movimiento(payload: MovimientoInventarioInput, gym_service: GymService = Depends(get_gym_service)):
+def registrar_movimiento(payload: MovimientoInventarioInput, gym_service: GymService = Depends(get_gym_service),
+                         actor_id: str = Depends(get_optional_actor_id)):
     try:
-        return gym_service.registrar_movimiento_inventario(payload.model_dump())
+        return gym_service.registrar_movimiento_inventario({**payload.model_dump(), "id_usuario": actor_id})
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
 

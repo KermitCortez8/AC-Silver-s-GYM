@@ -6,6 +6,7 @@ import time
 from typing import Any
 
 import pytest
+from tests.atomic_fake import AtomicFakeMixin, seed_snapshot
 
 from infrastructure.services.local_gym_service import LocalGymService
 from infrastructure.services.supabase_gym_service import SupabaseGymService
@@ -407,7 +408,7 @@ def test_producto_sin_vincular_vende_con_su_propio_stock() -> None:
 # --- Sincronización con Supabase -------------------------------------------------
 
 
-class FakeSupabase:
+class FakeSupabase(AtomicFakeMixin):
     def __init__(self, fail_insert_on: str | None = None) -> None:
         self.calls: list[tuple[str, str, Any]] = []
         self.fail_insert_on = fail_insert_on
@@ -441,6 +442,7 @@ def _supabase_service(fake: FakeSupabase, en_tienda: int = 0) -> SupabaseGymServ
     service.missing_remote_tables = set()
     service.state = deepcopy(local.state)
     service._last_refresh_at = time.monotonic() + 3600
+    seed_snapshot(service)
     return service
 
 

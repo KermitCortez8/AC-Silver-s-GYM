@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from application.services.store_images_service import StoreImagesService
 from infrastructure.services.local_image_storage import LocalImageStorage
-from presentation.dependencies import get_store_images_service
+from presentation.dependencies import get_store_images_service, get_current_user
 from presentation.routes.store_routes import router
 
 
@@ -15,6 +15,8 @@ def images_api(tmp_path):
     app = FastAPI()
     service = StoreImagesService(LocalImageStorage(tmp_path))
     app.dependency_overrides[get_store_images_service] = lambda: service
+    from types import SimpleNamespace
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role="admin")
     app.include_router(router)
     return TestClient(app), tmp_path
 
@@ -35,7 +37,7 @@ def test_image_upload_and_listing_preserve_public_urls(images_api):
     ("file.svg", b"svg", "image/svg+xml"),
     ("file.png", b"", "image/png"),
     ("file.png", b"x" * (5 * 1024 * 1024 + 1), "image/png"),
-])
+], ids=["wrong-mime", "svg", "empty", "too-large"])
 def test_invalid_uploads_are_rejected_before_storage(images_api, filename, data, mime):
     client, directory = images_api
     response = client.post("/tienda/imagenes", files={"file": (filename, data, mime)})

@@ -22,7 +22,7 @@ ESTADO_DISPONIBLE = "Disponible"
 ESTADO_STOCK_BAJO = "Stock bajo"
 ESTADO_AGOTADO = "Agotado"
 # Destino de las salidas de MOV_INV. VENTA solo aparece en los movimientos de pedidos registrados
-# mientras el stock estuvo compartido (migración 014); ya no se generan.
+# durante la etapa histórica de stock compartido; ya no se generan.
 DESTINO_TIENDA = "TIENDA"
 DESTINO_VENTA = "VENTA"
 # Movimientos de pedidos de esa etapa, reconocidos por el inicio de su descripción.
@@ -44,7 +44,7 @@ def _now_iso() -> str:
 
 # Procesa esta operación.
 def _now_time() -> str:
-    return datetime.now().strftime("%H:%M")
+    return datetime.now(_LIMA).strftime("%H:%M")
 
 
 # Procesa esta operación.

@@ -4,6 +4,7 @@ import threading
 import time
 
 import pytest
+from tests.atomic_fake import AtomicFakeMixin, seed_snapshot
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
@@ -185,7 +186,7 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
     expire(gym)
     writes = []
 
-    class Remote:
+    class Remote(AtomicFakeMixin):
         def validate_columns(self, *_args):
             pass
         def update(self, table, pk, id_value, body):
@@ -193,11 +194,7 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
         def select(self, table, order=None):
             return self.select_all(table, order)
         def select_all(self, table, order=None):
-            if table == 'CLIENTES':
-                return [service._client_to_remote(service.state['clientes'][0])]
-            if table == 'MEMBRESIA':
-                return [service._membership_to_remote(service.state['membresia'][0])]
-            return []
+            return self.rows.get(table, [])
 
     service = object.__new__(SupabaseGymService)
     service.lock = threading.Lock()
@@ -206,6 +203,7 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
     service.remote_columns = {}
     service.missing_remote_tables = set()
     service._last_refresh_at = time.monotonic()
+    seed_snapshot(service)
     service.ensure_fresh()
     assert [table for table, _ in writes] == ['MEMBRESIA', 'CLIENTES']
     assert writes[0][1]['Estado'] == 'VENCIDA'

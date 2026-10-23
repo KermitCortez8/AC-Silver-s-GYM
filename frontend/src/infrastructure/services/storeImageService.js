@@ -23,7 +23,7 @@ export const listStoreImages = async () => {
 };
 
 
-export const uploadStoreImage = async (file) => {
+export const uploadStoreImage = async (file, token = '') => {
   if (!file) {
     throw new Error('Selecciona una imagen');
   }
@@ -33,6 +33,7 @@ export const uploadStoreImage = async (file) => {
 
   const response = await fetch(`${apiBase}/tienda/imagenes`, {
     method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
 

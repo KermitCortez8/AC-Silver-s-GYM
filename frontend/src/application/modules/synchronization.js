@@ -17,10 +17,10 @@ export const createSynchronizationModule = (ctx) => {
   const fetchFromBackend = ({ force = false, section = 'all' } = {}) => {
     if (!ctx.authStore.token) return Promise.resolve();
     const scope = `${ctx.authStore.token}|${ctx.authStore.userRole}`;
-    if (ctx.syncScope !== scope && ctx.pendingSyncs.size) {
-      // Una sesión nueva espera las respuestas anteriores antes de llenar sus propios datos.
-      return Promise.allSettled([...ctx.pendingSyncs]).then(() => fetchFromBackend({ force, section }));
-    }
+    const generation = ctx.generation;
+    const assertCurrent = () => {
+      if (generation !== ctx.generation) throw new Error('La sesión ha cambiado.');
+    };
     ctx.syncScope = scope;
     if (scope !== ctx.errorScope) {
       ctx.errorScope = scope;
@@ -35,6 +35,7 @@ export const createSynchronizationModule = (ctx) => {
       const role = ctx.authStore.userRole || ctx.authStore.user?.role;
       const internal = ['admin', 'staff'].includes(role);
       const getList = async (path) => {
+        assertCurrent();
         const data = await apiGet(path, ctx.authStore.token);
         if (!Array.isArray(data)) throw new Error('El servidor devolvió una lista de datos inválida.');
         return data;
@@ -53,7 +54,7 @@ export const createSynchronizationModule = (ctx) => {
         })()]);
       }
 
-      tasks.push(['Inventario', async () => {
+      if (internal) tasks.push(['Inventario', async () => {
         ctx.inventory.value = (await getList('/inventario')).map((i) => ({
           id: `item-${i.id_item}`,
           inventoryCode: `ACT-${String(i.n_activo || i.id_item).padStart(4, '0')}`,
@@ -69,8 +70,8 @@ export const createSynchronizationModule = (ctx) => {
           observations: i.observaciones || '',
         }));
       }],
-        ['Movimientos', ctx.refreshInventoryMovementsFromBackend],
-        ['Productos', ctx.refreshStoreProductsFromBackend],
+        ['Movimientos', ctx.refreshInventoryMovementsFromBackend]);
+      tasks.push(['Productos', ctx.refreshStoreProductsFromBackend],
         ['Pedidos', ctx.refreshStoreOrdersFromBackend],
         ['Planes', async () => {
           ctx.planCatalog.value = (await getList('/planes-membresia')).map(normalizePlanFromBackend);
@@ -97,6 +98,7 @@ export const createSynchronizationModule = (ctx) => {
       if (role === 'admin' || role === 'user') tasks.push(['Asistencias', async () => {
         // La normalización de asistencias necesita los nombres de clientes.
         await clientsReady.catch(() => { });
+        assertCurrent();
         await ctx.refreshAttendanceFromBackend();
       }]);
 
@@ -121,16 +123,18 @@ export const createSynchronizationModule = (ctx) => {
         !(['dashboard', 'store'].includes(section) && label === 'Inventario' && !internal)) : tasks;
       await syncResources(selectedTasks.map(([label, load]) => [label, async () => {
         try {
-          await ctx.resourceCache.load(scope, label, load, { force });
-          if (scope === ctx.errorScope) ctx.resourceErrors.delete(label);
+          assertCurrent();
+          await ctx.resourceCache.load(scope, label, () => { assertCurrent(); return load(); }, { force });
+          if (scope === ctx.errorScope && generation === ctx.generation) ctx.resourceErrors.delete(label);
         } catch (error) {
-          if (scope === ctx.errorScope) ctx.resourceErrors.set(label, `${label}: ${error.message || 'No se pudieron cargar los datos.'}`);
+          if (scope === ctx.errorScope && generation === ctx.generation) ctx.resourceErrors.set(label, `${label}: ${error.message || 'No se pudieron cargar los datos.'}`);
           throw error;
         } finally {
-          if (scope === ctx.errorScope) ctx.syncError.value = [...ctx.resourceErrors.values()].join(' ');
+          if (scope === ctx.errorScope && generation === ctx.generation) ctx.syncError.value = [...ctx.resourceErrors.values()].join(' ');
         }
       }]));
     })().finally(() => {
+      if (generation !== ctx.generation) return;
       ctx.activeSyncs -= 1;
       ctx.sectionSyncs.value[section] -= 1;
       ctx.isSyncing.value = ctx.activeSyncs > 0;

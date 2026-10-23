@@ -500,6 +500,8 @@
 </template>
 
 <script setup>
+import { limaDate } from '../../domain/utils/dates.js';
+import { discountedPrice } from '../../domain/utils/money.js';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useGymStore } from '../../application/stores/gymStore';
 import { useTheme } from '../composables/useTheme';
@@ -601,11 +603,7 @@ const previewCalculatedPrice = computed(() => {
   if (!selectedPlan.value) return 0;
   const basePrice = Number(selectedPlan.value.price || 0);
   const val = Number(form.discountValue || 0);
-  if (form.discountType === 'fixed') {
-    return Math.max(0, basePrice - val);
-  } else {
-    return Math.max(0, basePrice - (basePrice * val / 100));
-  }
+  return discountedPrice(basePrice, val, form.discountType);
 });
 
 const previewSavings = computed(() => {
@@ -616,7 +614,7 @@ const previewSavings = computed(() => {
 
 const getPromoStatus = (promo) => {
   if (!promo.active) return { label: 'Pausada', tone: 'slate', icon: 'fa-solid fa-pause' };
-  const today = new Date().toISOString().split('T')[0];
+  const today = limaDate();
   const isCupoCumplido = promo.limite_cupos && promo.usos_actuales >= promo.limite_cupos;
   const isExpirada = promo.validUntil && promo.validUntil < today;
   if (isCupoCumplido || isExpirada) {

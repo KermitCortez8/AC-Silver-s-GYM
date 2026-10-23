@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from typing import Any
+from domain.money import cents
 
 from application.services.gym_service import GymService
 from domain.services.gym_domain_service import _today_iso
@@ -210,7 +211,7 @@ class ClientsService:
         if expected <= 0:
             plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0) or 0))
             expected = float((plan or {}).get("precio", 0) or 0)
-        return expected > 0 and abs(expected - float(amount)) < 0.01
+        return expected > 0 and cents(expected) == cents(amount)
 
     # Procesa esta operación.
     def activate_client_membership(self, id_cliente: int) -> dict[str, Any]:

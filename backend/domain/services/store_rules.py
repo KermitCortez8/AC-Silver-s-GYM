@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
+from domain.money import cents, order_totals
 from domain.services.gym_values import TIPO_TIENDA, ESTADO_PAGO_PAGADO, ESTADO_PAGO_PENDIENTE, ESTADO_PEDIDO_CANCELADO, _pedido_pagado, _parse_utc, PedidoCanceladoConPagoError
 
 
@@ -187,12 +188,13 @@ class StoreRules:
             id_pedido = self._next_int_id_in_state(state, "pedidos_tienda", "id_pedido")
             cliente_nombre = str(payload.get("cliente_nombre") or "Cliente")
             items: list[dict[str, Any]] = []
-            subtotal = 0.0
+            subtotal_cents = 0
 
             for producto, cantidad in lineas:
                 precio = float(producto.get("precio_venta") or 0)
-                item_subtotal = round(precio * cantidad, 2)
-                subtotal += item_subtotal
+                item_subtotal_cents = cents(precio) * cantidad
+                item_subtotal = item_subtotal_cents / 100
+                subtotal_cents += item_subtotal_cents
 
                 # La venta solo descuenta el stock de la tienda; la reserva de INVENTARIO no cambia.
                 producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) - cantidad
@@ -208,9 +210,7 @@ class StoreRules:
                 )
 
             self._actualizar_estados_tienda(state)
-            subtotal = round(subtotal, 2)
-            igv = round(subtotal * 0.18, 2)
-            total = round(subtotal + igv, 2)
+            totals = order_totals(subtotal_cents)
             ahora = self.now()
             pedido = {
                 "id_pedido": id_pedido,
@@ -222,14 +222,12 @@ class StoreRules:
                 "creado_en": ahora,
                 "metodo_pago": "tarjeta" if pago_pendiente else str(payload.get("metodo_pago") or "tarjeta"),
                 # Con tarjeta la referencia es el session_id de Stripe: se registra después de crear la sesión.
-                "referencia_pago": "" if pago_pendiente else str(payload.get("referencia_pago") or f"PED-{datetime.now().strftime('%Y%m%d%H%M%S')}"),
+                "referencia_pago": "" if pago_pendiente else str(payload.get("referencia_pago") or f"PED-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"),
                 "estado_pago": ESTADO_PAGO_PENDIENTE if pago_pendiente else ESTADO_PAGO_PAGADO,
                 "estado_pedido": "PENDIENTE",
                 "observacion_admin": "",
                 "fecha_actualizacion": ahora,
-                "subtotal": subtotal,
-                "igv": igv,
-                "total": total,
+                **totals,
                 "items": items,
             }
             state["pedidos_tienda"].insert(0, pedido)
@@ -312,7 +310,7 @@ class StoreRules:
                 raise ValueError("Pedido no encontrado")
 
             expected_amount = round(float(pedido.get("total") or 0), 2)
-            if expected_amount <= 0 or abs(expected_amount - amount) >= 0.01:
+            if expected_amount <= 0 or cents(expected_amount) != cents(amount):
                 raise ValueError("El importe del pago no coincide con el pedido")
 
             current_reference = str(pedido.get("referencia_pago") or "").strip()

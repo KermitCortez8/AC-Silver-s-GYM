@@ -1,0 +1,21 @@
+/** Impide publicar una respuesta que pertenece a una sesión sustituida. */
+import { getActivePinia } from 'pinia';
+import { useSessionStore } from '../stores/sessionStore.js';
+
+export const captureSession = () => {
+  const pinia = getActivePinia();
+  const session = pinia ? useSessionStore(pinia) : null;
+  const revision = session?.revision;
+  return () => {
+    if (session && session.revision !== revision) {
+      throw new Error('La sesión ha cambiado.');
+    }
+  };
+};
+
+export const inCurrentSession = async (operation) => {
+  const assertCurrent = captureSession();
+  const result = await operation();
+  assertCurrent();
+  return result;
+};

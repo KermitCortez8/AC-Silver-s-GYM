@@ -1,5 +1,6 @@
+import { addDays } from '../../domain/utils/dates.js';
 /** Estado y operaciones del módulo clients. */
-import { nowISO, todayISO, addMonthsISO, planDurationById } from '../../domain/utils/gymRules.js';
+import { nowISO, todayISO, planDurationDays } from '../../domain/utils/gymRules.js';
 import { normalizeMembershipStatus } from '../../domain/utils/clientDirectory.js';
 import { backendRequest, apiPost } from '../services/backendGateway.js';
 import { useAuthStore } from '../stores/authStore.js';
@@ -80,7 +81,7 @@ export const createClientsModule = (ctx) => {
       membershipEnd:
         payload.membershipEnd ||
         existingMember?.membershipEnd ||
-        addMonthsISO(baseMembershipStart, planDurationById(resolvedPlanId)),
+        addDays(baseMembershipStart, planDurationDays(ctx.getPlanById?.(resolvedPlanId), resolvedPlanId)),
       membershipPrice: Number(payload.membershipPrice ?? existingMember?.membershipPrice ?? 0),
       status: normalizeMembershipStatus(payload.status || existingMember?.status),
       membershipStatus: normalizeMembershipStatus(payload.membershipStatus || existingMember?.membershipStatus || payload.status),
@@ -144,10 +145,11 @@ export const createClientsModule = (ctx) => {
     return member;
   };
 
-  const deleteMember = (id) => {
+  const deleteMember = async (id) => {
     if (ctx.apiBase && /^(?:cliente-|SGCLI)\d+$/i.test(id)) {
       const id_cliente = Number(String(id).replace(/^(?:cliente-|SGCLI)/i, ''));
-      backendRequest(`${ctx.apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: ctx._authHeaders() }).catch(() => { });
+      const response = await backendRequest(`${ctx.apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: ctx._authHeaders() });
+      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar el cliente'));
     }
     ctx.members.value = ctx.members.value.filter((member) => member.id !== id);
     ctx.attendance.value = ctx.attendance.value.filter((entry) => entry.memberId !== id);

@@ -67,7 +67,8 @@ export const createGymState = () => {
 
   const resourceErrors = new Map();
 
-  return {
+  const context = {
+    generation: 0,
     initialState,
     authStore,
     planCatalog,
@@ -100,4 +101,22 @@ export const createGymState = () => {
     errorScope,
     resourceErrors,
   };
+  context.resetState = () => {
+    const clean = loadState();
+    for (const [key, value] of Object.entries(clean)) context[key].value = value;
+    context.initialState = clean;
+    membershipPayments.value = [];
+    syncError.value = '';
+    isSyncing.value = false;
+    sectionSyncs.value = {};
+    resourceErrors.clear();
+    resourceCache.clear();
+    trainerOverviewCache.clear();
+    pendingSyncs.clear();
+    context.syncScope = '';
+    context.errorScope = '';
+    context.activeSyncs = 0;
+    context.generation += 1;
+  };
+  return context;
 };

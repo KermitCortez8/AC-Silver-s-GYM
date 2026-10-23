@@ -6,6 +6,10 @@ export const createResourceCache = ({
   let currentScope = '';
   const entries = new Map();
   return {
+    clear() {
+      currentScope = '';
+      entries.clear();
+    },
     load(scope, key, fetchResource, { force = false } = {}) {
       if (scope !== currentScope) {
         currentScope = scope;
@@ -28,7 +32,10 @@ export const createResourceCache = ({
       const entry = { pending: null, updatedAt: -Infinity };
       entries.set(key, entry);
       entry.pending = Promise.resolve()
-        .then(fetchResource)
+        .then(() => {
+          if (scope !== currentScope || entries.get(key) !== entry) throw new Error('La sesión ha cambiado.');
+          return fetchResource();
+        })
         .then(() => {
           entry.updatedAt = now();
         })

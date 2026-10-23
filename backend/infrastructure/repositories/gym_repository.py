@@ -13,6 +13,7 @@ from domain.errors import AttendanceConflict, raise_schedule_enrollment_error
 from domain.services.gym_domain_service import GymDomainService, _now_iso, _today_iso
 from domain.services.membership_lifecycle import apply_membership_expiration, normalize_membership_status
 from infrastructure.supabase_client import SupabaseRestClient
+from infrastructure.repositories.atomic_changes import SnapshotConflict, commit_snapshot, table_changes
 
 class SupabaseGymRepository:
     def validate_admin_registration_schema(self) -> None:
@@ -59,6 +60,7 @@ class SupabaseGymRepository:
         self.supabase = SupabaseRestClient(supabase_url, supabase_key)
         self.lock = threading.Lock()
         self.remote_columns: dict[str, set[str]] = {}
+        self._raw_rows = {}
         self.missing_remote_tables: set[str] = set()
         self.state = GymDomainService().state
         self._last_refresh_at = 0.0
@@ -109,19 +111,19 @@ class SupabaseGymRepository:
 
     # Procesa esta operación.
     def _select_required(self, table: str, order: str | None = None) -> list[dict[str, Any]]:
-        rows = self.supabase.select(table, order=order)
+        rows = self.supabase.select_all(table, order=order or "1")
         self._remember_remote_columns(table, rows)
         return rows
 
     # Procesa esta operación.
     def _select_optional(self, table: str, order: str | None = None) -> list[dict[str, Any]]:
         try:
-            rows = self.supabase.select(table, order=order)
+            rows = self.supabase.select_all(table, order=order or "1")
             self._remember_remote_columns(table, rows)
             return rows
         except RuntimeError as error:
             message = str(error)
-            if "PGRST" in message or "does not exist" in message or "Could not find" in message:
+            if "PGRST205" in message or "42P01" in message:
                 self.missing_remote_tables.add(table)
                 return []
             raise
@@ -129,6 +131,16 @@ class SupabaseGymRepository:
     # Procesa esta operación.
     def _filter_remote_columns(self, table: str, body: dict[str, Any]) -> dict[str, Any]:
         columns = self.remote_columns.get(table)
+        preserved = {
+            "USUARIO": {"codigo_usuario"},
+            "PROMOCIONES": {"limite_cupos", "usos_actuales", "icono_etiqueta", "palabra_clave"},
+            "MEMBRESIA": {"id_promocion"},
+            "INVENTARIO": {"unidad_venta", "precio_venta", "stock_minimo", "ubicacion", "observaciones"},
+            "TIENDA_PRODUCTOS": {"descripcion", "unidad_venta"},
+        }.get(table, set())
+        if columns is not None and (preserved & body.keys()) - columns:
+            raise RuntimeError("Falta ejecutar backend/migrations/014_preserve_business_fields.sql en Supabase")
+
         exercise_column = {
             "CATALOGO_RUTINA": "ejercicios",
             "RUTINA_PROGRESO": "ejercicios_detalle",
@@ -251,7 +263,12 @@ class SupabaseGymRepository:
             GymDomainService(remote_state).recount_schedule()
         if "inventario" in selected:
             GymDomainService(remote_state).refresh_store_status()
-            self._guardar_estados_automaticos(rows["inventario"], remote_state)
+        raw = dict(getattr(self, "_raw_rows", {}))
+        for key, _load, table, _order in queries:
+            raw[table] = deepcopy(rows[key])
+            if table not in self.missing_remote_tables:
+                self._remember_remote_columns(table, rows[key])
+        self._raw_rows = raw
         self.state = remote_state
         refreshed_at = time.monotonic()
         if not hasattr(self, "_resource_refreshed_at"):
@@ -305,49 +322,44 @@ class SupabaseGymRepository:
     def _changed_state_keys(self, previous: dict[str, Any], current: dict[str, Any]) -> list[str]:
         return [key for key in previous if previous[key] != current.get(key, [])]
 
-    def _mutate_users(self, fn):
-        # Crear, editar y eliminar personal solo modifica USUARIO.
-        return self._mutate(fn, resources=("usuario",))
-
     # Procesa esta operación.
     def _mutate(self, fn, resources=None):
         with self.lock:
-            self._refresh_remote_state_if_stale(resources)
-            previous = self._mutation_snapshot(resources)
-            try:
-                result = fn(self.state)
-            except Exception:
-                self.state.update(deepcopy(previous))
-                raise
-            changed_keys = self._changed_state_keys(previous, self.state)
-            inserted_rows: list[tuple[str, str, Any]] = []
-            updated_rows: list[tuple[str, str, Any, dict[str, Any]]] = []
-            try:
-                self._sync_remote_changes(previous, self.state, changed_keys, inserted_rows, updated_rows)
-            except Exception:
-                self.state.update(deepcopy(previous))
-                # Deja Supabase como estaba: restaura filas actualizadas y borra las insertadas.
-                for table, remote_pk, remote_id, previous_body in reversed(updated_rows):
-                    try:
-                        self.supabase.update(table, remote_pk, remote_id, previous_body)
-                    except RuntimeError:
-                        pass
-                for table, remote_pk, remote_id in reversed(inserted_rows):
-                    try:
-                        self.supabase.delete(table, remote_pk, remote_id)
-                    except RuntimeError:
-                        pass
-                self._last_refresh_at = 0.0
-                getattr(self, "_resource_refreshed_at", {}).clear()
-                raise
-            changed_at = time.monotonic()
-            if resources is None:
-                self._last_refresh_at = changed_at
-            # Las tablas no modificadas conservan su vencimiento original.
-            getattr(self, "_resource_refreshed_at", {}).update(
-                dict.fromkeys(changed_keys, changed_at)
-            )
-            return result
+            for attempt in range(3):
+                self._refresh_remote_state_if_stale(resources)
+                previous = self._mutation_snapshot(resources)
+                try:
+                    table_names = [self.CORE_TABLES[key][0] for key in previous if key in self.CORE_TABLES
+                                   and self.CORE_TABLES[key][0] not in self.missing_remote_tables]
+                    if "pedidos_tienda" in previous:
+                        table_names.append("VENTAS")
+                    floors = self.supabase.rpc("gym_identity_floors", {"p_tables": sorted(table_names)})
+                    if not isinstance(floors, dict):
+                        raise RuntimeError("Falta ejecutar backend/migrations/015_atomic_gym_transactions.sql en Supabase")
+                    self.state["_identity_floors"] = {
+                        key: int(floors.get(table, 0)) for key, (table, _local, _remote) in self.CORE_TABLES.items()
+                    }
+                    self.state["_identity_floors"]["pedidos_tienda"] = int(floors.get("VENTAS", 0))
+                    result = fn(self.state)
+                    changed_keys = self._changed_state_keys(previous, self.state)
+                    if changed_keys:
+                        self._sync_remote_changes(previous, self.state, changed_keys)
+                except Exception as error:
+                    self.state.update(deepcopy(previous))
+                    self._last_refresh_at = 0.0
+                    getattr(self, "_resource_refreshed_at", {}).clear()
+                    if "PGRST202" in str(error) or '"code":"42883"' in str(error).replace(" ", ""):
+                        raise RuntimeError("Falta ejecutar backend/migrations/015_atomic_gym_transactions.sql en Supabase") from error
+                    if isinstance(error, SnapshotConflict) and attempt < 2:
+                        # La RPC no escribió nada. Recalcula las reglas sobre datos actuales.
+                        self._refresh_remote_state(resources)
+                        continue
+                    if isinstance(error, SnapshotConflict):
+                        raise ValueError("Los datos cambiaron. Actualiza e inténtalo de nuevo.") from error
+                    raise
+                changed_at = time.monotonic()
+                getattr(self, "_resource_refreshed_at", {}).update(dict.fromkeys(changed_keys, changed_at))
+                return result
 
     @staticmethod
     def _raise_schedule_enrollment_error(error: RuntimeError) -> NoReturn:
@@ -355,7 +367,7 @@ class SupabaseGymRepository:
 
     def enroll(self, payload: dict[str, Any]) -> dict[str, Any]:
 
-        """Crea la matrícula y usa la operación atómica cuando 002 está aplicada."""
+        """Crea la matrícula únicamente mediante la operación atómica de la base."""
         with self.lock:
             # Una matrícula siempre parte del estado remoto más reciente, incluso
             # si la caché general todavía no alcanzó su TTL.
@@ -388,21 +400,7 @@ class SupabaseGymRepository:
                 if "pgrst202" in normalized or "could not find the function" in normalized:
                     if admin_id:
                         raise RuntimeError("Falta ejecutar backend/migrations/006_schedule_email_notifications.sql en Supabase.") from error
-                    # Compatibilidad inmediata con bases creadas antes de 002.
-                    # PostgreSQL genera el ID; al aplicar 002, la RPC y sus locks
-                    # pasan a proteger además dos solicitudes simultáneas.
-                    try:
-                        created = self.supabase.insert(
-                            "MATRICULAS_HORARIO",
-                            {
-                                "id_cliente": id_cliente,
-                                "id_horario_servicio": id_horario,
-                                "estado": "ACTIVA",
-                            },
-                            return_representation=True,
-                        )
-                    except RuntimeError as insert_error:
-                        self._raise_schedule_enrollment_error(insert_error)
+                    raise RuntimeError("Falta ejecutar backend/migrations/002_harden_schedule_enrollment.sql en Supabase.") from error
                 else:
                     self._raise_schedule_enrollment_error(error)
 
@@ -443,140 +441,66 @@ class SupabaseGymRepository:
 
     # Procesa esta operación.
     def save_settings(self, payload: dict[str, Any]) -> dict[str, Any]:
-        body = self._config_to_remote(payload)
+        body = {"id_config": 1, **self._config_to_remote(payload)}
         with self.lock:
-            rows = self._select_optional("CONFIGURACION_GIMNASIO")
-            if rows:
-                self.supabase.update("CONFIGURACION_GIMNASIO", "id_config", 1, body)
-            else:
-                self.supabase.insert("CONFIGURACION_GIMNASIO", {"id_config": 1, **body})
-            self.state["configuracion_gimnasio"] = self._map_config(body)
-            getattr(self, "_resource_refreshed_at", {}).update(
-                configuracion_gimnasio=time.monotonic()
-            )
-            return self.configuracion_gimnasio()
+            for attempt in range(3):
+                rows = self._select_optional("CONFIGURACION_GIMNASIO", "id_config.asc")
+                try:
+                    committed = commit_snapshot(self.supabase, {"CONFIGURACION_GIMNASIO": rows},
+                        table_changes("CONFIGURACION_GIMNASIO", "id_config", rows, [body]))
+                except SnapshotConflict:
+                    if attempt < 2:
+                        continue
+                    raise ValueError("La configuración cambió. Actualiza e inténtalo de nuevo.")
+                self._raw_rows = {**getattr(self, "_raw_rows", {}), **committed}
+                self.state["configuracion_gimnasio"] = self._map_config(body)
+                getattr(self, "_resource_refreshed_at", {}).update(configuracion_gimnasio=time.monotonic())
+                return self.configuracion_gimnasio()
 
     # Actualiza el registro correspondiente.
-    def _sync_remote_changes(
-        self,
-        previous: dict[str, Any],
-        current: dict[str, Any],
-        changed_keys: list[str],
-        inserted_rows: list[tuple[str, str, Any]] | None = None,
-        updated_rows: list[tuple[str, str, Any, dict[str, Any]]] | None = None,
-    ) -> None:
+    def _sync_remote_changes(self, previous, current, changed_keys, *_legacy_tracking):
         if not changed_keys:
             return
-
-        core_keys = [key for key in changed_keys if key in self.CORE_TABLES]
-        updates_membership_and_client = (
-            "membresia" in core_keys
-            and "clientes" in core_keys
-            and not self._contains_new_rows("membresia", previous, current)
-            and not self._contains_new_rows("clientes", previous, current)
-        )
-        if updates_membership_and_client:
-            core_keys.remove("membresia")
-            core_keys.insert(core_keys.index("clientes"), "membresia")
-
-        for state_key in core_keys:
-            self._sync_table(
-                state_key,
-                previous.get(state_key, []),
-                current.get(state_key, []),
-                inserted_rows,
-                updated_rows,
-            )
-
+        operations = []
+        for key in changed_keys:
+            if key not in self.CORE_TABLES:
+                continue
+            table, _local_pk, remote_pk = self.CORE_TABLES[key]
+            if table in self.missing_remote_tables:
+                raise RuntimeError(f"La tabla {table} no está disponible; no se guardó ningún cambio")
+            before = [self._filter_remote_columns(table, self._to_remote_body(key, row))
+                      for row in previous.get(key, [])]
+            after = [self._filter_remote_columns(table, self._to_remote_body(key, row))
+                     for row in current.get(key, [])]
+            operations.extend(table_changes(table, remote_pk, before, after))
         if "pedidos_tienda" in changed_keys:
-            self._sync_orders(previous.get("pedidos_tienda", []), current.get("pedidos_tienda", []), inserted_rows, updated_rows)
-
-    def _contains_new_rows(
-        self,
-        state_key: str,
-        previous: dict[str, Any],
-        current: dict[str, Any],
-    ) -> bool:
-        _, local_pk, _ = self.CORE_TABLES[state_key]
-        previous_ids = {
-            self._pk(row, local_pk)
-            for row in previous.get(state_key, [])
-            if self._pk(row, local_pk)
-        }
-        return any(
-            self._pk(row, local_pk) not in previous_ids
-            for row in current.get(state_key, [])
-            if self._pk(row, local_pk)
-        )
-
-    # Actualiza el registro correspondiente.
-    def _sync_table(
-        self,
-        state_key: str,
-        previous_rows: list[dict[str, Any]],
-        current_rows: list[dict[str, Any]],
-        inserted_rows: list[tuple[str, str, Any]] | None = None,
-        updated_rows: list[tuple[str, str, Any, dict[str, Any]]] | None = None,
-    ) -> None:
-        table, local_pk, remote_pk = self.CORE_TABLES[state_key]
-        if table in self.missing_remote_tables:
+            before = {int(row["id_pedido"]): row for row in previous.get("pedidos_tienda", [])}
+            after = {int(row["id_pedido"]): row for row in current.get("pedidos_tienda", [])}
+            operations.extend(table_changes("VENTAS", "id_venta",
+                [self._filter_remote_columns("VENTAS", self._sale_to_remote(row)) for row in before.values()],
+                [self._filter_remote_columns("VENTAS", self._sale_to_remote(row)) for row in after.values()]))
+            for identity in before.keys() | after.keys():
+                old, new = before.get(identity), after.get(identity)
+                if old is None or new is None or old.get("items") != new.get("items"):
+                    operations.append({"table": "DETALLE_VENTA", "pk": "id_detalle", "action": "delete_details",
+                                       "id": identity})
+                    for item in (new or {}).get("items", []):
+                        operations.append({"table": "DETALLE_VENTA", "pk": "id_detalle", "action": "insert",
+                                           "body": self._sale_detail_to_remote(identity, item)})
+        if not operations:
             return
-        previous_by_id = {self._pk(row, local_pk): row for row in previous_rows if self._pk(row, local_pk)}
-        current_by_id = {self._pk(row, local_pk): row for row in current_rows if self._pk(row, local_pk)}
-
-        for deleted_id in previous_by_id.keys() - current_by_id.keys():
-            self.supabase.delete(table, remote_pk, self._remote_pk_value(state_key, previous_by_id[deleted_id], deleted_id))
-
-        for row_id, row in current_by_id.items():
-            body = self._filter_remote_columns(table, self._to_remote_body(state_key, row))
-            previous = previous_by_id.get(row_id)
-            previous_body = self._filter_remote_columns(table, self._to_remote_body(state_key, previous)) if previous else None
-            if previous and body == previous_body:
-                continue
-            remote_id = self._remote_pk_value(state_key, row, row_id)
-            if previous:
-                self.supabase.update(table, remote_pk, remote_id, body)
-                if updated_rows is not None and previous_body is not None:
-                    updated_rows.append((table, remote_pk, remote_id, previous_body))
-            else:
-                self.supabase.insert(table, body)
-                if inserted_rows is not None:
-                    inserted_rows.append((table, remote_pk, remote_id))
-
-    # Actualiza el registro correspondiente.
-    def _sync_orders(
-        self,
-        previous_rows: list[dict[str, Any]],
-        current_rows: list[dict[str, Any]],
-        inserted_rows: list[tuple[str, str, Any]] | None = None,
-        updated_rows: list[tuple[str, str, Any, dict[str, Any]]] | None = None,
-    ) -> None:
-        previous_by_id = {int(row.get("id_pedido", 0) or 0): row for row in previous_rows if int(row.get("id_pedido", 0) or 0)}
-        current_by_id = {int(row.get("id_pedido", 0) or 0): row for row in current_rows if int(row.get("id_pedido", 0) or 0)}
-
-        for deleted_id in previous_by_id.keys() - current_by_id.keys():
-            self.supabase.delete("VENTAS", "id_venta", deleted_id)
-
-        for sale_id, row in current_by_id.items():
-            previous = previous_by_id.get(sale_id)
-            if previous and row == previous:
-                continue
-
-            sale_body = self._filter_remote_columns("VENTAS", self._sale_to_remote(row))
-            if previous:
-                self.supabase.update("VENTAS", "id_venta", sale_id, sale_body)
-                if updated_rows is not None:
-                    previous_sale_body = self._filter_remote_columns("VENTAS", self._sale_to_remote(previous))
-                    updated_rows.append(("VENTAS", "id_venta", sale_id, previous_sale_body))
-            else:
-                self.supabase.insert("VENTAS", sale_body)
-                if inserted_rows is not None:
-                    inserted_rows.append(("VENTAS", "id_venta", sale_id))
-
-            self.supabase.delete_where("DETALLE_VENTA", "id_venta", sale_id)
-            detail_rows = [self._sale_detail_to_remote(sale_id, item) for item in row.get("items", [])]
-            if detail_rows:
-                self.supabase.insert("DETALLE_VENTA", detail_rows)
+        raw = getattr(self, "_raw_rows", {})
+        tables = {self.CORE_TABLES[key][0] for key in previous if key in self.CORE_TABLES}
+        if "pedidos_tienda" in previous:
+            tables.update(("VENTAS", "DETALLE_VENTA"))
+        if "clientes" in previous and "CONFIGURACION_GIMNASIO" in raw:
+            tables.add("CONFIGURACION_GIMNASIO")
+        tables.difference_update(self.missing_remote_tables)
+        if tables - raw.keys():
+            raise RuntimeError("No hay una instantánea remota completa para confirmar los cambios")
+        expected = {table: raw[table] for table in sorted(tables)}
+        committed = commit_snapshot(self.supabase, expected, operations)
+        self._raw_rows.update(committed)
 
     # Procesa esta operación.
     def _to_remote_body(self, state_key: str, row: dict[str, Any]) -> dict[str, Any]:
@@ -700,6 +624,10 @@ class SupabaseGymRepository:
         return {
             "id_promocion": int(row.get("id_promocion", 0) or 0),
             "nombre": str(row.get("nombre") or ""),
+            "limite_cupos": row.get("limite_cupos"),
+            "usos_actuales": int(row.get("usos_actuales") or 0),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
+            "palabra_clave": str(row.get("palabra_clave") or ""),
             "descripcion": str(row.get("descripcion") or ""),
             "tipo_descuento": str(row.get("tipo_descuento") or "porcentaje"),
             "valor_descuento": float(row.get("valor_descuento") or 0),
@@ -714,6 +642,10 @@ class SupabaseGymRepository:
         return {
             "id_promocion": int(row.get("id_promocion", 0) or 0),
             "nombre": str(row.get("nombre") or ""),
+            "limite_cupos": row.get("limite_cupos"),
+            "usos_actuales": int(row.get("usos_actuales") or 0),
+            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
+            "palabra_clave": str(row.get("palabra_clave") or ""),
             "descripcion": str(row.get("descripcion") or ""),
             "tipo_descuento": str(row.get("tipo_descuento") or "porcentaje"),
             "valor_descuento": float(row.get("valor_descuento") or 0),
@@ -777,6 +709,7 @@ class SupabaseGymRepository:
             "fecha_fin": str(row.get("Fecha_Fin") or ""),
             "estado": normalize_membership_status(membership_status),
             "id_cliente": int(row.get("id_cliente", 0) or 0),
+            "id_promocion": int(row.get("id_promocion") or 0) or None,
             "id_pm": int(row.get("id_PM", 0) or 0),
             "monto_pago": float(row.get("monto_pago", 0) or 0),
             "estado_pago": str(row.get("estado_pago") or default_payment_status),
@@ -793,6 +726,7 @@ class SupabaseGymRepository:
             "Fecha_Fin": self._date_or_today(row.get("fecha_fin")),
             "Estado": normalize_membership_status(row.get("estado")),
             "id_cliente": int(row.get("id_cliente", 0) or 0),
+            "id_promocion": int(row.get("id_promocion") or 0) or None,
             "id_PM": int(row.get("id_pm", 0) or 0) or None,
             "monto_pago": float(row.get("monto_pago", 0) or 0) or None,
             "estado_pago": str(row.get("estado_pago") or "PENDIENTE"),
@@ -822,7 +756,7 @@ class SupabaseGymRepository:
         role = str(row.get("Rol") or "staff").strip().lower()
         prefix = self.rules.user_role_prefix(role)
         return {
-            "id_usuario": f"SG{prefix}{user_id:03d}" if user_id else "",
+            "id_usuario": str(row.get("codigo_usuario") or (f"SG{prefix}{user_id:03d}" if user_id else "")),
             "nombre": str(row.get("Nombre") or f"Usuario {row.get('id_usuario', '')}"),
             "correo": str(row.get("Correo") or row.get("Email") or ""),
             "telefono": str(row.get("Telefono") or ""),
@@ -837,6 +771,7 @@ class SupabaseGymRepository:
     def _user_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
         return {
             "id_usuario": self._remote_user_id(row.get("id_usuario")),
+            "codigo_usuario": str(row.get("id_usuario") or ""),
             "Nombre": str(row.get("nombre") or ""),
             "Correo": str(row.get("correo") or row.get("email") or ""),
             "Telefono": str(row.get("telefono") or ""),
@@ -856,11 +791,11 @@ class SupabaseGymRepository:
             "cantidad_stock": int(row.get("Cantidad_Stock_E", 0) or 0),
             "estado": str(row.get("Estado") or "Operativo"),
             "n_activo": row.get("N_ACTIVO"),
-            "unidad_venta": "unidad",
-            "precio_venta": 0,
-            "stock_minimo": 1,
-            "ubicacion": "Almacen",
-            "observaciones": "",
+            "unidad_venta": str(row.get("unidad_venta") or "unidad"),
+            "precio_venta": float(row.get("precio_venta") or 0),
+            "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 1),
+            "ubicacion": str(row.get("ubicacion") or "Almacén"),
+            "observaciones": str(row.get("observaciones") or ""),
         }
 
     # Procesa esta operación.
@@ -872,6 +807,11 @@ class SupabaseGymRepository:
             "Cantidad_Stock_E": int(row.get("cantidad_stock", 0) or 0),
             "Estado": str(row.get("estado") or "Operativo"),
             "N_ACTIVO": int(row.get("n_activo") or 0) or None,
+            "unidad_venta": str(row.get("unidad_venta") or "unidad"),
+            "precio_venta": float(row.get("precio_venta") or 0),
+            "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 1),
+            "ubicacion": str(row.get("ubicacion") or "Almacén"),
+            "observaciones": str(row.get("observaciones") or ""),
         }
 
     # Procesa esta operación.
@@ -907,12 +847,12 @@ class SupabaseGymRepository:
             "id_producto": int(row.get("id_producto", 0) or 0),
             "id_item": int(row.get("id_item") or 0) or None,
             "nombre_producto": str(row.get("nombre_Producto") or ""),
-            "descripcion": "",
             "categoria": str(row.get("categoria") or "General"),
-            "unidad_venta": "unidad",
+            "descripcion": str(row.get("descripcion") or ""),
+            "unidad_venta": str(row.get("unidad_venta") or "unidad"),
             "precio_venta": float(row.get("precio_Venta") or 0),
             "cantidad_stock": stock,
-            "stock_minimo": int(row.get("stock_minimo", 5) or 5),
+            "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 5),
             "estado": "Disponible" if stock > 0 else "Sin stock",
             "imagen_url": str(row.get("imagen_url") or ""),
         }
@@ -924,10 +864,12 @@ class SupabaseGymRepository:
             "id_item": int(row.get("id_item") or 0) or None,
             "nombre_Producto": str(row.get("nombre_producto") or ""),
             "categoria": str(row.get("categoria") or "General"),
+            "descripcion": str(row.get("descripcion") or ""),
+            "unidad_venta": str(row.get("unidad_venta") or "unidad"),
             "precio_Venta": float(row.get("precio_venta") or 0),
             # Stock propio de la tienda: sube con reposiciones desde INVENTARIO y baja con ventas.
             "cantidad_stock": int(row.get("cantidad_stock", 0) or 0),
-            "stock_minimo": int(row.get("stock_minimo", 5) or 5),
+            "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 5),
             "imagen_url": str(row.get("imagen_url") or ""),
         }
 

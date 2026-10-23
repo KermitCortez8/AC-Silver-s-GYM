@@ -33,11 +33,11 @@ class AccountsRules:
         numbers: list[int] = []
         for row in state.get("usuario", []):
             usuario_id = str(row.get("id_usuario") or "").strip().upper()
-            match = re.match(r"^SG[A-Z]{3}(\d+)$", usuario_id)
+            match = re.match(r"^SG[A-Z]{2,3}(\d+)$", usuario_id)
             if match:
                 numbers.append(int(match.group(1)))
 
-        return max(numbers, default=0) + 1
+        return max(max(numbers, default=0), int(state.get("_identity_floors", {}).get("usuario", 0))) + 1
 
     def _normalize_usuario_record(self, row: dict[str, Any]) -> dict[str, Any]:
         nombre = str(row.get("nombre") or ((str(row.get("nombres") or "") + " " + str(row.get("apellidos") or "")).strip()) or "").strip()
@@ -47,7 +47,7 @@ class AccountsRules:
         raw_id = str(row.get("id_usuario") or "").strip().upper()
         number_match = re.search(r"(\d+)$", raw_id)
         number = int(number_match.group(1)) if number_match else self._next_usuario_code({"usuario": [row]})
-        raw_id = f"SG{prefix}{int(number):03d}"
+        raw_id = raw_id if re.fullmatch(r"SG[A-Z]{2,3}\d+", raw_id) else f"SG{prefix}{int(number):03d}"
         password_hash = str(row.get("password_hash") or "").strip()
         if not password_hash and row.get("password"):
             password_hash = self.passwords.hash(str(row.get("password") or ""))
@@ -68,7 +68,17 @@ class AccountsRules:
         if not usuario_id:
             return None
 
-        return next((u for u in self.state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) == usuario_id), None)
+        exact = next((u for u in self.state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) == usuario_id), None)
+        if exact:
+            return exact
+        legacy = re.fullmatch(r"SGUS(\d+)", usuario_id)
+        if legacy:
+            matches = [u for u in self.state["usuario"]
+                       if (number := re.search(r"(\d+)$", str(u.get("id_usuario") or "")))
+                       and int(number.group(1)) == int(legacy.group(1))]
+            if len(matches) == 1:
+                return matches[0]
+        return None
 
     def get_usuario_by_email(self, email: str) -> dict[str, Any] | None:
         normalized_email = str(email or "").strip().lower()
@@ -110,17 +120,18 @@ class AccountsRules:
 
             prefix = self._user_role_prefix(rol)
             raw_id = self._normalize_usuario_id(payload.get("id_usuario"))
-            if raw_id and re.match(r"^SG[A-Z]{3}\d{3}$", raw_id):
+            existing_by_id = self.get_usuario(raw_id) if raw_id else None
+            if existing_by_id:
+                item_id = existing_by_id["id_usuario"]
+            elif raw_id and re.fullmatch(r"SG[A-Z]{2,3}\d+", raw_id):
+                # Un código indicado al crear tampoco puede reutilizar la identidad numérica.
+                number = int(re.search(r"(\d+)$", raw_id).group(1))
+                if any(int(re.search(r"(\d+)$", str(row["id_usuario"])).group(1)) == number
+                       for row in state.get("usuario", [])):
+                    raise ValueError("El identificador de usuario ya está utilizado")
                 item_id = raw_id
             else:
-                numbers: list[int] = []
-                for row in state.get("usuario", []):
-                    current_id = str(row.get("id_usuario") or "").strip().upper()
-                    if current_id.startswith(f"SG{prefix}"):
-                        match = re.match(rf"^SG{prefix}(\d+)$", current_id)
-                        if match:
-                            numbers.append(int(match.group(1)))
-                item_id = f"SG{prefix}{(max(numbers, default=0) + 1):03d}"
+                item_id = f"SG{prefix}{self._next_usuario_code(state):03d}"
 
             nombre = str(payload.get("nombre") or "").strip()
             correo = str(payload.get("correo") or "").strip()

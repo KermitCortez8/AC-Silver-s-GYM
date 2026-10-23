@@ -156,6 +156,7 @@
 </template>
 
 <script setup>
+import { limaDate } from '../../../domain/utils/dates.js';
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { useGymStore } from '../../../application/stores/gymStore';
@@ -182,7 +183,7 @@ const movements = computed(() => gymStore.inventoryMovements || []);
 const feedbackClass = computed(() => feedbackTone.value === 'error'
   ? 'border-rose-400/20 bg-rose-400/10 text-rose-50'
   : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => limaDate();
 const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, destino: '', fecha_movimiento: today(), descripcion: '' });
 const form = reactive(emptyForm());
 

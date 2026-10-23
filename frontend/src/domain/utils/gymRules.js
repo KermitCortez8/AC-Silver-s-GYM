@@ -1,3 +1,4 @@
+import { limaDate, limaTime, addDays } from './dates.js';
 import { normalizeMembershipStatus, clientMembershipGroup } from './clientDirectory.js';
 
 export const PASS_EXPIRY_MINUTES = 10;
@@ -33,9 +34,9 @@ export const seedState = () => ({
   },
 });
 
-export const todayISO = () => new Date().toISOString().slice(0, 10);
+export const todayISO = () => limaDate();
 
-export const nowTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+export const nowTime = () => limaTime();
 
 export const nowISO = () => new Date().toISOString();
 
@@ -46,15 +47,22 @@ export const toISODate = (value) => value.toISOString().slice(0, 10);
 export const addMonthsISO = (dateISO, months) => {
   const date = dateFromISO(dateISO);
   date.setMonth(date.getMonth() + months);
-  return toISODate(date);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
 export const daysUntilISO = (dateISO) => {
-  const diff = dateFromISO(dateISO).getTime() - dateFromISO(todayISO()).getTime();
+  const diff = new Date(`${dateISO}T12:00:00Z`).getTime() - new Date(`${todayISO()}T12:00:00Z`).getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 
 export const planDurationById = (planId) => PLAN_DURATION_MONTHS[planId] || 1;
+
+export const planDurationDays = (plan = {}, fallbackId = 'plan-monthly') => {
+  if (Number.isInteger(plan?.durationDays) && plan.durationDays > 0) return plan.durationDays;
+  const match = String(plan?.duracion || plan?.duration || '').trim().toLowerCase().match(/^(\d+)\s*(dias?|días?|mes(?:es)?|años?|anos?)$/);
+  if (match) return Number(match[1]) * (/^mes/.test(match[2]) ? 30 : /^a/.test(match[2]) ? 365 : 1);
+  return ({ 'plan-monthly': 30, 'plan-quarterly': 90, 'plan-annual': 365 })[fallbackId] || 30;
+};
 
 export const planNameById = (planId) =>
   ({
@@ -131,7 +139,8 @@ export const normalizePlanFromBackend = (plan = {}) => {
     id_pm: idPm,
     name: plan.nombre_plan || plan.name || 'MENSUAL',
     duration: plan.duracion || `${durationNumber} dias`,
-    durationMonths: durationNumber,
+    durationDays: planDurationDays({ ...plan, duration: plan.duracion || plan.duration || `${durationNumber} dias` }),
+    durationMonths: /mes/i.test(plan.duracion || plan.duration || '') ? durationNumber : durationNumber / 30,
     price: Number(plan.precio ?? plan.price ?? 0),
     description: plan.descripcion || plan.description || '',
     benefits: plan.beneficios || plan.benefits || '',
@@ -241,7 +250,7 @@ export const normalizeMember = (member = {}) => {
     plan: member.plan || planNameById(planId),
     planId,
     membershipStart: baseDate,
-    membershipEnd: member.membershipEnd || addMonthsISO(baseDate, planDurationById(planId)),
+    membershipEnd: member.membershipEnd || addDays(baseDate, planDurationDays(member, planId)),
     membershipPrice: Number(member.membershipPrice ?? 0),
     membershipHistory: Array.isArray(member.membershipHistory) ? member.membershipHistory : [],
     changeHistory: Array.isArray(member.changeHistory) ? member.changeHistory : [],

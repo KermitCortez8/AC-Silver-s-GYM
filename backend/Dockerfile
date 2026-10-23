@@ -36,7 +36,8 @@ FROM runtime AS test
 USER root
 COPY requirements-dev.txt ./
 RUN pip install -r requirements-dev.txt
-COPY --chown=root:root --chmod=644 tests/test*.py tests/conftest.py ./tests/
+COPY --chown=root:root tests/ ./tests/
+COPY --chown=root:root migrations/ ./migrations/
 RUN chmod 755 /app/tests
 USER appuser
 CMD ["sh", "-c", "flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics && python -m pytest tests/ -q -p no:cacheprovider"]
