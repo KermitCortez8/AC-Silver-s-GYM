@@ -1,12 +1,14 @@
+import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
+import { bindSessionRepository } from '../services/sessionBoundary.js';
 import { addDays } from '../../domain/utils/dates.js';
 /** Estado y operaciones del módulo memberships. */
 import { todayISO, daysUntilISO, MEMBER_ALERT_DAYS, normalizePlanFromBackend, normalizePromotionFromBackend, planDurationDays, nowISO } from '../../domain/utils/gymRules.js';
 import { computed } from 'vue';
 import { discountedPrice, toCents } from '../../domain/utils/money.js';
 import { clientMembershipGroup, normalizeMembershipStatus } from '../../domain/utils/clientDirectory.js';
-import { backendRequest } from '../services/backendGateway.js';
 
-export const createMembershipsModule = (ctx) => {
+export const createMembershipsModule = (ctx, repository) => {
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
   const activePlans = computed(() => ctx.planCatalog.value.filter((plan) => plan.active));
 
   const activePromotions = computed(() =>
@@ -93,13 +95,9 @@ export const createMembershipsModule = (ctx) => {
     };
 
     if (ctx.apiBase) {
-      const response = await backendRequest(idPm ? `${ctx.apiBase}/planes-membresia/${idPm}` : `${ctx.apiBase}/planes-membresia`, {
-        method: idPm ? 'PUT' : 'POST',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo guardar el plan'));
-      return mergePlan(await response.json());
+      const response = await remote.upsertPlan(idPm, body);
+
+      return mergePlan(response);
     }
 
     return mergePlan({ ...body, id_pm: idPm || Date.now() });
@@ -109,8 +107,7 @@ export const createMembershipsModule = (ctx) => {
     const idPm = Number(String(planId || '').match(/(\d+)/)?.[1] || 0);
     if (!idPm) throw new Error('Plan no encontrado');
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/planes-membresia/${idPm}`, { method: 'DELETE', headers: ctx._authHeaders() });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar el plan'));
+      await remote.deletePlan(idPm);
     }
     ctx.planCatalog.value = ctx.planCatalog.value.filter((plan) => Number(plan.id_pm) !== idPm);
   };
@@ -143,13 +140,7 @@ export const createMembershipsModule = (ctx) => {
     };
 
     if (ctx.apiBase) {
-      const response = await backendRequest(idPromocion ? `${ctx.apiBase}/promociones/${idPromocion}` : `${ctx.apiBase}/promociones`, {
-        method: idPromocion ? 'PUT' : 'POST',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo guardar la promocion'));
-      const saved = await response.json();
+      const saved = await remote.upsertPromotion(idPromocion, body);
       return mergePromotion({ ...body, ...(saved || {}) });
     }
 
@@ -160,8 +151,7 @@ export const createMembershipsModule = (ctx) => {
     const idPromocion = Number(String(promotionId || '').match(/(\d+)/)?.[1] || 0);
     if (!idPromocion) throw new Error('Promocion no encontrada');
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/promociones/${idPromocion}`, { method: 'DELETE', headers: ctx._authHeaders() });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar la promocion'));
+      await remote.deletePromotion(idPromocion);
     }
     ctx.promotions.value = ctx.promotions.value.filter((promotion) => Number(promotion.id_promocion) !== idPromocion);
   };
@@ -197,11 +187,7 @@ export const createMembershipsModule = (ctx) => {
 
       const id_promocion = promotionId ? Number(String(promotionId).match(/(\d+)/)?.[1] || promotionId) : null;
       const payload = { id_cliente, id_pm, fecha_inicio: startDate, fecha_fin: endDate, id_promocion };
-      return backendRequest(`${ctx.apiBase}/membresias`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(payload) })
-        .then((r) => {
-          if (!r.ok) throw new Error('Error al asignar membresía en backend');
-          return r.json();
-        })
+      return remote.assignPlanToMember(payload)
         .then((memb) => {
           // actualizar estado local mínimo
           ctx.members.value[index] = { ...member, plan: getPlanById(planId)?.name || member.plan, planId, membershipStart: startDate, membershipEnd: endDate, membershipPrice: memb.monto_pago ?? member.membershipPrice, id_membresia: memb.id_membresia, paymentStatus: memb.estado_pago || 'PENDIENTE', membershipStatus: normalizeMembershipStatus(memb.estado) };
@@ -263,22 +249,14 @@ export const createMembershipsModule = (ctx) => {
 
   const refreshPromotionsFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const response = await backendRequest(`${ctx.apiBase}/promociones`, { headers: ctx._authHeaders() });
-    if (!response.ok) throw new Error(await ctx.readBackendError(response, 'Error al cargar promociones'));
-    const list = await response.json();
+    const list = await remote.refreshPromotionsFromBackend();
     ctx.promotions.value = list.map((promotion) => normalizePromotionFromBackend(promotion));
     return ctx.promotions.value;
   };
 
   const activateClientMembership = async (idCliente) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/clientes/${idCliente}/activar-membresia`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-    });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'No se pudo activar la membresía'));
-
-    const saved = await res.json();
+    const saved = await remote.activateClientMembership(idCliente);
     const membership = saved.membresia || {};
     const client = ctx.mergeClient({
       ...(saved.cliente || {}),
@@ -291,7 +269,7 @@ export const createMembershipsModule = (ctx) => {
       monto_pago: membership.monto_pago,
       id_promocion: membership.id_promocion,
     });
-    await ctx.fetchFromBackend({ section: 'clients', force: true }).catch(() => {});
+    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ section: 'clients', force: true }));
     return { ...client, notification: saved.notification || null };
   };
 

@@ -6,6 +6,7 @@ PARENTS = ['USUARIO', 'PLANES_MEMBRESIA', 'PROMOCIONES', 'CLIENTES', 'MEMBRESIA'
            'TIENDA_PRODUCTOS', 'CATALOGO_RUTINA', 'HORARIO', 'HORARIOS_SERVICIO', 'MATRICULAS_HORARIO',
            'RUTINA_PROGRESO', 'MOV_INV', 'TICKETS_ATENCION', 'ASISTENCIA', 'VENTAS', 'DETALLE_VENTA']
 DEFAULTS = {
+    'USUARIO': {'Nombre': '', 'Correo': 'admin@example.com', 'Telefono': '', 'DNI': '', 'Contraseña': '', 'Estado': True, 'google_sub': None},
     'PROMOCIONES': {'limite_cupos': None, 'usos_actuales': 0, 'icono_etiqueta': '🏷️', 'palabra_clave': ''},
     'MEMBRESIA': {'id_promocion': None},
     'INVENTARIO': {'unidad_venta': 'unidad', 'precio_venta': 0, 'stock_minimo': 1, 'ubicacion': 'Almacén', 'observaciones': ''},

@@ -175,12 +175,13 @@ def test_stripe_webhook_does_not_block_the_event_loop(monkeypatch):
     def blocking(*_args):
         started.set()
         return {'received': release.wait(2)}
-    monkeypatch.setattr(clients_routes, '_process_stripe_webhook', blocking)
+    from types import SimpleNamespace
+    payments = SimpleNamespace(process_webhook=blocking)
     class Request:
         async def body(self):
             return b'synthetic'
     async def run():
-        task = asyncio.create_task(clients_routes.stripe_webhook(Request(), '', None, None, None))
+        task = asyncio.create_task(clients_routes.stripe_webhook(Request(), '', payments))
         async def ticker():
             while not started.is_set():
                 await asyncio.sleep(0)
@@ -211,7 +212,7 @@ def test_missing_transaction_rpc_never_falls_back_to_partial_rest_writes(monkeyp
     monkeypatch.setattr('infrastructure.repositories.gym_repository.SupabaseRestClient', lambda *_args: database)
     gym = GymService(SupabaseGymRepository('local', 'unused'), Passwords())
     with pytest.raises(RuntimeError, match='015_atomic_gym_transactions.sql'):
-        gym.upsert_usuario({'nombre': 'Ana', 'rol': 'staff', 'password': 'secret123'})
+        gym.upsert_usuario({'nombre': 'Ana', 'correo': 'ana@example.com', 'rol': 'staff', 'password': 'secret123'})
     assert gym.usuarios() == []
     assert database.writes == []
 

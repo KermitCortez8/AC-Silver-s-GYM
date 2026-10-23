@@ -1,5 +1,6 @@
 """Reglas de inventory sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.validation import nonnegative, required_text
 
 from typing import Any
 from domain.services.gym_values import TIPO_TIENDA, ESTADO_DESCONTINUADO, ESTADO_DISPONIBLE, ESTADO_STOCK_BAJO, ESTADO_AGOTADO, DESTINO_TIENDA, DESTINO_VENTA, _MOVIMIENTO_PEDIDO
@@ -154,10 +155,11 @@ class InventoryRules:
             item["id_item"] = int(item_id)
             if str(item.get("tipo") or "").strip().lower() == TIPO_TIENDA.lower():
                 item["tipo"] = TIPO_TIENDA
-            stock_inicial = max(0, int(item.get("cantidad_stock") or 0))
-            item["stock_minimo"] = max(0, int(item.get("stock_minimo") or 1))
+            required_text(item.get("nombre_item"))
+            stock_inicial = int(nonnegative(item.get("cantidad_stock", 0), "Stock"))
+            item["stock_minimo"] = int(nonnegative(item["stock_minimo"] if item.get("stock_minimo") is not None else 1, "Stock mínimo"))
             item["unidad_venta"] = str(item.get("unidad_venta") or "unidad")
-            item["precio_venta"] = float(item.get("precio_venta") or 0)
+            item["precio_venta"] = float(nonnegative(item.get("precio_venta") or 0, "Precio"))
             item["ubicacion"] = str(item.get("ubicacion") or "Almacén")
             item["observaciones"] = str(item.get("observaciones") or "")
             if idx >= 0:

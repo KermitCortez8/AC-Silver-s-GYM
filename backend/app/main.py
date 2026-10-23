@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from infrastructure.config import get_settings
 from presentation.dependencies import get_gym_service
+from presentation.error_handlers import install_error_handlers
 from application.services.gym_service import GymService
 from app.bootstrap import process_pending_emails
 from presentation.routes.attendance_routes import router as attendance_router
@@ -51,6 +52,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+install_error_handlers(app)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -80,8 +83,8 @@ def root() -> dict[str, str]:
 @app.get("/api/health", include_in_schema=False)
 # Procesa esta operación.
 def health(_gym_service: GymService = Depends(get_gym_service)) -> dict[str, str]:
-    # La dependencia valida las credenciales y refresca los datos remotos.
-    # Si la base de datos falla, responde 503 en lugar de anunciar healthy.
+    # La comprobación declara una consulta mínima, independiente de su URL.
+    _gym_service.planes_membresia()
     return {"status": "healthy", "database": "connected"}
 
 

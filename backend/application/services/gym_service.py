@@ -5,10 +5,10 @@ from copy import deepcopy
 from typing import Any, Callable
 
 from application.ports.gym_repository import GymRepository
+from application.services.read_resources import READ_RESOURCES, CLIENTS, SCHEDULES
 from application.ports.integrations import IdentityProvider, SessionProvider, PaymentGateway
 from application.read_models import MembershipPaymentData, AttendanceHistoryData
 from domain.ports import PasswordHasher
-from domain.errors import raise_schedule_enrollment_error
 from domain.services.gym_domain_service import GymDomainService
 from domain.services import gym_domain_service as domain_clock
 from domain.services.membership_lifecycle import apply_membership_expiration
@@ -43,47 +43,50 @@ class GymService(
         operation = lambda state: deepcopy(getattr(self._rules(state), name)(*args, **kwargs))
         if write:
             resources = ("usuario",) if name in {"upsert_usuario", "delete_usuario"} else None
-            try:
-                return self.repository.change(operation, resources=resources)
-            except RuntimeError as error:
-                if name == "asignar_rutina_matricula":
-                    raise_schedule_enrollment_error(error)
-                raise
-        return self.repository.read(operation)
+            return self.repository.change(operation, resources=resources)
+        return self._read(READ_RESOURCES[name], operation)
 
     def ensure_fresh(self, resources=None):
+        """Refresca la caché. Persistir vencimientos es un comando explícito."""
         self.repository.refresh(resources)
-        if resources is None or "clientes" in resources or "membresia" in resources:
-            self.expire_memberships()
+
+    def _read(self, resources, operation, *, project=True):
+        self.repository.refresh(resources)
+        def query(state):
+            snapshot = deepcopy(state if resources is None else {key: state[key] for key in resources if key in state})
+            if project:
+                apply_membership_expiration(snapshot, domain_clock._today_iso())
+            return operation(snapshot)
+        return self.repository.read(query, resources=resources)
 
     def expire_memberships(self):
-        preview = self._snapshot("clientes", "membresia")
+        preview = self._read(CLIENTS, lambda state: state, project=False)
         if not apply_membership_expiration(preview, domain_clock._today_iso()):
             return False
         return self._execute("expire_memberships", True)
 
     def _snapshot(self, *resources):
-        return self.repository.read(lambda state: deepcopy(
+        return self._read(resources or None, lambda state: deepcopy(
             {key: state.get(key) for key in resources} if resources else state
         ))
 
     def membership_payment_data(self):
-        return self.repository.read(lambda state: MembershipPaymentData(
+        return self._read(CLIENTS, lambda state: MembershipPaymentData(
             deepcopy(state.get("clientes", [])), deepcopy(state.get("planes_membresia", [])),
             deepcopy(state.get("membresia", [])),
         ))
 
     def attendance_history_data(self):
-        return self.repository.read(lambda state: AttendanceHistoryData(
+        return self._read(("asistencia", "clientes"), lambda state: AttendanceHistoryData(
             deepcopy(state.get("asistencia", [])), deepcopy(state.get("clientes", [])),
         ))
 
     def attendance_enrollments(self, client_id=None):
-        return self.repository.read(lambda state: [deepcopy(row) for row in state.get("matriculas_horario", [])
+        return self._read(SCHEDULES, lambda state: [deepcopy(row) for row in state.get("matriculas_horario", [])
                                     if client_id is None or int(row.get("id_cliente") or 0) == int(client_id)])
 
     def latest_membership(self, client_id):
-        return self.repository.read(lambda state: deepcopy(
+        return self._read(CLIENTS, lambda state: deepcopy(
             self._rules(state).latest_membership(client_id)
         ))
 
@@ -95,11 +98,11 @@ class GymService(
         return self._rules({}).parse_client_id(value)
 
     def resolve_attendance_client(self, payload):
-        return self.repository.read(lambda state: self._rules(state).resolve_attendance_client(payload))
+        return self._read(CLIENTS, lambda state: self._rules(state).resolve_attendance_client(payload))
 
     def account_for_session(self, subject, client=False):
         resource = "clientes" if client else "usuario"
-        return self.repository.read(lambda state: next(
+        return self._read(CLIENTS if client else ("usuario",), lambda state: next(
             (deepcopy(row) for row in state.get(resource, []) if str(row.get("id_usuario")) == str(subject)), None
         ))
 

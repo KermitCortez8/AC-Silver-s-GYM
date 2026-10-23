@@ -1,17 +1,9 @@
 """Planifica cambios; PostgreSQL los valida y confirma en una sola transacción."""
-import json
+from infrastructure.http_transport import database_code
 
 
 class SnapshotConflict(RuntimeError):
     """Otra petición modificó la instantánea antes de confirmarla."""
-
-
-def database_code(error):
-    message = str(error)
-    try:
-        return json.loads(message[message.index("{"):]).get("code")
-    except (ValueError, TypeError):
-        return None
 
 
 def table_changes(table, pk, previous, current):
@@ -34,7 +26,7 @@ def commit_snapshot(database, expected, operations):
         code = database_code(error)
         if code in {"40001", "40P01"}:
             raise SnapshotConflict("Los datos cambiaron durante la operación") from error
-        if code in {"PGRST202", "42883"} or "PGRST202" in str(error):
+        if code in {"PGRST202", "42883"}:
             raise RuntimeError("Falta ejecutar backend/migrations/015_atomic_gym_transactions.sql en Supabase") from error
         raise
     if not isinstance(result, dict) or not isinstance(result.get("tables"), dict):

@@ -5,8 +5,10 @@ from uuid import uuid4
 
 from application.ports.image_storage import ImageStorage
 
-ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-MAX_IMAGE_BYTES = 5 * 1024 * 1024
+from domain.image_policy import (
+    ALLOWED_IMAGE_EXTENSIONS as ALLOWED_IMAGE_EXTENSIONS,
+    MAX_IMAGE_BYTES as MAX_IMAGE_BYTES, validate_image,
+)
 
 
 class StoreImagesService:
@@ -17,16 +19,8 @@ class StoreImagesService:
         return self.storage.list_images()
 
     def upload(self, filename, data, content_type):
-        if not str(content_type or "").lower().startswith("image/"):
-            raise ValueError("Selecciona un archivo de imagen")
-        if not data:
-            raise ValueError("La imagen esta vacia")
-        if len(data) > MAX_IMAGE_BYTES:
-            raise ValueError("La imagen supera 5 MB")
+        extension = validate_image(filename, data, content_type)
         original = PurePath(filename or "producto.jpg")
-        extension = original.suffix.lower() or ".jpg"
-        if extension not in ALLOWED_IMAGE_EXTENSIONS:
-            raise ValueError("Formato de imagen no permitido")
         stem = re.sub(r"[^a-zA-Z0-9]+", "-", original.stem).strip("-").lower() or "producto"
         safe_name = f"{stem}-{uuid4().hex[:12]}{extension}"
         return self.storage.upload(safe_name, data, str(content_type or "image/jpeg"))

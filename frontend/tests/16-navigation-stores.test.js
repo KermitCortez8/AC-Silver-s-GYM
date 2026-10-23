@@ -77,8 +77,8 @@ test('failed user writes preserve local users and their existing error messages'
   const initial = gym.users.map((user) => ({ ...user }));
   globalThis.fetch = async () => json({ detail: 'Acceso denegado' }, 403);
 
-  await assert.rejects(gym.upsertUser({ id_usuario: 'SGUS001', nombre: 'Otra persona' }), /Error al guardar usuario/);
-  await assert.rejects(gym.deleteUser('SGUS001'), /Error al eliminar usuario/);
+  await assert.rejects(gym.upsertUser({ id_usuario: 'SGUS001', nombre: 'Otra persona' }), /Acceso denegado/);
+  await assert.rejects(gym.deleteUser('SGUS001'), /Acceso denegado/);
   assert.deepEqual(gym.users, initial);
 });
 

@@ -24,7 +24,7 @@ class AttendanceOperations:
         return self._execute("actualizar_asistencia", True, id_asistencia, payload)
 
     def eliminar_asistencia(self, id_asistencia: int) -> None:
-        return self._execute("eliminar_asistencia", False, id_asistencia)
+        return self._execute("eliminar_asistencia", True, id_asistencia)
 
     def registrar_asistencia_por_dni(self, dni: str) -> dict[str, Any]:
         return self._execute("registrar_asistencia_por_dni", True, dni)

@@ -1,10 +1,12 @@
+import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
+import { bindSessionRepository } from '../services/sessionBoundary.js';
 import { orderTotals, toCents } from '../../domain/utils/money.js';
 /** Estado y operaciones del módulo store. */
 import { normalizeStoreOrder, normalizeStoreProductFromBackend, nowISO } from '../../domain/utils/gymRules.js';
-import { backendRequest } from '../services/backendGateway.js';
 import { computed } from 'vue';
 
-export const createStoreModule = (ctx) => {
+export const createStoreModule = (ctx, repository) => {
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
   const upsertProductoTienda = async (payload) => {
     const producto = {
       id_producto: payload.id_producto || null,
@@ -26,30 +28,10 @@ export const createStoreModule = (ctx) => {
         id_producto: producto.id_producto || undefined,
       };
 
-      const res = await backendRequest(`${ctx.apiBase}/tienda`, {
-        method: 'POST',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(body),
-      });
+      const saved = await remote.upsertProductoTienda(body);
 
-      if (!res.ok) throw new Error(await ctx.readBackendError(res, 'Error al guardar producto en backend'));
-      const saved = await res.json();
-
-      const id_producto = saved.id_producto || payload.id_producto || Date.now();
-      const normalized = {
-        id: `producto-${id_producto}`,
-        id_producto,
-        nombre: saved.nombre_producto || producto.nombre_producto,
-        descripcion: saved.descripcion || producto.descripcion,
-        categoria: saved.categoria || producto.categoria,
-        id_item: saved.id_item || producto.id_item || null,
-        unidad_venta: saved.unidad_venta || producto.unidad_venta || 'unidad',
-        precio: Number(saved.precio_venta || producto.precio_venta),
-        cantidad: saved.cantidad_stock ?? producto.cantidad_stock,
-        minimo: Number(saved.stock_minimo || producto.stock_minimo),
-        estado: saved.estado || producto.estado,
-        imagen_url: saved.imagen_url || producto.imagen_url || '',
-      };
+      const normalized = normalizeStoreProductFromBackend(saved);
+      const id_producto = normalized.id_producto;
 
       const index = ctx.productos_tienda.value.findIndex((p) => p.id_producto === id_producto);
       if (index >= 0) {
@@ -59,7 +41,7 @@ export const createStoreModule = (ctx) => {
       }
 
       // Un producto nuevo puede crear su reserva (vacia) en Inventario.
-      await ctx.fetchFromBackend({ force: true }).catch(() => {});
+      await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
       return normalized;
     }
 
@@ -91,10 +73,7 @@ export const createStoreModule = (ctx) => {
 
   const deleteProductoTienda = async (id_producto) => {
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/tienda/${id_producto}`, {
-        method: 'DELETE', headers: ctx._authHeaders(),
-      });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar el producto'));
+      await remote.deleteProductoTienda(id_producto);
     }
 
     ctx.productos_tienda.value = ctx.productos_tienda.value.filter((p) => p.id_producto !== id_producto);
@@ -147,12 +126,7 @@ export const createStoreModule = (ctx) => {
   const refreshStoreProductsFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await backendRequest(`${ctx.apiBase}/tienda`, { headers: ctx._authHeaders() });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'Error al cargar productos de tienda'));
-    }
-
-    const list = await response.json();
+    const list = await remote.refreshStoreProductsFromBackend();
     ctx.productos_tienda.value = list.map((product) => normalizeStoreProductFromBackend(product));
     return ctx.productos_tienda.value;
   };
@@ -160,12 +134,7 @@ export const createStoreModule = (ctx) => {
   const refreshStoreOrdersFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await backendRequest(`${ctx.apiBase}/tienda/pedidos`, { headers: ctx._authHeaders() });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'Error al cargar pedidos'));
-    }
-
-    const list = await response.json();
+    const list = await remote.refreshStoreOrdersFromBackend();
     ctx.storeOrders.value = list.map((order) => normalizeStoreOrder(order));
     return ctx.storeOrders.value;
   };
@@ -176,15 +145,11 @@ export const createStoreModule = (ctx) => {
       observacion_admin: payload.observacion_admin || payload.note || '',
     };
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/tienda/pedidos/${idPedido}`, {
-        method: 'PUT',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo actualizar el pedido'));
-      const saved = mergeStoreOrder(await response.json());
+      const response = await remote.updateStoreOrderStatus(idPedido, body);
+
+      const saved = mergeStoreOrder(response);
       // Cancelar devuelve el stock a la Tienda.
-      if (body.estado_pedido === 'CANCELADO') await ctx.fetchFromBackend({ force: true }).catch(() => {});
+      if (body.estado_pedido === 'CANCELADO') await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
       return saved;
     }
     const order = ctx.storeOrders.value.find((entry) => Number(entry.id_pedido) === Number(idPedido));
@@ -212,18 +177,11 @@ export const createStoreModule = (ctx) => {
     };
 
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/tienda/pedidos`, {
-        method: 'POST',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) {
-        throw new Error(await ctx.readBackendError(response, 'No se pudo registrar el pedido'));
-      }
+      const response = await remote.createStoreOrder(body);
 
-      const saved = mergeStoreOrder(await response.json());
+      const saved = mergeStoreOrder(response);
       clearCart();
-      await refreshStoreProductsFromBackend().catch(() => { });
+      await refreshAfterMutation(ctx, () => refreshStoreProductsFromBackend());
       return saved;
     }
 
@@ -267,24 +225,13 @@ export const createStoreModule = (ctx) => {
     }
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await backendRequest(`${ctx.apiBase}/tienda/pedidos/checkout`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-      body: JSON.stringify({
-        cliente_nombre: payload.cliente_nombre || payload.customerName || '',
-        cliente_correo: payload.cliente_correo || payload.customerEmail || '',
-        cliente_dni: payload.cliente_dni || payload.dni || '',
-        items: items.map((item) => ({
-          id_producto: Number(item.id_producto),
-          cantidad: Math.max(1, Number(item.cantidad || 1)),
-        })),
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'No se pudo iniciar el pago con tarjeta'));
-    }
-
-    const saved = await response.json();
+    const body = {
+      cliente_nombre: payload.cliente_nombre || payload.customerName || '',
+      cliente_correo: payload.cliente_correo || payload.customerEmail || '',
+      cliente_dni: payload.cliente_dni || payload.dni || '',
+      items: items.map((item) => ({ id_producto: Number(item.id_producto), cantidad: Math.max(1, Number(item.cantidad ?? 1)) })),
+    };
+    const saved = await remote.createStoreCheckout(body);
     if (!saved?.payment?.checkout_url) {
       throw new Error('No se recibió el enlace de pago de Stripe.');
     }
@@ -294,19 +241,11 @@ export const createStoreModule = (ctx) => {
   const confirmStoreCheckoutReturn = async (sessionId) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await backendRequest(`${ctx.apiBase}/pagos/stripe/confirmar-retorno?session_id=${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-    });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'No se pudo verificar el pago'));
-    }
-
-    const result = await response.json();
+    const result = await remote.confirmStoreCheckoutReturn(sessionId);
     if (result.confirmed) {
       // El pago ya está registrado: el carrito debe quedar vacío y el stock mostrado debe actualizarse.
       clearCart();
-      await refreshStoreProductsFromBackend().catch(() => { });
+      await refreshAfterMutation(ctx, () => refreshStoreProductsFromBackend());
     }
     return result;
   };
@@ -314,20 +253,13 @@ export const createStoreModule = (ctx) => {
   const cancelStoreCheckout = async (idPedido) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await backendRequest(`${ctx.apiBase}/tienda/pedidos/${Number(idPedido)}/cancelar-pago`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-    });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'No se pudo cancelar el pago'));
-    }
-
-    const result = await response.json();
+    const result = await remote.cancelStoreCheckout(idPedido);
     const restored = [];
     const skipped = [];
 
     // El stock ya volvió: se recarga el catálogo para dejar el carrito con datos actuales.
-    await refreshStoreProductsFromBackend().catch(() => { });
+    const refreshed = await refreshAfterMutation(ctx, () => refreshStoreProductsFromBackend());
+    if (!refreshed) return { ...result, restored, skipped: result.items || [], refreshPending: true };
 
     if (result.cancelled && !result.already_cancelled) {
       clearCart();

@@ -123,31 +123,25 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Gestiona esta acción de la vista.
    */
+  const establishSession = (idToken, userData) => {
+    if (!idToken || !userData?.email) throw new Error('Datos de autenticación incompletos');
+    const formattedUser = normalizeStoredUser(userData);
+    if (!isValidUser(formattedUser)) throw new Error('Datos de usuario inválidos');
+    sessionRevision.value += 1;
+    sessionErrorCode.value = '';
+    sessionValidator.clear();
+    user.value = formattedUser;
+    token.value = idToken;
+    userRole.value = formattedUser.role || 'user';
+    isSignout.value = false;
+    saveAuthSession(formattedUser, idToken, userData.expiresIn);
+  };
+
   const signIn = async (idToken, userData) => {
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-
-      if (!idToken || !userData || !userData.email) {
-        throw new Error('Datos de autenticación incompletos');
-      }
-
-      const formattedUser = normalizeStoredUser(userData);
-      if (!isValidUser(formattedUser)) {
-        throw new Error('Datos de usuario inválidos');
-      }
-
-      sessionRevision.value += 1;
-      sessionErrorCode.value = '';
-      sessionValidator.clear();
-      user.value = formattedUser;
-      token.value = idToken;
-      userRole.value = userData.role || formattedUser.role || 'user';
-      isSignout.value = false;
-
-      // Guardar sesión
-      saveAuthSession(formattedUser, idToken, userData.expiresIn);
+      establishSession(idToken, userData);
     } catch (error) {
-      console.error('Error en signIn:', error);
       isSignout.value = true;
       throw error;
     } finally {
@@ -155,39 +149,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
-  /**
-   * Gestiona esta acción de la vista.
-   */
-  const signUp = async (idToken, userData) => {
-    try {
-      isLoading.value = true;
-
-      if (!idToken || !userData || !userData.email) {
-        throw new Error('Datos de registro incompletos');
-      }
-
-      const formattedUser = normalizeStoredUser(userData);
-      if (!isValidUser(formattedUser)) {
-        throw new Error('Datos de usuario inválidos');
-      }
-
-      sessionRevision.value += 1;
-      sessionErrorCode.value = '';
-      sessionValidator.clear();
-      user.value = formattedUser;
-      token.value = idToken;
-      userRole.value = formattedUser.role || 'user';
-      isSignout.value = false;
-
-      saveAuthSession(formattedUser, idToken, userData.expiresIn);
-    } catch (error) {
-      console.error('Error en signUp:', error);
-      isSignout.value = true;
-      throw error;
-    } finally {
-      isLoading.value = false;
-    }
-  };
+  // Conserva el contrato público de registro con la misma política de sesión.
+  const signUp = signIn;
 
   /**
    * Gestiona esta acción de la vista.

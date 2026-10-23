@@ -1,5 +1,6 @@
 """Reglas de memberships sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.validation import nonnegative, required_text, date_range
 
 import re
 from domain.money import cents, discounted_price
@@ -144,10 +145,10 @@ class MembershipsRules:
             if item_id is None:
                 item_id = self._next_int_id("planes_membresia", "id_pm")
             item["id_pm"] = int(item_id)
-            item["nombre_plan"] = str(item.get("nombre_plan") or "MENSUAL").strip().upper()
+            item["nombre_plan"] = required_text(item.get("nombre_plan")).upper()
             item["duracion"] = str(item.get("duracion") or "30 dias").strip()
             self._duration_days(item)
-            item["precio"] = int(item.get("precio") or 0)
+            item["precio"] = int(nonnegative(item.get("precio", 0), "Precio"))
             item["activo"] = bool(item.get("activo", True))
             idx = next((i for i, row in enumerate(state["planes_membresia"]) if int(row.get("id_pm", 0)) == int(item_id)), -1)
             if idx >= 0:
@@ -212,7 +213,9 @@ class MembershipsRules:
         if tipo not in {"porcentaje", "monto"}:
             raise ValueError("Tipo de descuento invalido")
 
-        valor = max(0.0, float(payload.get("valor_descuento") or 0))
+        required_text(payload.get("nombre"))
+        date_range(payload.get("fecha_inicio"), payload.get("fecha_fin"))
+        valor = float(nonnegative(payload.get("valor_descuento", 0), "Descuento"))
         if tipo == "porcentaje" and valor > 100:
             raise ValueError("El porcentaje no puede ser mayor a 100")
 

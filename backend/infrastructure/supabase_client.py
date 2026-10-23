@@ -1,11 +1,10 @@
 """Cliente REST de Supabase compartido por los repositorios."""
 from __future__ import annotations
 
-import json
 from typing import Any
-from urllib.error import HTTPError
 from urllib.parse import quote, urlencode
-from urllib.request import Request, urlopen
+from urllib.request import urlopen
+from infrastructure.http_transport import json_request, supabase_headers
 
 class SupabaseRestClient:
     # Inicializa la clase.
@@ -28,26 +27,11 @@ class SupabaseRestClient:
         if query_string:
             url = f"{url}?{query_string}"
 
-        headers = {
-            "apikey": self.key,
-            "Authorization": f"Bearer {self.key}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Prefer": "return=representation" if return_representation else "return=minimal",
-        }
-        data = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
-        request = Request(url, data=data, headers=headers, method=method)
-
-        try:
-            with urlopen(request, timeout=20) as response:
-                raw = response.read().decode("utf-8")
-        except HTTPError as error:
-            details = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"Supabase {method} {table} fallo ({error.code}): {details}") from error
-
-        if not raw:
-            return []
-        return json.loads(raw)
+        headers = {**supabase_headers(self.key),
+                   "Prefer": "return=representation" if return_representation else "return=minimal"}
+        result = json_request(url, method=method, headers=headers, body=body,
+                              context=f"Supabase {method} {table}", opener=urlopen)
+        return result if result is not None else []
 
     # Procesa esta operación.
     def select(self, table: str, order: str | None = None) -> list[dict[str, Any]]:
@@ -87,28 +71,12 @@ class SupabaseRestClient:
 
     def rpc(self, function_name: str, body: dict[str, Any]) -> Any:
         url = f"{self.rest_url}/rpc/{quote(function_name, safe='')}"
-        headers = {
-            "apikey": self.key,
-            "Authorization": f"Bearer {self.key}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Prefer": "return=representation",
-        }
-        request = Request(
-            url,
-            data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
-            headers=headers,
-            method="POST",
-        )
-        try:
-            with urlopen(request, timeout=20) as response:
-                raw = response.read().decode("utf-8")
-        except HTTPError as error:
-            details = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(
-                f"Supabase RPC {function_name} fallo ({error.code}): {details}"
-            ) from error
-        return json.loads(raw) if raw else None
+        return json_request(url, method="POST", headers={**supabase_headers(self.key), "Prefer": "return=representation"},
+                            body=body, context=f"Supabase RPC {function_name}", opener=urlopen)
+
+    def update_matching(self, table: str, filters: dict[str, Any], body: dict[str, Any]):
+        """Actualización condicional que devuelve las filas realmente modificadas."""
+        return self._request("PATCH", table, query=filters, body=body, return_representation=True)
 
     # Actualiza el registro correspondiente.
     def update(self, table: str, pk_column: str, pk_value: Any, body: dict[str, Any]) -> None:

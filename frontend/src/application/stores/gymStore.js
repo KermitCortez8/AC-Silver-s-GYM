@@ -16,14 +16,14 @@ import { getApplicationServices } from '../ports/services.js';
 export const useGymStore = defineStore('gym', () => {
   const context = createGymState();
   const { repositories } = getApplicationServices();
-  Object.assign(context, createAttendanceModule(context));
+  Object.assign(context, createAttendanceModule(context, repositories.attendance));
   Object.assign(context, createDashboardModule(context, repositories.gymSettings));
-  Object.assign(context, createMembershipsModule(context));
-  Object.assign(context, createInventoryModule(context));
-  Object.assign(context, createClientsModule(context));
-  Object.assign(context, createSchedulesModule(context));
+  Object.assign(context, createMembershipsModule(context, repositories.memberships));
+  Object.assign(context, createInventoryModule(context, repositories.inventory));
+  Object.assign(context, createClientsModule(context, repositories.clients));
+  Object.assign(context, createSchedulesModule(context, repositories.schedules));
   Object.assign(context, createUsersModule(context, repositories.users));
-  Object.assign(context, createStoreModule(context));
+  Object.assign(context, createStoreModule(context, repositories.store));
   Object.assign(context, createSynchronizationModule(context));
   watch(() => [context.authStore.token, context.authStore.userRole, context.authStore.sessionRevision],
     () => context.resetState(), { flush: 'sync' });

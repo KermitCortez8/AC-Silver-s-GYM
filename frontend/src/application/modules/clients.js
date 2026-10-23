@@ -1,11 +1,12 @@
+import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
+import { bindSessionRepository } from '../services/sessionBoundary.js';
 import { addDays } from '../../domain/utils/dates.js';
 /** Estado y operaciones del módulo clients. */
-import { nowISO, todayISO, planDurationDays } from '../../domain/utils/gymRules.js';
+import { nowISO, todayISO, planDurationDays, normalizeBackendClientToMember } from '../../domain/utils/gymRules.js';
 import { normalizeMembershipStatus } from '../../domain/utils/clientDirectory.js';
-import { backendRequest, apiPost } from '../services/backendGateway.js';
-import { useAuthStore } from '../stores/authStore.js';
 
-export const createClientsModule = (ctx) => {
+export const createClientsModule = (ctx, repository) => {
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
   const memberByInternalCode = (code) => {
     const normalizedCode = String(code || '').trim().toUpperCase();
     if (!normalizedCode) {
@@ -96,7 +97,7 @@ export const createClientsModule = (ctx) => {
       const backendId = Number(existingMember?.id_cliente || String(payload.id || '').match(/^(?:cliente-|SGCLI)(\d+)$/i)?.[1] || payload.id_cliente || 0) || null;
       const body = {
         ...(backendId ? { id_cliente: backendId } : {}),
-        id_usuario: member.id || undefined,
+        id_usuario: backendId ? `SGCLI${String(backendId).padStart(3, '0')}` : undefined,
         nombre: member.name || '',
         correo: member.email || '',
         telefono: member.phone || '',
@@ -107,15 +108,9 @@ export const createClientsModule = (ctx) => {
         estado: String(member.status || 'ACTIVO').toUpperCase(),
       };
 
-      return backendRequest(`${ctx.apiBase}/clientes`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(body) })
-        .then((r) => {
-          if (!r.ok) throw new Error('Error al crear/actualizar cliente en backend');
-          return r.json();
-        })
+      return remote.upsertMember(body)
         .then((created) => {
-          const id_cliente = Number(String(created.id_usuario || created.id || '').replace(/^SGCLI/i, '')) || backendId || Date.now();
-          const localId = created.id_usuario || `SGCLI${String(id_cliente).padStart(3, '0')}`;
-          const localMember = { ...member, id: localId, id_cliente, internalCode: String(localId), joinedAt: created.fecha_registro || member.joinedAt };
+          const localMember = { ...member, ...normalizeBackendClientToMember(created, member) };
           const idx = ctx.members.value.findIndex((m) => m.id === localMember.id || m.dni === localMember.dni);
           if (idx >= 0) ctx.members.value[idx] = localMember; else ctx.members.value.unshift(localMember);
 
@@ -148,8 +143,7 @@ export const createClientsModule = (ctx) => {
   const deleteMember = async (id) => {
     if (ctx.apiBase && /^(?:cliente-|SGCLI)\d+$/i.test(id)) {
       const id_cliente = Number(String(id).replace(/^(?:cliente-|SGCLI)/i, ''));
-      const response = await backendRequest(`${ctx.apiBase}/clientes/${id_cliente}`, { method: 'DELETE', headers: ctx._authHeaders() });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar el cliente'));
+      await remote.deleteMember(id_cliente);
     }
     ctx.members.value = ctx.members.value.filter((member) => member.id !== id);
     ctx.attendance.value = ctx.attendance.value.filter((entry) => entry.memberId !== id);
@@ -160,9 +154,7 @@ export const createClientsModule = (ctx) => {
 
   const upsertClienteToServer = async (clientePayload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/clientes`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(clientePayload) });
-    if (!res.ok) throw new Error('Error al guardar cliente en backend');
-    return res.json();
+    return await remote.upsertClienteToServer(clientePayload);
   };
 
   const upsertClient = async (payload) => {
@@ -185,11 +177,11 @@ export const createClientsModule = (ctx) => {
       const isNewClient = !payload.id_usuario;
 
       if (isNewClient) {
-        const result = await apiPost('/clientes/registro-admin', {
+        const result = await remote.registerAdmin({
           ...clientPayload,
           id_promocion: Number(payload.id_promocion) || null,
           pagar_con_stripe: Boolean(payload.pagar_con_stripe),
-        }, useAuthStore().token);
+        });
         const membership = result.membresia || {};
         const client = mergeClient({
           ...result.cliente,
@@ -208,42 +200,14 @@ export const createClientsModule = (ctx) => {
         saved = await upsertClienteToServer(clientPayload);
       }
 
-      // Resolver nombre real de la promoción usando el catálogo local
-      const numericId = Number(saved.id_cliente || 0) || Number(String(saved.id_usuario || '').replace(/^SGCLI/i, '')) || Number(existingClient?.id_cliente || 0) || Date.now();
-      const savedPromoId = saved.id_promocion || (payload.id_promocion && Number(payload.id_promocion) > 0 ? Number(payload.id_promocion) : null);
-      const promoObj = savedPromoId ? ctx.promotions.value.find(p => Number(p.id_promocion) === Number(savedPromoId)) : null;
-      const promoName = promoObj ? (promoObj.name || promoObj.nombre || `promo-${savedPromoId}`) : 'SIN PROMOCION';
-
       const normalized = {
-        id: saved.id_usuario || `SGCLI${String(numericId).padStart(3, '0')}`,
-        id_cliente: numericId,
-        name: saved.nombre || clientPayload.nombre,
-        dni: saved.dni || clientPayload.dni,
-        internalCode: String(saved.id_usuario || `SGCLI${String(numericId).padStart(3, '0')}`),
-        email: saved.correo || clientPayload.correo,
-        phone: saved.telefono || clientPayload.telefono,
-        role: 'user',
-        plan: saved.plan || clientPayload.plan,
-        promocion: promoName,
-        id_promocion: savedPromoId,
-        planId: '',
-        id_membresia: saved.id_membresia || existingClient?.id_membresia || null,
-        membershipStatus: normalizeMembershipStatus(saved.membership_status || saved.estado || existingClient?.membershipStatus || clientPayload.estado),
-        membershipStart: saved.membership_start || saved.fecha_inicio || existingClient?.membershipStart || '',
-        membershipEnd: saved.membership_end || saved.fecha_fin || existingClient?.membershipEnd || '',
-        registrationOrigin: saved.origen_registro || existingClient?.registrationOrigin || '',
-        paymentStatus: saved.payment_status || saved.estado_pago || existingClient?.paymentStatus || '',
-        paymentReference: saved.payment_reference || saved.referencia_pago || existingClient?.paymentReference || '',
-        hasPassword: Boolean(saved.has_password ?? saved.hasPassword ?? existingClient?.hasPassword),
-        membershipPrice: Number(saved.monto_pago ?? existingClient?.membershipPrice ?? 0),
-        status: saved.estado || clientPayload.estado,
-        joinedAt: existingClient?.joinedAt || '',
+        ...existingClient,
+        ...normalizeBackendClientToMember(saved, existingClient),
         attendanceRate: Number(existingClient?.attendanceRate ?? 0),
-        membershipHistory: Array.isArray(existingClient?.membershipHistory) ? existingClient.membershipHistory : [],
-        changeHistory: Array.isArray(existingClient?.changeHistory) ? existingClient.changeHistory : [],
-        schedules: Array.isArray(existingClient?.schedules) ? existingClient.schedules : [],
+        membershipHistory: existingClient?.membershipHistory || [],
+        changeHistory: existingClient?.changeHistory || [],
+        schedules: existingClient?.schedules || [],
       };
-
 
       const index = ctx.members.value.findIndex((entry) => String(entry.id) === String(normalized.id));
       if (index >= 0) {
@@ -251,7 +215,7 @@ export const createClientsModule = (ctx) => {
       } else {
         ctx.members.value.unshift(normalized);
       }
-      ctx.fetchFromBackend({ section: 'clients', force: true }).catch(() => {});
+      refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ section: 'clients', force: true }));
       return normalized;
     }
 
@@ -294,49 +258,15 @@ export const createClientsModule = (ctx) => {
 
   const registerClienteMembresiaToServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/registro-cliente-membresia`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error('Error al registrar cliente y membresía');
-    return res.json();
-  };
-
-  const normalizeClientFromBackend = (client = {}) => {
-    const numericId = Number(client.id_cliente || 0) || Number(String(client.id_usuario || '').replace(/^SGCLI/i, '')) || Date.now();
-    return {
-      id: client.id_usuario || `SGCLI${String(numericId).padStart(3, '0')}`,
-      id_cliente: numericId,
-      name: client.nombre || '',
-      dni: client.dni || '',
-      internalCode: String(client.id_usuario || `SGCLI${String(numericId).padStart(3, '0')}`),
-      email: client.correo || client.email || '',
-      phone: client.telefono || client.phone || '',
-      role: 'user',
-      plan: client.plan || 'MENSUAL',
-      promocion: client.promocion || 'SIN PROMOCION',
-      planId: '',
-      id_membresia: client.id_membresia || null,
-      membershipStatus: normalizeMembershipStatus(client.membership_status || client.estado),
-      membershipStart: client.membership_start || '',
-      membershipEnd: client.membership_end || '',
-      registrationOrigin: client.origen_registro || '',
-      id_promocion: client.id_promocion || null,
-      paymentStatus: client.payment_status || '',
-      paymentReference: client.payment_reference || '',
-      hasPassword: Boolean(client.has_password ?? client.hasPassword),
-      membershipPrice: Number(client.monto_pago ?? 0),
-      status: String(client.estado || 'EN_TRAMITE').toUpperCase(),
-      joinedAt: client.fecha_registro || '',
-      attendanceRate: 0,
-      membershipHistory: [],
-      changeHistory: [],
-      schedules: [],
-    };
+    return await remote.registerClienteMembresiaToServer(payload);
   };
 
   const mergeClient = (client) => {
-    const normalized = normalizeClientFromBackend(client);
+    let normalized = normalizeBackendClientToMember(client);
     const index = ctx.members.value.findIndex((entry) => String(entry.id) === String(normalized.id) || Number(entry.id_cliente) === Number(normalized.id_cliente));
     if (index >= 0) {
-      ctx.members.value[index] = { ...ctx.members.value[index], ...normalized };
+      normalized = normalizeBackendClientToMember(client, ctx.members.value[index]);
+      ctx.members.value[index] = normalized;
     } else {
       ctx.members.value.unshift(normalized);
     }
@@ -345,14 +275,7 @@ export const createClientsModule = (ctx) => {
 
   const registerPublicClient = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/registro-publico`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'No se pudo completar el registro'));
-
-    const saved = await res.json();
+    const saved = await remote.registerPublicClient(payload);
     const membership = saved.membresia || {};
     const client = mergeClient({
       ...(saved.cliente || {}),
@@ -370,13 +293,7 @@ export const createClientsModule = (ctx) => {
 
   const confirmarPagoEfectivo = async (idCliente) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/clientes/${idCliente}/confirmar-pago-manual`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-    });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'No se pudo confirmar el pago manual'));
-
-    const data = await res.json();
+    const data = await remote.confirmarPagoEfectivo(idCliente);
     const saved = data.data;
     const membership = saved.membresia || {};
     const client = mergeClient({
@@ -390,9 +307,9 @@ export const createClientsModule = (ctx) => {
       monto_pago: membership.monto_pago,
       id_promocion: membership.id_promocion,
     });
-    await ctx.fetchFromBackend({ section: 'clients', force: true }).catch(() => {});
+    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ section: 'clients', force: true }));
     return client;
   };
 
-  return { memberByInternalCode, searchMembers, logMemberEvent, memberByEmail, memberById, upsertMember, deleteMember, deleteClient, upsertClienteToServer, upsertClient, registerClienteMembresiaToServer, normalizeClientFromBackend, mergeClient, registerPublicClient, confirmarPagoEfectivo };
+  return { memberByInternalCode, searchMembers, logMemberEvent, memberByEmail, memberById, upsertMember, deleteMember, deleteClient, upsertClienteToServer, upsertClient, registerClienteMembresiaToServer, normalizeClientFromBackend: normalizeBackendClientToMember, mergeClient, registerPublicClient, confirmarPagoEfectivo };
 };

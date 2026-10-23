@@ -61,3 +61,8 @@ def notify_schedule_enrollment(settings, enrollment_id):
 
 async def process_pending_emails(settings):
     await membership_notifications.process_pending_emails(create_membership_notifications(settings))
+
+
+def create_client_payments_service(clients, gym, settings):
+    from application.services.client_payments_service import ClientPaymentsService
+    return ClientPaymentsService(clients, gym, settings, gateway_factory=create_payment_gateway, notify=notify_membership)

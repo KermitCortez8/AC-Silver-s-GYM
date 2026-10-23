@@ -33,6 +33,9 @@ export const parseError = async (response) => {
         error.code = body.detail.code;
         return error;
       }
+      if (Array.isArray(body.detail)) {
+        return new Error(body.detail.map((item) => `${(item.loc || []).filter((part) => part !== 'body').join('.')}: ${item.msg || 'Valor inválido'}`).join(' '));
+      }
       return new Error(String(body.detail));
     }
 

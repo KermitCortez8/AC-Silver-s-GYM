@@ -3,19 +3,13 @@ import { storeImageUrl } from '../config/publicStorage';
 
 const apiBase = APP_CONFIG.authApiBaseUrl;
 
-/**
- * Gestiona esta acción de la vista.
- */
-const parseErrorMessage = async (response) => {
-  const message = await response.text();
-  return message || 'No se pudo completar la operacion de imagenes';
-};
+import { parseError } from './apiResponse.js';
 
 export const listStoreImages = async () => {
   const response = await fetch(`${apiBase}/tienda/imagenes`);
 
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    throw await parseError(response);
   }
 
   const images = await response.json();
@@ -38,10 +32,10 @@ export const uploadStoreImage = async (file, token = '') => {
   });
 
   if (!response.ok) {
-       throw new Error(await parseErrorMessage(response));
+    throw await parseError(response);
   }
 
-const uploaded = await response.json();
+  const uploaded = await response.json();
   return {
     ...uploaded,
     url: uploaded.url || storeImageUrl(uploaded.path || uploaded.name),

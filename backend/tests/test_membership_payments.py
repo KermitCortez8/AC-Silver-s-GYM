@@ -8,7 +8,7 @@ from domain.models.auth import UserProfile
 from presentation.routes.clients_routes import router
 from application.services.clients_service import ClientsService
 from infrastructure.services.local_gym_service import LocalGymService
-import presentation.routes.clients_routes as clients_routes
+import app.bootstrap as bootstrap
 
 
 @pytest.fixture
@@ -56,8 +56,8 @@ def test_verified_stripe_registration_appears_once_in_payment_history(api, monke
                              "membership_id": str(membership_id)},
             }
 
-    monkeypatch.setattr(clients_routes, "StripeService", Gateway)
-    monkeypatch.setattr(clients_routes, "notify_membership", lambda *args: {})
+    monkeypatch.setattr(bootstrap, "create_payment_gateway", Gateway)
+    monkeypatch.setattr(bootstrap, "notify_membership", lambda *args: {})
     for _ in range(2):
         response = client.post("/pagos/stripe/confirmar-retorno?session_id=cs_verified")
         assert response.status_code == 200

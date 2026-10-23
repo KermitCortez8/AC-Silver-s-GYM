@@ -7,6 +7,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from presentation.dependencies import get_gym_service, require_internal_viewer
+from domain.errors import MembershipRequired
 from domain.models.gym import CatalogoRutinaInput, MatriculaRutinaInput, RutinaProgresoInput
 from application.services.gym_service import GymService
 
@@ -47,7 +48,7 @@ def assign_trainer_rutina(
         return gym_service.asignar_rutina_matricula(id_matricula, payload.id_rutina)
     except (ValueError, RuntimeError) as error:
         detail = str(error)
-        if "sin membresia activa" in detail.lower():
+        if isinstance(error, MembershipRequired):
             detail = "El cliente no cuenta con una membresía activa para asignarle rutinas."
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from error
 
@@ -77,6 +78,6 @@ def trainer_rutina_progreso(
         return gym_service.registrar_progreso_rutina(id_matricula, payload.model_dump())
     except (ValueError, RuntimeError) as error:
         detail = str(error)
-        if "sin membresia activa" in detail.lower():
+        if isinstance(error, MembershipRequired):
             detail = "El cliente no cuenta con una membresía activa para registrar progresos."
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from error

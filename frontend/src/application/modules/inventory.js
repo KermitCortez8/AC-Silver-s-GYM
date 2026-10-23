@@ -1,9 +1,11 @@
+import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
+import { bindSessionRepository } from '../services/sessionBoundary.js';
 /** Estado y operaciones del módulo inventory. */
-import { generateInventoryCode } from '../../domain/utils/gymRules.js';
+import { generateInventoryCode, requireNumericId } from '../../domain/utils/gymRules.js';
 import { computed } from 'vue';
-import { backendRequest } from '../services/backendGateway.js';
 
-export const createInventoryModule = (ctx) => {
+export const createInventoryModule = (ctx, repository) => {
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
   const lowStockInventory = computed(() =>
     ctx.inventory.value.filter((item) => item.quantity <= item.minQuantity),
   );
@@ -25,7 +27,7 @@ export const createInventoryModule = (ctx) => {
         observaciones: payload.observations || '',
       };
       return upsertInventoryToServer(body).then((res) => {
-        const id_item = res.id_item || (res.id && Number(res.id)) || (body.id_item || Date.now());
+        const id_item = requireNumericId(res.id_item, 'un artículo');
         const item = {
           id: `item-${id_item}`,
           inventoryCode: `ACT-${String(res.n_activo || id_item).padStart(4, '0')}`,
@@ -43,7 +45,7 @@ export const createInventoryModule = (ctx) => {
         const index = ctx.inventory.value.findIndex((entry) => entry.id === item.id);
         if (index >= 0) ctx.inventory.value[index] = item; else ctx.inventory.value.unshift(item);
         // El alta registra su entrada en MOV_INV y un item Tipo Tienda crea su producto.
-        return ctx.fetchFromBackend({ force: true }).catch(() => {}).then(() => item);
+        return refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true })).then(() => item);
       });
     }
 
@@ -75,14 +77,14 @@ export const createInventoryModule = (ctx) => {
   const deleteInventoryItem = async (id) => {
     if (ctx.apiBase && /^item-\d+$/.test(id)) {
       const id_item = Number(id.split('-')[1]);
-      const response = await backendRequest(`${ctx.apiBase}/inventario/${id_item}`, { method: 'DELETE', headers: ctx._authHeaders() });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar el articulo'));
+      await remote.deleteInventoryItem(id_item);
+
       // Con historial o producto en tienda el backend no borra: lo marca como Descontinuado.
-      const result = response.status === 204 ? null : await response.json();
+      const result = response;
       if (result?.accion === 'descontinuado') {
         const item = ctx.inventory.value.find((entry) => entry.id === id);
         if (item) item.status = result.item?.estado || 'Descontinuado';
-        await ctx.fetchFromBackend({ force: true }).catch(() => {});
+        await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
         return result;
       }
     }
@@ -92,35 +94,29 @@ export const createInventoryModule = (ctx) => {
 
   const refreshInventoryMovementsFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const response = await backendRequest(`${ctx.apiBase}/inventario/movimientos`, { headers: ctx._authHeaders() });
-    if (!response.ok) throw new Error(await ctx.readBackendError(response, 'Error al cargar movimientos'));
-    ctx.inventoryMovements.value = await response.json();
+    const response = await remote.refreshInventoryMovementsFromBackend();
+
+    ctx.inventoryMovements.value = response;
     return ctx.inventoryMovements.value;
   };
 
   const upsertInventoryToServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/inventario`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error('Error al guardar inventario');
-    return res.json();
+    return await remote.upsertInventoryToServer(payload);
   };
 
   const registrarMovimientoToServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/inventario/movimientos`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'Error al crear movimiento de inventario'));
-    const saved = await res.json();
+    const saved = await remote.registrarMovimientoToServer(payload);
     if (saved?.movimiento) ctx.inventoryMovements.value.unshift(saved.movimiento);
-    await ctx.fetchFromBackend({ force: true }).catch(() => { });
+    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
     return saved;
   };
 
   const updateInventoryMovement = async (idMov, payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/inventario/movimientos/${idMov}`, { method: 'PUT', headers: ctx._authHeaders(), body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'No se pudo actualizar el movimiento'));
-    const saved = await res.json();
-    await ctx.fetchFromBackend({ force: true }).catch(() => {});
+    const saved = await remote.updateInventoryMovement(idMov, payload);
+    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
     return saved;
   };
 

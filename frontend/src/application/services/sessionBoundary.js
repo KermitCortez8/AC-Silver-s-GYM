@@ -19,3 +19,10 @@ export const inCurrentSession = async (operation) => {
   assertCurrent();
   return result;
 };
+
+/** Conserva el límite de sesión también con repositorios simulados o sin HTTP. */
+export const bindSessionRepository = (repository = {}, token = () => '') => Object.fromEntries(
+  Object.entries(repository).map(([name, operation]) => [name,
+    (...args) => inCurrentSession(() => operation(...args, token())),
+  ]),
+);

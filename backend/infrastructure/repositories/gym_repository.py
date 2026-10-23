@@ -1,19 +1,24 @@
-"""Persistencia del gimnasio: caché, mapeos, RPC y compensación de escrituras."""
+"""Coordina el estado remoto, la caché y las transacciones del gimnasio."""
 from __future__ import annotations
 
 from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
-import json
-import re
 import threading
 import time
 from typing import Any, NoReturn
 
-from domain.errors import AttendanceConflict, raise_schedule_enrollment_error
-from domain.services.gym_domain_service import GymDomainService, _now_iso, _today_iso
-from domain.services.membership_lifecycle import apply_membership_expiration, normalize_membership_status
+from application.errors import SchemaNotReady
+from domain.errors import AttendanceConflict
+from infrastructure.repositories.enrollment_errors import raise_schedule_enrollment_error
+from infrastructure.http_transport import database_code, error_payload
+from infrastructure.repositories.schema_policy import missing_column, prepare_write
+from domain.services.gym_domain_service import GymDomainService, _today_iso
+from domain.services.membership_lifecycle import apply_membership_expiration
 from infrastructure.supabase_client import SupabaseRestClient
 from infrastructure.repositories.atomic_changes import SnapshotConflict, commit_snapshot, table_changes
+
+from infrastructure.repositories.mappers import accounts, attendance, common, configuration, inventory, memberships, schedules, store
+
 
 class SupabaseGymRepository:
     def validate_admin_registration_schema(self) -> None:
@@ -72,26 +77,13 @@ class SupabaseGymRepository:
         try:
             self.supabase.validate_columns("MEMBRESIA", self.PAYMENT_COLUMNS)
         except RuntimeError as error:
-            message = str(error).lower()
-            missing_column = (
-                "pgrst204" in message
-                or ("could not find" in message and "column" in message)
-                or ("column" in message and "does not exist" in message)
-            )
-            if missing_column:
-                raise RuntimeError(
-                    "Falta ejecutar backend/migrations/001_add_membership_payment_fields.sql en Supabase"
-                ) from error
+            if missing_column(error):
+                raise SchemaNotReady("001_add_membership_payment_fields.sql") from error
             raise
 
     @staticmethod
     def _is_missing_column_error(error: RuntimeError) -> bool:
-        message = str(error).lower()
-        return (
-            "pgrst204" in message
-            or ("could not find" in message and "column" in message)
-            or ("column" in message and "does not exist" in message)
-        )
+        return missing_column(error)
 
     def _validate_store_payment_schema(self) -> None:
         """Falla al arrancar si falta la migración 009, en vez de perder datos en silencio."""
@@ -99,9 +91,7 @@ class SupabaseGymRepository:
             self.supabase.validate_columns("VENTAS", self.STORE_PAYMENT_COLUMNS)
         except RuntimeError as error:
             if self._is_missing_column_error(error):
-                raise RuntimeError(
-                    "Falta ejecutar backend/migrations/009_add_store_order_payment_fields.sql en Supabase"
-                ) from error
+                raise SchemaNotReady("009_add_store_order_payment_fields.sql") from error
             raise
     # Procesa esta operación.
     def _remember_remote_columns(self, table: str, rows: list[dict[str, Any]]) -> None:
@@ -122,63 +112,14 @@ class SupabaseGymRepository:
             self._remember_remote_columns(table, rows)
             return rows
         except RuntimeError as error:
-            message = str(error)
-            if "PGRST205" in message or "42P01" in message:
+            if database_code(error) in {"PGRST205", "42P01"}:
                 self.missing_remote_tables.add(table)
                 return []
             raise
 
     # Procesa esta operación.
     def _filter_remote_columns(self, table: str, body: dict[str, Any]) -> dict[str, Any]:
-        columns = self.remote_columns.get(table)
-        preserved = {
-            "USUARIO": {"codigo_usuario"},
-            "PROMOCIONES": {"limite_cupos", "usos_actuales", "icono_etiqueta", "palabra_clave"},
-            "MEMBRESIA": {"id_promocion"},
-            "INVENTARIO": {"unidad_venta", "precio_venta", "stock_minimo", "ubicacion", "observaciones"},
-            "TIENDA_PRODUCTOS": {"descripcion", "unidad_venta"},
-        }.get(table, set())
-        if columns is not None and (preserved & body.keys()) - columns:
-            raise RuntimeError("Falta ejecutar backend/migrations/014_preserve_business_fields.sql en Supabase")
-
-        exercise_column = {
-            "CATALOGO_RUTINA": "ejercicios",
-            "RUTINA_PROGRESO": "ejercicios_detalle",
-        }.get(table)
-        if columns and exercise_column and exercise_column not in columns and body.get(exercise_column):
-            raise RuntimeError(
-                "No se pudieron guardar los ejercicios. Ejecuta "
-                "backend/migrations/012_trainer_exercises.sql en Supabase."
-            )
-        if table == "CLIENTES" and (not columns or "origen_registro" not in columns):
-            if body.get("origen_registro") == "ADMIN":
-                try:
-                    self.supabase.validate_columns(table, {"origen_registro"})
-                except RuntimeError as error:
-                    raise RuntimeError(
-                        "No se pudo guardar el origen del cliente. Comprueba la conexión y ejecuta "
-                        "backend/migrations/009_admin_client_stripe.sql en Supabase."
-                    ) from error
-                if columns:
-                    columns.add("origen_registro")
-            else:
-                body = {key: value for key, value in body.items() if key != "origen_registro"}
-        if body.get("google_sub") and (not columns or "google_sub" not in columns):
-            try:
-                self.supabase.validate_columns(table, {"google_sub"})
-            except RuntimeError as error:
-                raise RuntimeError(
-                    "No se pudo guardar la identidad de Google. Comprueba la conexión y ejecuta "
-                    "backend/migrations/003_add_google_identity.sql en Supabase."
-                ) from error
-            if columns:
-                columns.add("google_sub")
-        elif not body.get("google_sub"):
-            # Mantiene compatibles las cuentas anteriores mientras se aplica la migración.
-            body = {key: value for key, value in body.items() if key != "google_sub"}
-        if not columns:
-            return body
-        return {key: value for key, value in body.items() if key in columns}
+        return prepare_write(table, body, self.remote_columns, lambda table, columns: self.supabase.validate_columns(table, columns))
 
     # Actualiza el registro correspondiente.
     def _read_resources(self, resources=None) -> set[str]:
@@ -253,7 +194,7 @@ class SupabaseGymRepository:
             config_rows = rows["configuracion_gimnasio"]
             remote_state["configuracion_gimnasio"] = self._map_config(config_rows[0] if config_rows else {})
         # Recupera la etiqueta derivada sin volver a escribir Estado=false en cada lectura.
-        # Los cambios de vigencia de MEMBRESIA se persisten después en ensure_fresh.
+        # La vigencia se proyecta en consultas y se persiste con el comando explícito de vencimiento.
         if "clientes" in selected:
             apply_membership_expiration({
                 "clientes": [row for row in remote_state["clientes"] if row["estado"] == "INACTIVO"],
@@ -335,7 +276,7 @@ class SupabaseGymRepository:
                         table_names.append("VENTAS")
                     floors = self.supabase.rpc("gym_identity_floors", {"p_tables": sorted(table_names)})
                     if not isinstance(floors, dict):
-                        raise RuntimeError("Falta ejecutar backend/migrations/015_atomic_gym_transactions.sql en Supabase")
+                        raise SchemaNotReady("015_atomic_gym_transactions.sql")
                     self.state["_identity_floors"] = {
                         key: int(floors.get(table, 0)) for key, (table, _local, _remote) in self.CORE_TABLES.items()
                     }
@@ -348,8 +289,8 @@ class SupabaseGymRepository:
                     self.state.update(deepcopy(previous))
                     self._last_refresh_at = 0.0
                     getattr(self, "_resource_refreshed_at", {}).clear()
-                    if "PGRST202" in str(error) or '"code":"42883"' in str(error).replace(" ", ""):
-                        raise RuntimeError("Falta ejecutar backend/migrations/015_atomic_gym_transactions.sql en Supabase") from error
+                    if database_code(error) in {"PGRST202", "42883"}:
+                        raise SchemaNotReady("015_atomic_gym_transactions.sql") from error
                     if isinstance(error, SnapshotConflict) and attempt < 2:
                         # La RPC no escribió nada. Recalcula las reglas sobre datos actuales.
                         self._refresh_remote_state(resources)
@@ -396,8 +337,7 @@ class SupabaseGymRepository:
             try:
                 created = self.supabase.rpc(rpc_name, rpc_body)
             except RuntimeError as error:
-                normalized = str(error).lower()
-                if "pgrst202" in normalized or "could not find the function" in normalized:
+                if database_code(error) in {"PGRST202", "42883"}:
                     if admin_id:
                         raise RuntimeError("Falta ejecutar backend/migrations/006_schedule_email_notifications.sql en Supabase.") from error
                     raise RuntimeError("Falta ejecutar backend/migrations/002_harden_schedule_enrollment.sql en Supabase.") from error
@@ -522,633 +462,54 @@ class SupabaseGymRepository:
             "asistencia": self._attendance_to_remote,
         }[state_key](row)
 
-    # Procesa esta operación.
-    def _pk(self, row: dict[str, Any], key: str) -> int:
-        if key == "id_usuario":
-            return self._remote_user_id(row.get(key))
-        return int(row.get(key, 0) or 0)
-
-    # Procesa esta operación.
-    def _remote_pk_value(self, state_key: str, row: dict[str, Any], fallback: int) -> int:
-        if state_key == "usuario":
-            return self._remote_user_id(row.get("id_usuario")) or int(fallback)
-        return int(fallback)
-
-    # Procesa esta operación.
-    def _remote_user_id(self, value: Any) -> int:
-        raw = str(value or "").strip()
-        if raw.isdigit():
-            return int(raw)
-        match = re.search(r"(\d+)$", raw)
-        return int(match.group(1)) if match else 0
-
-    # Procesa esta operación.
-    def _remote_user_id_or_none(self, value: Any) -> int | None:
-        user_id = self._remote_user_id(value)
-        return user_id or None
-
-    # Procesa esta operación.
-    def _split_name(self, value: str) -> tuple[str, str]:
-        parts = [part for part in str(value or "").strip().split() if part]
-        if len(parts) <= 1:
-            return (parts[0] if parts else "", "")
-        return (" ".join(parts[:-1]), parts[-1])
-
-    # Procesa esta operación.
-    def _phone_number(self, value: Any) -> int | None:
-        digits = re.sub(r"\D+", "", str(value or ""))
-        return int(digits) if digits else None
-
-    # Procesa esta operación.
-    def _status_to_bool(self, value: Any) -> bool:
-        status = str(value or "").strip().upper()
-        return status in {"ACTIVO", "ACTIVA", "TRUE", "1", "SI", "SÍ"}
-
-    # Procesa esta operación.
-    def _bool_to_status(self, value: Any) -> str:
-        return "ACTIVO" if bool(value) else "EN_TRAMITE"
-
-    # Procesa esta operación.
-    def _date_or_today(self, value: Any) -> str:
-        text = str(value or "").strip()
-        return text[:10] if text else _today_iso()
-
-    # Procesa esta operación.
-    def _date_or_none(self, value: Any) -> str | None:
-        text = str(value or "").strip()
-        return text[:10] if text else None
-
-    # Procesa esta operación.
-    def _map_config(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "capacidad_total": max(1, int(row.get("capacidad_total") or 30)),
-            "capacidad_por_hora": max(1, int(row.get("capacidad_por_hora") or 10)),
-        }
-
-    # Procesa esta operación.
-    def _config_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "capacidad_total": max(1, int(row.get("capacidad_total") or 30)),
-            "capacidad_por_hora": max(1, int(row.get("capacidad_por_hora") or 10)),
-        }
-
-    # Procesa esta operación.
-    def _map_plan(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_pm": int(row.get("id_PM") or row.get("id_pm") or row.get("id_plan") or 0),
-            "nombre_plan": str(row.get("Nombre_Plan") or row.get("nombre_plan") or row.get("nombre") or "MENSUAL").strip().upper(),
-            "duracion": str(row.get("Duración") or row.get("Duracion") or row.get("duracion") or "30 dias"),
-            "precio": float(row.get("Precio") or row.get("precio") or 0),
-            "descripcion": str(row.get("descripcion") or ""),
-            "beneficios": str(row.get("beneficios") or ""),
-            "activo": bool(row.get("Activo", row.get("activo", True))),
-        }
-
-    # Procesa esta operación.
-    def _plan_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_PM": int(row.get("id_pm", 0) or 0),
-            "Nombre_Plan": str(row.get("nombre_plan") or "MENSUAL").strip().upper(),
-            "Duración": str(row.get("duracion") or "30 dias"),
-            "Precio": float(row.get("precio") or 0),
-            "descripcion": str(row.get("descripcion") or ""),
-            "beneficios": str(row.get("beneficios") or ""),
-            "Activo": bool(row.get("activo", True)),
-        }
-
-    # Procesa esta operación.
-    def _map_promotion(self, row: dict[str, Any]) -> dict[str, Any]:
-        raw_plans = row.get("planes_aplicables") or []
-        if isinstance(raw_plans, str):
-            raw_plans = [part.strip() for part in raw_plans.split(",") if part.strip()]
-        return {
-            "id_promocion": int(row.get("id_promocion", 0) or 0),
-            "nombre": str(row.get("nombre") or ""),
-            "limite_cupos": row.get("limite_cupos"),
-            "usos_actuales": int(row.get("usos_actuales") or 0),
-            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
-            "palabra_clave": str(row.get("palabra_clave") or ""),
-            "descripcion": str(row.get("descripcion") or ""),
-            "tipo_descuento": str(row.get("tipo_descuento") or "porcentaje"),
-            "valor_descuento": float(row.get("valor_descuento") or 0),
-            "fecha_inicio": str(row.get("fecha_inicio") or ""),
-            "fecha_fin": str(row.get("fecha_fin") or ""),
-            "activo": bool(row.get("activo", True)),
-            "planes_aplicables": [int(value) for value in raw_plans if str(value).strip().isdigit()],
-        }
-
-    # Procesa esta operación.
-    def _promotion_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_promocion": int(row.get("id_promocion", 0) or 0),
-            "nombre": str(row.get("nombre") or ""),
-            "limite_cupos": row.get("limite_cupos"),
-            "usos_actuales": int(row.get("usos_actuales") or 0),
-            "icono_etiqueta": str(row.get("icono_etiqueta") or "🏷️"),
-            "palabra_clave": str(row.get("palabra_clave") or ""),
-            "descripcion": str(row.get("descripcion") or ""),
-            "tipo_descuento": str(row.get("tipo_descuento") or "porcentaje"),
-            "valor_descuento": float(row.get("valor_descuento") or 0),
-            "fecha_inicio": self._date_or_none(row.get("fecha_inicio")),
-            "fecha_fin": self._date_or_none(row.get("fecha_fin")),
-            "activo": bool(row.get("activo", True)),
-            "planes_aplicables": list(row.get("planes_aplicables") or []),
-        }
-
-    # Procesa esta operación.
-    def _map_client(self, row: dict[str, Any]) -> dict[str, Any]:
-        client_id = int(row.get("id_cliente", 0) or 0)
-        name = " ".join([str(row.get("Nombres") or "").strip(), str(row.get("Apellidos") or "").strip()]).strip()
-        return {
-            "id_cliente": client_id,
-            "id_usuario": f"SGCLI{client_id:03d}",
-            "nombre": name,
-            "correo": str(row.get("Correo") or row.get("Email") or ""),
-            "telefono": str(row.get("Telefono") or ""),
-            "dni": str(row.get("DNI") or ""),
-            "plan": str(row.get("Plan") or "MENSUAL").strip().upper(),
-            "promocion": "SIN PROMOCION",
-            "estado": self._bool_to_status(row.get("Estado")),
-            "password_hash": str(row.get("password_hash") or row.get("Password_Hash") or ""),
-            "google_sub": str(row.get("google_sub") or ""),
-            "fecha_registro": str(row.get("Fecha_Registro") or ""),
-            "origen_registro": str(row.get("origen_registro") or ""),
-        }
-
-    # Procesa esta operación.
-    def _client_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        nombres, apellidos = self._split_name(str(row.get("nombre") or ""))
-        correo = str(row.get("correo") or row.get("email") or "").strip()
-        return {
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "Nombres": nombres,
-            "Apellidos": apellidos,
-            "DNI": str(row.get("dni") or ""),
-            "Telefono": self._phone_number(row.get("telefono")),
-            "Email": correo,
-            "Correo": correo,
-            "Fecha_Registro": self._date_or_today(row.get("fecha_registro")),
-            "Estado": self._status_to_bool(row.get("estado")),
-            "Plan": str(row.get("plan") or "MENSUAL").strip().upper(),
-            "password_hash": str(row.get("password_hash") or ""),
-            "google_sub": str(row.get("google_sub") or "") or None,
-            "origen_registro": str(row.get("origen_registro") or "") or None,
-        }
-
-    # Procesa esta operación.
-    def _map_membership(self, row: dict[str, Any]) -> dict[str, Any]:
-        membership_status = str(row.get("Estado") or "PENDIENTE_PAGO")
-        default_payment_status = (
-            "PAGADO"
-            if membership_status.strip().upper() in {"ACTIVA", "ACTIVO", "EN_TRAMITE"}
-            else "PENDIENTE"
-        )
-        return {
-            "id_membresia": int(row.get("id_membresia", 0) or 0),
-            "fecha_inicio": str(row.get("Fecha_Inicio") or ""),
-            "fecha_fin": str(row.get("Fecha_Fin") or ""),
-            "estado": normalize_membership_status(membership_status),
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "id_promocion": int(row.get("id_promocion") or 0) or None,
-            "id_pm": int(row.get("id_PM", 0) or 0),
-            "monto_pago": float(row.get("monto_pago", 0) or 0),
-            "estado_pago": str(row.get("estado_pago") or default_payment_status),
-            "metodo_pago": str(row.get("metodo_pago") or ""),
-            "referencia_pago": str(row.get("referencia_pago") or ""),
-            "fecha_pago": str(row.get("fecha_pago") or ""),
-        }
-
-    # Procesa esta operación.
-    def _membership_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_membresia": int(row.get("id_membresia", 0) or 0),
-            "Fecha_Inicio": self._date_or_today(row.get("fecha_inicio")),
-            "Fecha_Fin": self._date_or_today(row.get("fecha_fin")),
-            "Estado": normalize_membership_status(row.get("estado")),
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "id_promocion": int(row.get("id_promocion") or 0) or None,
-            "id_PM": int(row.get("id_pm", 0) or 0) or None,
-            "monto_pago": float(row.get("monto_pago", 0) or 0) or None,
-            "estado_pago": str(row.get("estado_pago") or "PENDIENTE"),
-            "metodo_pago": str(row.get("metodo_pago") or ""),
-            "referencia_pago": str(row.get("referencia_pago") or ""),
-            "fecha_pago": self._date_or_none(row.get("fecha_pago")),
-        }
-
-    # Procesa esta operación.
-    def _map_user_legacy(self, row: dict[str, Any], local: dict[str, Any]) -> dict[str, Any]:
-        password = str(row.get("Contraseña") or local.get("password_hash") or "")
-        return {
-            "id_usuario": int(row.get("id_usuario", 0) or 0),
-            "nombre": str(local.get("nombre") or f"Usuario {row.get('id_usuario', '')}"),
-            "correo": str(local.get("correo") or ""),
-            "telefono": str(local.get("telefono") or ""),
-            "dni": str(row.get("DNI") or local.get("dni") or ""),
-            "rol": str(row.get("Rol") or local.get("rol") or "staff").strip().lower(),
-            "estado": "ACTIVO" if bool(row.get("Estado", True)) else "INACTIVO",
-            "password_hash": password,
-            "google_sub": str(row.get("google_sub") or ""),
-        }
-
-    # Procesa esta operación.
-    def _map_user(self, row: dict[str, Any]) -> dict[str, Any]:
-        user_id = int(row.get("id_usuario", 0) or 0)
-        role = str(row.get("Rol") or "staff").strip().lower()
-        prefix = self.rules.user_role_prefix(role)
-        return {
-            "id_usuario": str(row.get("codigo_usuario") or (f"SG{prefix}{user_id:03d}" if user_id else "")),
-            "nombre": str(row.get("Nombre") or f"Usuario {row.get('id_usuario', '')}"),
-            "correo": str(row.get("Correo") or row.get("Email") or ""),
-            "telefono": str(row.get("Telefono") or ""),
-            "dni": str(row.get("DNI") or ""),
-            "rol": role,
-            "estado": "ACTIVO" if bool(row.get("Estado", True)) else "INACTIVO",
-            "password_hash": str(row.get("Contraseña") or row.get("ContraseÃ±a") or ""),
-            "google_sub": str(row.get("google_sub") or ""),
-        }
-
-    # Procesa esta operación.
-    def _user_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_usuario": self._remote_user_id(row.get("id_usuario")),
-            "codigo_usuario": str(row.get("id_usuario") or ""),
-            "Nombre": str(row.get("nombre") or ""),
-            "Correo": str(row.get("correo") or row.get("email") or ""),
-            "Telefono": str(row.get("telefono") or ""),
-            "DNI": str(row.get("dni") or ""),
-            "Contraseña": str(row.get("password_hash") or ""),
-            "google_sub": str(row.get("google_sub") or "") or None,
-            "Rol": str(row.get("rol") or "staff").strip().lower(),
-            "Estado": self._status_to_bool(row.get("estado") or "ACTIVO"),
-        }
-
-    # Procesa esta operación.
-    def _map_inventory(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_item": int(row.get("id_item", 0) or 0),
-            "nombre_item": str(row.get("Nombre_item") or ""),
-            "tipo": str(row.get("Tipo") or "General"),
-            "cantidad_stock": int(row.get("Cantidad_Stock_E", 0) or 0),
-            "estado": str(row.get("Estado") or "Operativo"),
-            "n_activo": row.get("N_ACTIVO"),
-            "unidad_venta": str(row.get("unidad_venta") or "unidad"),
-            "precio_venta": float(row.get("precio_venta") or 0),
-            "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 1),
-            "ubicacion": str(row.get("ubicacion") or "Almacén"),
-            "observaciones": str(row.get("observaciones") or ""),
-        }
-
-    # Procesa esta operación.
-    def _inventory_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_item": int(row.get("id_item", 0) or 0),
-            "Nombre_item": str(row.get("nombre_item") or ""),
-            "Tipo": str(row.get("tipo") or "General"),
-            "Cantidad_Stock_E": int(row.get("cantidad_stock", 0) or 0),
-            "Estado": str(row.get("estado") or "Operativo"),
-            "N_ACTIVO": int(row.get("n_activo") or 0) or None,
-            "unidad_venta": str(row.get("unidad_venta") or "unidad"),
-            "precio_venta": float(row.get("precio_venta") or 0),
-            "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 1),
-            "ubicacion": str(row.get("ubicacion") or "Almacén"),
-            "observaciones": str(row.get("observaciones") or ""),
-        }
-
-    # Procesa esta operación.
-    def _map_inventory_move(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_mov": int(row.get("id_mov", 0) or 0),
-            "id_item": int(row.get("id_item", 0) or 0),
-            "id_usuario": int(row.get("id_usuario", 0) or 0) if row.get("id_usuario") else None,
-            "tipo_movimiento": str(row.get("tipo_movimiento") or "entrada"),
-            "fecha_movimiento": str(row.get("fecha_movimiento") or ""),
-            "descripcion": str(row.get("descripcion") or ""),
-            "cantidad": int(row.get("cantidad", 1) or 1),
-            "destino": str(row.get("destino") or "").strip().upper() or None,
-        }
-
-    # Procesa esta operación.
-    def _inventory_move_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_mov": int(row.get("id_mov", 0) or 0),
-            "id_item": int(row.get("id_item", 0) or 0),
-            "id_usuario": self._remote_user_id_or_none(row.get("id_usuario")),
-            "tipo_movimiento": str(row.get("tipo_movimiento") or "entrada").strip().lower(),
-            "fecha_movimiento": self._date_or_today(row.get("fecha_movimiento")),
-            "descripcion": str(row.get("descripcion") or ""),
-            "cantidad": max(1, int(row.get("cantidad", 1) or 1)),
-            "destino": str(row.get("destino") or "").strip().upper() or None,
-        }
-
-    # Procesa esta operación.
-    def _map_product(self, row: dict[str, Any]) -> dict[str, Any]:
-        stock = int(row.get("cantidad_stock", 0) or 0)
-        return {
-            "id_producto": int(row.get("id_producto", 0) or 0),
-            "id_item": int(row.get("id_item") or 0) or None,
-            "nombre_producto": str(row.get("nombre_Producto") or ""),
-            "categoria": str(row.get("categoria") or "General"),
-            "descripcion": str(row.get("descripcion") or ""),
-            "unidad_venta": str(row.get("unidad_venta") or "unidad"),
-            "precio_venta": float(row.get("precio_Venta") or 0),
-            "cantidad_stock": stock,
-            "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 5),
-            "estado": "Disponible" if stock > 0 else "Sin stock",
-            "imagen_url": str(row.get("imagen_url") or ""),
-        }
-
-    # Procesa esta operación.
-    def _product_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_producto": int(row.get("id_producto", 0) or 0),
-            "id_item": int(row.get("id_item") or 0) or None,
-            "nombre_Producto": str(row.get("nombre_producto") or ""),
-            "categoria": str(row.get("categoria") or "General"),
-            "descripcion": str(row.get("descripcion") or ""),
-            "unidad_venta": str(row.get("unidad_venta") or "unidad"),
-            "precio_Venta": float(row.get("precio_venta") or 0),
-            # Stock propio de la tienda: sube con reposiciones desde INVENTARIO y baja con ventas.
-            "cantidad_stock": int(row.get("cantidad_stock", 0) or 0),
-            "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 5),
-            "imagen_url": str(row.get("imagen_url") or ""),
-        }
-
-    # Procesa esta operación.
-    def _map_sale_detail(self, row: dict[str, Any], product_names: dict[int, str]) -> dict[str, Any]:
-        product_id = int(row.get("id_producto", 0) or 0)
-        return {
-            "id_producto": product_id,
-            "nombre_producto": product_names.get(product_id, ""),
-            "cantidad": int(row.get("Cantidad", 1) or 1),
-            "precio_unitario": float(row.get("Precio_Unitario") or 0),
-            "subtotal": float(row.get("Subtotal") or 0),
-        }
-
-    # Convierte una fila de VENTAS al formato de pedido que usa el dominio.
-    def _map_sale(self, row: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, Any]:
-        total = float(row.get("total_Venta") or 0)
-        return {
-            "id_pedido": int(row.get("id_venta", 0) or 0),
-            "id_cliente": int(row.get("id_cliente") or 0) or None,
-            "cliente_nombre": str(row.get("cliente_nombre") or "Cliente"),
-            "cliente_correo": str(row.get("cliente_correo") or ""),
-            "cliente_dni": str(row.get("cliente_dni") or ""),
-            "fecha_pedido": str(row.get("Fecha_Venta") or _now_iso()),
-            "creado_en": str(row.get("created_at") or ""),
-            "metodo_pago": str(row.get("metodo_Pago") or ""),
-            "referencia_pago": str(row.get("referencia_pago") or ""),
-            "observacion_admin": str(row.get("observacion_admin") or ""),
-            "estado_pago": str(row.get("estado_pago") or "PAGADO").strip().upper(),
-            "estado_pedido": str(row.get("estado_pedido") or "COMPLETADO"),
-            "fecha_actualizacion": str(row.get("fecha_actualizacion") or row.get("Fecha_Venta") or _now_iso()),
-            "subtotal": total,
-            "igv": 0,
-            "total": total,
-            "items": items,
-        }
-
-    # Convierte un pedido del dominio a una fila de VENTAS.
-    def _sale_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_venta": int(row.get("id_pedido", 0) or 0),
-            "id_cliente": int(row.get("id_cliente") or 0) or None,
-            "cliente_nombre": str(row.get("cliente_nombre") or ""),
-            "cliente_correo": str(row.get("cliente_correo") or ""),
-            "cliente_dni": str(row.get("cliente_dni") or ""),
-            "Fecha_Venta": self._date_or_today(row.get("fecha_pedido")),
-            "total_Venta": float(row.get("total") or row.get("subtotal") or 0),
-            "metodo_Pago": str(row.get("metodo_pago") or "tarjeta"),
-            "referencia_pago": str(row.get("referencia_pago") or ""),
-            "estado_pedido": str(row.get("estado_pedido") or "PENDIENTE"),
-            "estado_pago": str(row.get("estado_pago") or "PAGADO"),
-            "observacion_admin": str(row.get("observacion_admin") or ""),
-            "fecha_actualizacion": self._date_or_today(row.get("fecha_actualizacion")),
-        }
-
-    # Procesa esta operación.
-    def _sale_detail_to_remote(self, sale_id: int, row: dict[str, Any]) -> dict[str, Any]:
-        quantity = int(row.get("cantidad", 1) or 1)
-        price = float(row.get("precio_unitario") or row.get("precio") or 0)
-        return {
-            "id_venta": int(sale_id),
-            "id_producto": int(row.get("id_producto", 0) or 0),
-            "Cantidad": quantity,
-            "Precio_Unitario": price,
-            "Subtotal": float(row.get("subtotal") or price * quantity),
-        }
-
-    # Procesa esta operación.
-    def _map_routine(self, row: dict[str, Any]) -> dict[str, Any]:
-        ejercicios = row.get("ejercicios")
-        if isinstance(ejercicios, str):
-            try:
-                ejercicios = json.loads(ejercicios)
-            except Exception:
-                ejercicios = []
-        elif not isinstance(ejercicios, list):
-            ejercicios = []
-        return {
-            "id_rutina": int(row.get("id_rutina", 0) or 0),
-            "servicio": str(row.get("servicio") or "fitness").strip().lower(),
-            "nombre_rutina": str(row.get("Nombre_rutina") or ""),
-            "zonas_musculares": str(row.get("Zonas_musculares") or ""),
-            "color": str(row.get("Color") or "Azul"),
-            "ejercicios": ejercicios,
-        }
-
-    # Procesa esta operación.
-    def _routine_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_rutina": int(row.get("id_rutina", 0) or 0),
-            "servicio": str(row.get("servicio") or "fitness").strip().lower(),
-            "Nombre_rutina": str(row.get("nombre_rutina") or ""),
-            "Zonas_musculares": str(row.get("zonas_musculares") or ""),
-            "Color": str(row.get("color") or "Azul"),
-            "ejercicios": row.get("ejercicios") if isinstance(row.get("ejercicios"), list) else [],
-        }
-
-
-    # Procesa esta operación.
-    def _map_schedule(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_horario": int(row.get("id_horario", 0) or 0),
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "id_rutina": int(row.get("id_rutina", 0) or 0),
-            "dia_semana": str(row.get("Dia_semana") or "Lunes"),
-            "hora_inicio": str(row.get("Hora_inicio") or "06:00"),
-            "hora_fin": str(row.get("Hora_fin") or "07:00"),
-            "capacidad_maxima": 1,
-            "cupos_usados": 1,
-        }
-
-    # Procesa esta operación.
-    def _schedule_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_horario": int(row.get("id_horario", 0) or 0),
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "id_rutina": int(row.get("id_rutina", 0) or 0),
-            "Dia_semana": str(row.get("dia_semana") or "Lunes"),
-            "Hora_inicio": str(row.get("hora_inicio") or "06:00"),
-            "Hora_fin": str(row.get("hora_fin") or "07:00"),
-        }
-
-    # Procesa esta operación.
-    def _map_service_schedule(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
-            "servicio": str(row.get("servicio") or "fitness"),
-            "id_rutina": int(row.get("id_rutina", 0) or 0),
-            "codigo_dia": str(row.get("codigo_dia") or "LUN"),
-            "dia": str(row.get("dia") or "lunes"),
-            "hora_inicio": str(row.get("hora_inicio") or "06:00"),
-            "hora_fin": str(row.get("hora_fin") or "07:00"),
-            "cupos": max(1, int(row.get("cupos", 10) or 10)),
-            "cupos_usados": 0,
-            "activo": bool(row.get("activo", True)),
-        }
-
-    # Procesa esta operación.
-    def _service_schedule_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
-            "servicio": str(row.get("servicio") or "fitness").strip().lower(),
-            "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
-            "codigo_dia": str(row.get("codigo_dia") or self.rules.schedule_day_code(str(row.get("dia") or ""))).strip().upper(),
-            "dia": self.rules.normalize_schedule_day(row.get("dia")) or "lunes",
-            "hora_inicio": str(row.get("hora_inicio") or "06:00"),
-            "hora_fin": str(row.get("hora_fin") or "07:00"),
-            "cupos": max(1, int(row.get("cupos", 10) or 10)),
-            "activo": bool(row.get("activo", True)),
-        }
-
-    # Procesa esta operación.
-    def _map_schedule_enrollment(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_matricula": int(row.get("id_matricula", 0) or 0),
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
-            "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
-            "fecha_matricula": str(row.get("fecha_matricula") or ""),
-            "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
-        }
-
-    # Procesa esta operación.
-    def _schedule_enrollment_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_matricula": int(row.get("id_matricula", 0) or 0),
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
-            "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
-            "fecha_matricula": self._date_or_today(row.get("fecha_matricula")),
-            "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
-        }
-
-    # Procesa esta operación.
-    def _map_routine_progress(self, row: dict[str, Any]) -> dict[str, Any]:
-        ejercicios_detalle = row.get("ejercicios_detalle")
-        if isinstance(ejercicios_detalle, str):
-            try:
-                ejercicios_detalle = json.loads(ejercicios_detalle)
-            except Exception:
-                ejercicios_detalle = []
-        elif not isinstance(ejercicios_detalle, list):
-            ejercicios_detalle = []
-        return {
-            "id_progreso": int(row.get("id_progreso", 0) or 0),
-            "id_matricula": int(row.get("id_matricula", 0) or 0),
-            "id_rutina": int(row.get("id_rutina", 0) or 0),
-            "fecha": str(row.get("fecha") or ""),
-            "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
-            "observacion": str(row.get("observacion") or ""),
-            "id_usuario": row.get("id_usuario"),
-            "ejercicios_detalle": ejercicios_detalle,
-        }
-
-    # Procesa esta operación.
-    def _routine_progress_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_progreso": int(row.get("id_progreso", 0) or 0),
-            "id_matricula": int(row.get("id_matricula", 0) or 0),
-            "id_rutina": int(row.get("id_rutina", 0) or 0),
-            "fecha": self._date_or_today(row.get("fecha")),
-            "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
-            "observacion": str(row.get("observacion") or ""),
-            "id_usuario": self._remote_user_id_or_none(row.get("id_usuario")),
-            "ejercicios_detalle": row.get("ejercicios_detalle") if isinstance(row.get("ejercicios_detalle"), list) else [],
-        }
-
-
-    # Procesa esta operación.
-    def _map_ticket(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_ticket": int(row.get("id_ticket", 0) or 0),
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "id_usuario": int(row.get("id_usuario", 0) or 0) if row.get("id_usuario") else None,
-            "tipo_ticket": str(row.get("tipo_ticket") or ""),
-            "descripcion": str(row.get("descripcion") or ""),
-            "estado_ticket": str(row.get("estado_ticket") or "Abierto"),
-            "fecha_emitido": str(row.get("fecha_emitido") or ""),
-            "fecha_cierre": str(row.get("fecha_cierre") or ""),
-        }
-
-    # Procesa esta operación.
-    def _ticket_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id_ticket": int(row.get("id_ticket", 0) or 0),
-            "id_cliente": int(row.get("id_cliente", 0) or 0),
-            "id_usuario": self._remote_user_id_or_none(row.get("id_usuario")),
-            "tipo_ticket": str(row.get("tipo_ticket") or ""),
-            "descripcion": str(row.get("descripcion") or ""),
-            "estado_ticket": str(row.get("estado_ticket") or "Abierto"),
-            "fecha_emitido": self._date_or_today(row.get("fecha_emitido")),
-            "fecha_cierre": self._date_or_none(row.get("fecha_cierre")),
-        }
-
-    # Procesa esta operación.
-    def _map_attendance(self, row: dict[str, Any]) -> dict[str, Any]:
-        client_id = int(row.get("id_cliente", 0) or 0)
-        hour = str(row.get("Hora") or row.get("hora_entrada") or "")
-        return {
-            "id_asistencia": int(row.get("id_asistencia", 0) or 0),
-            "id_cliente": f"SGCLI{client_id:03d}",
-            "id_cliente_num": client_id,
-            "fecha": str(row.get("Fecha") or ""),
-            "hora": hour,
-            "hora_entrada": str(row.get("hora_entrada") or hour),
-            "hora_salida": str(row.get("hora_salida") or ""),
-            "fecha_salida": str(row.get("fecha_salida") or "") or None,
-            "anulado": bool(row.get("anulado", False)),
-            "auditoria": row.get("auditoria") or [],
-            "version": int(row.get("version") or 0),
-            "servicio": str(row.get("servicio") or "fitness"),
-            "id_usuario_registra": row.get("id_usuario_registra"),
-            "id_membresia": row.get("id_membresia"),
-            "id_matricula": row.get("id_matricula"),
-            "id_horario_servicio": row.get("id_horario_servicio"),
-            "validacion": bool(row.get("Validación", True)),
-        }
-
-    # Procesa esta operación.
-    def _attendance_to_remote(self, row: dict[str, Any]) -> dict[str, Any]:
-        hour = str(row.get("hora") or row.get("hora_entrada") or "00:00")
-        return {
-            "id_asistencia": int(row.get("id_asistencia", 0) or 0),
-            "id_cliente": int(row.get("id_cliente_num") or self.rules.parse_client_id(row.get("id_cliente"))),
-            "id_membresia": int(row.get("id_membresia") or 0) or None,
-            "Fecha": self._date_or_today(row.get("fecha")),
-            "Hora": hour,
-            "Validación": bool(row.get("validacion", True)),
-            "servicio": str(row.get("servicio") or "fitness").strip().lower(),
-            "id_usuario_registra": self._remote_user_id_or_none(row.get("id_usuario_registra")),
-            "id_matricula": int(row.get("id_matricula") or 0) or None,
-            "id_horario_servicio": int(row.get("id_horario_servicio") or 0) or None,
-            "hora_entrada": str(row.get("hora_entrada") or hour),
-            "hora_salida": str(row.get("hora_salida")) if row.get("hora_salida") else None,
-            "fecha_salida": row.get("fecha_salida") or None,
-            "anulado": bool(row.get("anulado", False)),
-            "auditoria": row.get("auditoria") or [],
-            "version": int(row.get("version") or 0),
-        }
+    # Compatibilidad con consumidores antiguos; los mapeos son funciones puras.
+    _pk = staticmethod(common._pk)
+    _remote_pk_value = staticmethod(common._remote_pk_value)
+    _remote_user_id = staticmethod(common._remote_user_id)
+    _remote_user_id_or_none = staticmethod(common._remote_user_id_or_none)
+    _split_name = staticmethod(common._split_name)
+    _phone_number = staticmethod(common._phone_number)
+    _status_to_bool = staticmethod(common._status_to_bool)
+    _bool_to_status = staticmethod(common._bool_to_status)
+    _date_or_today = staticmethod(common._date_or_today)
+    _date_or_none = staticmethod(common._date_or_none)
+    _map_config = staticmethod(configuration._map_config)
+    _config_to_remote = staticmethod(configuration._config_to_remote)
+    _map_plan = staticmethod(memberships._map_plan)
+    _plan_to_remote = staticmethod(memberships._plan_to_remote)
+    _map_promotion = staticmethod(memberships._map_promotion)
+    _promotion_to_remote = staticmethod(memberships._promotion_to_remote)
+    _map_membership = staticmethod(memberships._map_membership)
+    _membership_to_remote = staticmethod(memberships._membership_to_remote)
+    _map_client = staticmethod(accounts._map_client)
+    _client_to_remote = staticmethod(accounts._client_to_remote)
+    _map_user = staticmethod(accounts._map_user)
+    _map_user_legacy = staticmethod(accounts._map_user_legacy)
+    _user_to_remote = staticmethod(accounts._user_to_remote)
+    _map_inventory = staticmethod(inventory._map_inventory)
+    _inventory_to_remote = staticmethod(inventory._inventory_to_remote)
+    _map_inventory_move = staticmethod(inventory._map_inventory_move)
+    _inventory_move_to_remote = staticmethod(inventory._inventory_move_to_remote)
+    _map_product = staticmethod(inventory._map_product)
+    _product_to_remote = staticmethod(inventory._product_to_remote)
+    _map_sale_detail = staticmethod(store._map_sale_detail)
+    _map_sale = staticmethod(store._map_sale)
+    _sale_to_remote = staticmethod(store._sale_to_remote)
+    _sale_detail_to_remote = staticmethod(store._sale_detail_to_remote)
+    _map_routine = staticmethod(schedules._map_routine)
+    _routine_to_remote = staticmethod(schedules._routine_to_remote)
+    _map_schedule = staticmethod(schedules._map_schedule)
+    _schedule_to_remote = staticmethod(schedules._schedule_to_remote)
+    _map_service_schedule = staticmethod(schedules._map_service_schedule)
+    _service_schedule_to_remote = staticmethod(schedules._service_schedule_to_remote)
+    _map_schedule_enrollment = staticmethod(schedules._map_schedule_enrollment)
+    _schedule_enrollment_to_remote = staticmethod(schedules._schedule_enrollment_to_remote)
+    _map_routine_progress = staticmethod(schedules._map_routine_progress)
+    _routine_progress_to_remote = staticmethod(schedules._routine_progress_to_remote)
+    _map_ticket = staticmethod(schedules._map_ticket)
+    _ticket_to_remote = staticmethod(schedules._ticket_to_remote)
+    _map_attendance = staticmethod(attendance._map_attendance)
+    _attendance_to_remote = staticmethod(attendance._attendance_to_remote)
 
     def save_attendance(self, row, expected_version, audit):
 
@@ -1159,12 +520,8 @@ class SupabaseGymRepository:
                     "p_version": expected_version, "p_evento": audit,
                 })
             except RuntimeError as error:
-                # Solo se muestran los mensajes de validación emitidos por nuestra RPC.
-                if '"code":"P0001"' in str(error).replace(" ", ""):
-                    try:
-                        message = json.loads(str(error)[str(error).index("{"):])["message"]
-                    except (ValueError, KeyError):
-                        message = "El registro cambió. Actualiza la asistencia e inténtalo de nuevo."
+                if database_code(error) == "P0001":
+                    message = error_payload(error).get("message") or "El registro cambió. Actualiza la asistencia e inténtalo de nuevo."
                     raise AttendanceConflict(message) from error
                 raise
             mapped = self._map_attendance(saved)
@@ -1181,9 +538,9 @@ class SupabaseGymRepository:
     def rules(self):
         return GymDomainService(getattr(self, "state", None))
 
-    def read(self, operation):
+    def read(self, operation, resources=None):
         with self.lock:
-            return operation(self.state)
+            return operation(deepcopy(self.state if resources is None else {key: self.state[key] for key in resources if key in self.state}))
 
     def change(self, operation, resources=None):
         return self._mutate(operation, resources)

@@ -228,12 +228,12 @@ def test_admin_navigation_reuses_account_cache_without_loading_unrelated_modules
     response = client.get('/api/clientes')
     assert response.status_code == 200
     assert response.json()[0]['id_cliente'] == 7
-    assert set(remote.calls) == {'USUARIO', 'CLIENTES', 'MEMBRESIA'}
-    assert len(remote.calls) == 3
+    assert set(remote.calls) == {'USUARIO', 'CLIENTES', 'MEMBRESIA', 'PLANES_MEMBRESIA'}
+    assert len(remote.calls) == 4
     assert client.get('/api/gym/configuracion').status_code == 200
     assert remote.calls[-1] == 'CONFIGURACION_GIMNASIO'
     assert client.get('/api/usuarios').status_code == 200
-    assert len(remote.calls) == 4
+    assert len(remote.calls) == 5
     assert service.state['clientes'][0]['id_cliente'] == 7
 
 
@@ -247,26 +247,17 @@ def test_cached_account_role_changes_still_revoke_admin_access(scoped_api):
     assert remote.calls.count('CLIENTES') == 1
 
 
-def test_unknown_reads_and_writes_keep_full_validation():
-    from starlette.requests import Request
-    from presentation.dependencies import _resources_for_request
-
-    for method, path in [('POST', '/api/clientes'), ('GET', '/api/future-module')]:
-        request = Request({'type': 'http', 'method': method, 'path': path, 'headers': []})
-        assert _resources_for_request(request) is None
+def test_unknown_application_queries_cannot_silently_load_every_table():
+    service = service_with_remote(RecordingRemote())
+    with pytest.raises(KeyError):
+        service._execute("future_module", False)
 
 
 def test_health_check_does_not_refresh_admin_histories():
-    from starlette.requests import Request
-    from presentation.dependencies import _resources_for_request
-
-    for path in ('/health', '/api/health'):
-        request = Request({'type': 'http', 'method': 'GET', 'path': path, 'headers': []})
-        resources = _resources_for_request(request)
-        remote = RecordingRemote()
-        service = service_with_remote(remote)
-        service.ensure_fresh(resources)
-        assert remote.calls == ['PLANES_MEMBRESIA']
+    remote = RecordingRemote()
+    service = service_with_remote(remote)
+    service.planes_membresia()
+    assert remote.calls == ['PLANES_MEMBRESIA']
 
 
 def test_attendance_history_loads_clients_without_loading_store_or_schedules(scoped_api):
@@ -319,7 +310,7 @@ def test_user_mutations_do_not_copy_unrelated_cached_histories():
     service = service_with_remote(remote)
     history = [UnrelatedHistory()]
     service.state['asistencia'] = history
-    service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Admin', 'rol': 'admin'})
+    service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Admin', 'correo': 'admin@example.com', 'rol': 'admin'})
     assert remote.calls == ['USUARIO']
     assert service.state['asistencia'] is history
 
@@ -336,7 +327,7 @@ def test_failed_user_update_restores_account_without_discarding_other_sections()
 
     remote.update = fail
     with pytest.raises(RuntimeError, match='Update failed'):
-        service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Otro nombre', 'rol': 'admin'})
+        service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Otro nombre', 'correo': 'admin@example.com', 'rol': 'admin'})
     assert service.state['usuario'][0]['nombre'] == 'Admin'
     assert service.state['asistencia'] is history
     assert service._resource_refreshed_at == {}

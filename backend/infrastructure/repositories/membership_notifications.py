@@ -33,10 +33,10 @@ class NotificationRepository:
         else:
             delay = min(3600, 30 * 2 ** min(int(job.get("attempts") or 1) - 1, 7))
             body = {"status": "pending", "available_at": (now + timedelta(seconds=delay)).isoformat(), "last_error": error}
-        rows = self.db._request(
-            "PATCH", TABLE,
-            query={"event_key": f"eq.{job['event_key']}", "claim_token": f"eq.{job['claim_token']}", "status": "eq.processing"},
-            body={**body, "locked_until": None, "claim_token": None}, return_representation=True,
+        rows = self.db.update_matching(
+            TABLE,
+            filters={"event_key": f"eq.{job['event_key']}", "claim_token": f"eq.{job['claim_token']}", "status": "eq.processing"},
+            body={**body, "locked_until": None, "claim_token": None},
         )
         if not rows:
             raise RuntimeError("No se pudo registrar el resultado del correo")

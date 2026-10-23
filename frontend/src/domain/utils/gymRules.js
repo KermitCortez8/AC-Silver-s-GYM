@@ -93,9 +93,23 @@ export const generateSecureCodeSegment = (length) => {
 export const generateInventoryCode = () =>
   `INV-${Date.now().toString(36).toUpperCase()}-${generateSecureCodeSegment(3)}`;
 
+export const requireNumericId = (value, entity = 'registro') => {
+  const numeric = Number(value);
+  if (!Number.isSafeInteger(numeric) || numeric <= 0) throw new Error(`El servidor devolvió ${entity} sin un identificador válido.`);
+  return numeric;
+};
+
+const clientIdentity = (client) => {
+  const code = String(client.id_usuario ?? '').trim();
+  const fromCode = /^(?:SGCLI|cliente-)(\d+)$/i.exec(code)?.[1];
+  const id = requireNumericId(client.id_cliente ?? fromCode, 'un cliente');
+  if (fromCode && Number(fromCode) !== id) throw new Error('El identificador del cliente no coincide con su código.');
+  return { id_cliente: id, id: `SGCLI${String(id).padStart(3, '0')}` };
+};
+
 export const normalizeInventoryItem = (item = {}) => ({
   ...item,
-  inventoryCode: item.inventoryCode || (item.n_activo ? `ACT-${String(item.n_activo).padStart(4, '0')}` : `INV-${String(item.id || Date.now()).slice(-4).toUpperCase()}`),
+  inventoryCode: item.inventoryCode || (item.n_activo ? `ACT-${String(item.n_activo).padStart(4, '0')}` : `INV-${String(item.id ?? requireNumericId(item.id_item, 'un artículo')).slice(-4).toUpperCase()}`),
   n_activo: item.n_activo || item.assetNumber || '',
   unidad_venta: item.unidad_venta || item.unit || 'unidad',
   precio_venta: Number(item.precio_venta ?? item.salePrice ?? 0),
@@ -103,8 +117,8 @@ export const normalizeInventoryItem = (item = {}) => ({
 });
 
 export const normalizeStoreOrder = (order = {}) => ({
-  id: `pedido-${order.id_pedido || order.id || Date.now()}`,
-  id_pedido: Number(order.id_pedido || order.id || Date.now()),
+  id: `pedido-${requireNumericId(order.id_pedido ?? String(order.id ?? '').replace(/^pedido-/, ''), 'un pedido')}`,
+  id_pedido: Number(requireNumericId(order.id_pedido ?? String(order.id ?? '').replace(/^pedido-/, ''), 'un pedido')),
   id_cliente: order.id_cliente || null,
   cliente_nombre: order.cliente_nombre || order.nombre_cliente || order.customerName || 'Cliente',
   cliente_correo: order.cliente_correo || order.correo || order.customerEmail || '',
@@ -116,23 +130,23 @@ export const normalizeStoreOrder = (order = {}) => ({
   estado_pedido: order.estado_pedido || 'PENDIENTE',
   observacion_admin: order.observacion_admin || '',
   fecha_actualizacion: order.fecha_actualizacion || order.fecha_pedido || nowISO(),
-  subtotal: Number(order.subtotal || 0),
-  igv: Number(order.igv || 0),
-  total: Number(order.total || 0),
+  subtotal: Number(order.subtotal ?? 0),
+  igv: Number(order.igv ?? 0),
+  total: Number(order.total ?? 0),
   items: Array.isArray(order.items)
     ? order.items.map((item) => ({
-      id_producto: Number(item.id_producto || 0),
+      id_producto: requireNumericId(item.id_producto, 'un producto del pedido'),
       nombre_producto: item.nombre_producto || item.nombre || 'Producto',
       imagen_url: item.imagen_url || item.imageUrl || '',
-      cantidad: Number(item.cantidad || 1),
-      precio_unitario: Number(item.precio_unitario || item.precio || 0),
-      subtotal: Number(item.subtotal || Number(item.precio_unitario || item.precio || 0) * Number(item.cantidad || 1)),
+      cantidad: Number(item.cantidad ?? 1),
+      precio_unitario: Number(item.precio_unitario ?? item.precio ?? 0),
+      subtotal: Number(item.subtotal ?? Number(item.precio_unitario ?? item.precio ?? 0) * Number(item.cantidad ?? 1)),
     }))
     : [],
 });
 
 export const normalizePlanFromBackend = (plan = {}) => {
-  const idPm = Number(plan.id_pm || String(plan.id || '').match(/(\d+)/)?.[1] || Date.now());
+  const idPm = requireNumericId(plan.id_pm ?? /^pm-(\d+)$/.exec(String(plan.id ?? ''))?.[1], 'un plan');
   const durationNumber = Number(String(plan.duracion || plan.duration || '').match(/\d+/)?.[0] || plan.durationMonths || 1);
   return {
     id: `pm-${idPm}`,
@@ -149,7 +163,7 @@ export const normalizePlanFromBackend = (plan = {}) => {
 };
 
 export const normalizePromotionFromBackend = (promotion = {}) => {
-  const idPromocion = Number(promotion.id_promocion || String(promotion.id || '').match(/(\d+)/)?.[1] || Date.now());
+  const idPromocion = requireNumericId(promotion.id_promocion ?? /^promo-(\d+)$/.exec(String(promotion.id ?? ''))?.[1], 'una promoción');
   const plans = Array.isArray(promotion.planes_aplicables)
     ? promotion.planes_aplicables.map((value) => `pm-${Number(value)}`).filter((value) => value !== 'pm-0')
     : Array.isArray(promotion.appliesTo)
@@ -175,35 +189,49 @@ export const normalizePromotionFromBackend = (promotion = {}) => {
 
 export const normalizeStoreProductFromBackend = (product = {}) => ({
   id: `producto-${product.id_producto}`,
-  id_producto: product.id_producto,
+  id_producto: requireNumericId(product.id_producto, 'un producto'),
   id_item: product.id_item || null,
   nombre: product.nombre_producto,
   descripcion: product.descripcion || '',
   categoria: product.categoria || 'General',
   unidad_venta: product.unidad_venta || 'unidad',
-  precio: Number(product.precio_venta || 0),
-  cantidad: Number(product.cantidad_stock || 0),
-  minimo: Number(product.stock_minimo || 0),
+  precio: Number(product.precio_venta ?? 0),
+  cantidad: Number(product.cantidad_stock ?? 0),
+  minimo: Number(product.stock_minimo ?? 0),
   estado: product.estado || 'Disponible',
   imagen_url: product.imagen_url || product.imageUrl || '',
 });
 
-export const normalizeBackendClientToMember = (client = {}) => ({
-  id: client.id_usuario || `cliente-${client.id_cliente || Date.now()}`,
-  id_cliente:
-    client.id_cliente || Number(String(client.id_usuario || '').match(/(?:SGCLI|cliente-)(\d+)/)?.[1] || 0) || null,
+export const normalizeBackendClientToMember = (client = {}, previous = {}) => {
+  if (!previous || typeof previous !== 'object') previous = {};
+  // Una respuesta parcial actualiza los campos recibidos y conserva las relaciones ya cargadas.
+  client = {
+    id_cliente: previous.id_cliente, id_usuario: previous.id,
+    nombre: previous.name, dni: previous.dni, correo: previous.email, telefono: previous.phone,
+    plan: previous.plan, promocion: previous.promocion, id_promocion: previous.id_promocion,
+    id_membresia: previous.id_membresia, membership_status: previous.membershipStatus,
+    membership_start: previous.membershipStart, membership_end: previous.membershipEnd,
+    origen_registro: previous.registrationOrigin, payment_status: previous.paymentStatus,
+    payment_reference: previous.paymentReference, has_password: previous.hasPassword,
+    monto_pago: previous.membershipPrice, estado: previous.status, fecha_registro: previous.joinedAt,
+    ...Object.fromEntries(Object.entries(client).filter(([, value]) => value !== undefined)),
+  };
+  const identity = clientIdentity(client);
+  const status = client.estado === true ? 'ACTIVO' : client.estado === false ? 'INACTIVO' : String(client.estado || 'EN_TRAMITE').toUpperCase();
+  return {
+  ...identity,
   name: client.nombre || `${client.nombres || ''} ${client.apellidos || ''}`.trim(),
   dni: client.dni || '',
-  internalCode: String(client.id_usuario || client.id_cliente || '').trim(),
+  internalCode: identity.id,
   email: client.correo || client.email || '',
   phone: client.telefono || client.phone || '',
   role: 'user',
-  plan: client.plan || '',
+  plan: client.plan || 'MENSUAL',
   promocion: client.promocion || 'SIN PROMOCION',
   id_promocion: client.id_promocion || (client.promocion && String(client.promocion).startsWith('promo-') ? Number(String(client.promocion).replace('promo-', '')) : null),
-  planId: '',
+  planId: previous.planId || '',
   id_membresia: client.id_membresia || null,
-  membershipStatus: normalizeMembershipStatus(client.membership_status || client.estado),
+  membershipStatus: normalizeMembershipStatus(client.membership_status || status),
   membershipStart: client.membership_start || client.fecha_inicio || client.fecha_registro || client.joinedAt || '',
   membershipEnd: client.membership_end || client.fecha_fin || '',
   registrationOrigin: client.origen_registro || '',
@@ -211,17 +239,19 @@ export const normalizeBackendClientToMember = (client = {}) => ({
   paymentReference: client.payment_reference || client.referencia_pago || '',
   hasPassword: Boolean(client.has_password ?? client.hasPassword),
   membershipPrice: Number(client.monto_pago ?? 0),
-  status: String(client.estado || (client.estado === false ? 'INACTIVO' : 'ACTIVO')).toUpperCase(),
+  status,
   joinedAt: client.fecha_registro || client.joinedAt || '',
-  attendanceRate: 0,
-  membershipHistory: [],
-  changeHistory: [],
-  schedules: [],
-});
+  attendanceRate: Number(previous.attendanceRate ?? 0),
+  membershipHistory: previous.membershipHistory || [],
+  changeHistory: previous.changeHistory || [],
+  schedules: previous.schedules || [],
+};
+};
 
 export const normalizeUser = (user = {}) => {
   const email = String(user.correo || user.email || '').trim();
   const rawId = String(user.id_usuario || user.id || '').trim().toUpperCase();
+  if (!rawId) throw new Error('El servidor devolvió un usuario sin un identificador válido.');
   const nombre = String(user.nombre || '').trim();
 
 
@@ -241,12 +271,13 @@ export const normalizeUser = (user = {}) => {
 export const normalizeMember = (member = {}) => {
   const planId = member.planId || (member.plan === 'Anual' ? 'plan-annual' : member.plan === 'Trimestral' ? 'plan-quarterly' : 'plan-monthly');
   const baseDate = member.membershipStart || member.joinedAt || todayISO();
-  const memberCode = member.id_cliente ? String(member.id_cliente) : String(member.internalCode || '').trim();
+  const memberCode = member.id_cliente ? String(member.id_cliente) : String(member.internalCode || member.id || '').trim();
+  if (!memberCode) throw new Error('El socio no tiene un identificador válido.');
 
   return {
     ...member,
     dni: member.dni || '',
-    internalCode: memberCode || String(member.id || Date.now()),
+    internalCode: memberCode,
     plan: member.plan || planNameById(planId),
     planId,
     membershipStart: baseDate,
@@ -299,8 +330,8 @@ export const normalizeBackendAttendanceRecord = (entry = {}, memberList = []) =>
   const backendCode = String(entry.id_cliente || entry.id_cliente_num || '').trim();
 
   return normalizeAttendanceRecord({
-    id: `asistencia-${entry.id_asistencia || `${entry.fecha || todayISO()}-${entry.hora || nowTime()}-${backendCode}`}`,
-    id_asistencia: entry.id_asistencia || null,
+    id: `asistencia-${requireNumericId(entry.id_asistencia, 'una asistencia')}`,
+    id_asistencia: requireNumericId(entry.id_asistencia, 'una asistencia'),
     id_cliente: entry.id_cliente || '',
     id_cliente_num: entry.id_cliente_num || null,
     memberId: member?.id || backendCode,
@@ -340,7 +371,7 @@ export const normalizeState = (state) => ({
 
 export const buildAttendanceRecord = (member, response = {}, fallback = {}) =>
   normalizeAttendanceRecord({
-    id: `asistencia-${response.id_asistencia || Date.now()}`,
+    id: `asistencia-${fallback.local ? Date.now() : requireNumericId(response.id_asistencia, 'una asistencia')}`,
     id_asistencia: response.id_asistencia || null,
     id_cliente: response.id_cliente || member.internalCode || member.id || '',
     id_cliente_num: response.id_cliente_num || member.id_cliente || null,

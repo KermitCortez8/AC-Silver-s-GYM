@@ -33,8 +33,8 @@ class ScheduleNotificationRepository:
         else:
             delay = min(900, 30 * 2 ** min(int(job.get("attempts") or 1) - 1, 5))
             values = {"status": "pending", "last_error": error, "available_at": (now + timedelta(seconds=delay)).isoformat()}
-        rows = self.db._request("PATCH", TABLE, query={
+        rows = self.db.update_matching(TABLE, filters={
             "event_key": f"eq.{job['event_key']}", "claim_token": f"eq.{job['claim_token']}", "status": "eq.processing",
-        }, body={**values, "claim_token": None, "locked_until": None}, return_representation=True)
+        }, body={**values, "claim_token": None, "locked_until": None})
         if not rows:
             raise RuntimeError("No se pudo guardar el resultado del aviso de horario")

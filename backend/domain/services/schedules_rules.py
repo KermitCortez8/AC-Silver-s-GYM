@@ -1,5 +1,6 @@
 """Reglas de schedules sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.errors import EntityNotFound, MembershipRequired
 
 import re
 from datetime import datetime
@@ -196,9 +197,9 @@ class SchedulesRules:
         id_cliente = int(payload.get("id_cliente", 0))
         id_usuario = self._normalize_usuario_id(payload.get("id_usuario"))
         if not self.get_cliente(id_cliente):
-            raise ValueError("Cliente no encontrado")
+            raise EntityNotFound("Cliente no encontrado")
         if not self.get_usuario(id_usuario):
-            raise ValueError("Usuario no encontrado")
+            raise EntityNotFound("Usuario no encontrado")
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
@@ -259,9 +260,9 @@ class SchedulesRules:
         id_cliente = int(payload.get("id_cliente", 0))
         id_rutina = int(payload.get("id_rutina", 0))
         if not self.get_cliente(id_cliente):
-            raise ValueError("Cliente no encontrado")
+            raise EntityNotFound("Cliente no encontrado")
         if not next((r for r in self.state["catalogo_rutina"] if int(r.get("id_rutina", 0)) == id_rutina), None):
-            raise ValueError("Rutina no encontrada")
+            raise EntityNotFound("Rutina no encontrada")
 
         dia = str(payload.get("dia_semana") or "Lunes").strip()
         hora_inicio = str(payload.get("hora_inicio") or "06:00").strip()
@@ -429,7 +430,7 @@ class SchedulesRules:
                 row for row in state.get("horarios_servicio", []) if int(row.get("id_horario_servicio", 0) or 0) != schedule_id
             ]
             if len(state["horarios_servicio"]) == original:
-                raise ValueError("Horario no encontrado")
+                raise EntityNotFound("Horario no encontrado")
 
         self._change(_fn)
 
@@ -443,7 +444,7 @@ class SchedulesRules:
         if dni:
             cliente = self.get_cliente_by_dni(str(dni).strip())
             if not cliente:
-                raise ValueError("Cliente no encontrado")
+                raise EntityNotFound("Cliente no encontrado")
             resolved_id = int(cliente["id_cliente"])
 
         result = []
@@ -512,7 +513,7 @@ class SchedulesRules:
                 -1,
             )
             if idx < 0:
-                raise ValueError("Matricula no encontrada")
+                raise EntityNotFound("Matricula no encontrada")
 
             enrollment = state["matriculas_horario"][idx]
             if str(enrollment.get("estado") or "").strip().upper() != "ACTIVA":
@@ -527,7 +528,7 @@ class SchedulesRules:
                 None,
             )
             if not schedule:
-                raise ValueError("Horario no encontrado")
+                raise EntityNotFound("Horario no encontrado")
             if not schedule.get("activo", False):
                 raise ValueError("El horario de la matricula no esta activo")
 
@@ -540,7 +541,7 @@ class SchedulesRules:
                 None,
             )
             if not routine:
-                raise ValueError("Rutina no encontrada")
+                raise EntityNotFound("Rutina no encontrada")
             if str(routine.get("servicio") or "").strip().lower() != str(schedule.get("servicio") or "").strip().lower():
                 raise ValueError("La rutina no corresponde al servicio del cliente")
 
@@ -560,7 +561,7 @@ class SchedulesRules:
     def trainer_rutinas_cliente(self, dni: str) -> dict[str, Any]:
         cliente = self.get_cliente_by_dni(str(dni or "").strip())
         if not cliente:
-            raise ValueError("Cliente no encontrado")
+            raise EntityNotFound("Cliente no encontrado")
         enrollments = [
             row
             for row in self.matriculas_horario(id_cliente=int(cliente.get("id_cliente", 0) or 0))
@@ -606,7 +607,7 @@ class SchedulesRules:
                 None,
             )
             if not enrollment:
-                raise ValueError("Matricula no encontrada")
+                raise EntityNotFound("Matricula no encontrada")
             detail = next(
                 (
                     row
@@ -729,9 +730,9 @@ class SchedulesRules:
             None,
         )
         if not cliente:
-            raise ValueError("Cliente no encontrado")
+            raise EntityNotFound("Cliente no encontrado")
         if not self._active_membership_for_cliente(state, id_cliente):
-            raise ValueError("Cliente sin membresia activa")
+            raise MembershipRequired("Cliente sin membresia activa")
 
         schedule = next(
             (
@@ -768,7 +769,7 @@ class SchedulesRules:
         if payload.get("dni"):
             cliente = self.get_cliente_by_dni(str(payload.get("dni")).strip())
             if not cliente:
-                raise ValueError("Cliente no encontrado")
+                raise EntityNotFound("Cliente no encontrado")
             id_cliente = int(cliente["id_cliente"])
         else:
             id_cliente = self._parse_cliente_id(payload.get("id_cliente"))
@@ -800,7 +801,7 @@ class SchedulesRules:
         def _fn(state: dict[str, Any]):
             idx = next((i for i, row in enumerate(state.get("matriculas_horario", [])) if int(row.get("id_matricula", 0) or 0) == int(id_matricula)), -1)
             if idx < 0:
-                raise ValueError("Matricula no encontrada")
+                raise EntityNotFound("Matricula no encontrada")
             if id_cliente and int(state["matriculas_horario"][idx].get("id_cliente", 0) or 0) != int(id_cliente):
                 raise PermissionError("No puedes cancelar la matricula de otro cliente")
             state["matriculas_horario"][idx]["estado"] = "CANCELADA"

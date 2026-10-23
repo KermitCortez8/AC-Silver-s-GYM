@@ -64,3 +64,11 @@ def apply_membership_expiration(state: dict, today: str) -> bool:
                 client["estado"] = "VENCIDA"
                 changed = True
     return changed
+
+
+def project_memberships(state: dict, today: str) -> dict:
+    """Deriva la vigencia sin modificar el agregado ni persistir cambios."""
+    from copy import deepcopy
+    projection = deepcopy({key: state.get(key, []) for key in ("clientes", "membresia")})
+    apply_membership_expiration(projection, today)
+    return projection

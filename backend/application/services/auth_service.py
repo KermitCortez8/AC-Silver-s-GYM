@@ -62,7 +62,6 @@ class AuthService:
 
     def _require_active_client(self, client: dict | None) -> None:
         self.gym_service.ensure_fresh(resources=("clientes", "membresia"))
-        self.gym_service.expire_memberships()
         if client:
             client = self.gym_service.get_cliente(int(client["id_cliente"]))
         memberships = [

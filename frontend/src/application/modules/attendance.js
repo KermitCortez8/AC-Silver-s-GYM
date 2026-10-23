@@ -1,9 +1,10 @@
+import { bindSessionRepository } from '../services/sessionBoundary.js';
 /** Estado y operaciones del módulo attendance. */
 import { normalizeAttendanceRecord, todayISO, dateFromISO, getClientIdForBackend, getCurrentRegistrarId, nowTime, buildAttendanceRecord, findMemberForAttendance, isPassExpired, getPassPayload, PASS_EXPIRY_MINUTES, nowISO, generatePassCode, parsePassInput, normalizeBackendAttendanceRecord } from '../../domain/utils/gymRules.js';
 import { computed } from 'vue';
-import { backendRequest } from '../services/backendGateway.js';
 
-export const createAttendanceModule = (ctx) => {
+export const createAttendanceModule = (ctx, repository) => {
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
   const mergeAttendanceRecord = (record) => {
     const normalized = normalizeAttendanceRecord(record);
     const index = ctx.attendance.value.findIndex((entry) => {
@@ -106,6 +107,7 @@ export const createAttendanceModule = (ctx) => {
     }
 
     const record = buildAttendanceRecord(member, {}, {
+      local: true,
       service: service || 'fitness',
       time: options.hora || options.time || nowTime(),
       date: options.fecha || options.date || todayISO(),
@@ -300,6 +302,7 @@ export const createAttendanceModule = (ctx) => {
     }
 
     const record = buildAttendanceRecord(member, {}, {
+      local: true,
       service: service || 'fitness',
       time: options.hora || options.time || nowTime(),
       date: options.fecha || options.date || todayISO(),
@@ -321,51 +324,30 @@ export const createAttendanceModule = (ctx) => {
   const refreshAttendanceFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await backendRequest(`${ctx.apiBase}/asistencia`, { headers: ctx._authHeaders() });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'Error al cargar asistencia'));
-    }
-
-    const list = await response.json();
+    const list = await remote.refreshAttendanceFromBackend();
     ctx.attendance.value = list.map((entry) => normalizeBackendAttendanceRecord(entry, ctx.members.value));
     return ctx.attendance.value;
   };
 
   const checkinByDniServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/asistencia/checkin-dni`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'Error en checkin por DNI'));
-    return res.json();
+    return await remote.checkinByDniServer(payload);
   };
 
   const checkinByIdServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/asistencia/checkin`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'Error en checkin por cliente'));
-    return res.json();
+    return await remote.checkinByIdServer(payload);
   };
 
   const registerAttendanceEntry = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/asistencia/entrada`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'No se pudo registrar entrada'));
-    const saved = await res.json();
+    const saved = await remote.registerAttendanceEntry(payload);
     return mergeAttendanceRecord(normalizeBackendAttendanceRecord(saved, ctx.members.value));
   };
 
   const registerAttendanceExit = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/asistencia/salida`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(await ctx.readBackendError(res, 'No se pudo registrar salida'));
-    const saved = await res.json();
+    const saved = await remote.registerAttendanceExit(payload);
     return mergeAttendanceRecord(normalizeBackendAttendanceRecord(saved, ctx.members.value));
   };
 

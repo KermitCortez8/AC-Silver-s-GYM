@@ -24,9 +24,9 @@ class MemoryGymRepository:
                       if (match := re.search(r"(\d+)$", str(row.get(key) or "")))]
             floors[table] = max(floors.get(table, 0), max(values, default=0))
 
-    def read(self, operation):
+    def read(self, operation, resources=None):
         with self.lock:
-            return operation(self.state)
+            return operation(deepcopy(self.state if resources is None else {key: self.state[key] for key in resources if key in self.state}))
 
     def change(self, operation, resources=None):
         with self.lock:

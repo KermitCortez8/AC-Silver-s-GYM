@@ -58,7 +58,7 @@ class RecordingRepository:
         self.writes = 0
         self.fail_commit = False
 
-    def read(self, operation):
+    def read(self, operation, resources=None):
         return operation(self.data)
 
     def change(self, operation, resources=None):

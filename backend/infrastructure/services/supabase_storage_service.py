@@ -4,14 +4,15 @@
 # Valida extensiones y nombres antes de subir contenido.
 from __future__ import annotations
 
-import json
-from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+from domain.image_policy import LIST_IMAGE_EXTENSIONS
+from infrastructure.http_transport import json_request, send, supabase_headers
+
 
 class SupabaseStorageService:
-    IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
+    IMAGE_EXTENSIONS = LIST_IMAGE_EXTENSIONS
 
     # Inicializa la clase.
     def __init__(self, supabase_url: str, supabase_key: str, bucket: str) -> None:
@@ -28,20 +29,9 @@ class SupabaseStorageService:
     def upload(self, path: str, data: bytes, content_type: str) -> dict[str, str]:
         encoded_path = "/".join(quote(segment, safe="") for segment in path.split("/") if segment)
         url = f"{self.base_url}/storage/v1/object/{quote(self.bucket, safe='')}/{encoded_path}"
-        headers = {
-            "apikey": self.key,
-            "Authorization": f"Bearer {self.key}",
-            "Content-Type": content_type or "application/octet-stream",
-            "x-upsert": "true",
-        }
+        headers = {**supabase_headers(self.key), "Content-Type": content_type or "application/octet-stream", "x-upsert": "true"}
         request = Request(url, data=data, headers=headers, method="POST")
-
-        try:
-            with urlopen(request, timeout=30) as response:
-                response.read()
-        except HTTPError as error:
-            details = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"No se pudo subir la imagen a Supabase ({error.code}): {details}") from error
+        send(request, context="No se pudo subir la imagen a Supabase", timeout=30, opener=urlopen)
 
         return {
             "name": path.split("/")[-1],
@@ -58,27 +48,8 @@ class SupabaseStorageService:
             "offset": 0,
             "sortBy": {"column": "name", "order": "asc"},
         }
-        headers = {
-            "apikey": self.key,
-            "Authorization": f"Bearer {self.key}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-        request = Request(
-            url,
-            data=json.dumps(body).encode("utf-8"),
-            headers=headers,
-            method="POST",
-        )
-
-        try:
-            with urlopen(request, timeout=20) as response:
-                raw = response.read().decode("utf-8")
-        except HTTPError as error:
-            details = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"No se pudo listar imagenes del bucket ({error.code}): {details}") from error
-
-        rows = json.loads(raw) if raw else []
+        rows = json_request(url, method="POST", headers=supabase_headers(self.key), body=body,
+                            context="No se pudo listar imagenes del bucket", opener=urlopen) or []
         images: list[dict[str, str]] = []
 
         for row in rows if isinstance(rows, list) else []:

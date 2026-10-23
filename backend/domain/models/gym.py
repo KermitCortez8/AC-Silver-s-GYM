@@ -6,7 +6,50 @@ from __future__ import annotations
 
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
+from domain.validation import required_text, email_address, nonnegative, civil_date, clock_time, date_range, time_range
+
+
+class ValidatedInput(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    @field_validator("nombre", "nombre_plan", "nombre_item", "nombre_producto", "nombre_rutina", "tipo", "duracion", check_fields=False)
+    @classmethod
+    def nonempty_name(cls, value):
+        return required_text(value)
+
+    @field_validator("correo", check_fields=False)
+    @classmethod
+    def valid_email(cls, value):
+        return email_address(value)
+
+    @field_validator("precio", "precio_venta", "stock_minimo", "cantidad_stock", "valor_descuento", check_fields=False)
+    @classmethod
+    def valid_nonnegative(cls, value):
+        return nonnegative(value) if value is not None else value
+
+    @field_validator("fecha_inicio", "fecha_fin", "fecha", "fecha_movimiento", "fecha_emitido", "fecha_cierre", check_fields=False)
+    @classmethod
+    def valid_date(cls, value, info):
+        if not value and cls.model_fields[info.field_name].is_required():
+            raise ValueError("La fecha es obligatoria")
+        return civil_date(value) if value else value
+
+    @field_validator("hora", "hora_inicio", "hora_fin", "hora_entrada", "hora_salida", check_fields=False)
+    @classmethod
+    def valid_time(cls, value, info):
+        if not value and cls.model_fields[info.field_name].is_required():
+            raise ValueError("La hora es obligatoria")
+        return clock_time(value) if value else value
+
+    @model_validator(mode="after")
+    def valid_ranges(self):
+        date_range(getattr(self, "fecha_inicio", None), getattr(self, "fecha_fin", None))
+        start, end = getattr(self, "hora_inicio", None), getattr(self, "hora_fin", None)
+        time_range(start, end)
+        if getattr(self, "tipo_descuento", None) == "porcentaje" and self.valor_descuento > 100:
+            raise ValueError("El porcentaje no puede ser mayor a 100")
+        return self
 
 
 class HorarioPublico(BaseModel):
@@ -22,10 +65,10 @@ class HorarioPublico(BaseModel):
     cupos_disponibles: int
 
 
-class UsuarioInput(BaseModel):
+class UsuarioInput(ValidatedInput):
     id_usuario: str | int | None = None
-    nombre: str = ""
-    correo: str = ""
+    nombre: str
+    correo: str
     telefono: str = ""
     dni: str = ""
     password: str = ""
@@ -33,10 +76,10 @@ class UsuarioInput(BaseModel):
     rol: Literal["admin", "trainer", "staff"]
 
 
-class ClienteInput(BaseModel):
+class ClienteInput(ValidatedInput):
     id_usuario: str | int | None = None
-    nombre: str = ""
-    correo: str = ""
+    nombre: str
+    correo: str
     telefono: str = ""
     dni: str = ""
     password: str = ""
@@ -46,17 +89,17 @@ class ClienteInput(BaseModel):
     estado: str = "ACTIVO"
 
 
-class PlanMembresiaInput(BaseModel):
+class PlanMembresiaInput(ValidatedInput):
     id_pm: int | None = None
     nombre_plan: str
     duracion: str
-    precio: int
+    precio: int = Field(ge=0)
     descripcion: str = ""
     beneficios: str = ""
     activo: bool = True
 
 
-class PromocionInput(BaseModel):
+class PromocionInput(ValidatedInput):
     id_promocion: int | None = None
     nombre: str
     descripcion: str = ""
@@ -73,12 +116,12 @@ class PromocionInput(BaseModel):
 
 
 
-class PedidoTiendaUpdateInput(BaseModel):
+class PedidoTiendaUpdateInput(ValidatedInput):
     estado_pedido: Literal["PENDIENTE", "CONFIRMADO", "ENTREGADO", "CANCELADO"]
     observacion_admin: str = ""
 
 
-class MembresiaInput(BaseModel):
+class MembresiaInput(ValidatedInput):
     id_membresia: int | None = None
     fecha_inicio: str
     fecha_fin: str
@@ -88,7 +131,7 @@ class MembresiaInput(BaseModel):
     id_promocion: int | None = None
 
 
-class RegistrarClienteMembresiaInput(BaseModel):
+class RegistrarClienteMembresiaInput(ValidatedInput):
     cliente: ClienteInput
     id_pm: int
     fecha_inicio: str
@@ -101,9 +144,9 @@ class RegistroAdminClienteInput(ClienteInput):
     pagar_con_stripe: bool = False
 
 
-class RegistroPublicoClienteInput(BaseModel):
-    nombre: str = ""
-    correo: str = ""
+class RegistroPublicoClienteInput(ValidatedInput):
+    nombre: str
+    correo: str
     telefono: str = ""
     dni: str = ""
     password: str = ""
@@ -113,16 +156,16 @@ class RegistroPublicoClienteInput(BaseModel):
     google_credential: str = ""
 
 
-class PagoPublicoClienteInput(BaseModel):
+class PagoPublicoClienteInput(ValidatedInput):
     metodo_pago: str = "pasarela"
     referencia_pago: str = ""
 
 
-class InventarioInput(BaseModel):
+class InventarioInput(ValidatedInput):
     id_item: int | None = None
     nombre_item: str
     tipo: str
-    cantidad_stock: int
+    cantidad_stock: int = Field(ge=0)
     estado: str = "Operativo"
     n_activo: int | None = None
     unidad_venta: str = "unidad"
@@ -132,7 +175,7 @@ class InventarioInput(BaseModel):
     observaciones: str = ""
 
 
-class ProductoTiendaInput(BaseModel):
+class ProductoTiendaInput(ValidatedInput):
     id_producto: Optional[int] = None
     id_item: Optional[int] = None
     nombre_producto: str
@@ -146,12 +189,12 @@ class ProductoTiendaInput(BaseModel):
     imagen_url: Optional[str] = ""
 
 
-class PedidoTiendaItemInput(BaseModel):
+class PedidoTiendaItemInput(ValidatedInput):
     id_producto: int
     cantidad: int = Field(default=1, ge=1)
 
 
-class PedidoTiendaInput(BaseModel):
+class PedidoTiendaInput(ValidatedInput):
     id_cliente: int | None = None
     cliente_nombre: str = ""
     cliente_correo: str = ""
@@ -160,7 +203,7 @@ class PedidoTiendaInput(BaseModel):
     referencia_pago: str = ""
     items: list[PedidoTiendaItemInput] = Field(default_factory=list)
 
-class PedidoTiendaCheckoutInput(BaseModel):
+class PedidoTiendaCheckoutInput(ValidatedInput):
     # Los datos del cliente son solo informativos: el id_cliente siempre sale del token de sesión.
     cliente_nombre: str = ""
     cliente_correo: str = ""
@@ -168,19 +211,19 @@ class PedidoTiendaCheckoutInput(BaseModel):
     items: list[PedidoTiendaItemInput] = Field(min_length=1)
 
 
-class MovimientoInventarioInput(BaseModel):
+class MovimientoInventarioInput(ValidatedInput):
     id_mov: int | None = None
     id_item: int
     id_usuario: str | int
     tipo_movimiento: Literal["entrada", "salida", "ajuste"]
     fecha_movimiento: str = ""
     descripcion: str = ""
-    cantidad: int = 1
+    cantidad: int = Field(default=1, ge=1)
     # Solo para salidas: "TIENDA" repone el stock del producto enlazado.
     destino: str | None = None
 
 
-class MovimientoInventarioUpdateInput(BaseModel):
+class MovimientoInventarioUpdateInput(ValidatedInput):
     id_item: int | None = None
     tipo_movimiento: Literal["entrada", "salida", "ajuste"] | None = None
     fecha_movimiento: str | None = None
@@ -190,7 +233,7 @@ class MovimientoInventarioUpdateInput(BaseModel):
     destino: str | None = None
 
 
-class TicketAtencionInput(BaseModel):
+class TicketAtencionInput(ValidatedInput):
     id_ticket: int | None = None
     id_cliente: int
     id_usuario: str | int
@@ -201,18 +244,18 @@ class TicketAtencionInput(BaseModel):
     fecha_cierre: str = ""
 
 
-class EjercicioInput(BaseModel):
+class EjercicioInput(ValidatedInput):
     id_ejercicio: int | str | None = None
     nombre_ejercicio: str = ""
-    series: int = 3
+    series: int = Field(default=3, ge=1)
     repeticiones: str = "10-12"
-    descanso_segundos: int = 60
+    descanso_segundos: int = Field(default=60, ge=0)
     peso_sugerido_kg: float | None = None
     grupo_muscular: str = ""
     notas: str = ""
 
 
-class CatalogoRutinaInput(BaseModel):
+class CatalogoRutinaInput(ValidatedInput):
     id_rutina: int | None = None
     servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
     nombre_rutina: str
@@ -221,17 +264,17 @@ class CatalogoRutinaInput(BaseModel):
     ejercicios: list[EjercicioInput] = Field(default_factory=list)
 
 
-class HorarioInput(BaseModel):
+class HorarioInput(ValidatedInput):
     id_horario: int | None = None
     id_cliente: int
     id_rutina: int
     dia_semana: str
     hora_inicio: str
     hora_fin: str
-    capacidad_maxima: int = 1
+    capacidad_maxima: int = Field(default=1, ge=1)
 
 
-class HorarioServicioInput(BaseModel):
+class HorarioServicioInput(ValidatedInput):
     id_horario_servicio: int | None = None
     servicio: Literal["fitness", "musculacion", "cardio", "baile"]
     id_rutina: int
@@ -240,31 +283,31 @@ class HorarioServicioInput(BaseModel):
     codigo_dia: str = "LUN"
     dia: str = "lunes"
     dias: list[str] = Field(default_factory=list)
-    cupos: int = 10
+    cupos: int = Field(default=10, ge=1)
     activo: bool = True
 
 
-class MatriculaHorarioInput(BaseModel):
+class MatriculaHorarioInput(ValidatedInput):
     id_cliente: str | int | None = None
     dni: str = ""
     id_horario_servicio: int
 
 
-class MatriculaRutinaInput(BaseModel):
+class MatriculaRutinaInput(ValidatedInput):
     id_rutina: int
 
 
-class EjercicioProgresoInput(BaseModel):
+class EjercicioProgresoInput(ValidatedInput):
     id_ejercicio: int | str | None = None
     nombre_ejercicio: str = ""
     completado: bool = True
-    series_completadas: int = 3
+    series_completadas: int = Field(default=3, ge=0)
     repeticiones_logradas: str = ""
     peso_utilizado_kg: float | None = None
     observaciones: str = ""
 
 
-class RutinaProgresoInput(BaseModel):
+class RutinaProgresoInput(ValidatedInput):
     fecha: str = ""
     estado: str = "REALIZADO"
     observacion: str = ""
@@ -273,7 +316,7 @@ class RutinaProgresoInput(BaseModel):
 
 
 
-class AsistenciaInput(BaseModel):
+class AsistenciaInput(ValidatedInput):
     id_asistencia: int | None = None
     id_cliente: str | int
     fecha: str = ""
@@ -282,7 +325,7 @@ class AsistenciaInput(BaseModel):
     id_usuario: str | int | None = None
 
 
-class AsistenciaUpdateInput(BaseModel):
+class AsistenciaUpdateInput(ValidatedInput):
     id_cliente: str | int | None = None
     fecha: str | None = None
     hora: str | None = None
@@ -290,7 +333,7 @@ class AsistenciaUpdateInput(BaseModel):
     id_usuario: str | int | None = None
 
 
-class CheckinAsistenciaInput(BaseModel):
+class CheckinAsistenciaInput(ValidatedInput):
     id_cliente: str | int
     id_usuario: str | int | None = None
     fecha: str = ""
@@ -298,7 +341,7 @@ class CheckinAsistenciaInput(BaseModel):
     servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
 
 
-class CheckinAsistenciaDniInput(BaseModel):
+class CheckinAsistenciaDniInput(ValidatedInput):
     dni: str
     id_usuario: str | int | None = None
     fecha: str = ""
@@ -306,7 +349,7 @@ class CheckinAsistenciaDniInput(BaseModel):
     servicio: Literal["fitness", "musculacion", "cardio", "baile"] = "fitness"
 
 
-class AsistenciaEntradaInput(BaseModel):
+class AsistenciaEntradaInput(ValidatedInput):
     id_cliente: str | int | None = None
     dni: str = ""
     id_matricula: int | None = None
@@ -316,13 +359,13 @@ class AsistenciaEntradaInput(BaseModel):
     id_usuario: str | int | None = None
 
 
-class AsistenciaSalidaInput(BaseModel):
+class AsistenciaSalidaInput(ValidatedInput):
     id_asistencia: int
     hora_salida: str | None = None
     id_usuario: str | int | None = None
 
 
-class ConfiguracionGimnasioInput(BaseModel):
+class ConfiguracionGimnasioInput(ValidatedInput):
     capacidad_total: int = Field(default=30, ge=1)
     capacidad_por_hora: int = Field(default=10, ge=1)
 

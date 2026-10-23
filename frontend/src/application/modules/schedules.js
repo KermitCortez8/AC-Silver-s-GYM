@@ -1,8 +1,10 @@
+import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
+import { bindSessionRepository } from '../services/sessionBoundary.js';
 /** Estado y operaciones del módulo schedules. */
 import { nowISO, normalizeBackendClientToMember, todayISO, getCurrentRegistrarId } from '../../domain/utils/gymRules.js';
-import { backendRequest, apiGet } from '../services/backendGateway.js';
 
-export const createSchedulesModule = (ctx) => {
+export const createSchedulesModule = (ctx, repository) => {
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
   const upsertRutina = async (payload) => {
     const rutina = {
       id_rutina: payload.id_rutina || payload.id || null,
@@ -13,17 +15,7 @@ export const createSchedulesModule = (ctx) => {
     };
 
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/gym/rutinas`, {
-        method: 'POST',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(rutina),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al guardar rutina en backend');
-      }
-
-      const saved = await response.json();
+      const saved = await remote.upsertRutina(rutina);
       const normalized = {
         id_rutina: saved.id_rutina,
         servicio: saved.servicio || rutina.servicio,
@@ -66,17 +58,7 @@ export const createSchedulesModule = (ctx) => {
     };
 
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/gym/horarios`, {
-        method: 'POST',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(scheduleItem),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al guardar horario en backend');
-      }
-
-      const saved = await response.json();
+      const saved = await remote.upsertHorario(scheduleItem);
       const normalized = {
         id_horario: saved.id_horario,
         id_cliente: saved.id_cliente,
@@ -175,24 +157,16 @@ export const createSchedulesModule = (ctx) => {
   const refreshServiceSchedulesFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await backendRequest(`${ctx.apiBase}/gym/horarios-servicio`, { headers: ctx._authHeaders() });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'Error al cargar horarios de servicio'));
-    }
+    const response = await remote.refreshServiceSchedulesFromBackend();
 
-    ctx.serviceSchedules.value = await response.json();
+    ctx.serviceSchedules.value = response;
     return ctx.serviceSchedules.value;
   };
 
   const refreshRoutinesFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await backendRequest(`${ctx.apiBase}/gym/rutinas`, { headers: ctx._authHeaders() });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'Error al cargar rutinas'));
-    }
-
-    const list = await response.json();
+    const list = await remote.refreshRoutinesFromBackend();
     ctx.routines.value = list.map((r) => ({
       id_rutina: r.id_rutina,
       servicio: r.servicio || 'fitness',
@@ -220,16 +194,7 @@ export const createSchedulesModule = (ctx) => {
     }
 
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/gym/horarios-servicio`, {
-        method: 'POST',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) {
-        throw new Error(await ctx.readBackendError(response, 'Error al guardar horario de servicio'));
-      }
-
-      const saved = await response.json();
+      const saved = await remote.upsertServiceSchedule(body);
       const index = ctx.serviceSchedules.value.findIndex((entry) => Number(entry.id_horario_servicio) === Number(saved.id_horario_servicio));
       if (index >= 0) {
         ctx.serviceSchedules.value[index] = saved;
@@ -254,13 +219,7 @@ export const createSchedulesModule = (ctx) => {
 
   const deleteServiceSchedule = async (idHorarioServicio) => {
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/gym/horarios-servicio/${idHorarioServicio}`, {
-        method: 'DELETE',
-        headers: ctx._authHeaders(),
-      });
-      if (!response.ok && response.status !== 204) {
-        throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar el horario'));
-      }
+      await remote.deleteServiceSchedule(idHorarioServicio);
     }
 
     ctx.serviceSchedules.value = ctx.serviceSchedules.value.filter((entry) => Number(entry.id_horario_servicio) !== Number(idHorarioServicio));
@@ -268,25 +227,19 @@ export const createSchedulesModule = (ctx) => {
 
   const refreshScheduleClientsFromBackend = async () => {
     const isClient = (ctx.authStore.userRole || ctx.authStore.user?.role) === 'user';
-    const data = await apiGet(isClient ? '/clientes/me' : '/clientes', ctx.authStore.token);
+    const data = await remote.loadClients(isClient);
     ctx.members.value = (isClient ? [data] : data).map(normalizeBackendClientToMember);
     return ctx.members.value;
   };
 
   const refreshEnrollmentsFromBackend = async (filters = {}) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const params = new URLSearchParams();
-    if (filters.id_cliente) params.set('id_cliente', filters.id_cliente);
-    if (filters.dni) params.set('dni', filters.dni);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const response = await backendRequest(`${ctx.apiBase}/gym/matriculas${query}`, { headers: ctx._authHeaders() });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'Error al cargar matriculas'));
-    }
+    const response = await remote.refreshEnrollmentsFromBackend(filters);
+
     /**
      * Gestiona esta acción de la vista.
      */
-    const list = (await response.json()).map((entry) => ({
+    const list = (response).map((entry) => ({
       ...entry,
       estado: String(entry.estado || 'ACTIVA').toUpperCase(),
     }));
@@ -313,11 +266,7 @@ export const createSchedulesModule = (ctx) => {
       ctx.activeSyncs += 1;
       ctx.isSyncing.value = true;
       await ctx.trainerOverviewCache.load(scope, 'overview', async () => {
-        const response = await backendRequest(`${ctx.apiBase}/trainer/overview`, { headers: ctx._authHeaders() });
-        if (!response.ok) {
-          throw new Error(await ctx.readBackendError(response, 'Error al cargar supervision del trainer'));
-        }
-        const data = await response.json();
+        const data = await remote.fetchTrainerOverview();
         if (scope !== `${ctx.authStore.token}|${ctx.authStore.userRole}`) throw new Error('La sesión ha cambiado.');
         ctx.trainerOverview.value = data;
       }, { force });
@@ -338,15 +287,7 @@ export const createSchedulesModule = (ctx) => {
       color: payload.color || 'Azul',
       ejercicios: Array.isArray(payload.ejercicios) ? payload.ejercicios : [],
     };
-    const response = await backendRequest(`${ctx.apiBase}/trainer/rutinas`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'No se pudo guardar la rutina'));
-    }
-    const saved = await response.json();
+    const saved = await remote.upsertTrainerRoutine(body);
     const normalized = {
       id_rutina: saved.id_rutina,
       servicio: saved.servicio || body.servicio,
@@ -357,25 +298,17 @@ export const createSchedulesModule = (ctx) => {
     };
     const index = ctx.routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
     if (index >= 0) ctx.routines.value[index] = normalized; else ctx.routines.value.unshift(normalized);
-    await fetchTrainerOverview({ force: true }).catch(() => { });
+    await refreshAfterMutation(ctx, () => fetchTrainerOverview({ force: true }));
     return normalized;
   };
 
   const assignTrainerRoutine = async (idMatricula, idRutina) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const response = await backendRequest(`${ctx.apiBase}/trainer/matriculas/${idMatricula}/rutina`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-      body: JSON.stringify({ id_rutina: Number(idRutina) }),
-    });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'No se pudo asignar la rutina'));
-    }
-    const saved = await response.json();
+    const saved = await remote.assignTrainerRoutine(idMatricula, idRutina);
     const index = ctx.enrollments.value.findIndex((entry) => Number(entry.id_matricula) === Number(saved.id_matricula));
     if (index >= 0) ctx.enrollments.value[index] = { ...ctx.enrollments.value[index], ...saved };
     else ctx.enrollments.value.unshift(saved);
-    await fetchTrainerOverview({ force: true }).catch(() => { });
+    await refreshAfterMutation(ctx, () => fetchTrainerOverview({ force: true }));
     return saved;
   };
 
@@ -384,12 +317,7 @@ export const createSchedulesModule = (ctx) => {
     try {
       ctx.activeSyncs += 1;
       ctx.isSyncing.value = true;
-      const params = new URLSearchParams({ dni: String(dni || '').trim() });
-      const response = await backendRequest(`${ctx.apiBase}/trainer/clientes-rutinas?${params.toString()}`, { headers: ctx._authHeaders() });
-      if (!response.ok) {
-        throw new Error(await ctx.readBackendError(response, 'No se pudo cargar el cliente'));
-      }
-      return await response.json();
+      return await remote.fetchTrainerClientRoutines(String(dni || '').trim());
     } finally {
       ctx.activeSyncs -= 1;
       ctx.isSyncing.value = ctx.activeSyncs > 0;
@@ -398,34 +326,19 @@ export const createSchedulesModule = (ctx) => {
 
   const markTrainerRoutineProgress = async (idMatricula, payload = {}) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const response = await backendRequest(`${ctx.apiBase}/trainer/matriculas/${idMatricula}/progreso`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-      body: JSON.stringify({
-        fecha: payload.fecha || todayISO(),
-        estado: payload.estado || 'REALIZADO',
-        observacion: payload.observacion || '',
-        id_usuario: getCurrentRegistrarId(ctx.authStore) || undefined,
-        ejercicios_detalle: Array.isArray(payload.ejercicios_detalle) ? payload.ejercicios_detalle : [],
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'No se pudo registrar el progreso'));
-    }
-    return response.json();
+    const body = {
+      fecha: payload.fecha || todayISO(),
+      estado: payload.estado || 'REALIZADO',
+      observacion: payload.observacion || '',
+      id_usuario: getCurrentRegistrarId(ctx.authStore) || undefined,
+      ejercicios_detalle: Array.isArray(payload.ejercicios_detalle) ? payload.ejercicios_detalle : [],
+    };
+    return await remote.markTrainerRoutineProgress(idMatricula, body);
   };
 
   const enrollSchedule = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const response = await backendRequest(`${ctx.apiBase}/gym/matriculas`, {
-      method: 'POST',
-      headers: ctx._authHeaders(),
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      throw new Error(await ctx.readBackendError(response, 'No se pudo matricular en el horario'));
-    }
-    const savedResponse = await response.json();
+    const savedResponse = await remote.enrollSchedule(payload);
     const saved = {
       ...savedResponse,
       estado: String(savedResponse.estado || 'ACTIVA').toUpperCase(),
@@ -436,24 +349,18 @@ export const createSchedulesModule = (ctx) => {
     } else {
       ctx.enrollments.value.unshift(saved);
     }
-    await refreshServiceSchedulesFromBackend().catch(() => { });
+    await refreshAfterMutation(ctx, () => refreshServiceSchedulesFromBackend());
     return saved;
   };
 
   const deleteEnrollment = async (idMatricula) => {
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/gym/matriculas/${idMatricula}`, {
-        method: 'DELETE',
-        headers: ctx._authHeaders(),
-      });
-      if (!response.ok && response.status !== 204) {
-        throw new Error(await ctx.readBackendError(response, 'No se pudo cancelar la matricula'));
-      }
+      await remote.deleteEnrollment(idMatricula);
     }
     ctx.enrollments.value = ctx.enrollments.value.map((entry) =>
       Number(entry.id_matricula) === Number(idMatricula) ? { ...entry, estado: 'CANCELADA' } : entry,
     );
-    await refreshServiceSchedulesFromBackend().catch(() => { });
+    await refreshAfterMutation(ctx, () => refreshServiceSchedulesFromBackend());
   };
 
   return { upsertRutina, upsertHorario, memberSchedules, assignMemberSchedule, refreshServiceSchedulesFromBackend, refreshRoutinesFromBackend, upsertServiceSchedule, deleteServiceSchedule, refreshScheduleClientsFromBackend, refreshEnrollmentsFromBackend, fetchTrainerOverview, upsertTrainerRoutine, assignTrainerRoutine, fetchTrainerClientRoutines, markTrainerRoutineProgress, enrollSchedule, deleteEnrollment };

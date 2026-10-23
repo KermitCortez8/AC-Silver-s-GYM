@@ -16,6 +16,7 @@ from domain.models.gym import (
     ProductoTiendaInput,
 )
 from domain.models.auth import UserProfile
+from domain.errors import EntityNotFound
 from application.services.clients_service import ClientsService
 from application.services.gym_service import GymService
 from domain.services.gym_domain_service import PedidoCanceladoConPagoError
@@ -37,7 +38,7 @@ def _http_error(error: Exception) -> HTTPException:
         return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message)
     if isinstance(error, RuntimeError):
         return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=message)
-    code = status.HTTP_404_NOT_FOUND if "no encontrado" in message.lower() else status.HTTP_400_BAD_REQUEST
+    code = status.HTTP_404_NOT_FOUND if isinstance(error, EntityNotFound) else status.HTTP_400_BAD_REQUEST
     return HTTPException(status_code=code, detail=message)
 
 @router.get("")

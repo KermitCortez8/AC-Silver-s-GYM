@@ -4,10 +4,16 @@ from types import SimpleNamespace
 
 import pytest
 
-import presentation.routes.clients_routes as clients_routes
+import app.bootstrap as bootstrap
+from application.services.client_payments_service import ClientPaymentsService
 from domain.models.gym import RegistroPublicoClienteInput
 from application.services.clients_service import ClientsService
 from infrastructure.services.local_gym_service import LocalGymService
+
+
+def _confirm_checkout(session_id, clients, settings):
+    return ClientPaymentsService(clients, None, settings,
+        gateway_factory=bootstrap.create_payment_gateway, notify=bootstrap.notify_membership).confirm_membership(session_id)
 
 
 class FakeClientsService:
@@ -35,7 +41,7 @@ def _install_gateway(monkeypatch, checkout: dict) -> None:
         def get_checkout_session(self, _session_id: str) -> dict:
             return checkout
 
-    monkeypatch.setattr(clients_routes, "StripeService", FakeGateway)
+    monkeypatch.setattr(bootstrap, "create_payment_gateway", FakeGateway)
 
 
 def _paid_checkout(**overrides) -> dict:
@@ -57,7 +63,7 @@ def test_confirm_verified_checkout_persists_paid_session(monkeypatch) -> None:
     _install_gateway(monkeypatch, _paid_checkout())
     clients = FakeClientsService()
 
-    result = clients_routes._confirm_verified_checkout("cs_test_123", clients, SimpleNamespace())
+    result = _confirm_checkout("cs_test_123", clients, SimpleNamespace())
 
     assert result["confirmed"] is True
     assert result["id_cliente"] == 12
@@ -77,7 +83,7 @@ def test_confirm_verified_checkout_does_not_persist_unpaid_session(monkeypatch) 
     _install_gateway(monkeypatch, _paid_checkout(status="open", payment_status="unpaid"))
     clients = FakeClientsService()
 
-    result = clients_routes._confirm_verified_checkout("cs_test_123", clients, SimpleNamespace())
+    result = _confirm_checkout("cs_test_123", clients, SimpleNamespace())
 
     assert result == {"confirmed": False, "payment_status": "unpaid"}
     assert clients.confirmations == []
@@ -88,7 +94,7 @@ def test_confirm_verified_checkout_rejects_wrong_amount(monkeypatch) -> None:
     clients = FakeClientsService()
 
     with pytest.raises(ValueError, match="importe"):
-        clients_routes._confirm_verified_checkout("cs_test_123", clients, SimpleNamespace())
+        _confirm_checkout("cs_test_123", clients, SimpleNamespace())
 
     assert clients.confirmations == []
 
@@ -98,7 +104,7 @@ def test_confirm_verified_checkout_rejects_unrelated_metadata(monkeypatch) -> No
     clients = FakeClientsService()
 
     with pytest.raises(ValueError, match="metadatos"):
-        clients_routes._confirm_verified_checkout("cs_test_123", clients, SimpleNamespace())
+        _confirm_checkout("cs_test_123", clients, SimpleNamespace())
 
     assert clients.confirmations == []
 
@@ -112,7 +118,7 @@ def test_confirm_verified_checkout_rejects_another_membership(monkeypatch) -> No
     clients = FakeClientsService()
 
     with pytest.raises(ValueError, match="membresía"):
-        clients_routes._confirm_verified_checkout("cs_test_123", clients, SimpleNamespace())
+        _confirm_checkout("cs_test_123", clients, SimpleNamespace())
 
     assert clients.confirmations == []
 
@@ -122,7 +128,7 @@ def test_confirm_verified_checkout_rejects_live_session_in_test_mode(monkeypatch
     clients = FakeClientsService()
 
     with pytest.raises(ValueError, match="modo configurado"):
-        clients_routes._confirm_verified_checkout(
+        _confirm_checkout(
             "cs_live_123",
             clients,
             SimpleNamespace(stripe_mode="test"),

@@ -259,7 +259,8 @@ def test_admin_schema_is_required_instead_of_silently_dropping_origin():
     gym.supabase = FakeSupabase()
     with pytest.raises(RuntimeError, match="009_admin_client_stripe.sql"):
         gym.validate_admin_registration_schema()
-    assert "origen_registro" not in gym._filter_remote_columns("CLIENTES", {"id_cliente": 1, "origen_registro": "PUBLICO"})
+    with pytest.raises(RuntimeError, match="009_admin_client_stripe.sql"):
+        gym._filter_remote_columns("CLIENTES", {"id_cliente": 1, "origen_registro": "PUBLICO"})
 
 
 def test_zero_price_is_not_replaced_with_plan_price(api):

@@ -3,6 +3,7 @@
 # Reserva el stock al iniciar el pago, confirma el cobro y libera el stock si el pago no se completa.
 # Lo usan las rutas de la tienda y el webhook de Stripe.
 from __future__ import annotations
+from domain.errors import EntityNotFound
 
 import logging
 from typing import Any
@@ -309,7 +310,7 @@ def cancelar_checkout_tienda(
     _refrescar(gym)
     pedido = gym.get_pedido_tienda(id_pedido)
     if not pedido:
-        raise ValueError("Pedido no encontrado")
+        raise EntityNotFound("Pedido no encontrado")
 
     session_id = str(pedido.get("referencia_pago") or "").strip()
     session = gateway.get_checkout_session(session_id) if session_id and not _esta_pagado(pedido) else None

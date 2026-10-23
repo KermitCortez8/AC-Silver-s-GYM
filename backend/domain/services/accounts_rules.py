@@ -3,17 +3,17 @@ from __future__ import annotations
 
 import re
 from typing import Any
-from domain.services.membership_lifecycle import normalize_membership_status
+from domain.validation import required_text, email_address
+from domain.services.membership_lifecycle import normalize_membership_status, project_memberships
+
+
+def user_role_prefix(role: str) -> str:
+    return {"admin": "ADM", "trainer": "TRA", "staff": "STA"}.get(str(role or "").strip().lower(), "USR")
 
 
 class AccountsRules:
     def _user_role_prefix(self, rol: str) -> str:
-        rol_value = str(rol or "").strip().lower()
-        return {
-            "admin": "ADM",
-            "trainer": "TRA",
-            "staff": "STA",
-        }.get(rol_value, "USR")
+        return user_role_prefix(rol)
 
     def _normalize_usuario_id(self, value: Any) -> str | None:
         if value is None:
@@ -133,8 +133,8 @@ class AccountsRules:
             else:
                 item_id = f"SG{prefix}{self._next_usuario_code(state):03d}"
 
-            nombre = str(payload.get("nombre") or "").strip()
-            correo = str(payload.get("correo") or "").strip()
+            nombre = required_text(payload.get("nombre"))
+            correo = email_address(payload.get("correo"))
             password = str(payload.get("password") or payload.get("contrasena") or "").strip()
             idx = next((i for i, row in enumerate(state["usuario"]) if self._normalize_usuario_id(row.get("id_usuario")) == item_id), -1)
             existing = state["usuario"][idx] if idx >= 0 else {}
@@ -216,15 +216,15 @@ class AccountsRules:
         }
 
     def clientes_normalized(self) -> list[dict[str, Any]]:
-        self.expire_memberships()
+        state = project_memberships(self.state, self.today())
         latest_by_client = {}
-        for membership in self.state.get("membresia", []):
+        for membership in state.get("membresia", []):
             client_id = int(membership.get("id_cliente", 0) or 0)
             latest = latest_by_client.get(client_id)
             if latest is None or int(membership.get("id_membresia", 0) or 0) > int(latest.get("id_membresia", 0) or 0):
                 latest_by_client[client_id] = membership
         result = []
-        for row in self.state.get("clientes", []):
+        for row in state.get("clientes", []):
             membership = latest_by_client.get(int(row.get("id_cliente", 0) or 0), {})
             result.append(
                 {
@@ -289,8 +289,8 @@ class AccountsRules:
             item = {
                 "id_cliente": int(item_id),
                 "id_usuario": id_usuario,
-                "nombre": str(payload.get("nombre") or "").strip(),
-                "correo": str(payload.get("correo") or payload.get("email") or "").strip(),
+                "nombre": required_text(payload.get("nombre")),
+                "correo": email_address(payload.get("correo") or payload.get("email")),
                 "telefono": str(payload.get("telefono") or "").strip(),
                 "dni": str(payload.get("dni") or "").strip(),
                 "plan": str(payload.get("plan") or "MENSUAL").strip() or "MENSUAL",

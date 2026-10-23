@@ -61,7 +61,9 @@ def test_access_includes_last_day_and_expiration_preserves_payment_history(gym, 
     monkeypatch.setattr('application.services.auth_service._today_iso', lambda: '2026-10-02')
     with pytest.raises(ClientMembershipExpired):
         service.session_for_client(account)
-    assert account['estado'] == 'VENCIDA'
+    assert gym.get_cliente(account['id_cliente'])['estado'] == 'VENCIDA'
+    assert account['estado'] == 'ACTIVO'
+    gym.expire_memberships()
     assert gym.state['membresia'][0] == {**original, 'estado': 'VENCIDA'}
     assert gym.expire_memberships() is False
 
@@ -93,7 +95,8 @@ def test_expired_password_login_and_existing_signed_token_are_blocked(gym):
     ):
         assert response.status_code == 403
         assert response.json()['detail']['code'] == 'membership_expired'
-    assert gym.state['clientes'][0]['estado'] == 'VENCIDA'
+    assert gym.get_cliente(gym.state['clientes'][0]['id_cliente'])['estado'] == 'VENCIDA'
+    assert gym.state['clientes'][0]['estado'] == 'ACTIVO'
 
 
 def test_linked_google_login_is_blocked_after_expiration(gym, monkeypatch):
@@ -205,6 +208,10 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
     service._last_refresh_at = time.monotonic()
     seed_snapshot(service)
     service.ensure_fresh()
+    assert writes == []
+    assert service.clientes_normalized()[0]['estado'] == 'VENCIDA'
+    assert writes == []
+    assert service.expire_memberships() is True
     assert [table for table, _ in writes] == ['MEMBRESIA', 'CLIENTES']
     assert writes[0][1]['Estado'] == 'VENCIDA'
     assert writes[0][1]['estado_pago'] == 'PAGADO'
@@ -215,7 +222,7 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
     # Un nuevo refresco remoto recupera VENCIDA sin PATCH redundantes.
     service._last_refresh_at = 0
     service.ensure_fresh()
-    assert service.state['clientes'][0]['estado'] == 'VENCIDA'
+    assert service.get_cliente(service.state['clientes'][0]['id_cliente'])['estado'] == 'VENCIDA'
     assert len(writes) == 2
 
 

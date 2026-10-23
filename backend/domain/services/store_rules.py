@@ -1,5 +1,7 @@
 """Reglas de store sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.validation import nonnegative, required_text
+from domain.errors import EntityNotFound
 
 from datetime import datetime, timezone
 from typing import Any
@@ -69,9 +71,10 @@ class StoreRules:
             previo = productos[idx] if idx >= 0 else None
             producto["id_producto"] = int(producto_id)
             producto["unidad_venta"] = str(producto.get("unidad_venta") or "unidad")
-            producto["precio_venta"] = float(producto.get("precio_venta") or 0)
-            producto["stock_minimo"] = max(0, int(producto.get("stock_minimo") or 0))
-            stock_solicitado = max(0, int(producto.get("cantidad_stock") or 0))
+            required_text(producto.get("nombre_producto"))
+            producto["precio_venta"] = float(nonnegative(producto.get("precio_venta") or 0, "Precio"))
+            producto["stock_minimo"] = int(nonnegative(producto.get("stock_minimo") or 0, "Stock mínimo"))
+            stock_solicitado = int(nonnegative(producto.get("cantidad_stock") or 0, "Stock"))
 
             id_item = int(producto["id_item"]) if producto.get("id_item") else None
             if previo and previo.get("id_item"):
@@ -82,7 +85,7 @@ class StoreRules:
             if id_item:
                 item = self._find_item_in_state(state, id_item)
                 if not item:
-                    raise ValueError("Item de almacén no encontrado")
+                    raise EntityNotFound("Item de almacén no encontrado")
                 if not self._es_item_tienda(item):
                     raise ValueError("Solo los ítems con Tipo 'Tienda' pueden venderse en la tienda")
                 otro = next(
@@ -176,7 +179,7 @@ class StoreRules:
                 )
 
                 if not producto:
-                    raise ValueError(f"Producto no encontrado: {id_producto}")
+                    raise EntityNotFound(f"Producto no encontrado: {id_producto}")
                 if str(producto.get("estado") or "Disponible") != "Disponible":
                     raise ValueError(f"Producto no disponible: {producto.get('nombre_producto', id_producto)}")
 
@@ -283,7 +286,7 @@ class StoreRules:
         def _fn(state: dict[str, Any]):
             pedido = self._find_pedido_in_state(state, id_pedido)
             if not pedido:
-                raise ValueError("Pedido no encontrado")
+                raise EntityNotFound("Pedido no encontrado")
             if _pedido_pagado(pedido) or str(pedido.get("estado_pedido") or "").strip().upper() == ESTADO_PEDIDO_CANCELADO:
                 raise ValueError("El pedido ya no está pendiente de pago")
             pedido["referencia_pago"] = session_id
@@ -307,7 +310,7 @@ class StoreRules:
         def _fn(state: dict[str, Any]):
             pedido = self._find_pedido_in_state(state, id_pedido)
             if not pedido:
-                raise ValueError("Pedido no encontrado")
+                raise EntityNotFound("Pedido no encontrado")
 
             expected_amount = round(float(pedido.get("total") or 0), 2)
             if expected_amount <= 0 or cents(expected_amount) != cents(amount):
@@ -338,7 +341,7 @@ class StoreRules:
         def _fn(state: dict[str, Any]):
             pedido = self._find_pedido_in_state(state, id_pedido)
             if not pedido:
-                raise ValueError("Pedido no encontrado")
+                raise EntityNotFound("Pedido no encontrado")
             if _pedido_pagado(pedido):
                 raise ValueError("El pedido ya fue pagado")
             if str(pedido.get("estado_pedido") or "").strip().upper() == ESTADO_PEDIDO_CANCELADO:
@@ -360,7 +363,7 @@ class StoreRules:
         def _fn(state: dict[str, Any]):
             pedido = next((row for row in state.get("pedidos_tienda", []) if int(row.get("id_pedido", 0) or 0) == int(id_pedido)), None)
             if not pedido:
-                raise ValueError("Pedido no encontrado")
+                raise EntityNotFound("Pedido no encontrado")
             if estado in {"CONFIRMADO", "ENTREGADO"} and not _pedido_pagado(pedido):
                 raise ValueError("No se puede confirmar ni entregar un pedido sin pago confirmado")
             actual = str(pedido.get("estado_pedido") or "").strip().upper()

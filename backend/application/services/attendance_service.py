@@ -96,6 +96,8 @@ class AttendanceService:
 
     def client_context(self, client_id, now):
         client = self.gym.get_cliente(client_id)
+        if client and str(client.get("estado", "")).upper() == "VENCIDA":
+            raise ValueError("El cliente necesita una membresía activa, pagada y vigente.")
         if not client or str(client.get("estado", "")).upper() != "ACTIVO":
             raise ValueError("La cuenta debe estar activada por el administrador.")
         member = self.membership(client_id, now.date().isoformat())

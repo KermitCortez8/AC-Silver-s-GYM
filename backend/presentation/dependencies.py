@@ -14,79 +14,12 @@ from domain.models.auth import UserProfile
 from application.services.auth_service import AuthService, ClientActivationRequired
 from application.services.clients_service import ClientsService
 from application.services.gym_service import GymService
+from application.errors import SchemaNotReady
 from app.bootstrap import create_gym_service, create_identity_service, create_store_images_service
 from application.services.users_service import UsersService
 from infrastructure.security import verify_session_token
 
 logger = logging.getLogger(__name__)
-
-# Datos usados por cada consulta. Las operaciones de usuarios solo usan USUARIO;
-# las demás escrituras y rutas nuevas validan el estado completo del gimnasio.
-READ_RESOURCES = {
-    "/auth/me": (),
-    "/clientes": ("clientes", "membresia"),
-    "/clientes/me": ("clientes", "membresia"),
-    "/usuarios": ("usuario",),
-    "/planes-membresia": ("planes_membresia",),
-    "/membresias": ("clientes", "membresia"),
-    "/promociones": ("promociones", "clientes", "membresia"),
-    "/promociones/vigentes-publico": ("promociones", "clientes", "membresia"),
-    "/inventario": ("inventario", "productos_tienda"),
-    "/inventario/movimientos": ("mov_inv",),
-    "/tienda": ("inventario", "productos_tienda"),
-    "/tienda/pedidos": ("pedidos_tienda",),
-    "/asistencia": ("asistencia", "clientes"),
-    "/asistencia/historial": ("asistencia", "clientes"),
-    "/asistencia/resumen": ("asistencia", "clientes"),
-    "/asistencia/exportar": ("asistencia", "clientes"),
-    "/asistencia/cliente": ("asistencia", "clientes", "matriculas_horario", "horarios_servicio"),
-    "/asistencia/mi-semana": ("asistencia", "clientes", "matriculas_horario", "horarios_servicio"),
-    "/gym/configuracion": ("configuracion_gimnasio",),
-    "/gym/horarios": ("horario",),
-    "/gym/horarios-publicos": ("horarios_servicio", "matriculas_horario", "catalogo_rutina"),
-    "/gym/horarios-servicio": ("horarios_servicio", "matriculas_horario", "catalogo_rutina"),
-    "/gym/matriculas": ("matriculas_horario", "horarios_servicio", "catalogo_rutina", "clientes", "asistencia"),
-    "/gym/rutinas": ("catalogo_rutina",),
-    "/gym/tickets": ("tickets_atencion",),
-    "/gym/summary": ("clientes", "membresia", "asistencia", "inventario", "pedidos_tienda",
-                     "mov_inv", "usuario", "configuracion_gimnasio"),
-    "/trainer/overview": ("clientes", "matriculas_horario", "horarios_servicio", "catalogo_rutina", "asistencia"),
-    "/trainer/clientes-rutinas": ("clientes", "matriculas_horario", "horarios_servicio", "catalogo_rutina", "asistencia", "rutina_progreso"),
-    "/health": ("planes_membresia",),
-}
-
-
-def _resources_for_request(request: Request | None):
-    if request is None:
-        return None
-    path = request.url.path.removeprefix("/api").rstrip("/")
-    if request.method == "POST" and path in {"/auth/password", "/auth/google"}:
-        resources = ("usuario", "clientes", "membresia")
-    elif (request.method == "POST" and path == "/usuarios") or (
-        request.method == "DELETE" and path.startswith("/usuarios/")
-    ):
-        resources = ("usuario",)
-    elif request.method == "GET":
-        resources = READ_RESOURCES.get(path)
-        if path.startswith("/clientes/") and path.endswith("/membresias"):
-            resources = ("clientes", "membresia")
-    else:
-        return None
-    if resources is None:
-        return None
-    selected = set(resources)
-    # La identidad del token decide qué tabla consultar; el rol autorizado sigue
-    # saliendo de la cuenta actual en get_current_user, nunca del rol del token.
-    scheme, _, token = request.headers.get("authorization", "").partition(" ")
-    if scheme.lower() == "bearer" and token.strip():
-        try:
-            payload = verify_session_token(token.strip())
-        except (ValueError, RuntimeError):
-            payload = None
-        if payload:
-            selected.update(("clientes", "membresia") if payload.get("id_cliente") is not None else ("usuario",))
-    return selected
-
 
 @lru_cache(maxsize=1)
 # Obtiene los datos necesarios.
@@ -102,42 +35,14 @@ def get_gym_service(request: Request = None) -> GymService:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="La conexión con la base de datos no está configurada. Contacta con administración.",
         )
-    candidate_keys = [
-        key
-        for key in (settings.supabase_key, settings.supabase_anon_key)
-        if key and settings.supabase_url
-    ]
-    seen: set[str] = set()
-    connection_failed = False
-    payment_schema_missing = False
-    for key in candidate_keys:
-        if key in seen:
-            continue
-        seen.add(key)
-        try:
-            service = _get_supabase_gym_service(settings.supabase_url, key)
-            service.ensure_fresh(_resources_for_request(request))
-            return service
-        except (RuntimeError, OSError) as error:
-            connection_failed = True
-            details = str(error)
-            for credential in candidate_keys:
-                details = details.replace(credential, "[redacted]")
-            logger.warning("Error al consultar Supabase (%s): %s", type(error).__name__, details)
-            if "001_add_membership_payment_fields.sql" in str(error):
-                payment_schema_missing = True
-            continue
-    if payment_schema_missing:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Falta ejecutar backend/migrations/001_add_membership_payment_fields.sql en Supabase.",
-        )
-    if connection_failed:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No se pudo conectar con la base de datos. Inténtalo de nuevo en unos momentos.",
-        )
-    raise HTTPException(status_code=503, detail="La conexión con la base de datos no está configurada.")
+    try:
+        return _get_supabase_gym_service(settings.supabase_url, settings.supabase_key)
+    except SchemaNotReady as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except (RuntimeError, OSError) as error:
+        # No se sustituye una credencial rechazada por otra de menores permisos.
+        logger.warning("Error al iniciar el repositorio (%s)", type(error).__name__)
+        raise HTTPException(status_code=503, detail="No se pudo conectar con la base de datos. Inténtalo de nuevo en unos momentos.") from error
 
 
 # Obtiene los datos necesarios.
@@ -232,3 +137,10 @@ def get_identity_service():
 
 def get_store_images_service():
     return create_store_images_service(get_settings())
+
+
+def get_client_payments_service(
+    clients=Depends(get_clients_service), gym=Depends(get_gym_service), settings=Depends(get_settings),
+):
+    from app.bootstrap import create_client_payments_service
+    return create_client_payments_service(clients, gym, settings)
