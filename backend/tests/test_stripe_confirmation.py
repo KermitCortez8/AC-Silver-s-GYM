@@ -4,10 +4,10 @@ from types import SimpleNamespace
 
 import pytest
 
-import routes.clients_routes as clients_routes
-from models.gym import RegistroPublicoClienteInput
-from services.clients_service import ClientsService
-from services.local_gym_service import LocalGymService
+import presentation.routes.clients_routes as clients_routes
+from domain.models.gym import RegistroPublicoClienteInput
+from application.services.clients_service import ClientsService
+from infrastructure.services.local_gym_service import LocalGymService
 
 
 class FakeClientsService:
@@ -145,8 +145,12 @@ def test_payment_amount_uses_price_saved_on_membership() -> None:
         def ensure_fresh(self) -> None:
             pass
 
-        def _latest_membership_for_cliente(self, _state, id_cliente: int) -> dict | None:
+        def latest_membership(self, id_cliente):
             return self.state["membresia"][0] if id_cliente == 12 else None
+
+        def membership(self, id_cliente, id_membresia):
+            row = self.latest_membership(id_cliente)
+            return row if row and row["id_membresia"] == id_membresia else None
 
         def get_plan_membresia(self, _id_pm: int) -> dict:
             return {"precio": 199.0}
@@ -227,7 +231,7 @@ def test_membership_cannot_be_activated_before_payment() -> None:
 
 
 def test_activating_an_active_membership_does_not_extend_its_dates(monkeypatch) -> None:
-    monkeypatch.setattr('services.gym_domain_service._today_iso', lambda: '2026-01-15')
+    monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-01-15')
     gym = LocalGymService()
     gym.state["clientes"] = [{"id_cliente": 12, "estado": "PENDIENTE_PAGO"}]
     gym.state["membresia"] = [{

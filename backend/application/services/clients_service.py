@@ -1,0 +1,227 @@
+# Módulo: clients_service.
+# Adapta clientes y membresías al formato usado por la interfaz.
+# Controla registros pendientes y confirmaciones de pago.
+# Oculta contraseñas antes de devolver información pública.
+from __future__ import annotations
+
+from typing import Any
+
+from application.services.gym_service import GymService
+from domain.services.gym_domain_service import _today_iso
+from domain.services.membership_lifecycle import membership_expired
+
+
+class ClientsService:
+    """Servicio fino para manejar la entidad Cliente con la forma requerida por la UI.
+
+    Internamente reutiliza GymDomainService para reglas de negocio.
+    """
+
+    # Inicializa la clase.
+    def __init__(self, gym_service: GymService) -> None:
+        self.gym = gym_service
+        self.passwords = getattr(gym_service, "passwords", None)
+        self.identity = getattr(gym_service, "identity", None)
+        self.sessions = getattr(gym_service, "sessions", None)
+
+    # Obtiene los datos necesarios.
+    def list_clients(self) -> list[dict[str, Any]]:
+        return self.gym.clientes_normalized()
+
+    def list_membership_payments(self) -> list[dict[str, Any]]:
+        """Consulta el historial completo usando los cobros guardados en cada membresía."""
+        self.gym.ensure_fresh()
+        data = self.gym.membership_payment_data()
+        clients = {int(c["id_cliente"]): c for c in data.clients}
+        plans = {int(p["id_pm"]): p for p in data.plans}
+        payments = []
+        for membership in data.memberships:
+            client_id = int(membership.get("id_cliente", 0) or 0)
+            client = clients.get(client_id, {})
+            plan = plans.get(int(membership.get("id_pm", 0) or 0), {})
+            # Solo se exponen los campos necesarios, nunca credenciales del cliente.
+            payments.append({
+                "id_membresia": membership["id_membresia"],
+                "id_cliente": client_id,
+                "id_usuario": client.get("id_usuario") or f"SGCLI{client_id:03d}",
+                "nombre": client.get("nombre") or "Cliente no disponible",
+                "correo": client.get("correo") or "",
+                "dni": client.get("dni") or "",
+                "plan": plan.get("nombre_plan") or "Plan no disponible",
+                "monto_pago": float(membership.get("monto_pago", 0) or 0),
+                "estado_pago": str(membership.get("estado_pago") or "SIN_REGISTRO").upper(),
+                "metodo_pago": str(membership.get("metodo_pago") or "").lower(),
+                "referencia_pago": membership.get("referencia_pago") or "",
+                "fecha_pago": membership.get("fecha_pago") or "",
+            })
+        return sorted(payments, key=lambda p: int(p["id_membresia"]), reverse=True)
+
+    # Obtiene los datos necesarios.
+    def get_client(self, id_usuario: str) -> dict[str, Any] | None:
+        normalized = str(id_usuario or "").strip().upper()
+        return next((c for c in self.list_clients() if str(c.get("id_usuario") or "").strip().upper() == normalized), None)
+
+    # Obtiene los datos necesarios.
+    def get_client_for_user(self, user: Any) -> dict[str, Any]:
+        id_cliente = int(getattr(user, "id_cliente", 0) or 0)
+        email = str(getattr(user, "email", "") or getattr(user, "correo", "") or "").strip().lower()
+        dni = str(getattr(user, "dni", "") or "").strip()
+
+        client = None
+        if id_cliente:
+            client = next((c for c in self.list_clients() if int(c.get("id_cliente", 0) or 0) == id_cliente), None)
+        if not client and email:
+            client = next((c for c in self.list_clients() if str(c.get("correo") or "").strip().lower() == email), None)
+        if not client and dni:
+            client = next((c for c in self.list_clients() if str(c.get("dni") or "").strip() == dni), None)
+        if not client:
+            raise ValueError("Cliente no encontrado")
+        return client
+
+    # Actualiza el registro correspondiente.
+    def upsert_client(self, payload: dict[str, Any]) -> dict[str, Any]:
+        item = {}
+        item["id_usuario"] = str(payload.get("id_usuario") or "").strip()
+        item["nombre"] = str(payload.get("nombre") or "").strip()
+        item["correo"] = str(payload.get("correo") or payload.get("email") or "").strip()
+        item["telefono"] = str(payload.get("telefono") or "").strip()
+        item["dni"] = str(payload.get("dni") or "").strip()
+        item["password"] = str(payload.get("password") or payload.get("contrasena") or "").strip()
+        item["plan"] = str(payload.get("plan") or "MENSUAL").strip() or "MENSUAL"
+        item["promocion"] = str(payload.get("promocion") or "SIN PROMOCION").strip() or "SIN PROMOCION"
+        item["estado"] = str(payload.get("estado") or "ACTIVO").strip().upper() or "ACTIVO"
+
+        if item["id_usuario"] and item["estado"] in {"ACTIVO", "ACTIVA"}:
+            self.gym.ensure_fresh()
+            existing = self.gym.get_cliente(self.gym.parse_client_id(item["id_usuario"]))
+            if existing:
+                membership = self.gym.latest_membership(existing["id_cliente"])
+                if membership and membership_expired(membership, _today_iso()):
+                    raise ValueError("La membresía está vencida. Renueva la membresía antes de activar la cuenta.")
+            if existing and str(existing.get("estado") or "").upper() not in {"ACTIVO", "ACTIVA"}:
+                membership = self.gym.latest_membership(existing["id_cliente"])
+                if membership and str(membership.get("estado") or "").upper() in {"EN_TRAMITE", "PENDIENTE_PAGO"}:
+                    raise ValueError("Usa Activar en la lista de clientes para confirmar la activación y enviar su correo.")
+
+        saved = self.gym.upsert_cliente(item)
+
+        # Build normalized shape to return
+        normalized = {
+            "id_cliente": int(saved.get("id_cliente", 0) or 0),
+            "id_usuario": str(saved.get("id_usuario") or f"SGCLI{int(saved.get('id_cliente', 0)):03d}"),
+            "nombre": str(saved.get("nombre") or payload.get("nombre") or "").strip(),
+            "correo": str(saved.get("correo") or payload.get("correo") or payload.get("email") or "").strip(),
+            "telefono": str(saved.get("telefono") or payload.get("telefono") or "").strip(),
+            "dni": str(saved.get("dni") or payload.get("dni") or "").strip(),
+            "plan": str(saved.get("plan") or payload.get("plan") or "").strip(),
+            "promocion": str(saved.get("promocion") or payload.get("promocion") or "").strip(),
+            "estado": str(saved.get("estado") or payload.get("estado") or "ACTIVO").strip().upper() or "ACTIVO",
+            "has_password": bool(saved.get("password_hash")),
+            "origen_registro": saved.get("origen_registro", ""),
+        }
+        return normalized
+
+    # Procesa esta operación.
+    def _safe_registration_result(self, result: dict[str, Any]) -> dict[str, Any]:
+        cliente = {**(result.get("cliente") or {})}
+        cliente.pop("password_hash", None)
+        cliente.pop("google_sub", None)
+        if "cliente" in result:
+            cliente["has_password"] = bool((result.get("cliente") or {}).get("password_hash"))
+        return {**result, "cliente": cliente}
+
+    # Crea el registro correspondiente.
+    def register_public_client(self, payload: dict[str, Any]) -> dict[str, Any]:
+        payload = dict(payload)
+        payload.pop("google_sub", None)
+        credential = payload.pop("google_credential", "")
+        claims = self.identity.verify(credential) if credential else None
+        if claims:
+            self.sessions.validate_configuration()
+            email = str(claims["email"]).strip().lower()
+            if payload.get("correo") and str(payload["correo"]).strip().lower() != email:
+                raise ValueError("El correo debe coincidir con la cuenta verificada por Google")
+            payload.update(
+                correo=email, nombre=str(payload.get("nombre") or claims.get("name") or email.split("@")[0]),
+                google_sub=str(claims["sub"]), password="", contrasena="",
+            )
+        correo = str(payload.get("correo") or "").strip().lower()
+        dni = str(payload.get("dni") or "").strip()
+        existing = self.gym.get_cliente_by_email(correo) if correo else None
+        if claims and existing and existing.get("google_sub") != claims["sub"]:
+            raise ValueError("Ya tienes una cuenta con ese correo. Ve a Acceso para vincular Google con tu contraseña.")
+        if existing and not claims and not self.passwords.verify(
+            str(payload.get("password") or payload.get("contrasena") or ""), str(existing.get("password_hash") or ""),
+        ):
+            raise ValueError("Ya existe una cuenta con ese correo. Inicia sesión para continuar.")
+        result = None
+        if existing and str(existing.get("dni") or "").strip() == dni:
+            self.gym.ensure_fresh()
+            membership = self.gym.latest_membership(int(existing.get("id_cliente", 0) or 0))
+            if membership and str(membership.get("estado_pago") or "").upper() == "PENDIENTE":
+                plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0) or 0)) or {}
+                result = {"cliente": existing, "membresia": membership, "plan": plan}
+        if result is None:
+            result = self.gym.registrar_cliente_publico(payload)
+        # El preregistro solo crea la solicitud y permite pagar; no inicia una sesión.
+        return self._safe_registration_result(result)
+
+    # Procesa esta operación.
+    def confirm_public_payment(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
+        return self._safe_registration_result(self.gym.confirmar_pago_cliente_publico(id_cliente, payload))
+
+    def register_admin_client(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if payload.get("id_usuario"):
+            raise ValueError("Este registro solo permite crear clientes nuevos")
+        self.gym.ensure_fresh()
+        validate_schema = getattr(self.gym, "validate_admin_registration_schema", None)
+        if validate_schema:
+            validate_schema()
+        return self._safe_registration_result(
+            self.gym.registrar_cliente_publico(payload, origen_registro="ADMIN")
+        )
+
+    def get_admin_payment_registration(self, id_cliente: int) -> dict[str, Any]:
+        self.gym.ensure_fresh()
+        client = self.gym.get_cliente(id_cliente)
+        if not client:
+            raise ValueError("Cliente no encontrado")
+        if client.get("origen_registro") != "ADMIN":
+            raise ValueError("Solo se puede cobrar desde el panel a clientes registrados por administración")
+        membership = self.gym.latest_membership(id_cliente)
+        if not membership or str(membership.get("estado_pago") or "").upper() != "PENDIENTE":
+            raise ValueError("El cliente no tiene una membresía pendiente de pago")
+        plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0))) or {}
+        return self._safe_registration_result({"cliente": client, "membresia": membership, "plan": plan})
+
+    # Confirma el pago de manera manual (efectivo/caja)
+    def confirm_manual_payment(self, id_cliente: int) -> dict[str, Any]:
+        return self._safe_registration_result(self.gym.confirmar_pago_manual_cliente(id_cliente))
+
+    # Procesa esta operación.
+    def payment_amount_matches(self, id_cliente: int, amount: float, id_membresia: int | None = None) -> bool:
+        self.gym.ensure_fresh()
+        membership = (self.gym.membership(id_cliente, id_membresia) if id_membresia is not None
+                      else self.gym.latest_membership(int(id_cliente)))
+        if not membership:
+            return False
+        expected = float(membership.get("monto_pago", 0) or 0)
+        if expected <= 0:
+            plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0) or 0))
+            expected = float((plan or {}).get("precio", 0) or 0)
+        return expected > 0 and abs(expected - float(amount)) < 0.01
+
+    # Procesa esta operación.
+    def activate_client_membership(self, id_cliente: int) -> dict[str, Any]:
+        return self._safe_registration_result(self.gym.activar_membresia_cliente(id_cliente))
+
+    # Elimina el registro indicado.
+    def delete_client(self, id_usuario: str) -> None:
+        try:
+            normalized = str(id_usuario or "").strip().upper()
+            if normalized.startswith("SGCLI"):
+                id_num = int(normalized.replace("SGCLI", ""))
+                self.gym.delete_cliente(int(id_num))
+        except Exception:
+            # best-effort: ignore
+            pass

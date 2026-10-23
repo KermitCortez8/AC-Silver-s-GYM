@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createSessionValidator } from '../src/services/sessionValidation.js';
+import { createSessionValidator } from '../src/application/services/sessionValidation.js';
 
 test('navigation shares pending validation and reuses a recent server response', async () => {
   let calls = 0;

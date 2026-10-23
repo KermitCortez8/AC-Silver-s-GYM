@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from config import Settings
-import services.stripe_service as stripe_service
+from infrastructure.config import Settings
+import infrastructure.services.stripe_service as stripe_service
 
 
 def _checkout(

@@ -6,10 +6,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from dependencies import get_gym_service, require_internal_viewer
-from routes.trainer_routes import router
-from services.supabase_gym_service import SupabaseGymService
-from services.local_gym_service import LocalGymService
+from presentation.dependencies import get_gym_service, require_internal_viewer
+from presentation.routes.trainer_routes import router
+from infrastructure.services.supabase_gym_service import SupabaseGymService
+from infrastructure.services.local_gym_service import LocalGymService
 
 
 class TestTrainerExercises(unittest.TestCase):
@@ -163,8 +163,9 @@ def test_missing_exercise_migration_does_not_silently_discard_data(table, column
 
 
 def test_assignment_does_not_swallow_unknown_database_errors(monkeypatch):
-    from services.gym_domain_service import GymDomainService
-    service = object.__new__(SupabaseGymService)
+    from domain.services.gym_domain_service import GymDomainService
+    # La aplicación coordina ahora la transacción; el error del dominio debe propagarse.
+    service = LocalGymService()
 
     def fail(*args):
         raise RuntimeError("database unavailable")

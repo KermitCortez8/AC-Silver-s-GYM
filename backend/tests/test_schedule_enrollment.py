@@ -5,10 +5,10 @@ from types import SimpleNamespace
 import threading
 import unittest
 
-from models.gym import MatriculaHorarioInput
-from routes.gym_routes import create_matricula, delete_matricula, list_matriculas
-from services.local_gym_service import LocalGymService
-from services.supabase_gym_service import SupabaseGymService
+from domain.models.gym import MatriculaHorarioInput
+from presentation.routes.gym_routes import create_matricula, delete_matricula, list_matriculas
+from infrastructure.services.local_gym_service import LocalGymService
+from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 
 def _schedule_service() -> LocalGymService:

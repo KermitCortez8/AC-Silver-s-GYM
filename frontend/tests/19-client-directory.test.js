@@ -6,7 +6,7 @@ import {
   normalizeMembershipStatus,
   filterClientDirectory,
   paginateClients,
-} from '../src/utils/clientDirectory.js';
+} from '../src/domain/utils/clientDirectory.js';
 
 const clients = Array.from({ length: 23 }, (_, index) => ({
   id_cliente: index + 1,

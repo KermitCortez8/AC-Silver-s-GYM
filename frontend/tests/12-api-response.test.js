@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseError, parseResponse } from '../src/services/apiResponse.js';
+import { parseError, parseResponse } from '../src/infrastructure/services/apiResponse.js';
 
 test('gateway errors show a readable message instead of nginx HTML', async () => {
   for (const status of [502, 504]) {

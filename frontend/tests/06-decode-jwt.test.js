@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { decodeJWT } from '../src/utils/authUtils.js';
+import { decodeJWT } from '../src/infrastructure/utils/authUtils.js';
 
 const encodedPayload = Buffer.from(JSON.stringify({ email: 'cliente@example.com' })).toString('base64url');
 

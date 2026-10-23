@@ -1,10 +1,12 @@
 import pytest
 import threading
 from datetime import datetime, timezone
-from services.gym_domain_service import GymDomainService, _today_iso
+from domain.services.gym_domain_service import GymDomainService, _today_iso
+from infrastructure.authentication import PasswordService
 
 class MockSupabaseService(GymDomainService):
     def __init__(self):
+        super().__init__(passwords=PasswordService())
         self.lock = threading.Lock()
         self.state = self._seed()
         self.saved_states = []

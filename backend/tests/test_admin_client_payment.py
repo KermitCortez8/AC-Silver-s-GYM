@@ -4,14 +4,14 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from config import Settings, get_settings
-from dependencies import get_clients_service, get_current_user, get_gym_service
-from models.auth import UserProfile
-from routes.clients_routes import router
-from services.clients_service import ClientsService
-from services.local_gym_service import LocalGymService
-from services.supabase_gym_service import SupabaseGymService
-import services.stripe_service as stripe_service
+from infrastructure.config import Settings, get_settings
+from presentation.dependencies import get_clients_service, get_current_user, get_gym_service
+from domain.models.auth import UserProfile
+from presentation.routes.clients_routes import router
+from application.services.clients_service import ClientsService
+from infrastructure.services.local_gym_service import LocalGymService
+from infrastructure.services.supabase_gym_service import SupabaseGymService
+import infrastructure.services.stripe_service as stripe_service
 
 
 PAYLOAD = {

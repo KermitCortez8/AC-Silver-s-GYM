@@ -1,14 +1,14 @@
 import pytest
 from pydantic import ValidationError
 
-from models.gym import MembresiaInput
-from services.clients_service import ClientsService
-from services.local_gym_service import LocalGymService
-from services.supabase_gym_service import SupabaseGymService
+from domain.models.gym import MembresiaInput
+from application.services.clients_service import ClientsService
+from infrastructure.services.local_gym_service import LocalGymService
+from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 
 def test_registration_payment_activation_and_expiry_use_only_three_states(monkeypatch):
-    monkeypatch.setattr('services.gym_domain_service._today_iso', lambda: '2026-10-01')
+    monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-01')
     gym = LocalGymService()
     result = ClientsService(gym).register_admin_client({
         'nombre': 'Estados Cliente', 'correo': 'estados@example.com',
@@ -65,7 +65,7 @@ def test_new_membership_stays_in_progress_until_paid_and_activated():
 
 
 def test_editing_or_loading_expired_client_does_not_create_an_active_renewal(monkeypatch):
-    monkeypatch.setattr('services.gym_domain_service._today_iso', lambda: '2026-10-01')
+    monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-01')
     gym = LocalGymService()
     client = gym.upsert_cliente({
         'nombre': 'Cliente Anterior', 'correo': 'anterior@example.com',

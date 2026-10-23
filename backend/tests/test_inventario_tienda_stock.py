@@ -7,8 +7,8 @@ from typing import Any
 
 import pytest
 
-from services.local_gym_service import LocalGymService
-from services.supabase_gym_service import SupabaseGymService
+from infrastructure.services.local_gym_service import LocalGymService
+from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 ADMIN = "SGADM001"
 

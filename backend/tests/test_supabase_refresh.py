@@ -4,14 +4,14 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from config import Settings
-from routes.auth_routes import router as auth_router
-from routes.attendance_routes import router as attendance_router
-from routes.clients_routes import router as clients_router
-from routes.gym_routes import router as gym_router
-from routes.users_routes import router as users_router
-from services.supabase_gym_service import SupabaseGymService
-from utils.security import create_local_token
+from infrastructure.config import Settings
+from presentation.routes.auth_routes import router as auth_router
+from presentation.routes.attendance_routes import router as attendance_router
+from presentation.routes.clients_routes import router as clients_router
+from presentation.routes.gym_routes import router as gym_router
+from presentation.routes.users_routes import router as users_router
+from infrastructure.services.supabase_gym_service import SupabaseGymService
+from infrastructure.security import create_local_token
 
 
 def service_with_remote(remote):
@@ -119,11 +119,11 @@ class RecordingRemote:
 
 def test_constructing_service_validates_schema_without_loading_every_table(monkeypatch):
     checks = []
-    monkeypatch.setattr('services.supabase_gym_service.SupabaseRestClient.validate_columns',
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.SupabaseRestClient.validate_columns',
                         lambda self, table, columns: checks.append(table))
-    monkeypatch.setattr('services.supabase_gym_service.SupabaseRestClient.select',
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.SupabaseRestClient.select',
                         lambda *_args, **_kwargs: pytest.fail('Unexpected startup data query'))
-    monkeypatch.setattr('services.supabase_gym_service.SupabaseRestClient.select_all',
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.SupabaseRestClient.select_all',
                         lambda *_args, **_kwargs: pytest.fail('Unexpected startup data query'))
     service = SupabaseGymService('https://example.invalid', 'test')
     assert checks == ['MEMBRESIA', 'VENTAS']
@@ -131,7 +131,7 @@ def test_constructing_service_validates_schema_without_loading_every_table(monke
 
 
 def test_sections_load_only_needed_tables_and_preserve_other_sections(monkeypatch):
-    monkeypatch.setattr('services.supabase_gym_service.time.monotonic', lambda: 100)
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.time.monotonic', lambda: 100)
     remote = RecordingRemote({'USUARIO': [{'id_usuario': 1, 'Nombres': 'Admin', 'Rol': 'admin'}]})
     service = service_with_remote(remote)
     service.ensure_fresh(('usuario',))
@@ -147,7 +147,7 @@ def test_sections_load_only_needed_tables_and_preserve_other_sections(monkeypatc
 
 def test_table_cache_expiration_is_independent_between_sections(monkeypatch):
     clock = [100]
-    monkeypatch.setattr('services.supabase_gym_service.time.monotonic', lambda: clock[0])
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.time.monotonic', lambda: clock[0])
     remote = RecordingRemote()
     service = service_with_remote(remote)
     service.ensure_fresh(('usuario',))
@@ -160,7 +160,7 @@ def test_table_cache_expiration_is_independent_between_sections(monkeypatch):
 
 
 def test_failed_partial_refresh_keeps_data_and_can_be_retried(monkeypatch):
-    monkeypatch.setattr('services.supabase_gym_service.time.monotonic', lambda: 100)
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.time.monotonic', lambda: 100)
     remote = RecordingRemote()
     service = service_with_remote(remote)
     service.state['clientes'] = [{'id_cliente': 99, 'estado': 'ACTIVO'}]
@@ -203,14 +203,14 @@ def test_order_reads_include_product_names_and_shared_inventory_stock():
 @pytest.fixture
 def scoped_api(monkeypatch):
     settings = Settings(supabase_url='https://example.invalid', supabase_key='test', auth_secret_key='x' * 48)
-    monkeypatch.setattr('dependencies.get_settings', lambda: settings)
-    monkeypatch.setattr('utils.security.get_settings', lambda: settings)
+    monkeypatch.setattr('presentation.dependencies.get_settings', lambda: settings)
+    monkeypatch.setattr('infrastructure.security.get_settings', lambda: settings)
     remote = RecordingRemote({
         'USUARIO': [{'id_usuario': 1, 'Nombre': 'Admin', 'Correo': 'admin@example.com', 'Rol': 'admin'}],
         'CLIENTES': [{'id_cliente': 7, 'Nombres': 'Cliente', 'Estado': True}],
     })
     service = service_with_remote(remote)
-    monkeypatch.setattr('dependencies._get_supabase_gym_service', lambda *_args: service)
+    monkeypatch.setattr('presentation.dependencies._get_supabase_gym_service', lambda *_args: service)
     app = FastAPI()
     for router in (auth_router, attendance_router, clients_router, gym_router, users_router):
         app.include_router(router, prefix='/api')
@@ -248,7 +248,7 @@ def test_cached_account_role_changes_still_revoke_admin_access(scoped_api):
 
 def test_unknown_reads_and_writes_keep_full_validation():
     from starlette.requests import Request
-    from dependencies import _resources_for_request
+    from presentation.dependencies import _resources_for_request
 
     for method, path in [('POST', '/api/clientes'), ('GET', '/api/future-module')]:
         request = Request({'type': 'http', 'method': method, 'path': path, 'headers': []})
@@ -257,7 +257,7 @@ def test_unknown_reads_and_writes_keep_full_validation():
 
 def test_health_check_does_not_refresh_admin_histories():
     from starlette.requests import Request
-    from dependencies import _resources_for_request
+    from presentation.dependencies import _resources_for_request
 
     for path in ('/health', '/api/health'):
         request = Request({'type': 'http', 'method': 'GET', 'path': path, 'headers': []})

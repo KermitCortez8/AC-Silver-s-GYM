@@ -55,8 +55,9 @@ before(async () => {
     },
   });
 
-  ({ useAuthStore } = await server.ssrLoadModule('/src/stores/authStore.js'));
-  ({ useGymStore } = await server.ssrLoadModule('/src/stores/gymStore.js'));
+  await server.ssrLoadModule('/src/bootstrap.js');
+  ({ useAuthStore } = await server.ssrLoadModule('/src/application/stores/authStore.js'));
+  ({ useGymStore } = await server.ssrLoadModule('/src/application/stores/gymStore.js'));
 });
 
 beforeEach(() => {

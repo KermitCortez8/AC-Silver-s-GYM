@@ -7,20 +7,21 @@ import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from dependencies import get_current_user, get_gym_service
-from routes.auth_routes import router as auth_router
-from services.auth_service import AuthService, ClientMembershipExpired, ClientMembershipRequired
-from services.clients_service import ClientsService
-from services.local_gym_service import LocalGymService
-from services.membership_lifecycle import apply_membership_expiration
-from services.supabase_gym_service import SupabaseGymService
-import services.gym_domain_service as domain
+from presentation.dependencies import get_current_user, get_gym_service
+from presentation.routes.auth_routes import router as auth_router
+from application.services.auth_service import AuthService, ClientMembershipExpired, ClientMembershipRequired
+from application.services.clients_service import ClientsService
+from infrastructure.services.local_gym_service import LocalGymService
+from domain.services.membership_lifecycle import apply_membership_expiration
+from infrastructure.services.supabase_gym_service import SupabaseGymService
+import domain.services.gym_domain_service as domain
 
 
 @pytest.fixture
 def gym(monkeypatch):
-    for module in ('gym_domain_service', 'auth_service', 'clients_service', 'supabase_gym_service'):
-        monkeypatch.setattr(f'services.{module}._today_iso', lambda: '2026-10-01')
+    for module in ('domain.services.gym_domain_service', 'application.services.auth_service',
+                   'application.services.clients_service', 'infrastructure.services.supabase_gym_service'):
+        monkeypatch.setattr(f'{module}._today_iso', lambda: '2026-10-01')
     service = LocalGymService()
     result = ClientsService(service).register_admin_client({
         'nombre': 'Cliente Vigente', 'correo': 'cliente@example.com', 'dni': '12345678',
@@ -55,8 +56,8 @@ def test_access_includes_last_day_and_expiration_preserves_payment_history(gym, 
     account = gym.state['clientes'][0]
     service.session_for_client(account)
     original = deepcopy(gym.state['membresia'][0])
-    monkeypatch.setattr('services.gym_domain_service._today_iso', lambda: '2026-10-02')
-    monkeypatch.setattr('services.auth_service._today_iso', lambda: '2026-10-02')
+    monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-02')
+    monkeypatch.setattr('application.services.auth_service._today_iso', lambda: '2026-10-02')
     with pytest.raises(ClientMembershipExpired):
         service.session_for_client(account)
     assert account['estado'] == 'VENCIDA'
@@ -73,7 +74,7 @@ def test_date_boundary_uses_peru_midnight(monkeypatch, instant, expected):
         @classmethod
         def now(cls, tz=None):
             return datetime.fromisoformat(instant).astimezone(tz or timezone.utc)
-    monkeypatch.setattr(domain, 'datetime', Clock)
+    monkeypatch.setattr('domain.services.gym_values.datetime', Clock)
     assert domain._today_iso() == expected
 
 
@@ -97,7 +98,7 @@ def test_expired_password_login_and_existing_signed_token_are_blocked(gym):
 def test_linked_google_login_is_blocked_after_expiration(gym, monkeypatch):
     account = gym.state['clientes'][0]
     account['google_sub'] = 'google-client'
-    monkeypatch.setattr('services.auth_service.verify_google_credential', lambda _: {
+    monkeypatch.setattr(gym.identity, 'verify', lambda _: {
         'sub': 'google-client', 'email': 'cliente@example.com', 'name': 'Cliente',
     })
     expire(gym)

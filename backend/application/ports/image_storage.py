@@ -1,0 +1,6 @@
+from typing import Protocol
+
+
+class ImageStorage(Protocol):
+    def list_images(self) -> list[dict[str, str]]: ...
+    def upload(self, path: str, data: bytes, content_type: str) -> dict[str, str]: ...

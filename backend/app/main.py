@@ -12,20 +12,20 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from config import get_settings
-from dependencies import get_gym_service
-from services.supabase_gym_service import SupabaseGymService
-from services.membership_notifications import process_pending_emails
-from routes.attendance_routes import router as attendance_router
-from routes.auth_routes import router as auth_router
-from routes.clients_routes import router as clients_router
-from routes.gym_routes import router as gym_router
-from routes.inventory_routes import router as inventory_router
-from routes.memberships_routes import router as membership_router
-from routes.promotions_routes import router as promotions_router
-from routes.store_routes import router as store_router
-from routes.trainer_routes import router as trainer_router
-from routes.users_routes import router as users_router
+from infrastructure.config import get_settings
+from presentation.dependencies import get_gym_service
+from application.services.gym_service import GymService
+from app.bootstrap import process_pending_emails
+from presentation.routes.attendance_routes import router as attendance_router
+from presentation.routes.auth_routes import router as auth_router
+from presentation.routes.clients_routes import router as clients_router
+from presentation.routes.gym_routes import router as gym_router
+from presentation.routes.inventory_routes import router as inventory_router
+from presentation.routes.memberships_routes import router as membership_router
+from presentation.routes.promotions_routes import router as promotions_router
+from presentation.routes.store_routes import router as store_router
+from presentation.routes.trainer_routes import router as trainer_router
+from presentation.routes.users_routes import router as users_router
 
 settings = get_settings()
 store_images_dir = Path(settings.store_images_dir)
@@ -79,7 +79,7 @@ def root() -> dict[str, str]:
 @app.get("/health")
 @app.get("/api/health", include_in_schema=False)
 # Procesa esta operación.
-def health(_gym_service: SupabaseGymService = Depends(get_gym_service)) -> dict[str, str]:
+def health(_gym_service: GymService = Depends(get_gym_service)) -> dict[str, str]:
     # La dependencia valida las credenciales y refresca los datos remotos.
     # Si la base de datos falla, responde 503 en lugar de anunciar healthy.
     return {"status": "healthy", "database": "connected"}

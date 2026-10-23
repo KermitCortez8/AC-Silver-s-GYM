@@ -4,6 +4,13 @@ Aplicacion-web para la ggestion de un gimnasio. El proyecto esta dividido en un
 frontend Vue/Vite y un backend FastAPI que se conecta a Supabase para consultar
 y guardar la informacion del sistema.
 
+## Arquitectura
+
+El backend y el frontend se organizan en cuatro capas: `presentation` (API o
+interfaz), `application` (coordinación y estado), `domain` (reglas y contratos) e
+`infrastructure` (persistencia y servicios externos). Consulta la
+[distribución de archivos y el alcance de la separación](docs/arquitectura.md).
+
 ## Requisitos
 
 - Node.js 22 o superior

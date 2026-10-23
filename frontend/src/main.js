@@ -1,10 +1,11 @@
+import './bootstrap.js'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import './style.css'
-import './styles/workspace.css'
-import App from './App.vue'
-import router from './router'
-import { initializeTheme } from './composables/useTheme'
+import './presentation/style.css'
+import './presentation/styles/workspace.css'
+import App from './presentation/App.vue'
+import router from './presentation/router'
+import { initializeTheme } from './presentation/composables/useTheme'
 
 initializeTheme()
 
