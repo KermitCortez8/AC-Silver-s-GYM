@@ -10,6 +10,7 @@ DAYS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"
 
 
 from domain.errors import AttendanceConflict
+from application.read_models import AttendanceCriteria, PageRequest
 
 
 class AttendanceService:
@@ -71,6 +72,20 @@ class AttendanceService:
                 continue
             rows.append(item)
         return sorted(rows, key=lambda r: (r.get("fecha", ""), r.get("hora_entrada") or r.get("hora", ""), r["id_asistencia"]), reverse=True)
+
+    def history(self, user, *, page=1, page_size=15, desde=None, hasta=None, dni="", servicio="", estado="", tipo=""):
+        if desde and hasta and desde > hasta:
+            raise ValueError("La fecha inicial no puede ser posterior a la final.")
+        admin = user.role == "admin"
+        if not admin and not user.id_cliente:
+            raise ValueError("No encontramos tu cliente vinculado.")
+        criteria = AttendanceCriteria(client_id=None if admin else user.id_cliente, dni=dni,
+            since=str(desde) if desde else "", until=str(hasta) if hasta else "",
+            service=servicio, status=estado, kind=tipo, include_annulled=admin)
+        result = self.gym.attendance_page(criteria, PageRequest(page, page_size))
+        clients = {int(row["id_cliente"]): row for row in result.clients}
+        return {"items": [self.present(row, admin, clients.get(self.client_id(row), {})) for row in result.records],
+                "total": result.total, "page": page, "page_size": page_size}
 
     def summary(self, user):
         today = self.now().date().isoformat()

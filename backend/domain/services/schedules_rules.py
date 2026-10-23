@@ -8,7 +8,26 @@ from datetime import datetime
 from typing import Any
 
 
+from dataclasses import dataclass
+from typing import Callable
+from domain.services.rule_context import RuleContext
+
+
+@dataclass(frozen=True)
+class SchedulesDependencies:
+    active_membership_for_cliente: Callable
+    normalize_usuario_id: Callable
+    parse_cliente_id: Callable
+    get_cliente: Callable
+    get_cliente_by_dni: Callable
+    get_usuario: Callable
+
+
 class SchedulesRules:
+    def __init__(self, context: RuleContext, dependencies: SchedulesDependencies):
+        self.context = context
+        self.dependencies = dependencies
+
     def _time_to_minutes(self, hora: str) -> int:
         value = str(hora or "").strip().lower()
         value = value.replace("a. m.", "am").replace("p. m.", "pm")
@@ -138,7 +157,7 @@ class SchedulesRules:
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
             "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
-            "fecha_matricula": str(row.get("fecha_matricula") or self.today()),
+            "fecha_matricula": str(row.get("fecha_matricula") or self.context.today()),
             "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
         }
 
@@ -150,10 +169,10 @@ class SchedulesRules:
             "id_progreso": int(row.get("id_progreso", 0) or fallback_index),
             "id_matricula": int(row.get("id_matricula", 0) or 0),
             "id_rutina": int(row.get("id_rutina", 0) or 0),
-            "fecha": str(row.get("fecha") or self.today())[:10],
+            "fecha": str(row.get("fecha") or self.context.today())[:10],
             "estado": str(row.get("estado") or "REALIZADO").strip().upper(),
             "observacion": str(row.get("observacion") or "").strip(),
-            "id_usuario": self._normalize_usuario_id(row.get("id_usuario")) if row.get("id_usuario") else None,
+            "id_usuario": self.dependencies.normalize_usuario_id(row.get("id_usuario")) if row.get("id_usuario") else None,
             "ejercicios_detalle": ejercicios_detalle,
         }
 
@@ -192,14 +211,14 @@ class SchedulesRules:
         raise ValueError(f"El servicio {servicio} solo registra en estos horarios: {ranges}")
 
     def tickets(self) -> list[dict[str, Any]]:
-        return self.state["tickets_atencion"]
+        return self.context.state["tickets_atencion"]
 
     def upsert_ticket(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(payload.get("id_cliente", 0))
-        id_usuario = self._normalize_usuario_id(payload.get("id_usuario"))
-        if not self.get_cliente(id_cliente):
+        id_usuario = self.dependencies.normalize_usuario_id(payload.get("id_usuario"))
+        if not self.dependencies.get_cliente(id_cliente):
             raise EntityNotFound("Cliente no encontrado")
-        if not self.get_usuario(id_usuario):
+        if not self.dependencies.get_usuario(id_usuario):
             raise EntityNotFound("Usuario no encontrado")
 
         # Procesa esta operación.
@@ -207,10 +226,10 @@ class SchedulesRules:
             item = {**payload}
             item_id = item.get("id_ticket")
             if item_id is None:
-                item_id = self._next_int_id("tickets_atencion", "id_ticket")
+                item_id = self.context.next_int_id("tickets_atencion", "id_ticket")
             item["id_ticket"] = int(item_id)
             item["id_usuario"] = id_usuario
-            item["fecha_emitido"] = self.safe_date(item.get("fecha_emitido", ""))
+            item["fecha_emitido"] = self.context.safe_date(item.get("fecha_emitido", ""))
             idx = next((i for i, row in enumerate(state["tickets_atencion"]) if int(row.get("id_ticket", 0)) == int(item_id)), -1)
             if idx >= 0:
                 state["tickets_atencion"][idx] = item
@@ -218,10 +237,10 @@ class SchedulesRules:
                 state["tickets_atencion"].insert(0, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def catalogo_rutina(self) -> list[dict[str, Any]]:
-        return self.state["catalogo_rutina"]
+        return self.context.state["catalogo_rutina"]
 
     def upsert_rutina(self, payload: dict[str, Any]) -> dict[str, Any]:
         validate_exercises(payload.get("ejercicios"))
@@ -234,7 +253,7 @@ class SchedulesRules:
             item = {**payload}
             item_id = item.get("id_rutina")
             if item_id is None:
-                item_id = self._next_int_id("catalogo_rutina", "id_rutina")
+                item_id = self.context.next_int_id("catalogo_rutina", "id_rutina")
             item["id_rutina"] = int(item_id)
             item["servicio"] = servicio
             item["nombre_rutina"] = str(item.get("nombre_rutina") or "").strip()
@@ -253,17 +272,17 @@ class SchedulesRules:
                 state["catalogo_rutina"].insert(0, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def horarios(self) -> list[dict[str, Any]]:
-        return self.state["horario"]
+        return self.context.state["horario"]
 
     def upsert_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(payload.get("id_cliente", 0))
         id_rutina = int(payload.get("id_rutina", 0))
-        if not self.get_cliente(id_cliente):
+        if not self.dependencies.get_cliente(id_cliente):
             raise EntityNotFound("Cliente no encontrado")
-        if not next((r for r in self.state["catalogo_rutina"] if int(r.get("id_rutina", 0)) == id_rutina), None):
+        if not next((r for r in self.context.state["catalogo_rutina"] if int(r.get("id_rutina", 0)) == id_rutina), None):
             raise EntityNotFound("Rutina no encontrada")
 
         dia = str(payload.get("dia_semana") or "Lunes").strip()
@@ -276,7 +295,7 @@ class SchedulesRules:
             item = {**payload}
             item_id = item.get("id_horario")
             if item_id is None:
-                item_id = self._next_int_id("horario", "id_horario")
+                item_id = self.context.next_int_id("horario", "id_horario")
             item_id = int(item_id)
 
             same_slot = [
@@ -306,10 +325,10 @@ class SchedulesRules:
                 state["horario"].insert(0, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def configuracion_gimnasio(self) -> dict[str, Any]:
-        return self.state.get("configuracion_gimnasio", {"capacidad_total": 30, "capacidad_por_hora": 10})
+        return self.context.state.get("configuracion_gimnasio", {"capacidad_total": 30, "capacidad_por_hora": 10})
 
     def actualizar_configuracion_gimnasio(self, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
@@ -319,16 +338,16 @@ class SchedulesRules:
             cfg["capacidad_por_hora"] = max(1, int(payload.get("capacidad_por_hora", cfg.get("capacidad_por_hora", 10))))
             return cfg
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def horarios_servicio(self, solo_activos: bool = False) -> list[dict[str, Any]]:
-        self._recount_schedule_cupos(self.state)
+        self._recount_schedule_cupos(self.context.state)
         routines_by_id = {
             int(routine.get("id_rutina", 0) or 0): routine
-            for routine in self.state.get("catalogo_rutina", [])
+            for routine in self.context.state.get("catalogo_rutina", [])
         }
         result = []
-        for schedule in self.state.get("horarios_servicio", []):
+        for schedule in self.context.state.get("horarios_servicio", []):
             if solo_activos and not bool(schedule.get("activo", True)):
                 continue
             routine = routines_by_id.get(int(schedule.get("id_rutina", 0) or 0), {})
@@ -354,7 +373,7 @@ class SchedulesRules:
         return next(
             (
                 schedule
-                for schedule in self.state.get("horarios_servicio", [])
+                for schedule in self.context.state.get("horarios_servicio", [])
                 if int(schedule.get("id_horario_servicio", 0) or 0) == int(id_horario_servicio)
             ),
             None,
@@ -372,7 +391,7 @@ class SchedulesRules:
         if not dia:
             raise ValueError("Selecciona un dia")
         id_rutina = int(payload.get("id_rutina", 0) or 0)
-        routine = next((r for r in self.state["catalogo_rutina"] if int(r.get("id_rutina", 0) or 0) == id_rutina), None)
+        routine = next((r for r in self.context.state["catalogo_rutina"] if int(r.get("id_rutina", 0) or 0) == id_rutina), None)
         if not routine:
             raise ValueError("Selecciona una rutina valida para el servicio")
         routine_service = str(routine.get("servicio") or servicio).strip().lower()
@@ -396,7 +415,7 @@ class SchedulesRules:
         def _fn(state: dict[str, Any]):
             state["horarios_servicio"] = self._normalize_horarios_servicio(state.get("horarios_servicio", []))
             if item["id_horario_servicio"] <= 0:
-                item["id_horario_servicio"] = self._next_int_id_in_state(state, "horarios_servicio", "id_horario_servicio")
+                item["id_horario_servicio"] = self.context.next_int_id_in_state(state, "horarios_servicio", "id_horario_servicio")
             idx = next(
                 (
                     i
@@ -416,7 +435,7 @@ class SchedulesRules:
             self._recount_schedule_cupos(state)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def delete_horario_servicio(self, id_horario_servicio: int) -> None:
         # Procesa esta operación.
@@ -434,7 +453,7 @@ class SchedulesRules:
             if len(state["horarios_servicio"]) == original:
                 raise EntityNotFound("Horario no encontrado")
 
-        self._change(_fn)
+        self.context.change(_fn)
 
     def matriculas_horario(
         self,
@@ -444,13 +463,13 @@ class SchedulesRules:
     ) -> list[dict[str, Any]]:
         resolved_id = int(id_cliente or 0)
         if dni:
-            cliente = self.get_cliente_by_dni(str(dni).strip())
+            cliente = self.dependencies.get_cliente_by_dni(str(dni).strip())
             if not cliente:
                 raise EntityNotFound("Cliente no encontrado")
             resolved_id = int(cliente["id_cliente"])
 
         result = []
-        for enrollment in self.state.get("matriculas_horario", []):
+        for enrollment in self.context.state.get("matriculas_horario", []):
             if resolved_id and int(enrollment.get("id_cliente", 0) or 0) != resolved_id:
                 continue
             if solo_activas and str(enrollment.get("estado") or "").upper() != "ACTIVA":
@@ -460,12 +479,12 @@ class SchedulesRules:
             routine = next(
                 (
                     r
-                    for r in self.state.get("catalogo_rutina", [])
+                    for r in self.context.state.get("catalogo_rutina", [])
                     if int(r.get("id_rutina", 0) or 0) == effective_routine_id
                 ),
                 {},
             )
-            cliente = self.get_cliente(int(enrollment.get("id_cliente", 0) or 0)) or {}
+            cliente = self.dependencies.get_cliente(int(enrollment.get("id_cliente", 0) or 0)) or {}
             result.append(
                 {
                     **enrollment,
@@ -484,9 +503,9 @@ class SchedulesRules:
                     "hora_fin": schedule.get("hora_fin", ""),
                     "asistencias": [
                         asistencia
-                        for asistencia in self.state.get("asistencia", [])
+                        for asistencia in self.context.state.get("asistencia", [])
                         if int(asistencia.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
-                        and self._parse_cliente_id(asistencia.get("id_cliente_num") or asistencia.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
+                        and self.dependencies.parse_cliente_id(asistencia.get("id_cliente_num") or asistencia.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
                         and not asistencia.get("anulado")
                     ],
                 }
@@ -497,7 +516,7 @@ class SchedulesRules:
         return next(
             (
                 enrollment
-                for enrollment in self.state.get("matriculas_horario", [])
+                for enrollment in self.context.state.get("matriculas_horario", [])
                 if int(enrollment.get("id_matricula", 0) or 0) == int(id_matricula)
             ),
             None,
@@ -558,10 +577,10 @@ class SchedulesRules:
             )
             return updated or state["matriculas_horario"][idx]
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def trainer_rutinas_cliente(self, dni: str) -> dict[str, Any]:
-        cliente = self.get_cliente_by_dni(str(dni or "").strip())
+        cliente = self.dependencies.get_cliente_by_dni(str(dni or "").strip())
         if not cliente:
             raise EntityNotFound("Cliente no encontrado")
         enrollments = [
@@ -570,7 +589,7 @@ class SchedulesRules:
             if str(row.get("estado") or "").strip().upper() == "ACTIVA"
         ]
         progress_by_enrollment: dict[int, list[dict[str, Any]]] = {}
-        for row in self.state.get("rutina_progreso", []):
+        for row in self.context.state.get("rutina_progreso", []):
             progress_by_enrollment.setdefault(int(row.get("id_matricula", 0) or 0), []).append(row)
 
         return {
@@ -595,9 +614,9 @@ class SchedulesRules:
 
     def registrar_progreso_rutina(self, id_matricula: int, payload: dict[str, Any]) -> dict[str, Any]:
         validate_exercises(payload.get("ejercicios_detalle"))
-        fecha = str(payload.get("fecha") or self.today())[:10]
+        fecha = str(payload.get("fecha") or self.context.today())[:10]
         observacion = str(payload.get("observacion") or "").strip()
-        id_usuario = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
+        id_usuario = self.dependencies.normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
@@ -636,7 +655,7 @@ class SchedulesRules:
             if not isinstance(ejercicios_detalle, list):
                 ejercicios_detalle = []
             item = {
-                "id_progreso": int(state["rutina_progreso"][existing_idx].get("id_progreso", 0) or 0) if existing_idx >= 0 else self._next_int_id_in_state(state, "rutina_progreso", "id_progreso"),
+                "id_progreso": int(state["rutina_progreso"][existing_idx].get("id_progreso", 0) or 0) if existing_idx >= 0 else self.context.next_int_id_in_state(state, "rutina_progreso", "id_progreso"),
                 "id_matricula": int(id_matricula),
                 "id_rutina": id_rutina,
                 "fecha": fecha,
@@ -652,7 +671,7 @@ class SchedulesRules:
                 state["rutina_progreso"].insert(0, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def trainer_overview(self) -> dict[str, Any]:
         active_enrollments = [
@@ -662,7 +681,7 @@ class SchedulesRules:
         ]
         routines_by_id = {
             int(routine.get("id_rutina", 0) or 0): routine
-            for routine in self.state.get("catalogo_rutina", [])
+            for routine in self.context.state.get("catalogo_rutina", [])
         }
 
         routine_supervision = []
@@ -670,9 +689,9 @@ class SchedulesRules:
             routine = routines_by_id.get(int(enrollment.get("id_rutina", 0) or 0), {})
             attendance_rows = [
                 item
-                for item in self.state.get("asistencia", [])
+                for item in self.context.state.get("asistencia", [])
                 if int(item.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
-                and self._parse_cliente_id(item.get("id_cliente_num") or item.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
+                and self.dependencies.parse_cliente_id(item.get("id_cliente_num") or item.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
                 and not item.get("anulado")
             ]
             routine_supervision.append(
@@ -686,11 +705,11 @@ class SchedulesRules:
             )
 
         routines_summary = []
-        for routine in self.state.get("catalogo_rutina", []):
+        for routine in self.context.state.get("catalogo_rutina", []):
             routine_id = int(routine.get("id_rutina", 0) or 0)
             assigned = [
                 row
-                for row in self.state.get("horarios_servicio", [])
+                for row in self.context.state.get("horarios_servicio", [])
                 if int(row.get("id_rutina", 0) or 0) == routine_id
             ]
             routine_enrollments = [
@@ -710,8 +729,8 @@ class SchedulesRules:
             "stats": {
                 "clientes_en_horario": len({int(row.get("id_cliente", 0) or 0) for row in active_enrollments if int(row.get("id_cliente", 0) or 0)}),
                 "matriculas_activas": len(active_enrollments),
-                "rutinas": len(self.state.get("catalogo_rutina", [])),
-                "rutinas_asignadas": len([row for row in self.state.get("horarios_servicio", []) if int(row.get("id_rutina", 0) or 0)]),
+                "rutinas": len(self.context.state.get("catalogo_rutina", [])),
+                "rutinas_asignadas": len([row for row in self.context.state.get("horarios_servicio", []) if int(row.get("id_rutina", 0) or 0)]),
             },
             "schedule_monitor": active_enrollments,
             "routine_supervision": routine_supervision,
@@ -734,7 +753,7 @@ class SchedulesRules:
         )
         if not cliente:
             raise EntityNotFound("Cliente no encontrado")
-        if not self._active_membership_for_cliente(state, id_cliente):
+        if not self.dependencies.active_membership_for_cliente(state, id_cliente):
             raise MembershipRequired("Cliente sin membresia activa")
 
         schedule = next(
@@ -770,12 +789,12 @@ class SchedulesRules:
 
     def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get("dni"):
-            cliente = self.get_cliente_by_dni(str(payload.get("dni")).strip())
+            cliente = self.dependencies.get_cliente_by_dni(str(payload.get("dni")).strip())
             if not cliente:
                 raise EntityNotFound("Cliente no encontrado")
             id_cliente = int(cliente["id_cliente"])
         else:
-            id_cliente = self._parse_cliente_id(payload.get("id_cliente"))
+            id_cliente = self.dependencies.parse_cliente_id(payload.get("id_cliente"))
 
         id_horario = int(payload.get("id_horario_servicio", 0) or 0)
 
@@ -783,10 +802,10 @@ class SchedulesRules:
         def _fn(state: dict[str, Any]):
             self._validate_new_schedule_enrollment(state, id_cliente, id_horario)
             enrollment = {
-                "id_matricula": self._next_int_id_in_state(state, "matriculas_horario", "id_matricula"),
+                "id_matricula": self.context.next_int_id_in_state(state, "matriculas_horario", "id_matricula"),
                 "id_cliente": id_cliente,
                 "id_horario_servicio": id_horario,
-                "fecha_matricula": self.today(),
+                "fecha_matricula": self.context.today(),
                 "estado": "ACTIVA",
             }
             state.setdefault("matriculas_horario", []).insert(0, enrollment)
@@ -797,7 +816,7 @@ class SchedulesRules:
                 if int(row.get("id_matricula", 0) or 0) == int(enrollment["id_matricula"])
             )
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def cancelar_matricula_horario(self, id_matricula: int, id_cliente: int | None = None) -> None:
         # Procesa esta operación.
@@ -810,4 +829,4 @@ class SchedulesRules:
             state["matriculas_horario"][idx]["estado"] = "CANCELADA"
             self._recount_schedule_cupos(state)
 
-        self._change(_fn)
+        self.context.change(_fn)

@@ -6,9 +6,27 @@ from typing import Any
 from domain.services.gym_values import _now_time
 
 
+from dataclasses import dataclass
+from typing import Callable
+from domain.services.rule_context import RuleContext
+
+
+@dataclass(frozen=True)
+class AttendanceDependencies:
+    active_membership_for_cliente: Callable
+    normalize_usuario_id: Callable
+    validate_service_schedule: Callable
+    get_cliente: Callable
+    get_cliente_by_dni: Callable
+
+
 class AttendanceRules:
+    def __init__(self, context: RuleContext, dependencies: AttendanceDependencies):
+        self.context = context
+        self.dependencies = dependencies
+
     def asistencia(self) -> list[dict[str, Any]]:
-        return self.state["asistencia"]
+        return self.context.state["asistencia"]
 
     def registrar_asistencia(self, id_cliente: int) -> dict[str, Any]:
         return self.registrar_asistencia_detallada({"id_cliente": id_cliente})
@@ -62,7 +80,7 @@ class AttendanceRules:
     def registrar_asistencia_detallada(self, payload: dict[str, Any]) -> dict[str, Any]:
         raw_id_cliente = payload.get("id_cliente", 0)
         id_cliente = self._parse_cliente_id(raw_id_cliente)
-        if not self.get_cliente(id_cliente):
+        if not self.dependencies.get_cliente(id_cliente):
             raise ValueError("Cliente no encontrado")
 
         servicio = str(payload.get("servicio") or "fitness").strip().lower()
@@ -70,21 +88,21 @@ class AttendanceRules:
         if servicio not in allowed:
             raise ValueError(f"Servicio inválido: {servicio}")
 
-        fecha = str(payload.get("fecha") or "").strip() or self.today()
+        fecha = str(payload.get("fecha") or "").strip() or self.context.today()
         hora = str(payload.get("hora") or "").strip() or _now_time()
-        id_usuario_registra = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
+        id_usuario_registra = self.dependencies.normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
-            membresia = self._active_membership_for_cliente(state, id_cliente)
+            membresia = self.dependencies.active_membership_for_cliente(state, id_cliente)
             if not membresia:
                 raise ValueError("Cliente sin membresía activa")
-            self._validate_service_schedule(state, servicio, fecha, hora)
+            self.dependencies.validate_service_schedule(state, servicio, fecha, hora)
             self._validate_attendance_capacity(state, fecha, hora)
-            client_record = self.get_cliente(id_cliente) or {}
+            client_record = self.dependencies.get_cliente(id_cliente) or {}
             uid_value = str(client_record.get("id_usuario") or f"cliente-{id_cliente}")
             item = {
-                "id_asistencia": self._next_int_id("asistencia", "id_asistencia"),
+                "id_asistencia": self.context.next_int_id("asistencia", "id_asistencia"),
                 "id_cliente": uid_value,
                 "id_cliente_num": id_cliente,
                 "fecha": fecha,
@@ -96,11 +114,11 @@ class AttendanceRules:
             state["asistencia"].insert(0, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def _resolve_cliente_for_attendance(self, payload: dict[str, Any]) -> int:
         if payload.get("dni"):
-            cliente = self.get_cliente_by_dni(str(payload.get("dni")).strip())
+            cliente = self.dependencies.get_cliente_by_dni(str(payload.get("dni")).strip())
             if not cliente:
                 raise ValueError("Cliente no encontrado")
             return int(cliente["id_cliente"])
@@ -110,9 +128,9 @@ class AttendanceRules:
         id_matricula = int(payload.get("id_matricula", 0) or 0)
         id_horario = int(payload.get("id_horario_servicio", 0) or 0)
         id_cliente = self._resolve_cliente_for_attendance(payload) if not id_matricula else 0
-        fecha = str(payload.get("fecha") or "").strip() or self.today()
+        fecha = str(payload.get("fecha") or "").strip() or self.context.today()
         hora_entrada = str(payload.get("hora_entrada") or "").strip() or _now_time()
-        id_usuario_registra = self._normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
+        id_usuario_registra = self.dependencies.normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
@@ -141,7 +159,7 @@ class AttendanceRules:
                 raise ValueError("El cliente no tiene matricula activa en ese horario")
 
             resolved_cliente = int(enrollment.get("id_cliente", 0) or 0)
-            membresia = self._active_membership_for_cliente(state, resolved_cliente)
+            membresia = self.dependencies.active_membership_for_cliente(state, resolved_cliente)
             if not membresia:
                 raise ValueError("Cliente sin membresia activa")
 
@@ -169,9 +187,9 @@ class AttendanceRules:
                 existing["hora"] = existing.get("hora") or existing["hora_entrada"]
                 return existing
 
-            cliente = self.get_cliente(resolved_cliente) or {}
+            cliente = self.dependencies.get_cliente(resolved_cliente) or {}
             item = {
-                "id_asistencia": self._next_int_id("asistencia", "id_asistencia"),
+                "id_asistencia": self.context.next_int_id("asistencia", "id_asistencia"),
                 "id_cliente": str(cliente.get("id_usuario") or f"cliente-{resolved_cliente}"),
                 "id_cliente_num": resolved_cliente,
                 "fecha": fecha,
@@ -187,7 +205,7 @@ class AttendanceRules:
             state["asistencia"].insert(0, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def registrar_salida_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_asistencia = int(payload.get("id_asistencia", 0) or 0)
@@ -203,7 +221,7 @@ class AttendanceRules:
             asistencia["hora_salida"] = hora_salida
             return asistencia
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def actualizar_asistencia(self, id_asistencia: int, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
@@ -214,9 +232,9 @@ class AttendanceRules:
             current = {**state["asistencia"][idx]}
             if payload.get("id_cliente") is not None:
                 id_cliente = self._parse_cliente_id(payload.get("id_cliente"))
-                if not self.get_cliente(id_cliente):
+                if not self.dependencies.get_cliente(id_cliente):
                     raise ValueError("Cliente no encontrado")
-                cliente = self.get_cliente(id_cliente) or {}
+                cliente = self.dependencies.get_cliente(id_cliente) or {}
                 current["id_cliente"] = str(cliente.get("id_usuario") or f"cliente-{id_cliente}")
                 current["id_cliente_num"] = id_cliente
             if payload.get("fecha"):
@@ -229,13 +247,13 @@ class AttendanceRules:
                     raise ValueError(f"Servicio inválido: {servicio}")
                 current["servicio"] = servicio
             if payload.get("id_usuario"):
-                current["id_usuario_registra"] = self._normalize_usuario_id(payload.get("id_usuario"))
-            self._validate_service_schedule(state, current.get("servicio", "fitness"), current.get("fecha", self.today()), current.get("hora", _now_time()))
-            self._validate_attendance_capacity(state, current.get("fecha", self.today()), current.get("hora", _now_time()), exclude_id=id_asistencia)
+                current["id_usuario_registra"] = self.dependencies.normalize_usuario_id(payload.get("id_usuario"))
+            self.dependencies.validate_service_schedule(state, current.get("servicio", "fitness"), current.get("fecha", self.context.today()), current.get("hora", _now_time()))
+            self._validate_attendance_capacity(state, current.get("fecha", self.context.today()), current.get("hora", _now_time()), exclude_id=id_asistencia)
             state["asistencia"][idx] = current
             return current
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def eliminar_asistencia(self, id_asistencia: int) -> None:
         # Procesa esta operación.
@@ -245,7 +263,7 @@ class AttendanceRules:
             if len(state["asistencia"]) == original:
                 raise ValueError("Asistencia no encontrada")
 
-        self._change(_fn)
+        self.context.change(_fn)
 
     def registrar_asistencia_por_dni(self, dni: str) -> dict[str, Any]:
         payload: dict[str, Any]
@@ -256,7 +274,7 @@ class AttendanceRules:
             payload = {"dni": str(dni)}
             dni_val = str(dni)
 
-        cliente = self.get_cliente_by_dni(dni_val)
+        cliente = self.dependencies.get_cliente_by_dni(dni_val)
         if not cliente:
             raise ValueError("DNI no registrado")
         payload["id_cliente"] = int(cliente["id_cliente"])

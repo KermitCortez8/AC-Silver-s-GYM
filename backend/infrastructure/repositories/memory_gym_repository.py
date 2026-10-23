@@ -1,3 +1,4 @@
+from infrastructure.repositories.operation_adapter import query_operation, command_operation
 """Repositorio en memoria para pruebas y ejecución sin proveedores externos."""
 from copy import deepcopy
 import threading
@@ -23,6 +24,18 @@ class MemoryGymRepository:
             values = [int(match.group(1)) for row in self.state.get(table, [])
                       if (match := re.search(r"(\d+)$", str(row.get(key) or "")))]
             floors[table] = max(floors.get(table, 0), max(values, default=0))
+
+    def attendance_page(self, criteria, request):
+        from infrastructure.repositories.memory_attendance_history import attendance_page
+        with self.lock:
+            return attendance_page(self.state, criteria, request)
+
+    def query(self, query, passwords=None):
+        self.refresh(query.resources)
+        return self.read(lambda state: query_operation(query, state, passwords), query.resources)
+
+    def execute(self, command, passwords=None):
+        return self.change(lambda state: command_operation(command, state, passwords), command.resources)
 
     def read(self, operation, resources=None):
         with self.lock:

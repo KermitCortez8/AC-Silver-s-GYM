@@ -36,10 +36,10 @@ def database_code(error):
     return match.group(1) if match else None
 
 
-def send(request, *, context, timeout=20, opener=urlopen):
+def send_response(request, *, context, timeout=20, opener=urlopen):
     try:
         with opener(request, timeout=timeout) as response:
-            return response.read()
+            return response.read(), dict(getattr(response, "headers", {}))
     except HTTPError as error:
         raw = error.read().decode("utf-8", errors="replace")
         try:
@@ -49,6 +49,10 @@ def send(request, *, context, timeout=20, opener=urlopen):
         raise RemoteServiceError(context, error.code, payload) from error
     except OSError as error:
         raise RemoteServiceError(context, 503, {"message": "El proveedor no está disponible"}) from error
+
+
+def send(request, *, context, timeout=20, opener=urlopen):
+    return send_response(request, context=context, timeout=timeout, opener=opener)[0]
 
 
 def json_request(url, *, method, headers, body=None, context, timeout=20, opener=urlopen):

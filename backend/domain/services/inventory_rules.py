@@ -7,12 +7,27 @@ from typing import Any
 from domain.services.gym_values import TIPO_TIENDA, ESTADO_DESCONTINUADO, ESTADO_DISPONIBLE, ESTADO_STOCK_BAJO, ESTADO_AGOTADO, DESTINO_TIENDA, DESTINO_VENTA, _MOVIMIENTO_PEDIDO
 
 
+from dataclasses import dataclass
+from typing import Callable
+from domain.services.rule_context import RuleContext
+
+
+@dataclass(frozen=True)
+class InventoryDependencies:
+    normalize_usuario_id: Callable
+    get_usuario: Callable
+
+
 class InventoryRules:
+    def __init__(self, context: RuleContext, dependencies: InventoryDependencies):
+        self.context = context
+        self.dependencies = dependencies
+
     def inventario(self) -> list[dict[str, Any]]:
-        return self.state["inventario"]
+        return self.context.state["inventario"]
 
     def get_item_inventario(self, id_item: int) -> dict[str, Any] | None:
-        return next((i for i in self.state["inventario"] if int(i.get("id_item", 0)) == int(id_item)), None)
+        return next((i for i in self.context.state["inventario"] if int(i.get("id_item", 0)) == int(id_item)), None)
 
     @staticmethod
     def _es_item_tienda(item: dict[str, Any] | None) -> bool:
@@ -29,8 +44,8 @@ class InventoryRules:
         return max((int(i.get("n_activo") or 0) for i in state.get("inventario", [])), default=0) + 1
 
     def _actor_usuario_id(self, actor: Any) -> str | None:
-        usuario = self.get_usuario(actor) if actor else None
-        return self._normalize_usuario_id(usuario.get("id_usuario")) if usuario else None
+        usuario = self.dependencies.get_usuario(actor) if actor else None
+        return self.dependencies.normalize_usuario_id(usuario.get("id_usuario")) if usuario else None
 
     def _aplicar_movimiento(
         self,
@@ -59,11 +74,11 @@ class InventoryRules:
 
         item["cantidad_stock"] = nuevo_stock
         mov = {
-            "id_mov": self._next_int_id_in_state(state, "mov_inv", "id_mov"),
+            "id_mov": self.context.next_int_id_in_state(state, "mov_inv", "id_mov"),
             "id_item": int(item["id_item"]),
             "id_usuario": id_usuario,
             "tipo_movimiento": tipo,
-            "fecha_movimiento": self.safe_date(fecha),
+            "fecha_movimiento": self.context.safe_date(fecha),
             "descripcion": descripcion,
             "cantidad": cantidad,
             "destino": destino if tipo == "salida" else None,
@@ -127,7 +142,7 @@ class InventoryRules:
         productos.insert(
             0,
             {
-                "id_producto": self._next_int_id_in_state(state, "productos_tienda", "id_producto"),
+                "id_producto": self.context.next_int_id_in_state(state, "productos_tienda", "id_producto"),
                 "id_item": int(item["id_item"]),
                 "nombre_producto": str(item.get("nombre_item") or "Sin nombre"),
                 "descripcion": "",
@@ -152,7 +167,7 @@ class InventoryRules:
             if item_id is not None:
                 idx = next((i for i, row in enumerate(state["inventario"]) if int(row.get("id_item", 0)) == int(item_id)), -1)
             if item_id is None:
-                item_id = self._next_int_id_in_state(state, "inventario", "id_item")
+                item_id = self.context.next_int_id_in_state(state, "inventario", "id_item")
             item["id_item"] = int(item_id)
             if str(item.get("tipo") or "").strip().lower() == TIPO_TIENDA.lower():
                 item["tipo"] = TIPO_TIENDA
@@ -182,7 +197,7 @@ class InventoryRules:
             self._actualizar_estados_tienda(state)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def delete_inventario(self, id_item: int) -> dict[str, Any] | None:
         # Procesa esta operación.
@@ -199,19 +214,19 @@ class InventoryRules:
             state["inventario"] = [i for i in state["inventario"] if int(i.get("id_item", 0)) != int(id_item)]
             return None
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def movimientos_inventario(self) -> list[dict[str, Any]]:
-        return self.state["mov_inv"]
+        return self.context.state["mov_inv"]
 
     def registrar_movimiento_inventario(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_item = int(payload.get("id_item", 0))
-        id_usuario = self._normalize_usuario_id(payload.get("id_usuario"))
+        id_usuario = self.dependencies.normalize_usuario_id(payload.get("id_usuario"))
         tipo = str(payload.get("tipo_movimiento", "")).lower()
 
         if not self.get_item_inventario(id_item):
             raise EntityNotFound("Item de inventario no encontrado")
-        if not self.get_usuario(id_usuario):
+        if not self.dependencies.get_usuario(id_usuario):
             raise EntityNotFound("Usuario no encontrado")
         if tipo not in {"entrada", "salida", "ajuste"}:
             raise ValueError("Tipo de movimiento inválido")
@@ -245,7 +260,7 @@ class InventoryRules:
                 "stock_tienda": int(producto["cantidad_stock"]) if producto else None,
             }
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def actualizar_movimiento_inventario(self, id_mov: int, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
@@ -356,7 +371,7 @@ class InventoryRules:
                     "tipo_movimiento": nuevo_tipo,
                     "cantidad": nueva_cantidad,
                     "id_item": nuevo_item,
-                    "fecha_movimiento": self.safe_date(fecha),
+                    "fecha_movimiento": self.context.safe_date(fecha),
                     "descripcion": descripcion,
                     "destino": nuevo_destino,
                 }
@@ -365,4 +380,4 @@ class InventoryRules:
             item_final = self._find_item_in_state(state, nuevo_item)
             return {"movimiento": mov, "stock_actual": int(item_final.get("cantidad_stock", 0) or 0) if item_final else None}
 
-        return self._change(_fn)
+        return self.context.change(_fn)

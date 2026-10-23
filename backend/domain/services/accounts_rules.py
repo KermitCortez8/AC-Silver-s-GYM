@@ -11,7 +11,22 @@ def user_role_prefix(role: str) -> str:
     return {"admin": "ADM", "trainer": "TRA", "staff": "STA"}.get(str(role or "").strip().lower(), "USR")
 
 
+from dataclasses import dataclass
+from typing import Callable
+from domain.services.rule_context import RuleContext
+
+
+@dataclass(frozen=True)
+class AccountsDependencies:
+    ensure_membership_for_active_client: Callable
+    parse_cliente_id: Callable
+
+
 class AccountsRules:
+    def __init__(self, context: RuleContext, dependencies: AccountsDependencies):
+        self.context = context
+        self.dependencies = dependencies
+
     def _user_role_prefix(self, rol: str) -> str:
         return user_role_prefix(rol)
 
@@ -50,7 +65,7 @@ class AccountsRules:
         raw_id = raw_id if re.fullmatch(r"SG[A-Z]{2,3}\d+", raw_id) else f"SG{prefix}{int(number):03d}"
         password_hash = str(row.get("password_hash") or "").strip()
         if not password_hash and row.get("password"):
-            password_hash = self.passwords.hash(str(row.get("password") or ""))
+            password_hash = self.context.passwords.hash(str(row.get("password") or ""))
         return {
             "id_usuario": raw_id,
             "nombre": nombre,
@@ -68,12 +83,12 @@ class AccountsRules:
         if not usuario_id:
             return None
 
-        exact = next((u for u in self.state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) == usuario_id), None)
+        exact = next((u for u in self.context.state["usuario"] if self._normalize_usuario_id(u.get("id_usuario")) == usuario_id), None)
         if exact:
             return exact
         legacy = re.fullmatch(r"SGUS(\d+)", usuario_id)
         if legacy:
-            matches = [u for u in self.state["usuario"]
+            matches = [u for u in self.context.state["usuario"]
                        if (number := re.search(r"(\d+)$", str(u.get("id_usuario") or "")))
                        and int(number.group(1)) == int(legacy.group(1))]
             if len(matches) == 1:
@@ -85,14 +100,14 @@ class AccountsRules:
         return next(
             (
                 u
-                for u in self.state["usuario"]
+                for u in self.context.state["usuario"]
                 if str(u.get("email") or u.get("correo") or "").strip().lower() == normalized_email
             ),
             None,
         )
 
     def usuarios(self) -> list[dict[str, Any]]:
-        return self.state["usuario"]
+        return self.context.state["usuario"]
 
     def usuarios_normalized(self) -> list[dict[str, Any]]:
         return [
@@ -105,11 +120,11 @@ class AccountsRules:
                 "rol": row["rol"],
                 "has_password": bool(row.get("password_hash")),
             }
-            for row in self.state.get("usuario", [])
+            for row in self.context.state.get("usuario", [])
         ]
 
     def _change_users(self, fn):
-        return self._change(fn)
+        return self.context.change(fn)
 
     def upsert_usuario(self, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
@@ -150,7 +165,7 @@ class AccountsRules:
                 "dni": str(payload.get("dni") or "").strip(),
                 "rol": rol,
                 "estado": "Activo",
-                "password_hash": self.passwords.hash(password) if password else str(existing.get("password_hash") or ""),
+                "password_hash": self.context.passwords.hash(password) if password else str(existing.get("password_hash") or ""),
                 "google_sub": str(existing.get("google_sub") or ""),
             }
 
@@ -172,7 +187,7 @@ class AccountsRules:
         self._change_users(_fn)
 
     def clientes(self) -> list[dict[str, Any]]:
-        return self.state["clientes"]
+        return self.context.state["clientes"]
 
     def _normalize_cliente_record(self, row: dict[str, Any], fallback_index: int) -> dict[str, Any]:
         id_cliente = row.get("id_cliente")
@@ -187,7 +202,7 @@ class AccountsRules:
         promocion = str(row.get("promocion") or "").strip()
         password_hash = str(row.get("password_hash") or "").strip()
         if not password_hash and row.get("password"):
-            password_hash = self.passwords.hash(str(row.get("password") or ""))
+            password_hash = self.context.passwords.hash(str(row.get("password") or ""))
         raw_estado = row.get("estado")
         if isinstance(raw_estado, bool):
             estado = "Activo" if raw_estado else "Inactivo"
@@ -216,7 +231,7 @@ class AccountsRules:
         }
 
     def clientes_normalized(self) -> list[dict[str, Any]]:
-        state = project_memberships(self.state, self.today())
+        state = project_memberships(self.context.state, self.context.today())
         latest_by_client = {}
         for membership in state.get("membresia", []):
             client_id = int(membership.get("id_cliente", 0) or 0)
@@ -266,10 +281,10 @@ class AccountsRules:
             elif str(raw_id or "").isdigit():
                 item_id = int(str(raw_id))
             elif id_usuario.upper().startswith("SGCLI"):
-                item_id = self._parse_cliente_id(id_usuario)
+                item_id = self.dependencies.parse_cliente_id(id_usuario)
 
             if item_id is None:
-                item_id = self._next_int_id("clientes", "id_cliente")
+                item_id = self.context.next_int_id("clientes", "id_cliente")
 
             if not id_usuario or id_usuario.isdigit():
                 id_usuario = f"SGCLI{int(item_id):03d}"
@@ -305,30 +320,30 @@ class AccountsRules:
                 raise ValueError("Ingresa una contraseña para el cliente")
             if password and len(password) < 6:
                 raise ValueError("La contraseña debe tener al menos 6 caracteres")
-            item["password_hash"] = self.passwords.hash(password) if password else str(existing.get("password_hash") or "")
+            item["password_hash"] = self.context.passwords.hash(password) if password else str(existing.get("password_hash") or "")
             item["google_sub"] = str(existing.get("google_sub") or "")
             item["origen_registro"] = str(existing.get("origen_registro") or "") if existing else "ADMIN"
             if idx >= 0:
                 state["clientes"][idx] = item
             else:
                 state["clientes"].insert(0, item)
-            self._ensure_membership_for_active_client(state, item)
+            self.dependencies.ensure_membership_for_active_client(state, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def get_cliente(self, id_cliente: int) -> dict[str, Any] | None:
-        return next((c for c in self.state["clientes"] if int(c.get("id_cliente", 0)) == int(id_cliente)), None)
+        return next((c for c in self.context.state["clientes"] if int(c.get("id_cliente", 0)) == int(id_cliente)), None)
 
     def get_cliente_by_dni(self, dni: str) -> dict[str, Any] | None:
-        return next((c for c in self.state["clientes"] if str(c.get("dni", "")) == str(dni)), None)
+        return next((c for c in self.context.state["clientes"] if str(c.get("dni", "")) == str(dni)), None)
 
     def get_cliente_by_email(self, email: str) -> dict[str, Any] | None:
         normalized = str(email or "").strip().lower()
         return next(
             (
                 c
-                for c in self.state["clientes"]
+                for c in self.context.state["clientes"]
                 if str(c.get("correo") or c.get("email") or "").strip().lower() == normalized
             ),
             None,
@@ -338,7 +353,7 @@ class AccountsRules:
         if not subject:
             return None
         for kind in ("usuario", "clientes"):
-            for account in self.state[kind]:
+            for account in self.context.state[kind]:
                 if account.get("google_sub") == subject:
                     return kind, account
         return None
@@ -357,17 +372,17 @@ class AccountsRules:
             account["google_sub"] = subject
             return account
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def authenticate_usuario_password(self, correo: str, password: str) -> dict[str, Any] | None:
         usuario = self.get_usuario_by_email(correo)
-        if not usuario or not self.passwords.verify(password, str(usuario.get("password_hash") or "")):
+        if not usuario or not self.context.passwords.verify(password, str(usuario.get("password_hash") or "")):
             return None
         return usuario
 
     def authenticate_cliente_password(self, correo: str, password: str) -> dict[str, Any] | None:
         cliente = self.get_cliente_by_email(correo)
-        if not cliente or not self.passwords.verify(password, str(cliente.get("password_hash") or "")):
+        if not cliente or not self.context.passwords.verify(password, str(cliente.get("password_hash") or "")):
             return None
         return cliente
 
@@ -404,4 +419,4 @@ class AccountsRules:
             state["horario"] = [h for h in state["horario"] if not matches_id(h.get("id_cliente"))]
             state["tickets_atencion"] = [t for t in state["tickets_atencion"] if not matches_id(t.get("id_cliente"))]
 
-        self._change(_fn)
+        self.context.change(_fn)

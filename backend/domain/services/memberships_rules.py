@@ -9,9 +9,28 @@ from typing import Any
 from domain.services.membership_lifecycle import membership_expired, normalize_membership_status
 
 
+from dataclasses import dataclass
+from typing import Callable
+from domain.services.rule_context import RuleContext
+
+
+@dataclass(frozen=True)
+class MembershipsDependencies:
+    get_account_by_google_sub: Callable
+    get_cliente: Callable
+    get_cliente_by_dni: Callable
+    get_cliente_by_email: Callable
+    get_usuario_by_email: Callable
+    upsert_cliente: Callable
+
+
 class MembershipsRules:
+    def __init__(self, context: RuleContext, dependencies: MembershipsDependencies):
+        self.context = context
+        self.dependencies = dependencies
+
     def _active_membership_for_cliente(self, state: dict[str, Any], id_cliente: int) -> dict[str, Any] | None:
-        today = self.today()
+        today = self.context.today()
         for memb in state["membresia"]:
             if int(memb.get("id_cliente", 0)) != int(id_cliente):
                 continue
@@ -115,10 +134,10 @@ class MembershipsRules:
             return latest
 
         plan = self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
-        start = self.today()
+        start = self.context.today()
         end = (datetime.fromisoformat(start) + timedelta(days=self._duration_days(plan))).date().isoformat()
         membership = {
-            "id_membresia": self._next_int_id_in_state(state, "membresia", "id_membresia"),
+            "id_membresia": self.context.next_int_id_in_state(state, "membresia", "id_membresia"),
             "fecha_inicio": start,
             "fecha_fin": end,
             "estado": "EN_TRAMITE",
@@ -131,10 +150,10 @@ class MembershipsRules:
         return membership
 
     def planes_membresia(self) -> list[dict[str, Any]]:
-        return self.state.get("planes_membresia", [])
+        return self.context.state.get("planes_membresia", [])
 
     def get_plan_membresia(self, id_pm: int) -> dict[str, Any] | None:
-        return next((p for p in self.state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == int(id_pm)), None)
+        return next((p for p in self.context.state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == int(id_pm)), None)
 
     def upsert_plan_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
@@ -143,7 +162,7 @@ class MembershipsRules:
             item = {**payload}
             item_id = item.get("id_pm")
             if item_id is None:
-                item_id = self._next_int_id("planes_membresia", "id_pm")
+                item_id = self.context.next_int_id("planes_membresia", "id_pm")
             item["id_pm"] = int(item_id)
             item["nombre_plan"] = required_text(item.get("nombre_plan")).upper()
             item["duracion"] = str(item.get("duracion") or "30 dias").strip()
@@ -157,7 +176,7 @@ class MembershipsRules:
                 state["planes_membresia"].insert(0, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def delete_plan_membresia(self, id_pm: int) -> None:
         # Procesa esta operación.
@@ -166,7 +185,7 @@ class MembershipsRules:
                 raise ValueError("No se puede eliminar un plan usado por membresías")
             state["planes_membresia"] = [p for p in state.get("planes_membresia", []) if int(p.get("id_pm", 0)) != int(id_pm)]
 
-        self._change(_fn)
+        self.context.change(_fn)
 
     def _get_usos_promocion(self, state: dict[str, Any], promo: dict[str, Any]) -> int:
         promo_id = int(promo.get("id_promocion", 0) or 0)
@@ -199,9 +218,9 @@ class MembershipsRules:
 
     def promociones(self) -> list[dict[str, Any]]:
         result = []
-        for promo in self.state.get("promociones", []):
+        for promo in self.context.state.get("promociones", []):
             item = dict(promo)
-            calculated_usos = self._get_usos_promocion(self.state, promo)
+            calculated_usos = self._get_usos_promocion(self.context.state, promo)
             if calculated_usos != promo.get("usos_actuales"):
                 promo["usos_actuales"] = calculated_usos
             item["usos_actuales"] = calculated_usos
@@ -234,7 +253,7 @@ class MembershipsRules:
                     None,
                 )
                 if existing_promo:
-                    today = self.today()
+                    today = self.context.today()
                     limite = existing_promo.get("limite_cupos")
                     usos = self._get_usos_promocion(state, existing_promo)
                     valid_until = str(existing_promo.get("fecha_fin") or "")
@@ -249,7 +268,7 @@ class MembershipsRules:
 
             item = self._normalize_promocion(
                 {**payload, "tipo_descuento": tipo, "valor_descuento": valor},
-                self._next_int_id_in_state(state, "promociones", "id_promocion"),
+                self.context.next_int_id_in_state(state, "promociones", "id_promocion"),
             )
             item_id = int(payload.get("id_promocion") or item["id_promocion"])
             item["id_promocion"] = item_id
@@ -258,7 +277,7 @@ class MembershipsRules:
                 start_1 = str(item.get("fecha_inicio") or "")
                 end_1 = str(item.get("fecha_fin") or "")
                 plans_1 = item.get("planes_aplicables") or []
-                today = self.today()
+                today = self.context.today()
 
                 for existing in state["promociones"]:
                     if int(existing.get("id_promocion", 0)) == item_id:
@@ -310,7 +329,7 @@ class MembershipsRules:
                 state["promociones"].insert(0, item)
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def delete_promocion(self, id_promocion: int) -> None:
         # Procesa esta operación.
@@ -324,14 +343,14 @@ class MembershipsRules:
             if len(state["promociones"]) == before:
                 raise ValueError("Promocion no encontrada")
 
-        self._change(_fn)
+        self.context.change(_fn)
 
     def get_promocion_vigente_para_plan(
         self,
         state: dict[str, Any],
         id_pm: int,
     ) -> dict[str, Any] | None:
-        today = self.today()
+        today = self.context.today()
         for promo in state.get("promociones", []):
             if not promo.get("activo", True):
                 continue
@@ -356,15 +375,15 @@ class MembershipsRules:
         return None
 
     def promociones_vigentes_publicas(self) -> list[dict[str, Any]]:
-        today = self.today()
+        today = self.context.today()
         result = []
 
-        for promo in self.state.get("promociones", []):
+        for promo in self.context.state.get("promociones", []):
             if not promo.get("activo", True):
                 continue
 
             limite = promo.get("limite_cupos")
-            usos = self._get_usos_promocion(self.state, promo)
+            usos = self._get_usos_promocion(self.context.state, promo)
             if limite is not None and limite > 0 and usos >= limite:
                 continue
 
@@ -429,7 +448,7 @@ class MembershipsRules:
         if limite is not None and limite > 0 and usos >= limite:
             return precio_base
 
-        today = self.today()
+        today = self.context.today()
         fecha_inicio = str(promocion.get("fecha_inicio") or "")
         if fecha_inicio and fecha_inicio > today:
             return precio_base
@@ -468,7 +487,7 @@ class MembershipsRules:
             promocion["usos_actuales"] = usos
 
     def membresias(self) -> list[dict[str, Any]]:
-        return [{**m, "estado": normalize_membership_status(m.get("estado"))} for m in self.state["membresia"]]
+        return [{**m, "estado": normalize_membership_status(m.get("estado"))} for m in self.context.state["membresia"]]
 
     def membresias_por_cliente(self, id_cliente: int) -> list[dict[str, Any]]:
         return [m for m in self.membresias() if int(m.get("id_cliente", 0)) == int(id_cliente)]
@@ -476,7 +495,7 @@ class MembershipsRules:
     def crear_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(payload.get("id_cliente", 0))
         id_pm = int(payload.get("id_pm", 0))
-        if not self.get_cliente(id_cliente):
+        if not self.dependencies.get_cliente(id_cliente):
             raise ValueError("Cliente no encontrado")
         if not self.get_plan_membresia(id_pm):
             raise ValueError("Plan de membresía no encontrado")
@@ -487,14 +506,14 @@ class MembershipsRules:
             id_promocion = int(item.get("id_promocion") or 0) or None
             item_id = item.get("id_membresia")
             if item_id is None:
-                item_id = self._next_int_id("membresia", "id_membresia")
+                item_id = self.context.next_int_id("membresia", "id_membresia")
 
             item["id_membresia"] = int(item_id)
             item["id_cliente"] = id_cliente
             item["id_pm"] = id_pm
             item["id_promocion"] = id_promocion
-            item["fecha_inicio"] = self.safe_date(item.get("fecha_inicio", ""))
-            item["fecha_fin"] = self.safe_date(item.get("fecha_fin", ""))
+            item["fecha_inicio"] = self.context.safe_date(item.get("fecha_inicio", ""))
+            item["fecha_fin"] = self.context.safe_date(item.get("fecha_fin", ""))
             item["estado"] = normalize_membership_status(item.get("estado") or "EN_TRAMITE")
             item["monto_pago"] = self._apply_promocion_discount(state, id_pm, id_promocion)
             item["estado_pago"] = str(item.get("estado_pago") or "PENDIENTE").strip().upper()
@@ -525,14 +544,14 @@ class MembershipsRules:
 
             return item
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def _calcular_monto_con_descuento(
         self,
         id_pm: int,
         id_promocion: int | None,
     ) -> float:
-        return self._apply_promocion_discount(self.state, id_pm, id_promocion)
+        return self._apply_promocion_discount(self.context.state, id_pm, id_promocion)
 
     def registrar_cliente_con_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         cliente_payload = payload["cliente"]
@@ -541,7 +560,7 @@ class MembershipsRules:
         fecha_fin = payload["fecha_fin"]
         id_promocion = int(payload.get("id_promocion") or 0) or None
 
-        cliente = self.upsert_cliente(cliente_payload)
+        cliente = self.dependencies.upsert_cliente(cliente_payload)
         monto_pago = self._calcular_monto_con_descuento(id_pm, id_promocion)
         membresia = self.crear_membresia(
             {
@@ -580,19 +599,19 @@ class MembershipsRules:
             raise ValueError("Ingresa tu DNI")
         if not google_sub and len(password) < 6:
             raise ValueError("La contraseña debe tener al menos 6 caracteres")
-        if self.get_cliente_by_dni(dni):
+        if self.dependencies.get_cliente_by_dni(dni):
             raise ValueError("Ya existe un cliente registrado con ese DNI")
-        if self.get_cliente_by_email(correo):
+        if self.dependencies.get_cliente_by_email(correo):
             raise ValueError("Ya existe un cliente registrado con ese correo")
-        if self.get_usuario_by_email(correo):
+        if self.dependencies.get_usuario_by_email(correo):
             raise ValueError("Ya existe una cuenta con ese correo. Inicia sesión para continuar.")
-        if google_sub and self.get_account_by_google_sub(google_sub):
+        if google_sub and self.dependencies.get_account_by_google_sub(google_sub):
             raise ValueError("Ya existe una cuenta con esta identidad de Google. Inicia sesión.")
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             plan = self._ensure_plan_for_client(state, plan_name)
-            id_cliente = self._next_int_id_in_state(state, "clientes", "id_cliente")
+            id_cliente = self.context.next_int_id_in_state(state, "clientes", "id_cliente")
             id_pm = int(plan.get("id_pm"))
 
             promo_active = self.get_promocion_vigente_para_plan(state, id_pm)
@@ -648,13 +667,13 @@ class MembershipsRules:
                 ).strip()
                 or "SIN PROMOCION",
                 "estado": "EN_TRAMITE",
-                "password_hash": self.passwords.hash(password),
+                "password_hash": self.context.passwords.hash(password),
                 "google_sub": google_sub,
                 "origen_registro": origen_registro,
             }
 
             membresia = {
-                "id_membresia": self._next_int_id_in_state(
+                "id_membresia": self.context.next_int_id_in_state(
                     state,
                     "membresia",
                     "id_membresia",
@@ -683,7 +702,7 @@ class MembershipsRules:
                 "plan": plan,
             }
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def confirmar_pago_cliente_publico(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(id_cliente)
@@ -749,10 +768,10 @@ class MembershipsRules:
             membresia["metodo_pago"] = str(payload.get("metodo_pago") or membresia.get("metodo_pago") or "pasarela")
             membresia["referencia_pago"] = payment_reference
             membresia["monto_pago"] = expected_amount
-            membresia["fecha_pago"] = self.today()
+            membresia["fecha_pago"] = self.context.today()
             return {"cliente": cliente, "membresia": membresia}
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def confirmar_pago_manual_cliente(self, id_cliente: int) -> dict[str, Any]:
         """Registra el cobro en caja; la activación sigue siendo independiente."""
@@ -765,7 +784,7 @@ class MembershipsRules:
             membresia = self._latest_membership_for_cliente(state, id_cliente)
             if not membresia:
                 raise ValueError("Membresía no encontrada")
-            if membership_expired(membresia, self.today()):
+            if membership_expired(membresia, self.context.today()):
                 raise ValueError("La membresía está vencida. Registra una nueva membresía para renovar el acceso.")
             if str(membresia.get("estado_pago") or "").strip().upper() == "PAGADO":
                 return {"cliente": cliente, "membresia": membresia}
@@ -775,17 +794,17 @@ class MembershipsRules:
             membresia.update(
                 estado="EN_TRAMITE", estado_pago="PAGADO", metodo_pago="efectivo",
                 referencia_pago=f"manual:{membresia['id_membresia']}",
-                fecha_pago=self.today(),
+                fecha_pago=self.context.today(),
             )
             # El cobro de una renovación no desbloquea una cuenta vencida.
             if str(cliente.get("estado") or "").strip().upper() != "VENCIDA":
                 cliente["estado"] = "EN_TRAMITE"
             return {"cliente": cliente, "membresia": membresia}
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def activar_membresia_cliente(self, id_cliente: int) -> dict[str, Any]:
-        self.expire_memberships()
+        self.context.expire_memberships()
         id_cliente = int(id_cliente)
 
         # Procesa esta operación.
@@ -797,7 +816,7 @@ class MembershipsRules:
             membresia = self._latest_membership_for_cliente(state, id_cliente)
             if not membresia:
                 raise ValueError("Membresia no encontrada")
-            if membership_expired(membresia, self.today()):
+            if membership_expired(membresia, self.context.today()):
                 raise ValueError("La membresía está vencida. Registra una nueva membresía y confirma su pago para renovar el acceso.")
             if str(membresia.get("estado_pago") or "").strip().upper() != "PAGADO":
                 raise ValueError("No se puede activar una membresía sin pago confirmado")
@@ -808,7 +827,7 @@ class MembershipsRules:
 
             plan = self.get_plan_membresia(int(membresia.get("id_pm", 0) or 0)) or self._ensure_plan_for_client(state, cliente.get("plan") or "MENSUAL")
 
-            start = self.today()
+            start = self.context.today()
             end = (datetime.fromisoformat(start) + timedelta(days=self._duration_days(plan))).date().isoformat()
             cliente["estado"] = "ACTIVO"
             membresia["estado"] = "ACTIVO"
@@ -817,4 +836,4 @@ class MembershipsRules:
             membresia["estado_pago"] = membresia.get("estado_pago") or "PAGADO"
             return {"cliente": cliente, "membresia": membresia}
 
-        return self._change(_fn)
+        return self.context.change(_fn)

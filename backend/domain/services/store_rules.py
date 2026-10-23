@@ -9,7 +9,24 @@ from domain.money import cents, order_totals
 from domain.services.gym_values import TIPO_TIENDA, ESTADO_PAGO_PAGADO, ESTADO_PAGO_PENDIENTE, ESTADO_PEDIDO_CANCELADO, _pedido_pagado, _parse_utc, PedidoCanceladoConPagoError
 
 
+from dataclasses import dataclass
+from typing import Callable
+from domain.services.rule_context import RuleContext
+
+
+@dataclass(frozen=True)
+class StoreDependencies:
+    actualizar_estados_tienda: Callable
+    es_item_tienda: Callable
+    find_item_in_state: Callable
+    next_n_activo: Callable
+
+
 class StoreRules:
+    def __init__(self, context: RuleContext, dependencies: StoreDependencies):
+        self.context = context
+        self.dependencies = dependencies
+
     def _normalize_pedido_tienda(self, row: dict[str, Any], fallback_id: int) -> dict[str, Any]:
         items: list[dict[str, Any]] = []
         for item in row.get("items", []):
@@ -38,13 +55,13 @@ class StoreRules:
             "cliente_nombre": str(row.get("cliente_nombre") or row.get("nombre_cliente") or "Cliente"),
             "cliente_correo": str(row.get("cliente_correo") or row.get("correo") or ""),
             "cliente_dni": str(row.get("cliente_dni") or row.get("dni") or ""),
-            "fecha_pedido": str(row.get("fecha_pedido") or self.now()),
+            "fecha_pedido": str(row.get("fecha_pedido") or self.context.now()),
             "metodo_pago": str(row.get("metodo_pago") or "tarjeta"),
             "referencia_pago": str(row.get("referencia_pago") or ""),
             "estado_pago": str(row.get("estado_pago") or "PAGADO"),
             "estado_pedido": str(row.get("estado_pedido") or "PENDIENTE"),
             "observacion_admin": str(row.get("observacion_admin") or ""),
-            "fecha_actualizacion": str(row.get("fecha_actualizacion") or row.get("fecha_pedido") or self.now()),
+            "fecha_actualizacion": str(row.get("fecha_actualizacion") or row.get("fecha_pedido") or self.context.now()),
             "subtotal": round(subtotal, 2),
             "igv": round(igv, 2),
             "total": round(total, 2),
@@ -52,10 +69,10 @@ class StoreRules:
         }
 
     def productos_tienda(self) -> list[dict[str, Any]]:
-        return self.state.get("productos_tienda", [])
+        return self.context.state.get("productos_tienda", [])
 
     def get_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
-        return next((p for p in self.state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)), None)
+        return next((p for p in self.context.state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)), None)
 
     def upsert_producto_tienda(self, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
         # Procesa esta operación.
@@ -67,7 +84,7 @@ class StoreRules:
             if producto_id is not None:
                 idx = next((i for i, row in enumerate(productos) if int(row.get("id_producto", 0)) == int(producto_id)), -1)
             if producto_id is None:
-                producto_id = self._next_int_id_in_state(state, "productos_tienda", "id_producto")
+                producto_id = self.context.next_int_id_in_state(state, "productos_tienda", "id_producto")
             previo = productos[idx] if idx >= 0 else None
             producto["id_producto"] = int(producto_id)
             producto["unidad_venta"] = str(producto.get("unidad_venta") or "unidad")
@@ -83,10 +100,10 @@ class StoreRules:
 
             item = None
             if id_item:
-                item = self._find_item_in_state(state, id_item)
+                item = self.dependencies.find_item_in_state(state, id_item)
                 if not item:
                     raise EntityNotFound("Item de almacén no encontrado")
-                if not self._es_item_tienda(item):
+                if not self.dependencies.es_item_tienda(item):
                     raise ValueError("Solo los ítems con Tipo 'Tienda' pueden venderse en la tienda")
                 otro = next(
                     (
@@ -100,12 +117,12 @@ class StoreRules:
             elif previo is None:
                 # Producto nuevo sin ítem: se crea su reserva en INVENTARIO, vacía.
                 item = {
-                    "id_item": self._next_int_id_in_state(state, "inventario", "id_item"),
+                    "id_item": self.context.next_int_id_in_state(state, "inventario", "id_item"),
                     "nombre_item": str(producto.get("nombre_producto") or "Sin nombre"),
                     "tipo": TIPO_TIENDA,
                     "cantidad_stock": 0,
                     "estado": "Disponible",
-                    "n_activo": self._next_n_activo(state),
+                    "n_activo": self.dependencies.next_n_activo(state),
                     "unidad_venta": producto["unidad_venta"],
                     "precio_venta": producto["precio_venta"],
                     "stock_minimo": producto["stock_minimo"],
@@ -130,10 +147,10 @@ class StoreRules:
                 productos[idx] = producto
             else:
                 productos.insert(0, producto)
-            self._actualizar_estados_tienda(state)
+            self.dependencies.actualizar_estados_tienda(state)
             return producto
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def delete_producto_tienda(self, id_producto: int) -> None:
         # Procesa esta operación.
@@ -141,10 +158,10 @@ class StoreRules:
             if "productos_tienda" in state:
                 state["productos_tienda"] = [p for p in state["productos_tienda"] if int(p.get("id_producto", 0)) != int(id_producto)]
 
-        self._change(_fn)
+        self.context.change(_fn)
 
     def pedidos_tienda(self) -> list[dict[str, Any]]:
-        return self.state.get("pedidos_tienda", [])
+        return self.context.state.get("pedidos_tienda", [])
 
     def crear_pedido_tienda(self, payload: dict[str, Any]) -> dict[str, Any]:
         return self._crear_pedido_tienda(payload, pago_pendiente=False)
@@ -161,7 +178,7 @@ class StoreRules:
         def _fn(state: dict[str, Any]):
             state.setdefault("pedidos_tienda", [])
             state.setdefault("productos_tienda", [])
-            self._actualizar_estados_tienda(state)
+            self.dependencies.actualizar_estados_tienda(state)
 
             # Valida el pedido completo antes de tocar el stock.
             lineas: list[tuple[dict[str, Any], int]] = []
@@ -188,7 +205,7 @@ class StoreRules:
                     raise ValueError(f"Stock insuficiente para {producto.get('nombre_producto', 'producto')}")
                 lineas.append((producto, cantidad))
 
-            id_pedido = self._next_int_id_in_state(state, "pedidos_tienda", "id_pedido")
+            id_pedido = self.context.next_int_id_in_state(state, "pedidos_tienda", "id_pedido")
             cliente_nombre = str(payload.get("cliente_nombre") or "Cliente")
             items: list[dict[str, Any]] = []
             subtotal_cents = 0
@@ -212,9 +229,9 @@ class StoreRules:
                     }
                 )
 
-            self._actualizar_estados_tienda(state)
+            self.dependencies.actualizar_estados_tienda(state)
             totals = order_totals(subtotal_cents)
-            ahora = self.now()
+            ahora = self.context.now()
             pedido = {
                 "id_pedido": id_pedido,
                 "id_cliente": int(payload.get("id_cliente") or 0) or None,
@@ -236,7 +253,7 @@ class StoreRules:
             state["pedidos_tienda"].insert(0, pedido)
             return pedido
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def _devolver_stock_pedido(self, state: dict[str, Any], pedido: dict[str, Any]) -> None:
         for linea in pedido.get("items", []):
@@ -250,7 +267,7 @@ class StoreRules:
             )
             if producto:
                 producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) + max(1, int(linea.get("cantidad") or 1))
-        self._actualizar_estados_tienda(state)
+        self.dependencies.actualizar_estados_tienda(state)
 
     @staticmethod
     def _find_pedido_in_state(state: dict[str, Any], id_pedido: Any) -> dict[str, Any] | None:
@@ -260,12 +277,12 @@ class StoreRules:
         )
 
     def get_pedido_tienda(self, id_pedido: int) -> dict[str, Any] | None:
-        return self._find_pedido_in_state(self.state, id_pedido)
+        return self._find_pedido_in_state(self.context.state, id_pedido)
 
     def pedidos_pago_pendiente(self) -> list[dict[str, Any]]:
         return [
             dict(pedido)
-            for pedido in self.state.get("pedidos_tienda", [])
+            for pedido in self.context.state.get("pedidos_tienda", [])
             if not _pedido_pagado(pedido)
             and str(pedido.get("estado_pedido") or "").strip().upper() != ESTADO_PEDIDO_CANCELADO
         ]
@@ -290,10 +307,10 @@ class StoreRules:
             if _pedido_pagado(pedido) or str(pedido.get("estado_pedido") or "").strip().upper() == ESTADO_PEDIDO_CANCELADO:
                 raise ValueError("El pedido ya no está pendiente de pago")
             pedido["referencia_pago"] = session_id
-            pedido["fecha_actualizacion"] = self.now()
+            pedido["fecha_actualizacion"] = self.context.now()
             return pedido
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def confirmar_pago_pedido_tienda(self, id_pedido: int, payload: dict[str, Any]) -> dict[str, Any]:
         id_pedido = int(id_pedido)
@@ -331,10 +348,10 @@ class StoreRules:
             pedido["estado_pago"] = ESTADO_PAGO_PAGADO
             pedido["metodo_pago"] = str(payload.get("metodo_pago") or "tarjeta")
             pedido["referencia_pago"] = payment_reference
-            pedido["fecha_actualizacion"] = self.now()
+            pedido["fecha_actualizacion"] = self.context.now()
             return pedido
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def cancelar_pedido_pago_pendiente(self, id_pedido: int, observacion: str = "") -> dict[str, Any]:
         # Procesa esta operación.
@@ -349,10 +366,10 @@ class StoreRules:
             self._devolver_stock_pedido(state, pedido)
             pedido["estado_pedido"] = ESTADO_PEDIDO_CANCELADO
             pedido["observacion_admin"] = str(observacion or "Pago no completado: pedido cancelado y stock devuelto")
-            pedido["fecha_actualizacion"] = self.now()
+            pedido["fecha_actualizacion"] = self.context.now()
             return pedido
 
-        return self._change(_fn)
+        return self.context.change(_fn)
 
     def actualizar_pedido_tienda(self, id_pedido: int, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
         estado = str(payload.get("estado_pedido") or "").strip().upper()
@@ -375,7 +392,7 @@ class StoreRules:
                 self._devolver_stock_pedido(state, pedido)
             pedido["estado_pedido"] = estado
             pedido["observacion_admin"] = str(payload.get("observacion_admin") or "")
-            pedido["fecha_actualizacion"] = self.now()
+            pedido["fecha_actualizacion"] = self.context.now()
             return pedido
 
-        return self._change(_fn)
+        return self.context.change(_fn)

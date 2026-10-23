@@ -1,10 +1,19 @@
 """Cliente REST de Supabase compartido por los repositorios."""
 from __future__ import annotations
 
+import json
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote, urlencode
 from urllib.request import urlopen
-from infrastructure.http_transport import json_request, supabase_headers
+from infrastructure.http_transport import json_request, supabase_headers, send_response, RemoteServiceError
+from urllib.request import Request
+
+@dataclass(frozen=True)
+class RowsPage:
+    rows: list[dict]
+    total: int
+
 
 class SupabaseRestClient:
     # Inicializa la clase.
@@ -59,6 +68,46 @@ class SupabaseRestClient:
             if not page:
                 return rows
             rows.extend(page)
+
+    def select_filtered(self, table, filters, *, order):
+        rows = []
+        while True:
+            page = self._request("GET", table, query={"select": "*", "order": order,
+                "offset": len(rows), "limit": 1000, **filters})
+            if not page:
+                return rows
+            rows.extend(page)
+
+    def select_page(self, table, filters, *, order, offset, limit):
+        if offset < 0 or limit < 1 or limit > 100:
+            raise ValueError("Rango de consulta inválido")
+        rows, total = [], None
+        while len(rows) < limit and (total is None or offset + len(rows) < total):
+            query = {"select": "*", "order": order, **filters,
+                     "offset": offset + len(rows), "limit": limit - len(rows)}
+            try:
+                page, count = self._counted_page(table, query)
+            except RemoteServiceError as error:
+                if error.status != 416 or error.code != "PGRST103":
+                    raise
+                _, count = self._counted_page(table, {"select": "*", **filters, "limit": 0})
+                return RowsPage(rows, count)
+            total = count
+            if not page:
+                break
+            rows.extend(page)
+        return RowsPage(rows, total or 0)
+
+    def _counted_page(self, table, query):
+        address = f"{self.rest_url}/{quote(table, safe='')}?{urlencode(query, safe='*,().:')}"
+        headers = {**supabase_headers(self.key), "Prefer": "count=exact"}
+        raw, response_headers = send_response(Request(address, headers=headers),
+            context=f"Supabase GET {table}", opener=urlopen)
+        content_range = next((v for k, v in response_headers.items() if k.lower() == "content-range"), "")
+        total = content_range.rsplit("/", 1)[-1]
+        if not total.isdigit():
+            raise RuntimeError("El servidor no devolvió el total de la consulta paginada")
+        return json.loads(raw) if raw else [], int(total)
 
     # Procesa esta operación.
     def insert(

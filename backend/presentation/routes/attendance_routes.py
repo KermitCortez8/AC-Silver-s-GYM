@@ -40,9 +40,7 @@ def list_attendance(user=Depends(reader), attendance=Depends(service)):
 @router.get("/historial")
 def history(filters: AttendanceFilters = Depends(), page: int = Query(1, ge=1), page_size: int = Query(15, ge=1, le=100),
             user=Depends(reader), attendance=Depends(service)):
-    rows = run(lambda: attendance.records(user, **filters.model_dump()))
-    offset = (page - 1) * page_size
-    return {"items": rows[offset:offset + page_size], "total": len(rows), "page": page, "page_size": page_size}
+    return run(lambda: attendance.history(user, page=page, page_size=page_size, **filters.model_dump()))
 
 
 @router.get("/resumen")

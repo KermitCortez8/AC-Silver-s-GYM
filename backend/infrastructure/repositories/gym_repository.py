@@ -1,3 +1,4 @@
+from infrastructure.repositories.operation_adapter import query_operation, command_operation
 """Fachada del puerto GymRepository; delega cada capacidad a su componente."""
 from domain.services.gym_domain_service import GymDomainService
 from infrastructure.supabase_client import SupabaseRestClient
@@ -51,6 +52,17 @@ class SupabaseGymRepository:
         if "_assembled" not in self.__dict__:
             self._assembled = compose_repository(self.supabase, self.cache, self.metadata, self.REFRESH_TTL_SECONDS)
         return self._assembled
+
+    def attendance_page(self, criteria, request):
+        from infrastructure.repositories.attendance_history_repository import AttendanceHistoryRepository
+        return AttendanceHistoryRepository(self.supabase).page(criteria, request)
+
+    def query(self, query, passwords=None):
+        self.refresh(query.resources)
+        return self.read(lambda state: query_operation(query, state, passwords), query.resources)
+
+    def execute(self, command, passwords=None):
+        return self.change(lambda state: command_operation(command, state, passwords), command.resources)
 
     def read(self, operation, resources=None):
         return self.cache.read(operation, resources)
