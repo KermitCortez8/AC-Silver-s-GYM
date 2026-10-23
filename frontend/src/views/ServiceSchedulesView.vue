@@ -619,12 +619,7 @@ const refreshAll = async (notify = false) => {
   if (isRefreshing.value) return;
   isRefreshing.value = true;
   try {
-    const results = await Promise.allSettled([
-      gymStore.refreshRoutinesFromBackend(),
-      gymStore.refreshServiceSchedulesFromBackend(),
-    ]);
-    const failure = results.find((result) => result.status === 'rejected');
-    if (failure) throw failure.reason;
+    await gymStore.fetchFromBackend({ section: 'schedules', force: notify });
     if (notify) showNotification({ tone: 'success', message: 'Los horarios y las rutinas están actualizados.' });
   } catch (error) {
     feedbackTone.value = 'error';

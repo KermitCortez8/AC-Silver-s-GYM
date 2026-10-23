@@ -172,7 +172,7 @@ const removePlan = async (plan) => {
   }
 };
 
-onMounted(() => gymStore.fetchFromBackend?.().catch(() => {}));
+onMounted(() => gymStore.fetchFromBackend?.({ section: 'plans' }).catch(() => {}));
 onBeforeUnmount(() => editor.value?.close());
 </script>
 

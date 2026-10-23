@@ -1,5 +1,5 @@
 <template>
-  <main class="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-16 text-center">
+  <main class="public-page text-white flex min-h-screen items-center justify-center bg-slate-950 px-6 py-16 text-center">
     <div class="w-full max-w-5xl">
       <h1 class="text-5xl font-black uppercase leading-tight tracking-tight text-orange-500 sm:text-7xl">
         DE PARTE DE TP REMIX

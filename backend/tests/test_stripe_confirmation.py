@@ -181,7 +181,7 @@ def test_duplicate_confirmation_does_not_revert_active_membership() -> None:
     gym.confirmar_pago_cliente_publico(12, payment)
 
     assert gym.state["clientes"][0]["estado"] == "ACTIVO"
-    assert gym.state["membresia"][0]["estado"] == "Activa"
+    assert gym.state["membresia"][0]["estado"] == "ACTIVO"
     assert gym.state["membresia"][0]["estado_pago"] == "PAGADO"
 
 
@@ -226,7 +226,8 @@ def test_membership_cannot_be_activated_before_payment() -> None:
     assert gym.state["clientes"][0]["estado"] == "PENDIENTE_PAGO"
 
 
-def test_activating_an_active_membership_does_not_extend_its_dates() -> None:
+def test_activating_an_active_membership_does_not_extend_its_dates(monkeypatch) -> None:
+    monkeypatch.setattr('services.gym_domain_service._today_iso', lambda: '2026-01-15')
     gym = LocalGymService()
     gym.state["clientes"] = [{"id_cliente": 12, "estado": "PENDIENTE_PAGO"}]
     gym.state["membresia"] = [{

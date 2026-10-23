@@ -1,5 +1,5 @@
 <template>
-  <div class="faq-page min-h-screen bg-[#faf7f5] text-slate-950">
+  <div class="public-page faq-page min-h-screen bg-[#faf7f5] text-slate-950">
     <header class="sticky top-0 z-40 border-b border-orange-200 bg-white/90 backdrop-blur">
       <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <router-link to="/" class="text-xl font-black italic tracking-tight text-orange-600">

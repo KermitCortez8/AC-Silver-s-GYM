@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -13,15 +13,33 @@ RUN pip install --upgrade pip \
 RUN useradd --create-home --uid 10001 appuser \
     && install -d --owner=appuser --group=appuser /app/db/store-images
 
-COPY --chown=appuser:appuser config.py dependencies.py ./
-COPY --chown=appuser:appuser app/*.py ./app/
-COPY --chown=appuser:appuser models/*.py ./models/
-COPY --chown=appuser:appuser routes/*.py ./routes/
-COPY --chown=appuser:appuser services/*.py ./services/
-COPY --chown=appuser:appuser utils/*.py ./utils/
+# appuser puede leer el codigo, pero solo root puede modificarlo.
+# Los archivos subidos conservan escritura en /app/db/store-images.
+COPY --chown=root:root --chmod=644 config.py dependencies.py ./
+COPY --chown=root:root --chmod=644 app/*.py ./app/
+COPY --chown=root:root --chmod=644 models/*.py ./models/
+COPY --chown=root:root --chmod=644 routes/*.py ./routes/
+COPY --chown=root:root --chmod=644 services/*.py ./services/
+COPY --chown=root:root --chmod=644 utils/*.py ./utils/
+
+# Los directorios necesitan permiso de acceso, sin permitir escritura a appuser.
+RUN chmod 755 /app/app /app/models /app/routes /app/services /app/utils
 
 USER appuser
 
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Herramientas y pruebas solo en la imagen de CI.
+FROM runtime AS test
+USER root
+COPY requirements-dev.txt ./
+RUN pip install -r requirements-dev.txt
+COPY --chown=root:root --chmod=644 tests/test*.py tests/conftest.py ./tests/
+RUN chmod 755 /app/tests
+USER appuser
+CMD ["sh", "-c", "flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics && python -m pytest tests/ -q -p no:cacheprovider"]
+
+# La construcción predeterminada conserva la imagen de producción.
+FROM runtime AS production

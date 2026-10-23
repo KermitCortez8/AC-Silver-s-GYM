@@ -101,7 +101,63 @@
               El resumen aparecerá cuando registres a tus primeros clientes.
             </p>
           </div>
+          <nav
+            v-if="members.length"
+            class="mt-4 grid gap-2 sm:grid-cols-3"
+            aria-label="Filtrar clientes por membresía"
+          >
+            <RouterLink
+              v-for="segment in membershipSegments"
+              :key="segment.key"
+              :to="{ path: '/admin/clients', query: { status: segment.key } }"
+              class="membership-segment ws-hover"
+            >
+              <span class="flex items-center gap-2"
+                ><span
+                  class="h-2 w-2 rounded-full"
+                  :style="{ backgroundColor: segment.color }"
+                ></span
+                >{{ segment.label }}</span
+              >
+              <strong>{{ segment.count }}</strong>
+            </RouterLink>
+          </nav>
         </article>
+        <article class="ws-panel">
+          <div class="ws-toolbar">
+            <div>
+              <p class="ws-eyebrow">Cobros de membresías</p>
+              <h2 class="ws-heading mt-1">Pagos por origen del cliente</h2>
+            </div>
+            <RouterLink
+              :to="{ path: '/admin/clients', query: { payment: 'PENDIENTE' } }"
+              class="ws-btn"
+              >Revisar pagos <ArrowUpRight :size="16"
+            /></RouterLink>
+          </div>
+          <div v-if="members.length" class="chart-box">
+            <Bar
+              :data="paymentChartData"
+              :options="barOptions"
+              aria-label="Clientes con pago confirmado, pendiente o sin información según su origen"
+            />
+          </div>
+          <div v-else class="ws-empty mt-5">
+            <UsersRound :size="30" />
+            <h3>Pagos de tus clientes</h3>
+            <p>Los cobros aparecerán aquí cuando registres clientes.</p>
+          </div>
+          <p class="ws-muted text-sm mt-4">
+            {{ clientSummary.pendingPayment }} pendientes de pago ·
+            {{ clientSummary.readyToActivate }} con pago confirmado por activar.
+          </p>
+          <p class="ws-muted text-xs mt-2">
+            Un pago confirmado requiere activación para habilitar la membresía.
+            Se muestra el último pago de cada cliente.
+          </p>
+        </article>
+      </section>
+      <section class="grid gap-5 xl:grid-cols-2">
         <article class="ws-panel">
           <div class="ws-toolbar">
             <div>
@@ -125,8 +181,6 @@
             <p>Los horarios registrados aparecerán en este resumen.</p>
           </div>
         </article>
-      </section>
-      <section class="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
         <article class="ws-panel">
           <p class="ws-eyebrow">Asistencia</p>
           <h2 class="ws-heading mt-1">Últimos 7 días</h2>
@@ -138,10 +192,12 @@
             />
           </div>
         </article>
+      </section>
+      <section>
         <article class="ws-panel">
           <p class="ws-eyebrow">Organiza tu día</p>
           <h2 class="ws-heading mt-1">Por revisar</h2>
-          <div class="mt-5 space-y-3">
+          <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <RouterLink
               v-for="item in operationalAlerts"
               :key="item.label"
@@ -190,6 +246,7 @@
   </div>
 </template>
 <script setup>
+import { clientMembershipLabel } from '../utils/clientDirectory.js';
 import {
   ArcElement,
   BarElement,
@@ -203,7 +260,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'vue-chartjs';
-import { computed, onMounted, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import {
   ArrowUpRight,
@@ -215,7 +272,11 @@ import {
   ShoppingBag,
   UsersRound,
 } from 'lucide-vue-next';
-import ExcelScheduleGrid from '../components/ExcelScheduleGrid.vue';
+import {
+  summarizeDashboardClients,
+  peruDateKey,
+  lastSevenPeruDays,
+} from '../utils/clientDashboard.js';
 import { useAuth } from '../composables/useAuth';
 import { useTheme } from '../composables/useTheme';
 import { useGymStore } from '../stores/gymStore';
@@ -239,6 +300,9 @@ ChartJS.register(
   Tooltip,
 );
 
+const ExcelScheduleGrid = defineAsyncComponent(
+  () => import('../components/ExcelScheduleGrid.vue'),
+);
 const { user, isAdmin, userRole } = useAuth();
 const { isDarkTheme } = useTheme();
 const gymStore = useGymStore();
@@ -306,12 +370,7 @@ const normalizeStatus = (value) =>
 /**
  * Gestiona esta acción de la vista.
  */
-const dateKey = (date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-/**
- * Gestiona esta acción de la vista.
- */
-const todayKey = () => dateKey(new Date());
+const todayKey = () => peruDateKey();
 
 const members = computed(() => gymStore.members || []);
 const schedules = computed(() => gymStore.serviceSchedules || []);
@@ -382,28 +441,9 @@ const clientScheduleItems = computed(() =>
   }),
 );
 
-const activeMembers = computed(
-  () =>
-    members.value.filter((member) =>
-      normalizeStatus(member.membershipStatus || member.status).startsWith(
-        'ACT',
-      ),
-    ).length,
-);
-const pendingMembers = computed(
-  () =>
-    members.value.filter((member) =>
-      normalizeStatus(member.membershipStatus || member.status).includes(
-        'TRAMITE',
-      ),
-    ).length,
-);
-const attendanceToday = computed(
-  () =>
-    attendance.value.filter(
-      (entry) => String(entry.date || '').slice(0, 10) === todayKey(),
-    ).length,
-);
+const clientSummary = computed(() => summarizeDashboardClients(members.value));
+const activeMembers = computed(() => clientSummary.value.memberships.active);
+const pendingMembers = computed(() => clientSummary.value.readyToActivate);
 const usedSlots = computed(() => enrollments.value.length);
 const totalSlots = computed(() =>
   schedules.value.reduce((sum, item) => sum + Number(item.cupos || 0), 0),
@@ -411,58 +451,69 @@ const totalSlots = computed(() =>
 
 const adminCards = computed(() => [
   {
-    label: 'Clientes',
+    label: 'Clientes registrados',
     value: members.value.length,
-    detail: `${activeMembers.value} activos`,
+    detail: `${activeMembers.value} con membresía activa`,
     tone: 'ws-success',
   },
   {
     label: 'En trámite',
-    value: pendingMembers.value,
-    detail: 'pendientes de activar',
+    value: clientSummary.value.memberships.pending,
+    detail: `${pendingMembers.value} con pago confirmado por activar`,
     tone: 'ws-warning',
   },
   {
-    label: 'Horarios',
-    value: schedules.value.length,
-    detail: `${schedules.value.filter((item) => item.activo !== false).length} activos`,
-    tone: 'ws-info',
-  },
-  {
-    label: 'Matrículas',
-    value: enrollments.value.length,
-    detail: `${usedSlots.value}/${totalSlots.value || 0} cupos usados`,
-    tone: 'ws-info',
-  },
-  {
-    label: 'Asistencia hoy',
-    value: attendanceToday.value,
-    detail: 'registros del día',
-    tone: 'ws-info',
+    label: 'Vencidas',
+    value: clientSummary.value.memberships.expired,
+    detail: 'membresías con acceso bloqueado',
+    tone: 'ws-danger',
   },
 ]);
 
-const statusBuckets = computed(() => {
-  const buckets = { Activos: 0, 'En trámite': 0, Inactivos: 0 };
-  members.value.forEach((member) => {
-    const status = normalizeStatus(member.membershipStatus || member.status);
-    if (status.startsWith('ACT')) buckets.Activos += 1;
-    else if (status.includes('TRAMITE')) buckets['En trámite'] += 1;
-    else buckets.Inactivos += 1;
-  });
-  return buckets;
-});
+const membershipSegments = computed(() => [
+  {
+    key: 'active',
+    label: 'Activo',
+    count: clientSummary.value.memberships.active,
+    color: '#22c55e',
+  },
+  {
+    key: 'pending',
+    label: 'En trámite',
+    count: clientSummary.value.memberships.pending,
+    color: '#fbbf24',
+  },
+  {
+    key: 'expired',
+    label: 'Vencida',
+    count: clientSummary.value.memberships.expired,
+    color: '#f43f5e',
+  },
+]);
 
 const membershipChartData = computed(() => ({
-  labels: Object.keys(statusBuckets.value),
+  labels: membershipSegments.value.map((item) => item.label),
   datasets: [
     {
-      data: Object.values(statusBuckets.value),
-      backgroundColor: ['#22c55e', '#fbbf24', '#737373'],
+      data: membershipSegments.value.map((item) => item.count),
+      backgroundColor: membershipSegments.value.map((item) => item.color),
       borderColor: isDarkTheme.value ? '#171717' : '#f5f5f5',
       borderWidth: 2,
     },
   ],
+}));
+
+const paymentChartData = computed(() => ({
+  labels: clientSummary.value.origins.map((origin) => origin.label),
+  datasets: [
+    { label: 'Pagado', key: 'paid', backgroundColor: '#22c55e' },
+    { label: 'Pendiente', key: 'pending', backgroundColor: '#fbbf24' },
+    { label: 'Sin información', key: 'unknown', backgroundColor: '#94a3b8' },
+  ].map(({ key, ...dataset }) => ({
+    ...dataset,
+    data: clientSummary.value.origins.map((origin) => origin[key]),
+    borderRadius: 6,
+  })),
 }));
 
 const services = ['fitness', 'musculacion', 'cardio', 'baile'];
@@ -479,14 +530,8 @@ const serviceLabel = (service) =>
 /**
  * Obtiene los datos necesarios.
  */
-const readableStatus = (status) => {
-  const normalized = normalizeStatus(status);
-  if (normalized.startsWith('ACT')) return 'Activa';
-  if (normalized.includes('TRAMITE') || normalized.includes('PENDIENTE'))
-    return 'Pendiente';
-  if (normalized.startsWith('INACT')) return 'Inactiva';
-  return normalized || 'Sin datos';
-};
+const readableStatus = (status) =>
+  clientMembershipLabel({ membershipStatus: status });
 const serviceUsedColors = ['#84cc16', '#38bdf8', '#f59e0b', '#fb7185'];
 const serviceFreeColors = ['#d9f99d', '#bfdbfe', '#fde68a', '#fecdd3'];
 
@@ -529,13 +574,7 @@ const serviceCapacityData = computed(() => ({
   ],
 }));
 
-const lastSevenDays = computed(() =>
-  Array.from({ length: 7 }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - index));
-    return dateKey(date);
-  }),
-);
+const lastSevenDays = computed(() => lastSevenPeruDays());
 
 const attendanceTrendData = computed(() => ({
   labels: lastSevenDays.value.map((day) => day.slice(5)),
@@ -570,6 +609,7 @@ const baseScale = computed(() => ({
 }));
 
 const barOptions = computed(() => ({
+  animation: false,
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -588,6 +628,7 @@ const barOptions = computed(() => ({
 }));
 
 const lineOptions = computed(() => ({
+  animation: false,
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -604,6 +645,7 @@ const lineOptions = computed(() => ({
 }));
 
 const doughnutOptions = computed(() => ({
+  animation: false,
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -617,10 +659,27 @@ const doughnutOptions = computed(() => ({
 const operationalAlerts = computed(() => [
   {
     label: 'Membresías por activar',
-    to: '/admin/clients',
+    to: {
+      path: '/admin/clients',
+      query: { status: 'pending', payment: 'PAGADO' },
+    },
     value: pendingMembers.value,
-    detail: 'Clientes con estado en trámite.',
+    detail: 'Pago confirmado, activación pendiente.',
     color: 'ws-warning',
+  },
+  {
+    label: 'Pagos pendientes',
+    to: { path: '/admin/clients', query: { payment: 'PENDIENTE' } },
+    value: clientSummary.value.pendingPayment,
+    detail: 'Clientes con pago por confirmar.',
+    color: 'ws-warning',
+  },
+  {
+    label: 'Membresías vencidas',
+    to: { path: '/admin/clients', query: { status: 'expired' } },
+    value: clientSummary.value.memberships.expired,
+    detail: 'Requieren renovación para recuperar el acceso.',
+    color: 'ws-danger',
   },
   {
     label: 'Stock bajo',
@@ -668,7 +727,11 @@ const clientCards = computed(() => {
       detail: client.membershipEnd
         ? `vence ${client.membershipEnd}`
         : 'vigencia pendiente',
-      tone: status.startsWith('ACT') ? 'ws-success' : 'ws-warning',
+      tone: status.startsWith('ACT')
+        ? 'ws-success'
+        : status.startsWith('VENC')
+          ? 'ws-danger'
+          : 'ws-warning',
     },
     {
       label: 'Plan',
@@ -699,10 +762,11 @@ const refreshDashboard = async (force = false) => {
   isRefreshing.value = true;
   refreshError.value = '';
   try {
-    await gymStore.fetchFromBackend?.({ force });
+    await gymStore.fetchFromBackend?.({ section: 'dashboard', force });
     lastUpdated.value = new Intl.DateTimeFormat('es-PE', {
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/Lima',
     }).format(new Date());
   } catch {
     refreshError.value =
@@ -719,12 +783,14 @@ onMounted(() => refreshDashboard());
 .dashboard-metrics {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 768px) {
+  .dashboard-metrics--admin {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 @media (min-width: 1280px) {
-  .dashboard-metrics--admin {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
   .dashboard-metrics--client {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -734,6 +800,16 @@ onMounted(() => refreshDashboard());
   position: relative;
   height: 280px;
   margin-top: 1.5rem;
+}
+.membership-segment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--ws-border);
+  border-radius: 0.8rem;
+  font-size: 0.8rem;
 }
 @media (max-width: 480px) {
   .chart-box {
