@@ -14,7 +14,7 @@ from domain.services.membership_lifecycle import membership_expired
 class ClientsService:
     """Servicio fino para manejar la entidad Cliente con la forma requerida por la UI.
 
-    Internamente reutiliza GymDomainService para reglas de negocio.
+    Delega las operaciones de negocio en el servicio de aplicación GymService.
     """
 
     # Inicializa la clase.
@@ -67,13 +67,14 @@ class ClientsService:
         email = str(getattr(user, "email", "") or getattr(user, "correo", "") or "").strip().lower()
         dni = str(getattr(user, "dni", "") or "").strip()
 
+        clients = self.list_clients() if id_cliente or email or dni else []
         client = None
         if id_cliente:
-            client = next((c for c in self.list_clients() if int(c.get("id_cliente", 0) or 0) == id_cliente), None)
+            client = next((c for c in clients if int(c.get("id_cliente", 0) or 0) == id_cliente), None)
         if not client and email:
-            client = next((c for c in self.list_clients() if str(c.get("correo") or "").strip().lower() == email), None)
+            client = next((c for c in clients if str(c.get("correo") or "").strip().lower() == email), None)
         if not client and dni:
-            client = next((c for c in self.list_clients() if str(c.get("dni") or "").strip() == dni), None)
+            client = next((c for c in clients if str(c.get("dni") or "").strip() == dni), None)
         if not client:
             raise ValueError("Cliente no encontrado")
         return client

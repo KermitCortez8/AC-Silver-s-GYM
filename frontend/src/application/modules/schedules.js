@@ -39,7 +39,6 @@ export const createSchedulesModule = (ctx) => {
         ctx.routines.value.unshift(normalized);
       }
 
-      ctx.persist();
       return normalized;
     }
 
@@ -52,7 +51,6 @@ export const createSchedulesModule = (ctx) => {
       ctx.routines.value.unshift(normalized);
     }
 
-    ctx.persist();
     return normalized;
   };
 
@@ -115,7 +113,6 @@ export const createSchedulesModule = (ctx) => {
         };
       }
 
-      ctx.persist();
       return normalized;
     }
 
@@ -128,7 +125,6 @@ export const createSchedulesModule = (ctx) => {
       ctx.schedule.value.unshift(normalized);
     }
 
-    ctx.persist();
     return normalized;
   };
 
@@ -173,7 +169,6 @@ export const createSchedulesModule = (ctx) => {
       note: `${slot.day} ${slot.startTime}-${slot.endTime}`,
     });
 
-    ctx.persist();
     return slot;
   };
 
@@ -186,7 +181,6 @@ export const createSchedulesModule = (ctx) => {
     }
 
     ctx.serviceSchedules.value = await response.json();
-    ctx.persist();
     return ctx.serviceSchedules.value;
   };
 
@@ -206,7 +200,6 @@ export const createSchedulesModule = (ctx) => {
       zonas_musculares: r.zonas_musculares || '',
       color: r.color || 'Azul',
     }));
-    ctx.persist();
     return ctx.routines.value;
   };
 
@@ -243,7 +236,6 @@ export const createSchedulesModule = (ctx) => {
       } else {
         ctx.serviceSchedules.value.push(saved);
       }
-      ctx.persist();
       return saved;
     }
 
@@ -257,7 +249,6 @@ export const createSchedulesModule = (ctx) => {
     } else {
       ctx.serviceSchedules.value.push(body);
     }
-    ctx.persist();
     return body;
   };
 
@@ -273,14 +264,12 @@ export const createSchedulesModule = (ctx) => {
     }
 
     ctx.serviceSchedules.value = ctx.serviceSchedules.value.filter((entry) => Number(entry.id_horario_servicio) !== Number(idHorarioServicio));
-    ctx.persist();
   };
 
   const refreshScheduleClientsFromBackend = async () => {
     const isClient = (ctx.authStore.userRole || ctx.authStore.user?.role) === 'user';
     const data = await apiGet(isClient ? '/clientes/me' : '/clientes', ctx.authStore.token);
     ctx.members.value = (isClient ? [data] : data).map(normalizeBackendClientToMember);
-    ctx.persist();
     return ctx.members.value;
   };
 
@@ -314,7 +303,6 @@ export const createSchedulesModule = (ctx) => {
     } else {
       ctx.enrollments.value = list;
     }
-    ctx.persist();
     return list;
   };
 
@@ -370,7 +358,6 @@ export const createSchedulesModule = (ctx) => {
     const index = ctx.routines.value.findIndex((entry) => Number(entry.id_rutina) === Number(normalized.id_rutina));
     if (index >= 0) ctx.routines.value[index] = normalized; else ctx.routines.value.unshift(normalized);
     await fetchTrainerOverview({ force: true }).catch(() => { });
-    ctx.persist();
     return normalized;
   };
 
@@ -389,7 +376,6 @@ export const createSchedulesModule = (ctx) => {
     if (index >= 0) ctx.enrollments.value[index] = { ...ctx.enrollments.value[index], ...saved };
     else ctx.enrollments.value.unshift(saved);
     await fetchTrainerOverview({ force: true }).catch(() => { });
-    ctx.persist();
     return saved;
   };
 
@@ -451,7 +437,6 @@ export const createSchedulesModule = (ctx) => {
       ctx.enrollments.value.unshift(saved);
     }
     await refreshServiceSchedulesFromBackend().catch(() => { });
-    ctx.persist();
     return saved;
   };
 
@@ -469,7 +454,6 @@ export const createSchedulesModule = (ctx) => {
       Number(entry.id_matricula) === Number(idMatricula) ? { ...entry, estado: 'CANCELADA' } : entry,
     );
     await refreshServiceSchedulesFromBackend().catch(() => { });
-    ctx.persist();
   };
 
   return { upsertRutina, upsertHorario, memberSchedules, assignMemberSchedule, refreshServiceSchedulesFromBackend, refreshRoutinesFromBackend, upsertServiceSchedule, deleteServiceSchedule, refreshScheduleClientsFromBackend, refreshEnrollmentsFromBackend, fetchTrainerOverview, upsertTrainerRoutine, assignTrainerRoutine, fetchTrainerClientRoutines, markTrainerRoutineProgress, enrollSchedule, deleteEnrollment };

@@ -1,8 +1,11 @@
+from typing import NoReturn
+
+
 class AttendanceConflict(ValueError):
     """La asistencia fue modificada o entra en conflicto con otro registro."""
 
 
-def raise_schedule_enrollment_error(error):
+def raise_schedule_enrollment_error(error: RuntimeError) -> NoReturn:
     normalized = str(error).lower()
     for markers, message in (
         (("ya esta matriculado", "23505"), "El cliente ya esta matriculado en este horario"),

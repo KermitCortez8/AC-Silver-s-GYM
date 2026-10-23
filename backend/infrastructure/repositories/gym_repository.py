@@ -9,7 +9,7 @@ import threading
 import time
 from typing import Any, NoReturn
 
-from domain.errors import AttendanceConflict
+from domain.errors import AttendanceConflict, raise_schedule_enrollment_error
 from domain.services.gym_domain_service import GymDomainService, _now_iso, _today_iso
 from domain.services.membership_lifecycle import apply_membership_expiration, normalize_membership_status
 from infrastructure.supabase_client import SupabaseRestClient
@@ -351,16 +351,7 @@ class SupabaseGymRepository:
 
     @staticmethod
     def _raise_schedule_enrollment_error(error: RuntimeError) -> NoReturn:
-        normalized = str(error).lower()
-        if "ya esta matriculado" in normalized or "23505" in normalized:
-            raise ValueError("El cliente ya esta matriculado en este horario") from error
-        if "sin cupos" in normalized:
-            raise ValueError("Horario sin cupos disponibles") from error
-        if "sin membresia activa" in normalized:
-            raise ValueError("Cliente sin membresia activa") from error
-        if "horario no disponible" in normalized or "23503" in normalized:
-            raise ValueError("Horario no disponible") from error
-        raise error
+        raise_schedule_enrollment_error(error)
 
     def enroll(self, payload: dict[str, Any]) -> dict[str, Any]:
 

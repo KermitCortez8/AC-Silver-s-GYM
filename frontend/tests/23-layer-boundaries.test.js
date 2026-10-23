@@ -3,6 +3,9 @@ import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { ref } from 'vue';
+import { createUsersModule } from '../src/application/modules/users.js';
+import { createDashboardModule } from '../src/application/modules/dashboard.js';
 import { configureApplicationServices } from '../src/application/ports/services.js';
 import { loadMembershipPlans } from '../src/application/services/publicCatalog.js';
 import { confirmMembershipPayment } from '../src/application/services/clientPayments.js';
@@ -39,7 +42,7 @@ test('catalog and payments work with injected backend adapters', async () => {
       apiGet: async (...args) => { calls.push(['get', ...args]); return [{ id_pm: 1 }]; },
       apiPost: async (...args) => { calls.push(['post', ...args]); return { confirmed: true }; },
     },
-    auth: {}, session: {}, attendance: {}, images: {}, config: {}, storage: {}, preferences: {},
+    auth: {}, session: {}, attendance: {}, images: {}, config: {}, storage: {}, preferences: {}, repositories: {},
   });
   assert.deepEqual(await loadMembershipPlans(), [{ id_pm: 1 }]);
   assert.deepEqual(await confirmMembershipPayment('session/with?symbols', 'token'), { confirmed: true });
@@ -47,4 +50,52 @@ test('catalog and payments work with injected backend adapters', async () => {
     ['get', '/planes-membresia'],
     ['post', '/pagos/stripe/confirmar-retorno?session_id=session%2Fwith%3Fsymbols', {}, 'token'],
   ]);
+});
+
+test('users and settings accept data repositories without HTTP responses or a global adapter registry', async () => {
+  const ctx = { apiBase: '/api', authStore: { token: 'session' }, users: ref([]), gymSettings: ref({}) };
+  const users = createUsersModule(ctx, {
+    save: async (payload, token) => {
+      assert.equal(token, 'session');
+      return { ...payload, id_usuario: 'SGUS001' };
+    },
+    remove: async (id, token) => {
+      assert.equal(id, 'SGUS001');
+      assert.equal(token, 'session');
+      return true;
+    },
+  });
+  const settings = createDashboardModule(ctx, {
+    load: async (token) => {
+      assert.equal(token, 'session');
+      return { capacidad_total: 40, capacidad_por_hora: 12 };
+    },
+    save: async (payload, token) => {
+      assert.equal(token, 'session');
+      return payload;
+    },
+  });
+
+  await users.upsertUser({ nombre: 'Ana' });
+  assert.equal(ctx.users.value[0].nombre, 'Ana');
+  await users.deleteUser('SGUS001');
+  assert.deepEqual(ctx.users.value, []);
+  assert.equal((await settings.refreshGymSettingsFromBackend()).capacidad_total, 40);
+  assert.equal((await settings.updateGymSettings({ totalCapacity: 50 })).capacidad_total, 50);
+});
+
+test('local user edits keep the same identity and settings still support their local defaults', async () => {
+  const ctx = { users: ref([]), gymSettings: ref({}) };
+  const users = createUsersModule(ctx);
+  const created = await users.upsertUser({ nombre: 'Ana', rol: 'trainer' });
+  await users.upsertUser({ id_usuario: created.id_usuario, nombre: 'Ana Perez' });
+  assert.equal(ctx.users.value.length, 1);
+  assert.equal(ctx.users.value[0].id_usuario, 'SGUS001');
+  assert.equal(ctx.users.value[0].nombre, 'Ana Perez');
+  assert.equal(ctx.users.value[0].rol, 'trainer');
+  await users.deleteUser(created.id_usuario);
+  assert.deepEqual(ctx.users.value, []);
+
+  const settings = createDashboardModule(ctx);
+  assert.deepEqual(await settings.updateGymSettings(), { capacidad_total: 30, capacidad_por_hora: 10 });
 });

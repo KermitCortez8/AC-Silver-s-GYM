@@ -57,7 +57,6 @@ export const createStoreModule = (ctx) => {
         ctx.productos_tienda.value.unshift(normalized);
       }
 
-      ctx.persist();
       // Un producto nuevo puede crear su reserva (vacia) en Inventario.
       await ctx.fetchFromBackend({ force: true }).catch(() => {});
       return normalized;
@@ -86,7 +85,6 @@ export const createStoreModule = (ctx) => {
       ctx.productos_tienda.value.unshift(normalized);
     }
 
-    ctx.persist();
     return normalized;
   };
 
@@ -103,7 +101,6 @@ export const createStoreModule = (ctx) => {
     }
 
     ctx.productos_tienda.value = ctx.productos_tienda.value.filter((p) => p.id_producto !== id_producto);
-    ctx.persist();
   };
 
   const addToCart = (producto, cantidad = 1) => {
@@ -120,26 +117,21 @@ export const createStoreModule = (ctx) => {
         cantidad: Math.max(1, cantidad),
       });
     }
-
-    ctx.persist();
   };
 
   const removeFromCart = (id_producto) => {
     ctx.cart.value = ctx.cart.value.filter((item) => item.id_producto !== id_producto);
-    ctx.persist();
   };
 
   const updateCartQuantity = (id_producto, cantidad) => {
     const item = ctx.cart.value.find((item) => item.id_producto === id_producto);
     if (item) {
       item.cantidad = Math.max(1, cantidad);
-      ctx.persist();
     }
   };
 
   const clearCart = () => {
     ctx.cart.value = [];
-    ctx.persist();
   };
 
   const cartTotal = computed(() => {
@@ -157,7 +149,6 @@ export const createStoreModule = (ctx) => {
     } else {
       ctx.storeOrders.value.unshift(normalized);
     }
-    ctx.persist();
     return normalized;
   };
 
@@ -171,7 +162,6 @@ export const createStoreModule = (ctx) => {
 
     const list = await response.json();
     ctx.productos_tienda.value = list.map((product) => normalizeStoreProductFromBackend(product));
-    ctx.persist();
     return ctx.productos_tienda.value;
   };
 
@@ -185,7 +175,6 @@ export const createStoreModule = (ctx) => {
 
     const list = await response.json();
     ctx.storeOrders.value = list.map((order) => normalizeStoreOrder(order));
-    ctx.persist();
     return ctx.storeOrders.value;
   };
 

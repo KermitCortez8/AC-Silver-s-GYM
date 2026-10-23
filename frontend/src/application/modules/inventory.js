@@ -42,7 +42,6 @@ export const createInventoryModule = (ctx) => {
         };
         const index = ctx.inventory.value.findIndex((entry) => entry.id === item.id);
         if (index >= 0) ctx.inventory.value[index] = item; else ctx.inventory.value.unshift(item);
-        ctx.persist();
         // El alta registra su entrada en MOV_INV y un item Tipo Tienda crea su producto.
         return ctx.fetchFromBackend({ force: true }).catch(() => {}).then(() => item);
       });
@@ -70,7 +69,6 @@ export const createInventoryModule = (ctx) => {
     } else {
       ctx.inventory.value.unshift(item);
     }
-    ctx.persist();
     return item;
   };
 
@@ -84,13 +82,11 @@ export const createInventoryModule = (ctx) => {
       if (result?.accion === 'descontinuado') {
         const item = ctx.inventory.value.find((entry) => entry.id === id);
         if (item) item.status = result.item?.estado || 'Descontinuado';
-        ctx.persist();
         await ctx.fetchFromBackend({ force: true }).catch(() => {});
         return result;
       }
     }
     ctx.inventory.value = ctx.inventory.value.filter((item) => item.id !== id);
-    ctx.persist();
     return null;
   };
 
@@ -99,7 +95,6 @@ export const createInventoryModule = (ctx) => {
     const response = await backendRequest(`${ctx.apiBase}/inventario/movimientos`, { headers: ctx._authHeaders() });
     if (!response.ok) throw new Error(await ctx.readBackendError(response, 'Error al cargar movimientos'));
     ctx.inventoryMovements.value = await response.json();
-    ctx.persist();
     return ctx.inventoryMovements.value;
   };
 
@@ -117,7 +112,6 @@ export const createInventoryModule = (ctx) => {
     const saved = await res.json();
     if (saved?.movimiento) ctx.inventoryMovements.value.unshift(saved.movimiento);
     await ctx.fetchFromBackend({ force: true }).catch(() => { });
-    ctx.persist();
     return saved;
   };
 
@@ -127,7 +121,6 @@ export const createInventoryModule = (ctx) => {
     if (!res.ok) throw new Error(await ctx.readBackendError(res, 'No se pudo actualizar el movimiento'));
     const saved = await res.json();
     await ctx.fetchFromBackend({ force: true }).catch(() => {});
-    ctx.persist();
     return saved;
   };
 

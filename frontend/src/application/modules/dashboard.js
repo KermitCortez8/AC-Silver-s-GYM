@@ -2,9 +2,9 @@
 import { todayISO } from '../../domain/utils/gymRules.js';
 import { computed } from 'vue';
 import { clientMembershipGroup } from '../../domain/utils/clientDirectory.js';
-import { backendRequest } from '../services/backendGateway.js';
 
-export const createDashboardModule = (ctx) => {
+/** settingsRepository: load(token) y save(settings, token) devuelven la configuración guardada. */
+export const createDashboardModule = (ctx, settingsRepository) => {
   const stats = computed(() => {
     const today = todayISO();
     const lowStockItems = ctx.inventory.value.filter((item) => item.quantity <= item.minQuantity).length;
@@ -28,10 +28,7 @@ export const createDashboardModule = (ctx) => {
 
   const refreshGymSettingsFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const response = await backendRequest(`${ctx.apiBase}/gym/configuracion`, { headers: ctx._authHeaders() });
-    if (!response.ok) throw new Error(await ctx.readBackendError(response, 'Error al cargar configuracion'));
-    ctx.gymSettings.value = await response.json();
-    ctx.persist();
+    ctx.gymSettings.value = await settingsRepository.load(ctx.authStore.token);
     return ctx.gymSettings.value;
   };
 
@@ -41,17 +38,10 @@ export const createDashboardModule = (ctx) => {
       capacidad_por_hora: Number(payload.capacidad_por_hora || payload.hourCapacity || 10),
     };
     if (ctx.apiBase) {
-      const response = await backendRequest(`${ctx.apiBase}/gym/configuracion`, {
-        method: 'POST',
-        headers: ctx._authHeaders(),
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo guardar configuracion'));
-      ctx.gymSettings.value = await response.json();
+      ctx.gymSettings.value = await settingsRepository.save(body, ctx.authStore.token);
     } else {
       ctx.gymSettings.value = body;
     }
-    ctx.persist();
     return ctx.gymSettings.value;
   };
 

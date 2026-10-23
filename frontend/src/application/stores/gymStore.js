@@ -10,16 +10,18 @@ import { createSchedulesModule } from '../modules/schedules.js';
 import { createUsersModule } from '../modules/users.js';
 import { createStoreModule } from '../modules/store.js';
 import { createSynchronizationModule } from '../modules/synchronization.js';
+import { getApplicationServices } from '../ports/services.js';
 
 export const useGymStore = defineStore('gym', () => {
   const context = createGymState();
+  const { repositories } = getApplicationServices();
   Object.assign(context, createAttendanceModule(context));
-  Object.assign(context, createDashboardModule(context));
+  Object.assign(context, createDashboardModule(context, repositories.gymSettings));
   Object.assign(context, createMembershipsModule(context));
   Object.assign(context, createInventoryModule(context));
   Object.assign(context, createClientsModule(context));
   Object.assign(context, createSchedulesModule(context));
-  Object.assign(context, createUsersModule(context));
+  Object.assign(context, createUsersModule(context, repositories.users));
   Object.assign(context, createStoreModule(context));
   Object.assign(context, createSynchronizationModule(context));
   context.pruneExpiredAttendancePasses();

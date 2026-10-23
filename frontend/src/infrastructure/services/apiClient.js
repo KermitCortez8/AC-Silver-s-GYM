@@ -30,17 +30,19 @@ const buildHeaders = (token, headers = {}) => {
 };
 
 export const request = async (path, options = {}, token = '') => {
+  const { errorMessage, ...fetchOptions } = options;
   let response;
   try {
     response = await fetch(buildUrl(path), {
-      ...options,
-      headers: buildHeaders(token, options.headers),
+      ...fetchOptions,
+      headers: buildHeaders(token, fetchOptions.headers),
     });
   } catch {
     throw new Error('No se pudo contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.');
   }
 
   if (!response.ok) {
+    if (errorMessage) throw new Error(errorMessage);
     throw await parseError(response);
   }
 

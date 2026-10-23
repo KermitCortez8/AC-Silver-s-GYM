@@ -103,6 +103,16 @@ asistencia, inventario, horarios, usuarios, tienda, panel y sincronización. Los
 módulos comparten un contexto de estado para conservar las mismas referencias
 reactivas y la coordinación existente entre secciones.
 
+Usuarios y configuración del gimnasio reciben repositorios con operaciones que
+devuelven datos (`save`, `remove` y `load`). Su transporte HTTP está en
+`infrastructure/repositories/` y se conecta en `bootstrap.js`; estos dos módulos
+ya no construyen solicitudes ni interpretan respuestas HTTP. La actualización de
+usuarios reutiliza una única función de normalización e inserción o reemplazo.
+
+Se retiró la función vacía `persist()` y sus llamadas: los cambios remotos siguen
+guardándose mediante las operaciones del backend que ya existían. Los cambios
+locales mantienen sus referencias reactivas de Vue.
+
 Las transformaciones comunes viven en `domain/utils/gymRules.js` y las validaciones
 de autenticación en `domain/utils/authRules.js`. El almacenamiento de sesión vive
 en `infrastructure/services/sessionStorage.js`. El módulo anterior `authUtils.js`
@@ -128,7 +138,7 @@ todavía existen decisiones que limitan su independencia:
 - Los módulos del frontend usan un contexto compartido y las dependencias se
   registran globalmente al arrancar. Son módulos separados detrás de una fachada
   de Pinia; no son stores independientes.
-- El contrato HTTP del frontend conserva respuestas con `ok`, `json()` y opciones
+- Otros módulos del frontend conservan respuestas HTTP con `ok`, `json()` y opciones
   de transporte utilizadas por módulos de aplicación. Una separación más estricta
   devolvería datos mediante repositorios de clientes, pagos y horarios, dejando
   esos detalles enteramente en infraestructura.

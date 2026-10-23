@@ -73,7 +73,6 @@ export const createMembershipsModule = (ctx) => {
     const normalized = normalizePlanFromBackend(plan);
     const index = ctx.planCatalog.value.findIndex((entry) => Number(entry.id_pm) === Number(normalized.id_pm));
     if (index >= 0) ctx.planCatalog.value[index] = normalized; else ctx.planCatalog.value.unshift(normalized);
-    ctx.persist();
     return normalized;
   };
 
@@ -110,14 +109,12 @@ export const createMembershipsModule = (ctx) => {
       if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar el plan'));
     }
     ctx.planCatalog.value = ctx.planCatalog.value.filter((plan) => Number(plan.id_pm) !== idPm);
-    ctx.persist();
   };
 
   const mergePromotion = (promotion) => {
     const normalized = normalizePromotionFromBackend(promotion);
     const index = ctx.promotions.value.findIndex((entry) => Number(entry.id_promocion) === Number(normalized.id_promocion));
     if (index >= 0) ctx.promotions.value[index] = normalized; else ctx.promotions.value.unshift(normalized);
-    ctx.persist();
     return normalized;
   };
 
@@ -163,7 +160,6 @@ export const createMembershipsModule = (ctx) => {
       if (!response.ok) throw new Error(await ctx.readBackendError(response, 'No se pudo eliminar la promocion'));
     }
     ctx.promotions.value = ctx.promotions.value.filter((promotion) => Number(promotion.id_promocion) !== idPromocion);
-    ctx.persist();
   };
 
   const assignPlanToMember = (memberId, planId, promotionId = '', note = 'Asignación de membresía') => {
@@ -206,7 +202,6 @@ export const createMembershipsModule = (ctx) => {
           // actualizar estado local mínimo
           ctx.members.value[index] = { ...member, plan: getPlanById(planId)?.name || member.plan, planId, membershipStart: startDate, membershipEnd: endDate, membershipPrice: memb.monto_pago ?? member.membershipPrice, id_membresia: memb.id_membresia, paymentStatus: memb.estado_pago || 'PENDIENTE', membershipStatus: normalizeMembershipStatus(memb.estado) };
           ctx.logMemberEvent(memberId, { action: memb.id_membresia ? 'Asignación' : 'Renovación', fields: ['plan', 'planId', 'membershipStart', 'membershipEnd', 'membershipPrice', 'status'], note });
-          ctx.persist();
           return ctx.members.value[index];
         });
     }
@@ -250,7 +245,6 @@ export const createMembershipsModule = (ctx) => {
       note,
     });
 
-    ctx.persist();
     return ctx.members.value[index];
   };
 
@@ -269,7 +263,6 @@ export const createMembershipsModule = (ctx) => {
     if (!response.ok) throw new Error(await ctx.readBackendError(response, 'Error al cargar promociones'));
     const list = await response.json();
     ctx.promotions.value = list.map((promotion) => normalizePromotionFromBackend(promotion));
-    ctx.persist();
     return ctx.promotions.value;
   };
 

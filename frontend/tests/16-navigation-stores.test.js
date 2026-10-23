@@ -42,6 +42,67 @@ const deferred = () => {
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
+test('users save, replace and delete through the configured repository, including empty 204 responses', async () => {
+  auth.token = token;
+  gym.users = [];
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push([url, options.method]);
+    assert.equal(options.headers.Authorization, `Bearer ${token}`);
+    assert.equal(options.headers['Content-Type'], 'application/json');
+    assert.equal(Object.hasOwn(options, 'errorMessage'), false);
+    if (options.method === 'DELETE') return new Response(null, { status: 204 });
+    return json({ ...JSON.parse(options.body), id_usuario: 'SGUS001', has_password: true });
+  };
+
+  const created = await gym.upsertUser({ nombre: ' Ana ', email: 'ana@example.com', rol: 'trainer' });
+  assert.equal(created.nombre, 'Ana');
+  assert.equal(created.correo, 'ana@example.com');
+  assert.equal(created.hasPassword, true);
+
+  await gym.upsertUser({ id_usuario: created.id_usuario, nombre: 'Ana Perez' });
+  assert.equal(gym.users.length, 1);
+  assert.equal(gym.users[0].nombre, 'Ana Perez');
+  assert.equal(gym.users[0].rol, 'trainer');
+
+  await gym.deleteUser(created.id_usuario);
+  assert.deepEqual(gym.users, []);
+  assert.deepEqual(requests, [
+    ['/api/usuarios', 'POST'], ['/api/usuarios', 'POST'], ['/api/usuarios/SGUS001', 'DELETE'],
+  ]);
+});
+
+test('failed user writes preserve local users and their existing error messages', async () => {
+  gym.users = [{ id_usuario: 'SGUS001', nombre: 'Ana', rol: 'staff' }];
+  const initial = gym.users.map((user) => ({ ...user }));
+  globalThis.fetch = async () => json({ detail: 'Acceso denegado' }, 403);
+
+  await assert.rejects(gym.upsertUser({ id_usuario: 'SGUS001', nombre: 'Otra persona' }), /Error al guardar usuario/);
+  await assert.rejects(gym.deleteUser('SGUS001'), /Error al eliminar usuario/);
+  assert.deepEqual(gym.users, initial);
+});
+
+test('gym configuration loads and saves data, preserving the last settings if the server rejects a change', async () => {
+  auth.token = token;
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, '/api/gym/configuracion');
+    assert.equal(options.headers.Authorization, `Bearer ${token}`);
+    if (options.method === 'GET') return json({ capacidad_total: 40, capacidad_por_hora: 12 });
+    const body = JSON.parse(options.body);
+    assert.deepEqual(body, { capacidad_total: 50, capacidad_por_hora: 15 });
+    return json(body);
+  };
+
+  assert.deepEqual(await gym.refreshGymSettingsFromBackend(), { capacidad_total: 40, capacidad_por_hora: 12 });
+  assert.deepEqual(await gym.updateGymSettings({ totalCapacity: '50', hourCapacity: '15' }), {
+    capacidad_total: 50, capacidad_por_hora: 15,
+  });
+
+  globalThis.fetch = async () => json({ detail: 'Configuracion no valida' }, 400);
+  await assert.rejects(gym.updateGymSettings({ totalCapacity: 60 }), /Configuracion no valida/);
+  assert.equal(gym.gymSettings.capacidad_total, 50);
+});
+
 before(async () => {
   // Vite resuelve los imports del store sin abrir puertos ni conectar con la API.
   server = await createServer({

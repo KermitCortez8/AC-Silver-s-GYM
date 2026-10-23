@@ -51,7 +51,6 @@ export const createClientsModule = (ctx) => {
       changeHistory: [entry, ...(member.changeHistory || [])].slice(0, 20),
     };
 
-    ctx.persist();
     return entry;
   };
 
@@ -118,7 +117,6 @@ export const createClientsModule = (ctx) => {
           const localMember = { ...member, id: localId, id_cliente, internalCode: String(localId), joinedAt: created.fecha_registro || member.joinedAt };
           const idx = ctx.members.value.findIndex((m) => m.id === localMember.id || m.dni === localMember.dni);
           if (idx >= 0) ctx.members.value[idx] = localMember; else ctx.members.value.unshift(localMember);
-          ctx.persist();
 
           // Si se asignó un plan en el payload, registrar membresía
           /**
@@ -143,7 +141,6 @@ export const createClientsModule = (ctx) => {
     } else {
       ctx.members.value.unshift(member);
     }
-    ctx.persist();
     return member;
   };
 
@@ -155,7 +152,6 @@ export const createClientsModule = (ctx) => {
     ctx.members.value = ctx.members.value.filter((member) => member.id !== id);
     ctx.attendance.value = ctx.attendance.value.filter((entry) => entry.memberId !== id);
     ctx.attendancePasses.value = ctx.attendancePasses.value.filter((pass) => pass.memberId !== id);
-    ctx.persist();
   };
 
   const deleteClient = (id) => deleteMember(id);
@@ -253,7 +249,6 @@ export const createClientsModule = (ctx) => {
       } else {
         ctx.members.value.unshift(normalized);
       }
-      ctx.persist();
       ctx.fetchFromBackend({ section: 'clients', force: true }).catch(() => {});
       return normalized;
     }
@@ -292,7 +287,6 @@ export const createClientsModule = (ctx) => {
     } else {
       ctx.members.value.unshift(normalized);
     }
-    ctx.persist();
     return normalized;
   };
 
@@ -344,7 +338,6 @@ export const createClientsModule = (ctx) => {
     } else {
       ctx.members.value.unshift(normalized);
     }
-    ctx.persist();
     return normalized;
   };
 

@@ -67,9 +67,37 @@ export const createGymState = () => {
 
   const resourceErrors = new Map();
 
-  const persist = () => {
-    // Business data is persisted only through the backend, which writes to Supabase.
+  return {
+    initialState,
+    authStore,
+    planCatalog,
+    promotions,
+    members,
+    users,
+    attendance,
+    attendancePasses,
+    inventory,
+    inventoryMovements,
+    productos_tienda,
+    storeOrders,
+    cart,
+    routines,
+    schedule,
+    serviceSchedules,
+    enrollments,
+    trainerOverview,
+    gymSettings,
+    membershipPayments,
+    syncError,
+    isSyncing,
+    sectionSyncs,
+    isSectionSyncing,
+    resourceCache,
+    trainerOverviewCache,
+    pendingSyncs,
+    syncScope,
+    activeSyncs,
+    errorScope,
+    resourceErrors,
   };
-
-  return { initialState, authStore, planCatalog, promotions, members, users, attendance, attendancePasses, inventory, inventoryMovements, productos_tienda, storeOrders, cart, routines, schedule, serviceSchedules, enrollments, trainerOverview, gymSettings, membershipPayments, syncError, isSyncing, sectionSyncs, isSectionSyncing, resourceCache, trainerOverviewCache, pendingSyncs, syncScope, activeSyncs, errorScope, resourceErrors, persist };
 };

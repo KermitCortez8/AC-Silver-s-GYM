@@ -20,7 +20,6 @@ export const createAttendanceModule = (ctx) => {
       ctx.attendance.value.unshift(normalized);
     }
 
-    ctx.persist();
     return normalized;
   };
 
@@ -215,7 +214,6 @@ export const createAttendanceModule = (ctx) => {
     });
 
     ctx.attendancePasses.value = [pass, ...ctx.attendancePasses.value];
-    ctx.persist();
     return {
       ...pass,
       qrPayload: getPassPayload(pass),
@@ -239,7 +237,6 @@ export const createAttendanceModule = (ctx) => {
 
     if (isPassExpired(pass)) {
       pass.status = 'expired';
-      ctx.persist();
       throw new Error('El código expiró');
     }
 
@@ -247,7 +244,6 @@ export const createAttendanceModule = (ctx) => {
     pass.status = 'redeemed';
     pass.redeemedAt = nowISO();
     pass.redeemedAttendanceId = record.id;
-    ctx.persist();
 
     return {
       record,
@@ -313,20 +309,13 @@ export const createAttendanceModule = (ctx) => {
   };
 
   const pruneExpiredAttendancePasses = () => {
-    let changed = false;
-
     ctx.attendancePasses.value = ctx.attendancePasses.value.map((pass) => {
       if (pass.status === 'active' && isPassExpired(pass)) {
-        changed = true;
         return { ...pass, status: 'expired' };
       }
 
       return pass;
     });
-
-    if (changed) {
-      ctx.persist();
-    }
   };
 
   const refreshAttendanceFromBackend = async () => {
@@ -339,7 +328,6 @@ export const createAttendanceModule = (ctx) => {
 
     const list = await response.json();
     ctx.attendance.value = list.map((entry) => normalizeBackendAttendanceRecord(entry, ctx.members.value));
-    ctx.persist();
     return ctx.attendance.value;
   };
 
@@ -431,7 +419,6 @@ export const createAttendanceModule = (ctx) => {
 
       return entry.id !== current.id;
     });
-    ctx.persist();
   };
 
   return { mergeAttendanceRecord, recentAttendance, attendanceAnalytics, attendanceByMemberRange, recordAttendanceByCode, recordAttendanceByDni, userAttendance, activeAttendancePass, createAttendancePass, redeemAttendancePass, recordAttendance, pruneExpiredAttendancePasses, refreshAttendanceFromBackend, checkinByDniServer, checkinByIdServer, registerAttendanceEntry, registerAttendanceExit, updateAttendanceRecord, deleteAttendanceRecord };

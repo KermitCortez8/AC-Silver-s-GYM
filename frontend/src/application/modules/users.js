@@ -1,8 +1,19 @@
 /** Estado y operaciones del módulo users. */
 import { normalizeUser } from '../../domain/utils/gymRules.js';
-import { backendRequest } from '../services/backendGateway.js';
 
-export const createUsersModule = (ctx) => {
+/** usersRepository: save(payload, token) y remove(id, token) devuelven datos o lanzan un error. */
+export const createUsersModule = (ctx, usersRepository) => {
+  const mergeUser = (saved) => {
+    const normalized = normalizeUser(saved);
+    const index = ctx.users.value.findIndex((entry) => String(entry.id_usuario) === String(normalized.id_usuario));
+    if (index >= 0) {
+      ctx.users.value[index] = normalized;
+    } else {
+      ctx.users.value.unshift(normalized);
+    }
+    return normalized;
+  };
+
   const upsertUser = async (payload) => {
     const existingUser = ctx.users.value.find((entry) => String(entry.id_usuario) === String(payload.id_usuario || '').trim());
     const userPayload = {
@@ -21,27 +32,11 @@ export const createUsersModule = (ctx) => {
       }
 
       const saved = await upsertUserToServer(userPayload);
-      const normalized = normalizeUser(saved);
-      const index = ctx.users.value.findIndex((entry) => String(entry.id_usuario) === String(normalized.id_usuario));
-      if (index >= 0) {
-        ctx.users.value[index] = normalized;
-      } else {
-        ctx.users.value.unshift(normalized);
-      }
-      ctx.persist();
-      return normalized;
+      return mergeUser(saved);
     }
 
     const nextId = userPayload.id_usuario || `SGUS${String(ctx.users.value.length + 1).padStart(3, '0')}`;
-    const normalized = normalizeUser({ ...userPayload, id_usuario: nextId });
-    const index = ctx.users.value.findIndex((entry) => String(entry.id_usuario) === String(normalized.id_usuario));
-    if (index >= 0) {
-      ctx.users.value[index] = normalized;
-    } else {
-      ctx.users.value.unshift(normalized);
-    }
-    ctx.persist();
-    return normalized;
+    return mergeUser({ ...userPayload, id_usuario: nextId });
   };
 
   const deleteUser = async (idUsuario) => {
@@ -55,21 +50,16 @@ export const createUsersModule = (ctx) => {
     }
 
     ctx.users.value = ctx.users.value.filter((user) => String(user.id_usuario) !== normalizedId);
-    ctx.persist();
   };
 
   const upsertUserToServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/usuarios`, { method: 'POST', headers: ctx._authHeaders(), body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error('Error al guardar usuario');
-    return res.json();
+    return usersRepository.save(payload, ctx.authStore.token);
   };
 
   const deleteUserFromServer = async (idUsuario) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const res = await backendRequest(`${ctx.apiBase}/usuarios/${encodeURIComponent(idUsuario)}`, { method: 'DELETE', headers: ctx._authHeaders() });
-    if (!res.ok && res.status !== 204) throw new Error('Error al eliminar usuario');
-    return true;
+    return usersRepository.remove(idUsuario, ctx.authStore.token);
   };
 
   return { upsertUser, deleteUser, upsertUserToServer, deleteUserFromServer };

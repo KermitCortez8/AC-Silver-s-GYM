@@ -2,7 +2,7 @@
 let services;
 
 export const configureApplicationServices = (adapters) => {
-  for (const name of ['http', 'auth', 'session', 'attendance', 'images', 'config', 'storage', 'preferences']) {
+  for (const name of ['http', 'auth', 'session', 'attendance', 'images', 'config', 'storage', 'preferences', 'repositories']) {
     if (!adapters[name]) throw new Error(`Falta el adaptador de ${name}`);
   }
   services = adapters;
