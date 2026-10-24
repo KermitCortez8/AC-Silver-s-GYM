@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { findClientForUser } from '../src/utils/clientIdentity.js';
+import { findClientForUser } from '../src/domain/utils/clientIdentity.js';
 
 const members = [{ id_cliente: 7, email: 'otro@example.com' }];
 

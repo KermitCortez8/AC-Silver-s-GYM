@@ -1,5 +1,5 @@
 import pytest
-from services.gym_domain_service import GymDomainService
+from domain.services.gym_domain_service import GymDomainService
 
 
 def test_promocion_limite_cupos_exhaustion():

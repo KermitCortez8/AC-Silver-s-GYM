@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { syncResources } from '../src/services/syncResources.js';
+import { syncResources } from '../src/application/services/syncResources.js';
 
 test('loads at most three resources concurrently and starts another when one completes', async () => {
   const started = [];

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 let server;
 let useAuthStore;
 let useGymStore;
+let installServices;
 let auth;
 let gym;
 
@@ -42,6 +43,67 @@ const deferred = () => {
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
+test('users save, replace and delete through the configured repository, including empty 204 responses', async () => {
+  auth.token = token;
+  gym.users = [];
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push([url, options.method]);
+    assert.equal(options.headers.Authorization, `Bearer ${token}`);
+    assert.equal(options.headers['Content-Type'], 'application/json');
+    assert.equal(Object.hasOwn(options, 'errorMessage'), false);
+    if (options.method === 'DELETE') return new Response(null, { status: 204 });
+    return json({ ...JSON.parse(options.body), id_usuario: 'SGUS001', has_password: true });
+  };
+
+  const created = await gym.upsertUser({ nombre: ' Ana ', email: 'ana@example.com', rol: 'trainer' });
+  assert.equal(created.nombre, 'Ana');
+  assert.equal(created.correo, 'ana@example.com');
+  assert.equal(created.hasPassword, true);
+
+  await gym.upsertUser({ id_usuario: created.id_usuario, nombre: 'Ana Perez' });
+  assert.equal(gym.users.length, 1);
+  assert.equal(gym.users[0].nombre, 'Ana Perez');
+  assert.equal(gym.users[0].rol, 'trainer');
+
+  await gym.deleteUser(created.id_usuario);
+  assert.deepEqual(gym.users, []);
+  assert.deepEqual(requests, [
+    ['/api/usuarios', 'POST'], ['/api/usuarios', 'POST'], ['/api/usuarios/SGUS001', 'DELETE'],
+  ]);
+});
+
+test('failed user writes preserve local users and their existing error messages', async () => {
+  gym.users = [{ id_usuario: 'SGUS001', nombre: 'Ana', rol: 'staff' }];
+  const initial = gym.users.map((user) => ({ ...user }));
+  globalThis.fetch = async () => json({ detail: 'Acceso denegado' }, 403);
+
+  await assert.rejects(gym.upsertUser({ id_usuario: 'SGUS001', nombre: 'Otra persona' }), /Acceso denegado/);
+  await assert.rejects(gym.deleteUser('SGUS001'), /Acceso denegado/);
+  assert.deepEqual(gym.users, initial);
+});
+
+test('gym configuration loads and saves data, preserving the last settings if the server rejects a change', async () => {
+  auth.token = token;
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, '/api/gym/configuracion');
+    assert.equal(options.headers.Authorization, `Bearer ${token}`);
+    if (options.method === 'GET') return json({ capacidad_total: 40, capacidad_por_hora: 12 });
+    const body = JSON.parse(options.body);
+    assert.deepEqual(body, { capacidad_total: 50, capacidad_por_hora: 15 });
+    return json(body);
+  };
+
+  assert.deepEqual(await gym.refreshGymSettingsFromBackend(), { capacidad_total: 40, capacidad_por_hora: 12 });
+  assert.deepEqual(await gym.updateGymSettings({ totalCapacity: '50', hourCapacity: '15' }), {
+    capacidad_total: 50, capacidad_por_hora: 15,
+  });
+
+  globalThis.fetch = async () => json({ detail: 'Configuracion no valida' }, 400);
+  await assert.rejects(gym.updateGymSettings({ totalCapacity: 60 }), /Configuracion no valida/);
+  assert.equal(gym.gymSettings.capacidad_total, 50);
+});
+
 before(async () => {
   // Vite resuelve los imports del store sin abrir puertos ni conectar con la API.
   server = await createServer({
@@ -55,8 +117,9 @@ before(async () => {
     },
   });
 
-  ({ useAuthStore } = await server.ssrLoadModule('/src/stores/authStore.js'));
-  ({ useGymStore } = await server.ssrLoadModule('/src/stores/gymStore.js'));
+  ({ installServices } = await server.ssrLoadModule('/src/bootstrap.js'));
+  ({ useAuthStore } = await server.ssrLoadModule('/src/application/stores/authStore.js'));
+  ({ useGymStore } = await server.ssrLoadModule('/src/application/stores/gymStore.js'));
 });
 
 beforeEach(() => {
@@ -74,6 +137,7 @@ beforeEach(() => {
   };
 
   const pinia = createPinia();
+  installServices(pinia);
   auth = useAuthStore(pinia);
   gym = useGymStore(pinia);
 });
@@ -528,7 +592,7 @@ test('switching to users is not delayed by a pending client list', async () => {
   assert.equal(gym.isSyncing, false);
 });
 
-test('a new session waits for previous data responses so they cannot overwrite its clients', async () => {
+test('a new session loads immediately and discards previous data responses', async () => {
   auth.token = token;
   auth.userRole = 'admin';
 
@@ -552,19 +616,17 @@ test('a new session waits for previous data responses so they cannot overwrite i
     return json([]);
   };
 
-  const oldLoad = gym.fetchFromBackend({ section: 'clients' });
+  const oldLoad = gym.fetchFromBackend({ section: 'clients' }).catch(error => error);
   await flush();
 
   auth.token = 'new-session-token';
   const newLoad = gym.fetchFromBackend({ section: 'clients' });
-
-  await flush();
-  assert.equal(clientRequests, 1);
+  await newLoad;
+  assert.equal(clientRequests, 2);
+  assert.equal(gym.members[0].name, 'Sesión 2');
 
   oldResponse.resolve();
-  await Promise.all([oldLoad, newLoad]);
-
-  assert.equal(clientRequests, 2);
+  assert.match((await oldLoad).message, /sesión ha cambiado/);
   assert.equal(gym.members[0].name, 'Sesión 2');
 });
 
@@ -795,4 +857,97 @@ test('trainer views share the pending overview and refresh explicitly after navi
   assert.equal(calls, 2);
   assert.equal(gym.trainerOverview.routines[0].id_rutina, 2);
   assert.equal(gym.isSyncing, false);
+});
+
+test('failed client and product deletions keep their rows and surface the server error', async () => {
+  auth.token = token;
+  gym.members = [{ id: 'SGCLI001', name: 'Ana' }];
+  gym.productos_tienda = [{ id_producto: 1, nombre: 'Agua' }];
+  globalThis.fetch = async () => json({ detail: 'No se pudo guardar' }, 500);
+  await assert.rejects(gym.deleteClient('SGCLI001'), /No se pudo guardar/);
+  await assert.rejects(gym.deleteProductoTienda(1), /No se pudo guardar/);
+  assert.equal(gym.members.length, 1);
+  assert.equal(gym.productos_tienda.length, 1);
+});
+
+test('client and product deletion waits for server confirmation', async () => {
+  auth.token = token;
+  gym.members = [{ id: 'SGCLI001', name: 'Ana' }];
+  gym.productos_tienda = [{ id_producto: 1, nombre: 'Agua' }];
+  const response = deferred();
+  globalThis.fetch = () => response.promise;
+  const deleting = Promise.all([gym.deleteClient('SGCLI001'), gym.deleteProductoTienda(1)]);
+  await flush();
+  assert.equal(gym.members.length, 1);
+  assert.equal(gym.productos_tienda.length, 1);
+  response.resolve(new Response(null, { status: 204 }));
+  await deleting;
+  assert.equal(gym.members.length, 0);
+  assert.equal(gym.productos_tienda.length, 0);
+});
+
+test('logout clears all business state and pending old-session loads cannot restore it', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  gym.members = [{ id: 'SGCLI001', name: 'Ana' }];
+  gym.users = [{ id_usuario: 'SGSTA001' }];
+  gym.storeOrders = [{ id_pedido: 1 }];
+  gym.cart = [{ id_producto: 1, cantidad: 1 }];
+  gym.membershipPayments = [{ id_membresia: 1 }];
+  const response = deferred();
+  globalThis.fetch = async (url) => url.endsWith('/clientes') ? response.promise : json([]);
+  const loading = gym.fetchFromBackend({ section: 'clients' }).catch(error => error);
+  await flush();
+  await auth.signOut();
+  for (const key of ['members', 'users', 'storeOrders', 'cart', 'membershipPayments']) assert.equal(gym[key].length, 0, key);
+  response.resolve(json([{ id_cliente: 2, nombre: 'Otra sesión' }]));
+  assert.match((await loading).message, /sesión ha cambiado/);
+  assert.equal(gym.members.length, 0);
+  assert.equal(gym.isSyncing, false);
+  assert.equal(gym.syncError, '');
+});
+
+test('pending user saves cannot restore rows after logout, even if JSON finishes later', async () => {
+  auth.token = token;
+  const body = deferred();
+  globalThis.fetch = async () => ({
+    ok: true, status: 200, headers: new Headers({ 'content-type': 'application/json' }), json: () => body.promise,
+  });
+  const saving = gym.upsertUser({ nombre: 'Ana' }).catch(error => error);
+  await flush();
+  await auth.signOut();
+  body.resolve({ id_usuario: 'SGSTA001', nombre: 'Ana' });
+  assert.match((await saving).message, /sesión ha cambiado/);
+  assert.equal(gym.users.length, 0);
+});
+
+test('provider errors cannot prevent local logout or retain business data', async () => {
+  auth.token = token;
+  auth.user = profile;
+  auth.userRole = 'admin';
+  gym.users = [{ id_usuario: 'SGSTA001' }];
+  window.google = { accounts: { id: { disableAutoSelect() { throw new Error('Synthetic provider failure'); } } } };
+  await auth.signOut();
+  assert.equal(auth.isAuthenticated, false);
+  assert.equal(auth.token, null);
+  assert.equal(gym.users.length, 0);
+});
+
+test('logout also cancels queued synchronization tasks before they start another request', async () => {
+  auth.token = token;
+  auth.userRole = 'admin';
+  const response = deferred();
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; await response.promise; return json([]); };
+  const loading = gym.fetchFromBackend({ section: 'all' }).catch(error => error);
+  await flush();
+  assert.equal(calls, 3);
+  await auth.signOut();
+  response.resolve();
+  assert.match((await loading).message, /sesión ha cambiado/);
+  assert.equal(calls, 3);
+  for (const key of ['members', 'users', 'inventory', 'planCatalog', 'storeOrders', 'productos_tienda']) {
+    assert.equal(gym[key].length, 0, key);
+  }
+  assert.equal(gym.syncError, '');
 });

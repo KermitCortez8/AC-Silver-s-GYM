@@ -4,7 +4,7 @@ import {
   lastSevenPeruDays,
   peruDateKey,
   summarizeDashboardClients,
-} from '../src/utils/clientDashboard.js';
+} from '../src/domain/utils/clientDashboard.js';
 
 test('dashboard keeps expired memberships distinct and activation requires a confirmed payment', () => {
   const summary = summarizeDashboardClients([

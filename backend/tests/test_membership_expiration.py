@@ -4,23 +4,25 @@ import threading
 import time
 
 import pytest
+from tests.atomic_fake import AtomicFakeMixin, seed_snapshot
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from dependencies import get_current_user, get_gym_service
-from routes.auth_routes import router as auth_router
-from services.auth_service import AuthService, ClientMembershipExpired, ClientMembershipRequired
-from services.clients_service import ClientsService
-from services.local_gym_service import LocalGymService
-from services.membership_lifecycle import apply_membership_expiration
-from services.supabase_gym_service import SupabaseGymService
-import services.gym_domain_service as domain
+from presentation.dependencies import get_current_user, get_gym_service
+from presentation.routes.auth_routes import router as auth_router
+from application.services.auth_service import AuthService, ClientMembershipExpired, ClientMembershipRequired
+from application.services.clients_service import ClientsService
+from infrastructure.services.local_gym_service import LocalGymService
+from domain.services.membership_lifecycle import apply_membership_expiration
+from infrastructure.services.supabase_gym_service import SupabaseGymService
+import domain.services.gym_domain_service as domain
 
 
 @pytest.fixture
 def gym(monkeypatch):
-    for module in ('gym_domain_service', 'auth_service', 'clients_service', 'supabase_gym_service'):
-        monkeypatch.setattr(f'services.{module}._today_iso', lambda: '2026-10-01')
+    for module in ('domain.services.gym_domain_service', 'application.services.auth_service',
+                   'application.services.clients_service', 'infrastructure.services.supabase_gym_service'):
+        monkeypatch.setattr(f'{module}._today_iso', lambda: '2026-10-01')
     service = LocalGymService()
     result = ClientsService(service).register_admin_client({
         'nombre': 'Cliente Vigente', 'correo': 'cliente@example.com', 'dni': '12345678',
@@ -55,11 +57,13 @@ def test_access_includes_last_day_and_expiration_preserves_payment_history(gym, 
     account = gym.state['clientes'][0]
     service.session_for_client(account)
     original = deepcopy(gym.state['membresia'][0])
-    monkeypatch.setattr('services.gym_domain_service._today_iso', lambda: '2026-10-02')
-    monkeypatch.setattr('services.auth_service._today_iso', lambda: '2026-10-02')
+    monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-02')
+    monkeypatch.setattr('application.services.auth_service._today_iso', lambda: '2026-10-02')
     with pytest.raises(ClientMembershipExpired):
         service.session_for_client(account)
-    assert account['estado'] == 'VENCIDA'
+    assert gym.get_cliente(account['id_cliente'])['estado'] == 'VENCIDA'
+    assert account['estado'] == 'ACTIVO'
+    gym.expire_memberships()
     assert gym.state['membresia'][0] == {**original, 'estado': 'VENCIDA'}
     assert gym.expire_memberships() is False
 
@@ -73,7 +77,7 @@ def test_date_boundary_uses_peru_midnight(monkeypatch, instant, expected):
         @classmethod
         def now(cls, tz=None):
             return datetime.fromisoformat(instant).astimezone(tz or timezone.utc)
-    monkeypatch.setattr(domain, 'datetime', Clock)
+    monkeypatch.setattr('domain.services.gym_values.datetime', Clock)
     assert domain._today_iso() == expected
 
 
@@ -91,13 +95,14 @@ def test_expired_password_login_and_existing_signed_token_are_blocked(gym):
     ):
         assert response.status_code == 403
         assert response.json()['detail']['code'] == 'membership_expired'
-    assert gym.state['clientes'][0]['estado'] == 'VENCIDA'
+    assert gym.get_cliente(gym.state['clientes'][0]['id_cliente'])['estado'] == 'VENCIDA'
+    assert gym.state['clientes'][0]['estado'] == 'ACTIVO'
 
 
 def test_linked_google_login_is_blocked_after_expiration(gym, monkeypatch):
     account = gym.state['clientes'][0]
     account['google_sub'] = 'google-client'
-    monkeypatch.setattr('services.auth_service.verify_google_credential', lambda _: {
+    monkeypatch.setattr(gym.identity, 'verify', lambda _: {
         'sub': 'google-client', 'email': 'cliente@example.com', 'name': 'Cliente',
     })
     expire(gym)
@@ -130,7 +135,7 @@ def test_current_paid_renewal_preserves_access_and_expires_only_old_membership(g
     previous.update(id_membresia=0, estado='ACTIVO', fecha_fin='2026-09-01')
     gym.state['membresia'].append(previous)
     assert gym.expire_memberships() is True
-    assert previous['estado'] == 'VENCIDA'
+    assert next(row for row in gym.membresias() if row['id_membresia'] == previous['id_membresia'])['estado'] == 'VENCIDA'
     assert gym.state['clientes'][0]['estado'] == 'ACTIVO'
     AuthService(gym).session_for_client(gym.state['clientes'][0])
 
@@ -154,7 +159,7 @@ def test_duplicate_stripe_payment_cannot_unblock_expired_account(gym):
         'id_membresia': membership['id_membresia'], 'monto_pago': membership['monto_pago'],
         'referencia_pago': 'cs_paid_original', 'metodo_pago': 'stripe',
     })
-    assert membership['estado'] == 'VENCIDA'
+    assert gym.latest_membership(membership['id_cliente'])['estado'] == 'VENCIDA'
     assert gym.state['clientes'][0]['estado'] == 'VENCIDA'
 
 
@@ -184,7 +189,7 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
     expire(gym)
     writes = []
 
-    class Remote:
+    class Remote(AtomicFakeMixin):
         def validate_columns(self, *_args):
             pass
         def update(self, table, pk, id_value, body):
@@ -192,11 +197,7 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
         def select(self, table, order=None):
             return self.select_all(table, order)
         def select_all(self, table, order=None):
-            if table == 'CLIENTES':
-                return [service._client_to_remote(service.state['clientes'][0])]
-            if table == 'MEMBRESIA':
-                return [service._membership_to_remote(service.state['membresia'][0])]
-            return []
+            return self.rows.get(table, [])
 
     service = object.__new__(SupabaseGymService)
     service.lock = threading.Lock()
@@ -205,7 +206,12 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
     service.remote_columns = {}
     service.missing_remote_tables = set()
     service._last_refresh_at = time.monotonic()
+    seed_snapshot(service)
     service.ensure_fresh()
+    assert writes == []
+    assert service.clientes_normalized()[0]['estado'] == 'VENCIDA'
+    assert writes == []
+    assert service.expire_memberships() is True
     assert [table for table, _ in writes] == ['MEMBRESIA', 'CLIENTES']
     assert writes[0][1]['Estado'] == 'VENCIDA'
     assert writes[0][1]['estado_pago'] == 'PAGADO'
@@ -216,7 +222,7 @@ def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):
     # Un nuevo refresco remoto recupera VENCIDA sin PATCH redundantes.
     service._last_refresh_at = 0
     service.ensure_fresh()
-    assert service.state['clientes'][0]['estado'] == 'VENCIDA'
+    assert service.get_cliente(service.state['clientes'][0]['id_cliente'])['estado'] == 'VENCIDA'
     assert len(writes) == 2
 
 
@@ -233,7 +239,7 @@ def test_inactive_supabase_account_is_exposed_as_expired_after_reload(gym):
 
 def test_internal_staff_account_does_not_require_a_membership(gym):
     gym.state['usuario'].append({
-        'id_usuario': 'SGADM999', 'rol': 'admin', 'nombre': 'Admin', 'correo': 'admin@example.com',
+        'id_usuario': 'SGADM999', 'rol': 'admin', 'nombre': 'Admin', 'correo': 'admin@example.com', 'estado': 'ACTIVO',
     })
     profile = AuthService(gym).user_from_payload({'sub': 'SGADM999'})
     assert profile.role == 'admin'

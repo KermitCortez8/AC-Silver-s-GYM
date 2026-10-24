@@ -28,7 +28,7 @@ async def test():
         res = svc.registrar_cliente_con_membresia(payload)
         
         # Check if it's in the state
-        mem = svc.gym._latest_membership_for_cliente(svc.state, res['cliente']['id_cliente'])
+        mem = svc.latest_membership(res['cliente']['id_cliente'])
         print('State Mem:', mem)
         
     except Exception as e:

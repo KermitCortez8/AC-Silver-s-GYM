@@ -5,11 +5,11 @@ from urllib.error import HTTPError, URLError
 
 import pytest
 
-from config import Settings, get_settings
-from services import email_service
-from services.email_service import ResendEmailService, membership_email
-from services.membership_notifications import MembershipNotificationService
-from services.schedule_notifications import ScheduleNotificationService, schedule_email
+from infrastructure.config import Settings, get_settings
+from infrastructure.services import email_service
+from infrastructure.services.email_service import ResendEmailService, membership_email
+from application.services.membership_notifications import MembershipNotificationService
+from application.services.schedule_notifications import ScheduleNotificationService, schedule_email
 
 
 @pytest.fixture
@@ -91,7 +91,7 @@ def test_timeout_keeps_membership_pending(monkeypatch, settings, payload):
         def finish(self, job, **outcome):
             outcomes.append(outcome)
 
-    service = MembershipNotificationService(settings, repository=Repository())
+    service = MembershipNotificationService(settings, repository=Repository(), sender=email_service.ResendEmailService(settings))
     assert service.configured
     result = service.process_one("membership/1/payment")
     assert result["status"] == "queued"
@@ -110,7 +110,7 @@ def test_success_records_provider_id_for_membership(monkeypatch, settings, paylo
         def finish(self, job, **outcome):
             outcomes.append(outcome)
 
-    result = MembershipNotificationService(settings, repository=Repository()).process_one("membership/1/payment")
+    result = MembershipNotificationService(settings, repository=Repository(), sender=email_service.ResendEmailService(settings)).process_one("membership/1/payment")
     assert result["status"] == "sent"
     assert outcomes == [{"delivery_id": "accepted-id"}]
 

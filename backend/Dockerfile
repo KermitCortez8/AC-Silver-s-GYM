@@ -15,15 +15,15 @@ RUN useradd --create-home --uid 10001 appuser \
 
 # appuser puede leer el codigo, pero solo root puede modificarlo.
 # Los archivos subidos conservan escritura en /app/db/store-images.
-COPY --chown=root:root --chmod=644 config.py dependencies.py ./
 COPY --chown=root:root --chmod=644 app/*.py ./app/
-COPY --chown=root:root --chmod=644 models/*.py ./models/
-COPY --chown=root:root --chmod=644 routes/*.py ./routes/
-COPY --chown=root:root --chmod=644 services/*.py ./services/
-COPY --chown=root:root --chmod=644 utils/*.py ./utils/
+COPY --chown=root:root presentation/ ./presentation/
+COPY --chown=root:root application/ ./application/
+COPY --chown=root:root domain/ ./domain/
+COPY --chown=root:root infrastructure/ ./infrastructure/
 
 # Los directorios necesitan permiso de acceso, sin permitir escritura a appuser.
-RUN chmod 755 /app/app /app/models /app/routes /app/services /app/utils
+RUN find /app/app /app/presentation /app/application /app/domain /app/infrastructure -type d -exec chmod 755 {} + \
+    && find /app/app /app/presentation /app/application /app/domain /app/infrastructure -type f -exec chmod 644 {} +
 
 USER appuser
 
@@ -36,7 +36,8 @@ FROM runtime AS test
 USER root
 COPY requirements-dev.txt ./
 RUN pip install -r requirements-dev.txt
-COPY --chown=root:root --chmod=644 tests/test*.py tests/conftest.py ./tests/
+COPY --chown=root:root tests/ ./tests/
+COPY --chown=root:root migrations/ ./migrations/
 RUN chmod 755 /app/tests
 USER appuser
 CMD ["sh", "-c", "flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics && python -m pytest tests/ -q -p no:cacheprovider"]
