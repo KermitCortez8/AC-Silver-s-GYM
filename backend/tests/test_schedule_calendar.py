@@ -2,11 +2,11 @@ from datetime import date, datetime
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
-from config import Settings
-from routes.attendance_routes import week
-from services.attendance_service import AttendanceService
-from services.schedule_notifications import schedule_email
-from test_schedule_enrollment import _schedule_service
+from infrastructure.config import Settings
+from presentation.routes.attendance_routes import week
+from application.services.attendance_service import AttendanceService
+from application.services.schedule_notifications import schedule_email
+from tests.test_schedule_enrollment import _schedule_service
 
 
 def test_week_attendance_matches_date_and_client_across_month_boundary():

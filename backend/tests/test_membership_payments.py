@@ -2,13 +2,13 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
-from config import Settings, get_settings
-from dependencies import get_clients_service, get_current_user, get_gym_service
-from models.auth import UserProfile
-from routes.clients_routes import router
-from services.clients_service import ClientsService
-from services.local_gym_service import LocalGymService
-import routes.clients_routes as clients_routes
+from infrastructure.config import Settings, get_settings
+from presentation.dependencies import get_clients_service, get_current_user, get_gym_service
+from domain.models.auth import UserProfile
+from presentation.routes.clients_routes import router
+from application.services.clients_service import ClientsService
+from infrastructure.services.local_gym_service import LocalGymService
+import app.bootstrap as bootstrap
 
 
 @pytest.fixture
@@ -56,8 +56,8 @@ def test_verified_stripe_registration_appears_once_in_payment_history(api, monke
                              "membership_id": str(membership_id)},
             }
 
-    monkeypatch.setattr(clients_routes, "StripeService", Gateway)
-    monkeypatch.setattr(clients_routes, "notify_membership", lambda *args: {})
+    monkeypatch.setattr(bootstrap, "create_payment_gateway", Gateway)
+    monkeypatch.setattr(bootstrap, "notify_membership", lambda *args: {})
     for _ in range(2):
         response = client.post("/pagos/stripe/confirmar-retorno?session_id=cs_verified")
         assert response.status_code == 200
@@ -79,7 +79,7 @@ def test_verified_stripe_registration_appears_once_in_payment_history(api, monke
 def test_history_keeps_older_payments_and_saved_discounted_amount(api):
     client, _, gym, service = api
     result = register(service)
-    membership = result["membresia"]
+    membership = next(row for row in gym.state["membresia"] if row["id_membresia"] == result["membresia"]["id_membresia"])
     membership.update(monto_pago=69, estado_pago="PAGADO", metodo_pago="stripe",
                       referencia_pago="cs_old", fecha_pago="2026-09-01", estado="VENCIDA")
     gym.state["membresia"].append({

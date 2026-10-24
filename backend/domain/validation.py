@@ -1,0 +1,107 @@
+"""Invariantes de entrada reutilizables, sin dependencias de HTTP o persistencia."""
+from datetime import date, time
+from decimal import Decimal, InvalidOperation
+import re
+
+
+def required_text(value, label="Nombre"):
+    value = str(value or "").strip()
+    if not value:
+        raise ValueError(f"{label} es obligatorio")
+    return value
+
+
+def email_address(value):
+    value = str(value or "").strip()
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value):
+        raise ValueError("Correo inválido")
+    return value
+
+
+def nonnegative(value, label="Valor"):
+    try:
+        amount = Decimal(str(value))
+    except (ValueError, InvalidOperation):
+        raise ValueError(f"{label} debe ser un número válido") from None
+    if not amount.is_finite() or amount < 0:
+        raise ValueError(f"{label} no puede ser negativo ni infinito")
+    return value
+
+
+def civil_date(value):
+    text = str(value or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        raise ValueError("Fecha inválida; usa AAAA-MM-DD")
+    try:
+        date.fromisoformat(text)
+    except ValueError:
+        raise ValueError("Fecha inválida; usa AAAA-MM-DD") from None
+    return text
+
+
+def clock_time(value):
+    text = str(value or "").strip()
+    if not re.fullmatch(r"\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?", text):
+        raise ValueError("Hora inválida; usa HH:MM o HH:MM:SS")
+    try:
+        time.fromisoformat(text)
+    except ValueError:
+        raise ValueError("Hora inválida; usa HH:MM o HH:MM:SS") from None
+    return text
+
+
+def date_range(start, end):
+    if start:
+        civil_date(start)
+    if end:
+        civil_date(end)
+    if start and end and start > end:
+        raise ValueError("La fecha de fin debe ser igual o posterior a la de inicio")
+
+
+def time_range(start, end):
+    if start and end and time.fromisoformat(clock_time(start)) >= time.fromisoformat(clock_time(end)):
+        raise ValueError("La hora de fin debe ser posterior a la de inicio")
+
+
+def identifier(value, *, client=False):
+    if value is None:
+        return value
+    if isinstance(value, bool):
+        raise ValueError("El identificador debe ser positivo")
+    text = str(value).strip()
+    if not text:
+        raise ValueError("El identificador no puede estar vacío")
+    if not client and (code := re.fullmatch(r"(?:SG[A-Z]{2,3}|USSG)(\d+)", text, re.IGNORECASE)):
+        if int(code.group(1)) <= 0:
+            raise ValueError("El identificador debe ser positivo")
+    if client:
+        match = re.fullmatch(r"(?:SGCLI|cliente-)?(\d+)", text, re.IGNORECASE)
+        if not match or int(match.group(1)) <= 0:
+            raise ValueError("El identificador del cliente debe ser positivo")
+    elif isinstance(value, (int, float, Decimal)) or re.fullmatch(r"[+-]?\d+(?:\.\d+)?", text):
+        numeric = Decimal(text)
+        if not numeric.is_finite() or numeric <= 0 or numeric != numeric.to_integral_value():
+            raise ValueError("El identificador debe ser un entero positivo")
+    return value
+
+
+def validate_exercises(entries):
+    if entries is None:
+        return
+    if not isinstance(entries, list):
+        raise ValueError("Los ejercicios deben ser una lista")
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("Ejercicio inválido")
+        if entry.get("id_ejercicio") is not None:
+            identifier(entry["id_ejercicio"])
+        if not str(entry.get("nombre_ejercicio") or "").strip() and entry.get("id_ejercicio") is None:
+            raise ValueError("El ejercicio necesita un nombre o identificador")
+        for field in ("peso_sugerido_kg", "peso_utilizado_kg", "series_completadas", "descanso_segundos"):
+            if entry.get(field) is not None:
+                nonnegative(entry[field], field)
+        if entry.get("series") is not None:
+            nonnegative(entry["series"], "Series")
+            if int(entry["series"]) < 1:
+                raise ValueError("Las series deben ser mayores que cero")

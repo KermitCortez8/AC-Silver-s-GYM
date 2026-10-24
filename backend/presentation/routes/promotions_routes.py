@@ -1,0 +1,66 @@
+# Módulo: promotions_routes.
+# Expone la consulta y edición de promociones.
+# Valida descuentos, fechas y planes relacionados.
+# Restringe los cambios a personal autorizado.
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from presentation.dependencies import get_gym_service, require_admin_or_staff, require_roles
+from domain.models.gym import PromocionInput
+from application.services.gym_service import GymService
+
+router = APIRouter(prefix="/promociones", tags=["promociones"])
+
+
+@router.get("")
+# Obtiene los datos necesarios.
+def list_promociones(gym_service: GymService = Depends(get_gym_service)):
+    return gym_service.promociones()
+
+
+@router.get("/vigentes-publico")
+def list_promociones_vigentes_publicas(gym_service: GymService = Depends(get_gym_service)):
+    return gym_service.promociones_vigentes_publicas()
+
+
+@router.post("")
+# Actualiza el registro correspondiente.
+def upsert_promocion(
+    payload: PromocionInput,
+    gym_service: GymService = Depends(get_gym_service),
+    _current_user=Depends(require_roles("admin")),
+):
+    try:
+        return gym_service.upsert_promocion(payload.model_dump())
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+
+@router.put("/{id_promocion}")
+# Actualiza el registro correspondiente.
+def update_promocion(
+    id_promocion: int,
+    payload: PromocionInput,
+    gym_service: GymService = Depends(get_gym_service),
+    _current_user=Depends(require_roles("admin")),
+):
+    data = payload.model_dump()
+    data["id_promocion"] = id_promocion
+    try:
+        return gym_service.upsert_promocion(data)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+
+
+@router.delete("/{id_promocion}", status_code=status.HTTP_204_NO_CONTENT)
+# Elimina el registro indicado.
+def delete_promocion(
+    id_promocion: int,
+    gym_service: GymService = Depends(get_gym_service),
+    _current_user=Depends(require_roles("admin")),
+):
+    try:
+        gym_service.delete_promocion(id_promocion)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error

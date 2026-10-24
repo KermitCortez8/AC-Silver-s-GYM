@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { filterMembershipPayments, summarizeMembershipPayments } from '../src/utils/membershipPayments.js';
-import { sectionForPath } from '../src/services/moduleNavigation.js';
+import { filterMembershipPayments, summarizeMembershipPayments } from '../src/domain/utils/membershipPayments.js';
+import { sectionForPath } from '../src/application/services/moduleNavigation.js';
 
 const payments = [
   { id_membresia: 3, nombre: 'José Pérez', dni: '12345678', plan: 'MENSUAL', monto_pago: 69, estado_pago: 'PAGADO', metodo_pago: 'stripe', referencia_pago: 'cs_paid', fecha_pago: '2026-10-09' },

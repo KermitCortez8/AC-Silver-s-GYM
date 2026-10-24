@@ -1,14 +1,14 @@
 import pytest
 from pydantic import ValidationError
 
-from models.gym import MembresiaInput
-from services.clients_service import ClientsService
-from services.local_gym_service import LocalGymService
-from services.supabase_gym_service import SupabaseGymService
+from domain.models.gym import MembresiaInput
+from application.services.clients_service import ClientsService
+from infrastructure.services.local_gym_service import LocalGymService
+from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 
 def test_registration_payment_activation_and_expiry_use_only_three_states(monkeypatch):
-    monkeypatch.setattr('services.gym_domain_service._today_iso', lambda: '2026-10-01')
+    monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-01')
     gym = LocalGymService()
     result = ClientsService(gym).register_admin_client({
         'nombre': 'Estados Cliente', 'correo': 'estados@example.com',
@@ -19,12 +19,15 @@ def test_registration_payment_activation_and_expiry_use_only_three_states(monkey
     assert membership['estado'] == 'EN_TRAMITE'
     assert membership['estado_pago'] == 'PENDIENTE'
     gym.confirmar_pago_manual_cliente(client_id)
+    membership = gym.latest_membership(client_id)
     assert membership['estado'] == 'EN_TRAMITE'
     assert membership['estado_pago'] == 'PAGADO'
     gym.activar_membresia_cliente(client_id)
+    membership = gym.latest_membership(client_id)
     assert membership['estado'] == 'ACTIVO'
-    membership['fecha_fin'] = '2026-09-30'
+    gym.state['membresia'][0]['fecha_fin'] = '2026-09-30'
     gym.expire_memberships()
+    membership = gym.latest_membership(gym.state['clientes'][0]['id_cliente'])
     assert membership['estado'] == 'VENCIDA'
     assert membership['estado_pago'] == 'PAGADO'
     assert gym.clientes_normalized()[0]['membership_status'] == 'VENCIDA'
@@ -65,7 +68,7 @@ def test_new_membership_stays_in_progress_until_paid_and_activated():
 
 
 def test_editing_or_loading_expired_client_does_not_create_an_active_renewal(monkeypatch):
-    monkeypatch.setattr('services.gym_domain_service._today_iso', lambda: '2026-10-01')
+    monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-01')
     gym = LocalGymService()
     client = gym.upsert_cliente({
         'nombre': 'Cliente Anterior', 'correo': 'anterior@example.com',
@@ -81,5 +84,6 @@ def test_editing_or_loading_expired_client_does_not_create_an_active_renewal(mon
     assert normalized['membresia'][0]['fecha_fin'] == '2026-09-30'
     gym.state = normalized
     gym.expire_memberships()
+    membership = gym.latest_membership(gym.state['clientes'][0]['id_cliente'])
     assert membership['estado'] == 'VENCIDA'
     assert gym.state['clientes'][0]['estado'] == 'VENCIDA'

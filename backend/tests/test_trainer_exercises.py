@@ -1,15 +1,16 @@
 import unittest
 from copy import deepcopy
 import json
+from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from dependencies import get_gym_service, require_internal_viewer
-from routes.trainer_routes import router
-from services.supabase_gym_service import SupabaseGymService
-from services.local_gym_service import LocalGymService
+from presentation.dependencies import get_gym_service, require_internal_viewer
+from presentation.routes.trainer_routes import router
+from infrastructure.services.supabase_gym_service import SupabaseGymService
+from infrastructure.services.local_gym_service import LocalGymService
 
 
 class TestTrainerExercises(unittest.TestCase):
@@ -95,7 +96,7 @@ def test_trainer_api_preserves_exercises_in_catalog_and_session_history():
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[get_gym_service] = lambda: gym
-    app.dependency_overrides[require_internal_viewer] = lambda: None
+    app.dependency_overrides[require_internal_viewer] = lambda: SimpleNamespace(id='SGTRA001', id_usuario='SGTRA001')
     client = TestClient(app)
     exercises = [{
         "id_ejercicio": "press", "nombre_ejercicio": "Press banca", "series": 4,
@@ -156,19 +157,20 @@ def test_supabase_exercise_data_survives_json_serialization_and_legacy_rows():
     ("RUTINA_PROGRESO", "ejercicios_detalle"),
 ])
 def test_missing_exercise_migration_does_not_silently_discard_data(table, column):
-    service = object.__new__(SupabaseGymService)
-    service.remote_columns = {table: {"id_rutina"}}
+    from infrastructure.repositories.gym_table_access import GymTableAccess, TableMetadata
+    tables = GymTableAccess(None, TableMetadata(columns={table: {"id_rutina"}}))
     with pytest.raises(RuntimeError, match="012_trainer_exercises.sql"):
-        service._filter_remote_columns(table, {column: [{"nombre_ejercicio": "Press"}]})
+        tables.prepare_write(table, {column: [{"nombre_ejercicio": "Press"}]})
 
 
 def test_assignment_does_not_swallow_unknown_database_errors(monkeypatch):
-    from services.gym_domain_service import GymDomainService
-    service = object.__new__(SupabaseGymService)
+    from domain.services.schedules_rules import SchedulesRules
+    # La aplicación coordina ahora la transacción; el error del dominio debe propagarse.
+    service = LocalGymService()
 
     def fail(*args):
         raise RuntimeError("database unavailable")
 
-    monkeypatch.setattr(GymDomainService, "asignar_rutina_matricula", fail)
+    monkeypatch.setattr(SchedulesRules, "asignar_rutina_matricula", fail)
     with pytest.raises(RuntimeError, match="database unavailable"):
         service.asignar_rutina_matricula(10, 1)

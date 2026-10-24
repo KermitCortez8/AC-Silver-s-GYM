@@ -8,7 +8,7 @@ import {
   isScheduleFull,
   serviceLabel,
   slotsBadgeInfo,
-} from '../src/utils/scheduleEnrollment.js';
+} from '../src/domain/utils/scheduleEnrollment.js';
 
 // 1. exerciseName resolution
 assert.equal(

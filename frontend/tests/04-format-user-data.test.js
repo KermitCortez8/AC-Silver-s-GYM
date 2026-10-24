@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { formatUserData } from '../src/utils/authUtils.js';
+import { formatUserData } from '../src/infrastructure/utils/authUtils.js';
 
 const user = formatUserData({ id_usuario: 'SGCLI001', correo: 'cliente@example.com' });
 
