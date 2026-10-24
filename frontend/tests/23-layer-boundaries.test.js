@@ -4,11 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { ref } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import { createUsersModule } from '../src/application/modules/users.js';
 import { createDashboardModule } from '../src/application/modules/dashboard.js';
 import { configureApplicationServices } from '../src/application/ports/services.js';
-import { loadMembershipPlans } from '../src/application/services/publicCatalog.js';
-import { confirmMembershipPayment } from '../src/application/services/clientPayments.js';
+import { usePublicCatalog } from '../src/application/services/publicCatalog.js';
+import { useClientPayments } from '../src/application/services/clientPayments.js';
 
 const root = fileURLToPath(new URL('../src/', import.meta.url));
 const files = async (directory) => (await Promise.all((await readdir(directory, { withFileTypes: true }))
@@ -37,6 +38,7 @@ test('domain, application and presentation keep their dependency boundaries', as
 
 test('catalog and payments work with injected backend adapters', async () => {
   const calls = [];
+  setActivePinia(createPinia());
   configureApplicationServices({
     http: {
       apiGet: async (...args) => { calls.push(['get', ...args]); return [{ id_pm: 1 }]; },
@@ -44,6 +46,8 @@ test('catalog and payments work with injected backend adapters', async () => {
     },
     auth: {}, session: {}, attendance: {}, images: {}, config: {}, storage: {}, preferences: {}, repositories: {},
   });
+  const { loadMembershipPlans } = usePublicCatalog();
+  const { confirmMembershipPayment } = useClientPayments();
   assert.deepEqual(await loadMembershipPlans(), [{ id_pm: 1 }]);
   assert.deepEqual(await confirmMembershipPayment('session/with?symbols', 'token'), { confirmed: true });
   assert.deepEqual(calls, [

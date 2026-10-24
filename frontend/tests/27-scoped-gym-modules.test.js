@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { createPinia, setActivePinia } from 'pinia';
 let createGymState;
 let createGymModules;
-let getApplicationServices;
+let installServices;
 let server;
 
 before(async () => {
@@ -13,16 +13,17 @@ before(async () => {
     root: fileURLToPath(new URL('..', import.meta.url)), configFile: false,
     server: { middlewareMode: true, hmr: false, ws: false, watch: null },
   });
-  await server.ssrLoadModule('/src/bootstrap.js');
+  ({ installServices } = await server.ssrLoadModule('/src/bootstrap.js'));
   ({ createGymState } = await server.ssrLoadModule('/src/application/modules/state.js'));
   ({ createGymModules } = await server.ssrLoadModule('/src/application/services/gymModules.js'));
-  ({ getApplicationServices } = await server.ssrLoadModule('/src/application/ports/services.js'));
 });
 
 after(async () => { await server?.close(); });
 
-const fixture = (repositories = {}) => {
-  setActivePinia(createPinia());
+const fixture = (repositories = {}, adapters = {}) => {
+  const pinia = createPinia();
+  installServices(pinia, adapters);
+  setActivePinia(pinia);
   const state = createGymState();
   state.authStore.token = 'test-session';
   state.authStore.userRole = 'trainer';
@@ -66,27 +67,21 @@ test('membership renewal uses client lookup and history through declared capabil
 
 test('trainer and section synchronization share only their activity counter', async () => {
   const waiting = deferred();
-  const services = getApplicationServices();
-  const original = services.http.apiGet;
-  services.http.apiGet = async path => {
+  const http = { apiGet: async path => {
     assert.equal(path, '/planes-membresia');
     return [{ id_pm: 1, nombre_plan: 'Especial', duracion: '45 dias', precio: 45 }];
-  };
-  try {
-    const { state, modules } = fixture({ schedules: { fetchTrainerOverview: () => waiting.promise } });
-    const overview = modules.schedules.fetchTrainerOverview();
-    assert.equal(state.activeSyncs, 1);
-    await modules.synchronization.fetchFromBackend({ section: 'plans' });
-    assert.equal(state.planCatalog.value[0].name, 'Especial');
-    assert.equal(state.activeSyncs, 1);
-    assert.equal(state.isSyncing.value, true);
-    waiting.resolve({ clientes: [] });
-    await overview;
-    assert.equal(state.activeSyncs, 0);
-    assert.equal(state.isSyncing.value, false);
-  } finally {
-    services.http.apiGet = original;
-  }
+  } };
+  const { state, modules } = fixture({ schedules: { fetchTrainerOverview: () => waiting.promise } }, { http });
+  const overview = modules.schedules.fetchTrainerOverview();
+  assert.equal(state.activeSyncs, 1);
+  await modules.synchronization.fetchFromBackend({ section: 'plans' });
+  assert.equal(state.planCatalog.value[0].name, 'Especial');
+  assert.equal(state.activeSyncs, 1);
+  assert.equal(state.isSyncing.value, true);
+  waiting.resolve({ clientes: [] });
+  await overview;
+  assert.equal(state.activeSyncs, 0);
+  assert.equal(state.isSyncing.value, false);
 });
 
 test('a trainer response from before reset cannot change the next generation or its activity counter', async () => {

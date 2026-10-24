@@ -46,3 +46,12 @@ class AttendancePage:
     records: list[dict]
     clients: list[dict]
     total: int
+
+
+@dataclass(frozen=True)
+class AttendanceSummaryData:
+    entries: int
+    exits: int
+    inside: list[dict]
+    recent: list[dict]
+    clients: list[dict]

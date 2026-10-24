@@ -72,10 +72,12 @@ def trainer_rutina_progreso(
     id_matricula: int,
     payload: RutinaProgresoInput,
     gym_service: GymService = Depends(get_gym_service),
-    _current_user=Depends(require_internal_viewer),
+    current_user=Depends(require_internal_viewer),
 ):
     try:
-        return gym_service.registrar_progreso_rutina(id_matricula, payload.model_dump())
+        data = payload.model_dump()
+        data["id_usuario"] = current_user.id_usuario or current_user.id
+        return gym_service.registrar_progreso_rutina(id_matricula, data)
     except (ValueError, RuntimeError) as error:
         detail = str(error)
         if isinstance(error, MembershipRequired):

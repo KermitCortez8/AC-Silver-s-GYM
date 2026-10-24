@@ -1,6 +1,12 @@
-import { useAuthStore } from '../stores/authStore.js';
-import { getApplicationServices } from '../ports/services.js';
+import { useAuthStore } from "../stores/authStore.js";
+import { getApplicationServices } from "../ports/services.js";
 
-export const listStoreImages = (...args) => getApplicationServices().images.listStoreImages(...args);
-export const uploadStoreImage = (file) => getApplicationServices().images.uploadStoreImage(file, useAuthStore().token);
-export { storeImageUrl } from './appResources.js';
+export const useStoreImages = () => {
+  const { images, storage } = getApplicationServices();
+  const auth = useAuthStore();
+  return {
+    listStoreImages: (...args) => images.listStoreImages(...args),
+    uploadStoreImage: (file) => images.uploadStoreImage(file, auth.token),
+    storeImageUrl: storage.storeImageUrl,
+  };
+};

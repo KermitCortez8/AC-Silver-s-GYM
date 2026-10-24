@@ -402,9 +402,15 @@ import { discountedPrice } from '../../domain/utils/money.js';
 import LandingNavigation from '../components/LandingNavigation.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { serviceImages } from '../config/serviceImages';
-import { loadPublicSchedules, loadMembershipPlans, loadCurrentPromotions } from '../../application/services/publicCatalog.js';
-import { landingImageUrl } from '../../application/services/appResources.js';
+import { useServiceImages } from '../config/serviceImages';
+import { usePublicCatalog } from '../../application/services/publicCatalog.js';
+import { useAppResources } from '../../application/services/appResources.js';
+
+const serviceImages = useServiceImages();
+
+const { loadPublicSchedules, loadMembershipPlans, loadCurrentPromotions } = usePublicCatalog();
+
+const { landingImageUrl } = useAppResources();
 
 const heroBanner = landingImageUrl('hero-banner.png');
 

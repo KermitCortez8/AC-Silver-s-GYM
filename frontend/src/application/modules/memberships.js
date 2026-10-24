@@ -8,7 +8,7 @@ import { discountedPrice, toCents } from '../../domain/utils/money.js';
 import { clientMembershipGroup, normalizeMembershipStatus } from '../../domain/utils/clientDirectory.js';
 
 export const createMembershipsModule = (ctx, repository) => {
-  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
   const activePlans = computed(() => ctx.planCatalog.value.filter((plan) => plan.active));
 
   const activePromotions = computed(() =>

@@ -3,12 +3,13 @@ from typing import Protocol, TypeVar
 from application.operations.contracts import GymQuery, GymCommand, Record
 from domain.ports import PasswordHasher
 from domain.models.resources import Resource
-from application.read_models import AttendanceCriteria, AttendancePage, PageRequest
+from application.read_models import AttendanceCriteria, AttendancePage, AttendanceSummaryData, PageRequest
 
 T = TypeVar("T")
 
 
 class GymRepository(Protocol):
+    def attendance_summary(self, day: str, client_id: int | None = None) -> AttendanceSummaryData: ...
     def attendance_page(self, criteria: AttendanceCriteria, request: PageRequest) -> AttendancePage: ...
     def query(self, query: GymQuery[T], passwords: PasswordHasher | None = None) -> T: ...
     def execute(self, command: GymCommand[T], passwords: PasswordHasher | None = None) -> T: ...

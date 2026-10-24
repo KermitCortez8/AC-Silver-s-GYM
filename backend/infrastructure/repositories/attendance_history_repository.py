@@ -1,5 +1,5 @@
 """Historial filtrado y paginado en PostgREST, independiente de la caché global."""
-from application.read_models import AttendanceCriteria, AttendancePage, PageRequest
+from application.read_models import AttendanceCriteria, AttendancePage, AttendanceSummaryData, PageRequest
 from infrastructure.repositories.mappers.attendance import _map_attendance
 from infrastructure.repositories.mappers.accounts import _map_client
 
@@ -7,6 +7,23 @@ from infrastructure.repositories.mappers.accounts import _map_client
 class AttendanceHistoryRepository:
     def __init__(self, database):
         self.database = database
+
+    def summary(self, day: str, client_id: int | None = None) -> AttendanceSummaryData:
+        valid = {"or": "(anulado.is.null,anulado.eq.false)"}
+        if client_id is not None:
+            valid["id_cliente"] = f"eq.{client_id}"
+        entries = self.database.count("ASISTENCIA", {**valid, "Fecha": f"eq.{day}"})
+        exits = self.database.count("ASISTENCIA", {**valid, "hora_salida": "not.is.null",
+            "and": f"(or(fecha_salida.eq.{day},and(fecha_salida.is.null,Fecha.eq.{day})))"})
+        inside = self.database.select_filtered("ASISTENCIA", {**valid, "hora_salida": "is.null"},
+                                               order="Fecha.desc,Hora.desc.nullslast,id_asistencia.desc")
+        recent = self.database.select_page("ASISTENCIA", {**valid, "Fecha": f"eq.{day}"},
+            order="Fecha.desc,Hora.desc.nullslast,id_asistencia.desc", offset=0, limit=8).rows
+        ids = sorted({int(row["id_cliente"]) for row in [*inside, *recent]})
+        clients = self.database.select_filtered("CLIENTES", {"id_cliente": "in.(" + ",".join(map(str, ids)) + ")"},
+                                               order="id_cliente.asc") if ids else []
+        return AttendanceSummaryData(entries, exits, [_map_attendance(row) for row in inside],
+                                     [_map_attendance(row) for row in recent], [_map_client(row) for row in clients])
 
     def page(self, criteria: AttendanceCriteria, request: PageRequest) -> AttendancePage:
         filters, conditions = {}, []

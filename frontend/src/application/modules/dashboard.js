@@ -1,3 +1,4 @@
+import { getActivePinia } from 'pinia';
 /** Estado y operaciones del módulo dashboard. */
 import { todayISO } from '../../domain/utils/gymRules.js';
 import { computed } from 'vue';
@@ -6,6 +7,7 @@ import { clientMembershipGroup } from '../../domain/utils/clientDirectory.js';
 
 /** settingsRepository: load(token) y save(settings, token) devuelven la configuración guardada. */
 export const createDashboardModule = (ctx, settingsRepository) => {
+  const pinia = ctx.pinia || getActivePinia();
   const stats = computed(() => {
     const today = todayISO();
     const lowStockItems = ctx.inventory.value.filter((item) => item.quantity <= item.minQuantity).length;
@@ -29,7 +31,7 @@ export const createDashboardModule = (ctx, settingsRepository) => {
 
   const refreshGymSettingsFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    ctx.gymSettings.value = await inCurrentSession(() => settingsRepository.load(ctx.authStore.token));
+    ctx.gymSettings.value = await inCurrentSession(() => settingsRepository.load(ctx.authStore.token), pinia);
     return ctx.gymSettings.value;
   };
 
@@ -39,7 +41,7 @@ export const createDashboardModule = (ctx, settingsRepository) => {
       capacidad_por_hora: Number(payload.capacidad_por_hora || payload.hourCapacity || 10),
     };
     if (ctx.apiBase) {
-      ctx.gymSettings.value = await inCurrentSession(() => settingsRepository.save(body, ctx.authStore.token));
+      ctx.gymSettings.value = await inCurrentSession(() => settingsRepository.save(body, ctx.authStore.token), pinia);
     } else {
       ctx.gymSettings.value = body;
     }

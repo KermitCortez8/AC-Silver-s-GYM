@@ -5,7 +5,7 @@ import { generateInventoryCode, requireNumericId } from '../../domain/utils/gymR
 import { computed } from 'vue';
 
 export const createInventoryModule = (ctx, repository) => {
-  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
   const lowStockInventory = computed(() =>
     ctx.inventory.value.filter((item) => item.quantity <= item.minQuantity),
   );

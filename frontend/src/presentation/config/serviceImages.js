@@ -1,8 +1,7 @@
-import { landingImageUrl } from '../../application/services/appResources.js';
+import { useAppResources } from '../../application/services/appResources.js';
 
-export const serviceImages = {
-  fitness: landingImageUrl('service-fitness.jpg'),
-  musculacion: landingImageUrl('service-musculacion.jpg'),
-  cardio: landingImageUrl('service-cardio.jpg'),
-  baile: landingImageUrl('service-baile.jpg'),
+export const useServiceImages = () => {
+  const { landingImageUrl } = useAppResources();
+  return Object.fromEntries(['fitness', 'musculacion', 'cardio', 'baile'].map(service =>
+    [service, landingImageUrl(`service-${service}.jpg`)]));
 };

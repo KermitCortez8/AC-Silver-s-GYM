@@ -1,11 +1,9 @@
 /** Estado y operaciones del módulo synchronization. */
 import { normalizeBackendClientToMember, normalizeUser, normalizePlanFromBackend } from '../../domain/utils/gymRules.js';
-import { APP_CONFIG } from '../services/appResources.js';
-import { authHeaders, parseError, apiGet } from '../services/backendGateway.js';
 import { syncResources } from '../services/syncResources.js';
 
-export const createSynchronizationModule = (ctx) => {
-  const apiBase = APP_CONFIG.authApiBaseUrl || '/api';
+export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiGet }) => {
+  const apiBase = ctx.apiBase || '/api';
 
   const _authHeaders = () => authHeaders(ctx.authStore.token);
 

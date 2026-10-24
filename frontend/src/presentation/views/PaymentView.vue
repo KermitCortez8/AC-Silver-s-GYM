@@ -49,7 +49,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { confirmMembershipPayment } from '../../application/services/clientPayments.js';
+import { useClientPayments } from '../../application/services/clientPayments.js';
+
+const { confirmMembershipPayment } = useClientPayments();
 
 const route = useRoute();
 const idCliente = computed(() => Number(route.params.idCliente || 0));

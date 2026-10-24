@@ -14,8 +14,12 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue';
-import { GOOGLE_CONFIG } from '../../application/services/appResources.js';
-import { loadGoogleIdentityScript } from '../../application/services/authentication.js';
+import { useAppResources } from '../../application/services/appResources.js';
+import { useAuthentication } from '../../application/services/authentication.js';
+
+const { GOOGLE_CONFIG } = useAppResources();
+
+const { loadGoogleIdentityScript } = useAuthentication();
 
 const props = defineProps({ text: { type: String, default: 'signin_with' }, disabled: Boolean });
 const emit = defineEmits(['credential']);

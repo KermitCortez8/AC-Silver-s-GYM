@@ -239,7 +239,7 @@ def test_inactive_supabase_account_is_exposed_as_expired_after_reload(gym):
 
 def test_internal_staff_account_does_not_require_a_membership(gym):
     gym.state['usuario'].append({
-        'id_usuario': 'SGADM999', 'rol': 'admin', 'nombre': 'Admin', 'correo': 'admin@example.com',
+        'id_usuario': 'SGADM999', 'rol': 'admin', 'nombre': 'Admin', 'correo': 'admin@example.com', 'estado': 'ACTIVO',
     })
     profile = AuthService(gym).user_from_payload({'sub': 'SGADM999'})
     assert profile.role == 'admin'

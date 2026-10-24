@@ -5,6 +5,7 @@ from domain.models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthRespo
 from application.services.gym_service import GymService
 from domain.services.gym_domain_service import _today_iso
 from domain.services.membership_lifecycle import membership_current, membership_expired
+from domain.services.accounts_rules import internal_account_active
 
 
 class GoogleLinkRequired(ValueError):
@@ -83,7 +84,14 @@ class AuthService:
     def session_for_user(self, user: UserProfile) -> AuthResponse:
         if user.id_cliente is not None:
             self._require_active_client(self.gym_service.get_cliente(user.id_cliente))
+        else:
+            self._require_active_internal(self.gym_service.get_usuario(user.id_usuario or user.id))
         return AuthResponse(user=user, token=self.sessions.issue(user.model_dump()), expiresIn=3600)
+
+    @staticmethod
+    def _require_active_internal(account: dict | None) -> None:
+        if not internal_account_active(account):
+            raise ValueError("La cuenta está inactiva. Contacta con administración.")
 
     def session_for_client(self, client: dict, google: dict | None = None) -> AuthResponse:
         return self.session_for_user(self._profile(client, client=True, google=google))
@@ -113,6 +121,8 @@ class AuthService:
             raise GoogleLinkRequired("La contraseña del gimnasio es incorrecta. Inténtalo nuevamente.")
         if kind == "clientes":
             self._require_active_client(account)
+        else:
+            self._require_active_internal(account)
         account = self.gym_service.link_google_account(kind, account["id_usuario"], subject)
         return self.session_for_user(self._profile(account, client=kind == "clientes", google=claims))
 
@@ -136,4 +146,6 @@ class AuthService:
             raise ValueError("La cuenta de esta sesión ya no existe. Inicia sesión nuevamente.")
         if client:
             self._require_active_client(account)
+        else:
+            self._require_active_internal(account)
         return self._profile(account, client=client, google=payload)

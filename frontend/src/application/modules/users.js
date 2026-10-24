@@ -1,9 +1,11 @@
+import { getActivePinia } from 'pinia';
 /** Estado y operaciones del módulo users. */
 import { normalizeUser } from '../../domain/utils/gymRules.js';
 import { inCurrentSession } from '../services/sessionBoundary.js';
 
 /** usersRepository: save(payload, token) y remove(id, token) devuelven datos o lanzan un error. */
 export const createUsersModule = (ctx, usersRepository) => {
+  const pinia = ctx.pinia || getActivePinia();
   const mergeUser = (saved) => {
     const normalized = normalizeUser(saved);
     const index = ctx.users.value.findIndex((entry) => String(entry.id_usuario) === String(normalized.id_usuario));
@@ -55,12 +57,12 @@ export const createUsersModule = (ctx, usersRepository) => {
 
   const upsertUserToServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    return inCurrentSession(() => usersRepository.save(payload, ctx.authStore.token));
+    return inCurrentSession(() => usersRepository.save(payload, ctx.authStore.token), pinia);
   };
 
   const deleteUserFromServer = async (idUsuario) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    return inCurrentSession(() => usersRepository.remove(idUsuario, ctx.authStore.token));
+    return inCurrentSession(() => usersRepository.remove(idUsuario, ctx.authStore.token), pinia);
   };
 
   return { upsertUser, deleteUser, upsertUserToServer, deleteUserFromServer };

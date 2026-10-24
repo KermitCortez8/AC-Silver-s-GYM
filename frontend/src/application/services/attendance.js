@@ -1,8 +1,14 @@
-import { getApplicationServices } from '../ports/services.js';
+import { getActivePinia } from "pinia";
+import { getApplicationServices } from "../ports/services.js";
+import { inCurrentSession } from "./sessionBoundary.js";
 
-export const attendanceGet = (...args) => getApplicationServices().attendance.attendanceGet(...args);
-export const attendanceEntry = (...args) => getApplicationServices().attendance.attendanceEntry(...args);
-export const generalAttendanceEntry = (...args) => getApplicationServices().attendance.generalAttendanceEntry(...args);
-export const attendanceExit = (...args) => getApplicationServices().attendance.attendanceExit(...args);
-export const attendanceCorrect = (...args) => getApplicationServices().attendance.attendanceCorrect(...args);
-export const attendanceAnnul = (...args) => getApplicationServices().attendance.attendanceAnnul(...args);
+export const useAttendance = () => {
+  const pinia = getActivePinia();
+  const { attendance } = getApplicationServices(pinia);
+  return Object.fromEntries(
+    Object.entries(attendance).map(([name, operation]) => [
+      name,
+      (...args) => inCurrentSession(() => operation(...args), pinia),
+    ]),
+  );
+};

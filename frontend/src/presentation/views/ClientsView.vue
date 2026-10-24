@@ -392,318 +392,39 @@
       </p>
     </section>
 
-    <WorkspaceDialog
-      :open="isEditorOpen"
-      :busy="savingClient"
-      :title="editingId ? 'Editar cliente' : 'Nuevo cliente'"
-      @close="closeEditor"
-    >
-      <form @submit.prevent="handleSubmit">
-        <fieldset
-          :disabled="savingClient"
-          class="mt-6 grid gap-4 sm:grid-cols-2"
-        >
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm ws-soft">Nombre</span>
+    <ClientEditorDialog
+      :available-promotions="availablePromotions"
+      :close-editor="closeEditor"
+      :editing-expired="editingExpired"
+      :editing-id="editingId"
+      :editing-membership-label="editingMembershipLabel"
+      :editing-needs-activation="editingNeedsActivation"
+      :estimated-charge="estimatedCharge"
+      :form="form"
+      :handle-submit="handleSubmit"
+      :is-editor-open="isEditorOpen"
+      :saving-client="savingClient"
+      :submit-error="submitError"
+    />
 
-            <input
-              v-model="form.nombre"
-              required
-              class="ws-input"
-              placeholder="Jose Perez"
-            />
-          </label>
-
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm ws-soft">Correo</span>
-
-            <input
-              v-model="form.correo"
-              required
-              type="email"
-              class="ws-input"
-              placeholder="cliente@correo.com"
-            />
-          </label>
-
-          <label class="space-y-2 sm:col-span-2">
-            <span class="text-sm ws-soft">Contraseña</span>
-
-            <input
-              v-model="form.password"
-              :required="!editingId"
-              minlength="6"
-              type="password"
-              autocomplete="new-password"
-              class="ws-input"
-              :placeholder="
-                editingId
-                  ? 'Dejar vacio para conservar la actual'
-                  : 'Minimo 6 caracteres'
-              "
-            />
-          </label>
-
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Teléfono</span>
-            <input
-              v-model="form.telefono"
-              class="ws-input"
-              placeholder="999 111 222"
-            />
-          </label>
-
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">DNI</span>
-            <input
-              v-model="form.dni"
-              required
-              class="ws-input"
-              placeholder="12345678"
-            />
-          </label>
-
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Plan</span>
-            <select v-model="form.plan" class="ws-input">
-              <option value="MENSUAL">MENSUAL</option>
-              <option value="3 MESES">3 MESES</option>
-              <option value="ANUAL">ANUAL</option>
-            </select>
-          </label>
-
-          <label class="space-y-2">
-            <span class="text-sm ws-soft">Promocion</span>
-            <select v-model="form.id_promocion" class="ws-input">
-              <option :value="0">SIN PROMOCION</option>
-              <option
-                v-for="p in availablePromotions"
-                :key="p.id"
-                :value="p.id_promocion"
-              >
-                {{ p.name }}
-              </option>
-            </select>
-            <p class="text-xs ws-muted">
-              Precio estimado: S/. {{ estimatedCharge.finalPrice }}
-              <span
-                v-if="estimatedCharge.discountAmount > 0"
-                class="ws-warning"
-              >
-                (descuento: S/. {{ estimatedCharge.discountAmount }})
-              </span>
-            </p>
-          </label>
-
-          <label v-if="editingId" class="space-y-2 sm:col-span-2">
-            <span class="text-sm ws-soft">Estado de membresía</span>
-            <p class="ws-input">{{ editingMembershipLabel }}</p>
-            <p v-if="editingNeedsActivation" class="text-xs ws-muted">
-              La preinscripción se activa desde «Activar», después de confirmar
-              el pago.
-            </p>
-            <p v-if="editingExpired" class="text-xs ws-danger">
-              La membresía está vencida. Se necesita una nueva membresía pagada
-              y activada para recuperar el acceso.
-            </p>
-          </label>
-
-          <label v-if="!editingId" class="space-y-2 sm:col-span-2">
-            <span class="flex items-center gap-3 text-sm ws-text">
-              <input v-model="form.pagar_con_stripe" type="checkbox" />
-              Realizar el pago con Stripe al registrar
-            </span>
-            <p class="text-xs ws-muted">
-              El cliente quedará en trámite, con pago pendiente. Puedes pagar
-              ahora o después desde sus detalles. La membresía se activa después
-              de confirmar el pago.
-            </p>
-          </label>
-        </fieldset>
-
-        <p v-if="submitError" role="alert" class="mt-4 text-sm ws-warning">
-          {{ submitError }}
-        </p>
-
-        <button
-          type="submit"
-          :disabled="savingClient"
-          class="mt-6 w-full rounded-2xl ws-primary px-4 py-3 font-bold transition disabled:opacity-50"
-        >
-          {{
-            savingClient
-              ? 'Guardando...'
-              : editingId
-                ? 'Guardar cambios'
-                : form.pagar_con_stripe
-                  ? 'Registrar y pagar con Stripe'
-                  : 'Registrar cliente'
-          }}
-        </button>
-      </form>
-    </WorkspaceDialog>
-
-    <WorkspaceDialog
-      :open="isDetailsOpen && Boolean(viewingClient)"
-      title="Detalles del cliente"
-      @close="closeDetails"
-    >
-      <template v-if="viewingClient">
-        <div class="mb-6 border-b ws-border pb-5">
-          <h3 class="text-2xl font-black ws-text break-words">
-            {{ viewingClient.name || 'Sin nombre' }}
-          </h3>
-          <span class="ws-badge ws-tint-info ws-info mt-3">{{
-            viewingClient.id
-          }}</span>
-        </div>
-        <dl class="client-detail-grid">
-          <div class="client-detail-wide">
-            <dt>Correo electrónico</dt>
-            <dd>{{ viewingClient.email || 'Sin correo' }}</dd>
-          </div>
-          <div>
-            <dt>DNI</dt>
-            <dd>{{ viewingClient.dni || 'Sin DNI' }}</dd>
-          </div>
-          <div>
-            <dt>Teléfono</dt>
-            <dd>{{ viewingClient.phone || 'Sin teléfono' }}</dd>
-          </div>
-          <div>
-            <dt>Plan</dt>
-            <dd>{{ viewingClient.plan || 'MENSUAL' }}</dd>
-          </div>
-          <div>
-            <dt>Promoción</dt>
-            <dd>{{ viewingClient.promocion || 'SIN PROMOCION' }}</dd>
-          </div>
-          <div>
-            <dt>Membresía</dt>
-            <dd>
-              <span
-                class="ws-badge"
-                :class="membershipBadgeClass(viewingClient)"
-                >{{ clientMembershipLabel(viewingClient) }}</span
-              >
-            </dd>
-          </div>
-          <div>
-            <dt>Vigencia</dt>
-            <dd>
-              {{ viewingClient.membershipStart || 'Por activar' }}
-              <span class="block ws-muted text-xs mt-1">
-                hasta {{ viewingClient.membershipEnd || 'Por activar' }}
-              </span>
-            </dd>
-          </div>
-
-          <div
-            v-if="viewingClient.paymentReference || viewingClient.paymentStatus"
-            class="client-detail-wide"
-          >
-            <dt>Pago</dt>
-            <dd>
-              {{ viewingClient.paymentStatus || 'PENDIENTE' }}
-              <span
-                v-if="viewingClient.paymentReference"
-                class="block ws-muted text-sm mt-1"
-              >
-                {{ viewingClient.paymentReference }}
-              </span>
-            </dd>
-          </div>
-
-          <div
-            v-if="
-              Number(viewingClient.membershipPrice || 0) > 0 &&
-              getPlanPrice(viewingClient.plan) >
-                Number(viewingClient.membershipPrice || 0)
-            "
-            class="client-detail-wide"
-          >
-            <dt>Descuento aplicado</dt>
-            <dd>
-              Precio base: S/. {{ getPlanPrice(viewingClient.plan).toFixed(2) }}
-              <span class="block ws-success text-sm mt-1">
-                Pagado: S/.
-                {{ Number(viewingClient.membershipPrice || 0).toFixed(2) }} ·
-                Ahorro: S/.
-                {{
-                  (
-                    getPlanPrice(viewingClient.plan) -
-                    Number(viewingClient.membershipPrice || 0)
-                  ).toFixed(2)
-                }}
-              </span>
-            </dd>
-          </div>
-        </dl>
-
-        <p
-          v-if="clientMembershipGroup(viewingClient) === 'expired'"
-          class="mt-6 rounded-xl ws-tint-danger ws-danger p-4 text-sm"
-          role="status"
-        >
-          Acceso bloqueado por membresía vencida. Para recuperar el acceso, el
-          cliente necesita una nueva membresía pagada y activada.
-        </p>
-
-        <div class="mt-6 flex flex-col gap-3">
-          <button
-            v-if="
-              isActiveStatus(viewingClient.status) &&
-              isActiveStatus(viewingClient.membershipStatus)
-            "
-            type="button"
-            class="ws-btn"
-            :disabled="Boolean(notifyingClientId)"
-            @click="retryActivationEmail(viewingClient)"
-          >
-            <Mail :size="17" aria-hidden="true" />{{
-              notifyingClientId === viewingClient.id
-                ? 'Enviando…'
-                : 'Notificar activación'
-            }}
-          </button>
-          <p v-if="paymentError" role="alert" class="text-sm ws-warning">
-            {{ paymentError }}
-          </p>
-          <button
-            v-if="canPayClientWithStripe(viewingClient)"
-            type="button"
-            class="w-full rounded-xl ws-primary px-4 py-3 font-bold disabled:opacity-50"
-            :disabled="Boolean(payingClientId)"
-            @click="payWithStripe(viewingClient)"
-          >
-            {{
-              payingClientId
-                ? 'Abriendo Stripe...'
-                : `Pagar S/. ${Number(viewingClient.membershipPrice || 0).toFixed(2)} con Stripe`
-            }}
-          </button>
-          <button
-            v-if="viewingClient.paymentStatus === 'PENDIENTE'"
-            type="button"
-            class="w-full rounded-xl border ws-border-warning ws-tint-warning px-4 py-3 font-bold ws-warning transition ws-hover"
-            @click="markAsPaidManual(viewingClient)"
-          >
-            Confirmar Pago (Manual/Efectivo)
-          </button>
-          <button
-            v-if="
-              viewingClient.paymentStatus === 'PAGADO' &&
-              clientMembershipGroup(viewingClient) === 'pending'
-            "
-            type="button"
-            class="w-full rounded-xl border ws-border-success ws-tint-success px-4 py-3 font-bold ws-success transition ws-hover"
-            @click="requestActivation(viewingClient)"
-          >
-            Activar Membresía
-          </button>
-        </div>
-      </template>
-    </WorkspaceDialog>
+    <ClientDetailsDialog
+      :can-pay-client-with-stripe="canPayClientWithStripe"
+      :client-membership-group="clientMembershipGroup"
+      :client-membership-label="clientMembershipLabel"
+      :close-details="closeDetails"
+      :get-plan-price="getPlanPrice"
+      :is-active-status="isActiveStatus"
+      :is-details-open="isDetailsOpen"
+      :mark-as-paid-manual="markAsPaidManual"
+      :membership-badge-class="membershipBadgeClass"
+      :notifying-client-id="notifyingClientId"
+      :pay-with-stripe="payWithStripe"
+      :paying-client-id="payingClientId"
+      :payment-error="paymentError"
+      :request-activation="requestActivation"
+      :retry-activation-email="retryActivationEmail"
+      :viewing-client="viewingClient"
+    />
     <ConfirmDialog
       v-if="pendingActivation"
       title="¿Estás seguro de la activación?"
@@ -718,13 +439,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useClientMembershipActions } from '../composables/clients/useClientMembershipActions.js';
+import { useClientEditor } from '../composables/clients/useClientEditor.js';
+import ClientDetailsDialog from '../components/clients/ClientDetailsDialog.vue';
+import ClientEditorDialog from '../components/clients/ClientEditorDialog.vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-
-import WorkspaceDialog from '../components/WorkspaceDialog.vue';
 import { useGymStore } from '../../application/stores/gymStore';
 import { useAuthStore } from '../../application/stores/authStore';
-import { retryActivationEmail as sendActivationEmail, startClientPayment, confirmMembershipPayment } from '../../application/services/clientPayments.js';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import { canPayClientWithStripe } from '../../domain/utils/adminClientPayment.js';
 import {
@@ -733,25 +455,7 @@ import {
   filterClientDirectory,
   paginateClients,
 } from '../../domain/utils/clientDirectory.js';
-import {
-  BadgeCheck,
-  ChevronLeft,
-  ChevronRight,
-  CircleCheck,
-  Clock3,
-  CreditCard,
-  Info,
-  LoaderCircle,
-  Mail,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Search,
-  SearchX,
-  Trash2,
-  Users,
-  X,
-} from 'lucide-vue-next';
+import { BadgeCheck, ChevronLeft, ChevronRight, CircleCheck, Clock3, CreditCard, Info, LoaderCircle, Pencil, Plus, RefreshCw, Search, SearchX, Trash2, Users, X } from 'lucide-vue-next';
 
 const gymStore = useGymStore();
 const authStore = useAuthStore();
@@ -775,111 +479,23 @@ const paymentFilter = ref(
 const sortOrder = ref('recent');
 const currentPage = ref(1);
 const isLoading = ref(true);
-const editingId = ref('');
-const isEditorOpen = ref(false);
+
 const isDetailsOpen = ref(false);
 const viewingClient = ref(null);
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
-const activatingClientId = ref('');
-const pendingActivation = ref(null);
-const activationError = ref('');
-const notifyingClientId = ref('');
-const savingClient = ref(false);
-const payingClientId = ref('');
-const paymentError = ref('');
-const submitError = ref('');
-const editingClient = computed(() =>
-  clients.value.find((entry) => entry.id === editingId.value),
-);
-const editingMembershipLabel = computed(() =>
-  clientMembershipLabel(editingClient.value || {}),
-);
-const editingNeedsActivation = computed(
-  () =>
-    editingClient.value &&
-    clientMembershipGroup(editingClient.value) === 'pending',
-);
-const editingExpired = computed(() => {
-  const client = clients.value.find((entry) => entry.id === editingId.value);
-  return (
-    client &&
-    (clientMembershipGroup(client) === 'expired' ||
-      normalizeStatus(client.status) === 'VENCIDA')
-  );
-});
 
-const requestActivation = (client) => {
-  if (activatingClientId.value) return;
-  pendingActivation.value = { ...client };
-  activationError.value = '';
-};
-const cancelActivation = () => {
-  if (activatingClientId.value) return;
-  pendingActivation.value = null;
-  activationError.value = '';
-};
-const notificationMessage = (notification) => {
-  if (notification?.status === 'sent')
-    return 'Correo de activación enviado al cliente.';
-  if (notification?.status === 'queued')
-    return 'El correo está pendiente de envío y se reintentará automáticamente.';
-  return 'El correo no se pudo enviar. Revisa la configuración del servicio y usa Notificar activación para reintentarlo.';
-};
-const retryActivationEmail = async (client) => {
-  if (notifyingClientId.value) return;
-  notifyingClientId.value = client.id;
-  try {
-    const idCliente =
-      client.id_cliente || Number(String(client.id).replace(/^SGCLI/i, ''));
-    const notification = await sendActivationEmail(idCliente, authStore.token);
-    feedbackTone.value = ['sent', 'queued'].includes(notification.status)
-      ? 'success'
-      : 'info';
-    feedbackMessage.value = notificationMessage(notification);
-  } catch (error) {
-    feedbackTone.value = 'error';
-    feedbackMessage.value = error.message || 'No se pudo enviar el correo.';
-  } finally {
-    notifyingClientId.value = '';
-  }
-};
-
-const form = reactive({
-  nombre: '',
-  correo: '',
-  telefono: '',
-  dni: '',
-  password: '',
-  plan: 'MENSUAL',
-  id_promocion: 0,
-  estado: 'EN_TRAMITE',
-  pagar_con_stripe: false,
-});
-
-/**
- * Normaliza el valor recibido.
- */
 const normalizeStatus = (value) =>
   String(value || '')
     .trim()
     .toUpperCase();
 
-/**
- * Obtiene el estado de membresía mostrado para el cliente.
- */
 const displayMembershipStatus = (client) =>
   normalizeStatus(client.membershipStatus || client.status || 'EN_TRAMITE');
 
-/**
- * Valida si el estado corresponde a una membresía activa.
- */
 const isActiveStatus = (value) =>
   ['ACTIVO', 'ACTIVA'].includes(normalizeStatus(value));
 
-/**
- * Valida si la membresía del cliente se encuentra pendiente.
- */
 const isPendingMembership = (client) =>
   clientMembershipGroup(client) === 'pending';
 
@@ -887,39 +503,6 @@ const getPlanPrice = (planName) => {
   const plan = gymStore.planCatalog.find((p) => p.name === planName);
   return plan ? Number(plan.price || 0) : 0;
 };
-
-const availablePromotions = computed(() => {
-  const active = gymStore.activePromotions;
-  if (form.id_promocion) {
-    const current = gymStore.promotions.find(
-      (p) => Number(p.id_promocion) === Number(form.id_promocion),
-    );
-    if (
-      current &&
-      !active.some(
-        (p) => Number(p.id_promocion) === Number(current.id_promocion),
-      )
-    ) {
-      return [...active, current];
-    }
-  }
-  return active;
-});
-
-const estimatedCharge = computed(() => {
-  try {
-    const plan =
-      gymStore.planCatalog.find((p) => p.name === form.plan) ||
-      gymStore.planCatalog[0];
-    if (!plan) return { finalPrice: 0, discountAmount: 0 };
-    return gymStore.calculatePlanCharge(
-      plan.id,
-      form.id_promocion ? `promo-${form.id_promocion}` : '',
-    );
-  } catch (e) {
-    return { finalPrice: 0, discountAmount: 0 };
-  }
-});
 
 const filteredClients = computed(() =>
   filterClientDirectory(clients.value, {
@@ -1043,82 +626,17 @@ const refreshClients = async (force = false) => {
   }
 };
 
-/**
- * Restablece los datos del formulario.
- */
-const resetForm = () => {
-  editingId.value = '';
-
-  form.nombre = '';
-  form.correo = '';
-  form.telefono = '';
-  form.dni = '';
-  form.password = '';
-  form.plan = 'MENSUAL';
-  form.id_promocion = 0;
-  form.estado = 'EN_TRAMITE';
-  form.pagar_con_stripe = false;
-  submitError.value = '';
-};
-
-/**
- * Abre el formulario para registrar un cliente nuevo.
- */
-const openNewClient = () => {
-  resetForm();
-  feedbackMessage.value = '';
-  isEditorOpen.value = true;
-};
-
-/**
- * Cierra el formulario de creación o edición.
- */
-const closeEditor = () => {
-  if (savingClient.value) return;
-  isEditorOpen.value = false;
-  resetForm();
-};
-
-/**
- * Carga los datos de un cliente en el formulario de edición.
- */
-const editClient = (client) => {
-  submitError.value = '';
-  editingId.value = client.id;
-
-  form.nombre = client.name || '';
-  form.correo = client.email || '';
-  form.telefono = client.phone || '';
-  form.dni = client.dni || '';
-  form.password = '';
-  form.plan = client.plan || 'MENSUAL';
-  form.id_promocion = Number(client.id_promocion || 0);
-  form.estado = client.status || 'ACTIVO';
-
-  feedbackMessage.value = '';
-  isEditorOpen.value = true;
-};
-
-/**
- * Abre el modal con los detalles del cliente seleccionado.
- */
 const openDetails = (client) => {
   paymentError.value = '';
   viewingClient.value = client;
   isDetailsOpen.value = true;
 };
 
-/**
- * Cierra el modal de detalles y limpia el cliente seleccionado.
- */
 const closeDetails = () => {
   isDetailsOpen.value = false;
   viewingClient.value = null;
 };
 
-/**
- * Gestiona la eliminación de un cliente previa confirmación.
- */
 const confirmDelete = async (client) => {
   if (!window.confirm(`Eliminar al cliente ${client.id}?`)) {
     return;
@@ -1144,521 +662,9 @@ const confirmDelete = async (client) => {
   }
 };
 
-/**
- * Marca la membresía como pagada en efectivo manualmente.
- */
-const markAsPaidManual = async (client) => {
-  if (
-    !client ||
-    !window.confirm(
-      `¿Confirmas que recibiste el pago en efectivo para la membresía de ${client.name}?`,
-    )
-  )
-    return;
-  const idCliente =
-    client.id_cliente || Number(String(client.id || '').replace(/^SGCLI/i, ''));
-
-  if (!idCliente) return;
-
-  try {
-    const saved = await gymStore.confirmarPagoEfectivo(idCliente);
-    if (viewingClient.value && viewingClient.value.id === saved.id) {
-      viewingClient.value = { ...saved };
-    }
-    feedbackTone.value = 'success';
-    feedbackMessage.value = `Pago de ${saved.id} confirmado correctamente. Ya puedes activar la membresía.`;
-  } catch (error) {
-    feedbackTone.value = 'error';
-    feedbackMessage.value =
-      error instanceof Error ? error.message : 'No se pudo registrar el pago.';
-  }
-};
-
-/**
- * Activa la membresía del cliente seleccionado.
- */
-const activateMembership = async (client) => {
-  if (!client || activatingClientId.value) return;
-  const idCliente =
-    client.id_cliente || Number(String(client.id || '').replace(/^SGCLI/i, ''));
-
-  if (!idCliente) {
-    feedbackTone.value = 'error';
-
-    feedbackMessage.value = 'No se encontro el ID numerico del cliente.';
-    activationError.value = feedbackMessage.value;
-
-    return;
-  }
-
-  activatingClientId.value = client.id;
-  activationError.value = '';
-
-  try {
-    const saved = await gymStore.activateClientMembership(idCliente);
-
-    feedbackTone.value = 'success';
-
-    feedbackMessage.value = `Membresía de ${saved.id} activada. ${notificationMessage(saved.notification)}`;
-    pendingActivation.value = null;
-  } catch (error) {
-    feedbackTone.value = 'error';
-
-    feedbackMessage.value =
-      error instanceof Error
-        ? error.message
-        : 'No se pudo activar la membresia.';
-    activationError.value = feedbackMessage.value;
-  } finally {
-    activatingClientId.value = '';
-  }
-};
-
-/**
- * Registra o actualiza los datos de un cliente.
- */
-const handleSubmit = async () => {
-  if (savingClient.value) return;
-  savingClient.value = true;
-  const isNewClient = !editingId.value;
-  submitError.value = '';
-  try {
-    const saved = await gymStore.upsertClient({
-      id_usuario: editingId.value || undefined,
-
-      nombre: form.nombre,
-
-      correo: form.correo,
-
-      telefono: form.telefono,
-
-      dni: form.dni,
-
-      password: form.password,
-
-      plan: form.plan,
-
-      id_promocion: form.id_promocion || undefined,
-
-      estado: form.estado,
-      pagar_con_stripe: !editingId.value && form.pagar_con_stripe,
-    });
-
-    if (isNewClient) {
-      resetFilters();
-      sortOrder.value = 'recent';
-    }
-    savingClient.value = false;
-    closeEditor();
-
-    feedbackTone.value = 'success';
-
-    feedbackMessage.value = `Cliente ${saved.id} guardado con estado ${saved.status || form.estado}.`;
-    if (saved.payment?.checkout_url) {
-      window.location.assign(saved.payment.checkout_url);
-    } else if (saved.payment?.message) {
-      feedbackTone.value = 'info';
-      feedbackMessage.value = `Cliente ${saved.id} registrado. ${saved.payment.message}. Puedes retomar el pago desde sus detalles.`;
-      openDetails(saved);
-      paymentError.value = saved.payment.message;
-    }
-  } catch (error) {
-    feedbackTone.value = 'error';
-
-    feedbackMessage.value =
-      error instanceof Error ? error.message : 'No se pudo guardar el cliente.';
-    submitError.value = feedbackMessage.value;
-  } finally {
-    savingClient.value = false;
-  }
-};
-
-const payWithStripe = async (client) => {
-  if (payingClientId.value || !canPayClientWithStripe(client)) return;
-  payingClientId.value = client.id;
-  paymentError.value = '';
-  try {
-    const payment = await startClientPayment(client.id_cliente, authStore.token);
-    if (!payment.checkout_url)
-      throw new Error(payment.message || 'No se pudo abrir Stripe.');
-    window.location.assign(payment.checkout_url);
-  } catch (error) {
-    paymentError.value = error.message || 'No se pudo iniciar el pago.';
-    feedbackTone.value = 'error';
-    feedbackMessage.value = paymentError.value;
-  } finally {
-    payingClientId.value = '';
-  }
-};
-
-onMounted(async () => {
-  const stripeResult = route.query.stripe_result;
-  if (stripeResult) {
-    try {
-      if (stripeResult === 'success') {
-        if (!route.query.session_id)
-          throw new Error('Falta la sesión de Stripe para verificar el pago.');
-        const result = await confirmMembershipPayment(route.query.session_id, authStore.token);
-        feedbackTone.value = result.confirmed ? 'success' : 'info';
-        feedbackMessage.value = result.confirmed
-          ? `Pago de SGCLI${String(result.id_cliente).padStart(3, '0')} confirmado. Ya puedes activar su membresía.`
-          : 'Stripe todavía no confirmó el pago. Actualiza la lista en unos momentos.';
-      } else {
-        feedbackTone.value = 'info';
-        feedbackMessage.value =
-          'Pago cancelado. El cliente sigue registrado y puedes retomar el pago desde sus detalles.';
-      }
-      const { stripe_result, session_id, ...query } = route.query;
-      await router.replace({ path: route.path, query });
-    } catch (error) {
-      feedbackTone.value = 'error';
-      feedbackMessage.value = `${error.message || 'No se pudo verificar el pago.'} Recarga esta página para volver a comprobarlo.`;
-    }
-  }
-  await refreshClients(Boolean(stripeResult));
-});
+const { activatingClientId, pendingActivation, activationError, notifyingClientId, payingClientId, paymentError, requestActivation, cancelActivation, notificationMessage, retryActivationEmail, markAsPaidManual, activateMembership, payWithStripe, initializeDirectory } = useClientMembershipActions({ gymStore, authStore, feedbackMessage, feedbackTone, viewingClient, route, router, refreshClients });
+const { editingId, isEditorOpen, savingClient, submitError, editingClient, editingMembershipLabel, editingNeedsActivation, editingExpired, form, availablePromotions, estimatedCharge, resetForm, openNewClient, closeEditor, editClient, handleSubmit } = useClientEditor({ gymStore, clients, feedbackMessage, feedbackTone, resetFilters, sortOrder, openDetails, paymentError, normalizeStatus });
+onMounted(initializeDirectory);
 </script>
 
-<style scoped>
-.client-metrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
-}
-.client-metrics .ws-metric {
-  position: relative;
-  padding: 1.1rem;
-}
-.clients-view > header {
-  padding: 1.25rem 1.75rem;
-}
-.clients-view > header .ws-title {
-  font-size: clamp(1.5rem, 2.5vw, 1.9rem);
-}
-.client-metrics .ws-metric > p:first-of-type {
-  padding-right: 2rem;
-}
-.client-metric-icon {
-  position: absolute;
-  top: 0.9rem;
-  right: 0.9rem;
-  display: grid;
-  place-items: center;
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 0.75rem;
-  margin-bottom: 0.85rem;
-}
-.client-directory {
-  display: grid;
-  gap: 1rem;
-}
-.client-filter-bar {
-  display: grid;
-  grid-template-columns: minmax(230px, 2fr) repeat(3, minmax(140px, 1fr));
-  gap: 0.85rem;
-  align-items: end;
-}
-.client-search {
-  min-width: 0;
-}
-.client-status-bar,
-.client-page-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-.client-filter-count {
-  border-radius: 999px;
-  background: var(--ws-inset);
-  color: var(--ws-soft);
-  padding: 0.1rem 0.45rem;
-  font-size: 0.7rem;
-  font-variant-numeric: tabular-nums;
-}
-.client-reset {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-  font-weight: 650;
-  color: var(--ws-muted);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-}
-.client-reset:hover {
-  color: var(--ws-text);
-  background: var(--ws-hover);
-}
-.client-page-bar {
-  position: sticky;
-  top: 0.75rem;
-  z-index: 5;
-  border: 1px solid var(--ws-border);
-  background: var(--ws-inset);
-  border-radius: 0.85rem;
-  padding: 0.7rem 0.85rem;
-}
-.client-pagination {
-  display: flex;
-  gap: 0.3rem;
-  align-items: center;
-}
-.client-page-number,
-.client-page-arrow,
-.client-page-gap {
-  display: grid;
-  place-items: center;
-  min-width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.6rem;
-  font-size: 0.8rem;
-  font-weight: 750;
-  color: var(--ws-muted);
-}
-.client-page-arrow {
-  border: 1px solid var(--ws-border);
-  background: var(--ws-panel);
-}
-.client-page-number:hover,
-.client-page-arrow:not(:disabled):hover {
-  background: var(--ws-hover);
-  color: var(--ws-text);
-}
-.client-page-number[aria-current='page'] {
-  background: var(--ws-info-bg);
-  color: var(--ws-info);
-  box-shadow: inset 0 0 0 1px var(--ws-info);
-}
-.client-table {
-  min-width: 800px;
-}
-.client-table td {
-  padding: 0.65rem 1rem;
-  vertical-align: middle;
-}
-.client-table .client-identity-cell {
-  width: 36%;
-}
-.client-identity {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-.client-name {
-  text-align: left;
-  font-weight: 750;
-  color: var(--ws-text);
-  border-radius: 0.3rem;
-}
-.client-name:hover {
-  color: var(--ws-info);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.client-contact {
-  font-size: 0.75rem;
-  margin-top: 0.2rem;
-  overflow-wrap: anywhere;
-}
-.client-id {
-  font-size: 0.65rem;
-  margin-top: 0.15rem;
-}
-.client-plan {
-  font-size: 0.75rem;
-  font-weight: 750;
-  white-space: nowrap;
-}
-.client-status-dot {
-  width: 0.35rem;
-  height: 0.35rem;
-  border-radius: 50%;
-  background: currentColor;
-}
-.client-actions-heading {
-  text-align: right;
-}
-.client-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.35rem;
-}
-.client-icon-button {
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border: 1px solid var(--ws-border);
-  border-radius: 0.65rem;
-  background: var(--ws-panel);
-  color: var(--ws-soft);
-  flex-shrink: 0;
-}
-.client-icon-button:hover {
-  background: var(--ws-hover);
-  color: var(--ws-info);
-}
-.client-delete:hover {
-  color: var(--ws-danger);
-  background: var(--ws-danger-bg);
-  border-color: var(--ws-danger);
-}
-.client-action-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 2.25rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: 0.65rem;
-  font-size: 0.75rem;
-  font-weight: 750;
-  white-space: nowrap;
-}
-.client-action-primary:hover {
-  box-shadow: inset 0 0 0 1px currentColor;
-}
-.client-directory-note {
-  line-height: 1.5;
-}
-@media (max-width: 1100px) {
-  .client-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .client-filter-bar {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .client-search {
-    grid-column: 1 / -1;
-  }
-}
-@media (max-width: 1023px) {
-  .client-page-bar {
-    top: 4.5rem;
-  }
-}
-@media (max-width: 700px) {
-  .client-metrics {
-    gap: 0.65rem;
-  }
-  .client-metrics .ws-metric {
-    padding: 0.85rem;
-  }
-  .client-metric-icon {
-    display: none;
-  }
-  .clients-view > header {
-    padding: 1rem;
-  }
-  .client-metrics .ws-metric > p:first-of-type {
-    padding-right: 0;
-  }
-  .client-metrics .ws-metric-value {
-    margin: 0.3rem 0;
-  }
-  .client-filter-bar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .client-filter-bar > label:last-child {
-    grid-column: 1 / -1;
-  }
-  .client-page-bar {
-    justify-content: center;
-  }
-  .client-page-bar > p {
-    width: 100%;
-    text-align: center;
-  }
-  .client-pagination {
-    gap: 0.15rem;
-  }
-  .client-page-number,
-  .client-page-arrow,
-  .client-page-gap {
-    min-width: 2rem;
-  }
-  .client-table-wrap {
-    border: none;
-    overflow: visible;
-  }
-  .client-table {
-    min-width: 0;
-    display: block;
-  }
-  .client-table thead {
-    display: none;
-  }
-  .client-table tbody {
-    display: grid;
-    gap: 0.75rem;
-  }
-  .client-table tbody tr {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    border: 1px solid var(--ws-border);
-    border-radius: 1rem;
-    padding: 0.9rem;
-    gap: 0.8rem;
-  }
-  .client-table td {
-    display: block;
-    border: none;
-    padding: 0;
-  }
-  .client-table .client-identity-cell {
-    grid-column: 1 / -1;
-    width: auto;
-    border-bottom: 1px solid var(--ws-border);
-    padding-bottom: 0.8rem;
-  }
-  .client-table td[data-label]::before {
-    content: attr(data-label);
-    display: block;
-    color: var(--ws-muted);
-    font-size: 0.7rem;
-    margin-bottom: 0.4rem;
-  }
-  .client-table .ws-badge {
-    max-width: 100%;
-    white-space: normal;
-  }
-  .client-actions-cell {
-    grid-column: 1 / -1;
-  }
-  .client-actions {
-    justify-content: flex-end;
-    border-top: 1px solid var(--ws-border);
-    padding-top: 0.8rem;
-  }
-  .client-actions .client-action-primary {
-    margin-right: auto;
-  }
-}
-.client-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-.client-detail-grid dt {
-  color: var(--ws-muted);
-  font-size: 0.8rem;
-  margin-bottom: 0.4rem;
-}
-.client-detail-grid dd {
-  color: var(--ws-text);
-  font-size: 0.95rem;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.client-detail-wide {
-  grid-column: 1 / -1;
-}
-@media (max-width: 380px) {
-  .client-detail-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-</style>
+<style scoped src="../styles/clients-view.css"></style>

@@ -57,6 +57,10 @@ class SupabaseGymRepository:
         from infrastructure.repositories.attendance_history_repository import AttendanceHistoryRepository
         return AttendanceHistoryRepository(self.supabase).page(criteria, request)
 
+    def attendance_summary(self, day, client_id=None):
+        from infrastructure.repositories.attendance_history_repository import AttendanceHistoryRepository
+        return AttendanceHistoryRepository(self.supabase).summary(day, client_id)
+
     def query(self, query, passwords=None):
         self.refresh(query.resources)
         return self.read(lambda state: query_operation(query, state, passwords), query.resources)

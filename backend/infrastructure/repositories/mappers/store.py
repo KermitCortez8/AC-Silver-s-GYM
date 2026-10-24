@@ -1,6 +1,7 @@
 """Mapeos de store: conversión explícita entre filas y datos de negocio."""
 from __future__ import annotations
 from typing import Any
+from domain.money import cents
 from domain.services.gym_values import _now_iso
 from .common import _date_or_today
 
@@ -17,7 +18,9 @@ def _map_sale_detail(row: dict[str, Any], product_names: dict[int, str]) -> dict
 
 
 def _map_sale(row: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, Any]:
-    total = float(row.get("total_Venta") or 0)
+    total_cents = cents(row.get("total_Venta"))
+    # Las líneas conservan la base cobrada; no se recalcula con precios ni tasas actuales.
+    subtotal_cents = sum(cents(item["subtotal"]) for item in items) if items else total_cents
     return {
         "id_pedido": int(row.get("id_venta", 0) or 0),
         "id_cliente": int(row.get("id_cliente") or 0) or None,
@@ -32,9 +35,9 @@ def _map_sale(row: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, Any
         "estado_pago": str(row.get("estado_pago") or "PAGADO").strip().upper(),
         "estado_pedido": str(row.get("estado_pedido") or "COMPLETADO"),
         "fecha_actualizacion": str(row.get("fecha_actualizacion") or row.get("Fecha_Venta") or _now_iso()),
-        "subtotal": total,
-        "igv": 0,
-        "total": total,
+        "subtotal": subtotal_cents / 100,
+        "igv": (total_cents - subtotal_cents) / 100,
+        "total": total_cents / 100,
         "items": items,
     }
 

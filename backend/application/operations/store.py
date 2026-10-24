@@ -32,11 +32,8 @@ class UpsertProductoTiendaCommand:
     payload: Record
     actor: object = None
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
         Resource.INVENTARIO,
         Resource.PRODUCTOS_TIENDA,
-        Resource.MOV_INV,
-        Resource.PEDIDOS_TIENDA,
     )
 
     def run(self, rules: DomainComponents) -> Record:
@@ -48,11 +45,7 @@ class DeleteProductoTiendaCommand:
     operation_kind: ClassVar[str] = 'command'
     id_producto: int
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
-        Resource.INVENTARIO,
         Resource.PRODUCTOS_TIENDA,
-        Resource.MOV_INV,
-        Resource.PEDIDOS_TIENDA,
     )
 
     def run(self, rules: DomainComponents) -> None:
@@ -73,10 +66,8 @@ class CrearPedidoTiendaCommand:
     operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
         Resource.INVENTARIO,
         Resource.PRODUCTOS_TIENDA,
-        Resource.MOV_INV,
         Resource.PEDIDOS_TIENDA,
     )
 
@@ -89,10 +80,8 @@ class CrearPedidoTiendaPagoPendienteCommand:
     operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
         Resource.INVENTARIO,
         Resource.PRODUCTOS_TIENDA,
-        Resource.MOV_INV,
         Resource.PEDIDOS_TIENDA,
     )
 
@@ -135,10 +124,6 @@ class RegistrarSesionPagoPedidoCommand:
     id_pedido: int
     session_id: str
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
-        Resource.INVENTARIO,
-        Resource.PRODUCTOS_TIENDA,
-        Resource.MOV_INV,
         Resource.PEDIDOS_TIENDA,
     )
 
@@ -152,10 +137,6 @@ class ConfirmarPagoPedidoTiendaCommand:
     id_pedido: int
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
-        Resource.INVENTARIO,
-        Resource.PRODUCTOS_TIENDA,
-        Resource.MOV_INV,
         Resource.PEDIDOS_TIENDA,
     )
 
@@ -169,10 +150,8 @@ class CancelarPedidoPagoPendienteCommand:
     id_pedido: int
     observacion: str = ''
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
         Resource.INVENTARIO,
         Resource.PRODUCTOS_TIENDA,
-        Resource.MOV_INV,
         Resource.PEDIDOS_TIENDA,
     )
 
@@ -187,10 +166,8 @@ class ActualizarPedidoTiendaCommand:
     payload: Record
     actor: object = None
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
         Resource.INVENTARIO,
         Resource.PRODUCTOS_TIENDA,
-        Resource.MOV_INV,
         Resource.PEDIDOS_TIENDA,
     )
 

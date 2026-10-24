@@ -1,8 +1,14 @@
-import { apiPost } from './backendGateway.js';
+import { createBackendGateway } from "./backendGateway.js";
 
-export const retryActivationEmail = (clientId, token) =>
-  apiPost(`/clientes/${clientId}/notificar-activacion`, {}, token);
-export const startClientPayment = (clientId, token) =>
-  apiPost(`/clientes/${clientId}/pago-stripe`, {}, token);
-export const confirmMembershipPayment = (sessionId, token) =>
-  apiPost(`/pagos/stripe/confirmar-retorno?session_id=${encodeURIComponent(sessionId)}`, {}, token);
+export const useClientPayments = (gateway = createBackendGateway()) => ({
+  retryActivationEmail: (clientId, token) =>
+    gateway.apiPost(`/clientes/${clientId}/notificar-activacion`, {}, token),
+  startClientPayment: (clientId, token) =>
+    gateway.apiPost(`/clientes/${clientId}/pago-stripe`, {}, token),
+  confirmMembershipPayment: (sessionId, token) =>
+    gateway.apiPost(
+      `/pagos/stripe/confirmar-retorno?session_id=${encodeURIComponent(sessionId)}`,
+      {},
+      token,
+    ),
+});

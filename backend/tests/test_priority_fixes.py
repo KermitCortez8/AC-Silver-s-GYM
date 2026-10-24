@@ -33,7 +33,7 @@ def protected_api(monkeypatch):
     monkeypatch.setattr('infrastructure.security.get_settings', lambda: Settings(auth_secret_key='local-tests-only-' * 3))
     service = GymService(MemoryGymRepository(), Passwords(), sessions=SignedSessionProvider())
     state = service.repository.state
-    state['usuario'] = [dict(id_usuario=f'SG{prefix}{i:03}', rol=role, nombre=role, correo=role+'@example.com')
+    state['usuario'] = [dict(id_usuario=f'SG{prefix}{i:03}', rol=role, nombre=role, correo=role+'@example.com', estado='ACTIVO')
                         for i, (prefix, role) in enumerate([('ADM', 'admin'), ('STA', 'staff'), ('TRA', 'trainer')], 1)]
     state['clientes'] = [dict(id_cliente=i, id_usuario=f'SGCLI{i:03}', nombre='Cliente', correo=f'client{i}@example.com',
                               estado='ACTIVO', telefono='', dni=str(i), plan='MENSUAL', promocion='SIN PROMOCION') for i in (10, 11)]

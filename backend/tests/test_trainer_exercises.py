@@ -1,6 +1,7 @@
 import unittest
 from copy import deepcopy
 import json
+from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI
@@ -95,7 +96,7 @@ def test_trainer_api_preserves_exercises_in_catalog_and_session_history():
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[get_gym_service] = lambda: gym
-    app.dependency_overrides[require_internal_viewer] = lambda: None
+    app.dependency_overrides[require_internal_viewer] = lambda: SimpleNamespace(id='SGTRA001', id_usuario='SGTRA001')
     client = TestClient(app)
     exercises = [{
         "id_ejercicio": "press", "nombre_ejercicio": "Press banca", "series": 4,

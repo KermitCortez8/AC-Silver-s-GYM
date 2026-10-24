@@ -1,5 +1,10 @@
 import { getApplicationServices } from '../ports/services.js';
 
-export const readThemePreference = () => getApplicationServices().preferences.readThemePreference();
-export const writeThemePreference = (theme) => getApplicationServices().preferences.writeThemePreference(theme);
-export const preferredTheme = () => getApplicationServices().preferences.preferredTheme();
+export const useThemePreferences = () => {
+  const { preferences } = getApplicationServices();
+  return {
+    readThemePreference: () => preferences.readThemePreference(),
+    writeThemePreference: theme => preferences.writeThemePreference(theme),
+    preferredTheme: () => preferences.preferredTheme(),
+  };
+};

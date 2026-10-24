@@ -4,7 +4,7 @@ import { bindSessionRepository } from '../services/sessionBoundary.js';
 import { nowISO, normalizeBackendClientToMember, todayISO, getCurrentRegistrarId } from '../../domain/utils/gymRules.js';
 
 export const createSchedulesModule = (ctx, repository) => {
-  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
   const upsertRutina = async (payload) => {
     const rutina = {
       id_rutina: payload.id_rutina || payload.id || null,

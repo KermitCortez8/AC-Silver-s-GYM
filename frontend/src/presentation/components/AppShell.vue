@@ -269,7 +269,6 @@
 <script setup>
 import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-
 import {
   Activity,
   CalendarDays,
@@ -285,12 +284,13 @@ import {
   Users,
   WalletCards,
 } from 'lucide-vue-next';
-
 import { useAuth } from '../../application/composables/useAuth';
 import { useTheme } from '../composables/useTheme';
-import { APP_CONFIG } from '../../application/services/appResources.js';
+import { useAppResources } from '../../application/services/appResources.js';
 import { useGymStore } from '../../application/stores/gymStore';
 import { createModuleLoader, sectionForPath } from '../../application/services/moduleNavigation.js';
+
+const { APP_CONFIG } = useAppResources();
 
 const props = defineProps({
   mode: {

@@ -197,9 +197,12 @@ import {
   Pencil,
 } from 'lucide-vue-next';
 import { useAuth } from '../../../application/composables/useAuth';
-import { attendanceGet } from '../../../application/services/attendance.js';
+import { useAttendance } from '../../../application/services/attendance.js';
 import { dateLabel, services, shortTime, states } from '../../utils/attendance';
 import AttendanceCorrectionDialog from './AttendanceCorrectionDialog.vue';
+
+const { attendanceGet } = useAttendance();
+
 const props = defineProps({ admin: Boolean });
 const emit = defineEmits(['changed']);
 const { token } = useAuth();

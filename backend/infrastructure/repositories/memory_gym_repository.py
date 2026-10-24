@@ -30,6 +30,11 @@ class MemoryGymRepository:
         with self.lock:
             return attendance_page(self.state, criteria, request)
 
+    def attendance_summary(self, day, client_id=None):
+        from infrastructure.repositories.memory_attendance_history import attendance_summary
+        with self.lock:
+            return attendance_summary(self.state, day, client_id)
+
     def query(self, query, passwords=None):
         self.refresh(query.resources)
         return self.read(lambda state: query_operation(query, state, passwords), query.resources)

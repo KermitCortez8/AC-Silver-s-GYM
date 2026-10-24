@@ -1,7 +1,21 @@
 """Adaptador local del mismo contrato paginado de historial."""
 from copy import deepcopy
-from application.read_models import AttendancePage
+from application.read_models import AttendancePage, AttendanceSummaryData
 from domain.services.client_identifiers import parse_client_id
+
+
+def attendance_summary(state, day, client_id=None):
+    valid = [row for row in state.get("asistencia", []) if not row.get("anulado")
+             and (client_id is None or parse_client_id(row.get("id_cliente_num") or row.get("id_cliente")) == client_id)]
+    today = sorted((row for row in valid if row.get("fecha") == day),
+                   key=lambda row: (row.get("hora_entrada") or row.get("hora", ""), row["id_asistencia"]), reverse=True)
+    inside = [row for row in valid if not row.get("hora_salida")]
+    inside.sort(key=lambda row: (row.get("fecha", ""), row.get("hora_entrada") or row.get("hora", ""), row["id_asistencia"]), reverse=True)
+    recent = today[:8]
+    ids = {parse_client_id(row.get("id_cliente_num") or row.get("id_cliente")) for row in [*inside, *recent]}
+    return AttendanceSummaryData(len(today),
+        sum(bool(row.get("hora_salida")) and (row.get("fecha_salida") or row.get("fecha")) == day for row in valid),
+        deepcopy(inside), deepcopy(recent), [deepcopy(row) for row in state.get("clientes", []) if row["id_cliente"] in ids])
 
 
 def attendance_page(state, criteria, request):

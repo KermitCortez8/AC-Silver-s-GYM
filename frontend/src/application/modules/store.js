@@ -6,7 +6,7 @@ import { normalizeStoreOrder, normalizeStoreProductFromBackend, nowISO } from '.
 import { computed } from 'vue';
 
 export const createStoreModule = (ctx, repository) => {
-  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
   const upsertProductoTienda = async (payload) => {
     const producto = {
       id_producto: payload.id_producto || null,

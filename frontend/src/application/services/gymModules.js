@@ -8,11 +8,13 @@ import { createStoreModule } from '../modules/store.js';
 import { createAttendanceModule } from '../modules/attendance.js';
 import { createUsersModule } from '../modules/users.js';
 import { createInventoryModule } from '../modules/inventory.js';
-import { APP_CONFIG } from './appResources.js';
+import { getApplicationServices } from '../ports/services.js';
+import { createBackendGateway } from './backendGateway.js';
 
-export const createGymModules = (state, repositories) => {
-  const apiBase = APP_CONFIG.authApiBaseUrl || '/api';
+export const createGymModules = (state, repositories, services = getApplicationServices()) => {
+  const apiBase = services.config.app.authApiBaseUrl || '/api';
   const dashboard = createDashboardModule(Object.freeze({
+    pinia: services.pinia,
     apiBase,
     attendance: state.attendance,
     authStore: state.authStore,
@@ -21,6 +23,7 @@ export const createGymModules = (state, repositories) => {
     members: state.members
   }), repositories.gymSettings);
   const clients = createClientsModule(Object.freeze({
+    pinia: services.pinia,
     apiBase,
     attendance: state.attendance,
     attendancePasses: state.attendancePasses,
@@ -34,6 +37,7 @@ export const createGymModules = (state, repositories) => {
     syncError: state.syncError
   }), repositories.clients);
   const memberships = createMembershipsModule(Object.freeze({
+    pinia: services.pinia,
     apiBase,
     authStore: state.authStore,
     fetchFromBackend: (...args) => synchronization.fetchFromBackend(...args),
@@ -48,6 +52,7 @@ export const createGymModules = (state, repositories) => {
     syncError: state.syncError
   }), repositories.memberships);
   const attendance = createAttendanceModule(Object.freeze({
+    pinia: services.pinia,
     apiBase,
     attendance: state.attendance,
     attendancePasses: state.attendancePasses,
@@ -59,6 +64,7 @@ export const createGymModules = (state, repositories) => {
     normalizeLookupEmail: dashboard.normalizeLookupEmail
   }), repositories.attendance);
   const inventory = createInventoryModule(Object.freeze({
+    pinia: services.pinia,
     apiBase,
     authStore: state.authStore,
     fetchFromBackend: (...args) => synchronization.fetchFromBackend(...args),
@@ -69,6 +75,7 @@ export const createGymModules = (state, repositories) => {
     syncError: state.syncError
   }), repositories.inventory);
   const store = createStoreModule(Object.freeze({
+    pinia: services.pinia,
     apiBase,
     authStore: state.authStore,
     cart: state.cart,
@@ -80,11 +87,13 @@ export const createGymModules = (state, repositories) => {
     syncError: state.syncError
   }), repositories.store);
   const users = createUsersModule(Object.freeze({
+    pinia: services.pinia,
     apiBase,
     authStore: state.authStore,
     users: state.users
   }), repositories.users);
   const schedules = createSchedulesModule(Object.freeze({
+    pinia: services.pinia,
     get activeSyncs() { return state.activeSyncs; },
     set activeSyncs(value) { state.activeSyncs = value; },
     apiBase,
@@ -104,6 +113,8 @@ export const createGymModules = (state, repositories) => {
     trainerOverviewCache: state.trainerOverviewCache
   }), repositories.schedules);
   const synchronization = createSynchronizationModule(Object.freeze({
+    pinia: services.pinia,
+    apiBase,
     get activeSyncs() { return state.activeSyncs; },
     set activeSyncs(value) { state.activeSyncs = value; },
     authStore: state.authStore,
@@ -134,6 +145,6 @@ export const createGymModules = (state, repositories) => {
     get syncScope() { return state.syncScope; },
     set syncScope(value) { state.syncScope = value; },
     users: state.users
-  }));
+  }), createBackendGateway(services));
   return Object.freeze({ dashboard, clients, memberships, attendance, inventory, store, users, schedules, synchronization });
 };

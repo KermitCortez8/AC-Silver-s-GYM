@@ -6,7 +6,7 @@ import { nowISO, todayISO, planDurationDays, normalizeBackendClientToMember } fr
 import { normalizeMembershipStatus } from '../../domain/utils/clientDirectory.js';
 
 export const createClientsModule = (ctx, repository) => {
-  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
   const memberByInternalCode = (code) => {
     const normalizedCode = String(code || '').trim().toUpperCase();
     if (!normalizedCode) {

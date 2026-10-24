@@ -1,5 +1,7 @@
-import { apiGet } from './backendGateway.js';
+import { createBackendGateway } from "./backendGateway.js";
 
-export const loadPublicSchedules = () => apiGet('/gym/horarios-publicos');
-export const loadMembershipPlans = () => apiGet('/planes-membresia');
-export const loadCurrentPromotions = () => apiGet('/promociones/vigentes-publico');
+export const usePublicCatalog = (gateway = createBackendGateway()) => ({
+  loadPublicSchedules: () => gateway.apiGet("/gym/horarios-publicos"),
+  loadMembershipPlans: () => gateway.apiGet("/planes-membresia"),
+  loadCurrentPromotions: () => gateway.apiGet("/promociones/vigentes-publico"),
+});

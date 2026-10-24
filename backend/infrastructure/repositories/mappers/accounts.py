@@ -1,7 +1,7 @@
 """Mapeos de accounts: conversión explícita entre filas y datos de negocio."""
 from __future__ import annotations
 from typing import Any
-from domain.services.accounts_rules import user_role_prefix
+from domain.services.accounts_rules import user_role_prefix, internal_account_active
 from .common import _bool_to_status, _date_or_today, _phone_number, _remote_user_id, _split_name, _status_to_bool
 
 
@@ -88,5 +88,5 @@ def _user_to_remote(row: dict[str, Any]) -> dict[str, Any]:
         "Contraseña": str(row.get("password_hash") or ""),
         "google_sub": str(row.get("google_sub") or "") or None,
         "Rol": str(row.get("rol") or "staff").strip().lower(),
-        "Estado": _status_to_bool(row.get("estado") or "ACTIVO"),
+        "Estado": internal_account_active({"estado": row.get("estado", "ACTIVO")}),
     }

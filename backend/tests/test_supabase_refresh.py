@@ -196,7 +196,7 @@ def test_first_mutation_after_partial_read_loads_remaining_tables():
     assert set(service._resource_refreshed_at) == set(service.READ_STATE_KEYS)
 
 
-def test_order_reads_include_product_names_and_shared_inventory_stock():
+def test_order_reads_include_product_names_without_loading_inventory():
     remote = RecordingRemote({
         'TIENDA_PRODUCTOS': [{'id_producto': 1, 'id_item': 2, 'nombre_Producto': 'Agua', 'precio_Venta': 3}],
         'INVENTARIO': [{'id_item': 2, 'Tipo': 'Tienda', 'Cantidad_Stock_E': 0, 'Estado': 'Agotado'}],
@@ -205,9 +205,10 @@ def test_order_reads_include_product_names_and_shared_inventory_stock():
     })
     service = service_with_remote(remote)
     service.ensure_fresh(('pedidos_tienda',))
-    assert set(remote.calls) == {'VENTAS', 'DETALLE_VENTA', 'TIENDA_PRODUCTOS', 'INVENTARIO'}
+    assert set(remote.calls) == {'VENTAS', 'DETALLE_VENTA', 'TIENDA_PRODUCTOS'}
     assert service.state['pedidos_tienda'][0]['items'][0]['nombre_producto'] == 'Agua'
-    assert service.state['productos_tienda'][0]['estado'] == 'Agotado'
+    assert service.state['productos_tienda'] == []
+    assert 'TIENDA_PRODUCTOS' not in service._raw_rows
 
 
 @pytest.fixture

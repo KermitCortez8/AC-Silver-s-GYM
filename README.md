@@ -13,7 +13,7 @@ interfaz), `application` (coordinación y estado), `domain` (reglas y contratos)
 
 La [auditoría de code smells](docs/auditoria-code-smells.md) documenta los 42
 hallazgos. El [seguimiento de los 12 prioritarios](docs/correcciones-prioritarias.md)
-explica las correcciones, sus pruebas y las migraciones 014 y 015 que deben
+explica las correcciones, sus pruebas y las migraciones 014, 015 y 016 que deben
 aplicarse antes de desplegar este backend.
 
 ## Requisitos

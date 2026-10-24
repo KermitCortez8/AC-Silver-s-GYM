@@ -1,10 +1,9 @@
 """Reglas de dashboard sobre el agregado en memoria."""
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
-from zoneinfo import ZoneInfo
 from domain.services.gym_values import ESTADO_PEDIDO_CANCELADO, _days_until, _pedido_pagado
+from domain.services.membership_lifecycle import membership_current
 
 
 from dataclasses import dataclass
@@ -25,23 +24,15 @@ class DashboardRules:
     def summary(self) -> dict[str, Any]:
         total_clientes = len(self.context.state["clientes"])
         today = self.context.today()
-        membresias_activas = len(
-            [
-                m
-                for m in self.context.state["membresia"]
-                if str(m.get("estado", "")).lower() == "activa"
-                and str(m.get("fecha_inicio", "")) <= today <= str(m.get("fecha_fin", ""))
-            ]
-        )
-        attendance_today = datetime.now(ZoneInfo("America/Lima")).date().isoformat()
+        membresias_activas = sum(membership_current(m, today) for m in self.context.state["membresia"])
         valid_attendance = [a for a in self.context.state["asistencia"] if not a.get("anulado")]
-        asistencias_hoy = len([a for a in valid_attendance if a.get("fecha") == attendance_today])
+        asistencias_hoy = len([a for a in valid_attendance if a.get("fecha") == today])
         items_stock_bajo = [
             item
             for item in self.context.state["inventario"]
             if int(item.get("cantidad_stock", 0)) <= int(item.get("stock_minimo", 0))
         ]
-               # Solo cuentan los pedidos con el cobro confirmado; las ventas excluyen los cancelados.
+        # Solo cuentan los pedidos con el cobro confirmado; las ventas excluyen los cancelados.
         pedidos = [p for p in self.context.state.get("pedidos_tienda", []) if _pedido_pagado(p)]
         pedidos_pendientes = len([p for p in pedidos if str(p.get("estado_pedido") or "").upper() == "PENDIENTE"])
         ventas_mes = round(

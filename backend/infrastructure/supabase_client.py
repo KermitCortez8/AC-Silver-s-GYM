@@ -98,6 +98,10 @@ class SupabaseRestClient:
             rows.extend(page)
         return RowsPage(rows, total or 0)
 
+    def count(self, table, filters):
+        _, total = self._counted_page(table, {"select": "*", **filters, "limit": 0})
+        return total
+
     def _counted_page(self, table, query):
         address = f"{self.rest_url}/{quote(table, safe='')}?{urlencode(query, safe='*,().:')}"
         headers = {**supabase_headers(self.key), "Prefer": "count=exact"}

@@ -322,16 +322,15 @@
 import { discountedPrice } from '../../domain/utils/money.js';
 import { clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
 import { computed, onMounted, reactive, ref } from 'vue';
-
 import { useRoute } from 'vue-router';
-
 import GoogleSignInButton from '../components/GoogleSignInButton.vue';
-
-import { getVerifiedGoogleProfile } from '../../application/services/authentication.js';
-
-import { loadPublicSchedules, loadMembershipPlans, loadCurrentPromotions } from '../../application/services/publicCatalog.js';
-
+import { useAuthentication } from '../../application/services/authentication.js';
+import { usePublicCatalog } from '../../application/services/publicCatalog.js';
 import { useGymStore } from '../../application/stores/gymStore';
+
+const { getVerifiedGoogleProfile } = useAuthentication();
+
+const { loadPublicSchedules, loadMembershipPlans, loadCurrentPromotions } = usePublicCatalog();
 
 /* -------------------------------------------------------------------------- */
 /* INSTANCIAS                                                                 */

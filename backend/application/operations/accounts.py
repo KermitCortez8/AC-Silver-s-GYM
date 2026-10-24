@@ -187,6 +187,9 @@ class DeleteClienteCommand:
         Resource.ASISTENCIA,
         Resource.CLIENTES,
         Resource.HORARIO,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.RUTINA_PROGRESO,
         Resource.MEMBRESIA,
         Resource.PLANES_MEMBRESIA,
         Resource.PROMOCIONES,
@@ -195,7 +198,8 @@ class DeleteClienteCommand:
     )
 
     def run(self, rules: DomainComponents) -> None:
-        return rules.accounts.delete_cliente(self.id_cliente)
+        rules.accounts.delete_cliente(self.id_cliente)
+        rules.schedules._recount_schedule_cupos(rules.context.state)
 
 
 @dataclass(frozen=True)

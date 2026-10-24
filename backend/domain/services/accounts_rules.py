@@ -15,6 +15,10 @@ def user_role_prefix(role: str) -> str:
     return {"admin": "ADM", "trainer": "TRA", "staff": "STA"}.get(str(role or "").strip().lower(), "USR")
 
 
+def internal_account_active(account: dict | None) -> bool:
+    state = account.get("estado") if account else None
+    return state is True or str(state or "").strip().upper() in {"ACTIVO", "ACTIVA"}
+
 
 
 @dataclass(frozen=True)
@@ -73,7 +77,7 @@ class AccountsRules:
             "telefono": str(row.get("telefono") or "").strip(),
             "dni": str(row.get("dni") or "").strip(),
             "rol": rol if rol in {"admin", "trainer", "staff"} else "staff",
-            "estado": "ACTIVO",
+            "estado": "ACTIVO" if internal_account_active({"estado": row.get("estado", "ACTIVO")}) else "INACTIVO",
             "password_hash": password_hash,
             "google_sub": str(row.get("google_sub") or ""),
         }
@@ -164,7 +168,7 @@ class AccountsRules:
                 "telefono": str(payload.get("telefono") or "").strip(),
                 "dni": str(payload.get("dni") or "").strip(),
                 "rol": rol,
-                "estado": "Activo",
+                "estado": "ACTIVO" if internal_account_active({"estado": existing.get("estado", "ACTIVO")}) else "INACTIVO",
                 "password_hash": self.context.passwords.hash(password) if password else str(existing.get("password_hash") or ""),
                 "google_sub": str(existing.get("google_sub") or ""),
             }
@@ -228,6 +232,7 @@ class AccountsRules:
             "password_hash": password_hash,
             "google_sub": str(row.get("google_sub") or ""),
             "origen_registro": str(row.get("origen_registro") or ""),
+            "fecha_registro": str(row.get("fecha_registro") or ""),
         }
 
     def clientes_normalized(self) -> list[dict[str, Any]]:
@@ -323,6 +328,7 @@ class AccountsRules:
             item["password_hash"] = self.context.passwords.hash(password) if password else str(existing.get("password_hash") or "")
             item["google_sub"] = str(existing.get("google_sub") or "")
             item["origen_registro"] = str(existing.get("origen_registro") or "") if existing else "ADMIN"
+            item["fecha_registro"] = existing.get("fecha_registro") or self.context.today()
             if idx >= 0:
                 state["clientes"][idx] = item
             else:
@@ -418,5 +424,11 @@ class AccountsRules:
             state["asistencia"] = [a for a in state["asistencia"] if not matches_id(a.get("id_cliente_num") or a.get("id_cliente") or a.get("id_cliente_uid"))]
             state["horario"] = [h for h in state["horario"] if not matches_id(h.get("id_cliente"))]
             state["tickets_atencion"] = [t for t in state["tickets_atencion"] if not matches_id(t.get("id_cliente"))]
+            enrollment_ids = {int(row["id_matricula"]) for row in state.get("matriculas_horario", [])
+                              if matches_id(row.get("id_cliente"))}
+            state["rutina_progreso"] = [row for row in state.get("rutina_progreso", [])
+                                        if int(row.get("id_matricula") or 0) not in enrollment_ids]
+            state["matriculas_horario"] = [row for row in state.get("matriculas_horario", [])
+                                           if not matches_id(row.get("id_cliente"))]
 
         self.context.change(_fn)

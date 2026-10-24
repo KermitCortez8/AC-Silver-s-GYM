@@ -45,7 +45,7 @@ class GymSnapshotReader:
             ("asistencia", self.database.select_all, "ASISTENCIA", "id_asistencia.asc"),
         ]
         queries = [query for query in queries if query[0] in selected or
-                   (query[0] == "sale_details" and "pedidos_tienda" in selected)]
+                   (query[0] in {"sale_details", "productos_tienda"} and "pedidos_tienda" in selected)]
         with ThreadPoolExecutor(max_workers=6) as pool:
             pending = {key: pool.submit(load, table, order=order) for key, load, table, order in queries}
             rows = {key: future.result() for key, future in pending.items()}
@@ -90,7 +90,10 @@ class GymSnapshotReader:
             GymDomainService(remote_state).refresh_store_status()
         raw = dict(self.cache.raw_rows)
         for key, _load, table, _order in queries:
-            raw[table] = deepcopy(rows[key])
+            # El catálogo auxiliar solo aporta nombres a pedidos. No publica una
+            # versión remota nueva junto a un estado de productos todavía antiguo.
+            if key != "productos_tienda" or key in selected:
+                raw[table] = deepcopy(rows[key])
             if table not in self.tables.metadata.missing_tables:
                 self.tables.remember_columns(table, rows[key])
         self.cache.raw_rows = raw

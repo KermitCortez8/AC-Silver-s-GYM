@@ -136,16 +136,17 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import { useAuth } from '../../../application/composables/useAuth';
-import {
-  attendanceAnnul,
-  attendanceCorrect,
-} from '../../../application/services/attendance.js';
+import { useAttendance } from '../../../application/services/attendance.js';
 import {
   dateLabel,
   limaDate,
   services,
   shortTime,
 } from '../../utils/attendance';
+
+const { attendanceAnnul,
+  attendanceCorrect, } = useAttendance();
+
 const props = defineProps({
   record: { type: Object, required: true },
   annulling: Boolean,

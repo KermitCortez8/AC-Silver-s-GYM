@@ -72,15 +72,19 @@ class AttendanceService:
 
     def summary(self, user):
         today = self.now().date().isoformat()
-        rows = [r for r in self.records(user) if not r.get("anulado")]
-        inside = [r for r in rows if not r.get("hora_salida")]
+        admin = user.role == "admin"
+        if not admin and not user.id_cliente:
+            raise ValueError("No encontramos tu cliente vinculado.")
+        data = self.gym.attendance_summary(today, None if admin else user.id_cliente)
+        clients = {int(row["id_cliente"]): row for row in data.clients}
+        present = lambda row: self.present(row, admin, clients.get(self.client_id(row), {}))
+        inside = [present(row) for row in data.inside]
+        occupancy = len({self.client_id(row) for row in inside})
+        capacity = self.capacity()
         return {"fecha": today, "server_now": self.now().isoformat(),
-                "entradas": sum(r["fecha"] == today for r in rows),
-                "salidas": sum(bool(r.get("hora_salida")) and (r.get("fecha_salida") or r["fecha"]) == today for r in rows),
-                "dentro": len({self.client_id(r) for r in inside}), "pendientes": inside,
-                "capacidad": self.capacity(),
-                "disponibles": max(0, self.capacity() - len({self.client_id(r) for r in inside})),
-                "recientes": [r for r in rows if r["fecha"] == today][:8]}
+                "entradas": data.entries, "salidas": data.exits,
+                "dentro": occupancy, "pendientes": inside, "capacidad": capacity,
+                "disponibles": max(0, capacity - occupancy), "recientes": [present(row) for row in data.recent]}
 
     def membership(self, client_id, day):
         return next((m for m in self.gym.membresias_por_cliente(client_id)

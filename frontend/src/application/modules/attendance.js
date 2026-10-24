@@ -4,7 +4,7 @@ import { normalizeAttendanceRecord, todayISO, dateFromISO, getClientIdForBackend
 import { computed } from 'vue';
 
 export const createAttendanceModule = (ctx, repository) => {
-  const remote = bindSessionRepository(repository, () => ctx.authStore.token);
+  const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
   const mergeAttendanceRecord = (record) => {
     const normalized = normalizeAttendanceRecord(record);
     const index = ctx.attendance.value.findIndex((entry) => {
@@ -68,52 +68,7 @@ export const createAttendanceModule = (ctx, repository) => {
       throw new Error('Código no encontrado');
     }
 
-    if (ctx.apiBase) {
-      const backendMemberId = getClientIdForBackend(member);
-      const registrarId = getCurrentRegistrarId(ctx.authStore);
-      if (backendMemberId) {
-        return checkinByIdServer({
-          id_cliente: backendMemberId,
-          id_usuario: registrarId,
-          servicio: service || 'fitness',
-          fecha: options.fecha || options.date || todayISO(),
-          hora: options.hora || options.time || nowTime(),
-        }).then((res) => {
-          const record = buildAttendanceRecord(member, res, {
-            service: service || 'fitness',
-          });
-          return mergeAttendanceRecord(record);
-        });
-      }
-
-      if (member.dni) {
-        return checkinByDniServer({
-          dni: member.dni,
-          id_usuario: registrarId,
-          servicio: service || 'fitness',
-          fecha: options.fecha || options.date || todayISO(),
-          hora: options.hora || options.time || nowTime(),
-        }).then((res) => {
-          const record = buildAttendanceRecord(member, res, {
-            service: service || 'fitness',
-          });
-          return mergeAttendanceRecord(record);
-        });
-      }
-    }
-
-    if (!ctx.isMembershipActive(member)) {
-      throw new Error('El socio no tiene una membresía vigente');
-    }
-
-    const record = buildAttendanceRecord(member, {}, {
-      local: true,
-      service: service || 'fitness',
-      time: options.hora || options.time || nowTime(),
-      date: options.fecha || options.date || todayISO(),
-    });
-
-    return mergeAttendanceRecord(record);
+    return recordAttendance(member.id, service, options);
   };
 
   const recordAttendanceByDni = (dni, service = 'fitness', options = {}) => {

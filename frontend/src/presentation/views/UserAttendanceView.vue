@@ -114,7 +114,7 @@ import {
   ShieldCheck,
 } from 'lucide-vue-next';
 import { useAuth } from '../../application/composables/useAuth';
-import { attendanceGet } from '../../application/services/attendance.js';
+import { useAttendance } from '../../application/services/attendance.js';
 import {
   addDays,
   dateLabel,
@@ -125,6 +125,9 @@ import {
 } from '../utils/attendance';
 import AttendanceHistory from '../components/attendance/AttendanceHistory.vue';
 import '../styles/attendance.css';
+
+const { attendanceGet } = useAttendance();
+
 const { token } = useAuth();
 const route = useRoute();
 const selectedDate = ref(calendarDate(route.query.fecha));

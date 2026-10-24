@@ -56,6 +56,9 @@ class GymService:
     def attendance_page(self, criteria, request):
         return self.repository.attendance_page(criteria, request)
 
+    def attendance_summary(self, day, client_id=None):
+        return self.repository.attendance_summary(day, client_id)
+
     def attendance_history_data(self):
         return self.executor.query(AttendanceHistoryQuery())
 

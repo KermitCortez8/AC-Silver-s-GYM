@@ -21,17 +21,7 @@ class UpsertRutinaCommand:
     operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
-        Resource.CLIENTES,
-        Resource.MEMBRESIA,
-        Resource.PLANES_MEMBRESIA,
         Resource.CATALOGO_RUTINA,
-        Resource.HORARIO,
-        Resource.HORARIOS_SERVICIO,
-        Resource.MATRICULAS_HORARIO,
-        Resource.RUTINA_PROGRESO,
-        Resource.ASISTENCIA,
-        Resource.CONFIGURACION_GIMNASIO,
     )
 
     def run(self, rules: DomainComponents) -> Record:
@@ -52,17 +42,9 @@ class UpsertHorarioCommand:
     operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
         Resource.CLIENTES,
-        Resource.MEMBRESIA,
-        Resource.PLANES_MEMBRESIA,
         Resource.CATALOGO_RUTINA,
         Resource.HORARIO,
-        Resource.HORARIOS_SERVICIO,
-        Resource.MATRICULAS_HORARIO,
-        Resource.RUTINA_PROGRESO,
-        Resource.ASISTENCIA,
-        Resource.CONFIGURACION_GIMNASIO,
     )
 
     def run(self, rules: DomainComponents) -> Record:
@@ -94,17 +76,9 @@ class UpsertHorarioServicioCommand:
     operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
-        Resource.CLIENTES,
-        Resource.MEMBRESIA,
-        Resource.PLANES_MEMBRESIA,
         Resource.CATALOGO_RUTINA,
-        Resource.HORARIO,
         Resource.HORARIOS_SERVICIO,
         Resource.MATRICULAS_HORARIO,
-        Resource.RUTINA_PROGRESO,
-        Resource.ASISTENCIA,
-        Resource.CONFIGURACION_GIMNASIO,
     )
 
     def run(self, rules: DomainComponents) -> Record:
@@ -116,17 +90,8 @@ class DeleteHorarioServicioCommand:
     operation_kind: ClassVar[str] = 'command'
     id_horario_servicio: int
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
-        Resource.CLIENTES,
-        Resource.MEMBRESIA,
-        Resource.PLANES_MEMBRESIA,
-        Resource.CATALOGO_RUTINA,
-        Resource.HORARIO,
         Resource.HORARIOS_SERVICIO,
         Resource.MATRICULAS_HORARIO,
-        Resource.RUTINA_PROGRESO,
-        Resource.ASISTENCIA,
-        Resource.CONFIGURACION_GIMNASIO,
     )
 
     def run(self, rules: DomainComponents) -> None:
@@ -168,17 +133,11 @@ class AsignarRutinaMatriculaCommand:
     id_matricula: int
     id_rutina: int
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
         Resource.CLIENTES,
-        Resource.MEMBRESIA,
-        Resource.PLANES_MEMBRESIA,
         Resource.CATALOGO_RUTINA,
-        Resource.HORARIO,
         Resource.HORARIOS_SERVICIO,
         Resource.MATRICULAS_HORARIO,
-        Resource.RUTINA_PROGRESO,
         Resource.ASISTENCIA,
-        Resource.CONFIGURACION_GIMNASIO,
     )
 
     def run(self, rules: DomainComponents) -> Record:
@@ -209,17 +168,12 @@ class RegistrarProgresoRutinaCommand:
     id_matricula: int
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
         Resource.CLIENTES,
-        Resource.MEMBRESIA,
-        Resource.PLANES_MEMBRESIA,
         Resource.CATALOGO_RUTINA,
-        Resource.HORARIO,
         Resource.HORARIOS_SERVICIO,
         Resource.MATRICULAS_HORARIO,
-        Resource.RUTINA_PROGRESO,
         Resource.ASISTENCIA,
-        Resource.CONFIGURACION_GIMNASIO,
+        Resource.RUTINA_PROGRESO,
     )
 
     def run(self, rules: DomainComponents) -> Record:
@@ -248,17 +202,8 @@ class CancelarMatriculaHorarioCommand:
     id_matricula: int
     id_cliente: int | None = None
     resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.USUARIO,
-        Resource.CLIENTES,
-        Resource.MEMBRESIA,
-        Resource.PLANES_MEMBRESIA,
-        Resource.CATALOGO_RUTINA,
-        Resource.HORARIO,
         Resource.HORARIOS_SERVICIO,
         Resource.MATRICULAS_HORARIO,
-        Resource.RUTINA_PROGRESO,
-        Resource.ASISTENCIA,
-        Resource.CONFIGURACION_GIMNASIO,
     )
 
     def run(self, rules: DomainComponents) -> None:

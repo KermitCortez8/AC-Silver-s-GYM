@@ -49,9 +49,9 @@ flowchart LR
 ni consulta Supabase. Las contraseñas se procesan mediante `PasswordHasher`,
 inyectado por la aplicación.
 
-`GymService` coordina las operaciones de aplicación por módulo. Consulta el
-repositorio o ejecuta una unidad de trabajo que aplica las reglas sobre los datos
-cargados. Las consultas y los resultados de comandos devuelven copias para evitar
+`GymService` coordina las operaciones de aplicación por módulo. El puerto recibe
+comandos y consultas que declaran sus recursos mediante `Resource` y ejecutan
+reglas a través de componentes explícitos. Las consultas y los resultados de comandos devuelven copias para evitar
 que un consumidor modifique el estado persistido sin pasar por una operación.
 Clientes y asistencia utilizan operaciones públicas y modelos de lectura en lugar
 de acceder al estado, los bloqueos o los métodos privados de otro servicio.
@@ -64,13 +64,22 @@ Se conservan la caché y la detección diferencial de cambios. Las matrículas y
 asistencias mantienen sus RPC específicas; una matrícula exige la RPC y nunca
 recurre a un INSERT sin sus locks. Las demás mutaciones se confirman mediante
 `commit_gym_transaction` (migración 015), incluyendo borrados y detalles de venta.
-La RPC bloquea las tablas de la instantánea, comprueba que no cambiaron y confirma
+La RPC bloquea las tablas de los recursos declarados, comprueba que no cambiaron y confirma
 todas las operaciones o ninguna. Ante un conflicto, el repositorio refresca y
 recalcula las reglas, hasta tres intentos. No se usan compensaciones HTTP.
+
+Los comandos de horarios y tienda declaran sus dependencias de lectura y escritura
+por operación. Guardar una rutina necesita solamente el catálogo; matricular carga
+clientes, membresías, catálogo, horarios de servicio y matrículas antes de ejecutar
+su RPC. El resumen de asistencia usa conteos filtrados, visitas abiertas y ocho
+entradas recientes; no materializa el historial cerrado. El historial conserva su
+consulta paginada independiente.
 
 `gym_identity_floors` combina los IDs actuales, las secuencias y una marca creciente
 para evitar colisiones entre procesos y reutilización después de borrar. El código
 visible del usuario se persiste en `codigo_usuario` y no cambia al modificar su rol.
+La migración 016 concede a `service_role` los permisos sobre las secuencias que
+necesitan esas RPC para consultar y avanzar identidades bajo `SECURITY INVOKER`.
 Las RPC genéricas solo son ejecutables con `service_role`; no se exponen a usuarios
 anónimos ni autenticados directamente. La migración 014 conserva los campos de
 promociones, membresías, inventario y productos que ahora leen y escriben los mappers.
@@ -103,24 +112,29 @@ están en [correcciones-prioritarias.md](correcciones-prioritarias.md).
 | Dominio | `frontend/src/domain/` | Cálculos, normalización y validaciones de clientes, membresías, pagos, asistencia y calendarios. |
 | Infraestructura | `frontend/src/infrastructure/` | HTTP, SDK de Google, configuración del entorno, almacenamiento de sesión y preferencias del navegador. |
 
-`frontend/src/bootstrap.js` configura los adaptadores antes de montar Vue.
-`application/ports/services.js` permite sustituir esas capacidades en pruebas sin
-realizar solicitudes reales. Las vistas utilizan servicios de aplicación con
-operaciones de catálogo, pagos, asistencia e imágenes.
+`frontend/src/bootstrap.js` instala los adaptadores explícitamente para una
+instancia de Pinia antes de montar Vue. `application/ports/services.js` los asocia
+con su propietario mediante un `WeakMap`, impide reinstalarlos y conserva una copia
+inmutable de la configuración. Los servicios capturan sus adaptadores y la sesión
+de esa instancia al construirse. Instalar otra aplicación no redirige consumidores
+existentes. Las pruebas pueden inyectar capacidades sin realizar solicitudes reales.
+Las vistas utilizan servicios de aplicación con operaciones de catálogo, pagos,
+asistencia e imágenes.
 
 `gymStore.js` conserva su nombre y su interfaz pública como fachada de Pinia.
 Las operaciones están separadas en `application/modules/`: clientes, membresías,
 asistencia, inventario, horarios, usuarios, tienda, panel y sincronización. Los
-módulos comparten un contexto de estado para conservar las mismas referencias
-reactivas y la coordinación existente entre secciones. Al cambiar o cerrar sesión
+módulos reciben contextos acotados con las referencias y capacidades que necesitan,
+ensamblados en `application/services/gymModules.js`. Al cambiar o cerrar sesión
 se vacían los datos de negocio y las cachés. `sessionStore` aporta una generación
 independiente de HTTP y autenticación; los adaptadores de aplicación rechazan
 respuestas de una generación anterior antes de publicar datos.
 
-Usuarios y configuración del gimnasio reciben repositorios con operaciones que
+Los módulos reciben repositorios con operaciones que
 devuelven datos (`save`, `remove` y `load`). Su transporte HTTP está en
-`infrastructure/repositories/` y se conecta en `bootstrap.js`; estos dos módulos
-ya no construyen solicitudes ni interpretan respuestas HTTP. La actualización de
+`infrastructure/repositories/` y se conecta en `bootstrap.js`; los módulos
+ya no construyen solicitudes ni interpretan respuestas HTTP. Sincronización recibe
+su gateway al ensamblarse. La actualización de
 usuarios reutiliza una única función de normalización e inserción o reemplazo.
 
 Se retiró la función vacía `persist()` y sus llamadas: los cambios remotos siguen
@@ -137,28 +151,46 @@ se conectan desde infraestructura. Las vistas y las reglas no ejecutan `fetch`
 ni acceden a `localStorage`. Los cálculos de calendarios tampoco dependen de las
 utilidades de presentación.
 
+Las vistas de clientes y tienda delegan formularios, pagos de membresía y selección
+de imágenes en composables de presentación. Sus diálogos tienen componentes
+propios. El registro de asistencia por código resuelve al cliente y reutiliza la
+misma operación de registro por ID.
+
+`TrainerRoutineMonitorView` ensambla búsqueda, asignaciones, progreso y descanso
+mediante composables con capacidades explícitas. La asignación directa y la del
+diálogo reutilizan el mismo guardado. Las fichas de matrícula, el historial y los
+diálogos son componentes separados; un solo temporizador alimenta sus dos
+representaciones. Los borradores de ejercicios y las confirmaciones de
+desvinculación tienen selección independiente.
+
+`AttendanceView` coordina pestañas y compone resumen, búsqueda, visitas generales,
+horarios y salidas pendientes. `useAttendanceControl` coordina mutaciones y
+refrescos; `useAttendanceLookup` descarta búsquedas reemplazadas. Los componentes
+reciben datos y emiten acciones; no acceden al transporte. Los estilos de control
+se comparten bajo `.attendance-page` para conservar su alcance tras la extracción.
+
 ## Límites actuales de la separación
 
 La organización y las dependencias principales siguen las cuatro capas, pero
 todavía existen decisiones que limitan su independencia:
 
-- El contrato `GymRepository` expone operaciones sobre un diccionario de estado.
-  La aplicación conoce sus claves y `GymService` concentra el acceso a varios
-  módulos. Repositorios por entidad y unidades de trabajo específicas permitirían
-  cambiar la persistencia con menos conocimiento de ese estado compartido.
-- Algunas rutas de clientes todavía coordinan el registro y la creación de un
-  checkout. Esa coordinación podría trasladarse a un caso de uso completo que
-  recibiera los proveedores como dependencias.
-- Los módulos del frontend usan un contexto compartido y las dependencias se
-  registran globalmente al arrancar. Son módulos separados detrás de una fachada
-  de Pinia; no son stores independientes.
-- Otros módulos del frontend conservan respuestas HTTP con `ok`, `json()` y opciones
-  de transporte utilizadas por módulos de aplicación. Una separación más estricta
-  devolvería datos mediante repositorios de clientes, pagos y horarios, dejando
-  esos detalles enteramente en infraestructura.
+- `GymService` y `gymStore` siguen siendo fachadas centrales de varios módulos.
+  El dominio conserva un estado compartido internamente y métodos antiguos de
+  compatibilidad; los registros de negocio siguen siendo diccionarios.
+- La transacción general compara instantáneas completas de cada recurso elegido
+  y bloquea tablas. Acotar los recursos reduce conflictos ajenos, pero no aporta
+  concurrencia por fila ni elimina el coste de cargar una tabla seleccionada.
+- Clientes, membresías y pedidos todavía tienen consultas que devuelven listas
+  completas. La paginación de asistencia y su resumen especializado no equivalen
+  a paginación uniforme de toda la API.
+- Los módulos del frontend conservan coordinación explícita detrás de una fachada
+  de Pinia. Las vistas de clientes y tienda son más pequeñas, pero aún reúnen
+  listados, filtros y acciones; otras pantallas extensas requieren revisión propia.
 
 Las pruebas de imports comprueban dependencias entre capas; por sí solas no
 demuestran que todas las responsabilidades estén completamente separadas.
+La evaluación de los objetivos y su evidencia se recoge en
+[revision-refactorizacion.md](revision-refactorizacion.md).
 
 ## Compatibilidad y verificación
 

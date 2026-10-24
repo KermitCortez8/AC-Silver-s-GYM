@@ -273,21 +273,16 @@ import {
   reactive,
   ref,
 } from 'vue';
-
 import { useRoute, useRouter } from 'vue-router';
-
 import { useAuth } from '../../application/composables/useAuth';
+import { useAppResources } from '../../application/services/appResources.js';
+import { useAuthentication } from '../../application/services/authentication.js';
 
-import { GOOGLE_CONFIG } from '../../application/services/appResources.js';
+const { GOOGLE_CONFIG, landingImageUrl } = useAppResources();
 
-import {
-  authenticateWithGoogleCredential,
+const { authenticateWithGoogleCredential,
   authenticateWithPassword,
-  loadGoogleIdentityScript,
-} from '../../application/services/authentication.js';
-
-import { landingImageUrl } from '../../application/services/appResources.js';
-
+  loadGoogleIdentityScript, } = useAuthentication();
 
 const router = useRouter();
 const route = useRoute();
@@ -298,7 +293,6 @@ const {
   isAuthenticated,
   dashboardPath,
 } = useAuth();
-
 
 /* -------------------------------------------------------------------------- */
 /* ESTADOS                                                                    */
@@ -318,12 +312,10 @@ const googleReady = ref(false);
 
 const googleButtonRef = ref(null);
 
-
 const passwordForm = reactive({
   correo: '',
   password: '',
 });
-
 
 /* -------------------------------------------------------------------------- */
 /* IMAGEN                                                                     */
@@ -331,11 +323,9 @@ const passwordForm = reactive({
 
 const panelImage = landingImageUrl('fitness.jpg');
 
-
 const handlePanelImageError = (event) => {
   event.currentTarget.style.display = 'none';
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* NAVEGACIÓN SEGÚN ROL                                                       */
@@ -355,7 +345,6 @@ const navigateByRole = (role) => {
   router.replace('/user/dashboard');
 };
 
-
 /* -------------------------------------------------------------------------- */
 /* CANCELAR VINCULACIÓN GOOGLE                                                */
 /* -------------------------------------------------------------------------- */
@@ -365,7 +354,6 @@ const cancelLink = () => {
   linkPassword.value = '';
   googleError.value = '';
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* LOGIN / VINCULACIÓN CON GOOGLE                                             */
@@ -426,7 +414,6 @@ const completeLogin = async (credential, password = '') => {
   }
 };
 
-
 /* -------------------------------------------------------------------------- */
 /* LOGIN CORREO / PASSWORD                                                    */
 /* -------------------------------------------------------------------------- */
@@ -464,7 +451,6 @@ const handlePasswordLogin = async () => {
     processing.value = false;
   }
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* INICIALIZAR GOOGLE IDENTITY SERVICES                                       */
@@ -565,7 +551,6 @@ const initializeGoogleSignIn = async () => {
       'No se pudo cargar el inicio de sesión con Google.';
   }
 };
-
 
 /* -------------------------------------------------------------------------- */
 /* MOUNT                                                                      */

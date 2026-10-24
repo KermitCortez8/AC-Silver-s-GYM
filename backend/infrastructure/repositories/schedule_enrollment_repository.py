@@ -11,6 +11,7 @@ from infrastructure.repositories.gym_snapshot_reader import GymSnapshotReader
 
 
 class ScheduleEnrollmentRepository:
+    RESOURCES = ("clientes", "membresia", "catalogo_rutina", "horarios_servicio", "matriculas_horario")
 
     def __init__(self, database, cache: GymCache, reader: GymSnapshotReader):
         self.database, self.cache, self.reader = database, cache, reader
@@ -21,7 +22,7 @@ class ScheduleEnrollmentRepository:
         with self.cache.lock:
             # Una matrícula siempre parte del estado remoto más reciente, incluso
             # si la caché general todavía no alcanzó su TTL.
-            self.reader.load()
+            self.reader.load(self.RESOURCES)
             if payload.get("dni"):
                 cliente = GymDomainService(self.cache.state).get_cliente_by_dni(str(payload.get("dni") or "").strip())
                 if not cliente:
@@ -73,7 +74,8 @@ class ScheduleEnrollmentRepository:
             # La siguiente petición recarga también las matrículas creadas por
             # cualquier otra instancia del backend.
             self.cache.last_refresh_at = 0.0
-            self.cache.resource_refreshed_at.clear()
+            for resource in ("horarios_servicio", "matriculas_horario"):
+                self.cache.resource_refreshed_at.pop(resource, None)
 
             result = next(
                 row

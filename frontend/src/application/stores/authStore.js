@@ -1,15 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { useSessionStore } from './sessionStore.js';
-import {
-  saveAuthSession,
-  getAuthSession,
-  clearAuthStorage,
-  disableGoogleAutoSelect,
-} from '../services/authentication.js';
+import { useAuthentication } from '../services/authentication.js';
 import { formatUserData, isValidUser } from '../../domain/utils/authRules.js';
-import { APP_CONFIG } from '../services/appResources.js';
-import { apiGet } from '../services/backendGateway.js';
+import { useAppResources } from '../services/appResources.js';
+import { createBackendGateway } from '../services/backendGateway.js';
 import { createSessionValidator } from '../services/sessionValidation.js';
 
 /**
@@ -34,6 +29,9 @@ const normalizeStoredUser = (userData) => {
 };
 
 export const useAuthStore = defineStore('auth', () => {
+  const { saveAuthSession, getAuthSession, clearAuthStorage, disableGoogleAutoSelect } = useAuthentication();
+  const { APP_CONFIG } = useAppResources();
+  const { apiGet } = createBackendGateway();
   // State
   const user = ref(null);
   const token = ref(null);

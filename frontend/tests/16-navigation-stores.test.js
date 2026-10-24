@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 let server;
 let useAuthStore;
 let useGymStore;
+let installServices;
 let auth;
 let gym;
 
@@ -116,7 +117,7 @@ before(async () => {
     },
   });
 
-  await server.ssrLoadModule('/src/bootstrap.js');
+  ({ installServices } = await server.ssrLoadModule('/src/bootstrap.js'));
   ({ useAuthStore } = await server.ssrLoadModule('/src/application/stores/authStore.js'));
   ({ useGymStore } = await server.ssrLoadModule('/src/application/stores/gymStore.js'));
 });
@@ -136,6 +137,7 @@ beforeEach(() => {
   };
 
   const pinia = createPinia();
+  installServices(pinia);
   auth = useAuthStore(pinia);
   gym = useGymStore(pinia);
 });

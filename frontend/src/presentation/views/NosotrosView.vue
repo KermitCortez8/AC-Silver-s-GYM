@@ -205,8 +205,10 @@
 
 <script setup>
 import LandingNavigation from '../components/LandingNavigation.vue';
-import { serviceImages } from '../config/serviceImages';
+import { useServiceImages } from '../config/serviceImages';
 import heroBanner from '../assets/hero-banner.png';
+
+const serviceImages = useServiceImages();
 
 const gymAddress = 'Jirón Vista Alegre 606, Lima 15056';
 

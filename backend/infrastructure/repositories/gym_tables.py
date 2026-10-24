@@ -32,8 +32,6 @@ def selected_resources(resources=None) -> set[str]:
     selected = set(READ_STATE_KEYS if resources is None else resources)
     if selected - set(READ_STATE_KEYS):
         raise ValueError("Recurso de lectura desconocido")
-    if "pedidos_tienda" in selected:
-        selected.update(("inventario", "productos_tienda"))
     for related in RELATED_READS:
         if selected & related:
             selected.update(related)
