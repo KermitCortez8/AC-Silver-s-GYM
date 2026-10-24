@@ -4,12 +4,13 @@ from dataclasses import dataclass
 from typing import ClassVar
 from domain.models.resources import Resource
 from domain.services.domain_components import DomainComponents
-from application.operations.contracts import Record, Identifier
+from application.operations.contracts import Record
 
 
 @dataclass(frozen=True)
 class ProductosTiendaQuery:
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA)
+    operation_kind: ClassVar[str] = 'query'
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.PRODUCTOS_TIENDA,)
 
     def run(self, rules: DomainComponents) -> list[Record]:
         return rules.store.productos_tienda()
@@ -17,8 +18,9 @@ class ProductosTiendaQuery:
 
 @dataclass(frozen=True)
 class GetProductoTiendaQuery:
+    operation_kind: ClassVar[str] = 'query'
     id_producto: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.PRODUCTOS_TIENDA,)
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.store.get_producto_tienda(self.id_producto)
@@ -26,9 +28,16 @@ class GetProductoTiendaQuery:
 
 @dataclass(frozen=True)
 class UpsertProductoTiendaCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
     actor: object = None
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.MOV_INV, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+        Resource.PEDIDOS_TIENDA,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.store.upsert_producto_tienda(self.payload, self.actor)
@@ -36,8 +45,15 @@ class UpsertProductoTiendaCommand:
 
 @dataclass(frozen=True)
 class DeleteProductoTiendaCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_producto: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.MOV_INV, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+        Resource.PEDIDOS_TIENDA,
+    )
 
     def run(self, rules: DomainComponents) -> None:
         return rules.store.delete_producto_tienda(self.id_producto)
@@ -45,7 +61,8 @@ class DeleteProductoTiendaCommand:
 
 @dataclass(frozen=True)
 class PedidosTiendaQuery:
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.PEDIDOS_TIENDA)
+    operation_kind: ClassVar[str] = 'query'
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.PEDIDOS_TIENDA,)
 
     def run(self, rules: DomainComponents) -> list[Record]:
         return rules.store.pedidos_tienda()
@@ -53,8 +70,15 @@ class PedidosTiendaQuery:
 
 @dataclass(frozen=True)
 class CrearPedidoTiendaCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.MOV_INV, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+        Resource.PEDIDOS_TIENDA,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.store.crear_pedido_tienda(self.payload)
@@ -62,8 +86,15 @@ class CrearPedidoTiendaCommand:
 
 @dataclass(frozen=True)
 class CrearPedidoTiendaPagoPendienteCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.MOV_INV, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+        Resource.PEDIDOS_TIENDA,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.store.crear_pedido_tienda_pago_pendiente(self.payload)
@@ -71,8 +102,9 @@ class CrearPedidoTiendaPagoPendienteCommand:
 
 @dataclass(frozen=True)
 class GetPedidoTiendaQuery:
+    operation_kind: ClassVar[str] = 'query'
     id_pedido: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.PEDIDOS_TIENDA,)
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.store.get_pedido_tienda(self.id_pedido)
@@ -80,7 +112,8 @@ class GetPedidoTiendaQuery:
 
 @dataclass(frozen=True)
 class PedidosPagoPendienteQuery:
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.PEDIDOS_TIENDA)
+    operation_kind: ClassVar[str] = 'query'
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.PEDIDOS_TIENDA,)
 
     def run(self, rules: DomainComponents) -> list[Record]:
         return rules.store.pedidos_pago_pendiente()
@@ -88,6 +121,7 @@ class PedidosPagoPendienteQuery:
 
 @dataclass(frozen=True)
 class MinutosDesdeCreacionQuery:
+    operation_kind: ClassVar[str] = 'query'
     pedido: Record
     resources: ClassVar[tuple[Resource, ...]] = ()
 
@@ -97,9 +131,16 @@ class MinutosDesdeCreacionQuery:
 
 @dataclass(frozen=True)
 class RegistrarSesionPagoPedidoCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_pedido: int
     session_id: str
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.MOV_INV, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+        Resource.PEDIDOS_TIENDA,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.store.registrar_sesion_pago_pedido(self.id_pedido, self.session_id)
@@ -107,9 +148,16 @@ class RegistrarSesionPagoPedidoCommand:
 
 @dataclass(frozen=True)
 class ConfirmarPagoPedidoTiendaCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_pedido: int
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.MOV_INV, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+        Resource.PEDIDOS_TIENDA,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.store.confirmar_pago_pedido_tienda(self.id_pedido, self.payload)
@@ -117,9 +165,16 @@ class ConfirmarPagoPedidoTiendaCommand:
 
 @dataclass(frozen=True)
 class CancelarPedidoPagoPendienteCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_pedido: int
     observacion: str = ''
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.MOV_INV, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+        Resource.PEDIDOS_TIENDA,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.store.cancelar_pedido_pago_pendiente(self.id_pedido, self.observacion)
@@ -127,10 +182,17 @@ class CancelarPedidoPagoPendienteCommand:
 
 @dataclass(frozen=True)
 class ActualizarPedidoTiendaCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_pedido: int
     payload: Record
     actor: object = None
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.INVENTARIO, Resource.PRODUCTOS_TIENDA, Resource.MOV_INV, Resource.PEDIDOS_TIENDA)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+        Resource.PEDIDOS_TIENDA,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.store.actualizar_pedido_tienda(self.id_pedido, self.payload, self.actor)

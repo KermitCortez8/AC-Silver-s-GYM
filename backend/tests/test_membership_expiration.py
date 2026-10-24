@@ -135,7 +135,7 @@ def test_current_paid_renewal_preserves_access_and_expires_only_old_membership(g
     previous.update(id_membresia=0, estado='ACTIVO', fecha_fin='2026-09-01')
     gym.state['membresia'].append(previous)
     assert gym.expire_memberships() is True
-    assert previous['estado'] == 'VENCIDA'
+    assert next(row for row in gym.membresias() if row['id_membresia'] == previous['id_membresia'])['estado'] == 'VENCIDA'
     assert gym.state['clientes'][0]['estado'] == 'ACTIVO'
     AuthService(gym).session_for_client(gym.state['clientes'][0])
 
@@ -159,7 +159,7 @@ def test_duplicate_stripe_payment_cannot_unblock_expired_account(gym):
         'id_membresia': membership['id_membresia'], 'monto_pago': membership['monto_pago'],
         'referencia_pago': 'cs_paid_original', 'metodo_pago': 'stripe',
     })
-    assert membership['estado'] == 'VENCIDA'
+    assert gym.latest_membership(membership['id_cliente'])['estado'] == 'VENCIDA'
     assert gym.state['clientes'][0]['estado'] == 'VENCIDA'
 
 

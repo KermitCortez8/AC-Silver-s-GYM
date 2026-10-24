@@ -39,7 +39,8 @@ from domain.services.dashboard_rules import DashboardRules
 
 class GymDomainService:
     def __init__(self, state: dict[str, Any] | None = None, passwords: PasswordHasher | None = None) -> None:
-        self._context = RuleContext(state if state is not None else self._seed(), passwords)
+        self._context = RuleContext(state if state is not None else self._seed(), passwords,
+                                    today_provider=lambda: _today_iso(), now_provider=lambda: _now_iso())
 
     @property
     def context(self):

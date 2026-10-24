@@ -9,6 +9,7 @@ from application.operations.contracts import Record, Identifier
 
 @dataclass(frozen=True)
 class GetUsuarioQuery:
+    operation_kind: ClassVar[str] = 'query'
     id_usuario: Identifier
     resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO,)
 
@@ -18,6 +19,7 @@ class GetUsuarioQuery:
 
 @dataclass(frozen=True)
 class GetUsuarioByEmailQuery:
+    operation_kind: ClassVar[str] = 'query'
     email: str
     resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO,)
 
@@ -27,6 +29,7 @@ class GetUsuarioByEmailQuery:
 
 @dataclass(frozen=True)
 class UsuariosQuery:
+    operation_kind: ClassVar[str] = 'query'
     resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO,)
 
     def run(self, rules: DomainComponents) -> list[Record]:
@@ -35,6 +38,7 @@ class UsuariosQuery:
 
 @dataclass(frozen=True)
 class UsuariosNormalizedQuery:
+    operation_kind: ClassVar[str] = 'query'
     resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO,)
 
     def run(self, rules: DomainComponents) -> list[Record]:
@@ -43,6 +47,7 @@ class UsuariosNormalizedQuery:
 
 @dataclass(frozen=True)
 class UpsertUsuarioCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO,)
 
@@ -52,6 +57,7 @@ class UpsertUsuarioCommand:
 
 @dataclass(frozen=True)
 class DeleteUsuarioCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_usuario: Identifier
     resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO,)
 
@@ -61,7 +67,8 @@ class DeleteUsuarioCommand:
 
 @dataclass(frozen=True)
 class ClientesQuery:
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA)
+    operation_kind: ClassVar[str] = 'query'
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA)
 
     def run(self, rules: DomainComponents) -> list[Record]:
         return rules.accounts.clientes()
@@ -69,7 +76,8 @@ class ClientesQuery:
 
 @dataclass(frozen=True)
 class ClientesNormalizedQuery:
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA)
+    operation_kind: ClassVar[str] = 'query'
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA)
 
     def run(self, rules: DomainComponents) -> list[Record]:
         return rules.accounts.clientes_normalized()
@@ -77,8 +85,15 @@ class ClientesNormalizedQuery:
 
 @dataclass(frozen=True)
 class UpsertClienteCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.PROMOCIONES)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.PROMOCIONES,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.accounts.upsert_cliente(self.payload)
@@ -86,8 +101,9 @@ class UpsertClienteCommand:
 
 @dataclass(frozen=True)
 class GetClienteQuery:
+    operation_kind: ClassVar[str] = 'query'
     id_cliente: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA)
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.accounts.get_cliente(self.id_cliente)
@@ -95,8 +111,9 @@ class GetClienteQuery:
 
 @dataclass(frozen=True)
 class GetClienteByDniQuery:
+    operation_kind: ClassVar[str] = 'query'
     dni: str
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA)
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.accounts.get_cliente_by_dni(self.dni)
@@ -104,8 +121,9 @@ class GetClienteByDniQuery:
 
 @dataclass(frozen=True)
 class GetClienteByEmailQuery:
+    operation_kind: ClassVar[str] = 'query'
     email: str
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA)
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.accounts.get_cliente_by_email(self.email)
@@ -113,8 +131,9 @@ class GetClienteByEmailQuery:
 
 @dataclass(frozen=True)
 class GetAccountByGoogleSubQuery:
+    operation_kind: ClassVar[str] = 'query'
     subject: str
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.USUARIO)
 
     def run(self, rules: DomainComponents) -> tuple[str, Record] | None:
         return rules.accounts.get_account_by_google_sub(self.subject)
@@ -122,10 +141,17 @@ class GetAccountByGoogleSubQuery:
 
 @dataclass(frozen=True)
 class LinkGoogleAccountCommand:
+    operation_kind: ClassVar[str] = 'command'
     kind: str
     account_id: str
     subject: str
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.PROMOCIONES)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.PROMOCIONES,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.accounts.link_google_account(self.kind, self.account_id, self.subject)
@@ -133,6 +159,7 @@ class LinkGoogleAccountCommand:
 
 @dataclass(frozen=True)
 class AuthenticateUsuarioPasswordQuery:
+    operation_kind: ClassVar[str] = 'query'
     correo: str
     password: str
     resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO,)
@@ -143,9 +170,10 @@ class AuthenticateUsuarioPasswordQuery:
 
 @dataclass(frozen=True)
 class AuthenticateClientePasswordQuery:
+    operation_kind: ClassVar[str] = 'query'
     correo: str
     password: str
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA)
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.accounts.authenticate_cliente_password(self.correo, self.password)
@@ -153,8 +181,18 @@ class AuthenticateClientePasswordQuery:
 
 @dataclass(frozen=True)
 class DeleteClienteCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_cliente: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.PROMOCIONES)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.ASISTENCIA,
+        Resource.CLIENTES,
+        Resource.HORARIO,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.PROMOCIONES,
+        Resource.TICKETS_ATENCION,
+        Resource.USUARIO,
+    )
 
     def run(self, rules: DomainComponents) -> None:
         return rules.accounts.delete_cliente(self.id_cliente)
@@ -162,9 +200,16 @@ class DeleteClienteCommand:
 
 @dataclass(frozen=True)
 class RegistrarClientePublicoCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
     origen_registro: str = 'PUBLICO'
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.PROMOCIONES)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.PROMOCIONES,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.memberships.registrar_cliente_publico(self.payload, origen_registro=self.origen_registro)
@@ -172,9 +217,16 @@ class RegistrarClientePublicoCommand:
 
 @dataclass(frozen=True)
 class ConfirmarPagoClientePublicoCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_cliente: int
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.PROMOCIONES)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.PROMOCIONES,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.memberships.confirmar_pago_cliente_publico(self.id_cliente, self.payload)
@@ -182,8 +234,15 @@ class ConfirmarPagoClientePublicoCommand:
 
 @dataclass(frozen=True)
 class ConfirmarPagoManualClienteCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_cliente: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.PROMOCIONES)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.PROMOCIONES,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.memberships.confirmar_pago_manual_cliente(self.id_cliente)

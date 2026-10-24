@@ -1,5 +1,5 @@
-from infrastructure.repositories.operation_adapter import query_operation, command_operation
 """Fachada del puerto GymRepository; delega cada capacidad a su componente."""
+from infrastructure.repositories.operation_adapter import query_operation, command_operation
 from domain.services.gym_domain_service import GymDomainService
 from infrastructure.supabase_client import SupabaseRestClient
 from infrastructure.repositories.gym_cache import GymCache

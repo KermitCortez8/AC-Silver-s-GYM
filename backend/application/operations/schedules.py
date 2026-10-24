@@ -4,11 +4,12 @@ from dataclasses import dataclass
 from typing import ClassVar
 from domain.models.resources import Resource
 from domain.services.domain_components import DomainComponents
-from application.operations.contracts import Record, Identifier
+from application.operations.contracts import Record
 
 
 @dataclass(frozen=True)
 class CatalogoRutinaQuery:
+    operation_kind: ClassVar[str] = 'query'
     resources: ClassVar[tuple[Resource, ...]] = (Resource.CATALOGO_RUTINA,)
 
     def run(self, rules: DomainComponents) -> list[Record]:
@@ -17,8 +18,21 @@ class CatalogoRutinaQuery:
 
 @dataclass(frozen=True)
 class UpsertRutinaCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.CATALOGO_RUTINA, Resource.HORARIO, Resource.HORARIOS_SERVICIO, Resource.MATRICULAS_HORARIO, Resource.RUTINA_PROGRESO, Resource.ASISTENCIA, Resource.CONFIGURACION_GIMNASIO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.HORARIO,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.RUTINA_PROGRESO,
+        Resource.ASISTENCIA,
+        Resource.CONFIGURACION_GIMNASIO,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.schedules.upsert_rutina(self.payload)
@@ -26,6 +40,7 @@ class UpsertRutinaCommand:
 
 @dataclass(frozen=True)
 class HorariosQuery:
+    operation_kind: ClassVar[str] = 'query'
     resources: ClassVar[tuple[Resource, ...]] = (Resource.HORARIO,)
 
     def run(self, rules: DomainComponents) -> list[Record]:
@@ -34,8 +49,21 @@ class HorariosQuery:
 
 @dataclass(frozen=True)
 class UpsertHorarioCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.CATALOGO_RUTINA, Resource.HORARIO, Resource.HORARIOS_SERVICIO, Resource.MATRICULAS_HORARIO, Resource.RUTINA_PROGRESO, Resource.ASISTENCIA, Resource.CONFIGURACION_GIMNASIO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.HORARIO,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.RUTINA_PROGRESO,
+        Resource.ASISTENCIA,
+        Resource.CONFIGURACION_GIMNASIO,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.schedules.upsert_horario(self.payload)
@@ -43,8 +71,9 @@ class UpsertHorarioCommand:
 
 @dataclass(frozen=True)
 class HorariosServicioQuery:
+    operation_kind: ClassVar[str] = 'query'
     solo_activos: bool = False
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.MATRICULAS_HORARIO, Resource.HORARIOS_SERVICIO, Resource.CATALOGO_RUTINA, Resource.ASISTENCIA, Resource.RUTINA_PROGRESO)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.CATALOGO_RUTINA, Resource.HORARIOS_SERVICIO, Resource.MATRICULAS_HORARIO)
 
     def run(self, rules: DomainComponents) -> list[Record]:
         return rules.schedules.horarios_servicio(self.solo_activos)
@@ -52,8 +81,9 @@ class HorariosServicioQuery:
 
 @dataclass(frozen=True)
 class GetHorarioServicioQuery:
+    operation_kind: ClassVar[str] = 'query'
     id_horario_servicio: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.MATRICULAS_HORARIO, Resource.HORARIOS_SERVICIO, Resource.CATALOGO_RUTINA, Resource.ASISTENCIA, Resource.RUTINA_PROGRESO)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.HORARIOS_SERVICIO,)
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.schedules.get_horario_servicio(self.id_horario_servicio)
@@ -61,8 +91,21 @@ class GetHorarioServicioQuery:
 
 @dataclass(frozen=True)
 class UpsertHorarioServicioCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.CATALOGO_RUTINA, Resource.HORARIO, Resource.HORARIOS_SERVICIO, Resource.MATRICULAS_HORARIO, Resource.RUTINA_PROGRESO, Resource.ASISTENCIA, Resource.CONFIGURACION_GIMNASIO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.HORARIO,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.RUTINA_PROGRESO,
+        Resource.ASISTENCIA,
+        Resource.CONFIGURACION_GIMNASIO,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.schedules.upsert_horario_servicio(self.payload)
@@ -70,8 +113,21 @@ class UpsertHorarioServicioCommand:
 
 @dataclass(frozen=True)
 class DeleteHorarioServicioCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_horario_servicio: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.CATALOGO_RUTINA, Resource.HORARIO, Resource.HORARIOS_SERVICIO, Resource.MATRICULAS_HORARIO, Resource.RUTINA_PROGRESO, Resource.ASISTENCIA, Resource.CONFIGURACION_GIMNASIO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.HORARIO,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.RUTINA_PROGRESO,
+        Resource.ASISTENCIA,
+        Resource.CONFIGURACION_GIMNASIO,
+    )
 
     def run(self, rules: DomainComponents) -> None:
         return rules.schedules.delete_horario_servicio(self.id_horario_servicio)
@@ -79,10 +135,18 @@ class DeleteHorarioServicioCommand:
 
 @dataclass(frozen=True)
 class MatriculasHorarioQuery:
+    operation_kind: ClassVar[str] = 'query'
     id_cliente: int | None = None
     dni: str | None = None
     solo_activas: bool = False
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.MATRICULAS_HORARIO, Resource.HORARIOS_SERVICIO, Resource.CATALOGO_RUTINA, Resource.ASISTENCIA, Resource.RUTINA_PROGRESO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.ASISTENCIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.CLIENTES,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.MEMBRESIA,
+    )
 
     def run(self, rules: DomainComponents) -> list[Record]:
         return rules.schedules.matriculas_horario(self.id_cliente, self.dni, self.solo_activas)
@@ -90,8 +154,9 @@ class MatriculasHorarioQuery:
 
 @dataclass(frozen=True)
 class GetMatriculaHorarioQuery:
+    operation_kind: ClassVar[str] = 'query'
     id_matricula: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.MATRICULAS_HORARIO, Resource.HORARIOS_SERVICIO, Resource.CATALOGO_RUTINA, Resource.ASISTENCIA, Resource.RUTINA_PROGRESO)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.MATRICULAS_HORARIO,)
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.schedules.get_matricula_horario(self.id_matricula)
@@ -99,9 +164,22 @@ class GetMatriculaHorarioQuery:
 
 @dataclass(frozen=True)
 class AsignarRutinaMatriculaCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_matricula: int
     id_rutina: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.CATALOGO_RUTINA, Resource.HORARIO, Resource.HORARIOS_SERVICIO, Resource.MATRICULAS_HORARIO, Resource.RUTINA_PROGRESO, Resource.ASISTENCIA, Resource.CONFIGURACION_GIMNASIO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.HORARIO,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.RUTINA_PROGRESO,
+        Resource.ASISTENCIA,
+        Resource.CONFIGURACION_GIMNASIO,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.schedules.asignar_rutina_matricula(self.id_matricula, self.id_rutina)
@@ -109,8 +187,17 @@ class AsignarRutinaMatriculaCommand:
 
 @dataclass(frozen=True)
 class TrainerRutinasClienteQuery:
+    operation_kind: ClassVar[str] = 'query'
     dni: str
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.MATRICULAS_HORARIO, Resource.HORARIOS_SERVICIO, Resource.CATALOGO_RUTINA, Resource.ASISTENCIA, Resource.RUTINA_PROGRESO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.ASISTENCIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.CLIENTES,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.MEMBRESIA,
+        Resource.RUTINA_PROGRESO,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.schedules.trainer_rutinas_cliente(self.dni)
@@ -118,9 +205,22 @@ class TrainerRutinasClienteQuery:
 
 @dataclass(frozen=True)
 class RegistrarProgresoRutinaCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_matricula: int
     payload: Record
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.CATALOGO_RUTINA, Resource.HORARIO, Resource.HORARIOS_SERVICIO, Resource.MATRICULAS_HORARIO, Resource.RUTINA_PROGRESO, Resource.ASISTENCIA, Resource.CONFIGURACION_GIMNASIO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.HORARIO,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.RUTINA_PROGRESO,
+        Resource.ASISTENCIA,
+        Resource.CONFIGURACION_GIMNASIO,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.schedules.registrar_progreso_rutina(self.id_matricula, self.payload)
@@ -128,7 +228,15 @@ class RegistrarProgresoRutinaCommand:
 
 @dataclass(frozen=True)
 class TrainerOverviewQuery:
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.MATRICULAS_HORARIO, Resource.HORARIOS_SERVICIO, Resource.CATALOGO_RUTINA, Resource.ASISTENCIA, Resource.RUTINA_PROGRESO)
+    operation_kind: ClassVar[str] = 'query'
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.ASISTENCIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.CLIENTES,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.MEMBRESIA,
+    )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.schedules.trainer_overview()
@@ -136,9 +244,22 @@ class TrainerOverviewQuery:
 
 @dataclass(frozen=True)
 class CancelarMatriculaHorarioCommand:
+    operation_kind: ClassVar[str] = 'command'
     id_matricula: int
     id_cliente: int | None = None
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.USUARIO, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PLANES_MEMBRESIA, Resource.CATALOGO_RUTINA, Resource.HORARIO, Resource.HORARIOS_SERVICIO, Resource.MATRICULAS_HORARIO, Resource.RUTINA_PROGRESO, Resource.ASISTENCIA, Resource.CONFIGURACION_GIMNASIO)
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.CLIENTES,
+        Resource.MEMBRESIA,
+        Resource.PLANES_MEMBRESIA,
+        Resource.CATALOGO_RUTINA,
+        Resource.HORARIO,
+        Resource.HORARIOS_SERVICIO,
+        Resource.MATRICULAS_HORARIO,
+        Resource.RUTINA_PROGRESO,
+        Resource.ASISTENCIA,
+        Resource.CONFIGURACION_GIMNASIO,
+    )
 
     def run(self, rules: DomainComponents) -> None:
         return rules.schedules.cancelar_matricula_horario(self.id_matricula, self.id_cliente)

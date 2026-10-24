@@ -92,7 +92,12 @@ class GymService:
     def save_attendance(self, row, expected_version, audit):
         return self.repository.save_attendance(row, expected_version, audit)
 
+    def apply_local_attendance(self, row, expected_version, audit, timestamp):
+        from application.operations.attendance_save import SaveAttendanceCommand
+        return self.executor.execute(SaveAttendanceCommand(row, expected_version, audit, timestamp))
+
     def change_attendance(self, operation):
+        """Compatibilidad con integraciones anteriores; los casos nuevos usan comandos."""
         return self.repository.change(operation)
 
     def productos_tienda(self) -> list[dict[str, Any]]:

@@ -12,4 +12,10 @@ def query_operation(query, state, passwords):
 
 
 def command_operation(command, state, passwords):
-    return deepcopy(command.run(GymDomainService(state, passwords).components))
+    # El comando trabaja solo sobre su unidad de datos. Un error no publica cambios
+    # parciales en caché y nunca modifica recursos ajenos a su contrato.
+    snapshot = {key: deepcopy(state.get(key, [])) for key in command.resources}
+    snapshot["_identity_floors"] = deepcopy(state.get("_identity_floors", {}))
+    result = deepcopy(command.run(GymDomainService(snapshot, passwords).components))
+    state.update({key: snapshot[key] for key in command.resources})
+    return result

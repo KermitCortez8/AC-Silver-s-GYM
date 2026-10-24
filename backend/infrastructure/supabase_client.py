@@ -107,7 +107,10 @@ class SupabaseRestClient:
         total = content_range.rsplit("/", 1)[-1]
         if not total.isdigit():
             raise RuntimeError("El servidor no devolvió el total de la consulta paginada")
-        return json.loads(raw) if raw else [], int(total)
+        rows = json.loads(raw) if raw else []
+        if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+            raise RuntimeError("El servidor devolvió una página inválida")
+        return rows, int(total)
 
     # Procesa esta operación.
     def insert(

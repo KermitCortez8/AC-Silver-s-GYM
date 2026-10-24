@@ -11,10 +11,14 @@ T_co = TypeVar("T_co", covariant=True)
 
 
 class GymQuery(Protocol[T_co]):
-    resources: ClassVar[tuple[Resource, ...]]
+    operation_kind: ClassVar[str]
+    @property
+    def resources(self) -> tuple[Resource, ...]: ...
     def run(self, rules: DomainComponents) -> T_co: ...
 
 
 class GymCommand(Protocol[T_co]):
-    resources: ClassVar[tuple[Resource, ...]]
+    operation_kind: ClassVar[str]
+    @property
+    def resources(self) -> tuple[Resource, ...]: ...
     def run(self, rules: DomainComponents) -> T_co: ...

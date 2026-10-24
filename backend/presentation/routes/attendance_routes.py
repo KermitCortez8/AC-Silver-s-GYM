@@ -50,8 +50,7 @@ def summary(user=Depends(administrator), attendance=Depends(service)):
 
 @router.get("/exportar")
 def export_history(filters: AttendanceFilters = Depends(), user=Depends(reader), attendance=Depends(service)):
-    # Una sola lectura evita repetir u omitir filas si entran visitas mientras
-    # el administrador descarga varias páginas del historial.
+    # El adaptador mantiene filtros y permisos durante toda la exportación.
     return run(lambda: attendance.records(user, **filters.model_dump()))
 
 

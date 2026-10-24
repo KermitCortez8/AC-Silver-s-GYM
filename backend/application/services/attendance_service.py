@@ -45,33 +45,16 @@ class AttendanceService:
         return result
 
     def records(self, user, desde=None, hasta=None, dni="", servicio="", estado="", tipo=""):
-        if desde and hasta and desde > hasta:
-            raise ValueError("La fecha inicial no puede ser posterior a la final.")
-        admin = user.role == "admin"
-        if not admin and not user.id_cliente:
-            raise ValueError("No encontramos tu cliente vinculado.")
-        rows = []
-        data = self.gym.attendance_history_data()
-        source = data.records
-        clients = {int(c["id_cliente"]): c for c in data.clients}
-        for row in source:
-            if not admin and (self.client_id(row) != user.id_cliente or row.get("anulado")):
-                continue
-            if desde and row.get("fecha", "") < str(desde):
-                continue
-            if hasta and row.get("fecha", "") > str(hasta):
-                continue
-            if servicio and row.get("servicio") != servicio:
-                continue
-            if tipo and self.kind(row) != tipo:
-                continue
-            if estado and self.status(row) != estado:
-                continue
-            item = self.present(row, admin, clients.get(self.client_id(row), {}))
-            if dni and item["cliente_dni"] != dni:
-                continue
-            rows.append(item)
-        return sorted(rows, key=lambda r: (r.get("fecha", ""), r.get("hora_entrada") or r.get("hora", ""), r["id_asistencia"]), reverse=True)
+        # Los contratos de listado y exportación conservan la lista completa,
+        # pero el filtrado y cada lectura acotada ocurren en persistencia.
+        rows, page = [], 1
+        while True:
+            batch = self.history(user, page=page, page_size=100, desde=desde, hasta=hasta,
+                                 dni=dni, servicio=servicio, estado=estado, tipo=tipo)
+            rows.extend(batch["items"])
+            if not batch["items"] or len(rows) >= batch["total"]:
+                return rows
+            page += 1
 
     def history(self, user, *, page=1, page_size=15, desde=None, hasta=None, dni="", servicio="", estado="", tipo=""):
         if desde and hasta and desde > hasta:
@@ -299,44 +282,4 @@ class AttendanceService:
         if saved is not None:
             return self.present(saved)
 
-        def change(state):
-            rows = state.setdefault("asistencia", [])
-            old = next((r for r in rows if r.get("id_asistencia") == row.get("id_asistencia")), None)
-            if expected is None:
-                if self.kind(row) == "general":
-                    duplicate = self.general_retry(rows, self.client_id(row), request_id)
-                else:
-                    duplicate = next((r for r in rows if not r.get("anulado")
-                                      and self.client_id(r) == self.client_id(row)
-                                      and r.get("id_matricula") == row.get("id_matricula")
-                                      and r.get("fecha") == row["fecha"]), None)
-                if duplicate:
-                    return duplicate
-                if self.kind(row) == "general":
-                    self.general_context(self.client_id(row), self.now())
-                else:
-                    enrollment = next(e for e in state["matriculas_horario"] if e["id_matricula"] == row["id_matricula"])
-                    self.entry_context(enrollment, self.now())
-                row["id_asistencia"] = max((r["id_asistencia"] for r in rows), default=0) + 1
-            elif not old or int(old.get("version") or 0) != expected:
-                if operation == "salida" and old and old.get("hora_salida") and not old.get("anulado"):
-                    return old
-                raise AttendanceConflict("El registro cambió. Actualiza el historial e inténtalo de nuevo.")
-            if not row.get("anulado"):
-                for other in rows:
-                    if other.get("id_asistencia") == row.get("id_asistencia") or other.get("anulado") or self.client_id(other) != self.client_id(row):
-                        continue
-                    if (row.get("id_matricula") and other.get("id_matricula") == row["id_matricula"] and other["fecha"] == row["fecha"]) or (not row.get("hora_salida") and not other.get("hora_salida")):
-                        raise AttendanceConflict("El cliente ya tiene una asistencia para ese horario y día, o una entrada sin salida.")
-            fields = ("fecha", "hora_entrada", "hora_salida", "fecha_salida", "anulado")
-            audit["antes"] = {k: old.get(k) for k in fields} if old else None
-            audit["despues"] = {k: row.get(k) for k in fields}
-            row["auditoria"] = [*(old or {}).get("auditoria", []), audit]
-            row["version"] = int((old or {}).get("version") or 0) + 1
-            if old:
-                rows[rows.index(old)] = deepcopy(row)
-            else:
-                rows.insert(0, deepcopy(row))
-            return row
-
-        return self.present(self.gym.change_attendance(change))
+        return self.present(self.gym.apply_local_attendance(row, expected, audit, self.now()))

@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
+from typing import Callable
+from domain.services.rule_context import RuleContext
+from domain.services.client_identifiers import parse_client_id
 from typing import Any
 from domain.validation import required_text, email_address
 from domain.services.membership_lifecycle import normalize_membership_status, project_memberships
@@ -11,15 +15,11 @@ def user_role_prefix(role: str) -> str:
     return {"admin": "ADM", "trainer": "TRA", "staff": "STA"}.get(str(role or "").strip().lower(), "USR")
 
 
-from dataclasses import dataclass
-from typing import Callable
-from domain.services.rule_context import RuleContext
 
 
 @dataclass(frozen=True)
 class AccountsDependencies:
     ensure_membership_for_active_client: Callable
-    parse_cliente_id: Callable
 
 
 class AccountsRules:
@@ -281,7 +281,7 @@ class AccountsRules:
             elif str(raw_id or "").isdigit():
                 item_id = int(str(raw_id))
             elif id_usuario.upper().startswith("SGCLI"):
-                item_id = self.dependencies.parse_cliente_id(id_usuario)
+                item_id = parse_client_id(id_usuario)
 
             if item_id is None:
                 item_id = self.context.next_int_id("clientes", "id_cliente")

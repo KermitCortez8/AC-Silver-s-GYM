@@ -33,9 +33,9 @@ class AttendanceHistoryRepository:
         if criteria.status == "anulada":
             conditions.append("anulado.eq.true")
         elif criteria.status == "dentro":
-            conditions.append('or(hora_salida.is.null,hora_salida.eq."")')
+            conditions.append("hora_salida.is.null")
         elif criteria.status == "completada":
-            conditions.extend(("hora_salida.not.is.null", 'hora_salida.neq.""'))
+            conditions.append("hora_salida.not.is.null")
         if conditions:
             filters["and"] = "(" + ",".join(conditions) + ")"
         page = self.database.select_page("ASISTENCIA", filters,

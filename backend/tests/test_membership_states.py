@@ -19,12 +19,15 @@ def test_registration_payment_activation_and_expiry_use_only_three_states(monkey
     assert membership['estado'] == 'EN_TRAMITE'
     assert membership['estado_pago'] == 'PENDIENTE'
     gym.confirmar_pago_manual_cliente(client_id)
+    membership = gym.latest_membership(client_id)
     assert membership['estado'] == 'EN_TRAMITE'
     assert membership['estado_pago'] == 'PAGADO'
     gym.activar_membresia_cliente(client_id)
+    membership = gym.latest_membership(client_id)
     assert membership['estado'] == 'ACTIVO'
-    membership['fecha_fin'] = '2026-09-30'
+    gym.state['membresia'][0]['fecha_fin'] = '2026-09-30'
     gym.expire_memberships()
+    membership = gym.latest_membership(gym.state['clientes'][0]['id_cliente'])
     assert membership['estado'] == 'VENCIDA'
     assert membership['estado_pago'] == 'PAGADO'
     assert gym.clientes_normalized()[0]['membership_status'] == 'VENCIDA'
@@ -81,5 +84,6 @@ def test_editing_or_loading_expired_client_does_not_create_an_active_renewal(mon
     assert normalized['membresia'][0]['fecha_fin'] == '2026-09-30'
     gym.state = normalized
     gym.expire_memberships()
+    membership = gym.latest_membership(gym.state['clientes'][0]['id_cliente'])
     assert membership['estado'] == 'VENCIDA'
     assert gym.state['clientes'][0]['estado'] == 'VENCIDA'

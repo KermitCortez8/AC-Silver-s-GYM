@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from domain.services.client_identifiers import parse_client_id
 from typing import Any
 from domain.services.gym_values import _now_time
 
@@ -32,17 +33,7 @@ class AttendanceRules:
         return self.registrar_asistencia_detallada({"id_cliente": id_cliente})
 
     def _parse_cliente_id(self, raw_id_cliente: Any) -> int:
-        try:
-            if isinstance(raw_id_cliente, str):
-                s = raw_id_cliente.strip()
-                m = re.match(r"^(?:SGCLI|cliente-)?(\d+)$", s, re.IGNORECASE)
-                if m:
-                    return int(m.group(1))
-                if s.isdigit():
-                    return int(s)
-            return int(raw_id_cliente)
-        except Exception:
-            return 0
+        return parse_client_id(raw_id_cliente)
 
     def _attendance_hour_key(self, hora: str) -> str:
         value = str(hora or "").strip().lower()

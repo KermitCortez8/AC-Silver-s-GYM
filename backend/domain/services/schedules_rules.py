@@ -4,6 +4,7 @@ from domain.validation import validate_exercises
 from domain.errors import EntityNotFound, MembershipRequired, EnrollmentConflict
 
 import re
+from domain.services.client_identifiers import parse_client_id
 from datetime import datetime
 from typing import Any
 
@@ -17,7 +18,6 @@ from domain.services.rule_context import RuleContext
 class SchedulesDependencies:
     active_membership_for_cliente: Callable
     normalize_usuario_id: Callable
-    parse_cliente_id: Callable
     get_cliente: Callable
     get_cliente_by_dni: Callable
     get_usuario: Callable
@@ -505,7 +505,7 @@ class SchedulesRules:
                         asistencia
                         for asistencia in self.context.state.get("asistencia", [])
                         if int(asistencia.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
-                        and self.dependencies.parse_cliente_id(asistencia.get("id_cliente_num") or asistencia.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
+                        and parse_client_id(asistencia.get("id_cliente_num") or asistencia.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
                         and not asistencia.get("anulado")
                     ],
                 }
@@ -691,7 +691,7 @@ class SchedulesRules:
                 item
                 for item in self.context.state.get("asistencia", [])
                 if int(item.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
-                and self.dependencies.parse_cliente_id(item.get("id_cliente_num") or item.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
+                and parse_client_id(item.get("id_cliente_num") or item.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
                 and not item.get("anulado")
             ]
             routine_supervision.append(
@@ -794,7 +794,7 @@ class SchedulesRules:
                 raise EntityNotFound("Cliente no encontrado")
             id_cliente = int(cliente["id_cliente"])
         else:
-            id_cliente = self.dependencies.parse_cliente_id(payload.get("id_cliente"))
+            id_cliente = parse_client_id(payload.get("id_cliente"))
 
         id_horario = int(payload.get("id_horario_servicio", 0) or 0)
 
@@ -830,3 +830,8 @@ class SchedulesRules:
             self._recount_schedule_cupos(state)
 
         self.context.change(_fn)
+
+    def enrollments_for_attendance(self, client_id: int | None = None) -> list[dict[str, Any]]:
+        """La asistencia necesita identidades de matrícula, sin proyectar su historial."""
+        return [row for row in self.context.state.get("matriculas_horario", [])
+                if client_id is None or int(row.get("id_cliente") or 0) == int(client_id)]

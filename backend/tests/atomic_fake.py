@@ -77,3 +77,4 @@ def seed_snapshot(service):
     rows.update(VENTAS=[service._sale_to_remote(row) for row in service.state.get('pedidos_tienda', [])], DETALLE_VENTA=[])
     service.supabase.rows = deepcopy(rows)
     service._raw_rows = deepcopy(rows)
+    service._resource_refreshed_at = dict.fromkeys(service.READ_STATE_KEYS, service._last_refresh_at)

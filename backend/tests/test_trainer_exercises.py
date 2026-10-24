@@ -163,13 +163,13 @@ def test_missing_exercise_migration_does_not_silently_discard_data(table, column
 
 
 def test_assignment_does_not_swallow_unknown_database_errors(monkeypatch):
-    from domain.services.gym_domain_service import GymDomainService
+    from domain.services.schedules_rules import SchedulesRules
     # La aplicación coordina ahora la transacción; el error del dominio debe propagarse.
     service = LocalGymService()
 
     def fail(*args):
         raise RuntimeError("database unavailable")
 
-    monkeypatch.setattr(GymDomainService, "asignar_rutina_matricula", fail)
+    monkeypatch.setattr(SchedulesRules, "asignar_rutina_matricula", fail)
     with pytest.raises(RuntimeError, match="database unavailable"):
         service.asignar_rutina_matricula(10, 1)

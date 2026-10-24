@@ -58,6 +58,16 @@ class RecordingRepository:
         self.writes = 0
         self.fail_commit = False
 
+    def query(self, query, passwords=None):
+        from domain.services.membership_lifecycle import apply_membership_expiration
+        from domain.services.gym_domain_service import _today_iso
+        snapshot = deepcopy({key: self.data.get(key, []) for key in query.resources})
+        apply_membership_expiration(snapshot, _today_iso())
+        return deepcopy(query.run(GymDomainService(snapshot, passwords).components))
+
+    def execute(self, command, passwords=None):
+        return deepcopy(self.change(lambda state: command.run(GymDomainService(state, passwords).components), command.resources))
+
     def read(self, operation, resources=None):
         return operation(self.data)
 

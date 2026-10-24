@@ -15,6 +15,7 @@ SCHEDULES = (*CLIENTS, Resource.MATRICULAS_HORARIO, Resource.HORARIOS_SERVICIO,
 
 @dataclass(frozen=True)
 class ExpireMembershipsCommand:
+    operation_kind: ClassVar[str] = 'command'
     resources: ClassVar = CLIENTS
 
     def run(self, rules: DomainComponents) -> bool:
@@ -23,6 +24,7 @@ class ExpireMembershipsCommand:
 
 @dataclass(frozen=True)
 class EnrollScheduleCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar = SCHEDULES
 
@@ -32,6 +34,7 @@ class EnrollScheduleCommand:
 
 @dataclass(frozen=True)
 class UpdateGymSettingsCommand:
+    operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar = (Resource.CONFIGURACION_GIMNASIO,)
 
@@ -41,6 +44,7 @@ class UpdateGymSettingsCommand:
 
 @dataclass(frozen=True)
 class MembershipPaymentQuery:
+    operation_kind: ClassVar[str] = 'query'
     resources: ClassVar = CLIENTS
 
     def run(self, rules: DomainComponents) -> MembershipPaymentData:
@@ -50,6 +54,7 @@ class MembershipPaymentQuery:
 
 @dataclass(frozen=True)
 class AttendanceHistoryQuery:
+    operation_kind: ClassVar[str] = 'query'
     resources: ClassVar = (Resource.ASISTENCIA, Resource.CLIENTES)
 
     def run(self, rules: DomainComponents) -> AttendanceHistoryData:
@@ -58,15 +63,17 @@ class AttendanceHistoryQuery:
 
 @dataclass(frozen=True)
 class AttendanceEnrollmentsQuery:
+    operation_kind: ClassVar[str] = 'query'
     client_id: int | None = None
-    resources: ClassVar = SCHEDULES
+    resources: ClassVar = (Resource.MATRICULAS_HORARIO,)
 
     def run(self, rules: DomainComponents) -> list[Record]:
-        return rules.schedules.matriculas_horario(id_cliente=self.client_id)
+        return rules.schedules.enrollments_for_attendance(self.client_id)
 
 
 @dataclass(frozen=True)
 class LatestMembershipQuery:
+    operation_kind: ClassVar[str] = 'query'
     client_id: int
     resources: ClassVar = CLIENTS
 
@@ -76,6 +83,7 @@ class LatestMembershipQuery:
 
 @dataclass(frozen=True)
 class ResolveAttendanceClientQuery:
+    operation_kind: ClassVar[str] = 'query'
     payload: Record
     resources: ClassVar = CLIENTS
 
@@ -85,6 +93,7 @@ class ResolveAttendanceClientQuery:
 
 @dataclass(frozen=True)
 class AccountForSessionQuery:
+    operation_kind: ClassVar[str] = 'query'
     subject: Identifier
     client: bool = False
 
@@ -99,6 +108,7 @@ class AccountForSessionQuery:
 
 @dataclass(frozen=True)
 class LegacySnapshotQuery:
+    operation_kind: ClassVar[str] = 'query'
     """Compatibilidad para consumidores anteriores que inspeccionan instantáneas."""
     resources: tuple[Resource, ...]
 

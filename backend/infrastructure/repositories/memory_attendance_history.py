@@ -1,11 +1,11 @@
 """Adaptador local del mismo contrato paginado de historial."""
 from copy import deepcopy
 from application.read_models import AttendancePage
-from domain.services.gym_domain_service import GymDomainService
+from domain.services.client_identifiers import parse_client_id
 
 
 def attendance_page(state, criteria, request):
-    parse_id = GymDomainService().parse_client_id
+    parse_id = parse_client_id
     clients = {int(row["id_cliente"]): row for row in state.get("clientes", [])}
     selected = []
     for row in state.get("asistencia", []):

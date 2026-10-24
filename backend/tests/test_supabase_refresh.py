@@ -103,6 +103,15 @@ class RecordingRemote(AtomicFakeMixin):
 
     select_all = select
 
+    def select_page(self, table, filters, *, order, offset, limit):
+        from infrastructure.supabase_client import RowsPage
+        rows = self.select(table, order)
+        return RowsPage(rows[offset:offset + limit], len(rows))
+
+    def select_filtered(self, table, filters, *, order):
+        rows = self.select(table, order)
+        return rows
+
     def update(self, table, pk, value, body):
         self.writes.append(('update', table, value))
         for row in self.rows.get(table, []):
@@ -228,12 +237,12 @@ def test_admin_navigation_reuses_account_cache_without_loading_unrelated_modules
     response = client.get('/api/clientes')
     assert response.status_code == 200
     assert response.json()[0]['id_cliente'] == 7
-    assert set(remote.calls) == {'USUARIO', 'CLIENTES', 'MEMBRESIA', 'PLANES_MEMBRESIA'}
-    assert len(remote.calls) == 4
+    assert set(remote.calls) == {'USUARIO', 'CLIENTES', 'MEMBRESIA'}
+    assert len(remote.calls) == 3
     assert client.get('/api/gym/configuracion').status_code == 200
     assert remote.calls[-1] == 'CONFIGURACION_GIMNASIO'
     assert client.get('/api/usuarios').status_code == 200
-    assert len(remote.calls) == 5
+    assert len(remote.calls) == 4
     assert service.state['clientes'][0]['id_cliente'] == 7
 
 
@@ -249,8 +258,9 @@ def test_cached_account_role_changes_still_revoke_admin_access(scoped_api):
 
 def test_unknown_application_queries_cannot_silently_load_every_table():
     service = service_with_remote(RecordingRemote())
-    with pytest.raises(KeyError):
-        service._execute("future_module", False)
+    with pytest.raises(ValueError, match="contrato"):
+        service.executor.query(object())
+    assert service.supabase.calls == []
 
 
 def test_health_check_does_not_refresh_admin_histories():
@@ -265,7 +275,7 @@ def test_attendance_history_loads_clients_without_loading_store_or_schedules(sco
     response = client.get('/api/asistencia/historial')
     assert response.status_code == 200
     assert response.json()['items'] == []
-    assert set(remote.calls) == {'USUARIO', 'CLIENTES', 'MEMBRESIA', 'ASISTENCIA'}
+    assert set(remote.calls) == {'USUARIO', 'ASISTENCIA'}
 
 
 def test_normalized_client_list_keeps_latest_membership_from_unsorted_history():

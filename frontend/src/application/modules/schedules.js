@@ -262,18 +262,21 @@ export const createSchedulesModule = (ctx, repository) => {
   const fetchTrainerOverview = async ({ force = false } = {}) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const scope = `${ctx.authStore.token}|${ctx.authStore.userRole}`;
+    const generation = ctx.generation;
     try {
       ctx.activeSyncs += 1;
       ctx.isSyncing.value = true;
       await ctx.trainerOverviewCache.load(scope, 'overview', async () => {
         const data = await remote.fetchTrainerOverview();
-        if (scope !== `${ctx.authStore.token}|${ctx.authStore.userRole}`) throw new Error('La sesión ha cambiado.');
+        if (generation !== ctx.generation || scope !== `${ctx.authStore.token}|${ctx.authStore.userRole}`) throw new Error('La sesión ha cambiado.');
         ctx.trainerOverview.value = data;
       }, { force });
       return ctx.trainerOverview.value;
     } finally {
-      ctx.activeSyncs -= 1;
-      ctx.isSyncing.value = ctx.activeSyncs > 0;
+      if (generation === ctx.generation) {
+        ctx.activeSyncs -= 1;
+        ctx.isSyncing.value = ctx.activeSyncs > 0;
+      }
     }
   };
 
@@ -314,13 +317,16 @@ export const createSchedulesModule = (ctx, repository) => {
 
   const fetchTrainerClientRoutines = async (dni) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
+    const generation = ctx.generation;
     try {
       ctx.activeSyncs += 1;
       ctx.isSyncing.value = true;
       return await remote.fetchTrainerClientRoutines(String(dni || '').trim());
     } finally {
-      ctx.activeSyncs -= 1;
-      ctx.isSyncing.value = ctx.activeSyncs > 0;
+      if (generation === ctx.generation) {
+        ctx.activeSyncs -= 1;
+        ctx.isSyncing.value = ctx.activeSyncs > 0;
+      }
     }
   };
 

@@ -56,7 +56,7 @@ def test_query_refresh_does_not_write_or_expose_mutable_state(monkeypatch):
     repo.state['membresia'] = [{'id_membresia': 1, 'id_cliente': 1, 'estado': 'ACTIVO', 'estado_pago': 'PAGADO',
                                'fecha_inicio': '2026-01-01', 'fecha_fin': '2026-01-31'}]
     before = deepcopy(repo.state)
-    monkeypatch.setattr('application.services.gym_service.domain_clock._today_iso', lambda: '2026-10-23')
+    monkeypatch.setattr('infrastructure.repositories.operation_adapter.domain_clock._today_iso', lambda: '2026-10-23')
     monkeypatch.setattr(repo, 'change', lambda *a, **k: pytest.fail('Una consulta intentó escribir'))
     gym.ensure_fresh()
     assert gym.get_cliente(1)['estado'] == 'VENCIDA'

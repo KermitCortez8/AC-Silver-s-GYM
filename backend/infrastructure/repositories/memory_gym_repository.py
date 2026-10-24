@@ -1,5 +1,5 @@
-from infrastructure.repositories.operation_adapter import query_operation, command_operation
 """Repositorio en memoria para pruebas y ejecución sin proveedores externos."""
+from infrastructure.repositories.operation_adapter import query_operation, command_operation
 from copy import deepcopy
 import threading
 import re
