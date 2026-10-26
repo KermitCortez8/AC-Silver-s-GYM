@@ -8,11 +8,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from dependencies import get_current_user
-from routes import attendance_routes
-from services.attendance_service import AttendanceConflict, AttendanceService, LIMA
-from services.local_gym_service import LocalGymService
-from services.supabase_gym_service import SupabaseGymService
+from presentation.dependencies import get_current_user
+from presentation.routes import attendance_routes
+from application.services.attendance_service import AttendanceConflict, AttendanceService, LIMA
+from infrastructure.services.local_gym_service import LocalGymService
+from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 
 @pytest.fixture

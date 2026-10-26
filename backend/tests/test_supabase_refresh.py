@@ -1,17 +1,18 @@
 import threading
 
 import pytest
+from tests.atomic_fake import AtomicFakeMixin, migrated_rows
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from config import Settings
-from routes.auth_routes import router as auth_router
-from routes.attendance_routes import router as attendance_router
-from routes.clients_routes import router as clients_router
-from routes.gym_routes import router as gym_router
-from routes.users_routes import router as users_router
-from services.supabase_gym_service import SupabaseGymService
-from utils.security import create_local_token
+from infrastructure.config import Settings
+from presentation.routes.auth_routes import router as auth_router
+from presentation.routes.attendance_routes import router as attendance_router
+from presentation.routes.clients_routes import router as clients_router
+from presentation.routes.gym_routes import router as gym_router
+from presentation.routes.users_routes import router as users_router
+from infrastructure.services.supabase_gym_service import SupabaseGymService
+from infrastructure.security import create_local_token
 
 
 def service_with_remote(remote):
@@ -87,7 +88,7 @@ def test_optional_missing_table_still_loads_other_sections():
     assert service.state['promociones'] == []
 
 
-class RecordingRemote:
+class RecordingRemote(AtomicFakeMixin):
     def __init__(self, rows=None):
         self.calls = []
         self.writes = []
@@ -98,9 +99,18 @@ class RecordingRemote:
         self.calls.append(table)
         if table == self.error_table:
             raise RuntimeError('Supabase unavailable')
-        return self.rows.get(table, [])
+        return migrated_rows(table, self.rows.get(table, []))
 
     select_all = select
+
+    def select_page(self, table, filters, *, order, offset, limit):
+        from infrastructure.supabase_client import RowsPage
+        rows = self.select(table, order)
+        return RowsPage(rows[offset:offset + limit], len(rows))
+
+    def select_filtered(self, table, filters, *, order):
+        rows = self.select(table, order)
+        return rows
 
     def update(self, table, pk, value, body):
         self.writes.append(('update', table, value))
@@ -119,11 +129,11 @@ class RecordingRemote:
 
 def test_constructing_service_validates_schema_without_loading_every_table(monkeypatch):
     checks = []
-    monkeypatch.setattr('services.supabase_gym_service.SupabaseRestClient.validate_columns',
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.SupabaseRestClient.validate_columns',
                         lambda self, table, columns: checks.append(table))
-    monkeypatch.setattr('services.supabase_gym_service.SupabaseRestClient.select',
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.SupabaseRestClient.select',
                         lambda *_args, **_kwargs: pytest.fail('Unexpected startup data query'))
-    monkeypatch.setattr('services.supabase_gym_service.SupabaseRestClient.select_all',
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.SupabaseRestClient.select_all',
                         lambda *_args, **_kwargs: pytest.fail('Unexpected startup data query'))
     service = SupabaseGymService('https://example.invalid', 'test')
     assert checks == ['MEMBRESIA', 'VENTAS']
@@ -131,7 +141,7 @@ def test_constructing_service_validates_schema_without_loading_every_table(monke
 
 
 def test_sections_load_only_needed_tables_and_preserve_other_sections(monkeypatch):
-    monkeypatch.setattr('services.supabase_gym_service.time.monotonic', lambda: 100)
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.time.monotonic', lambda: 100)
     remote = RecordingRemote({'USUARIO': [{'id_usuario': 1, 'Nombres': 'Admin', 'Rol': 'admin'}]})
     service = service_with_remote(remote)
     service.ensure_fresh(('usuario',))
@@ -147,7 +157,7 @@ def test_sections_load_only_needed_tables_and_preserve_other_sections(monkeypatc
 
 def test_table_cache_expiration_is_independent_between_sections(monkeypatch):
     clock = [100]
-    monkeypatch.setattr('services.supabase_gym_service.time.monotonic', lambda: clock[0])
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.time.monotonic', lambda: clock[0])
     remote = RecordingRemote()
     service = service_with_remote(remote)
     service.ensure_fresh(('usuario',))
@@ -160,7 +170,7 @@ def test_table_cache_expiration_is_independent_between_sections(monkeypatch):
 
 
 def test_failed_partial_refresh_keeps_data_and_can_be_retried(monkeypatch):
-    monkeypatch.setattr('services.supabase_gym_service.time.monotonic', lambda: 100)
+    monkeypatch.setattr('infrastructure.services.supabase_gym_service.time.monotonic', lambda: 100)
     remote = RecordingRemote()
     service = service_with_remote(remote)
     service.state['clientes'] = [{'id_cliente': 99, 'estado': 'ACTIVO'}]
@@ -186,7 +196,7 @@ def test_first_mutation_after_partial_read_loads_remaining_tables():
     assert set(service._resource_refreshed_at) == set(service.READ_STATE_KEYS)
 
 
-def test_order_reads_include_product_names_and_shared_inventory_stock():
+def test_order_reads_include_product_names_without_loading_inventory():
     remote = RecordingRemote({
         'TIENDA_PRODUCTOS': [{'id_producto': 1, 'id_item': 2, 'nombre_Producto': 'Agua', 'precio_Venta': 3}],
         'INVENTARIO': [{'id_item': 2, 'Tipo': 'Tienda', 'Cantidad_Stock_E': 0, 'Estado': 'Agotado'}],
@@ -195,22 +205,23 @@ def test_order_reads_include_product_names_and_shared_inventory_stock():
     })
     service = service_with_remote(remote)
     service.ensure_fresh(('pedidos_tienda',))
-    assert set(remote.calls) == {'VENTAS', 'DETALLE_VENTA', 'TIENDA_PRODUCTOS', 'INVENTARIO'}
+    assert set(remote.calls) == {'VENTAS', 'DETALLE_VENTA', 'TIENDA_PRODUCTOS'}
     assert service.state['pedidos_tienda'][0]['items'][0]['nombre_producto'] == 'Agua'
-    assert service.state['productos_tienda'][0]['estado'] == 'Agotado'
+    assert service.state['productos_tienda'] == []
+    assert 'TIENDA_PRODUCTOS' not in service._raw_rows
 
 
 @pytest.fixture
 def scoped_api(monkeypatch):
     settings = Settings(supabase_url='https://example.invalid', supabase_key='test', auth_secret_key='x' * 48)
-    monkeypatch.setattr('dependencies.get_settings', lambda: settings)
-    monkeypatch.setattr('utils.security.get_settings', lambda: settings)
+    monkeypatch.setattr('presentation.dependencies.get_settings', lambda: settings)
+    monkeypatch.setattr('infrastructure.security.get_settings', lambda: settings)
     remote = RecordingRemote({
         'USUARIO': [{'id_usuario': 1, 'Nombre': 'Admin', 'Correo': 'admin@example.com', 'Rol': 'admin'}],
         'CLIENTES': [{'id_cliente': 7, 'Nombres': 'Cliente', 'Estado': True}],
     })
     service = service_with_remote(remote)
-    monkeypatch.setattr('dependencies._get_supabase_gym_service', lambda *_args: service)
+    monkeypatch.setattr('presentation.dependencies._get_supabase_gym_service', lambda *_args: service)
     app = FastAPI()
     for router in (auth_router, attendance_router, clients_router, gym_router, users_router):
         app.include_router(router, prefix='/api')
@@ -246,26 +257,18 @@ def test_cached_account_role_changes_still_revoke_admin_access(scoped_api):
     assert remote.calls.count('CLIENTES') == 1
 
 
-def test_unknown_reads_and_writes_keep_full_validation():
-    from starlette.requests import Request
-    from dependencies import _resources_for_request
-
-    for method, path in [('POST', '/api/clientes'), ('GET', '/api/future-module')]:
-        request = Request({'type': 'http', 'method': method, 'path': path, 'headers': []})
-        assert _resources_for_request(request) is None
+def test_unknown_application_queries_cannot_silently_load_every_table():
+    service = service_with_remote(RecordingRemote())
+    with pytest.raises(ValueError, match="contrato"):
+        service.executor.query(object())
+    assert service.supabase.calls == []
 
 
 def test_health_check_does_not_refresh_admin_histories():
-    from starlette.requests import Request
-    from dependencies import _resources_for_request
-
-    for path in ('/health', '/api/health'):
-        request = Request({'type': 'http', 'method': 'GET', 'path': path, 'headers': []})
-        resources = _resources_for_request(request)
-        remote = RecordingRemote()
-        service = service_with_remote(remote)
-        service.ensure_fresh(resources)
-        assert remote.calls == ['PLANES_MEMBRESIA']
+    remote = RecordingRemote()
+    service = service_with_remote(remote)
+    service.planes_membresia()
+    assert remote.calls == ['PLANES_MEMBRESIA']
 
 
 def test_attendance_history_loads_clients_without_loading_store_or_schedules(scoped_api):
@@ -273,7 +276,7 @@ def test_attendance_history_loads_clients_without_loading_store_or_schedules(sco
     response = client.get('/api/asistencia/historial')
     assert response.status_code == 200
     assert response.json()['items'] == []
-    assert set(remote.calls) == {'USUARIO', 'CLIENTES', 'MEMBRESIA', 'ASISTENCIA'}
+    assert set(remote.calls) == {'USUARIO', 'ASISTENCIA'}
 
 
 def test_normalized_client_list_keeps_latest_membership_from_unsorted_history():
@@ -318,7 +321,7 @@ def test_user_mutations_do_not_copy_unrelated_cached_histories():
     service = service_with_remote(remote)
     history = [UnrelatedHistory()]
     service.state['asistencia'] = history
-    service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Admin', 'rol': 'admin'})
+    service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Admin', 'correo': 'admin@example.com', 'rol': 'admin'})
     assert remote.calls == ['USUARIO']
     assert service.state['asistencia'] is history
 
@@ -335,7 +338,7 @@ def test_failed_user_update_restores_account_without_discarding_other_sections()
 
     remote.update = fail
     with pytest.raises(RuntimeError, match='Update failed'):
-        service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Otro nombre', 'rol': 'admin'})
+        service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Otro nombre', 'correo': 'admin@example.com', 'rol': 'admin'})
     assert service.state['usuario'][0]['nombre'] == 'Admin'
     assert service.state['asistencia'] is history
     assert service._resource_refreshed_at == {}

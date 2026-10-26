@@ -4,7 +4,7 @@ import {
   buildClientIdentityFromUser,
   resolveClientIdForUser,
   weekdayFromISO,
-} from '../src/utils/clientIdentity.js';
+} from '../src/domain/utils/clientIdentity.js';
 
 const members = [{ id_cliente: 12, id: 'SGCLI012', email: 'cliente@example.com' }];
 const user = { id: 'SGCLI012', email: 'cliente@example.com' };

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { canPayClientWithStripe } from '../src/utils/adminClientPayment.js';
+import { canPayClientWithStripe } from '../src/domain/utils/adminClientPayment.js';
 
 test('only admin-created clients with an unpaid membership can pay from the panel', () => {
   const client = { registrationOrigin: 'ADMIN', paymentStatus: 'PENDIENTE', id_membresia: 34 };

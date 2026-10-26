@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calendarDate, monthWeeks, scheduleOccurrences, weekStart } from '../src/utils/scheduleCalendar.js';
+import { calendarDate, monthWeeks, scheduleOccurrences, weekStart } from '../src/domain/utils/scheduleCalendar.js';
 
 test('month weeks include partial weeks, leap day and year boundaries', () => {
   const weeks = monthWeeks('2026-03');

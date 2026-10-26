@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from services.supabase_gym_service import SupabaseGymService
+from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 
 def _service_with_validator(error: RuntimeError | None) -> SupabaseGymService:

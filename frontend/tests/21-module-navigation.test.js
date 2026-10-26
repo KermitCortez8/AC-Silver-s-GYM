@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createModuleLoader, prepareNavigationSession } from '../src/services/moduleNavigation.js';
+import { createModuleLoader, prepareNavigationSession } from '../src/application/services/moduleNavigation.js';
 
 const deferred = () => {
   let resolve;

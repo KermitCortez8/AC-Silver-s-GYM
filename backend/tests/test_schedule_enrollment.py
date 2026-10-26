@@ -5,10 +5,10 @@ from types import SimpleNamespace
 import threading
 import unittest
 
-from models.gym import MatriculaHorarioInput
-from routes.gym_routes import create_matricula, delete_matricula, list_matriculas
-from services.local_gym_service import LocalGymService
-from services.supabase_gym_service import SupabaseGymService
+from domain.models.gym import MatriculaHorarioInput
+from presentation.routes.gym_routes import create_matricula, delete_matricula, list_matriculas
+from infrastructure.services.local_gym_service import LocalGymService
+from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 
 def _schedule_service() -> LocalGymService:
@@ -238,24 +238,17 @@ class _SupabaseWithoutScheduleRpc:
 
 
 class SupabaseScheduleCompatibilityTests(unittest.TestCase):
-    def test_enrollment_falls_back_to_identity_insert_before_migration_002(self) -> None:
+    def test_enrollment_requires_atomic_rpc_before_writing(self) -> None:
         local_service = _schedule_service()
-        service = SupabaseGymService.__new__(SupabaseGymService)
-        service.lock = threading.Lock()
-        service.state = local_service.state
-        service.supabase = _SupabaseWithoutScheduleRpc()
-        service._last_refresh_at = 0.0
-        service._refresh_remote_state = lambda: None
+        from types import SimpleNamespace
+        from infrastructure.repositories.gym_cache import GymCache
+        from infrastructure.repositories.schedule_enrollment_repository import ScheduleEnrollmentRepository
+        database = _SupabaseWithoutScheduleRpc()
+        enrollments = ScheduleEnrollmentRepository(database, GymCache(state=local_service.state), SimpleNamespace(load=lambda resources: None))
+        with self.assertRaisesRegex(RuntimeError, "002_harden_schedule_enrollment.sql"):
+            enrollments.enroll({"id_cliente": 1, "id_horario_servicio": 10})
+        self.assertIsNone(database.inserted)
 
-        created = service.matricular_cliente_horario(
-            {"id_cliente": 1, "id_horario_servicio": 10}
-        )
-
-        self.assertEqual(created["id_matricula"], 90)
-        table, body, returns_rows = service.supabase.inserted
-        self.assertEqual(table, "MATRICULAS_HORARIO")
-        self.assertNotIn("id_matricula", body)
-        self.assertTrue(returns_rows)
 
 
 if __name__ == "__main__":
