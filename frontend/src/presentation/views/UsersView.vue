@@ -52,11 +52,10 @@
         </div>
         <label class="ws-search max-w-md"
           ><span class="sr-only">Buscar usuarios</span
-          ><Search :size="18" /><input
+          ><Search :size="18" /><SearchInput
             v-model="search"
             class="ws-input"
-            type="search"
-            placeholder="Nombre, correo, DNI o teléfono"
+            placeholder="Nombre, correo, DNI, teléfono o ID"
         /></label>
       </div>
       <div
@@ -390,6 +389,8 @@
   </div>
 </template>
 <script setup>
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
+import SearchInput from "../components/SearchInput.vue";
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import {
@@ -467,17 +468,7 @@ const usersWithPassword = computed(
   () => users.value.filter((systemUser) => systemUser.hasPassword).length,
 );
 
-const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success') {
-    return 'ws-border-success ws-tint-success ws-success';
-  }
-
-  if (feedbackTone.value === 'error') {
-    return 'ws-border-danger ws-tint-danger ws-danger';
-  }
-
-  return 'ws-border-info ws-tint-info ws-info';
-});
+const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
 
 /**
  * Restablece los datos del formulario.

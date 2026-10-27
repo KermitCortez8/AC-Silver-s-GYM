@@ -20,7 +20,7 @@
       </article>
       <article class="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
         <p class="text-sm text-slate-400">Pendientes</p>
-        <p class="mt-2 text-3xl font-black text-amber-300">{{ pendingOrders.length }}</p>
+        <p class="mt-2 text-3xl font-black text-orange-300">{{ pendingOrders.length }}</p>
       </article>
       <article class="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
         <p class="text-sm text-slate-400">Ventas</p>
@@ -36,7 +36,7 @@
         </div>
         <label class="w-full space-y-2 lg:max-w-md">
           <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Buscar</span>
-          <input v-model="search" class="field-input" placeholder="Cliente, DNI, pedido o producto" />
+          <SearchInput v-model="search" class="field-input" placeholder="Cliente, DNI, pedido o producto" />
         </label>
       </div>
 
@@ -51,7 +51,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 <h3 class="text-xl font-black text-white">Pedido #{{ order.id_pedido }}</h3>
                 <span class="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-100">{{ order.estado_pago }}</span>
-                <span class="rounded-full bg-amber-400/15 px-3 py-1 text-xs font-black text-amber-100">{{ order.estado_pedido }}</span>
+                <span class="rounded-full bg-orange-400/15 px-3 py-1 text-xs font-black text-orange-100">{{ order.estado_pedido }}</span>
               </div>
               <p class="mt-2 text-sm text-slate-300">{{ clientOf(order).name || 'Sin registrar' }} - {{ clientOf(order).email || 'Sin correo' }}</p>
               <p class="mt-1 text-xs text-slate-500">DNI: {{ clientOf(order).dni || 'No registrado' }} | {{ formatDate(order.fecha_pedido) }}</p>
@@ -59,7 +59,7 @@
 
             <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right">
               <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Total</p>
-              <p class="mt-1 text-2xl font-black text-amber-300">S/. {{ Number(order.total || 0).toFixed(2) }}</p>
+              <p class="mt-1 text-2xl font-black text-orange-300">S/. {{ Number(order.total || 0).toFixed(2) }}</p>
             </div>
           </div>
 
@@ -79,7 +79,7 @@
               <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Observacion</span>
               <input v-model="ensureDraft(order).observacion_admin" class="field-input" placeholder="Entrega, recojo, incidencia o anulacion" />
             </label>
-            <button class="rounded-2xl bg-amber-400 px-4 py-3 font-black text-slate-950" @click="updateOrder(order)">
+            <button class="rounded-2xl bg-orange-400 px-4 py-3 font-black text-slate-950" @click="updateOrder(order)">
               Guardar
             </button>
           </div>
@@ -111,6 +111,7 @@
 </template>
 
 <script setup>
+import SearchInput from "../components/SearchInput.vue";
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useGymStore } from '../../application/stores/gymStore';
 

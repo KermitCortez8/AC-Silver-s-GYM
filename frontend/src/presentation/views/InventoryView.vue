@@ -3,12 +3,12 @@
     <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p class="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Recursos &middot; Gestion de inventario</p>
+          <p class="text-xs font-bold uppercase tracking-[0.3em] text-orange-300">Recursos &middot; Gestion de inventario</p>
           <h1 class="mt-2 text-3xl font-black text-white">Inventario</h1>
           <p class="mt-2 text-slate-300">Controla stock, ubicacion, estado operativo y observaciones de cada recurso del gimnasio.</p>
         </div>
 
-        <button v-if="activeTab === 'articulos'" class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] hover:bg-amber-300" @click="openNewItem">
+        <button v-if="activeTab === 'articulos'" class="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.02] hover:bg-orange-300" @click="openNewItem">
           + Ingresar Nuevo Articulo
         </button>
       </div>
@@ -19,14 +19,14 @@
           :key="tab.value"
           type="button"
           class="relative px-5 py-3 text-sm font-bold transition-colors duration-200"
-          :class="activeTab === tab.value ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'"
+          :class="activeTab === tab.value ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'"
           :aria-current="activeTab === tab.value ? 'page' : undefined"
           @click="activeTab = tab.value"
         >
           {{ tab.label }}
           <span
             v-if="activeTab === tab.value"
-            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-400"
+            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-orange-400"
           ></span>
         </button>
       </nav>
@@ -64,13 +64,13 @@
         </div>
         <button
           type="button"
-          class="flex items-center gap-3 rounded-2xl border-l-4 border-l-yellow-400 bg-slate-900/80 px-4 py-3 text-left transition hover:bg-slate-800/80"
-          :class="isLowStockFilter ? 'ring-2 ring-yellow-400/70' : ''"
+          class="flex items-center gap-3 rounded-2xl border-l-4 border-l-orange-400 bg-slate-900/80 px-4 py-3 text-left transition hover:bg-slate-800/80"
+          :class="isLowStockFilter ? 'ring-2 ring-orange-400/70' : ''"
           :aria-pressed="isLowStockFilter"
           :title="isLowStockFilter ? 'Quitar filtro de stock bajo' : 'Ver solo articulos en stock bajo'"
           @click="toggleLowStockFilter"
         >
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
             <TrendingDown :size="20" stroke-width="2.5" />
           </span>
           <div>
@@ -93,7 +93,7 @@
         <button
           type="button"
           class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
-          :class="selectedCategory === 'all' ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
+          :class="selectedCategory === 'all' ? 'border-orange-400 bg-orange-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
           @click="selectedCategory = 'all'; paginaActual = 1"
         >
           Todas las categorias <span :class="selectedCategory === 'all' ? 'text-slate-900/70' : 'text-slate-500'">{{ inventory.length }}</span>
@@ -103,7 +103,7 @@
           :key="entry.name"
           type="button"
           class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
-          :class="selectedCategory === entry.name ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
+          :class="selectedCategory === entry.name ? 'border-orange-400 bg-orange-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
           @click="selectedCategory = entry.name; paginaActual = 1"
         >
           <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ background: categoryDotColor(entry.name) }"></span>
@@ -116,7 +116,7 @@
       <div class="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr]">
         <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
           <Search :size="16" class="shrink-0 text-slate-500" />
-          <input v-model="searchQuery" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar por codigo, nombre o marca..." @input="paginaActual = 1" />
+          <SearchInput v-model="searchQuery" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Código, nombre o categoría (máx. 30)" @input="paginaActual = 1" />
         </div>
         <select v-model="selectedLocation" class="field-input" @change="paginaActual = 1">
           <option value="all">Todas las ubicaciones</option>
@@ -156,12 +156,12 @@
               <tr v-for="item in inventoryPaginado" :key="item.id" class="transition hover:bg-white/[0.04]">
                 <td class="max-w-sm px-5 py-4 align-top">
                   <div class="flex items-start gap-3">
-                    <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-200">
+                    <span class="mt-0.5 rounded-lg bg-orange-400/10 px-2.5 py-1 text-xs font-bold text-orange-200">
                       {{ item.inventoryCode }}
                     </span>
                     <div class="min-w-0">
                       <p class="font-bold text-white">{{ item.name }}</p>
-                      <p class="mt-1 text-xs text-amber-100/80">N. Activo: {{ item.n_activo || 'Auto' }}</p>
+                      <p class="mt-1 text-xs text-orange-100/80">N. Activo: {{ item.n_activo || 'Auto' }}</p>
                       <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">{{ item.observations || 'Sin observaciones' }}</p>
                     </div>
                   </div>
@@ -217,7 +217,7 @@
             :key="p"
             class="h-9 w-9 rounded-xl border text-sm font-bold transition"
             :class="p === paginaActual
-              ? 'border-amber-400/40 bg-amber-400/20 text-amber-300'
+              ? 'border-orange-400/40 bg-orange-400/20 text-orange-300'
               : 'border-white/10 text-white hover:bg-white/5'"
             @click="paginaActual = p"
           >{{ p }}</button>
@@ -247,12 +247,12 @@
             </button>
           </div>
 
-          <div class="mt-4 flex items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400 text-slate-950">
+          <div class="app-notice app-notice--info mt-4 flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-400/10">
               <Tag :size="20" stroke-width="2.5" />
             </span>
             <div>
-              <p class="text-xs font-bold uppercase tracking-[0.35em] text-amber-200">Identificador unico</p>
+              <p class="text-xs font-bold uppercase tracking-[0.35em] text-orange-200">Identificador unico</p>
               <p class="mt-1 font-semibold text-white">{{ currentInventoryCode }}</p>
             </div>
           </div>
@@ -260,26 +260,24 @@
           <div class="mt-5 grid gap-4 sm:grid-cols-2">
             <label class="space-y-2 sm:col-span-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Nombre</span>
-              <input v-model="form.name" class="field-input" placeholder="Nombre del articulo" />
+              <input v-model="form.name" required maxlength="120" class="field-input" placeholder="Nombre del articulo" />
             </label>
             <label class="space-y-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Categoria (Tipo)</span>
-              <input v-model="form.category" class="field-input" list="inventory-types" placeholder="Tienda, Equipo de fuerza..." />
-              <datalist id="inventory-types">
-                <option value="Tienda" />
-                <option v-for="entry in categorySummary" :key="entry.name" :value="entry.name" />
-              </datalist>
+              <select v-model="form.category" class="field-input" required>
+                <option v-for="category in categoryOptions" :key="category" :value="category">{{ category }}</option>
+              </select>
             </label>
             <label class="space-y-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">{{ editingId ? 'Stock actual' : 'Stock inicial' }}</span>
               <div v-if="!editingId" class="flex items-center gap-2">
-                <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" @click="form.quantity = Math.max(0, form.quantity - 1)">−</button>
-                <input v-model.number="form.quantity" type="number" min="0" class="field-input flex-1 text-center" />
-                <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" @click="form.quantity = form.quantity + 1">+</button>
+                <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" @click="stepQuantity(-1)" :disabled="isSaving" aria-label="Reducir stock inicial">−</button>
+                <QuantityInput v-model="form.quantity" aria-label="Stock inicial" class="field-input flex-1 text-center" />
+                <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" @click="stepQuantity(1)" :disabled="isSaving" aria-label="Aumentar stock inicial">+</button>
               </div>
               <input v-else :value="form.quantity" type="number" class="field-input cursor-not-allowed text-center opacity-70" readonly />
             </label>
-            <div class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50 sm:col-span-2">
+            <div class="app-notice app-notice--info rounded-2xl border px-4 py-3 text-xs leading-5 sm:col-span-2">
               <template v-if="editingId">
                 El stock no se edita aqui. Para cambiarlo registra una entrada, salida o ajuste en la pestaña Movimientos.
                 <span v-if="isTiendaForm" class="font-bold">Este articulo es la reserva de Tienda: para pasar unidades a la Tienda registra una salida con destino Tienda.</span>
@@ -291,27 +289,31 @@
             </div>
             <label class="space-y-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Unidad de venta</span>
-              <input v-model="form.unidad_venta" class="field-input" placeholder="unidad, botella, paquete..." />
+              <select v-model="form.unidad_venta" class="field-input" required>
+                <option v-for="unit in unitOptions" :key="unit" :value="unit">{{ unit }}</option>
+              </select>
             </label>
             <label class="space-y-2">
               <span class="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-400">
                 Stock minimo
-                <span v-if="form.quantity <= form.minQuantity" class="rounded-full border border-yellow-400/40 bg-yellow-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-yellow-800">Alerta activa</span>
+                <span v-if="Number(form.quantity) <= Number(form.minQuantity)" class="rounded-full border border-orange-400/40 bg-orange-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-orange-800">Alerta activa</span>
               </span>
-              <input v-model.number="form.minQuantity" type="number" min="0" class="field-input" />
+              <QuantityInput v-model="form.minQuantity" aria-label="Stock minimo" class="field-input" />
               <span class="block text-[11px] text-slate-500">
                 {{ isTiendaForm ? 'Se guarda en el producto de Tienda y se usa en ambas vistas.' : 'Solo se guarda para articulos Tipo Tienda.' }}
               </span>
             </label>
             <label class="space-y-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Ubicacion</span>
-              <input v-model="form.location" class="field-input" placeholder="Sala 1" />
+              <select v-model="form.location" class="field-input" required>
+                <option v-for="location in editorLocationOptions" :key="location" :value="location">{{ location }}</option>
+              </select>
             </label>
             <label class="space-y-2 sm:col-span-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Estado</span>
               <template v-if="isTiendaForm">
                 <label class="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                  <input v-model="isDiscontinuedForm" type="checkbox" class="h-4 w-4 accent-amber-400" />
+                  <input v-model="isDiscontinuedForm" type="checkbox" class="h-4 w-4 accent-orange-400" />
                   Marcar como Descontinuado
                 </label>
                 <span class="block text-[11px] text-slate-500">
@@ -338,8 +340,10 @@
             </label>
           </div>
 
-          <button type="submit" class="mt-6 w-full rounded-2xl bg-amber-400 px-4 py-3 text-base font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.01] hover:bg-amber-300">
-            {{ editingId ? 'Guardar cambios' : 'Agregar articulo' }}
+          <p v-if="editorError" role="alert" class="app-notice app-notice--error mt-4 rounded-2xl border px-4 py-3 text-sm">{{ editorError }}</p>
+
+          <button type="submit" :disabled="isSaving" class="mt-6 w-full rounded-2xl bg-orange-400 px-4 py-3 text-base font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.01] hover:bg-orange-300">
+            {{ isSaving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Agregar articulo' }}
           </button>
         </form>
       </div>
@@ -348,12 +352,18 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import QuantityInput from "../components/QuantityInput.vue";
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
+import SearchInput from "../components/SearchInput.vue";
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { CheckCircle2, Package, Search, Tag, TrendingDown, Wrench } from 'lucide-vue-next';
 import InventoryDestinationPanel from '../components/inventory/InventoryDestinationPanel.vue';
 import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import { useGymStore } from '../../application/stores/gymStore';
+
+import { parseQuantity, MAX_QUANTITY } from '../../domain/utils/quantities.js';
+import { INVENTORY_CATEGORIES, INVENTORY_LOCATIONS, INVENTORY_UNITS, inventoryOptions } from '../utils/inventoryOptions.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -419,6 +429,9 @@ const paginaInicio = computed(() => (paginaActual.value - 1) * porPagina);
 const paginaFin = computed(() => Math.min(paginaInicio.value + porPagina, filteredInventory.value.length));
 const inventoryPaginado = computed(() => filteredInventory.value.slice(paginaInicio.value, paginaFin.value));
 
+watch([searchQuery, selectedCategory, selectedLocation, selectedStatus], () => { paginaActual.value = 1; });
+watch(totalPages, (pages) => { paginaActual.value = Math.max(1, Math.min(paginaActual.value, pages)); });
+
 // Derivados de inventory, solo lectura.
 const operationalPercent = computed(() => {
   if (!inventory.value.length) return 0;
@@ -435,6 +448,8 @@ const categorySummary = computed(() => {
 });
 const editingId = ref('');
 const isEditorOpen = ref(false);
+const isSaving = ref(false);
+const editorError = ref('');
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
 
@@ -450,6 +465,16 @@ const form = reactive({
   observations: '',
 });
 
+const categoryOptions = computed(() => inventoryOptions(INVENTORY_CATEGORIES, inventory.value.map(item => item.category), form.category));
+const editorLocationOptions = computed(() => inventoryOptions(INVENTORY_LOCATIONS, inventory.value.map(item => item.location), form.location));
+const unitOptions = computed(() => inventoryOptions(INVENTORY_UNITS, inventory.value.map(item => item.unidad_venta), form.unidad_venta));
+const stepQuantity = (delta) => {
+  try {
+    form.quantity = Math.min(MAX_QUANTITY, Math.max(0, parseQuantity(form.quantity) + delta));
+    editorError.value = '';
+  } catch (error) { editorError.value = error.message; }
+};
+
 const isTiendaForm = computed(() => String(form.category || '').trim().toLowerCase() === 'tienda');
 // En articulos de Tienda el estado lo calcula el backend; solo se marca o desmarca Descontinuado.
 const isDiscontinuedForm = computed({
@@ -462,11 +487,7 @@ const statusPreview = computed(() => {
   return editingId.value && current && current !== 'Descontinuado' ? current : 'Automatico';
 });
 
-const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
-  if (feedbackTone.value === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
-  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
-});
+const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
 
 /**
  * Valida los datos recibidos.
@@ -499,7 +520,7 @@ const inventoryStatusClass = (status) => {
   if (status === 'Operativo') return 'bg-green-100 text-green-700 border-green-300';
   if (status === 'Disponible') return 'bg-blue-100 text-blue-700 border-blue-300';
   if (status === 'En mantenimiento') return 'bg-violet-100 text-violet-700 border-violet-300';
-  if (status === 'Stock bajo') return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+  if (status === 'Stock bajo') return 'bg-orange-100 text-orange-800 border-orange-300';
   if (status === 'Agotado') return 'bg-rose-100 text-rose-700 border-rose-300';
   if (status === 'Descontinuado') return 'bg-slate-300 text-slate-600 border-slate-400 line-through';
   return 'bg-slate-200 text-slate-700 border-slate-300';
@@ -534,6 +555,7 @@ const resetForm = () => {
  */
 const openNewItem = () => {
   resetForm();
+  editorError.value = '';
   feedbackMessage.value = '';
   isEditorOpen.value = true;
 };
@@ -542,6 +564,8 @@ const openNewItem = () => {
  * Gestiona esta acción de la vista.
  */
 const closeEditor = () => {
+  if (isSaving.value) return;
+  editorError.value = '';
   isEditorOpen.value = false;
   resetForm();
 };
@@ -550,6 +574,7 @@ const closeEditor = () => {
  * Gestiona esta acción de la vista.
  */
 const editItem = (item) => {
+  editorError.value = '';
   editingId.value = item.id;
   form.name = item.name;
   form.category = item.category || 'General';
@@ -568,15 +593,24 @@ const editItem = (item) => {
  * Gestiona esta acción de la vista.
  */
 const handleSubmit = async () => {
+  if (isSaving.value) return;
+  editorError.value = '';
   try {
-    await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form });
+    if (!form.name.trim()) throw new Error('El nombre del artículo es obligatorio.');
+    const quantity = parseQuantity(form.quantity, { label: 'El stock inicial' });
+    const minQuantity = parseQuantity(form.minQuantity, { label: 'El stock mínimo' });
+    isSaving.value = true;
+    await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form, quantity, minQuantity });
     const savedLabel = editingId.value ? 'Articulo actualizado.' : 'Articulo registrado.';
+    isSaving.value = false;
     closeEditor();
     feedbackTone.value = 'success';
     feedbackMessage.value = savedLabel;
   } catch (error) {
     feedbackTone.value = 'error';
-    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo guardar el articulo.';
+    editorError.value = error instanceof Error ? error.message : 'No se pudo guardar el articulo.';
+  } finally {
+    isSaving.value = false;
   }
 };
 

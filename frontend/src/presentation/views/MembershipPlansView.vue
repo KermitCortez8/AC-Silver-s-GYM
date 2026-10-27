@@ -92,6 +92,7 @@
 </template>
 
 <script setup>
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useGymStore } from '../../application/stores/gymStore';
 
@@ -102,7 +103,7 @@ const editor = ref(null);
 const editorError = ref('');
 const saving = ref(false);
 const plans = computed(() => gymStore.planCatalog);
-const feedbackClass = computed(() => feedbackTone.value === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
+const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 const form = reactive({ id_pm: null, name: '', duration: '30 dias', price: 0, description: '', benefits: '', active: true });
 
 /**

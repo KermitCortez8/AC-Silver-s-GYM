@@ -6,13 +6,13 @@
         <h2 class="mt-2 text-2xl font-black text-white">Movimientos de inventario</h2>
         <p class="mt-1 text-sm text-slate-400">Entradas, salidas y ajustes. Una salida con destino Tienda repone el stock del producto.</p>
       </div>
-      <button type="button" class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] hover:bg-amber-300" @click="openNew">
+      <button type="button" class="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.02] hover:bg-orange-300" @click="openNew">
         + Registrar movimiento
       </button>
     </div>
 
     <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
-      <input v-model="search" class="field-input" placeholder="Buscar articulo o descripcion" />
+      <SearchInput v-model="search" class="field-input" placeholder="Buscar articulo o descripcion" />
       <select v-model="typeFilter" class="field-input">
         <option value="all">Todos los tipos</option>
         <option value="entrada">Entradas</option>
@@ -56,7 +56,7 @@
                 <span v-else-if="!movement.id_usuario" class="ml-2 rounded-full bg-slate-400/15 px-2 py-0.5 text-[11px] font-black text-slate-300">Automatico</span>
               </td>
               <td class="px-4 py-3"><span class="rounded-full px-3 py-1 text-xs font-black capitalize" :class="movementClass(movement.tipo_movimiento)">{{ movement.tipo_movimiento }}</span></td>
-              <td class="px-4 py-3 font-bold text-amber-200">{{ signedQuantity(movement) }}</td>
+              <td class="px-4 py-3 font-bold text-orange-200">{{ signedQuantity(movement) }}</td>
               <td class="px-4 py-3">
                 <span v-if="destinationOf(movement)" class="rounded-full px-3 py-1 text-xs font-black" :class="destinationClass(destinationOf(movement))">
                   {{ destinationLabel(destinationOf(movement)) }}
@@ -111,7 +111,7 @@
             </label>
             <label class="space-y-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Cantidad</span>
-              <input v-model.number="form.cantidad" type="number" min="1" class="field-input" :disabled="lockedByOrder" />
+              <QuantityInput v-model="form.cantidad" class="field-input" :disabled="lockedByOrder" />
             </label>
             <label v-if="form.tipo_movimiento === 'salida'" class="space-y-2 sm:col-span-2">
               <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Destino</span>
@@ -131,7 +131,7 @@
             </label>
           </div>
 
-          <p v-if="lockedByOrder" class="mt-4 rounded-2xl border border-sky-400/25 bg-sky-400/10 px-4 py-3 text-xs leading-5 text-sky-50">
+          <p v-if="lockedByOrder" class="app-notice app-notice--info mt-4 rounded-2xl border px-4 py-3 text-xs leading-5">
             Movimiento de un pedido de Tienda: solo puedes cambiar la fecha y la descripcion. La referencia al pedido se conserva.
           </p>
           <div v-else-if="selectedItem" class="mt-4 space-y-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-5 text-slate-300">
@@ -144,9 +144,9 @@
             <p v-if="projectedStoreStock < 0" class="font-bold text-rose-500">La Tienda ya vendio esas unidades; no puedes reducir la reposicion.</p>
           </div>
 
-          <p v-if="modalError" class="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-50">{{ modalError }}</p>
+          <p v-if="modalError" role="alert" class="app-notice app-notice--error mt-4 rounded-2xl border px-4 py-3 text-sm">{{ modalError }}</p>
 
-          <button type="submit" class="mt-5 w-full rounded-2xl bg-amber-400 px-4 py-3 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 disabled:opacity-60" :disabled="isSaving">
+          <button type="submit" class="mt-5 w-full rounded-2xl bg-orange-400 px-4 py-3 font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:bg-orange-300 disabled:opacity-60" :disabled="isSaving">
             {{ isSaving ? 'Guardando...' : editingMovement ? 'Guardar cambios' : 'Registrar movimiento' }}
           </button>
         </form>
@@ -156,6 +156,10 @@
 </template>
 
 <script setup>
+import QuantityInput from "../QuantityInput.vue";
+import { feedbackClass as noticeClassFor } from "../../utils/feedback.js";
+import SearchInput from "../SearchInput.vue";
+import { parseQuantity } from '../../../domain/utils/quantities.js';
 import { limaDate } from '../../../domain/utils/dates.js';
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../../../application/stores/authStore';
@@ -180,9 +184,7 @@ const editingMovement = ref(null);
 const inventory = computed(() => gymStore.inventory);
 const products = computed(() => gymStore.productos_tienda || []);
 const movements = computed(() => gymStore.inventoryMovements || []);
-const feedbackClass = computed(() => feedbackTone.value === 'error'
-  ? 'border-rose-400/20 bg-rose-400/10 text-rose-50'
-  : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
+const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 const today = () => limaDate();
 const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, destino: '', fecha_movimiento: today(), descripcion: '' });
 const form = reactive(emptyForm());
@@ -289,8 +291,10 @@ const closeModal = () => {
  * Gestiona esta acción de la vista.
  */
 const save = async () => {
+  if (isSaving.value) return;
   modalError.value = '';
   try {
+    const cantidad = lockedByOrder.value ? undefined : parseQuantity(form.cantidad, { min: 1 });
     if (!form.id_item) throw new Error('Selecciona un articulo de inventario.');
     if (!lockedByOrder.value && projectedStock.value < 0) throw new Error('No hay stock suficiente en Inventario para este movimiento.');
     if (!lockedByOrder.value && projectedStoreStock.value < 0) throw new Error('La Tienda ya vendio esas unidades; no puedes reducir la reposicion.');
@@ -299,12 +303,13 @@ const save = async () => {
     if (editingMovement.value) {
       const payload = lockedByOrder.value
         ? { fecha_movimiento: form.fecha_movimiento, descripcion: form.descripcion }
-        : { ...form, destino };
+        : { ...form, cantidad, destino };
       await gymStore.updateInventoryMovement(editingMovement.value.id_mov, payload);
       feedback.value = 'Movimiento actualizado y stock recalculado.';
     } else {
       await gymStore.registrarMovimientoToServer({
         ...form,
+        cantidad,
         destino: destino || null,
         id_usuario: authStore.user?.id_usuario || authStore.user?.id || 1,
       });

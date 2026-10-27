@@ -11,7 +11,7 @@
         <p class="mt-1 text-3xl font-black text-white">{{ totals.sold }}</p>
         <p class="text-xs text-slate-500">unidades en pedidos no cancelados</p>
       </article>
-      <article class="rounded-2xl border-l-4 border-l-amber-400 bg-slate-900/80 px-5 py-4">
+      <article class="rounded-2xl border-l-4 border-l-orange-400 bg-slate-900/80 px-5 py-4">
         <p class="text-xs font-bold uppercase tracking-wide text-slate-400">En Tienda ahora</p>
         <p class="mt-1 text-3xl font-black text-white">{{ totals.inStore }}</p>
         <p class="text-xs text-slate-500">reserva en Inventario: {{ totals.reserve }}</p>
@@ -26,7 +26,7 @@
           <p class="mt-1 text-sm text-slate-400">Cuanto salio de Inventario hacia Tienda y cuanto se vendio. Las fechas filtran reposiciones y ventas.</p>
         </div>
         <div class="grid gap-3 sm:grid-cols-3 lg:w-[620px]">
-          <input v-model="search" class="field-input" placeholder="Buscar articulo" />
+          <SearchInput v-model="search" class="field-input" placeholder="Artículo o producto vinculado" />
           <input v-model="dateFrom" type="date" class="field-input" title="Desde" />
           <input v-model="dateTo" type="date" class="field-input" title="Hasta" />
         </div>
@@ -56,7 +56,7 @@
                 <td class="px-4 py-3 text-right font-bold text-green-300">{{ row.sold }}</td>
                 <td class="px-4 py-3 text-right">
                   <span class="font-bold" :class="row.isLow ? 'text-rose-500' : 'text-white'">{{ row.inStore }}</span>
-                  <span v-if="row.isLow" class="ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-[11px] font-black text-yellow-800">Reponer</span>
+                  <span v-if="row.isLow" class="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-black text-orange-800">Reponer</span>
                 </td>
                 <td class="px-4 py-3 text-slate-400">{{ row.lastRestock || 'Nunca' }}</td>
               </tr>
@@ -72,6 +72,7 @@
 </template>
 
 <script setup>
+import SearchInput from "../SearchInput.vue";
 import { computed, ref } from 'vue';
 import { useGymStore } from '../../../application/stores/gymStore';
 

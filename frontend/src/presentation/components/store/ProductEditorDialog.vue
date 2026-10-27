@@ -16,7 +16,7 @@
             <p
               class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.35em] text-slate-500"
             >
-              <span class="text-amber-400">Producto</span>
+              <span class="text-orange-400">Producto</span>
               <span>•</span>
               <span>{{
                 editingId ? "Edicion de registro" : "Nuevo registro"
@@ -51,13 +51,13 @@
         <div class="p-6 space-y-6">
           <!-- Identificador -->
           <div
-            class="flex items-center gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/8 px-4 py-3"
+            class="flex items-center gap-3 rounded-2xl border border-orange-400/25 bg-orange-400/8 px-4 py-3"
           >
             <div
-              class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-400/20"
+              class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-orange-400/20"
             >
               <svg
-                class="h-4 w-4 text-amber-300"
+                class="h-4 w-4 text-orange-300"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -72,7 +72,7 @@
             </div>
             <div>
               <p
-                class="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300"
+                class="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-300"
               >
                 Identificador unico
               </p>
@@ -200,11 +200,9 @@
                       : "Stock en Tienda"
                   }}</span
                 >
-                <input
+                <QuantityInput
                   v-if="stockEditable"
-                  v-model.number="form.cantidad"
-                  type="number"
-                  min="0"
+                  v-model="form.cantidad"
                   class="field-input"
                 />
                 <input
@@ -220,16 +218,14 @@
                   class="text-xs font-semibold uppercase tracking-wider text-slate-400"
                   >Stock minimo</span
                 >
-                <input
-                  v-model.number="form.minimo"
-                  type="number"
-                  min="0"
+                <QuantityInput
+                  v-model="form.minimo"
                   class="field-input"
                 />
               </label>
 
               <div
-                class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-slate-200 sm:col-span-2"
+                class="app-notice app-notice--info rounded-2xl border px-4 py-3 text-xs leading-5 sm:col-span-2"
               >
                 <p v-if="stockEditable">
                   El stock inicial queda en la Tienda; la reserva de Inventario
@@ -299,7 +295,7 @@
                 <div class="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    class="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-200 transition hover:bg-amber-400/20"
+                    class="rounded-xl border border-orange-400/30 bg-orange-400/10 px-4 py-2 text-sm font-bold text-orange-200 transition hover:bg-orange-400/20"
                     :disabled="isLoadingBucketImages"
                     @click="openBucketPicker"
                   >
@@ -335,7 +331,7 @@
 
                 <p
                   v-if="isUploadingImage"
-                  class="flex items-center gap-2 text-xs font-semibold text-amber-300"
+                  class="flex items-center gap-2 text-xs font-semibold text-orange-300"
                 >
                   <svg
                     class="h-3.5 w-3.5 animate-spin"
@@ -422,8 +418,8 @@
                   class="rounded-xl border px-3 py-2 text-xs"
                   :class="
                     imageFeedbackTone === 'error'
-                      ? 'border-rose-400/20 bg-rose-400/10 text-rose-200'
-                      : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
+                      ? 'app-notice app-notice--error'
+                      : 'app-notice app-notice--info'
                   "
                 >
                   {{ imageFeedback }}
@@ -436,7 +432,7 @@
         <p
           v-if="feedbackMessage && feedbackTone === 'error'"
           role="alert"
-          class="mx-6 mt-4 rounded-xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+          class="app-notice app-notice--error mx-6 mt-4 rounded-xl border px-4 py-3 text-sm"
         >
           {{ feedbackMessage }}
         </p>
@@ -446,7 +442,7 @@
           <button
             :disabled="isSaving || isUploadingImage"
             type="submit"
-            class="w-full rounded-2xl bg-amber-400 px-4 py-3.5 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 hover:shadow-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60"
+            class="w-full rounded-2xl bg-orange-400 px-4 py-3.5 font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:bg-orange-300 hover:shadow-orange-400/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {{
               isSaving
@@ -463,6 +459,7 @@
 </template>
 
 <script setup>
+import QuantityInput from "../QuantityInput.vue";
 defineProps([
   "availableTiendaItems",
   "bucketImages",

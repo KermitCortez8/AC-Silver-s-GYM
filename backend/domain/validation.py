@@ -28,6 +28,16 @@ def nonnegative(value, label="Valor"):
     return value
 
 
+def integer_quantity(value, label="Cantidad", minimum=0):
+    """Reject lossy coercions, signs and exponents before changing stock."""
+    if isinstance(value, bool) or not re.fullmatch(r"[0-9]+", str(value)):
+        raise ValueError(f"{label} debe contener solo dígitos enteros")
+    quantity = int(value)
+    if not minimum <= quantity <= 2147483647:
+        raise ValueError(f"{label} debe estar entre {minimum} y 2147483647")
+    return quantity
+
+
 def civil_date(value):
     text = str(value or "").strip()
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):

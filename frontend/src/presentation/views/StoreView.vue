@@ -36,14 +36,14 @@
           :key="tab.value"
           type="button"
           class="relative px-5 py-3 text-sm font-bold transition-colors duration-200"
-          :class="activeTab === tab.value ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'"
+          :class="activeTab === tab.value ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'"
           :aria-current="activeTab === tab.value ? 'page' : undefined"
           @click="activeTab = tab.value"
         >
           {{ tab.label }}
           <span
             v-if="activeTab === tab.value"
-            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-400"
+            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-orange-400"
           ></span>
         </button>
       </nav>
@@ -52,11 +52,10 @@
     <div v-if="!isAdmin" class="ws-panel flex flex-col gap-4 sm:flex-row sm:items-end">
       <label class="ws-search"
         ><span class="sr-only">Buscar productos</span
-        ><Search :size="18" /><input
+        ><Search :size="18" /><SearchInput
           v-model="productSearch"
-          type="search"
           class="ws-input"
-          placeholder="Busca por nombre o categoría"
+          placeholder="Nombre, categoría o descripción"
       /></label>
       <label class="sm:w-52"
         ><span class="ws-field-label">Categoría</span
@@ -119,13 +118,13 @@
          </div>
         <button
           type="button"
-          class="flex items-center gap-3 rounded-2xl border-l-4 border-l-yellow-400 bg-slate-900/80 px-4 py-3 text-left transition hover:bg-slate-800/80"
-          :class="soloStockBajo ? 'ring-2 ring-yellow-400/70' : ''"
+          class="flex items-center gap-3 rounded-2xl border-l-4 border-l-orange-400 bg-slate-900/80 px-4 py-3 text-left transition hover:bg-slate-800/80"
+          :class="soloStockBajo ? 'ring-2 ring-orange-400/70' : ''"
           :aria-pressed="soloStockBajo"
           :title="soloStockBajo ? 'Quitar filtro de stock bajo' : 'Ver solo productos por reponer desde Inventario'"
           @click="toggleStockBajo"
         >
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
             <TrendingDown :size="20" stroke-width="2.5" />
           </span>
           <div>
@@ -174,7 +173,7 @@
       <div class="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr]">
         <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
           <Search :size="16" class="shrink-0 text-slate-500" />
-          <input v-model="busqueda" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar producto, codigo..." />
+          <SearchInput v-model="busqueda" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Nombre, código o descripción" />
         </div>
         <select v-model="filtroEstado" class="field-input">
           <option value="">Todos los estados</option>
@@ -213,7 +212,7 @@
                 <!-- Producto -->
                 <td class="max-w-sm px-5 py-4 align-top">
                   <div class="flex items-start gap-3">
-                    <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-200">
+                    <span class="mt-0.5 rounded-lg bg-orange-400/10 px-2.5 py-1 text-xs font-bold text-orange-200">
                       {{ productCode(producto.id_producto) }}
                     </span>
                     <div class="min-w-0">
@@ -265,7 +264,7 @@
 
                 <!-- Almacen -->
                 <td data-label="Almacén" class="px-4 py-4 align-top">
-                  <span v-if="producto.id_item" class="font-semibold text-amber-200">Item #{{ producto.id_item }}</span>
+                  <span v-if="producto.id_item" class="font-semibold text-orange-200">Item #{{ producto.id_item }}</span>
                   <span v-else class="text-slate-500">Sin vincular</span>
                 </td>
 
@@ -612,6 +611,8 @@
 </template>
 
 <script setup>
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
+import SearchInput from "../components/SearchInput.vue";
 import { useProductEditor } from '../composables/store/useProductEditor.js';
 import ProductEditorDialog from '../components/store/ProductEditorDialog.vue';
 import { computed, onMounted, ref } from 'vue';
@@ -737,13 +738,7 @@ const cantidadInput = ref({});
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
 
-const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success')
-    return 'ws-border-success ws-tint-success ws-success';
-  if (feedbackTone.value === 'error')
-    return 'ws-border-danger ws-tint-danger ws-danger';
-  return 'ws-border-info ws-tint-info ws-info';
-});
+const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
 
 const productCode = (id) => `PROD-${String(id || 0).padStart(4, '0')}`;
 
@@ -763,7 +758,7 @@ const productStatusClass = (status) => {
 const productStatusDot = (status) => {
   if (status === 'Disponible') return 'bg-emerald-400';
   if (status === 'Agotado') return 'bg-rose-400';
-  return 'bg-amber-400';
+  return 'bg-orange-400';
 };
 
 const stockBarWidth = (producto) => {
@@ -775,7 +770,7 @@ const stockBarColor = (producto) => {
   const cantidad = Number(producto.cantidad || 0);
   const minimo = Number(producto.minimo ?? 1);
   if (cantidad <= minimo) return 'bg-rose-400';
-  if (cantidad <= minimo * 2) return 'bg-amber-400';
+  if (cantidad <= minimo * 2) return 'bg-orange-400';
   return 'bg-emerald-400';
 };
 

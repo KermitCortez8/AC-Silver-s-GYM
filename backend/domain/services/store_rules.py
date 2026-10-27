@@ -1,6 +1,6 @@
 """Reglas de store sobre el agregado en memoria."""
 from __future__ import annotations
-from domain.validation import nonnegative, required_text
+from domain.validation import integer_quantity, nonnegative, required_text
 from domain.errors import EntityNotFound
 
 from datetime import datetime, timezone
@@ -90,8 +90,8 @@ class StoreRules:
             producto["unidad_venta"] = str(producto.get("unidad_venta") or "unidad")
             required_text(producto.get("nombre_producto"))
             producto["precio_venta"] = float(nonnegative(producto.get("precio_venta") or 0, "Precio"))
-            producto["stock_minimo"] = int(nonnegative(producto.get("stock_minimo") or 0, "Stock mínimo"))
-            stock_solicitado = int(nonnegative(producto.get("cantidad_stock") or 0, "Stock"))
+            producto["stock_minimo"] = integer_quantity(producto["stock_minimo"] if producto.get("stock_minimo") is not None else 0, "Stock mínimo")
+            stock_solicitado = integer_quantity(producto.get("cantidad_stock", 0), "Stock")
 
             id_item = int(producto["id_item"]) if producto.get("id_item") else None
             if previo and previo.get("id_item"):
@@ -185,7 +185,7 @@ class StoreRules:
             solicitado: dict[int, int] = {}
             for raw_item in raw_items:
                 id_producto = int(raw_item.get("id_producto") or 0)
-                cantidad = max(1, int(raw_item.get("cantidad") or 1))
+                cantidad = integer_quantity(raw_item.get("cantidad", 1), minimum=1)
                 producto = next(
                     (
                         row

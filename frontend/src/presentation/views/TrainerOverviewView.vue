@@ -61,7 +61,7 @@
           <!-- Buscador -->
           <div class="relative w-full sm:w-64">
             <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-            <input v-model="search" class="field-input search-input text-xs pr-4 py-2.5" placeholder="Filtrar por cliente, servicio o día..." @input="handleSearchInput" />
+            <SearchInput v-model="search" class="field-input search-input text-xs pr-4 py-2.5" placeholder="Filtrar por cliente, servicio o día..." @input="handleSearchInput" />
           </div>
         </div>
       </div>
@@ -149,6 +149,7 @@
 </template>
 
 <script setup>
+import SearchInput from "../components/SearchInput.vue";
 import { computed, onMounted, ref } from 'vue';
 import { useGymStore } from '../../application/stores/gymStore';
 

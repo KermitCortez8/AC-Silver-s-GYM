@@ -22,6 +22,32 @@ const context = () => ({
   inventory: ref([]), inventoryMovements: ref([]), syncError: ref(''), resourceErrors: new Map(),
 });
 
+test('deleting inventory preserves discontinued records and reports the server response', async () => {
+  setActivePinia(createPinia());
+  const ctx = context();
+  ctx.inventory.value = [{ id: 'item-1', name: 'Agua', status: 'Disponible' }];
+  ctx.fetchFromBackend = async () => {};
+  const result = { accion: 'descontinuado', item: { estado: 'Descontinuado' } };
+  const module = createInventoryModule(ctx, {
+    deleteInventoryItem: async (id, token) => {
+      assert.equal(id, 1);
+      assert.equal(token, 'session');
+      return result;
+    },
+  });
+  assert.deepEqual(await module.deleteInventoryItem('item-1'), result);
+  assert.equal(ctx.inventory.value[0].status, 'Descontinuado');
+});
+
+test('deleting inventory without history removes the record after a successful response', async () => {
+  setActivePinia(createPinia());
+  const ctx = context();
+  ctx.inventory.value = [{ id: 'item-1' }];
+  const module = createInventoryModule(ctx, { deleteInventoryItem: async () => null });
+  await module.deleteInventoryItem('item-1');
+  assert.equal(ctx.inventory.value.length, 0);
+});
+
 const operations = [
   ['attendance', createAttendanceModule, 'checkinByDniServer', [{ dni: '12345678' }], { id_asistencia: 1 }],
   ['clients', createClientsModule, 'upsertClienteToServer', [{ nombre: 'Ana' }], { id_cliente: 1 }],

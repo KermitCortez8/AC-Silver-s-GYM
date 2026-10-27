@@ -1,3 +1,4 @@
+import { parseQuantity } from "../../../domain/utils/quantities.js";
 import { computed, reactive, ref } from "vue";
 import { useStoreImagePicker } from "./useStoreImagePicker.js";
 
@@ -148,8 +149,8 @@ export const useProductEditor = ({
         id_item: form.id_item || null,
         unidad_venta: form.unidad_venta,
         precio: form.precio,
-        cantidad: form.cantidad,
-        minimo: form.minimo,
+        cantidad: parseQuantity(form.cantidad, { label: "El stock inicial" }),
+        minimo: parseQuantity(form.minimo, { label: "El stock mínimo" }),
         estado: form.estado,
         imagen_url: form.imagen_url,
       });

@@ -7,11 +7,17 @@ from __future__ import annotations
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
+from domain.validation import integer_quantity
 from domain.validation import required_text, email_address, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
 
 
 class ValidatedInput(BaseModel):
     model_config = ConfigDict(allow_inf_nan=False)
+
+    @field_validator("cantidad_stock", "stock_minimo", "cantidad", check_fields=False, mode="before")
+    @classmethod
+    def valid_integer_quantity(cls, value):
+        return integer_quantity(value) if value is not None else value
 
     @field_validator("nombre", "nombre_plan", "nombre_item", "nombre_producto", "nombre_rutina", "tipo", "duracion", check_fields=False)
     @classmethod

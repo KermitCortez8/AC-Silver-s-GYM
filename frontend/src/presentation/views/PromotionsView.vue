@@ -16,10 +16,10 @@
     <!-- Modal de Notificación / Alerta -->
     <Teleport to="body">
       <div v-if="feedback" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all">
-        <div class="w-full max-w-md rounded-3xl border bg-slate-900 p-6 shadow-2xl space-y-5" :class="feedbackTone === 'error' ? 'border-rose-500/40' : 'border-emerald-500/40'">
+        <div class="w-full max-w-md rounded-3xl border bg-slate-900 p-6 shadow-2xl space-y-5" :class="feedbackTone === 'error' ? 'border-rose-500/40' : 'border-blue-500/40'">
           <div class="flex items-start justify-between gap-4">
             <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-inner" :class="feedbackTone === 'error' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'">
+              <div class="h-10 w-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-inner" :class="feedbackTone === 'error' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'">
                 <i :class="feedbackTone === 'error' ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-check'"></i>
               </div>
               <div>
@@ -34,14 +34,14 @@
             </button>
           </div>
 
-          <div class="p-4 rounded-2xl bg-slate-950/70 border border-white/5">
+          <div class="app-notice p-4 rounded-2xl border" :class="feedbackTone === 'error' ? 'app-notice--error' : 'app-notice--info'">
             <p class="text-sm font-medium text-slate-200 leading-relaxed">
               {{ feedback }}
             </p>
           </div>
 
           <div class="flex justify-end pt-1">
-            <button type="button" @click="feedback = ''" :class="feedbackTone === 'error' ? 'bg-rose-500 hover:bg-rose-400 shadow-rose-500/25' : 'bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/25'" class="w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-white transition-all shadow-lg cursor-pointer">
+            <button type="button" @click="feedback = ''" :class="feedbackTone === 'error' ? 'bg-rose-500 hover:bg-rose-400 shadow-rose-500/25' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/25'" class="w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-white transition-all shadow-lg cursor-pointer">
               Entendido
             </button>
           </div>
@@ -100,7 +100,7 @@
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
         <div class="flex justify-between items-start">
           <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Descuentos Aplicados</p>
-          <i class="fa-solid fa-dollar-sign text-amber-500 bg-amber-400/10 p-2 rounded-full text-xs px-3"></i>
+          <i class="fa-solid fa-dollar-sign text-orange-500 bg-orange-400/10 p-2 rounded-full text-xs px-3"></i>
         </div>
         <p class="mt-4 text-3xl font-black text-white">S/. {{ totalAhorrado.toFixed(2) }}</p>
         <p class="mt-2 text-xs text-slate-400">Ahorrados a clientes este mes</p>
@@ -162,7 +162,7 @@
                       :class="{
                         'bg-emerald-500/15 text-emerald-400 border-emerald-500/30': getPromoStatus(promo).tone === 'emerald',
                         'bg-slate-700/40 text-slate-400 border-slate-600/30': getPromoStatus(promo).tone === 'slate',
-                        'bg-amber-500/15 text-amber-400 border-amber-500/30': getPromoStatus(promo).tone === 'amber',
+                        'bg-orange-500/15 text-orange-400 border-orange-500/30': getPromoStatus(promo).tone === 'amber',
                         'bg-rose-500/15 text-rose-400 border-rose-500/30': getPromoStatus(promo).tone === 'rose'
                       }"
                       class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider"
@@ -184,7 +184,7 @@
                 {{ promo.discountType === 'fixed' ? `S/. ${promo.discountValue}` : `${promo.discountValue}%` }}
               </td>
               <td class="px-6 py-4 text-xs">
-                <span v-if="getPromoStatus(promo).label === 'Terminada'" class="inline-flex items-center gap-1 font-extrabold text-amber-400">
+                <span v-if="getPromoStatus(promo).label === 'Terminada'" class="inline-flex items-center gap-1 font-extrabold text-orange-400">
                   <i class="fa-solid fa-ban text-[11px]"></i> No aplica (Terminada)
                 </span>
                 <span v-else class="text-slate-400">
@@ -202,7 +202,7 @@
                   <div class="w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
                     <div 
                       class="h-full rounded-full transition-all" 
-                      :class="(promo.usos_actuales || 0) >= promo.limite_cupos ? 'bg-amber-400' : 'bg-rose-500'" 
+                      :class="(promo.usos_actuales || 0) >= promo.limite_cupos ? 'bg-orange-400' : 'bg-rose-500'"
                       :style="{ width: Math.min(100, Math.round(((promo.usos_actuales || 0) / promo.limite_cupos) * 100)) + '%' }"
                     ></div>
                   </div>
@@ -369,7 +369,7 @@
                     <label class="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-widest">
                       <i class="fa-regular fa-credit-card"></i> SELECCIONA EL PLAN APLICABLE
                     </label>
-                    <span class="text-[10px] text-amber-400 font-bold bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+                    <span class="text-[10px] text-orange-400 font-bold bg-orange-400/10 px-2.5 py-0.5 rounded-full border border-orange-400/20">
                       1 solo plan
                     </span>
                   </div>
@@ -456,7 +456,7 @@
                         <span class="text-slate-300">{{ selectedPlan?.duration || '30 dias' }}</span>
                       </div>
                       <div>
-                        <span v-if="form.limite_cupos && form.limite_cupos > 0" :class="form.usos_actuales >= form.limite_cupos ? 'text-amber-400 bg-amber-500/10 border-amber-500/30' : 'text-amber-400 bg-amber-400/10 border-amber-400/30'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold">
+                        <span v-if="form.limite_cupos && form.limite_cupos > 0" :class="form.usos_actuales >= form.limite_cupos ? 'text-orange-400 bg-orange-500/10 border-orange-500/30' : 'text-orange-400 bg-orange-400/10 border-orange-400/30'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold">
                           <i :class="form.usos_actuales >= form.limite_cupos ? 'fa-solid fa-flag-checkered' : 'fa-solid fa-fire'"></i>
                           {{ form.usos_actuales >= form.limite_cupos ? 'Terminada' : `Quedan ${Math.max(0, form.limite_cupos - (form.usos_actuales || 0))} de ${form.limite_cupos} cupos` }}
                         </span>

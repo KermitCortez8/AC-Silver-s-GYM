@@ -44,7 +44,7 @@
       <div class="mt-4 grid gap-3 sm:max-w-md">
         <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
           <Search :size="16" class="shrink-0 text-slate-500" />
-          <input v-model="search" @input="paginaActual = 1" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar producto, cliente o pedido..." />
+          <SearchInput v-model="search" @input="paginaActual = 1" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar producto, cliente o pedido..." />
         </div>
       </div>
 
@@ -67,7 +67,7 @@
               <tr v-for="movement in paginatedMovements" :key="movement.key" class="transition hover:bg-white/[0.04]" :class="movement.isCancelled ? 'opacity-60' : ''">
                 <td class="px-5 py-4 align-top text-slate-300">{{ formatDate(movement.fecha) }}</td>
                 <td class="px-4 py-4 align-top font-bold text-white">{{ movement.producto }}</td>
-                <td class="px-4 py-4 align-top font-bold text-amber-200">-{{ movement.cantidad }}</td>
+                <td class="px-4 py-4 align-top font-bold text-orange-200">-{{ movement.cantidad }}</td>
                 <td class="px-4 py-4 align-top font-black text-emerald-300">S/. {{ movement.subtotal.toFixed(2) }}</td>
                 <td class="px-4 py-4 align-top">
                   <p class="font-bold text-white">#{{ movement.idPedido }}</p>
@@ -124,6 +124,7 @@
 </template>
 
 <script setup>
+import SearchInput from "../SearchInput.vue";
 import { computed, ref } from 'vue';
 import { Activity, ShoppingBag, DollarSign, Search } from 'lucide-vue-next';
 import { useGymStore } from '../../../application/stores/gymStore';

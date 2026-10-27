@@ -99,9 +99,8 @@
             >Buscar clientes por nombre, DNI, correo o ID</span
           >
           <Search :size="18" aria-hidden="true" />
-          <input
+          <SearchInput
             v-model="search"
-            type="search"
             class="ws-input"
             placeholder="Nombre, DNI, correo o ID…"
           />
@@ -439,6 +438,8 @@
 </template>
 
 <script setup>
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
+import SearchInput from "../components/SearchInput.vue";
 import { useClientMembershipActions } from '../composables/clients/useClientMembershipActions.js';
 import { useClientEditor } from '../composables/clients/useClientEditor.js';
 import ClientDetailsDialog from '../components/clients/ClientDetailsDialog.vue';
@@ -464,7 +465,7 @@ const router = useRouter();
 
 const clients = computed(() => gymStore.members);
 
-const search = ref(typeof route.query.search === 'string' ? route.query.search : '');
+const search = ref(typeof route.query.search === 'string' ? route.query.search.slice(0, 30) : '');
 const statusFilter = ref(
   ['active', 'pending', 'expired'].includes(route.query.status)
     ? route.query.status
@@ -605,13 +606,7 @@ const initials = (name) =>
     .map((part) => part[0])
     .join('')
     .toUpperCase() || '?';
-const feedbackToneClass = computed(() =>
-  feedbackTone.value === 'success'
-    ? 'ws-tint-success ws-success'
-    : feedbackTone.value === 'error'
-      ? 'ws-tint-danger ws-danger'
-      : 'ws-tint-info ws-info',
-);
+const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
 const refreshClients = async (force = false) => {
   isLoading.value = true;
   try {

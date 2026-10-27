@@ -17,7 +17,7 @@
     <section v-if="returnNotice && !isVerifying" class="rounded-2xl border px-6 py-5" :class="noticeClass" data-test="return-notice">
       <p class="font-bold">{{ returnNotice.message }}</p>
       <div v-if="returnNotice.canRetry" class="mt-4">
-        <button class="rounded-2xl bg-amber-400 px-5 py-3 font-bold text-slate-950" data-test="retry-return" @click="retryReturn">
+        <button class="rounded-2xl bg-orange-400 px-5 py-3 font-bold text-slate-950" data-test="retry-return" @click="retryReturn">
           Verificar de nuevo
         </button>
       </div>
@@ -34,7 +34,7 @@
       <h2 class="mt-2 text-2xl font-black text-white">Pedido #{{ orderCreated.id_pedido }}</h2>
       <p class="mt-2 text-emerald-50">{{ orderCreatedMessage }}</p>
       <div class="mt-5 flex flex-col gap-3 sm:flex-row">
-        <button class="rounded-2xl bg-amber-400 px-5 py-3 font-bold text-slate-950" @click="router.push('/user/store')">
+        <button class="rounded-2xl bg-orange-400 px-5 py-3 font-bold text-slate-950" @click="router.push('/user/store')">
           Seguir comprando
         </button>
         <button class="rounded-2xl border border-white/10 px-5 py-3 font-bold text-white" @click="router.push('/user/dashboard')">
@@ -47,7 +47,7 @@
       <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Carrito</p>
       <h2 class="mt-2 text-2xl font-black text-white">No hay productos para pagar</h2>
       <p class="mt-2 text-slate-400">Agrega articulos desde tienda para iniciar una compra.</p>
-      <button class="mt-6 rounded-2xl bg-amber-400 px-5 py-3 font-bold text-slate-950" @click="router.push('/user/store')">
+      <button class="mt-6 rounded-2xl bg-orange-400 px-5 py-3 font-bold text-slate-950" @click="router.push('/user/store')">
         Ver tienda
       </button>
     </section>
@@ -86,7 +86,7 @@
           </label>
         </div>
 
-        <div class="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
+        <div class="app-notice app-notice--info mt-5 rounded-2xl border px-4 py-3 text-sm">
           {{ infoMessage }}
         </div>
 
@@ -94,7 +94,7 @@
           {{ feedback }}
         </p>
 
-        <button type="submit" class="mt-6 w-full rounded-2xl bg-amber-400 px-4 py-3 font-black text-slate-950 transition hover:bg-amber-300 disabled:opacity-60" data-test="submit" :disabled="isSubmitting">
+        <button type="submit" class="mt-6 w-full rounded-2xl bg-orange-400 px-4 py-3 font-black text-slate-950 transition hover:bg-orange-300 disabled:opacity-60" data-test="submit" :disabled="isSubmitting">
           {{ submitLabel }}
         </button>
       </form>
@@ -118,7 +118,7 @@
                 <p class="mt-1 text-sm text-slate-400">Cantidad: {{ item.cantidad }}</p>
               </div>
             </div>
-              <p class="shrink-0 font-black text-amber-300">S/. {{ (Number(item.precio || 0) * Number(item.cantidad || 0)).toFixed(2) }}</p>
+              <p class="shrink-0 font-black text-orange-300">S/. {{ (Number(item.precio || 0) * Number(item.cantidad || 0)).toFixed(2) }}</p>
             </div>
           </article>
         </div>
@@ -134,7 +134,7 @@
           </div>
           <div class="flex justify-between border-t border-white/10 pt-3">
             <span class="font-black text-white">Total</span>
-            <span class="text-xl font-black text-amber-300">S/. {{ cartTotal.total.toFixed(2) }}</span>
+            <span class="text-xl font-black text-orange-300">S/. {{ cartTotal.total.toFixed(2) }}</span>
           </div>
         </div>
       </aside>
@@ -143,6 +143,7 @@
 </template>
 
 <script setup>
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../../application/composables/useAuth';
@@ -177,17 +178,9 @@ const payment = reactive({
 
 const isCard = computed(() => payment.method === 'tarjeta');
 
-const feedbackClass = computed(() => {
-  if (feedbackTone.value === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
-  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
-});
+const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 
-const noticeClass = computed(() => {
-  const tone = returnNotice.value?.tone;
-  if (tone === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
-  if (tone === 'warn') return 'border-amber-400/20 bg-amber-400/10 text-amber-50';
-  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
-});
+const noticeClass = computed(() => noticeClassFor(returnNotice.value?.tone));
 
 const infoMessage = computed(() =>
   isCard.value

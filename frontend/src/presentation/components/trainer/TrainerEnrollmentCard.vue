@@ -37,7 +37,7 @@
             <strong class="text-slate-400">Estado:</strong>
             <span
               class="font-bold ml-1"
-              :class="item.id_rutina ? 'text-emerald-400' : 'text-amber-400'"
+              :class="item.id_rutina ? 'text-emerald-400' : 'text-orange-400'"
             >
               {{ item.id_rutina ? 'En progreso' : 'Pendiente asignación' }}
             </span>
@@ -73,7 +73,7 @@
         :class="
           isEnrollmentActive(item)
             ? 'bg-emerald-400/15 text-emerald-200'
-            : 'bg-amber-400/15 text-amber-200'
+            : 'bg-orange-400/15 text-orange-200'
         "
       >
         {{
@@ -134,7 +134,7 @@
     </button>
     <p
       v-if="isEnrollmentActive(item) && !routines.length"
-      class="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100"
+      class="rounded-xl border border-orange-400/20 bg-orange-400/10 px-3 py-2 text-sm text-orange-100"
       role="status"
     >
       No hay rutinas compatibles con el servicio
