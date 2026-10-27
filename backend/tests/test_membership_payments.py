@@ -28,8 +28,8 @@ def api():
 
 def register(service):
     return service.register_public_client({
-        "nombre": "Cliente Stripe", "correo": "stripe@example.com",
-        "dni": "12345678", "password": "secreto123", "plan": "MENSUAL",
+        "nombre": "Cliente Stripe", "correo": "stripe@gmail.com",
+        "dni": "12345678", "telefono": "987654321", "password": "secreto123", "plan": "MENSUAL",
     })
 
 

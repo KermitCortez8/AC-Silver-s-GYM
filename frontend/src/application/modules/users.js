@@ -1,3 +1,4 @@
+import { requireRecord } from '../services/responseValidation.js';
 import { getActivePinia } from 'pinia';
 /** Estado y operaciones del módulo users. */
 import { normalizeUser } from '../../domain/utils/gymRules.js';
@@ -7,7 +8,7 @@ import { inCurrentSession } from '../services/sessionBoundary.js';
 export const createUsersModule = (ctx, usersRepository) => {
   const pinia = ctx.pinia || getActivePinia();
   const mergeUser = (saved) => {
-    const normalized = normalizeUser(saved);
+    const normalized = normalizeUser(requireRecord(saved));
     const index = ctx.users.value.findIndex((entry) => String(entry.id_usuario) === String(normalized.id_usuario));
     if (index >= 0) {
       ctx.users.value[index] = normalized;

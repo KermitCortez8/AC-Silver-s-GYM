@@ -63,7 +63,7 @@
                 <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Confirmación requerida</p>
               </div>
             </div>
-            <button type="button" class="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-base transition cursor-pointer" @click="promoToDelete = null" title="Cerrar">
+            <button type="button" class="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-base transition cursor-pointer" :disabled="deleting" @click="promoToDelete = null" title="Cerrar">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -75,11 +75,12 @@
             <p class="text-xs text-rose-400/80 font-semibold">Esta acción no se puede deshacer.</p>
           </div>
 
+          <p v-if="deleteError" role="alert" class="app-notice app-notice--error rounded-xl border px-4 py-3 text-sm">{{ deleteError }}</p>
           <div class="flex items-center justify-end gap-3 pt-1">
-            <button type="button" class="px-5 py-2.5 rounded-xl border border-white/10 bg-slate-800 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer" @click="promoToDelete = null">
+            <button type="button" class="px-5 py-2.5 rounded-xl border border-white/10 bg-slate-800 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer" :disabled="deleting" @click="promoToDelete = null">
               Cancelar
             </button>
-            <button type="button" class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-xs font-black uppercase tracking-wider text-white transition shadow-lg shadow-rose-500/25 flex items-center gap-2 cursor-pointer" @click="confirmDelete">
+            <button type="button" class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-xs font-black uppercase tracking-wider text-white transition shadow-lg shadow-rose-500/25 flex items-center gap-2 cursor-pointer" :disabled="deleting" @click="confirmDelete">
               <i class="fa-solid fa-trash-can"></i> Sí, Eliminar
             </button>
           </div>
@@ -243,7 +244,7 @@
     <!-- Modal Form con Preview y Plan Único -->
     <Teleport to="body">
       <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-opacity">
-        <form class="w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto max-h-[92vh]" @submit.prevent="save">
+        <form class="w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto max-h-[92vh]" novalidate @submit.prevent="save">
           <!-- Top gradient border -->
           <div class="h-1 w-full bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 rounded-t-3xl"></div>
           
@@ -485,11 +486,12 @@
               </div>
             </div>
             
+            <p v-if="modalError" role="alert" class="app-notice app-notice--error rounded-xl border px-4 py-3 text-sm">{{ modalError }}</p>
             <!-- Actions -->
             <div class="mt-10 flex justify-end items-center gap-6">
               <button type="button" class="text-sm font-bold text-slate-300 hover:text-white transition cursor-pointer" @click="closeModal">Cancelar</button>
-              <button type="submit" class="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-3 text-sm font-black text-white hover:bg-rose-400 transition shadow-lg shadow-rose-500/20 cursor-pointer">
-                <i class="fa-solid fa-check"></i> Guardar y Activar Regla
+              <button type="submit" :disabled="saving" class="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-3 text-sm font-black text-white hover:bg-rose-400 transition shadow-lg shadow-rose-500/20 cursor-pointer">
+                <i class="fa-solid fa-check"></i> {{ saving ? 'Guardando…' : 'Guardar y Activar Regla' }}
               </button>
             </div>
           </div>
@@ -500,6 +502,7 @@
 </template>
 
 <script setup>
+import { promotionErrors } from "../../domain/utils/formValidation.js";
 import { limaDate } from '../../domain/utils/dates.js';
 import { discountedPrice } from '../../domain/utils/money.js';
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -624,11 +627,17 @@ const getPromoStatus = (promo) => {
 };
 
 const isModalOpen = ref(false);
+const saving = ref(false);
+const modalError = ref('');
+const deleting = ref(false);
+const deleteError = ref('');
 const openNewModal = () => {
   reset();
+  modalError.value = '';
   isModalOpen.value = true;
 };
 const closeModal = () => {
+  if (saving.value) return;
   isModalOpen.value = false;
 };
 const editModal = (promo) => {
@@ -637,6 +646,7 @@ const editModal = (promo) => {
     feedback.value = 'Las promociones terminadas no se pueden editar, únicamente eliminar.';
     return;
   }
+  modalError.value = '';
   edit(promo);
   isModalOpen.value = true;
 };
@@ -749,40 +759,49 @@ const edit = (promo) => {
 };
 
 const save = async () => {
-  if (!form.appliesTo || !form.appliesTo.length) {
+  if (saving.value) return;
+  modalError.value = '';
+  const invalid = Object.values(promotionErrors(form))[0];
+  if (invalid) {
     feedbackTone.value = 'error';
-    feedback.value = 'Debes seleccionar exactamente un plan para la promoción.';
+    modalError.value = invalid;
     return;
   }
+  saving.value = true;
   try {
     await gymStore.upsertPromotion({ ...form });
     feedbackTone.value = 'success';
     feedback.value = 'Promoción guardada exitosamente.';
+    saving.value = false;
     closeModal();
   } catch (error) {
     feedbackTone.value = 'error';
-    feedback.value = error instanceof Error ? error.message : 'No se pudo guardar la promoción.';
-  }
+    modalError.value = error instanceof Error ? error.message : 'No se pudo guardar la promoción.';
+  } finally { saving.value = false; }
 };
 
 const promoToDelete = ref(null);
 
 const requestDelete = (promo) => {
+  if (deleting.value) return;
+  deleteError.value = '';
   promoToDelete.value = promo;
 };
 
 const confirmDelete = async () => {
-  if (!promoToDelete.value) return;
+  if (!promoToDelete.value || deleting.value) return;
   const target = promoToDelete.value;
-  promoToDelete.value = null;
+  deleting.value = true;
+  deleteError.value = '';
   try {
     await gymStore.deletePromotion(target.id_promocion);
+    promoToDelete.value = null;
     feedbackTone.value = 'success';
     feedback.value = 'Promoción eliminada exitosamente.';
   } catch (error) {
     feedbackTone.value = 'error';
-    feedback.value = error instanceof Error ? error.message : 'No se pudo eliminar la promoción.';
-  }
+    deleteError.value = error instanceof Error ? error.message : 'No se pudo eliminar la promoción.';
+  } finally { deleting.value = false; }
 };
 
 onMounted(() => gymStore.fetchFromBackend?.({ section: 'promotions' }).catch(() => {}));

@@ -236,7 +236,7 @@
 
     <Teleport to="body">
       <div v-if="isEditorOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-        <form class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl" @submit.prevent="handleSubmit">
+        <form novalidate class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-6 shadow-2xl" @submit.prevent="handleSubmit">
           <div class="flex items-start justify-between gap-4">
             <div>
               <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Articulo</p>

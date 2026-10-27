@@ -1,3 +1,4 @@
+import { requireList, requireRecord } from '../services/responseValidation.js';
 import { parseQuantity } from '../../domain/utils/quantities.js';
 import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
@@ -29,6 +30,7 @@ export const createInventoryModule = (ctx, repository) => {
         observaciones: payload.observations || '',
       };
       return upsertInventoryToServer(body).then((res) => {
+        requireRecord(res, 'id_item');
         const id_item = requireNumericId(res.id_item, 'un artículo');
         const item = {
           id: `item-${id_item}`,
@@ -98,7 +100,7 @@ export const createInventoryModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const response = await remote.refreshInventoryMovementsFromBackend();
 
-    ctx.inventoryMovements.value = response;
+    ctx.inventoryMovements.value = requireList(response, 'id_mov');
     return ctx.inventoryMovements.value;
   };
 
@@ -110,7 +112,9 @@ export const createInventoryModule = (ctx, repository) => {
   const registrarMovimientoToServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const saved = await remote.registrarMovimientoToServer({ ...payload, cantidad: parseQuantity(payload.cantidad ?? 1, { min: 1 }) });
-    if (saved?.movimiento) ctx.inventoryMovements.value.unshift(saved.movimiento);
+    requireRecord(saved);
+    requireRecord(saved.movimiento, 'id_mov');
+    ctx.inventoryMovements.value.unshift(saved.movimiento);
     await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
     return saved;
   };
@@ -119,6 +123,8 @@ export const createInventoryModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const body = payload.cantidad === undefined ? payload : { ...payload, cantidad: parseQuantity(payload.cantidad, { min: 1 }) };
     const saved = await remote.updateInventoryMovement(idMov, body);
+    requireRecord(saved);
+    requireRecord(saved.movimiento, 'id_mov');
     await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
     return saved;
   };

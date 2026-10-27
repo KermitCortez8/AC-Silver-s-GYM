@@ -1,3 +1,4 @@
+import { requireRecord } from '../services/responseValidation.js';
 import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
 import { addDays } from '../../domain/utils/dates.js';
@@ -182,7 +183,9 @@ export const createClientsModule = (ctx, repository) => {
           id_promocion: Number(payload.id_promocion) || null,
           pagar_con_stripe: Boolean(payload.pagar_con_stripe),
         });
-        const membership = result.membresia || {};
+        requireRecord(result);
+        requireRecord(result.cliente);
+        const membership = requireRecord(result.membresia, 'id_membresia');
         const client = mergeClient({
           ...result.cliente,
           id_membresia: membership.id_membresia,
@@ -202,7 +205,7 @@ export const createClientsModule = (ctx, repository) => {
 
       const normalized = {
         ...existingClient,
-        ...normalizeBackendClientToMember(saved, existingClient),
+        ...normalizeBackendClientToMember(requireRecord(saved, 'id_cliente'), existingClient),
         attendanceRate: Number(existingClient?.attendanceRate ?? 0),
         membershipHistory: existingClient?.membershipHistory || [],
         changeHistory: existingClient?.changeHistory || [],
@@ -262,6 +265,7 @@ export const createClientsModule = (ctx, repository) => {
   };
 
   const mergeClient = (client) => {
+    requireRecord(client);
     let normalized = normalizeBackendClientToMember(client);
     const index = ctx.members.value.findIndex((entry) => String(entry.id) === String(normalized.id) || Number(entry.id_cliente) === Number(normalized.id_cliente));
     if (index >= 0) {
@@ -276,7 +280,9 @@ export const createClientsModule = (ctx, repository) => {
   const registerPublicClient = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const saved = await remote.registerPublicClient(payload);
-    const membership = saved.membresia || {};
+    requireRecord(saved);
+    requireRecord(saved.cliente);
+    const membership = requireRecord(saved.membresia, 'id_membresia');
     const client = mergeClient({
       ...(saved.cliente || {}),
       id_membresia: membership.id_membresia,
@@ -294,8 +300,10 @@ export const createClientsModule = (ctx, repository) => {
   const confirmarPagoEfectivo = async (idCliente) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const data = await remote.confirmarPagoEfectivo(idCliente);
-    const saved = data.data;
-    const membership = saved.membresia || {};
+    const saved = requireRecord(data).data;
+    requireRecord(saved);
+    requireRecord(saved.cliente);
+    const membership = requireRecord(saved.membresia, 'id_membresia');
     const client = mergeClient({
       ...(saved.cliente || {}),
       id_membresia: membership.id_membresia,

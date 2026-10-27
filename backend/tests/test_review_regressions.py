@@ -101,7 +101,7 @@ def test_editing_and_normalizing_an_internal_account_does_not_reactivate_it(gym,
     gym.repository.state['usuario'] = [internal_account(state)]
     gym.repository.state = GymDomainService(gym.repository.state, gym.passwords).normalize()
     assert gym.repository.state['usuario'][0]['estado'] == 'INACTIVO'
-    saved = gym.upsert_usuario(dict(id_usuario='SGADM001', rol='admin', nombre='Admin editado', correo='admin@example.com'))
+    saved = gym.upsert_usuario(dict(id_usuario='SGADM001', rol='admin', nombre='Admin editado', correo='admin@gmail.com'))
     assert accounts._user_to_remote(saved)['Estado'] is False
 
 
@@ -125,7 +125,7 @@ def test_progress_uses_the_authenticated_trainer_even_if_the_actor_is_spoofed_or
 
 def test_client_edit_preserves_registration_date_across_normalization_and_mapping(gym, monkeypatch):
     monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-23')
-    first = gym.upsert_cliente(dict(nombre='Ana', correo='ana@example.com', password='secret123', estado='EN_TRAMITE'))
+    first = gym.upsert_cliente(dict(nombre='Ana', correo='ana@gmail.com', password='secret123', estado='EN_TRAMITE'))
     assert first['fecha_registro'] == '2026-10-23'
     gym.repository.state = GymDomainService(gym.repository.state, gym.passwords).normalize()
     monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-24')

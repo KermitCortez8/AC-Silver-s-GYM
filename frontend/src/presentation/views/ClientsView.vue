@@ -392,6 +392,9 @@
     </section>
 
     <ClientEditorDialog
+      :field-errors="fieldErrors"
+      :validate-field="validateField"
+      :revalidate-field="revalidateField"
       :available-promotions="availablePromotions"
       :close-editor="closeEditor"
       :editing-expired="editingExpired"
@@ -658,7 +661,7 @@ const confirmDelete = async (client) => {
 };
 
 const { activatingClientId, pendingActivation, activationError, notifyingClientId, payingClientId, paymentError, requestActivation, cancelActivation, notificationMessage, retryActivationEmail, markAsPaidManual, activateMembership, payWithStripe, initializeDirectory } = useClientMembershipActions({ gymStore, authStore, feedbackMessage, feedbackTone, viewingClient, route, router, refreshClients });
-const { editingId, isEditorOpen, savingClient, submitError, editingClient, editingMembershipLabel, editingNeedsActivation, editingExpired, form, availablePromotions, estimatedCharge, resetForm, openNewClient, closeEditor, editClient, handleSubmit } = useClientEditor({ gymStore, clients, feedbackMessage, feedbackTone, resetFilters, sortOrder, openDetails, paymentError, normalizeStatus });
+const { fieldErrors, validateField, revalidateField, editingId, isEditorOpen, savingClient, submitError, editingClient, editingMembershipLabel, editingNeedsActivation, editingExpired, form, availablePromotions, estimatedCharge, resetForm, openNewClient, closeEditor, editClient, handleSubmit } = useClientEditor({ gymStore, clients, feedbackMessage, feedbackTone, resetFilters, sortOrder, openDetails, paymentError, normalizeStatus });
 onMounted(initializeDirectory);
 </script>
 

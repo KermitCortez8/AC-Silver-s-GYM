@@ -397,17 +397,10 @@
                 "
                 class="mt-4 flex gap-2"
               >
-                <input
-                  :value="cantidadInput[producto.id_producto] ?? 1"
-                  @input="
-                    cantidadInput[producto.id_producto] = Number(
-                      $event.target.value,
-                    )
-                  "
+                <QuantityInput
+                  :model-value="cantidadInput[producto.id_producto] ?? 1"
+                  @update:model-value="cantidadInput[producto.id_producto] = $event"
                   :aria-label="`Cantidad de ${producto.nombre}`"
-                  type="number"
-                  min="1"
-                  :max="producto.cantidad"
                   class="ws-input flex-1 px-3 py-2 text-sm"
                 />
                 <button
@@ -480,7 +473,7 @@
                   :aria-label="`Reducir cantidad de ${item.nombre}`"
                   @click="
                     () =>
-                      gymStore.updateCartQuantity(
+                      updateCart(
                         item.id_producto,
                         Math.max(1, item.cantidad - 1),
                       )
@@ -488,26 +481,18 @@
                 >
                   -
                 </button>
-                <input
-                  :value="item.cantidad"
+                <QuantityInput
+                  :model-value="item.cantidad"
                   :aria-label="`Cantidad de ${item.nombre} en el carrito`"
-                  type="number"
-                  min="1"
                   class="w-full rounded ws-inset px-2 py-1 text-center text-sm ws-text outline-none"
-                  @change="
-                    (event) =>
-                      gymStore.updateCartQuantity(
-                        item.id_producto,
-                        Math.max(1, Number(event.target.value)),
-                      )
-                  "
+                  @update:model-value="updateCart(item.id_producto, $event)"
                 />
                 <button
                   class="rounded ws-inset px-2 py-1 text-sm ws-text ws-hover"
                   :aria-label="`Aumentar cantidad de ${item.nombre}`"
                   @click="
                     () =>
-                      gymStore.updateCartQuantity(
+                      updateCart(
                         item.id_producto,
                         item.cantidad + 1,
                       )
@@ -611,6 +596,7 @@
 </template>
 
 <script setup>
+import QuantityInput from "../components/QuantityInput.vue";
 import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import SearchInput from "../components/SearchInput.vue";
 import { useProductEditor } from '../composables/store/useProductEditor.js';
@@ -789,14 +775,21 @@ const deleteProducto = async (idProducto) => {
   }
 };
 
+const cartError = (error) => {
+  feedbackTone.value = 'error';
+  feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo actualizar el carrito.';
+};
+const updateCart = (id, quantity) => {
+  try { gymStore.updateCartQuantity(id, quantity); }
+  catch (error) { cartError(error); }
+};
 const agregarAlCarrito = (producto) => {
-  const requested = Number(cantidadInput.value[producto.id_producto] || 1);
-  const stock = Number(producto.cantidad || 1);
-  const cantidad = Math.max(1, Math.min(requested, stock));
-  gymStore.addToCart(producto, cantidad);
-  cantidadInput.value[producto.id_producto] = 1;
-  feedbackTone.value = 'success';
-  feedbackMessage.value = `${producto.nombre} añadido al carrito.`;
+  try {
+    gymStore.addToCart(producto, cantidadInput.value[producto.id_producto] ?? 1);
+    cantidadInput.value[producto.id_producto] = 1;
+    feedbackTone.value = 'success';
+    feedbackMessage.value = `${producto.nombre} añadido al carrito.`;
+  } catch (error) { cartError(error); }
 };
 
 const goToCheckout = () => {

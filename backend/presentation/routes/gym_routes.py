@@ -4,6 +4,8 @@
 # Entrega respuestas HTTP a partir del servicio de dominio.
 from __future__ import annotations
 
+from presentation.error_handlers import http_error
+
 from domain.errors import EnrollmentConflict, MembershipRequired
 from application.errors import SchemaNotReady
 
@@ -80,7 +82,7 @@ def update_configuracion(
     try:
         return gym_service.actualizar_configuracion_gimnasio(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.get("/horarios-publicos", response_model=list[HorarioPublico])
@@ -108,7 +110,7 @@ def upsert_horario_servicio(
     try:
         return gym_service.upsert_horario_servicio(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.delete("/horarios-servicio/{id_horario_servicio}", status_code=status.HTTP_204_NO_CONTENT)
@@ -121,7 +123,7 @@ def delete_horario_servicio(
     try:
         gym_service.delete_horario_servicio(id_horario_servicio)
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_404_NOT_FOUND) from error
 
 
 @router.get("/matriculas")
@@ -140,7 +142,7 @@ def list_matriculas(
             )
         return gym_service.matriculas_horario(id_cliente=id_cliente, dni=dni)
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.post("/matriculas")
@@ -162,7 +164,7 @@ def create_matricula(
             saved["email_notification"] = notify_schedule_enrollment(get_settings(), int(saved["id_matricula"]))
         return saved
     except ValueError as error:
-        raise HTTPException(status_code=_enrollment_error_status(error), detail=str(error)) from error
+        raise http_error(error, validation_status=_enrollment_error_status(error)) from error
     except (RuntimeError, OSError) as error:
         detail = str(error) if isinstance(error, SchemaNotReady) else (
             "No se pudo guardar la matrícula. Comprueba la conexión e inténtalo de nuevo.")
@@ -180,9 +182,9 @@ def delete_matricula(
         id_cliente = _require_session_cliente_id(current_user) if current_user.role == "user" else None
         gym_service.cancelar_matricula_horario(id_matricula, id_cliente=id_cliente)
     except PermissionError as error:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_403_FORBIDDEN) from error
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_404_NOT_FOUND) from error
 
 
 @router.get("/tickets")
@@ -204,7 +206,7 @@ def upsert_ticket(
     try:
         return gym_service.upsert_ticket(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.get("/rutinas")
@@ -245,4 +247,4 @@ def upsert_horario(
     try:
         return gym_service.upsert_horario(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error

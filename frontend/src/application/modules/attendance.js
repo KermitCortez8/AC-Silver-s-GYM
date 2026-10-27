@@ -1,3 +1,4 @@
+import { requireList } from '../services/responseValidation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
 /** Estado y operaciones del módulo attendance. */
 import { normalizeAttendanceRecord, todayISO, dateFromISO, getClientIdForBackend, getCurrentRegistrarId, nowTime, buildAttendanceRecord, findMemberForAttendance, isPassExpired, getPassPayload, PASS_EXPIRY_MINUTES, nowISO, generatePassCode, parsePassInput, normalizeBackendAttendanceRecord } from '../../domain/utils/gymRules.js';
@@ -279,7 +280,7 @@ export const createAttendanceModule = (ctx, repository) => {
   const refreshAttendanceFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const list = await remote.refreshAttendanceFromBackend();
+    const list = requireList(await remote.refreshAttendanceFromBackend(), 'id_asistencia');
     ctx.attendance.value = list.map((entry) => normalizeBackendAttendanceRecord(entry, ctx.members.value));
     return ctx.attendance.value;
   };

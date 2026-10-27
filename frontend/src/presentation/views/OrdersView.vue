@@ -40,7 +40,7 @@
         </label>
       </div>
 
-      <p v-if="feedback" class="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-50">
+      <p v-if="feedback" role="alert" class="app-notice app-notice--error mt-4 rounded-2xl border px-4 py-3 text-sm">
         {{ feedback }}
       </p>
 
@@ -79,7 +79,7 @@
               <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Observacion</span>
               <input v-model="ensureDraft(order).observacion_admin" class="field-input" placeholder="Entrega, recojo, incidencia o anulacion" />
             </label>
-            <button class="rounded-2xl bg-orange-400 px-4 py-3 font-black text-slate-950" @click="updateOrder(order)">
+            <button class="rounded-2xl bg-orange-400 px-4 py-3 font-black text-slate-950" :disabled="savingOrders.has(order.id_pedido)" @click="updateOrder(order)">
               Guardar
             </button>
           </div>
@@ -118,6 +118,7 @@ import { useGymStore } from '../../application/stores/gymStore';
 const gymStore = useGymStore();
 const search = ref('');
 const feedback = ref('');
+const savingOrders = reactive(new Set());
 const orderDrafts = reactive({});
 
 const orderStatus = (order) => String(order.estado_pedido || '').toUpperCase();
@@ -219,6 +220,7 @@ const refresh = async (force = true) => {
 };
 
 const updateOrder = async (order) => {
+  if (savingOrders.has(order.id_pedido)) return;
   feedback.value = '';
   const draft = ensureDraft(order);
   if (draft.estado_pedido === 'CANCELADO' && !isCancelled(order)) {
@@ -232,11 +234,12 @@ const updateOrder = async (order) => {
       return;
     }
   }
+  savingOrders.add(order.id_pedido);
   try {
-    await gymStore.updateStoreOrderStatus(order.id_pedido, draft);
+    await gymStore.updateStoreOrderStatus(order.id_pedido, { ...draft });
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'No se pudo actualizar el pedido.';
-  }
+  } finally { savingOrders.delete(order.id_pedido); }
 };
 
 onMounted(() => refresh(false));

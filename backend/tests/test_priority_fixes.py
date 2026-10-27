@@ -111,7 +111,7 @@ def test_image_upload_requires_staff_but_listing_remains_public(protected_api):
 
 def test_user_identity_is_unique_across_roles_and_stable_after_role_change(monkeypatch):
     gym = GymService(MemoryGymRepository(), Passwords())
-    users = [gym.upsert_usuario({'nombre': role, 'correo': role+'@example.com', 'rol': role, 'password': 'secret123'})
+    users = [gym.upsert_usuario({'nombre': role, 'correo': role+'@gmail.com', 'rol': role, 'password': 'secret123'})
              for role in ('admin', 'trainer', 'staff')]
     assert [u['id_usuario'] for u in users] == ['SGADM001', 'SGTRA002', 'SGSTA003']
     updated = gym.upsert_usuario({**users[0], 'rol': 'trainer'})
@@ -150,8 +150,8 @@ def test_money_uses_cents_and_half_up(price, discount, kind, expected):
 def test_activation_uses_configured_duration_and_stays_idempotent():
     gym = GymService(MemoryGymRepository(), Passwords())
     gym.upsert_plan_membresia({'id_pm': 1, 'nombre_plan': 'MENSUAL', 'duracion': '45 dias', 'precio': 79})
-    saved = gym.registrar_cliente_publico({'nombre': 'Demo', 'correo': 'demo@example.com', 'dni': '12345678',
-                                         'password': 'secret123', 'plan': 'MENSUAL'})
+    saved = gym.registrar_cliente_publico({'nombre': 'Demo', 'correo': 'demo@gmail.com', 'dni': '12345678',
+                                         'password': 'secret123', 'telefono': '987654321', 'plan': 'MENSUAL'})
     identity = saved['cliente']['id_cliente']
     gym.confirmar_pago_manual_cliente(identity)
     first = gym.activar_membresia_cliente(identity)['membresia']
@@ -212,7 +212,7 @@ def test_missing_transaction_rpc_never_falls_back_to_partial_rest_writes(monkeyp
     monkeypatch.setattr('infrastructure.repositories.gym_repository.SupabaseRestClient', lambda *_args: database)
     gym = GymService(SupabaseGymRepository('local', 'unused'), Passwords())
     with pytest.raises(RuntimeError, match='015_atomic_gym_transactions.sql'):
-        gym.upsert_usuario({'nombre': 'Ana', 'correo': 'ana@example.com', 'rol': 'staff', 'password': 'secret123'})
+        gym.upsert_usuario({'nombre': 'Ana', 'correo': 'ana@gmail.com', 'rol': 'staff', 'password': 'secret123'})
     assert gym.usuarios() == []
     assert database.writes == []
 

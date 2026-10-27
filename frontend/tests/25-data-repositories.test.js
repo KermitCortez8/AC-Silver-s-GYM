@@ -161,7 +161,7 @@ test('data repositories reject HTML gateways and explain validation failures', a
   http.rawRequest = async () => new Response(JSON.stringify({ detail: [{ loc: ['body', 'precio'], msg: 'Debe ser positivo' }] }), {
     status: 422, headers: { 'content-type': 'application/json' },
   });
-  await assert.rejects(dataRequest(http, '/api'), /precio: Debe ser positivo/);
+  await assert.rejects(dataRequest(http, '/api'), /Precio: Debe ser positivo/);
 });
 
 test('partial client edits preserve membership and payment details while accepting a zero amount', () => {

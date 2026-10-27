@@ -74,6 +74,9 @@ export const createAuthService = (http = { apiPost }) => {
 
   const authenticateWithPassword = async ({ correo, password }) => {
     const result = await apiPost("/auth/password", { correo, password });
+    if (!result?.token || !result?.user?.email) {
+      throw new Error("El servidor no devolvió una sesión válida");
+    }
     return {
       user: result.user,
       token: result.token,

@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from presentation.error_handlers import http_error
+
 
 from starlette.concurrency import run_in_threadpool
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 
 from presentation.dependencies import Settings, get_settings
 from presentation.dependencies import (
@@ -35,13 +37,13 @@ def _payment_response(operation):
     try:
         return operation()
     except EntityNotFound as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
+        raise http_error(error, validation_status=404) from error
     except PedidoCanceladoConPagoError as error:
-        raise HTTPException(status_code=409, detail=str(error)) from error
+        raise http_error(error, validation_status=409) from error
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        raise http_error(error, validation_status=400) from error
     except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        raise http_error(error, validation_status=503) from error
 
 
 @router.get("/pagos/membresias")
@@ -71,10 +73,7 @@ def get_mi_cliente(
         return clients_service.get_client_for_user(current_user)
 
     except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
+        raise http_error(error, validation_status=status.HTTP_404_NOT_FOUND) from error
 
 
 @router.post("/clientes")
@@ -90,10 +89,7 @@ def upsert_cliente(
         )
 
     except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error),
-        ) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.post("/registro-publico")
@@ -159,10 +155,7 @@ def confirmar_pago_manual(
         }
 
     except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error),
-        ) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.post(

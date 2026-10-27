@@ -15,8 +15,8 @@ import infrastructure.services.stripe_service as stripe_service
 
 
 PAYLOAD = {
-    "nombre": "Cliente Admin", "correo": "admin-client@example.com",
-    "dni": "12345678", "password": "secreto123", "plan": "MENSUAL",
+    "nombre": "Cliente Admin", "correo": "admin-client@gmail.com",
+    "dni": "12345678", "telefono": "987654321", "password": "secreto123", "plan": "MENSUAL",
 }
 
 

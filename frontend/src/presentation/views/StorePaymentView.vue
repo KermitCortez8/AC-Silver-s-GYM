@@ -53,7 +53,7 @@
     </section>
 
     <section v-else-if="cart.length" class="grid gap-6 xl:grid-cols-[1fr_420px]">
-      <form class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="submitPayment">
+      <form novalidate class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur" @submit.prevent="submitPayment">
         <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Datos de pago</p>
         <h2 class="mt-2 text-2xl font-black text-white">Confirmar compra</h2>
 
@@ -68,7 +68,7 @@
           </label>
           <label class="space-y-2">
             <span class="text-sm text-slate-300">DNI</span>
-            <input v-model="payment.dni" class="field-input" maxlength="12" />
+            <input v-model="payment.dni" class="field-input" maxlength="8" inputmode="numeric" />
           </label>
           <label class="space-y-2">
             <span class="text-sm text-slate-300">Metodo de pago</span>
@@ -90,7 +90,7 @@
           {{ infoMessage }}
         </div>
 
-        <p v-if="feedback" class="mt-4 rounded-2xl border px-4 py-3 text-sm" :class="feedbackClass">
+        <p v-if="feedback" :role="feedbackTone === 'error' ? 'alert' : 'status'" class="mt-4 rounded-2xl border px-4 py-3 text-sm" :class="feedbackClass">
           {{ feedback }}
         </p>
 
@@ -143,6 +143,7 @@
 </template>
 
 <script setup>
+import { dniError, emailError, requiredTextError } from '../../domain/utils/formValidation.js';
 import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -216,10 +217,17 @@ const syncCustomer = () => {
  * Con tarjeta, el backend crea el pedido pendiente y la sesión de Stripe, y se redirige al checkout.
  */
 const submitPayment = async () => {
+  if (isSubmitting.value) return;
   feedback.value = '';
   isSubmitting.value = true;
   let redirecting = false;
   try {
+    const invalid = requiredTextError(payment.customerName, 'El nombre del cliente')
+      || emailError(payment.customerEmail)
+      || dniError(payment.dni, false)
+      || (!isCard.value && requiredTextError(payment.reference, 'El código de referencia de pago'));
+    if (invalid) throw new Error(invalid);
+    if (!cart.value.length) throw new Error('Agrega productos al carrito antes de pagar.');
     if (isCard.value) {
       const { payment: checkout } = await gymStore.createStoreCheckout({
         cliente_nombre: payment.customerName,

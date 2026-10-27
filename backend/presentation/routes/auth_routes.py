@@ -1,6 +1,8 @@
 """Acceso con Google o contraseña y consulta de la sesión verificada."""
 from __future__ import annotations
 
+from presentation.error_handlers import http_error
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from presentation.dependencies import get_current_user, get_gym_service, get_identity_service
@@ -16,9 +18,9 @@ def google_profile(payload: AuthGoogleRequest, identity=Depends(get_identity_ser
     try:
         return GoogleProfile(**identity.profile(payload.credential))
     except ValueError as error:
-        raise HTTPException(status_code=401, detail=str(error)) from error
+        raise http_error(error, validation_status=401) from error
     except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        raise http_error(error, validation_status=503) from error
 
 
 @router.post("/google", response_model=AuthResponse)
@@ -30,9 +32,9 @@ def google_auth(payload: AuthGoogleRequest, gym_service: GymService = Depends(ge
     except ClientActivationRequired as error:
         raise HTTPException(status_code=403, detail={"code": error.code, "message": str(error)}) from error
     except ValueError as error:
-        raise HTTPException(status_code=401, detail=str(error)) from error
+        raise http_error(error, validation_status=401) from error
     except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        raise http_error(error, validation_status=503) from error
 
 
 @router.post("/password", response_model=AuthResponse)
@@ -42,9 +44,9 @@ def password_auth(payload: AuthPasswordRequest, gym_service: GymService = Depend
     except ClientActivationRequired as error:
         raise HTTPException(status_code=403, detail={"code": error.code, "message": str(error)}) from error
     except ValueError as error:
-        raise HTTPException(status_code=401, detail=str(error)) from error
+        raise http_error(error, validation_status=401) from error
     except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        raise http_error(error, validation_status=503) from error
 
 
 @router.get("/me", response_model=UserProfile)

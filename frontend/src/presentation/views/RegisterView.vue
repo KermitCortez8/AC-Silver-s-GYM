@@ -43,7 +43,8 @@
         <!-- ERROR GOOGLE -->
         <div
           v-if="googleError"
-          class="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+          role="alert"
+          class="mt-5 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-900"
         >
           {{ googleError }}
         </div>
@@ -87,7 +88,7 @@
         </div>
 
         <!-- FORMULARIO -->
-        <form class="mt-6 space-y-4" @submit.prevent="submitRegistration">
+        <form novalidate class="mt-6 space-y-4" @submit.prevent="submitRegistration">
           <!-- NOMBRE -->
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">
@@ -96,11 +97,15 @@
 
             <input
               v-model.trim="form.nombre"
+              :aria-invalid="Boolean(fieldErrors.nombre)"
+              :aria-describedby="fieldErrors.nombre ? 'register-nombre-error' : undefined"
+              @blur="validateField('nombre')" @input="revalidateField('nombre')"
               required
               autocomplete="name"
               class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
               placeholder="Jose Perez"
             />
+            <FieldError id="register-nombre-error" :message="fieldErrors.nombre" />
           </label>
 
           <!-- CORREO -->
@@ -121,13 +126,18 @@
             -->
             <input
               v-model.trim="form.correo"
+              :aria-invalid="Boolean(fieldErrors.correo)"
+              :aria-describedby="fieldErrors.correo ? 'register-correo-error' : undefined"
+              @blur="validateField('correo')" @input="revalidateField('correo')"
               :readonly="Boolean(googleCredential)"
               required
               type="email"
               autocomplete="email"
               class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 transition focus:border-orange-400 read-only:cursor-not-allowed read-only:bg-slate-100 read-only:text-slate-600"
-              placeholder="cliente@correo.com"
+              placeholder="nombre@gmail.com"
             />
+            <FieldError id="register-correo-error" :message="fieldErrors.correo" />
+            <p class="text-xs text-slate-600">Solo se permiten correos @gmail.com o @hotmail.com.</p>
           </label>
 
           <!-- CONTRASEÑA -->
@@ -138,6 +148,9 @@
 
             <input
               v-model="form.password"
+              :aria-invalid="Boolean(fieldErrors.password)"
+              :aria-describedby="fieldErrors.password ? 'register-password-error' : undefined"
+              @blur="validateField('password')" @input="revalidateField('password')"
               required
               minlength="6"
               type="password"
@@ -145,6 +158,7 @@
               class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
               placeholder="Mínimo 6 caracteres"
             />
+            <FieldError id="register-password-error" :message="fieldErrors.password" />
           </label>
 
           <!-- DNI + TELEFONO -->
@@ -154,6 +168,9 @@
 
               <input
                 v-model.trim="form.dni"
+                :aria-invalid="Boolean(fieldErrors.dni)"
+                :aria-describedby="fieldErrors.dni ? 'register-dni-error' : undefined"
+                @blur="validateField('dni')" @input="revalidateField('dni')"
                 required
                 inputmode="numeric"
                 pattern="[0-9]{8}"
@@ -161,6 +178,7 @@
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
                 placeholder="12345678"
               />
+              <FieldError id="register-dni-error" :message="fieldErrors.dni" />
             </label>
 
             <label class="block space-y-2">
@@ -170,6 +188,9 @@
 
               <input
                 :value="form.telefono"
+                :aria-invalid="Boolean(fieldErrors.telefono)"
+                :aria-describedby="fieldErrors.telefono ? 'register-telefono-error' : undefined"
+                @blur="validateField('telefono')"
                 @input="updateTelefono"
                 required
                 type="tel"
@@ -180,6 +201,7 @@
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
                 placeholder="999111222"
               />
+              <FieldError id="register-telefono-error" :message="fieldErrors.telefono" />
             </label>
           </div>
 
@@ -208,6 +230,7 @@
         <!-- FEEDBACK -->
         <p
           v-if="feedback"
+          :role="feedbackTone === 'error' ? 'alert' : 'status'"
           class="mt-5 rounded-2xl border px-4 py-3 text-sm"
           :class="
             feedbackTone === 'error'
@@ -319,6 +342,9 @@
 </template>
 
 <script setup>
+import FieldError from '../components/FieldError.vue';
+import { emailError, validateAccountForm } from '../../domain/utils/formValidation.js';
+import { useFormValidation } from '../composables/useFormValidation.js';
 import { discountedPrice } from '../../domain/utils/money.js';
 import { clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -490,10 +516,12 @@ const form = reactive({
   plan: normalizePlanName(route.query.plan),
 });
 
+const { fieldErrors, validateField, revalidateField, validateForm } = useFormValidation(form,
+  value => validateAccountForm(value, { requirePhone: true, google: Boolean(googleCredential.value) }));
+
 const updateTelefono = (event) => {
-  const telefono = event.target.value.replace(/\D/g, '').slice(0, 9);
-  event.target.value = telefono;
-  form.telefono = telefono;
+  form.telefono = event.target.value;
+  revalidateField('telefono');
 };
 
 /* -------------------------------------------------------------------------- */
@@ -585,6 +613,8 @@ const selectGoogleAccount = async (credential) => {
       throw new Error('Google no devolvió un correo válido.');
     }
 
+    const invalidEmail = emailError(profile.email);
+    if (invalidEmail) throw new Error(invalidEmail);
     form.nombre = profile.name || form.nombre;
 
     form.correo = profile.email;
@@ -628,6 +658,7 @@ const submitRegistration = async () => {
   registeredClient.value = null;
 
   try {
+    if (!validateForm()) throw new Error(Object.values(fieldErrors)[0]);
     if (!form.plan) {
       throw new Error('No hay planes configurados para registrar clientes.');
     }
@@ -643,7 +674,7 @@ const submitRegistration = async () => {
      */
     const result = await gymStore.registerPublicClient({
       ...form,
-
+      correo: form.correo.trim().toLowerCase(),
       google_credential: googleCredential.value,
     });
 
@@ -673,6 +704,7 @@ const submitRegistration = async () => {
     window.location.assign(payment.checkout_url);
   } catch (error) {
     feedbackTone.value = 'error';
+    Object.assign(fieldErrors, error?.fieldErrors || {});
 
     feedback.value =
       error instanceof Error

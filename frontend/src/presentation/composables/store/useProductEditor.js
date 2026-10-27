@@ -1,3 +1,4 @@
+import { amountError, requiredTextError } from "../../../domain/utils/formValidation.js";
 import { parseQuantity } from "../../../domain/utils/quantities.js";
 import { computed, reactive, ref } from "vue";
 import { useStoreImagePicker } from "./useStoreImagePicker.js";
@@ -141,6 +142,8 @@ export const useProductEditor = ({
     isSaving.value = true;
     feedbackMessage.value = "";
     try {
+      const invalid = requiredTextError(form.nombre, 'El nombre del producto') || amountError(form.precio);
+      if (invalid) throw new Error(invalid);
       await gymStore.upsertProductoTienda({
         id_producto: editingId.value || undefined,
         nombre: form.nombre,

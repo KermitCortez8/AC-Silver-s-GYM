@@ -43,9 +43,9 @@ const setupView = async (filename, path, prepare) => {
     }
   } });
   const context = {};
-  await renderToString(app, context);
+  const html = await renderToString(app, context);
   assert.ok(setup, 'Se debe ejecutar el setup real de la vista');
-  return { setup, gym: useGymStore(pinia), dialogs: Object.values(context.teleports || {}).join('') };
+  return { setup, gym: useGymStore(pinia), html, dialogs: Object.values(context.teleports || {}).join('') };
 };
 
 test('editing a store product preserves a zero threshold through the actual view and save payload', async () => {
@@ -82,7 +82,7 @@ test('editing inventory preserves a zero threshold and uses one only when the va
 
 test('client editor and membership actions preserve the actual view flow after extraction', async () => {
   const { setup, gym } = await setupView('ClientsView', '/admin/clients');
-  const client = { id: 'SGCLI001', id_cliente: 1, name: 'Ana', email: 'ana@example.com', status: 'EN_TRAMITE', paymentStatus: 'PAGADO' };
+  const client = { id: 'SGCLI001', id_cliente: 1, name: 'Ana', email: 'ana@gmail.com', dni: '12345678', status: 'EN_TRAMITE', paymentStatus: 'PAGADO' };
   gym.members = [client];
   setup.editClient(client);
   setup.form.nombre = 'Ana editada';
@@ -271,4 +271,153 @@ test('movement editor refuses invalid quantities and sends valid quantities as i
   await setup.save();
   assert.equal(payload.cantidad, 3);
   assert.equal(setup.isModalOpen, false);
+});
+
+test('promotion saves reject duplicate clicks and retain the draft with an inline error', async () => {
+  const { setup, gym } = await setupView('PromotionsView', '/admin/promotions');
+  setup.openNewModal();
+  setup.form.name = 'Verano';
+  setup.form.appliesTo = ['pm-1'];
+  let calls = 0;
+  let reject;
+  gym.upsertPromotion = () => { calls++; return new Promise((resolve, fail) => { reject = fail; }); };
+  const pending = setup.save();
+  await setup.save();
+  setup.closeModal();
+  assert.equal(calls, 1);
+  assert.equal(setup.isModalOpen, true);
+  reject(new Error('Sin conexión'));
+  await pending;
+  assert.equal(setup.modalError, 'Sin conexión');
+  assert.equal(setup.form.name, 'Verano');
+  assert.equal(setup.isModalOpen, true);
+  assert.equal(setup.saving, false);
+});
+
+test('promotion deletion preserves its confirmation and target after failure', async () => {
+  const { setup, gym } = await setupView('PromotionsView', '/admin/promotions');
+  setup.requestDelete({ id_promocion: 1, name: 'Verano' });
+  gym.deletePromotion = async () => { throw new Error('No se pudo eliminar'); };
+  await setup.confirmDelete();
+  assert.equal(setup.promoToDelete.id_promocion, 1);
+  assert.equal(setup.deleteError, 'No se pudo eliminar');
+  assert.equal(setup.deleting, false);
+});
+
+test('order status saves cannot overlap and retain their draft after failure', async () => {
+  const { setup, gym } = await setupView('OrdersView', '/admin/orders');
+  const order = { id_pedido: 1, estado_pedido: 'PENDIENTE', items: [] };
+  setup.ensureDraft(order).estado_pedido = 'CONFIRMADO';
+  setup.ensureDraft(order).observacion_admin = 'Recoger mañana';
+  let reject;
+  let calls = 0;
+  gym.updateStoreOrderStatus = () => { calls++; return new Promise((resolve, fail) => { reject = fail; }); };
+  const pending = setup.updateOrder(order);
+  await setup.updateOrder(order);
+  assert.equal(calls, 1);
+  reject(new Error('Sin conexión'));
+  await pending;
+  assert.equal(setup.ensureDraft(order).estado_pedido, 'CONFIRMADO');
+  assert.equal(setup.ensureDraft(order).observacion_admin, 'Recoger mañana');
+  assert.equal(setup.savingOrders.size, 0);
+  assert.equal(setup.feedback, 'Sin conexión');
+});
+
+test('store quantity errors are visible and do not change the cart', async () => {
+  const { setup, gym } = await setupView('StoreView', '/user/store');
+  const product = { id_producto: 1, nombre: 'Agua', precio: 2, cantidad: 3, estado: 'Disponible' };
+  gym.productos_tienda = [product];
+  setup.cantidadInput[1] = '1e2';
+  setup.agregarAlCarrito(product);
+  assert.equal(gym.cart.length, 0);
+  assert.equal(setup.feedbackTone, 'error');
+  setup.cantidadInput[1] = '2';
+  setup.agregarAlCarrito(product);
+  assert.equal(gym.cart[0].cantidad, 2);
+  setup.agregarAlCarrito(product);
+  assert.equal(gym.cart[0].cantidad, 3);
+  setup.agregarAlCarrito(product);
+  assert.equal(gym.cart[0].cantidad, 3);
+  assert.equal(setup.feedbackTone, 'error');
+  setup.updateCart(1, '1.5');
+  assert.equal(gym.cart[0].cantidad, 3);
+});
+
+test('failed gallery refresh preserves previously loaded images', async (t) => {
+  const { setup } = await setupView('StoreView', '/admin/store');
+  setup.bucketImages = [{ name: 'agua.png', url: '/agua.png' }];
+  t.mock.method(globalThis, 'fetch', async () => { throw new TypeError('Failed to fetch'); });
+  await setup.loadBucketImages();
+  assert.equal(setup.bucketImages.length, 1);
+  assert.equal(setup.bucketImages[0].name, 'agua.png');
+  assert.equal(setup.imageFeedbackTone, 'error');
+  assert.equal(setup.isLoadingBucketImages, false);
+});
+
+test('public registration rejects invalid email inline before sending a request', async () => {
+  const { setup, gym, html } = await setupView('RegisterView', '/registro', setup => {
+    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@gmail.com.otro.com', dni: '12345678', telefono: '987654321', password: 'secreto123' });
+    setup.validateField('correo');
+  });
+  let calls = 0;
+  gym.registerPublicClient = async () => { calls++; };
+  await setup.submitRegistration();
+  assert.equal(calls, 0);
+  assert.equal(setup.feedbackTone, 'error');
+  assert.match(setup.feedback, /Solo se permiten correos/);
+  assert.equal(setup.form.correo, 'ana@gmail.com.otro.com');
+  assert.equal(setup.isSubmitting, false);
+  assert.match(html, /aria-invalid="true"/);
+  assert.match(html, /id="register-correo-error" role="alert"/);
+});
+
+test('client and user editors keep invalid drafts open and do not call the server', async () => {
+  for (const [view, path, open, save] of [
+    ['ClientsView', '/admin/clients', 'openNewClient', 'upsertClient'],
+    ['UsersView', '/admin/users', 'openNewUser', 'upsertUser'],
+  ]) {
+    const { setup, gym } = await setupView(view, path);
+    setup[open]();
+    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@company.com', dni: 'bad', telefono: 'bad', password: '123' });
+    let calls = 0;
+    gym[save] = async () => { calls++; };
+    await setup.handleSubmit();
+    assert.equal(calls, 0);
+    assert.equal(setup.isEditorOpen, true);
+    assert.equal(setup.form.nombre, 'Ana');
+    assert.equal(setup.feedbackTone, 'error');
+    for (const field of ['correo', 'dni', 'telefono', 'password']) assert.ok(setup.fieldErrors[field]);
+  }
+});
+
+test('checkout validates customer data and prevents duplicate payments while preserving failed drafts', async () => {
+  const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
+  gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@gmail.com.otro.com', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  let calls = 0;
+  let rejectSave;
+  gym.createStoreOrder = () => { calls++; return new Promise((_resolve, reject) => { rejectSave = reject; }); };
+  await setup.submitPayment();
+  assert.equal(calls, 0);
+  assert.match(setup.feedback, /Solo se permiten correos/);
+  setup.payment.customerEmail = 'ana@hotmail.com';
+  setup.payment.dni = 'abc';
+  await setup.submitPayment();
+  assert.equal(calls, 0);
+  assert.match(setup.feedback, /8 dígitos/);
+  setup.payment.dni = '12345678';
+  setup.payment.reference = ' ';
+  await setup.submitPayment();
+  assert.equal(calls, 0);
+  assert.match(setup.feedback, /referencia de pago es obligatorio/);
+  setup.payment.reference = 'PAY-1';
+  const pending = setup.submitPayment();
+  await setup.submitPayment();
+  assert.equal(calls, 1);
+  rejectSave(new Error('Servicio no disponible'));
+  await pending;
+  assert.equal(setup.feedback, 'Servicio no disponible');
+  assert.equal(setup.isSubmitting, false);
+  assert.equal(setup.payment.reference, 'PAY-1');
+  assert.equal(gym.cart.length, 1);
 });

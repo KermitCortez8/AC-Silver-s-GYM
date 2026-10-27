@@ -1,12 +1,18 @@
+import { requireList, requireRecord } from '../services/responseValidation.js';
 import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
 import { orderTotals, toCents } from '../../domain/utils/money.js';
 /** Estado y operaciones del módulo store. */
 import { normalizeStoreOrder, normalizeStoreProductFromBackend, nowISO } from '../../domain/utils/gymRules.js';
 import { computed } from 'vue';
+import { parseQuantity } from '../../domain/utils/quantities.js';
 
 export const createStoreModule = (ctx, repository) => {
   const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
+  const orderLines = (items) => requireList(items, 'id_producto').map(item => ({
+    id_producto: Number(item.id_producto),
+    cantidad: parseQuantity(item.cantidad === undefined ? 1 : item.cantidad, { min: 1 }),
+  }));
   const upsertProductoTienda = async (payload) => {
     const producto = {
       id_producto: payload.id_producto || null,
@@ -16,8 +22,8 @@ export const createStoreModule = (ctx, repository) => {
       id_item: payload.id_item ? Number(payload.id_item) : null,
       unidad_venta: payload.unidad_venta || 'unidad',
       precio_venta: Number(payload.precio ?? 0),
-      cantidad_stock: Number(payload.cantidad ?? 0),
-      stock_minimo: Number(payload.minimo ?? 5),
+      cantidad_stock: parseQuantity(payload.cantidad ?? 0),
+      stock_minimo: parseQuantity(payload.minimo ?? 5),
       estado: payload.estado || 'Disponible',
       imagen_url: payload.imagen_url || payload.imageUrl || '',
     };
@@ -30,7 +36,7 @@ export const createStoreModule = (ctx, repository) => {
 
       const saved = await remote.upsertProductoTienda(body);
 
-      const normalized = normalizeStoreProductFromBackend(saved);
+      const normalized = normalizeStoreProductFromBackend(requireRecord(saved));
       const id_producto = normalized.id_producto;
 
       const index = ctx.productos_tienda.value.findIndex((p) => p.id_producto === id_producto);
@@ -80,7 +86,13 @@ export const createStoreModule = (ctx, repository) => {
   };
 
   const addToCart = (producto, cantidad = 1) => {
+    requireRecord(producto, 'id_producto');
+    cantidad = parseQuantity(cantidad, { min: 1 });
     const existingItem = ctx.cart.value.find((item) => item.id_producto === producto.id_producto);
+    const total = cantidad + (existingItem?.cantidad || 0);
+    if (producto.estado === 'Descatalogado' || total > parseQuantity(producto.cantidad ?? 0)) {
+      throw new Error(`No hay stock suficiente de ${producto.nombre || 'este producto'} para esa cantidad.`);
+    }
 
     if (existingItem) {
       existingItem.cantidad += cantidad;
@@ -90,7 +102,7 @@ export const createStoreModule = (ctx, repository) => {
         nombre: producto.nombre,
         imagen_url: producto.imagen_url || '',
         precio: producto.precio,
-        cantidad: Math.max(1, cantidad),
+        cantidad,
       });
     }
   };
@@ -100,9 +112,14 @@ export const createStoreModule = (ctx, repository) => {
   };
 
   const updateCartQuantity = (id_producto, cantidad) => {
+    cantidad = parseQuantity(cantidad, { min: 1 });
     const item = ctx.cart.value.find((item) => item.id_producto === id_producto);
     if (item) {
-      item.cantidad = Math.max(1, cantidad);
+      const product = ctx.productos_tienda.value.find(product => product.id_producto === id_producto);
+      if (!product || product.estado === 'Descatalogado' || cantidad > parseQuantity(product.cantidad ?? 0)) {
+        throw new Error('La cantidad supera el stock disponible. Actualiza el catálogo.');
+      }
+      item.cantidad = cantidad;
     }
   };
 
@@ -113,6 +130,7 @@ export const createStoreModule = (ctx, repository) => {
   const cartTotal = computed(() => orderTotals(ctx.cart.value));
 
   const mergeStoreOrder = (order) => {
+    requireRecord(order, 'id_pedido');
     const normalized = normalizeStoreOrder(order);
     const index = ctx.storeOrders.value.findIndex((entry) => Number(entry.id_pedido) === Number(normalized.id_pedido));
     if (index >= 0) {
@@ -126,7 +144,7 @@ export const createStoreModule = (ctx, repository) => {
   const refreshStoreProductsFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const list = await remote.refreshStoreProductsFromBackend();
+    const list = requireList(await remote.refreshStoreProductsFromBackend(), 'id_producto');
     ctx.productos_tienda.value = list.map((product) => normalizeStoreProductFromBackend(product));
     return ctx.productos_tienda.value;
   };
@@ -134,7 +152,7 @@ export const createStoreModule = (ctx, repository) => {
   const refreshStoreOrdersFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const list = await remote.refreshStoreOrdersFromBackend();
+    const list = requireList(await remote.refreshStoreOrdersFromBackend(), 'id_pedido');
     ctx.storeOrders.value = list.map((order) => normalizeStoreOrder(order));
     return ctx.storeOrders.value;
   };
@@ -158,7 +176,7 @@ export const createStoreModule = (ctx, repository) => {
   };
 
   const createStoreOrder = async (payload = {}) => {
-    const items = Array.isArray(payload.items) && payload.items.length ? payload.items : ctx.cart.value;
+    const items = requireList(payload.items === undefined ? ctx.cart.value : payload.items);
     if (!items.length) {
       throw new Error('El carrito esta vacio');
     }
@@ -170,10 +188,7 @@ export const createStoreModule = (ctx, repository) => {
       cliente_dni: payload.cliente_dni || payload.dni || ctx.authStore.user?.dni || '',
       metodo_pago: payload.metodo_pago || 'tarjeta',
       referencia_pago: payload.referencia_pago || `WEB-${Date.now()}`,
-      items: items.map((item) => ({
-        id_producto: Number(item.id_producto),
-        cantidad: Math.max(1, Number(item.cantidad || 1)),
-      })),
+      items: orderLines(items),
     };
 
     if (ctx.apiBase) {
@@ -185,16 +200,17 @@ export const createStoreModule = (ctx, repository) => {
       return saved;
     }
 
+    const requested = new Map();
     const orderItems = body.items.map((item) => {
       const product = ctx.productos_tienda.value.find((entry) => Number(entry.id_producto) === Number(item.id_producto));
       if (!product) {
         throw new Error(`Producto no encontrado: ${item.id_producto}`);
       }
-      if (Number(product.cantidad || 0) < item.cantidad) {
+      requested.set(product.id_producto, (requested.get(product.id_producto) || 0) + item.cantidad);
+      if (product.estado === 'Descatalogado' || Number(product.cantidad || 0) < requested.get(product.id_producto)) {
         throw new Error(`Stock insuficiente para ${product.nombre}`);
       }
 
-      product.cantidad = Number(product.cantidad || 0) - item.cantidad;
       return {
         id_producto: product.id_producto,
         nombre_producto: product.nombre,
@@ -205,6 +221,11 @@ export const createStoreModule = (ctx, repository) => {
     });
 
     const totals = orderTotals(orderItems.map(item => ({ precio: item.precio_unitario, cantidad: item.cantidad })));
+    // All lines are valid before any product stock changes.
+    for (const [id, quantity] of requested) {
+      const product = ctx.productos_tienda.value.find(entry => entry.id_producto === id);
+      product.cantidad = Number(product.cantidad) - quantity;
+    }
     const saved = mergeStoreOrder({
       id_pedido: Date.now(),
       ...body,
@@ -219,7 +240,7 @@ export const createStoreModule = (ctx, repository) => {
   };
 
   const createStoreCheckout = async (payload = {}) => {
-    const items = Array.isArray(payload.items) && payload.items.length ? payload.items : ctx.cart.value;
+    const items = requireList(payload.items === undefined ? ctx.cart.value : payload.items);
     if (!items.length) {
       throw new Error('El carrito esta vacio');
     }
@@ -229,7 +250,7 @@ export const createStoreModule = (ctx, repository) => {
       cliente_nombre: payload.cliente_nombre || payload.customerName || '',
       cliente_correo: payload.cliente_correo || payload.customerEmail || '',
       cliente_dni: payload.cliente_dni || payload.dni || '',
-      items: items.map((item) => ({ id_producto: Number(item.id_producto), cantidad: Math.max(1, Number(item.cantidad ?? 1)) })),
+      items: orderLines(items),
     };
     const saved = await remote.createStoreCheckout(body);
     if (!saved?.payment?.checkout_url) {
@@ -242,6 +263,7 @@ export const createStoreModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
     const result = await remote.confirmStoreCheckoutReturn(sessionId);
+    requireRecord(result);
     if (result.confirmed) {
       // El pago ya está registrado: el carrito debe quedar vacío y el stock mostrado debe actualizarse.
       clearCart();
@@ -253,7 +275,7 @@ export const createStoreModule = (ctx, repository) => {
   const cancelStoreCheckout = async (idPedido) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const result = await remote.cancelStoreCheckout(idPedido);
+    const result = requireRecord(await remote.cancelStoreCheckout(idPedido));
     const restored = [];
     const skipped = [];
 

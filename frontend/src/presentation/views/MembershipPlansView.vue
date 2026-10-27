@@ -46,7 +46,7 @@
         @cancel.prevent="closeEditor"
         @click="handleBackdrop"
       >
-        <form @submit.prevent="savePlan">
+        <form novalidate @submit.prevent="savePlan">
           <div class="flex items-start justify-between gap-4">
             <div>
               <p class="text-sm uppercase tracking-[0.35em] text-slate-400">{{ form.id_pm ? 'Editar' : 'Crear' }}</p>
@@ -92,6 +92,7 @@
 </template>
 
 <script setup>
+import { amountError, durationError, requiredTextError } from "../../domain/utils/formValidation.js";
 import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useGymStore } from '../../application/stores/gymStore';
@@ -146,6 +147,8 @@ const savePlan = async () => {
   saving.value = true;
   editorError.value = '';
   try {
+    const invalid = requiredTextError(form.name, 'El nombre del plan') || durationError(form.duration) || amountError(form.price);
+    if (invalid) throw new Error(invalid);
     await gymStore.upsertPlan({ ...form });
     feedbackTone.value = 'success';
     feedback.value = 'Plan guardado correctamente.';

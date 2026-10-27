@@ -4,6 +4,8 @@
 # Los accesos externos se mantienen separados de las reglas de negocio.
 from __future__ import annotations
 
+from presentation.error_handlers import http_error
+
 from functools import lru_cache
 import logging
 
@@ -38,7 +40,7 @@ def get_gym_service(request: Request = None) -> GymService:
     try:
         return _get_supabase_gym_service(settings.supabase_url, settings.supabase_key)
     except SchemaNotReady as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        raise http_error(error, validation_status=503) from error
     except (RuntimeError, OSError) as error:
         # No se sustituye una credencial rechazada por otra de menores permisos.
         logger.warning("Error al iniciar el repositorio (%s)", type(error).__name__)
@@ -73,9 +75,9 @@ def get_current_user(
     except ClientActivationRequired as error:
         raise HTTPException(status_code=403, detail={"code": error.code, "message": str(error)}) from error
     except ValueError as error:
-        raise HTTPException(status_code=401, detail=str(error)) from error
+        raise http_error(error, validation_status=401) from error
     except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        raise http_error(error, validation_status=503) from error
 
 
 # Usuario interno que origina la operación (para MOV_INV.id_usuario); None si no hay sesión válida.

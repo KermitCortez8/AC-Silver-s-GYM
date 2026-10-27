@@ -13,9 +13,44 @@ def required_text(value, label="Nombre"):
 
 def email_address(value):
     value = str(value or "").strip()
-    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value):
-        raise ValueError("Correo inválido")
-    return value
+    if not value:
+        raise ValueError("El correo es obligatorio.")
+    parts = value.split("@")
+    local, domain = parts[0], parts[1] if len(parts) == 2 else ""
+    if (len(parts) != 2 or len(value) > 254 or len(local) > 64
+            or not re.fullmatch(r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*", local, re.I)
+            or not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+", domain, re.I)):
+        raise ValueError("Ingresa un correo válido, por ejemplo nombre@gmail.com.")
+    return value.lower()
+
+
+def account_email(value):
+    email = email_address(value)
+    if email.rsplit("@", 1)[1] not in {"gmail.com", "hotmail.com"}:
+        raise ValueError("Solo se permiten correos @gmail.com o @hotmail.com.")
+    return email
+
+
+def dni_number(value, required=False):
+    text = str(value or "").strip()
+    if not text:
+        if required:
+            raise ValueError("El DNI es obligatorio.")
+        return ""
+    if not re.fullmatch(r"[0-9]{8}", text):
+        raise ValueError("El DNI debe tener exactamente 8 dígitos.")
+    return text
+
+
+def phone_number(value, required=False):
+    text = str(value or "").strip()
+    if not text:
+        if required:
+            raise ValueError("El teléfono es obligatorio.")
+        return ""
+    if not re.fullmatch(r"[0-9]{7,9}", text):
+        raise ValueError("El teléfono debe tener entre 7 y 9 dígitos, sin espacios ni letras.")
+    return text
 
 
 def nonnegative(value, label="Valor"):

@@ -6,6 +6,7 @@
     >
       <form
         class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 shadow-2xl"
+        novalidate
         @submit.prevent="handleSubmit"
       >
         <!-- Modal header -->

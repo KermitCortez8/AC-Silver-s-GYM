@@ -4,7 +4,9 @@
 # Restringe los cambios a personal autorizado.
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from presentation.error_handlers import http_error
+
+from fastapi import APIRouter, Depends, status
 
 from presentation.dependencies import get_gym_service, require_admin_or_staff, require_roles
 from domain.models.gym import PromocionInput
@@ -34,7 +36,7 @@ def upsert_promocion(
     try:
         return gym_service.upsert_promocion(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.put("/{id_promocion}")
@@ -50,7 +52,7 @@ def update_promocion(
     try:
         return gym_service.upsert_promocion(data)
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.delete("/{id_promocion}", status_code=status.HTTP_204_NO_CONTENT)
@@ -63,4 +65,4 @@ def delete_promocion(
     try:
         gym_service.delete_promocion(id_promocion)
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_404_NOT_FOUND) from error

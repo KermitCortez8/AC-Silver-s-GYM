@@ -1,4 +1,5 @@
 import { computed, reactive, ref } from 'vue';
+import { refreshSavedView } from '../../utils/refreshSavedView.js';
 import {
   dayLabel,
   serviceLabel,
@@ -87,8 +88,7 @@ export const useRoutineAssignments = ({
     try {
       await assign(item.id_matricula, idRutina);
       delete selection[item.id_matricula];
-      await reloadClient();
-      notify(message, 'success', toastMessage);
+      await refreshSavedView(reloadClient, notify, message, toastMessage);
       return true;
     } catch (error) {
       notify(
@@ -150,9 +150,8 @@ export const useRoutineAssignments = ({
     try {
       await assign(item.id_matricula, 0);
       delete selection[item.id_matricula];
-      await reloadClient();
       showConfirmModal.value = false;
-      notify('Rutina desvinculada del servicio.');
+      await refreshSavedView(reloadClient, notify, 'Rutina desvinculada del servicio.');
     } catch (error) {
       notify(
         error instanceof Error
