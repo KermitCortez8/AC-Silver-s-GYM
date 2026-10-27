@@ -190,7 +190,7 @@ conserva su indicación accionable de migración pendiente.
 Los problemas de campos se muestran en español y se asocian al campo cuando
 corresponde. Los formularios afectados conservan el borrador y los atributos de
 accesibilidad de error. Las reglas de cada campo se mantienen en el
-[documento de validaciones](../../docs/control-errores-modulos.md); cualquier
+[documento de validaciones](../../../docs/control-errores-modulos.md); cualquier
 cambio futuro de esas reglas debe tener su propio criterio verificable.
 
 **Dado** un cliente con un correo rechazado por la API, **cuando** el formulario

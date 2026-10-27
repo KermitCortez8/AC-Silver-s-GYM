@@ -2,10 +2,21 @@
 
 ## Desarrollo guiado por especificaciones
 
-Para cambios funcionales, leer `.specify/memory/constitution.md` y trabajar con
-`specs/<numero>-<cambio>/spec.md`, `plan.md` y `tasks.md`. Usar las skills oficiales
-de `.agents/skills/speckit-*` cuando corresponda. La guía local está en
-`docs/spec-driven-development.md`.
+Para cambios funcionales, leer `sdd/.specify/memory/constitution.md` y trabajar con
+`sdd/specs/<numero>-<cambio>/spec.md`, `plan.md` y `tasks.md`. Usar las skills
+oficiales de `sdd/.agents/skills/speckit-*` cuando corresponda. La guía local está
+en `sdd/README.md`.
+
+La raíz de trabajo de Spec Kit es `sdd/`; la raíz de la aplicación sigue siendo
+la del repositorio. Al ejecutar una skill oficial, interpretar sus rutas
+`.specify/`, `.agents/` y `specs/` respecto de `sdd/` y ejecutar sus scripts con
+directorio de trabajo `sdd/`. Desde otro directorio, usar `SPECIFY_INIT_DIR` con
+la ruta absoluta a `sdd/`. Los paths de `backend/`, `frontend/` y `supabase/` en
+los documentos de negocio se refieren a la raíz de la aplicación.
+
+Crear las nuevas especificaciones dentro de `sdd/specs/`. No recrear carpetas
+`specs/`, `.specify/`, `scripts/` o `tools/` de SDD en la raíz. `.agents/skills`
+es únicamente el enlace de descubrimiento hacia las skills guardadas en `sdd/`.
 
 Antes de cambiar comportamiento, definir el escenario esperado y su evidencia.
 Reutilizar pruebas existentes; añadir una regresión cuando falte un escenario.

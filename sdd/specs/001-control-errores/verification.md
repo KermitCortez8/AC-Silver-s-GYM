@@ -16,16 +16,18 @@ es el valor resuelto de `refs/tags/v1.2.3^{}`.
 
 | Comprobación | Resultado |
 | --- | --- |
-| `bash scripts/specify version` | CLI 1.2.3 disponible. |
-| `bash scripts/setup-spec-kit.sh` | Instalación local ejecutada; versión y procedencia comprobadas. |
-| `bash .specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` | Resuelve el piloto y sus documentos. |
-| `bash -n scripts/setup-spec-kit.sh scripts/specify` | Sin errores de sintaxis. |
+| `bash sdd/scripts/specify version` | CLI 1.2.3 disponible. |
+| `bash sdd/scripts/setup-spec-kit.sh` | Instalación local ejecutada; versión y procedencia comprobadas. |
+| `bash sdd/.specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` | Resuelve el piloto y sus documentos. |
+| `bash -n sdd/scripts/setup-spec-kit.sh sdd/scripts/specify` | Sin errores de sintaxis. |
 | SHA-256 de archivos oficiales contra manifiestos instalados | 22 archivos coinciden, incluidas las diez skills. |
 | Hashes de los cuatro archivos de aplicación/test preexistentes | Sin cambios durante esta adopción. |
 | `git diff --check` | Sin errores en los cambios versionados. |
 
 El contexto del piloto se seleccionó con
-`SPECIFY_FEATURE_DIRECTORY=specs/001-control-errores`. CI tiene el mismo contexto
+`SPECIFY_FEATURE_DIRECTORY=specs/001-control-errores`, relativo al proyecto SDD.
+Tras la reorganización, desde la raíz se usa además `SPECIFY_INIT_DIR="$PWD/sdd"`.
+CI tiene el mismo contexto
 y ejecutará su comprobación estructural en PR; no se afirma una ejecución remota
 de GitHub Actions desde esta sesión.
 
@@ -36,9 +38,9 @@ de GitHub Actions desde esta sesión.
 | `npm --prefix frontend test` | Ejecución final: 35 archivos aprobados, sin fallos. El runner informó por archivo; no se contabilizan como 35 casos individuales. |
 | `npm --prefix frontend run build` | Compilación de producción correcta. |
 | `node --test tests/23-layer-boundaries.test.js tests/26-stock-edit-forms.test.js tests/31-module-error-control.test.js tests/32-http-error-control.test.js tests/33-trainer-refresh-errors.test.js tests/34-form-validation.test.js tests/35-response-identifiers.test.js`, desde `frontend/` | Los siete archivos seleccionados pasaron. |
-| `AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef .tools/backend-tests/bin/python -m pytest backend/tests/test_module_error_control.py backend/tests/test_basic_form_validation.py backend/tests/test_layer_boundaries.py -q` | 153 pruebas aprobadas. |
-| `AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef .tools/backend-tests/bin/python -m pytest backend/tests/ -q` | 544 aprobadas; 15 omitidas por requerir PostgreSQL aislado. |
-| `.tools/backend-tests/bin/python -m flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics` | 0 errores. |
+| `AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef sdd/.tools/backend-tests/bin/python -m pytest backend/tests/test_module_error_control.py backend/tests/test_basic_form_validation.py backend/tests/test_layer_boundaries.py -q` | 153 pruebas aprobadas. |
+| `AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef sdd/.tools/backend-tests/bin/python -m pytest backend/tests/ -q` | 544 aprobadas; 15 omitidas por requerir PostgreSQL aislado. |
+| `sdd/.tools/backend-tests/bin/python -m flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics` | 0 errores. |
 
 Entorno: Node.js 24.21.0; backend de pruebas Python 3.12; CLI SDD Python 3.14.2.
 Las dependencias backend se prepararon en un entorno local ignorado por Git.
@@ -84,3 +86,35 @@ No se ejecutaron PostgreSQL, revisión visual, Deno ni integraciones externas en
 esta adopción. No cambian SQL ni Edge Functions. Los quince tests omitidos no
 demuestran atomicidad/concurrencia en esta ejecución; el trabajo PostgreSQL del
 workflow existente mantiene su responsabilidad.
+
+## Reorganización del apartado SDD
+
+El 27 de octubre de 2026 se agruparon la guía, memoria, plantillas, scripts,
+skills, especificaciones y entornos locales en `sdd/`. La raíz de trabajo de
+Spec Kit es ahora `sdd/`; el código de la aplicación permanece en su ubicación.
+Las rutas de los comandos anteriores se han adaptado a esta organización para
+facilitar su consulta. Los resultados funcionales anteriores son históricos:
+esta reorganización no volvió a ejecutar las suites de la aplicación.
+
+Comprobaciones ejecutadas para el traslado:
+
+- CLI 1.2.3 y procedencia del commit fijado, instaladas en `sdd/.tools/spec-kit`.
+- Lanzador `sdd/scripts/specify` desde la raíz y desde otro directorio;
+  `workflow list` encuentra el workflow del proyecto SDD.
+- Script oficial de prerrequisitos desde la raíz con `SPECIFY_INIT_DIR` y desde
+  `sdd/` con el mismo directorio de trabajo que CI.
+- Creación simulada con `create-new-feature.sh --dry-run`: la siguiente spec se
+  resolvería dentro de `sdd/specs/`, sin crear una funcionalidad de prueba.
+- Copia temporal equivalente a un checkout sin `feature.json` ni entornos locales:
+  los prerrequisitos y la creación simulada resuelven las rutas correctas.
+- Las diez skills se encuentran mediante `.agents/skills`, que es un enlace
+  hacia su ubicación única en `sdd/.agents/skills`.
+- Los 22 archivos oficiales incluidos en los manifiestos mantienen sus hashes.
+- Los enlaces de los 14 documentos propios revisados y la sintaxis Bash son válidos.
+- El YAML de CI trabaja desde `sdd/` para SDD y conserva los demás trabajos.
+- Se compararon los hashes de 417 archivos de aplicación y configuración: todos
+  permanecen en su ruta original y con el contenido anterior al traslado.
+- El entorno auxiliar de pruebas backend resuelve su nueva ubicación y carga pytest.
+- Los entornos y `feature.json` siguen ignorados por Git; `git diff --check` pasa.
+
+Las tareas funcionales pendientes del piloto conservan su estado.

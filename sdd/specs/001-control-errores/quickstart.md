@@ -2,23 +2,24 @@
 
 ## Spec Kit
 
-La CLI está instalada localmente en `.tools/spec-kit`. En otro checkout, desde
+La CLI está instalada localmente en `sdd/.tools/spec-kit`. En otro checkout, desde
 la raíz, con Python 3.11+, venv, pip, Git y acceso de descarga:
 
 ```bash
-bash scripts/setup-spec-kit.sh
-bash scripts/specify version
+bash sdd/scripts/setup-spec-kit.sh
+bash sdd/scripts/specify version
 ```
 
 Los archivos de integración y las skills ya se versionan: no hace falta repetir
 `init`. La instalación local se ignora en Git. El script no modifica el PATH ni
 las dependencias de la aplicación.
 
-Seleccionar el piloto para los scripts oficiales:
+Seleccionar el proyecto SDD y el piloto desde la raíz del repositorio:
 
 ```bash
+export SPECIFY_INIT_DIR="$PWD/sdd"
 export SPECIFY_FEATURE_DIRECTORY=specs/001-control-errores
-bash .specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks --include-tasks
+bash sdd/.specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks --include-tasks
 ```
 
 Se espera la ruta del piloto y sus documentos. Esto verifica presencia de
@@ -35,8 +36,10 @@ $speckit-converge
 Para este piloto, empezar por las tareas abiertas y leer la evidencia. Las
 skills no son órdenes de terminal. Si el cliente no permite seleccionarlas,
 referenciar el `SKILL.md` correspondiente y los documentos del piloto.
-El archivo `.specify/feature.json` es estado local ignorado; se puede usar la
-variable anterior en cada nueva sesión sin cambiar de rama Git.
+El archivo `sdd/.specify/feature.json` es estado local ignorado; se puede usar la
+selección anterior en cada nueva sesión sin cambiar de rama Git. Las skills
+interpretan sus rutas respecto de `sdd/`. Las pruebas de la aplicación que siguen
+se ejecutan desde la raíz del repositorio o desde la carpeta indicada.
 
 ## Pruebas de la aplicación
 

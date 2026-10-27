@@ -1,26 +1,37 @@
 # AC Silver's GYM
 
-Aplicacion-web para la ggestion de un gimnasio. El proyecto esta dividido en un
-frontend Vue/Vite y un backend FastAPI que se conecta a Supabase para consultar
-y guardar la informacion del sistema.
+Aplicación web para la gestión de AC Silver's GYM. Centraliza el registro de
+clientes, las membresías, los horarios, el seguimiento del entrenamiento y el
+control de inventario y tienda. Ofrece funciones para administración, personal,
+entrenadores y clientes, con acceso según el perfil de cada usuario.
 
-## Arquitectura
+## Módulos del sistema
 
-El backend y el frontend se organizan en cuatro capas: `presentation` (API o
-interfaz), `application` (coordinación y estado), `domain` (reglas y contratos) e
-`infrastructure` (persistencia y servicios externos). Consulta la
-[distribución de archivos y el alcance de la separación](docs/arquitectura.md).
+| Módulo | Descripción |
+| --- | --- |
+| Registro | Permite el preregistro público y el alta administrativa de clientes, con la continuación del proceso de pago y activación. |
+| Autenticación y usuarios | Gestiona el acceso con contraseña o Google, las sesiones, los perfiles y los roles de las cuentas. |
+| Clientes | Reúne el directorio, la búsqueda y la edición de datos personales, junto con la consulta de membresías y acciones de cada ficha. |
+| Planes y membresías | Administra los planes, sus precios y duración, y las membresías de los clientes con sus estados y vigencia. |
+| Promociones | Gestiona descuentos vinculados a planes, fechas de validez, condiciones y cupos aplicables. |
+| Horarios | Organiza los horarios de servicio, su disponibilidad y los cupos de las actividades del gimnasio. |
+| Matrículas | Permite inscribir o dar de baja a un cliente en un horario, comprobando su membresía y los cupos disponibles. |
+| Entrenador y rutinas | Ofrece el resumen del entrenador, el catálogo de rutinas, la asignación a matrículas y el seguimiento del progreso. |
+| Asistencias | Controla entradas y salidas generales o por horario, aforo, correcciones y consulta del historial del cliente. |
+| Inventario | Administra artículos y equipos, categorías, ubicaciones, estado operativo, stock de reserva y movimientos de entrada, salida o ajuste. |
+| Tienda | Presenta productos con imágenes, precios y disponibilidad; permite gestionar el catálogo, el carrito y el proceso de compra según el perfil. |
+| Pedidos y ventas | Registra y consulta pedidos, sus estados, entregas y cancelaciones, y permite revisar las salidas por venta. |
+| Pagos | Centraliza el historial de pagos de membresía, la confirmación manual o mediante Stripe y la coordinación del pago de pedidos. |
+| Paneles y configuración | Muestra resúmenes y accesos según el perfil, y permite administrar parámetros operativos como las capacidades del gimnasio. |
+| Sitio público | Presenta los servicios del gimnasio, información institucional, preguntas frecuentes y accesos al registro e inicio de sesión. |
 
-La [auditoría de code smells](docs/auditoria-code-smells.md) documenta los 42
-hallazgos. El [seguimiento de los 12 prioritarios](docs/correcciones-prioritarias.md)
-explica las correcciones, sus pruebas y las migraciones 014, 015 y 016 que deben
-aplicarse antes de desplegar este backend.
+Los módulos se relacionan entre sí: registro, membresías y pagos participan en
+la activación del cliente; horarios, matrículas y asistencias organizan su
+participación en las actividades; inventario, tienda y pedidos coordinan las
+existencias y las ventas. Un módulo puede reunir varias pantallas o compartir
+una vista con otros módulos.
 
-El [desarrollo guiado por especificaciones con GitHub Spec Kit](docs/spec-driven-development.md)
-ya está configurado: principios del proyecto, piloto de control de errores,
-plan, tareas y proceso de verificación. Consulta la guía para usar las skills
-instaladas y distinguir la integración terminada de la aceptación pendiente del piloto.
-
+ 
 ## Requisitos
 
 - Node.js 22 o superior
@@ -28,38 +39,7 @@ instaladas y distinguir la integración terminada de la aceptación pendiente de
 - Docker Desktop o Docker Engine con Docker Compose 2.17 o superior, si se usara Docker
 - Credenciales de Supabase para el backend
 
-## Integración continua y despliegue
 
-Al fusionar un PR hacia `main`, GitHub Actions ejecuta esta secuencia:
-
-1. Construye las imágenes Docker del backend y frontend, arranca ambos
-   contenedores y verifica el backend, la web y el proxy de Nginx.
-2. Ejecuta las pruebas de Python y Node.js dentro de los targets `test` de sus
-   Dockerfiles, y las pruebas de Deno en paralelo. Las imágenes de producción
-   no incluyen las dependencias ni los archivos exclusivos de pruebas.
-3. Si todas pasan, despliega el frontend en Vercel y solicita el despliegue
-   del mismo commit en Render.
-
-Si falla Docker o alguna prueba, los despliegues no se ejecutan. La validación
-usa `docker-compose.yml` con un archivo temporal de CI y una clave de prueba,
-sin credenciales de producción.
-Comprueba el arranque y el proxy; no comprueba una conexión real a Supabase.
-El endpoint `/api/health` devuelve el 503 esperado por falta de credenciales.
-
-Los despliegues conservan sus mecanismos actuales: Vercel compila el frontend
-y Render recibe su Deploy Hook. Este workflow no publica imágenes Docker ni
-cambia la configuración del servicio en Render. La aceptación del hook no
-confirma que Render haya terminado el despliegue.
-
-GitHub Actions necesita únicamente los secretos de despliegue
-`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` y
-`RENDER_DEPLOY_HOOK_URL`. Las variables de la aplicación se configuran en
-Vercel (Production) y Render. Antes de compilar, `vercel pull` recupera la
-configuración y las variables de producción de Vercel; el hook de Render
-conserva las variables del servicio y solicita el mismo commit probado.
-El proyecto de Vercel debe tener `Root Directory` en `frontend`.
-Mantén desactivados los despliegues automáticos por Git en ambas plataformas
-para que las publicaciones dependan de este workflow.
 
 ## Activacion Manual
 

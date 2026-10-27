@@ -23,7 +23,7 @@ no modifica el comportamiento funcional de la aplicación.
   sin reintentos automáticos de escrituras ni acceso a proveedores de producción.
 - **Scale/Scope**: cuatro historias y nueve requisitos `ERR-*`.
 - **Toolchain**: Spec Kit 1.2.3, commit
-  `5ea8b1cf0a38699340a38e00d02770308997d8c0`, instalación en `.tools/spec-kit`.
+  `5ea8b1cf0a38699340a38e00d02770308997d8c0`, instalación en `sdd/.tools/spec-kit`.
 
 ## Constitution Check
 
@@ -40,14 +40,17 @@ evalúa el plan; no afirma que todos los requisitos funcionales estén implement
 
 ## Project Structure
 
+Spec Kit trabaja desde `sdd/`. Las rutas de código y pruebas de la aplicación
+se refieren a la raíz del repositorio, donde permanecen backend y frontend.
+
 ```text
-.agents/skills/speckit-*/       Skills oficiales generadas para Codex
-.specify/                     Scripts, plantillas, integración y workflow oficiales
-.specify/memory/constitution.md
-scripts/setup-spec-kit.sh     Instalación local reproducible
-scripts/specify               Acceso a la CLI local
-tools/spec-kit-requirements.txt
-specs/001-control-errores/
+sdd/.agents/skills/speckit-*/       Skills oficiales generadas para Codex
+sdd/.specify/                     Scripts, plantillas, integración y workflow oficiales
+sdd/.specify/memory/constitution.md
+sdd/scripts/setup-spec-kit.sh     Instalación local reproducible
+sdd/scripts/specify               Acceso a la CLI local
+sdd/requirements.txt
+sdd/specs/001-control-errores/
   spec.md
   plan.md
   research.md

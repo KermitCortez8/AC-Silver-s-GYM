@@ -8,7 +8,7 @@ Desde la adopción de Spec Kit, usar las plantillas oficiales instaladas:
 - [Checklist](../.specify/templates/checklist-template.md).
 
 El [piloto de errores](001-control-errores/spec.md) muestra la adaptación al
-gimnasio. La [guía local](../docs/spec-driven-development.md) explica las skills,
+gimnasio. La [guía local](../README.md) explica las skills,
 la constitución y la verificación.
 
 Conservar IDs estables de requisitos y relacionarlos con tareas y evidencia.

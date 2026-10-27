@@ -17,6 +17,9 @@ jobs:
     name: Estructura del piloto Spec Kit
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: sdd
     env:
       SPECIFY_FEATURE_DIRECTORY: specs/001-control-errores
       SPECIFY_FEATURE_NO_PERSIST: '1'

@@ -8,5 +8,5 @@ speckit_python="${SPECKIT_PYTHON:-python3}"
 "$speckit_python" -m venv "$speckit_root/.tools/spec-kit"
 # Reinstalar evita conservar otro commit que declare la misma versión de la CLI.
 "$speckit_root/.tools/spec-kit/bin/python" -m pip install --force-reinstall --disable-pip-version-check \
-  -r "$speckit_root/tools/spec-kit-requirements.txt"
+  -r "$speckit_root/requirements.txt"
 "$speckit_root/.tools/spec-kit/bin/specify" version

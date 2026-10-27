@@ -1,10 +1,7 @@
 <!--
-Sync Impact Report — enmienda para revisión antes del commit
-Versión: 1.0.0 → 1.1.0 (MINOR: mapa funcional y guía de alcance por módulo).
-Principios modificados o eliminados: ninguno.
-Sección añadida: Módulos funcionales y relaciones.
-Plantillas y skills oficiales: sin cambios; leen la constitución en ejecución.
-Pendientes de contenido: ninguno.
+Sync Impact Report: 1.1.0 → 1.1.1 (PATCH).
+Reubicación de SDD en sdd/ y ajuste de referencias; principios y módulos conservados.
+Sin cambios en plantillas o skills oficiales ni pendientes de contenido.
 -->
 # Constitución de AC Silver's GYM
 
@@ -81,15 +78,18 @@ crear la misma cantidad de ventanas o accesos de menú.
 | Paneles y configuración | Resúmenes por perfil y parámetros operativos, como capacidades del gimnasio. | `HomeView.vue`, `dashboard.js`, `configuration.py`, `gym_routes.py`. |
 | Sitio público | Presentación del gimnasio, información institucional, preguntas frecuentes y acceso al registro o inicio de sesión. | `LandingView.vue`, `NosotrosView.vue`, `PreguntasFrecuentesView.vue`. |
 
+Las rutas de aplicación de esta memoria se refieren a la raíz del repositorio;
+la raíz de trabajo de Spec Kit es `sdd/`.
+
 Las vistas se encuentran en `frontend/src/presentation/views/`, los componentes
 en `frontend/src/presentation/components/` y los módulos de aplicación frontend
 en `frontend/src/application/modules/`. Las rutas backend están en
 `backend/presentation/routes/`, las operaciones en `backend/application/operations/`
 y los servicios en `backend/application/services/`.
 
-Fuentes para mantener el mapa: [rutas de navegación](../../frontend/src/presentation/router/index.js),
-[rutas backend](../../backend/presentation/routes/) y
-[arquitectura](../../docs/arquitectura.md). Los nombres de archivo de la tabla
+Fuentes para mantener el mapa: [rutas de navegación](../../../frontend/src/presentation/router/index.js),
+[rutas backend](../../../backend/presentation/routes) y
+[arquitectura](../../../docs/arquitectura.md). Los nombres de archivo de la tabla
 son puntos de entrada representativos, no implementaciones independientes de
 todo el módulo.
 
@@ -145,4 +145,4 @@ Fuentes iniciales: README, `docs/arquitectura.md`,
 `docs/control-errores-modulos.md` y CI del repositorio.
 No establece condiciones nuevas de despliegue ni exige aprobaciones adicionales.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27
+**Version**: 1.1.1 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27
