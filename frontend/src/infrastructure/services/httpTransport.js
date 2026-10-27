@@ -12,7 +12,22 @@ export const fetchWithTimeout = async (url, options = {}, timeoutMs = 30_000) =>
     controller.abort();
   }, timeoutMs);
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    if (!response.body) return response;
+
+    // These clients consume complete JSON/text responses. Keep the deadline and
+    // caller cancellation active until the body has arrived, then expose an
+    // unread response so existing status checks and parsers keep working.
+    const body = await response.arrayBuffer();
+    return Object.defineProperties(new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    }), {
+      url: { value: response.url },
+      redirected: { value: response.redirected },
+      type: { value: response.type },
+    });
   } catch {
     const isWrite = !['GET', 'HEAD'].includes(String(options.method || 'GET').toUpperCase());
     const error = new Error(timedOut

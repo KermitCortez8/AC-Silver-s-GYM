@@ -16,6 +16,11 @@ hallazgos. El [seguimiento de los 12 prioritarios](docs/correcciones-prioritaria
 explica las correcciones, sus pruebas y las migraciones 014, 015 y 016 que deben
 aplicarse antes de desplegar este backend.
 
+El [desarrollo guiado por especificaciones con GitHub Spec Kit](docs/spec-driven-development.md)
+ya está configurado: principios del proyecto, piloto de control de errores,
+plan, tareas y proceso de verificación. Consulta la guía para usar las skills
+instaladas y distinguir la integración terminada de la aceptación pendiente del piloto.
+
 ## Requisitos
 
 - Node.js 22 o superior

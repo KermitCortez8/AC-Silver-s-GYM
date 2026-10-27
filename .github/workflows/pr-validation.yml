@@ -13,6 +13,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  specifications:
+    name: Estructura del piloto Spec Kit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SPECIFY_FEATURE_DIRECTORY: specs/001-control-errores
+      SPECIFY_FEATURE_NO_PERSIST: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Comprobar artefactos con el script oficial
+        run: bash .specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks --include-tasks
+      - name: Comprobar sintaxis de instalación local
+        run: bash -n scripts/setup-spec-kit.sh scripts/specify
+
   tests:
     name: Pruebas de ${{ matrix.component }}
     runs-on: ubuntu-latest

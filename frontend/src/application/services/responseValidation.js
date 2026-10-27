@@ -2,7 +2,11 @@ const invalidResponse = () => new Error('El servidor devolvió datos incompletos
 
 export const requireRecord = (value, idField) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw invalidResponse();
-  if (idField && (typeof value[idField] === 'boolean' || !Number.isSafeInteger(Number(value[idField])) || Number(value[idField]) <= 0)) throw invalidResponse();
+  if (idField) {
+    const id = value[idField];
+    const validType = typeof id === 'number' || (typeof id === 'string' && /^[0-9]+$/.test(id));
+    if (!validType || !Number.isSafeInteger(Number(id)) || Number(id) <= 0) throw invalidResponse();
+  }
   return value;
 };
 

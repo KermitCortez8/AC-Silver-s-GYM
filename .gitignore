@@ -51,6 +51,7 @@ frontend/.env
 backend/.venv/
 .venv/
 venv/
+.tools/
 **/__pycache__/
 *.pyc
 backend/db/state.json
