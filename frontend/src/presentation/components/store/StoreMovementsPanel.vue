@@ -38,19 +38,49 @@
           <h2 class="mt-2 text-2xl font-black text-white">Salidas por ventas</h2>
           <p class="mt-1 text-sm text-slate-400">Cada producto vendido en un pedido descuenta stock de la tienda.</p>
         </div>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 self-start rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+          :disabled="!filteredMovements.length || isExporting"
+          @click="exportToExcel"
+        >
+          <FileSpreadsheet :size="18" aria-hidden="true" />
+          {{ isExporting ? 'Exportando...' : 'Exportar a Excel' }}
+        </button>
       </div>
 
-      <!-- Buscador en fila (estilo Inventario) -->
-      <div class="mt-4 grid gap-3 sm:max-w-md">
-        <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
-          <Search :size="16" class="shrink-0 text-slate-500" />
-          <input v-model="search" @input="paginaActual = 1" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar producto, cliente o pedido..." />
-        </div>
+      <!-- Buscador (solo nombre del producto) y filtros -->
+      <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <TableSearch
+          v-model="search"
+          label="Buscar ventas por nombre de producto"
+          placeholder="Buscar por nombre de producto"
+          @update:model-value="paginaActual = 1"
+        />
+        <select v-model="monthFilter" class="inv-input" aria-label="Filtrar por mes" @change="paginaActual = 1">
+          <option value="">Todos los meses</option>
+          <option v-for="month in monthOptions" :key="month.value" :value="month.value">{{ month.label }}</option>
+        </select>
+        <select v-model="orderFilter" class="inv-input" aria-label="Filtrar por pedido" @change="paginaActual = 1">
+          <option value="">Todos los pedidos</option>
+          <option v-for="order in orderOptions" :key="order" :value="order">Pedido #{{ order }}</option>
+        </select>
+        <select v-model="clientFilter" class="inv-input" aria-label="Filtrar por cliente" @change="paginaActual = 1">
+          <option value="">Todos los clientes</option>
+          <option v-for="client in clientOptions" :key="client" :value="client">{{ client }}</option>
+        </select>
       </div>
 
-      <p class="mt-3 text-xs text-slate-500">Mostrando {{ paginatedMovements.length }} de {{ filteredMovements.length }} movimientos</p>
+      <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+        <p>{{ filteredMovements.length }} de {{ movements.length }} ventas · S/. {{ filteredAmount.toFixed(2) }} en el filtro</p>
+        <button v-if="hasFilters" type="button" class="inv-btn-ghost" @click="clearFilters">Limpiar filtros</button>
+      </div>
+      <p v-if="exportNotice" role="status" class="inv-info mt-3">
+        <Info :size="16" aria-hidden="true" />
+        {{ exportNotice }}
+      </p>
 
-      <div v-if="filteredMovements.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
+      <div v-if="filteredMovements.length" class="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
           <table class="w-full min-w-[820px] text-left text-sm">
             <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
@@ -67,14 +97,14 @@
               <tr v-for="movement in paginatedMovements" :key="movement.key" class="transition hover:bg-white/[0.04]" :class="movement.isCancelled ? 'opacity-60' : ''">
                 <td class="px-5 py-4 align-top text-slate-300">{{ formatDate(movement.fecha) }}</td>
                 <td class="px-4 py-4 align-top font-bold text-white">{{ movement.producto }}</td>
-                <td class="px-4 py-4 align-top font-bold text-amber-200">-{{ movement.cantidad }}</td>
+                <td class="px-4 py-4 align-top font-bold text-rose-300">-{{ movement.cantidad }}</td>
                 <td class="px-4 py-4 align-top font-black text-emerald-300">S/. {{ movement.subtotal.toFixed(2) }}</td>
                 <td class="px-4 py-4 align-top">
                   <p class="font-bold text-white">#{{ movement.idPedido }}</p>
                   <span class="mt-1 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-black" :class="orderStatusClass(movement.estado)">{{ movement.estado }}</span>
                 </td>
                 <td class="px-4 py-4 align-top">
-                  <p :class="movement.cliente ? 'font-semibold text-white' : 'italic text-slate-500'">{{ movement.cliente || 'Sin registrar' }}</p>
+                  <p :class="movement.cliente ? 'font-semibold text-white' : 'italic text-slate-500'">{{ movement.cliente || NO_CLIENT }}</p>
                   <p v-if="movement.clienteDni" class="mt-1 text-xs text-slate-400">DNI: {{ movement.clienteDni }}</p>
                 </td>
               </tr>
@@ -83,31 +113,12 @@
         </div>
       </div>
 
-      <!-- Paginación -->
-      <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between text-sm text-slate-400">
-        <p>Mostrando {{ paginaInicio + 1 }} a {{ paginaFin }} de <span class="font-bold text-white">{{ filteredMovements.length }}</span> movimientos</p>
-        <div class="flex items-center gap-2">
-          <button
-            class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30"
-            :disabled="paginaActual === 1"
-            @click="paginaActual--"
-          >Anterior</button>
-          <button
-            v-for="p in totalPages"
-            :key="p"
-            class="h-9 w-9 rounded-xl border text-sm font-bold transition"
-            :class="p === paginaActual
-              ? 'border-rose-500/40 bg-rose-600/20 text-rose-300'
-              : 'border-white/10 text-white hover:bg-white/5'"
-            @click="paginaActual = p"
-          >{{ p }}</button>
-          <button
-            class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30"
-            :disabled="paginaActual === totalPages"
-            @click="paginaActual++"
-          >Siguiente</button>
-        </div>
-      </div>
+      <TablePager
+        v-model:page="paginaActual"
+        v-model:pageSize="porPagina"
+        :total="filteredMovements.length"
+        item-label="ventas"
+      />
 
       <!-- Empty state -->
       <div v-if="!filteredMovements.length" class="mt-6 rounded-2xl border border-dashed border-white/10 px-6 py-14 text-center">
@@ -116,8 +127,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 3H8l-2 4h12l-2-4z" />
           </svg>
         </div>
-        <p class="text-sm font-semibold text-slate-300">{{ search ? 'Sin resultados' : 'Sin ventas registradas' }}</p>
-        <p class="mt-1 text-xs text-slate-500">{{ search ? 'Prueba con otro termino de busqueda.' : 'No se han registrado ventas en la tienda todavia.' }}</p>
+        <p class="text-sm font-semibold text-slate-300">{{ hasFilters ? 'Sin resultados' : 'Sin ventas registradas' }}</p>
+        <p class="mt-1 text-xs text-slate-500">{{ hasFilters ? 'Prueba con otros filtros o termino de busqueda.' : 'No se han registrado ventas en la tienda todavia.' }}</p>
       </div>
     </section>
   </div>
@@ -125,11 +136,19 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { Activity, ShoppingBag, DollarSign, Search } from 'lucide-vue-next';
+import { Activity, DollarSign, FileSpreadsheet, Info, ShoppingBag } from 'lucide-vue-next';
+import TablePager from '../common/TablePager.vue';
+import TableSearch from '../common/TableSearch.vue';
+import { limaDate } from '../../../domain/utils/dates.js';
+import { DEFAULT_PAGE_SIZE, matchesSearch } from '../../../domain/utils/inputRules.js';
 import { useGymStore } from '../../../application/stores/gymStore';
 
+const NO_CLIENT = 'Sin registrar';
 const gymStore = useGymStore();
 const search = ref('');
+const monthFilter = ref('');
+const orderFilter = ref('');
+const clientFilter = ref('');
 
 /**
  * Obtiene el cliente del pedido, completando sus datos con la lista de clientes.
@@ -142,6 +161,11 @@ const orderClient = (order) => {
   return { name: member?.name || savedName, dni: dni || member?.dni || '' };
 };
 
+// Mes civil del gimnasio (America/Lima) de una fecha de pedido, como "AAAA-MM".
+const monthKey = (value) => (value ? limaDate(new Date(value)).slice(0, 7) : '');
+const monthLabel = (key) => new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+  .format(new Date(`${key}-15T12:00:00Z`));
+
 const movements = computed(() =>
   (gymStore.storeOrders || [])
     .flatMap((order) => {
@@ -149,6 +173,7 @@ const movements = computed(() =>
       return (order.items || []).map((item, index) => ({
         key: `${order.id_pedido}-${item.id_producto}-${index}`,
         fecha: order.fecha_pedido,
+        mes: monthKey(order.fecha_pedido),
         producto: item.nombre_producto || `Producto #${item.id_producto}`,
         cantidad: Number(item.cantidad || 0),
         subtotal: Number(item.subtotal || 0),
@@ -165,26 +190,78 @@ const activeMovements = computed(() => movements.value.filter((movement) => !mov
 const soldUnits = computed(() => activeMovements.value.reduce((sum, movement) => sum + movement.cantidad, 0));
 const soldAmount = computed(() => activeMovements.value.reduce((sum, movement) => sum + movement.subtotal, 0));
 
-const filteredMovements = computed(() => {
-  const query = search.value.trim().toLowerCase();
-  if (!query) return movements.value;
-  return movements.value.filter((movement) => [movement.producto, movement.cliente, movement.clienteDni, movement.idPedido, movement.estado].join(' ').toLowerCase().includes(query));
-});
+// Opciones de los desplegables a partir de las ventas existentes.
+const monthOptions = computed(() => [...new Set(movements.value.map((movement) => movement.mes).filter(Boolean))]
+  .sort((a, b) => b.localeCompare(a))
+  .map((value) => ({ value, label: monthLabel(value) })));
+const orderOptions = computed(() => [...new Set(movements.value.map((movement) => movement.idPedido))]
+  .sort((a, b) => Number(b) - Number(a)));
+const clientOptions = computed(() => [...new Set(movements.value.map((movement) => movement.cliente || NO_CLIENT))]
+  .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })));
+
+// El buscador solo mira el nombre del producto; mes, pedido y cliente se filtran con sus desplegables.
+const filteredMovements = computed(() => movements.value.filter((movement) =>
+  matchesSearch(search.value, [movement.producto])
+  && (!monthFilter.value || movement.mes === monthFilter.value)
+  && (!orderFilter.value || String(movement.idPedido) === String(orderFilter.value))
+  && (!clientFilter.value || (movement.cliente || NO_CLIENT) === clientFilter.value)));
+const filteredAmount = computed(() => filteredMovements.value
+  .filter((movement) => !movement.isCancelled)
+  .reduce((sum, movement) => sum + movement.subtotal, 0));
+const hasFilters = computed(() => Boolean(search.value || monthFilter.value || orderFilter.value || clientFilter.value));
+
+const clearFilters = () => {
+  search.value = '';
+  monthFilter.value = '';
+  orderFilter.value = '';
+  clientFilter.value = '';
+  paginaActual.value = 1;
+};
 
 // Paginación
 const paginaActual = ref(1);
-const porPagina = 7;
-const totalPages = computed(() => Math.ceil(filteredMovements.value.length / porPagina));
-const paginaInicio = computed(() => (paginaActual.value - 1) * porPagina);
-const paginaFin = computed(() => Math.min(paginaInicio.value + porPagina, filteredMovements.value.length));
-const paginatedMovements = computed(() => filteredMovements.value.slice(paginaInicio.value, paginaFin.value));
+const porPagina = ref(DEFAULT_PAGE_SIZE);
+const paginatedMovements = computed(() => filteredMovements.value.slice((paginaActual.value - 1) * porPagina.value, paginaActual.value * porPagina.value));
 
 /**
  * Formatea el valor para mostrarlo.
  */
 const formatDate = (value) => {
   if (!value) return 'Sin fecha';
-  return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
+  return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Lima' });
+};
+
+/**
+ * Exporta a Excel las ventas que se ven con los filtros aplicados.
+ */
+const isExporting = ref(false);
+const exportNotice = ref('');
+const exportToExcel = async () => {
+  if (isExporting.value || !filteredMovements.value.length) return;
+  isExporting.value = true;
+  try {
+    const XLSX = await import('xlsx');
+    const sheet = XLSX.utils.json_to_sheet(filteredMovements.value.map((movement) => ({
+      Fecha: formatDate(movement.fecha),
+      Mes: movement.mes ? monthLabel(movement.mes) : '',
+      Producto: movement.producto,
+      Cantidad: movement.cantidad,
+      'Subtotal (S/.)': Number(movement.subtotal.toFixed(2)),
+      Pedido: movement.idPedido,
+      Estado: movement.estado,
+      Cliente: movement.cliente || NO_CLIENT,
+      DNI: movement.clienteDni || '',
+    })));
+    sheet['!cols'] = [22, 16, 32, 10, 14, 10, 14, 28, 12].map((wch) => ({ wch }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Ventas');
+    XLSX.writeFile(workbook, `ventas-tienda${monthFilter.value ? `-${monthFilter.value}` : ''}.xlsx`);
+    exportNotice.value = `Se exportaron ${filteredMovements.value.length} ventas con los filtros aplicados.`;
+  } catch (error) {
+    exportNotice.value = error instanceof Error ? `No se pudo exportar: ${error.message}` : 'No se pudo exportar.';
+  } finally {
+    isExporting.value = false;
+  }
 };
 
 /**
@@ -197,6 +274,3 @@ const orderStatusClass = (status) => {
   return 'ws-tint-warning ws-warning border ws-border-warning';
 };
 </script>
-
-<style scoped>
-</style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="workspace-view space-y-6">
+  <div class="workspace-view inv-store-theme space-y-6">
 
     <!-- ═══════════════════════════════════════════════
          HEADER
@@ -49,32 +49,42 @@
       </nav>
     </section>
 
-    <div v-if="!isAdmin" class="ws-panel flex flex-col gap-4 sm:flex-row sm:items-end">
-      <label class="ws-search"
-        ><span class="sr-only">Buscar productos</span
-        ><Search :size="18" /><input
+    <div v-if="!isAdmin" class="ws-panel store-toolbar">
+      <div class="store-toolbar-search">
+        <span class="ws-field-label">Buscar</span>
+        <TableSearch
           v-model="productSearch"
-          type="search"
-          class="ws-input"
-          placeholder="Busca por nombre o categoría"
-      /></label>
-      <label class="sm:w-52"
-        ><span class="ws-field-label">Categoría</span
-        ><select v-model="categoryFilter" class="ws-input">
+          label="Buscar productos por nombre o categoria"
+          placeholder="Buscar por nombre o categoria"
+        />
+      </div>
+      <label>
+        <span class="ws-field-label">Categoría</span>
+        <select v-model="categoryFilter" class="inv-input">
           <option value="">Todas las categorías</option>
-          <option v-for="category in categories" :key="category">
-            {{ category }}
-          </option>
-        </select></label
-      >
+          <option v-for="category in categories" :key="category">{{ category }}</option>
+        </select>
+      </label>
+      <label>
+        <span class="ws-field-label">Ordenar por</span>
+        <select v-model="clientSort" class="inv-input">
+          <option value="recomendados">Recomendados</option>
+          <option value="nombre">Nombre (A-Z)</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+        </select>
+      </label>
       <button
-        v-if="productSearch || categoryFilter"
-        class="ws-btn"
-        @click="
-          productSearch = '';
-          categoryFilter = '';
-        "
+        type="button"
+        class="store-fav-filter"
+        :class="{ 'is-active': onlyFavorites }"
+        :aria-pressed="onlyFavorites"
+        @click="onlyFavorites = !onlyFavorites"
       >
+        <Heart :size="16" :fill="onlyFavorites ? 'currentColor' : 'none'" aria-hidden="true" />
+        Favoritos ({{ favoriteIds.length }})
+      </button>
+      <button v-if="hasClientFilters" type="button" class="inv-btn-ghost" @click="clearClientFilters">
         Limpiar filtros
       </button>
     </div>
@@ -168,15 +178,15 @@
         </button>
       </div>
 
-      <p class="mt-3 text-xs text-slate-500">Mostrando {{ productosFiltrados.length }} de {{ productos.length }} productos</p>
-
-      <!-- Buscador + select de estado en fila (estilo Inventario) -->
-      <div class="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr]">
-        <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3">
-          <Search :size="16" class="shrink-0 text-slate-500" />
-          <input v-model="busqueda" class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" placeholder="Buscar producto, codigo..." />
-        </div>
-        <select v-model="filtroEstado" class="field-input">
+      <!-- Buscador (N° de producto y nombre) + select de estado -->
+      <div class="mt-4 grid gap-3 sm:grid-cols-[1.5fr_1fr]">
+        <TableSearch
+          v-model="busqueda"
+          label="Buscar productos por N° o nombre"
+          placeholder="Buscar por N° de producto o nombre"
+          @update:model-value="paginaActual = 1"
+        />
+        <select v-model="filtroEstado" class="field-input" aria-label="Filtrar por estado" @change="paginaActual = 1">
           <option value="">Todos los estados</option>
           <option>Disponible</option>
           <option>Agotado</option>
@@ -190,18 +200,17 @@
       </p>
 
       <!-- Tabla con min-w fijo para no romperse en zoom -->
-      <div v-if="productos.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
+      <div v-if="productosFiltrados.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70">
         <div class="overflow-x-auto">
-
-         <table class="w-full text-left text-sm store-admin-table">
+          <table class="w-full text-left text-sm store-admin-table">
             <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
-
               <tr>
-                <th class="px-5 py-4 font-bold">Producto</th>
+                <SortableTh class="px-5 py-4 font-bold" label="N° producto" column="code" :sort-key="sortKey" :sort-dir="sortDir" @sort="toggleSort" />
+                <SortableTh class="px-4 py-4 font-bold" label="Nombre" column="nombre" :sort-key="sortKey" :sort-dir="sortDir" @sort="toggleSort" />
                 <th class="px-4 py-4 font-bold">Imagen</th>
                 <th class="px-4 py-4 font-bold">Categoría</th>
-                <th class="px-4 py-4 font-bold">Precio</th>
-                <th class="px-4 py-4 font-bold">Stock</th>
+                <SortableTh class="px-4 py-4 font-bold" label="Precio" column="precio" numeric :sort-key="sortKey" :sort-dir="sortDir" @sort="toggleSort" />
+                <SortableTh class="px-4 py-4 font-bold" label="Stock" column="cantidad" numeric :sort-key="sortKey" :sort-dir="sortDir" @sort="toggleSort" />
                 <th class="px-4 py-4 font-bold">Estado</th>
                 <th class="px-4 py-4 font-bold">Almacén</th>
                 <th class="px-5 py-4 text-right font-bold">Acciones</th>
@@ -209,22 +218,18 @@
             </thead>
             <tbody class="divide-y divide-white/10">
               <tr v-for="producto in productosPaginados" :key="producto.id_producto" class="transition hover:bg-white/[0.04]">
-
-                <!-- Producto -->
-                <td class="max-w-sm px-5 py-4 align-top">
-                  <div class="flex items-start gap-3">
-                    <span class="mt-0.5 rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-200">
-                      {{ productCode(producto.id_producto) }}
-                    </span>
-                    <div class="min-w-0">
-                      <p class="font-bold text-white">{{ producto.nombre }}</p>
-                      <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">
-                        {{ producto.descripcion || 'Sin descripción' }}
-                      </p>
-                    </div>
-                  </div>
+                <td data-label="N° producto" class="whitespace-nowrap px-5 py-4 align-top">
+                  <span class="rounded-lg bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-200">
+                    {{ productCode(producto.id_producto) }}
+                  </span>
                 </td>
-                <td class="px-4 py-4 align-top">
+                <td data-label="Nombre" class="max-w-xs px-4 py-4 align-top">
+                  <p class="font-bold text-white">{{ producto.nombre }}</p>
+                  <p class="mt-1 line-clamp-1 text-xs leading-5 text-slate-400">
+                    {{ producto.descripcion || 'Sin descripción' }}
+                  </p>
+                </td>
+                <td data-label="Imagen" class="px-4 py-4 align-top">
                   <img
                     v-if="producto.imagen_url"
                     :src="producto.imagen_url"
@@ -233,7 +238,7 @@
                   />
                   <span v-else class="text-xs text-slate-500">Sin imagen</span>
                 </td>
-                <td class="px-4 py-4 align-top">
+                <td data-label="Categoría" class="px-4 py-4 align-top">
                   <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-slate-200">
                     <span class="h-1.5 w-1.5 shrink-0 rounded-full" :style="{ background: categoriaDotColor(producto.categoria || 'General') }"></span>
                     {{ producto.categoria || 'General' }}
@@ -246,7 +251,7 @@
                 </td>
 
                 <!-- Stock con barra -->
-                <td class="px-4 py-4 align-top">
+                <td data-label="Stock" class="px-4 py-4 align-top">
                   <p class="font-bold" :class="isProductLowStock(producto) ? 'text-rose-300' : 'text-white'">
                     {{ producto.cantidad }} {{ producto.unidad_venta || 'unidad' }}
                   </p>
@@ -257,7 +262,7 @@
                 </td>
 
                 <!-- Estado -->
-                <td class="px-4 py-4 align-top">
+                <td data-label="Estado" class="px-4 py-4 align-top">
                   <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold" :class="productStatusClass(producto.estado)">
                     {{ producto.estado }}
                   </span>
@@ -272,6 +277,12 @@
                 <!-- Acciones -->
                 <td data-label="Acciones" class="px-5 py-4 align-top">
                   <div class="flex justify-end gap-2">
+                    <button
+                      class="inline-flex items-center gap-1.5 rounded-xl border border-sky-400/30 bg-sky-400/10 px-3 py-2 text-sm font-bold text-sky-200 transition hover:bg-sky-400/20"
+                      @click="detailProduct = producto"
+                    >
+                      <Eye :size="15" aria-hidden="true" /> Detalles
+                    </button>
                     <button
                       class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:border-white/20 hover:bg-white/5"
                       @click="editProducto(producto)"
@@ -293,31 +304,12 @@
         </div>
       </div>
 
-      <!-- Paginación -->
-      <div v-if="totalPages > 1" class="mt-4 flex items-center justify-between text-sm text-slate-400">
-        <p>Mostrando {{ paginaInicio + 1 }} a {{ paginaFin }} de <span class="font-bold text-white">{{ productosFiltrados.length }}</span> productos</p>
-        <div class="flex items-center gap-2">
-          <button
-            class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
-            :disabled="paginaActual === 1"
-            @click="paginaActual--"
-          >Anterior</button>
-          <button
-            v-for="p in totalPages"
-            :key="p"
-            class="h-9 w-9 rounded-xl border text-sm font-bold transition"
-            :class="p === paginaActual
-              ? 'border-rose-500/40 bg-rose-600/20 text-rose-300'
-              : 'border-white/10 text-white hover:bg-white/5'"
-            @click="paginaActual = p"
-          >{{ p }}</button>
-          <button
-            class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
-            :disabled="paginaActual === totalPages"
-            @click="paginaActual++"
-          >Siguiente</button>
-        </div>
-      </div>
+      <TablePager
+        v-model:page="paginaActual"
+        v-model:pageSize="porPagina"
+        :total="productosFiltrados.length"
+        item-label="productos"
+      />
 
       <!-- Empty state -->
       <div v-if="!productosFiltrados.length" class="mt-6 rounded-2xl border border-dashed border-white/10 px-6 py-14 text-center">
@@ -337,20 +329,20 @@
     <section v-else class="space-y-6">
       <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div class="space-y-4">
-          <div
-            class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
-          >
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p class="ws-eyebrow">Para tu entrenamiento</p>
-              <h2 class="mt-2 text-2xl font-black ws-text">
-                Encuentra tu complemento ideal
-              </h2>
+              <h2 class="mt-2 text-2xl font-black ws-text">Encuentra tu complemento ideal</h2>
             </div>
-            <div class="rounded-2xl ws-inset px-4 py-3 text-right">
-              <p class="text-xs ws-muted">Productos</p>
-              <p class="text-xl font-black ws-text">
-                {{ visibleProducts.length }}
-              </p>
+            <div class="flex gap-2">
+              <div class="rounded-2xl ws-inset px-4 py-3 text-right">
+                <p class="text-xs ws-muted">Productos</p>
+                <p class="text-xl font-black ws-text">{{ visibleProducts.length }}</p>
+              </div>
+              <div class="rounded-2xl ws-inset px-4 py-3 text-right">
+                <p class="text-xs ws-muted">Favoritos</p>
+                <p class="text-xl font-black ws-text">{{ favoriteIds.length }}</p>
+              </div>
             </div>
           </div>
 
@@ -358,58 +350,48 @@
             <article
               v-for="producto in visibleProducts"
               :key="producto.id_producto"
-              class="ws-panel store-product-card"
+              class="ws-panel store-product-card store-card"
+              :class="{ 'is-unavailable': !canBuy(producto) }"
             >
-              <div
-                class="store-product-image mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-xl border ws-border-warning ws-tint-warning"
+              <button
+                type="button"
+                class="store-card-fav"
+                :class="{ 'is-active': isFavorite(producto.id_producto) }"
+                :aria-pressed="isFavorite(producto.id_producto)"
+                :aria-label="isFavorite(producto.id_producto) ? `Quitar ${producto.nombre} de favoritos` : `Agregar ${producto.nombre} a favoritos`"
+                @click="toggleFavorite(producto.id_producto)"
               >
-                <img
-                  v-if="producto.imagen_url"
-                  :src="producto.imagen_url"
-                  :alt="producto.nombre"
-                  class="h-full w-full object-contain p-2"
-                />
-                <div v-else class="text-center">
-                  <p class="text-xs uppercase tracking-[0.25em] ws-warning">
-                    {{ producto.categoria }}
-                  </p>
-                  <Package
-                    :size="48"
-                    class="mx-auto mt-3 ws-muted"
-                    aria-hidden="true"
-                  />
-                </div>
+                <Heart :size="18" :fill="isFavorite(producto.id_producto) ? 'currentColor' : 'none'" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                class="store-card-open"
+                :aria-label="`Ver detalle de ${producto.nombre}`"
+                @click="openClientDetail(producto)"
+              >
+                <span class="store-product-image store-card-image">
+                  <img v-if="producto.imagen_url" :src="producto.imagen_url" :alt="producto.nombre" class="h-full w-full object-contain p-3" />
+                  <Package v-else :size="48" class="ws-muted" aria-hidden="true" />
+                  <span v-if="!canBuy(producto)" class="store-card-badge">{{ producto.estado !== 'Disponible' ? producto.estado : 'Agotado' }}</span>
+                </span>
+                <span class="store-card-category">{{ producto.categoria || 'General' }}</span>
+                <span class="block font-bold ws-text">{{ producto.nombre }}</span>
+                <span class="mt-1 line-clamp-2 block text-sm ws-muted">{{ producto.descripcion || 'Producto disponible en tienda.' }}</span>
+              </button>
+              <div class="mt-3 flex items-end justify-between gap-2">
+                <p class="text-xl font-black ws-success">S/. {{ Number(producto.precio || 0).toFixed(2) }}</p>
+                <p class="text-xs ws-muted">Stock: {{ producto.cantidad }}</p>
               </div>
-              <p class="font-semibold ws-text">{{ producto.nombre }}</p>
-              <p class="mt-1 line-clamp-2 text-sm ws-muted">
-                {{ producto.descripcion || 'Producto disponible en tienda.' }}
-              </p>
-              <p class="mt-3 text-lg font-black ws-success">
-                S/. {{ Number(producto.precio || 0).toFixed(2) }}
-              </p>
-              <p class="mt-1 text-xs ws-muted">
-                Stock: {{ producto.cantidad }}
-              </p>
 
-              <div
-                v-if="
-                  producto.estado === 'Disponible' &&
-                  Number(producto.cantidad || 0) > 0
-                "
-                class="mt-4 flex gap-2"
-              >
+              <div v-if="canBuy(producto)" class="mt-4 flex gap-2">
                 <input
                   :value="cantidadInput[producto.id_producto] ?? 1"
-                  @input="
-                    cantidadInput[producto.id_producto] = Number(
-                      $event.target.value,
-                    )
-                  "
                   :aria-label="`Cantidad de ${producto.nombre}`"
-                  type="number"
-                  min="1"
-                  :max="producto.cantidad"
-                  class="ws-input flex-1 px-3 py-2 text-sm"
+                  type="text"
+                  inputmode="numeric"
+                  class="ws-input w-16 px-3 py-2 text-center text-sm"
+                  @beforeinput="blockQuantityChars"
+                  @input="setQuantity(producto, $event)"
                 />
                 <button
                   class="flex-1 rounded-xl ws-primary px-3 py-2 text-sm font-bold ws-onaccent transition ws-primary-hover"
@@ -418,13 +400,8 @@
                   Agregar
                 </button>
               </div>
-              <div
-                v-else
-                class="mt-4 rounded-xl ws-inset px-3 py-2 text-center text-sm ws-muted"
-              >
-                {{
-                  producto.estado !== 'Disponible' ? producto.estado : 'Agotado'
-                }}
+              <div v-else class="mt-4 rounded-xl ws-inset px-3 py-2 text-center text-sm ws-muted">
+                {{ producto.estado !== 'Disponible' ? producto.estado : 'Agotado' }}
               </div>
             </article>
           </div>
@@ -434,9 +411,11 @@
             class="rounded-2xl border border-dashed ws-border p-10 text-center text-sm ws-muted"
           >
             {{
-              productSearch || categoryFilter
-                ? 'No encontramos productos con esos filtros. Prueba otra búsqueda.'
-                : 'Pronto encontrarás nuevos productos aquí.'
+              onlyFavorites && !favoriteIds.length
+                ? 'Aun no tienes favoritos. Toca el corazon de un producto para guardarlo aqui.'
+                : hasClientFilters
+                  ? 'No encontramos productos con esos filtros. Prueba otra búsqueda.'
+                  : 'Pronto encontrarás nuevos productos aquí.'
             }}
           </p>
         </div>
@@ -579,7 +558,137 @@
     <!-- ═══════════════════════════════════════════════
          MODAL — INGRESAR / EDITAR PRODUCTO
     ════════════════════════════════════════════════ -->
+    <!-- MODAL — DETALLE DEL PRODUCTO (cliente) -->
+    <ResourceModal
+      v-if="!isAdmin"
+      :open="Boolean(clientDetail)"
+      :icon="ShoppingBag"
+      :eyebrow="clientDetail?.categoria || 'Tienda'"
+      :title="clientDetail?.nombre || 'Producto'"
+      size="lg"
+      @close="clientDetail = null"
+    >
+      <template v-if="clientDetail">
+        <div class="grid gap-5 sm:grid-cols-[minmax(0,240px)_1fr]">
+          <div class="store-detail-image">
+            <img v-if="clientDetail.imagen_url" :src="clientDetail.imagen_url" :alt="clientDetail.nombre" class="h-full w-full object-contain p-3" />
+            <Package v-else :size="64" class="text-slate-500" aria-hidden="true" />
+          </div>
+          <div class="space-y-4">
+            <p class="text-3xl font-black text-emerald-300">S/. {{ Number(clientDetail.precio || 0).toFixed(2) }}</p>
+            <p class="text-sm leading-6 text-slate-300">{{ clientDetail.descripcion || 'Producto disponible en tienda.' }}</p>
+            <dl class="grid grid-cols-2 gap-3 text-sm">
+              <div class="rm-section">
+                <dt class="inv-label">Disponibles</dt>
+                <dd class="mt-1 text-lg font-black text-white">{{ clientDetail.cantidad }}</dd>
+              </div>
+              <div class="rm-section">
+                <dt class="inv-label">Unidad</dt>
+                <dd class="mt-1 text-lg font-black text-white">{{ clientDetail.unidad_venta || 'unidad' }}</dd>
+              </div>
+            </dl>
+            <div v-if="canBuy(clientDetail)" class="space-y-2">
+              <span class="inv-label">Cantidad</span>
+              <div class="flex items-center gap-2">
+                <button type="button" class="inv-btn-ghost h-11 w-11 text-lg" aria-label="Restar uno" @click="stepDetailQuantity(-1)">−</button>
+                <input
+                  :value="detailQuantity"
+                  type="text"
+                  inputmode="numeric"
+                  aria-label="Cantidad"
+                  class="inv-input w-20 text-center"
+                  @beforeinput="blockQuantityChars"
+                  @input="setDetailQuantity($event)"
+                />
+                <button type="button" class="inv-btn-ghost h-11 w-11 text-lg" aria-label="Sumar uno" @click="stepDetailQuantity(1)">+</button>
+              </div>
+            </div>
+            <p v-else class="inv-error">Este producto no esta disponible por ahora.</p>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <button
+          v-if="clientDetail"
+          type="button"
+          class="rm-btn-secondary inline-flex items-center justify-center gap-2"
+          :aria-pressed="isFavorite(clientDetail.id_producto)"
+          @click="toggleFavorite(clientDetail.id_producto)"
+        >
+          <Heart :size="16" :fill="isFavorite(clientDetail.id_producto) ? 'currentColor' : 'none'" aria-hidden="true" />
+          {{ isFavorite(clientDetail.id_producto) ? 'En favoritos' : 'Agregar a favoritos' }}
+        </button>
+        <button
+          v-if="clientDetail && canBuy(clientDetail)"
+          type="button"
+          class="rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300"
+          @click="addDetailToCart"
+        >
+          Agregar al carrito · S/. {{ (Number(clientDetail.precio || 0) * detailQuantity).toFixed(2) }}
+        </button>
+      </template>
+    </ResourceModal>
+
+    <!-- MODAL — DETALLES DEL PRODUCTO (solo lectura) -->
+    <ResourceModal
+      v-if="isAdmin"
+      :open="Boolean(detailProduct)"
+      :icon="Eye"
+      eyebrow="Tienda · Detalles"
+      :title="detailProduct?.nombre || 'Producto'"
+      :subtitle="detailProduct ? `N° de producto ${productCode(detailProduct.id_producto)}` : ''"
+      size="lg"
+      @close="detailProduct = null"
+    >
+      <template v-if="detailProduct">
+        <div class="grid gap-4 sm:grid-cols-[160px_1fr]">
+          <div class="mx-auto flex aspect-square w-40 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-2 sm:mx-0">
+            <img v-if="detailProduct.imagen_url" :src="detailProduct.imagen_url" :alt="detailProduct.nombre" class="h-full w-full object-contain" />
+            <Package v-else :size="40" class="text-slate-500" aria-hidden="true" />
+          </div>
+          <div class="grid content-start gap-3 sm:grid-cols-2">
+            <div class="rm-section">
+              <p class="rm-section-title" style="margin-bottom: 0.35rem">Precio</p>
+              <p class="text-2xl font-black text-emerald-300">S/. {{ Number(detailProduct.precio || 0).toFixed(2) }}</p>
+            </div>
+            <div class="rm-section">
+              <p class="rm-section-title" style="margin-bottom: 0.35rem">Stock en Tienda</p>
+              <p class="text-2xl font-black" :class="isProductLowStock(detailProduct) ? 'text-rose-300' : 'text-white'">{{ detailProduct.cantidad }}</p>
+              <p class="text-xs text-slate-400">{{ detailProduct.unidad_venta || 'unidad' }} · minimo {{ detailProduct.minimo || 0 }}</p>
+            </div>
+            <div class="rm-section sm:col-span-2">
+              <p class="rm-section-title" style="margin-bottom: 0.35rem">Estado</p>
+              <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold" :class="productStatusClass(detailProduct.estado)">{{ detailProduct.estado }}</span>
+            </div>
+          </div>
+        </div>
+        <dl class="rm-section grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt class="inv-label">Categoría</dt>
+            <dd class="mt-1 text-slate-300">{{ detailProduct.categoria || 'General' }}</dd>
+          </div>
+          <div>
+            <dt class="inv-label">Almacén</dt>
+            <dd class="mt-1 text-slate-300">{{ detailProduct.id_item ? linkedItemName(detailProduct.id_item) : 'Sin vincular' }}</dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="inv-label">Descripción</dt>
+            <dd class="mt-1 text-slate-300">{{ detailProduct.descripcion || 'Sin descripción' }}</dd>
+          </div>
+        </dl>
+      </template>
+      <template #footer>
+        <button type="button" class="rm-btn-secondary" @click="detailProduct = null">Cerrar</button>
+        <button type="button" class="rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300" @click="editFromDetails">
+          Editar producto
+        </button>
+      </template>
+    </ResourceModal>
+
     <ProductEditorDialog
+      :category-options="productCategoryOptions"
+      :unit-options="productUnitOptions"
+      :form-errors="productFormErrors"
       :available-tienda-items="availableTiendaItems"
       :bucket-images="bucketImages"
       :clear-selected-image="clearSelectedImage"
@@ -615,7 +724,15 @@
 import { useProductEditor } from '../composables/store/useProductEditor.js';
 import ProductEditorDialog from '../components/store/ProductEditorDialog.vue';
 import { computed, onMounted, ref } from 'vue';
-import { Package, Search, ShoppingBag, TrendingDown, AlertTriangle, BarChart3 } from 'lucide-vue-next';
+import { Eye, Heart, Package, ShoppingBag, TrendingDown, AlertTriangle, BarChart3 } from 'lucide-vue-next';
+import { useStoreFavorites } from '../composables/store/useStoreFavorites.js';
+import { blockNonInteger } from '../utils/inputGuards.js';
+import { useAuthStore } from '../../application/stores/authStore';
+import ResourceModal from '../components/ResourceModal.vue';
+import SortableTh from '../components/common/SortableTh.vue';
+import TablePager from '../components/common/TablePager.vue';
+import TableSearch from '../components/common/TableSearch.vue';
+import { cleanInteger, DEFAULT_PAGE_SIZE, matchesSearch, sortRows, uniqueOptions } from '../../domain/utils/inputRules.js';
 import { useRoute, useRouter } from 'vue-router';
 import StoreMovementsPanel from '../components/store/StoreMovementsPanel.vue';
 import { useGymStore } from '../../application/stores/gymStore';
@@ -647,19 +764,66 @@ const categories = computed(() =>
     ...new Set(catalogProducts.value.map((p) => p.categoria || 'General')),
   ].sort(),
 );
-const filteredProducts = computed(() => {
-  const query = productSearch.value.trim().toLocaleLowerCase('es');
-  return catalogProducts.value.filter(
-    (p) =>
-      (!categoryFilter.value ||
-        (p.categoria || 'General') === categoryFilter.value) &&
-      (!query ||
-        `${p.nombre} ${p.categoria || 'General'} ${p.descripcion || ''}`
-          .toLocaleLowerCase('es')
-          .includes(query)),
-  );
-});
-const visibleProducts = computed(() => filteredProducts.value);
+// El buscador del cliente mira el nombre y la categoria.
+const filteredProducts = computed(() => catalogProducts.value.filter((p) =>
+  (!categoryFilter.value || (p.categoria || 'General') === categoryFilter.value)
+  && matchesSearch(productSearch.value, [p.nombre, p.categoria || 'General'])
+  && (!onlyFavorites.value || isFavorite(p.id_producto))));
+
+// Favoritos por usuario, guardados en este navegador.
+const authStore = useAuthStore();
+const favoriteOwner = computed(() => authStore.user?.id_usuario || authStore.user?.email || '');
+const { favoriteIds, isFavorite, toggleFavorite } = useStoreFavorites(favoriteOwner);
+const onlyFavorites = ref(false);
+const clientSort = ref('recomendados');
+const canBuy = (producto) => producto.estado === 'Disponible' && Number(producto.cantidad || 0) > 0;
+const CLIENT_SORTS = {
+  nombre: (rows) => sortRows(rows, (p) => p.nombre),
+  'precio-asc': (rows) => sortRows(rows, (p) => p.precio, 'asc', 'number'),
+  'precio-desc': (rows) => sortRows(rows, (p) => p.precio, 'desc', 'number'),
+  // Primero lo que se puede comprar, luego los favoritos.
+  recomendados: (rows) => [...rows].sort((a, b) => Number(canBuy(b)) - Number(canBuy(a)) || Number(isFavorite(b.id_producto)) - Number(isFavorite(a.id_producto))),
+};
+const visibleProducts = computed(() => (CLIENT_SORTS[clientSort.value] || CLIENT_SORTS.recomendados)(filteredProducts.value));
+const hasClientFilters = computed(() => Boolean(productSearch.value || categoryFilter.value || onlyFavorites.value || clientSort.value !== 'recomendados'));
+const clearClientFilters = () => {
+  productSearch.value = '';
+  categoryFilter.value = '';
+  onlyFavorites.value = false;
+  clientSort.value = 'recomendados';
+};
+
+// Cantidades: solo enteros entre 1 y el stock disponible.
+const blockQuantityChars = blockNonInteger();
+const clampQuantity = (value, producto) => Math.max(1, Math.min(Number(value) || 1, Number(producto?.cantidad || 1)));
+const setQuantity = (producto, event) => {
+  const digits = cleanInteger(event.target.value);
+  event.target.value = digits;
+  if (digits) cantidadInput.value[producto.id_producto] = clampQuantity(digits, producto);
+};
+
+// Detalle del producto para el cliente.
+const clientDetail = ref(null);
+const detailQuantity = ref(1);
+const openClientDetail = (producto) => {
+  clientDetail.value = producto;
+  detailQuantity.value = 1;
+};
+const stepDetailQuantity = (delta) => {
+  detailQuantity.value = clampQuantity(detailQuantity.value + delta, clientDetail.value);
+};
+const setDetailQuantity = (event) => {
+  const digits = cleanInteger(event.target.value);
+  event.target.value = digits;
+  if (digits) detailQuantity.value = clampQuantity(digits, clientDetail.value);
+};
+const addDetailToCart = () => {
+  const producto = clientDetail.value;
+  if (!producto) return;
+  cantidadInput.value[producto.id_producto] = detailQuantity.value;
+  agregarAlCarrito(producto);
+  clientDetail.value = null;
+};
 const inventario = computed(() => gymStore.inventory);
 const cart = computed(() => gymStore.cart);
 const cartTotal = computed(() => gymStore.cartTotal);
@@ -684,7 +848,23 @@ function categoriaDotColor(cat) {
   return CATEGORY_COLORS[idx % CATEGORY_COLORS.length] ?? '#94a3b8';
 }
 // Filtro de la tarjeta "Stock bajo": productos que hay que reponer desde Inventario.
-const soloStockBajo = ref(false);
+// El enlace "Stock bajo" del Home llega con ?stock=bajo y abre la lista ya filtrada.
+const soloStockBajo = ref(route.query.stock === 'bajo');
+
+// Orden por columna: clic alterna ascendente y descendente.
+const sortKey = ref('');
+const sortDir = ref('asc');
+const SORT_COLUMNS = {
+  code: { accessor: (p) => Number(p.id_producto || 0), type: 'number' },
+  nombre: { accessor: (p) => p.nombre, type: 'text' },
+  precio: { accessor: (p) => p.precio, type: 'number' },
+  cantidad: { accessor: (p) => p.cantidad, type: 'number' },
+};
+const toggleSort = (column) => {
+  sortDir.value = sortKey.value === column && sortDir.value === 'asc' ? 'desc' : 'asc';
+  sortKey.value = column;
+  paginaActual.value = 1;
+};
 const toggleStockBajo = () => {
   soloStockBajo.value = !soloStockBajo.value;
   paginaActual.value = 1;
@@ -701,25 +881,31 @@ const productosFiltrados = computed(() => {
   if (filtroEstado.value) {
     lista = lista.filter((p) => p.estado === filtroEstado.value);
   }
-  const q = busqueda.value.trim().toLowerCase();
-  if (q) {
-    lista = lista.filter(
-      (p) =>
-        p.nombre?.toLowerCase().includes(q) ||
-        productCode(p.id_producto).toLowerCase().includes(q) ||
-        (p.descripcion || '').toLowerCase().includes(q)
-    );
-  }
-  return lista;
+  // El buscador solo mira el N° de producto y el nombre.
+  lista = lista.filter((p) => matchesSearch(busqueda.value, [productCode(p.id_producto), p.nombre]));
+  const column = SORT_COLUMNS[sortKey.value];
+  return column ? sortRows(lista, column.accessor, sortDir.value, column.type) : lista;
 });
 
-// Paginación (sobre lista filtrada)
+// Paginación (sobre lista filtrada y ordenada)
 const paginaActual = ref(1);
-const porPagina = 10;
-const totalPages = computed(() => Math.ceil(productosFiltrados.value.length / porPagina));
-const paginaInicio = computed(() => (paginaActual.value - 1) * porPagina);
-const paginaFin = computed(() => Math.min(paginaInicio.value + porPagina, productosFiltrados.value.length));
-const productosPaginados = computed(() => productosFiltrados.value.slice(paginaInicio.value, paginaFin.value));
+const porPagina = ref(DEFAULT_PAGE_SIZE);
+const productosPaginados = computed(() => productosFiltrados.value.slice((paginaActual.value - 1) * porPagina.value, paginaActual.value * porPagina.value));
+
+// Detalles de solo lectura del producto.
+const detailProduct = ref(null);
+const linkedItemName = (idItem) => {
+  const item = findItem(idItem);
+  return item ? `${item.inventoryCode} - ${item.name}` : `Item #${idItem}`;
+};
+// Desplegables extensibles del modal: valores existentes en la base + sugeridos.
+const productCategoryOptions = computed(() => uniqueOptions(productos.value.map((p) => p.categoria)));
+const productUnitOptions = computed(() => uniqueOptions(['Unidad', 'Paquete', 'Docena', 'Caja', 'Combo'], productos.value.map((p) => p.unidad_venta)));
+const editFromDetails = () => {
+  const producto = detailProduct.value;
+  detailProduct.value = null;
+  if (producto) editProducto(producto);
+};
 
 // Métricas
 const lowStockCount = computed(() => productos.value.filter((p) => isProductLowStock(p)).length);
@@ -809,7 +995,7 @@ const goToCheckout = () => {
   router.push('/user/store/payment');
 };
 
-const { isSaving, editingId, isProductEditorOpen, form, currentProductCode, itemNumber, findItem, availableTiendaItems, editingLinked, linkedItemLabel, stockEditable, stockMostrado, resetForm, openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback, imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages, loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage, handleLocalImageUpload } = useProductEditor({ gymStore, productos, inventario, feedbackMessage, feedbackTone, productCode });
+const { isSaving, editingId, isProductEditorOpen, form, formErrors: productFormErrors, currentProductCode, itemNumber, findItem, availableTiendaItems, editingLinked, linkedItemLabel, stockEditable, stockMostrado, resetForm, openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback, imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages, loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage, handleLocalImageUpload } = useProductEditor({ gymStore, productos, inventario, feedbackMessage, feedbackTone, productCode });
 
 onMounted(() => {
   gymStore
