@@ -116,7 +116,7 @@ def test_registration_keeps_the_saved_client_when_checkout_fails():
     assert len(calls) == 1
 
 
-@pytest.mark.parametrize('filename,mime', [('a.svg', 'image/svg+xml'), ('a.jpg', 'image/png'), ('a.png', 'text/plain')])
+@pytest.mark.parametrize('filename,mime', [('a.svg', 'image/svg+xml'), ('a.webp', 'image/webp'), ('a.gif', 'image/gif'), ('a.jpg', 'image/png'), ('a.png', 'text/plain')])
 def test_image_policy_rejects_unsupported_or_mismatched_formats(filename, mime):
     with pytest.raises(ValueError):
         validate_image(filename, b'image', mime)
@@ -135,3 +135,13 @@ def test_http_reports_a_late_repository_failure_as_503():
     response = TestClient(app).get('/read')
     assert response.status_code == 503
     assert 'detalle interno' not in response.text
+
+
+@pytest.mark.parametrize('filename,mime,extension', [('a.png', 'image/png', '.png'), ('a.JPG', 'image/jpeg', '.jpg'), ('a.jpeg', 'image/jpeg', '.jpeg')])
+def test_image_policy_accepts_only_png_and_jpg(filename, mime, extension):
+    assert validate_image(filename, b'image', mime) == extension
+
+
+def test_image_policy_tells_which_formats_are_allowed():
+    with pytest.raises(ValueError, match=r'\.png y \.jpg'):
+        validate_image('a.webp', b'image', 'image/webp')

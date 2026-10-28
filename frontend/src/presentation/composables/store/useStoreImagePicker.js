@@ -1,5 +1,6 @@
 import { computed, reactive, ref } from "vue";
 import { useStoreImages } from "../../../application/services/storeImages.js";
+import { ALLOWED_IMAGE_MESSAGE, isAllowedImageFile } from "../../../domain/utils/inputRules.js";
 
 export const useStoreImagePicker = ({ form }) => {
   const { uploadStoreImage, listStoreImages } = useStoreImages();
@@ -57,6 +58,12 @@ export const useStoreImagePicker = ({ form }) => {
   const handleLocalImageUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!isAllowedImageFile(file)) {
+      imageFeedbackTone.value = "error";
+      imageFeedback.value = ALLOWED_IMAGE_MESSAGE;
+      event.target.value = "";
+      return;
+    }
 
     isUploadingImage.value = true;
     imageFeedback.value = "";
