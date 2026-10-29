@@ -178,11 +178,12 @@ def test_new_paid_membership_can_restore_access_after_admin_activation(gym):
     assert old['fecha_fin'] == '2026-09-30'
 
 
-def test_no_change_expiration_does_not_write_or_extend_refresh_ttl(gym, monkeypatch):
-    def unexpected_write(_fn):
-        pytest.fail('La comprobación de vigencia no debe escribir sin cambios')
-    monkeypatch.setattr(gym, '_mutate', unexpected_write)
+def test_no_change_expiration_does_not_write_or_extend_refresh_ttl(gym):
+    # La fachada reenvía atributos al repositorio: no se parchea con monkeypatch,
+    # porque su limpieza fallaría y dejaría la fecha fija para otras pruebas.
+    before = {key: deepcopy(gym.state[key]) for key in ('clientes', 'membresia')}
     assert gym.expire_memberships() is False
+    assert {key: gym.state[key] for key in ('clientes', 'membresia')} == before
 
 
 def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):

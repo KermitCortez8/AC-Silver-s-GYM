@@ -513,7 +513,7 @@ def test_estado_automatico_sigue_la_reserva_del_inventario() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
-    service.upsert_producto_tienda({**producto, "stock_minimo": 4})
+    service.upsert_inventario({**service.get_item_inventario(item["id_item"]), "stock_minimo": 4}, actor=ADMIN)
     assert _estado(service, item["id_item"]) == "Disponible"
 
     _reponer(service, item["id_item"], 6)  # quedan 4 = minimo
@@ -532,11 +532,22 @@ def test_estado_automatico_sigue_la_reserva_del_inventario() -> None:
 def test_cambiar_minimo_recalcula_estado() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
+    _publicar(service, item["id_item"])
+
+    service.upsert_inventario({**service.get_item_inventario(item["id_item"]), "stock_minimo": 12}, actor=ADMIN)
+
+    assert _estado(service, item["id_item"]) == "Stock bajo"
+
+
+def test_minimo_de_tienda_no_cambia_estado_de_inventario() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
 
     service.upsert_producto_tienda({**producto, "stock_minimo": 12})
 
-    assert _estado(service, item["id_item"]) == "Stock bajo"
+    assert _estado(service, item["id_item"]) == "Disponible"
+    assert _producto_de(service, item["id_item"])["stock_minimo"] == 12
 
 
 def test_descontinuado_es_manual_y_se_respeta() -> None:

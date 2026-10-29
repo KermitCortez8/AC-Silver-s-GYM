@@ -114,7 +114,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
         enrollment: ['Clientes', 'Mi perfil', 'Horarios por servicio', 'Matrículas'],
         attendance: ['Clientes', 'Matrículas', 'Asistencias'],
         trainer: ['Supervisión'],
-        dashboard: ['Clientes', 'Mi perfil', 'Inventario', 'Horarios por servicio', 'Matrículas', 'Asistencias'],
+        dashboard: ['Clientes', 'Mi perfil', 'Inventario', 'Productos', 'Horarios por servicio', 'Matrículas', 'Asistencias'],
       };
       const labels = sectionResources[section];
       if (section !== 'all' && !labels) throw new Error('Sección de datos desconocida.');

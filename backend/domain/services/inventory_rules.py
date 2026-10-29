@@ -119,18 +119,14 @@ class InventoryRules:
             producto["estado"] = "Disponible" if stock > 0 else "Agotado"
 
     def _actualizar_estados_items_tienda(self, state: dict[str, Any]) -> None:
-        minimos = {
-            int(p["id_item"]): int(p.get("stock_minimo") or 0)
-            for p in state.get("productos_tienda", [])
-            if p.get("id_item")
-        }
+        # Cada ítem usa su propio stock mínimo; el del producto solo aplica al stock de la tienda.
         for item in state.get("inventario", []):
             if not self._es_item_tienda(item) or str(item.get("estado") or "") == ESTADO_DESCONTINUADO:
                 continue
             stock = int(item.get("cantidad_stock", 0) or 0)
             if stock <= 0:
                 item["estado"] = ESTADO_AGOTADO
-            elif stock <= minimos.get(int(item["id_item"]), 0):
+            elif stock <= int(item.get("stock_minimo") or 0):
                 item["estado"] = ESTADO_STOCK_BAJO
             else:
                 item["estado"] = ESTADO_DISPONIBLE

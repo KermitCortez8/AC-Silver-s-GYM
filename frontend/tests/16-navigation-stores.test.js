@@ -548,8 +548,10 @@ test('each admin section loads only its resources and shares them with the dashb
   await gym.fetchFromBackend({ section: 'dashboard' });
 
   assert.equal(paths.includes('/api/clientes'), false);
+  // El aviso de stock bajo del Home usa los productos de Tienda, no sus pedidos.
+  assert.ok(paths.includes('/api/tienda'));
   assert.equal(
-    paths.some(path => /usuarios|tienda|planes-membresia|rutinas/.test(path)),
+    paths.some(path => /usuarios|tienda\/pedidos|planes-membresia|rutinas/.test(path)),
     false,
   );
 

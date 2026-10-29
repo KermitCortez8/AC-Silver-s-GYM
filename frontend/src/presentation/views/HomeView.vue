@@ -378,7 +378,7 @@ const enrollments = computed(() =>
   (gymStore.enrollments || []).filter((item) => item.estado !== 'CANCELADA'),
 );
 const attendance = computed(() => gymStore.attendance || []);
-const inventory = computed(() => gymStore.inventory || []);
+const storeProducts = computed(() => gymStore.productos_tienda || []);
 
 const currentClient = computed(() => {
   return findClientForUser(user.value, members.value);
@@ -683,11 +683,11 @@ const operationalAlerts = computed(() => [
   },
   {
     label: 'Stock bajo',
-    to: '/admin/inventory',
-    value: inventory.value.filter(
-      (item) => Number(item.quantity || 0) <= Number(item.minQuantity || 0),
+    to: { path: '/admin/store', query: { stock: 'bajo' } },
+    value: storeProducts.value.filter(
+      (product) => Number(product.cantidad || 0) <= Number(product.minimo || 0),
     ).length,
-    detail: 'Artículos en el mínimo o por debajo.',
+    detail: 'Productos de Tienda en el mínimo o por debajo.',
     color: 'ws-danger',
   },
   {
