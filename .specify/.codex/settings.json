@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "consumer": "hooks/validate.py",
+  "instructions": "../AGENTS.md",
+  "rules": [
+    {
+      "id": "general",
+      "document": "rules/general.md",
+      "paths": [
+        "**"
+      ],
+      "always": true
+    },
+    {
+      "id": "seguridad",
+      "document": "rules/seguridad.md",
+      "paths": [
+        "**"
+      ],
+      "always": true
+    },
+    {
+      "id": "testing",
+      "document": "rules/testing.md",
+      "paths": [
+        "**"
+      ],
+      "always": true
+    },
+    {
+      "id": "api",
+      "document": "rules/api.md",
+      "paths": [
+        "backend/app/**",
+        "backend/presentation/**",
+        "backend/application/**"
+      ]
+    },
+    {
+      "id": "frontend",
+      "document": "rules/frontend.md",
+      "paths": [
+        "frontend/**"
+      ]
+    },
+    {
+      "id": "datos",
+      "document": "rules/datos.md",
+      "paths": [
+        "backend/domain/**",
+        "backend/infrastructure/**",
+        "backend/migrations/**",
+        "supabase/**"
+      ]
+    },
+    {
+      "id": "automatizacion",
+      "document": "rules/automatizacion.md",
+      "paths": [
+        ".specify/**",
+        ".agents/**",
+        ".github/**",
+        "AGENTS.md",
+        "docker-compose.yml",
+        "backend/Dockerfile",
+        "frontend/Dockerfile",
+        "render.yaml"
+      ]
+    }
+  ],
+  "hooks": {
+    "plan": {
+      "required": [
+        "spec.md",
+        "context.md"
+      ]
+    },
+    "implement": {
+      "required": [
+        "spec.md",
+        "context.md",
+        "plan.md",
+        "tasks.md"
+      ]
+    },
+    "close": {
+      "required": [
+        "spec.md",
+        "context.md",
+        "plan.md",
+        "tasks.md",
+        "validation.md"
+      ]
+    }
+  },
+  "reviews": {
+    "analyze": "agents/revisor.md",
+    "close": "agents/auditor.md"
+  }
+}

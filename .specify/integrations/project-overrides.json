@@ -1,0 +1,30 @@
+{
+  "speckit_version": "1.2.5",
+  "reason": "Ruta única y hooks de contexto/trazabilidad dentro de scripts oficiales, sin runner paralelo",
+  "files": {
+    ".specify/scripts/bash/create-new-feature.sh": {
+      "upstream_sha256": "972f03ed8ca5ee17b7baad6d56d821d46269d77abc337496beafb0fe85a725f2",
+      "project_sha256": "cf5228d77af0cdafa5e7dbf7a7d79e52207fc6a4e1262c20d69e4e6139709815"
+    },
+    ".specify/scripts/bash/common.sh": {
+      "upstream_sha256": "e3f72d571b8d27088a0aa6a96068eb6583175fbfa7a48bad465be62b9898f09c",
+      "project_sha256": "d6aaad7607179e0b72f34b3f5dec7507603af0fa57dc63998ff04a0b595fee12"
+    },
+    ".specify/templates/plan-template.md": {
+      "upstream_sha256": "a828ad6206526574ab3fc99be6d0154588cb1c9774c5919d71b81ab5b2dbffa0",
+      "project_sha256": "e3661c552d2dbcf1b1936ac2d23760c19aeb135b1724d784bc041f72c35a68bb"
+    },
+    ".specify/templates/tasks-template.md": {
+      "upstream_sha256": "b0f527d41e546af0c31903e04f9b20965b6b497b573792198f663a64ce128863",
+      "project_sha256": "ad9b9851aa77bf0ec07f26a610641d1afe9da847d98785d026d675bd5e026a03"
+    },
+    ".specify/scripts/bash/setup-plan.sh": {
+      "upstream_sha256": "d378ec66ba20d2da01c71dad8935062c1c27f0bba890be9a6d3dda52ea056a4e",
+      "project_sha256": "4180f97811998d57f7140931233ed8cc2ea481183054b74aceb878ed2ef34206"
+    },
+    ".specify/scripts/bash/check-prerequisites.sh": {
+      "upstream_sha256": "47cddf0ee476a1a5201927260666364490b7c602a52fdd8466160802925f995b",
+      "project_sha256": "a6a4aadb18305abb873af8fa2668f280fea6e1b1507e437244e4b12e4658ab53"
+    }
+  }
+}

@@ -1,0 +1,2 @@
+# Herramientas de desarrollo, aisladas del backend y frontend.
+specify-cli==1.2.5

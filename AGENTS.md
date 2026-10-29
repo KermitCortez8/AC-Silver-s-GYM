@@ -1,51 +1,36 @@
-# Trabajo en AC Silver's GYM
+# AC Silver's GYM · instrucciones para Codex
 
-## Desarrollo guiado por especificaciones
+Vue 3/Vite/Pinia y FastAPI/Supabase; frontend y backend contenerizados con Docker.
+Trabajar en español desde el código. El proceso está en [.specify/](.specify/README.md).
 
-Para cambios funcionales, leer `sdd/.specify/memory/constitution.md` y trabajar con
-`sdd/specs/<numero>-<cambio>/spec.md`, `plan.md` y `tasks.md`. Usar las skills
-oficiales de `sdd/.agents/skills/speckit-*` cuando corresponda. La guía local está
-en `sdd/README.md`.
+## Contexto y reglas
 
-La raíz de trabajo de Spec Kit es `sdd/`; la raíz de la aplicación sigue siendo
-la del repositorio. Al ejecutar una skill oficial, interpretar sus rutas
-`.specify/`, `.agents/` y `specs/` respecto de `sdd/` y ejecutar sus scripts con
-directorio de trabajo `sdd/`. Desde otro directorio, usar `SPECIFY_INIT_DIR` con
-la ruta absoluta a `sdd/`. Los paths de `backend/`, `frontend/` y `supabase/` en
-los documentos de negocio se refieren a la raíz de la aplicación.
+Leer el [índice central](.specify/AGENTS.md), las [reglas comunes](.specify/.codex/rules/general.md),
+[seguridad](.specify/.codex/rules/seguridad.md) y [pruebas](.specify/.codex/rules/testing.md).
+Aplicar las reglas por rutas de [.codex/settings.json](.specify/.codex/settings.json).
+Si existe `.specify/AGENTS.local.md`, leer sus preferencias complementarias.
 
-Crear las nuevas especificaciones dentro de `sdd/specs/`. No recrear carpetas
-`specs/`, `.specify/`, `scripts/` o `tools/` de SDD en la raíz. `.agents/skills`
-es únicamente el enlace de descubrimiento hacia las skills guardadas en `sdd/`.
+## Consulta de base y activación de Spec Kit
 
-Antes de cambiar comportamiento, definir el escenario esperado y su evidencia.
-Reutilizar pruebas existentes; añadir una regresión cuando falte un escenario.
-Actualizar criterios, plan y tareas si cambia el alcance. Documentación, formato
-y refactorizaciones sin cambios de comportamiento no requieren otra spec.
+Consultar [constitución](.specify/memory/constitution.md), [base 000](.specify/specs/000-base-implementada/spec.md),
+[módulos](.specify/base/modulos/README.md), contratos, código y pruebas según el cambio.
+Por indicación actual del usuario, resolver los pedidos directamente y no crear
+specs, planes ni tareas ni iniciar el flujo Spec Kit hasta que lo pida expresamente.
+Se pueden corregir referencias existentes necesarias al mantener la documentación.
 
-Conservar las cuatro capas de ambos proyectos y los contratos públicos salvo que
-el cambio solicitado requiera modificarlos expresamente. Las vistas no hacen
-HTTP directo; dominio y aplicación backend no importan infraestructura o FastAPI.
+Cuando el usuario active ese flujo, aplicar
+[gym-spec-driven](.specify/.codex/skills/gym-spec-driven/SKILL.md) y seguir las etapas
+oficiales y el [preámbulo único](.specify/.codex/preamble.md). Una consulta solo
+analiza; la implementación autorizada continúa hasta verificar.
 
-No marcar tareas ni especificaciones como verificadas solo por existir pruebas.
-Registrar comandos, resultados y limitaciones en la carpeta de la funcionalidad.
-Los resultados omitidos de PostgreSQL o de revisión visual siguen pendientes.
+## Comprobaciones desde la raíz
 
-Los archivos instalados de Spec Kit son herramientas de desarrollo. Mantener
-personalizaciones del proyecto fuera de las skills y plantillas oficiales para
-facilitar actualizaciones. No reinicializar con `--force` sobre trabajo existente
-sin revisar antes los archivos que se reemplazarían.
+```bash
+python .specify/.codex/hooks/validate.py
+python .specify/.codex/hooks/validate.py --feature NNN-nombre --stage implement
+python -B -m unittest discover -s .specify/tests -v
+```
 
-## Comprobaciones existentes
-
-- Frontend: `npm --prefix frontend test` y `npm --prefix frontend run build`.
-- Backend, con dependencias de desarrollo y desde `backend/`:
-  `python -m pytest tests/ -q` y
-  `python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics`.
-- PostgreSQL aislado: `backend/tests/test_atomic_transactions_postgres.py`,
-  habilitado mediante `GYM_TEST_POSTGRES_CONTAINER`; consultar el workflow de PR.
-- Contratos de arquitectura: `backend/tests/test_layer_boundaries.py` y
-  `frontend/tests/23-layer-boundaries.test.js`.
-
-Para los tests que requieren firma de sesión usar una clave exclusiva de pruebas,
-como la configurada en `.github/workflows/pr-validation.yml`.
+Seguir la [guía](.specify/guias/spec-driven.md). No modificar README principal salvo
+petición explícita ni recrear docs/specs en la raíz. Conservar .github y los enlaces
+nativos .agents/skills. Trabajar en esta sesión sin confirmaciones rutinarias ni agentes adicionales.

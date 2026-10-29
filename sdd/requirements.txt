@@ -1,2 +1,0 @@
-# GitHub Spec Kit v1.2.3: fuente fijada al commit de la publicación oficial.
-specify-cli @ git+https://github.com/github/spec-kit.git@5ea8b1cf0a38699340a38e00d02770308997d8c0

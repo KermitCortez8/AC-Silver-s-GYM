@@ -1,0 +1,6 @@
+interface:
+  display_name: "Spec Driven del gimnasio"
+  short_description: "Consulta la base antes de diseñar o programar"
+  default_prompt: "Usa $gym-spec-driven para desarrollar este cambio consultando primero los módulos, reglas y pruebas existentes."
+policy:
+  allow_implicit_invocation: true
