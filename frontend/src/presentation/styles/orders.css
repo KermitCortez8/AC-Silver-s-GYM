@@ -108,7 +108,7 @@
   padding: 0.75rem 1.15rem;
   font-size: 0.875rem;
   font-weight: 800;
-  transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
+  transition: background-color 0.15s, border-color 0.15s;
 }
 
 .ord-btn-primary {
@@ -119,6 +119,11 @@
 
 .ord-btn-primary:hover {
   background: var(--ord-accent-strong);
+}
+
+.ord-btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .ord-btn-secondary {
@@ -451,4 +456,12 @@
 
 .ord-empty svg {
   color: var(--ord-accent);
+}
+
+/* Paginador compartido con Inventario y Tienda: en Pedidos la pagina activa usa el naranja. */
+.orders-theme .inv-btn-ghost.is-active,
+[data-theme="light"] .orders-theme .inv-btn-ghost.is-active {
+  border-color: var(--ord-accent);
+  background: var(--ord-accent);
+  color: var(--ord-accent-ink);
 }

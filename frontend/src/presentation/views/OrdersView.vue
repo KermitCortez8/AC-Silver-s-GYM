@@ -200,7 +200,7 @@ const filteredOrders = computed(() => {
 // Paginacion sobre la lista filtrada; vuelve a la primera pagina al buscar.
 const paginaActual = ref(1);
 // Pedidos muestra 10 por pagina (Inventario y Tienda usan 8).
-const ORDER_PAGE_SIZES = [5, 8, 10, 50];
+const ORDER_PAGE_SIZES = [10, 20, 30, 50];
 const porPagina = ref(ORDER_PAGE_SIZES[0]);
 const paginatedOrders = computed(() => filteredOrders.value
   .slice((paginaActual.value - 1) * porPagina.value, paginaActual.value * porPagina.value));

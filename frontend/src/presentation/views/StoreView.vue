@@ -36,14 +36,14 @@
           :key="tab.value"
           type="button"
           class="relative px-5 py-3 text-sm font-bold transition-colors duration-200"
-          :class="activeTab === tab.value ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'"
+          :class="activeTab === tab.value ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'"
           :aria-current="activeTab === tab.value ? 'page' : undefined"
           @click="activeTab = tab.value"
         >
           {{ tab.label }}
           <span
             v-if="activeTab === tab.value"
-            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-400"
+            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-orange-400"
           ></span>
         </button>
       </nav>
@@ -144,7 +144,7 @@
           <option>Descatalogado</option>
         </select>
       </div>
-      <button v-if="soloStockBajo" type="button" class="inv-btn-ghost mt-3" @click="toggleStockBajo">
+      <button v-if="soloStockBajo" type="button" class="inv-btn-ghost mt-3 inline-flex items-center gap-1.5 whitespace-nowrap" @click="toggleStockBajo">
         Mostrando solo stock bajo <X :size="14" aria-hidden="true" />
       </button>
 
@@ -221,7 +221,7 @@
 
                 <!-- Almacen -->
                 <td data-label="Almacén" class="px-4 py-4 align-top">
-                  <span v-if="producto.id_item" class="font-semibold text-amber-200">Item #{{ producto.id_item }}</span>
+                  <span v-if="producto.id_item" class="font-semibold text-orange-200">Item #{{ producto.id_item }}</span>
                   <span v-else class="text-slate-500">Sin vincular</span>
                 </td>
 
@@ -334,13 +334,20 @@
                 <p class="text-xs ws-muted">Stock: {{ producto.cantidad }}</p>
               </div>
 
-              <div v-if="canBuy(producto)" class="mt-4 flex gap-2">
+              <div
+                v-if="
+                  producto.estado === 'Disponible' &&
+                  Number(producto.cantidad || 0) > 0
+                "
+                class="mt-4 flex gap-2"
+              >
                 <input
                   :value="cantidadInput[producto.id_producto] ?? 1"
                   :aria-label="`Cantidad de ${producto.nombre}, maximo ${availableFor(producto)}`"
                   type="text"
                   inputmode="numeric"
-                  class="ws-input w-16 px-3 py-2 text-center text-sm"
+                  maxlength="10"
+                  class="ws-input flex-1 px-3 py-2 text-sm"
                   :disabled="!availableFor(producto)"
                   @beforeinput="blockQuantityChars"
                   @input="setQuantity(producto, $event)"
@@ -414,7 +421,7 @@
                   :aria-label="`Reducir cantidad de ${item.nombre}`"
                   @click="
                     () =>
-                      gymStore.updateCartQuantity(
+                      updateCart(
                         item.id_producto,
                         Math.max(1, item.cantidad - 1),
                       )
@@ -422,19 +429,11 @@
                 >
                   -
                 </button>
-                <input
-                  :value="item.cantidad"
+                <QuantityInput
+                  :model-value="item.cantidad"
                   :aria-label="`Cantidad de ${item.nombre} en el carrito`"
-                  type="number"
-                  min="1"
-                  :max="cartItemStock(item)"
                   class="w-full rounded ws-inset px-2 py-1 text-center text-sm ws-text outline-none"
-                  @change="
-                    (event) => {
-                      gymStore.updateCartQuantity(item.id_producto, Math.max(1, Number(event.target.value) || 1));
-                      event.target.value = String(item.cantidad);
-                    }
-                  "
+                  @update:model-value="updateCart(item.id_producto, $event)"
                 />
                 <button
                   class="rounded ws-inset px-2 py-1 text-sm ws-text ws-hover"
@@ -443,7 +442,7 @@
                   :title="item.cantidad >= cartItemStock(item) ? `Maximo disponible: ${cartItemStock(item)}` : ''"
                   @click="
                     () =>
-                      gymStore.updateCartQuantity(
+                      updateCart(
                         item.id_producto,
                         item.cantidad + 1,
                       )
@@ -685,6 +684,8 @@
 </template>
 
 <script setup>
+import QuantityInput from "../components/QuantityInput.vue";
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { useProductEditor } from '../composables/store/useProductEditor.js';
 import ProductEditorDialog from '../components/store/ProductEditorDialog.vue';
 import { computed, onMounted, ref } from 'vue';
@@ -775,6 +776,7 @@ const setQuantity = (producto, event) => {
   const digits = cleanInteger(event.target.value);
   if (!digits) {
     event.target.value = '';
+    cantidadInput.value[producto.id_producto] = '';
     return;
   }
   warnStock(producto, digits);
@@ -899,13 +901,7 @@ const cantidadInput = ref({});
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
 
-const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success')
-    return 'ws-border-success ws-tint-success ws-success';
-  if (feedbackTone.value === 'error')
-    return 'ws-border-danger ws-tint-danger ws-danger';
-  return 'ws-border-info ws-tint-info ws-info';
-});
+const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
 
 const productCode = (id) => `PROD-${String(id || 0).padStart(4, '0')}`;
 
@@ -925,14 +921,14 @@ const productStatusClass = (status) => {
 const productStatusDot = (status) => {
   if (status === 'Disponible') return 'bg-emerald-400';
   if (status === 'Agotado') return 'bg-rose-400';
-  return 'bg-amber-400';
+  return 'bg-orange-400';
 };
 
 const stockBarColor = (producto) => {
   const cantidad = Number(producto.cantidad || 0);
   const minimo = Number(producto.minimo ?? 1);
   if (cantidad <= minimo) return 'bg-rose-400';
-  if (cantidad <= minimo * 2) return 'bg-amber-400';
+  if (cantidad <= minimo * 2) return 'bg-orange-400';
   return 'bg-emerald-400';
 };
 
@@ -953,18 +949,35 @@ const deleteProducto = async (idProducto) => {
   }
 };
 
+const cartError = (error) => {
+  feedbackTone.value = 'error';
+  feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo actualizar el carrito.';
+};
+// En el carrito un numero mayor al stock se ajusta al maximo y se avisa.
+const updateCart = (id, quantity) => {
+  const item = cart.value.find((entry) => entry.id_producto === id);
+  const max = item ? cartItemStock(item) : Infinity;
+  if (/^[0-9]+$/.test(String(quantity)) && Number(quantity) > max) {
+    quantity = max;
+    feedbackTone.value = 'error';
+    feedbackMessage.value = `Solo hay ${max} disponible${max === 1 ? '' : 's'} de ${item.nombre}.`;
+  }
+  try { gymStore.updateCartQuantity(id, quantity); }
+  catch (error) { cartError(error); }
+};
 const agregarAlCarrito = (producto) => {
   if (!availableFor(producto)) {
     feedbackTone.value = 'error';
     feedbackMessage.value = `Ya tienes en el carrito todo el stock de ${producto.nombre}.`;
     return;
   }
-  const cantidad = clampQuantity(cantidadInput.value[producto.id_producto] || 1, producto);
-  gymStore.addToCart(producto, cantidad);
-  cantidadInput.value[producto.id_producto] = 1;
   stockWarning.value[producto.id_producto] = '';
-  feedbackTone.value = 'success';
-  feedbackMessage.value = `${producto.nombre} añadido al carrito.`;
+  try {
+    gymStore.addToCart(producto, cantidadInput.value[producto.id_producto] ?? 1);
+    cantidadInput.value[producto.id_producto] = 1;
+    feedbackTone.value = 'success';
+    feedbackMessage.value = `${producto.nombre} añadido al carrito.`;
+  } catch (error) { cartError(error); }
 };
 
 const goToCheckout = () => {
