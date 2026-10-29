@@ -96,7 +96,7 @@
             >
               <option :value="0">Selecciona un artículo...</option>
               <option
-                v-for="item in inventory"
+                v-for="item in activeInventory"
                 :key="item.id"
                 :value="itemId(item)"
               >
@@ -490,6 +490,7 @@ const pageSize = 8;
 const errors = reactive({ id_item: '', cantidad: '' });
 
 const inventory = computed(() => gymStore.inventory);
+const activeInventory = computed(() => inventory.value.filter((item) => !item.archived));
 const movements = computed(() =>
   [...(gymStore.inventoryMovements || [])].sort(
     (a, b) =>

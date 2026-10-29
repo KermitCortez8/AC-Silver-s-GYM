@@ -17,11 +17,18 @@ def _map_inventory(row: dict[str, Any]) -> dict[str, Any]:
         "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 1),
         "ubicacion": str(row.get("ubicacion") or "Almacén"),
         "observaciones": str(row.get("observaciones") or ""),
+        "archivado": bool(row.get("archivado") or False),
     }
+
+
+def _archived_field(row: dict[str, Any]) -> dict[str, Any]:
+    # Solo se envía al archivar: las instalaciones sin la migración 018 siguen guardando lo demás.
+    return {"archivado": True} if row.get("archivado") else {}
 
 
 def _inventory_to_remote(row: dict[str, Any]) -> dict[str, Any]:
     return {
+        **_archived_field(row),
         "id_item": int(row.get("id_item", 0) or 0),
         "Nombre_item": str(row.get("nombre_item") or ""),
         "Tipo": str(row.get("tipo") or "General"),
@@ -76,11 +83,13 @@ def _map_product(row: dict[str, Any]) -> dict[str, Any]:
         "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 5),
         "estado": "Disponible" if stock > 0 else "Sin stock",
         "imagen_url": str(row.get("imagen_url") or ""),
+        "archivado": bool(row.get("archivado") or False),
     }
 
 
 def _product_to_remote(row: dict[str, Any]) -> dict[str, Any]:
     return {
+        **_archived_field(row),
         "id_producto": int(row.get("id_producto", 0) or 0),
         "id_item": int(row.get("id_item") or 0) or None,
         "nombre_Producto": str(row.get("nombre_producto") or ""),

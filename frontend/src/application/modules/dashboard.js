@@ -18,13 +18,14 @@ export const createDashboardModule = (ctx, settingsRepository) => {
   };
   const stats = computed(() => {
     const today = todayISO();
-    const lowStockItems = ctx.inventory.value.filter((item) => item.quantity <= item.minQuantity).length;
+    const activeInventory = ctx.inventory.value.filter((item) => !item.archived);
+    const lowStockItems = activeInventory.filter((item) => item.quantity <= item.minQuantity).length;
 
     return {
       totalMembers: ctx.members.value.length,
       activeMembers: ctx.members.value.filter((member) => clientMembershipGroup(member) === 'active').length,
       attendanceToday: ctx.attendance.value.filter((entry) => entry.date === today).length,
-      inventoryItems: ctx.inventory.value.length,
+      inventoryItems: activeInventory.length,
       lowStockItems,
       attendanceRate: ctx.members.value.length
         ? Math.round(

@@ -42,52 +42,6 @@
         </div>
       </div>
 
-      <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-blue-400 bg-slate-900/80 px-4 py-3">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-            <Package :size="20" stroke-width="2.5" />
-          </span>
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Total registrados</p>
-            <p class="text-2xl font-black text-white">{{ inventory.length }}</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-green-400 bg-slate-900/80 px-4 py-3">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-600">
-            <CheckCircle2 :size="20" stroke-width="2.5" />
-          </span>
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Disponibilidad operativa</p>
-            <p class="text-2xl font-black text-white">{{ operationalPercent }}%</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="flex items-center gap-3 rounded-2xl border-l-4 border-l-orange-400 bg-slate-900/80 px-4 py-3 text-left transition hover:bg-slate-800/80"
-          :class="isLowStockFilter ? 'ring-2 ring-orange-400/70' : ''"
-          :aria-pressed="isLowStockFilter"
-          :title="isLowStockFilter ? 'Quitar filtro de stock minimo' : 'Ver solo articulos en su stock minimo o por debajo'"
-          @click="toggleLowStockFilter"
-        >
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
-            <TrendingDown :size="20" stroke-width="2.5" />
-          </span>
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Stock minimo</p>
-            <p class="text-2xl font-black text-white">{{ lowStock.length }}</p>
-          </div>
-        </button>
-        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-violet-400 bg-slate-900/80 px-4 py-3">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
-            <Wrench :size="20" stroke-width="2.5" />
-          </span>
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">En mantenimiento</p>
-            <p class="text-2xl font-black text-white">{{ maintenanceItems }}</p>
-          </div>
-        </div>
-      </div>
-
       <div class="mt-5 flex flex-wrap gap-2.5">
         <button
           type="button"
@@ -174,9 +128,6 @@
                   <p class="font-bold" :class="isLowStock(item) ? 'text-rose-300' : 'text-white'">
                     {{ item.quantity }} {{ item.unidad_venta || 'unidad' }}
                   </p>
-                  <div class="mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
-                    <div class="h-full rounded-full transition-all" :class="isLowStock(item) ? 'bg-rose-500' : 'bg-green-500'" :style="{ width: stockBarPercent(item) + '%' }"></div>
-                  </div>
                   <p class="mt-1 text-xs text-slate-400">Minimo: {{ item.minQuantity || 0 }}</p>
                 </td>
                 <td class="px-4 py-4 align-top">
@@ -296,13 +247,16 @@
           </div>
           <div class="space-y-2">
             <label for="inv-min" class="flex items-center justify-between gap-2">
-              <span class="inv-label">Stock minimo</span>
-              <span v-if="Number(form.quantity || 0) <= Number(form.minQuantity || 0)" class="rounded-full border border-yellow-400/40 bg-yellow-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-yellow-800">Alerta activa</span>
+              <span class="inv-label inv-required">Stock minimo</span>
+              <span v-if="form.minQuantity !== '' && Number(form.quantity || 0) <= Number(form.minQuantity)" class="rounded-full border border-yellow-400/40 bg-yellow-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-yellow-800">Alerta activa</span>
             </label>
             <QuantityInput
               id="inv-min"
               v-model="form.minQuantity"
               class="field-input"
+              placeholder="Ej. 5"
+              :class="{ 'is-invalid': formErrors.includes('Stock minimo') }"
+              @update:model-value="formErrors = formErrors.filter((label) => label !== 'Stock minimo')"
             />
             <p v-if="numberWarning.minQuantity" class="inv-field-error">{{ numberWarning.minQuantity }}</p>
           </div>
@@ -320,7 +274,7 @@
           <div class="inv-info sm:col-span-3">
             <Info :size="16" aria-hidden="true" />
             <div class="space-y-1">
-              <p>Alerta de stock minimo: el articulo entra en alerta cuando su stock es igual o menor a este valor (10 por defecto).{{ isTiendaForm ? ' El minimo de Tienda se edita en su producto.' : '' }}</p>
+              <p>Alerta de stock minimo: el articulo entra en alerta cuando su stock es igual o menor a este valor.{{ isTiendaForm ? ' El minimo de Tienda se edita en su producto.' : '' }}</p>
               <p v-if="editingId">
                 El stock no se edita aqui: registra una entrada, salida o ajuste en la pestaña Movimientos.
                 <span v-if="isTiendaForm" class="font-bold">Este articulo es la reserva de Tienda: para pasar unidades a la Tienda registra una salida con destino Tienda.</span>
@@ -453,7 +407,7 @@ import QuantityInput from "../components/QuantityInput.vue";
 import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { AlertCircle, Boxes, CheckCircle2, ClipboardCheck, Eye, History, Info, Package, TrendingDown, Wrench } from 'lucide-vue-next';
+import { AlertCircle, Boxes, ClipboardCheck, Eye, History, Info, Package } from 'lucide-vue-next';
 import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import ResourceModal from '../components/ResourceModal.vue';
 import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
@@ -486,33 +440,13 @@ const activeTab = computed({
   get: () => (tabs.some((tab) => tab.value === route.query.tab) ? route.query.tab : 'articulos'),
   set: (tab) => router.replace({ query: { ...route.query, tab } }),
 });
-const inventory = computed(() => gymStore.inventory);
-// Articulos de Inventario (equipos y productos) con stock en su minimo o por debajo, agotados incluidos.
-// Los descontinuados y dados de baja no se reponen, por eso no cuentan.
-const lowStock = computed(() => inventory.value.filter(isLowStockAlert));
-const maintenanceItems = computed(() => inventory.value.filter((item) => item.status === 'En mantenimiento').length);
-
-// Unidades sugeridas por el TP2; se suman las que ya existen en la base.
-const DEFAULT_MIN_QUANTITY = 10;
+const inventory = computed(() => gymStore.inventory.filter((item) => !item.archived));
 
 // Filtros de la tabla (solo lectura, no afectan el store).
 const searchQuery = ref('');
 const selectedCategory = ref('all');
 const selectedLocation = ref('all');
 const selectedStatus = ref('all');
-const isLowStockFilter = ref(false);
-
-/**
- * Activa o quita el filtro de articulos en stock minimo desde la tarjeta.
- */
-const toggleLowStockFilter = () => {
-  isLowStockFilter.value = !isLowStockFilter.value;
-  if (isLowStockFilter.value) {
-    selectedStatus.value = 'all';
-    selectedCategory.value = 'all';
-  }
-  paginaActual.value = 1;
-};
 
 const locationOptions = computed(() => {
   const set = new Set(inventory.value.map((item) => item.location).filter(Boolean));
@@ -526,8 +460,7 @@ const filteredInventory = computed(() => inventory.value.filter((item) => {
   const matchesCategory = selectedCategory.value === 'all' || (item.category || 'General') === selectedCategory.value;
   const matchesLocation = selectedLocation.value === 'all' || item.location === selectedLocation.value;
   const matchesStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value;
-  const matchesLowStock = !isLowStockFilter.value || isLowStockAlert(item);
-  return matchesQuery && matchesCategory && matchesLocation && matchesStatus && matchesLowStock;
+  return matchesQuery && matchesCategory && matchesLocation && matchesStatus;
 }));
 
 // Orden por columna: clic alterna ascendente y descendente.
@@ -559,11 +492,6 @@ watch([searchQuery, selectedCategory, selectedLocation, selectedStatus], () => {
 watch(totalPages, (pages) => { paginaActual.value = Math.max(1, Math.min(paginaActual.value, pages)); });
 
 // Derivados de inventory, solo lectura.
-const operationalPercent = computed(() => {
-  if (!inventory.value.length) return 0;
-  const operational = inventory.value.filter((item) => item.status === 'Operativo' || item.status === 'Disponible').length;
-  return Math.round((operational / inventory.value.length) * 100);
-});
 const categorySummary = computed(() => {
   const counts = new Map();
   inventory.value.forEach((item) => {
@@ -586,7 +514,7 @@ const form = reactive({
   name: '',
   category: 'General',
   quantity: 0,
-  minQuantity: DEFAULT_MIN_QUANTITY,
+  minQuantity: '',
   unidad_venta: 'unidad',
   precio_venta: 0,
   location: 'Recepcion',
@@ -622,17 +550,6 @@ const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
  * Valida los datos recibidos.
  */
 const isLowStock = (item) => Number(item.quantity || 0) <= Number(item.minQuantity || 0);
-const isLowStockAlert = (item) => isLowStock(item) && !['Descontinuado', 'Dado de baja'].includes(item.status);
-
-/**
- * Ancho de la barra de stock respecto al minimo (3x el minimo = 100%).
- */
-const stockBarPercent = (item) => {
-  const min = Number(item.minQuantity ?? 1);
-  const qty = Number(item.quantity || 0);
-  const reference = Math.max(min * 3, 1);
-  return Math.min(100, Math.round((qty / reference) * 100));
-};
 
 // Color del punto por categoria (categoria es texto libre, color estable segun el nombre).
 const categoryDotPalette = ['#0d9488', '#7c3aed', '#2563eb', '#db2777', '#4f46e5'];
@@ -692,7 +609,7 @@ const resetForm = () => {
   form.name = '';
   form.category = 'General';
   form.quantity = 0;
-  form.minQuantity = DEFAULT_MIN_QUANTITY;
+  form.minQuantity = '';
   form.unidad_venta = 'unidad';
   form.precio_venta = 0;
   form.location = 'Recepcion';
@@ -756,6 +673,11 @@ const handleSubmit = async () => {
   try {
     if (!form.name.trim()) throw new Error('El nombre del artículo es obligatorio.');
     const quantity = parseQuantity(form.quantity, { label: 'El stock inicial' });
+    // No hay un minimo por defecto: el usuario lo escribe al crear el articulo.
+    if (form.minQuantity === '' || form.minQuantity === null || form.minQuantity === undefined) {
+      formErrors.value = ['Stock minimo'];
+      throw new Error('El stock mínimo es obligatorio.');
+    }
     const minQuantity = parseQuantity(form.minQuantity, { label: 'El stock mínimo' });
     formErrors.value = missingFields(form, requiredFields());
     if (formErrors.value.length) return;
@@ -778,12 +700,12 @@ const handleSubmit = async () => {
  * Elimina el registro indicado.
  */
 const deleteItem = async (id) => {
-  if (!window.confirm('Eliminar este articulo?\n\nSi ya tiene movimientos o se vende en Tienda no se borrara: quedara como "Descontinuado" para conservar su historial.')) return;
+  if (!window.confirm('Eliminar este articulo?\n\nSi ya tiene movimientos o se vende en Tienda no se borrara: se archivara (deja de mostrarse) y su historial se conserva.')) return;
   try {
     const result = await gymStore.deleteInventoryItem(id);
     feedbackTone.value = 'success';
-    feedbackMessage.value = result?.accion === 'descontinuado'
-      ? 'El articulo tiene historial o se vende en Tienda: se marco como Descontinuado.'
+    feedbackMessage.value = result?.accion === 'archivado'
+      ? 'El articulo tiene historial o se vende en Tienda: se archivo y su historial se conserva.'
       : 'Articulo eliminado.';
   } catch (error) {
     feedbackTone.value = 'error';

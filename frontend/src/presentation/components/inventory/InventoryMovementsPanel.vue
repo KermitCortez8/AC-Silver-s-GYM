@@ -142,7 +142,7 @@
             <span class="inv-label inv-required">Articulo</span>
             <select v-model.number="form.id_item" class="field-input" :class="{ 'is-invalid': formErrors.includes('Articulo') }" :disabled="lockedByOrder" @change="formErrors = formErrors.filter((label) => label !== 'Articulo')">
               <option :value="0">Selecciona un articulo</option>
-              <option v-for="item in inventory" :key="item.id" :value="itemNumber(item)">
+              <option v-for="item in activeInventory" :key="item.id" :value="itemNumber(item)">
                 {{ item.inventoryCode }} - {{ item.name }} ({{ item.quantity }})
               </option>
             </select>
@@ -271,6 +271,7 @@ const dateFrom = ref('');
 const dateTo = ref('');
 const editingMovement = ref(null);
 const inventory = computed(() => gymStore.inventory);
+const activeInventory = computed(() => inventory.value.filter((item) => !item.archived));
 const products = computed(() => gymStore.productos_tienda || []);
 const movements = computed(() => gymStore.inventoryMovements || []);
 const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));

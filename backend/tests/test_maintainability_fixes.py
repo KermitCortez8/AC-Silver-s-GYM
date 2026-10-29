@@ -137,6 +137,22 @@ def test_http_reports_a_late_repository_failure_as_503():
     assert 'detalle interno' not in response.text
 
 
+def test_http_reports_a_foreign_key_rejection_as_409():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from presentation.error_handlers import install_error_handlers
+    from infrastructure.http_transport import RemoteServiceError
+    app = FastAPI()
+    install_error_handlers(app)
+    @app.delete('/producto')
+    def delete():
+        raise RemoteServiceError('commit', 409, {'code': '23503', 'message': 'violates foreign key'})
+    response = TestClient(app).delete('/producto')
+    assert response.status_code == 409
+    assert 'historial' in response.json()['detail']
+    assert 'foreign key' not in response.text
+
+
 @pytest.mark.parametrize('filename,mime,extension', [('a.png', 'image/png', '.png'), ('a.JPG', 'image/jpeg', '.jpg'), ('a.jpeg', 'image/jpeg', '.jpeg')])
 def test_image_policy_accepts_only_png_and_jpg(filename, mime, extension):
     assert validate_image(filename, b'image', mime) == extension

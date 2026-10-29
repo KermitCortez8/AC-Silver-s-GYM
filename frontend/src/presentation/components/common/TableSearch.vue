@@ -15,7 +15,6 @@
         @beforeinput="handleBeforeInput"
         @input="handleInput"
       />
-      <span class="inv-search-count" aria-hidden="true">{{ String(modelValue || '').length }}/{{ SEARCH_MAX_LENGTH }}</span>
     </label>
     <p v-if="message" :id="messageId" role="alert" class="inv-field-error">{{ message }}</p>
   </div>
@@ -44,12 +43,18 @@ const warn = (text) => {
 };
 
 /**
- * Bloquea al escribir los caracteres especiales.
+ * Bloquea al escribir los caracteres especiales y avisa al llegar al maximo (sin contador visible).
  */
 const handleBeforeInput = (event) => {
   if (event.data && !isAllowedText(event.data)) {
     event.preventDefault();
     warn('Solo se permiten letras, numeros y espacios.');
+    return;
+  }
+  const input = event.target;
+  const selected = (input.selectionEnd ?? 0) - (input.selectionStart ?? 0);
+  if (event.data && input.value.length - selected >= SEARCH_MAX_LENGTH) {
+    warn(`Maximo ${SEARCH_MAX_LENGTH} caracteres.`);
   }
 };
 

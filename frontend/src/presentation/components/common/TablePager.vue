@@ -8,7 +8,7 @@
       <label class="inv-pager-size">
         <span class="whitespace-nowrap">Filas por pagina</span>
         <select :value="pageSize" class="inv-input" @change="changeSize($event.target.value)">
-          <option v-for="size in PAGE_SIZES" :key="size" :value="size">{{ size }}</option>
+          <option v-for="size in sizes" :key="size" :value="size">{{ size }}</option>
         </select>
       </label>
     </div>
@@ -39,6 +39,8 @@ const props = defineProps({
   pageSize: { type: Number, required: true },
   total: { type: Number, required: true },
   itemLabel: { type: String, default: 'registros' },
+  // Opciones de filas por pagina; cada vista puede usar las suyas.
+  sizes: { type: Array, default: () => PAGE_SIZES },
 });
 const emit = defineEmits(['update:page', 'update:pageSize']);
 

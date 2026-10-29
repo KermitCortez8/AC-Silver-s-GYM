@@ -38,7 +38,7 @@ def upsert_inventario(
         raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
-# DELETE /inventario/{id_item}: elimina el ítem; si tiene historial o producto en tienda lo descontinúa.
+# DELETE /inventario/{id_item}: elimina el ítem; si tiene historial o producto en tienda lo archiva.
 @router.delete("/{id_item}")
 # Elimina el registro indicado.
 def delete_inventario(id_item: int, gym_service: GymService = Depends(get_gym_service)):
@@ -48,7 +48,7 @@ def delete_inventario(id_item: int, gym_service: GymService = Depends(get_gym_se
         raise http_error(error, validation_status=status.HTTP_404_NOT_FOUND) from error
     if item is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
-    return {"accion": "descontinuado", "item": item}
+    return {"accion": "archivado", "item": item}
 
 
 # GET /inventario/movimientos: lista los movimientos registrados.
