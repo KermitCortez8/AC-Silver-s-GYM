@@ -9,7 +9,7 @@ import { computed } from 'vue';
 export const createInventoryModule = (ctx, repository) => {
   const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
   const lowStockInventory = computed(() =>
-    ctx.inventory.value.filter((item) => item.quantity <= item.minQuantity),
+    ctx.inventory.value.filter((item) => !item.archived && item.quantity <= item.minQuantity),
   );
 
   const upsertInventoryItem = (payload) => {
@@ -81,13 +81,12 @@ export const createInventoryModule = (ctx, repository) => {
   const deleteInventoryItem = async (id) => {
     if (ctx.apiBase && /^item-\d+$/.test(id)) {
       const id_item = Number(id.split('-')[1]);
-      const response = await remote.deleteInventoryItem(id_item);
+      const result = await remote.deleteInventoryItem(id_item);
 
-      // Con historial o producto en tienda el backend no borra: lo marca como Descontinuado.
-      const result = response;
-      if (result?.accion === 'descontinuado') {
+      // Con historial o producto en tienda el backend no borra: lo archiva y deja de mostrarse.
+      if (result?.accion === 'archivado') {
         const item = ctx.inventory.value.find((entry) => entry.id === id);
-        if (item) item.status = result.item?.estado || 'Descontinuado';
+        if (item) Object.assign(item, { archived: true, status: result.item?.estado || item.status });
         await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
         return result;
       }

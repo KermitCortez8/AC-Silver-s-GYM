@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-6">
-    <!-- Stats cards con iconos (estilo Inventario/Tienda) -->
+    <!-- Tarjetas del mes elegido en el filtro (o de todo el historial con "Todos los meses") -->
     <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-blue-400 bg-slate-900/80 px-4 py-3">
         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
           <Activity :size="20" stroke-width="2.5" />
         </span>
         <div>
-          <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Movimientos</p>
+          <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Ventas · {{ periodLabel }}</p>
           <p class="text-2xl font-black text-white">{{ activeMovements.length }}</p>
         </div>
       </div>
@@ -16,7 +16,7 @@
           <ShoppingBag :size="20" stroke-width="2.5" />
         </span>
         <div>
-          <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Unidades vendidas</p>
+          <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Unidades vendidas · {{ periodLabel }}</p>
           <p class="text-2xl font-black text-white">{{ soldUnits }}</p>
         </div>
       </div>
@@ -25,7 +25,7 @@
           <DollarSign :size="20" stroke-width="2.5" />
         </span>
         <div>
-          <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Monto vendido</p>
+          <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Monto vendido · {{ periodLabel }}</p>
           <p class="text-2xl font-black text-white">S/. {{ soldAmount.toFixed(2) }}</p>
         </div>
       </div>
@@ -35,7 +35,7 @@
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
-          <h2 class="mt-2 text-2xl font-black text-white">Salidas por ventas</h2>
+          <h2 class="mt-2 text-2xl font-black text-white">Ventas</h2>
           <p class="mt-1 text-sm text-slate-400">Cada producto vendido en un pedido descuenta stock de la tienda.</p>
         </div>
         <button
@@ -58,7 +58,7 @@
           @update:model-value="paginaActual = 1"
         />
         <select v-model="monthFilter" class="inv-input" aria-label="Filtrar por mes" @change="paginaActual = 1">
-          <option value="">Todos los meses</option>
+          <option :value="ALL_MONTHS">Todos los meses</option>
           <option v-for="month in monthOptions" :key="month.value" :value="month.value">{{ month.label }}</option>
         </select>
         <select v-model="orderFilter" class="inv-input" aria-label="Filtrar por pedido" @change="paginaActual = 1">
@@ -72,7 +72,7 @@
       </div>
 
       <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-        <p>{{ filteredMovements.length }} de {{ movements.length }} ventas · S/. {{ filteredAmount.toFixed(2) }} en el filtro</p>
+        <p>{{ filteredMovements.length }} ventas · S/. {{ filteredAmount.toFixed(2) }} en el filtro</p>
         <button v-if="hasFilters" type="button" class="inv-btn-ghost" @click="clearFilters">Limpiar filtros</button>
       </div>
       <p v-if="exportNotice" role="status" class="inv-info mt-3">
@@ -127,7 +127,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 3H8l-2 4h12l-2-4z" />
           </svg>
         </div>
-        <p class="text-sm font-semibold text-slate-300">{{ hasFilters ? 'Sin resultados' : 'Sin ventas registradas' }}</p>
+        <p class="text-sm font-semibold text-slate-300">{{ hasFilters ? 'Sin resultados' : `Sin ventas en ${periodLabel}` }}</p>
         <p class="mt-1 text-xs text-slate-500">{{ hasFilters ? 'Prueba con otros filtros o termino de busqueda.' : 'No se han registrado ventas en la tienda todavia.' }}</p>
       </div>
     </section>
@@ -146,7 +146,10 @@ import { useGymStore } from '../../../application/stores/gymStore';
 const NO_CLIENT = 'Sin registrar';
 const gymStore = useGymStore();
 const search = ref('');
-const monthFilter = ref('');
+// Por defecto se ve el mes en curso (hora de Lima); "Todos los meses" muestra el historial completo.
+const ALL_MONTHS = 'all';
+const currentMonth = limaDate().slice(0, 7);
+const monthFilter = ref(currentMonth);
 const orderFilter = ref('');
 const clientFilter = ref('');
 
@@ -186,12 +189,14 @@ const movements = computed(() =>
     })
     .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || ''))),
 );
-const activeMovements = computed(() => movements.value.filter((movement) => !movement.isCancelled));
+// Las tarjetas responden solo al mes elegido.
+const isInMonth = (movement) => monthFilter.value === ALL_MONTHS || movement.mes === monthFilter.value;
+const activeMovements = computed(() => movements.value.filter((movement) => !movement.isCancelled && isInMonth(movement)));
 const soldUnits = computed(() => activeMovements.value.reduce((sum, movement) => sum + movement.cantidad, 0));
 const soldAmount = computed(() => activeMovements.value.reduce((sum, movement) => sum + movement.subtotal, 0));
 
 // Opciones de los desplegables a partir de las ventas existentes.
-const monthOptions = computed(() => [...new Set(movements.value.map((movement) => movement.mes).filter(Boolean))]
+const monthOptions = computed(() => [...new Set([currentMonth, ...movements.value.map((movement) => movement.mes).filter(Boolean)])]
   .sort((a, b) => b.localeCompare(a))
   .map((value) => ({ value, label: monthLabel(value) })));
 const orderOptions = computed(() => [...new Set(movements.value.map((movement) => movement.idPedido))]
@@ -202,17 +207,18 @@ const clientOptions = computed(() => [...new Set(movements.value.map((movement) 
 // El buscador solo mira el nombre del producto; mes, pedido y cliente se filtran con sus desplegables.
 const filteredMovements = computed(() => movements.value.filter((movement) =>
   matchesSearch(search.value, [movement.producto])
-  && (!monthFilter.value || movement.mes === monthFilter.value)
+  && isInMonth(movement)
   && (!orderFilter.value || String(movement.idPedido) === String(orderFilter.value))
   && (!clientFilter.value || (movement.cliente || NO_CLIENT) === clientFilter.value)));
 const filteredAmount = computed(() => filteredMovements.value
   .filter((movement) => !movement.isCancelled)
   .reduce((sum, movement) => sum + movement.subtotal, 0));
-const hasFilters = computed(() => Boolean(search.value || monthFilter.value || orderFilter.value || clientFilter.value));
+const hasFilters = computed(() => Boolean(search.value || monthFilter.value !== currentMonth || orderFilter.value || clientFilter.value));
+const periodLabel = computed(() => (monthFilter.value === ALL_MONTHS ? 'historico' : monthLabel(monthFilter.value)));
 
 const clearFilters = () => {
   search.value = '';
-  monthFilter.value = '';
+  monthFilter.value = currentMonth;
   orderFilter.value = '';
   clientFilter.value = '';
   paginaActual.value = 1;
@@ -232,7 +238,7 @@ const formatDate = (value) => {
 };
 
 /**
- * Exporta a Excel las ventas que se ven con los filtros aplicados.
+ * Exporta a Excel solo las ventas que se ven: las del mes elegido y los demas filtros.
  */
 const isExporting = ref(false);
 const exportNotice = ref('');
@@ -255,8 +261,8 @@ const exportToExcel = async () => {
     sheet['!cols'] = [22, 16, 32, 10, 14, 10, 14, 28, 12].map((wch) => ({ wch }));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, 'Ventas');
-    XLSX.writeFile(workbook, `ventas-tienda${monthFilter.value ? `-${monthFilter.value}` : ''}.xlsx`);
-    exportNotice.value = `Se exportaron ${filteredMovements.value.length} ventas con los filtros aplicados.`;
+    XLSX.writeFile(workbook, `ventas-tienda-${monthFilter.value === ALL_MONTHS ? 'historico' : monthFilter.value}.xlsx`);
+    exportNotice.value = `Se exportaron ${filteredMovements.value.length} ventas de ${periodLabel.value}.`;
   } catch (error) {
     exportNotice.value = error instanceof Error ? `No se pudo exportar: ${error.message}` : 'No se pudo exportar.';
   } finally {

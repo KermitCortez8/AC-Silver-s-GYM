@@ -15,27 +15,6 @@
       <p>{{ missingFieldsMessage(formErrors) }}</p>
     </div>
 
-    <!-- Identificador -->
-    <div
-      class="flex items-center gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3"
-    >
-      <span
-        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400 text-slate-950"
-      >
-        <Tag :size="20" stroke-width="2.5" aria-hidden="true" />
-      </span>
-      <div>
-        <p
-          class="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300"
-        >
-          Identificador unico
-        </p>
-        <p class="mt-0.5 font-black text-white">
-          {{ currentProductCode }}
-        </p>
-      </div>
-    </div>
-
     <!-- Sección: Informacion básica -->
     <fieldset class="rm-section">
       <legend class="sr-only">Informacion del producto</legend>
@@ -377,7 +356,6 @@ import {
   Info,
   Loader2,
   ShoppingBag,
-  Tag,
   Trash2,
   Wallet,
 } from "lucide-vue-next";

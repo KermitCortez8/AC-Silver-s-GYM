@@ -46,9 +46,10 @@ class DeleteProductoTiendaCommand:
     id_producto: int
     resources: ClassVar[tuple[Resource, ...]] = (
         Resource.PRODUCTOS_TIENDA,
+        Resource.PEDIDOS_TIENDA,
     )
 
-    def run(self, rules: DomainComponents) -> None:
+    def run(self, rules: DomainComponents) -> Record | None:
         return rules.store.delete_producto_tienda(self.id_producto)
 
 

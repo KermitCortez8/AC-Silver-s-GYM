@@ -67,6 +67,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
           location: i.ubicacion || 'Almacén',
           status: i.estado || '',
           observations: i.observaciones || '',
+          archived: Boolean(i.archivado),
         }));
       }],
         ['Movimientos', ctx.refreshInventoryMovementsFromBackend]);

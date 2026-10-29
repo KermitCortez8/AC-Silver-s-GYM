@@ -24,6 +24,9 @@ def http_error(error, *, validation_status=400):
         return HTTPException(503, "No se pudo conectar con la base de datos. Inténtalo de nuevo en unos momentos.")
     if isinstance(error, EntityNotFound):
         return HTTPException(404, str(error))
+    if isinstance(error, PersistenceUnavailable) and getattr(error, "code", None) == "23503":
+        # Llave foránea: el registro tiene historial que lo referencia; no es un fallo de conexión.
+        return HTTPException(409, "No se puede completar: el registro tiene historial relacionado (ventas o movimientos).")
     if isinstance(error, (MembershipRequired, PermissionError)):
         return HTTPException(403, str(error))
     if isinstance(error, (AttendanceConflict, EnrollmentConflict, PedidoCanceladoConPagoError)):

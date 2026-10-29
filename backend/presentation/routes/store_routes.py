@@ -7,7 +7,7 @@ from __future__ import annotations
 from presentation.error_handlers import http_error
 
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 
 from presentation.dependencies import Settings, get_settings, get_store_images_service
 from presentation.dependencies import get_clients_service, get_current_user, get_gym_service, get_optional_actor_id, require_admin_or_staff
@@ -146,7 +146,10 @@ async def upload_producto_imagen(file: UploadFile = File(...), images: StoreImag
         raise http_error(error, validation_status=status.HTTP_502_BAD_GATEWAY) from error
 
 
-@router.delete("/{id_producto}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin_or_staff)])
-# Elimina el registro indicado.
+@router.delete("/{id_producto}", dependencies=[Depends(require_admin_or_staff)])
+# Elimina el registro indicado; si tiene ventas registradas lo archiva.
 def delete_producto(id_producto: int, gym_service: GymService = Depends(get_gym_service)):
-    gym_service.delete_producto_tienda(id_producto)
+    producto = gym_service.delete_producto_tienda(id_producto)
+    if producto is None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return {"accion": "archivado", "producto": producto}

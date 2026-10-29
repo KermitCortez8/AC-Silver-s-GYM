@@ -152,13 +152,26 @@ class StoreRules:
 
         return self.context.change(_fn)
 
-    def delete_producto_tienda(self, id_producto: int) -> None:
-        # Procesa esta operación.
+    def delete_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
+        # Con ventas registradas se archiva: DETALLE_VENTA lo referencia y las ventas se conservan.
         def _fn(state: dict[str, Any]):
-            if "productos_tienda" in state:
-                state["productos_tienda"] = [p for p in state["productos_tienda"] if int(p.get("id_producto", 0)) != int(id_producto)]
+            productos = state.get("productos_tienda", [])
+            producto = next((p for p in productos if int(p.get("id_producto", 0)) == int(id_producto)), None)
+            if not producto:
+                return None
+            tiene_ventas = any(
+                int(linea.get("id_producto") or 0) == int(id_producto)
+                for pedido in state.get("pedidos_tienda", [])
+                for linea in pedido.get("items", [])
+            )
+            if tiene_ventas:
+                producto["archivado"] = True
+                producto["estado"] = "Descatalogado"
+                return producto
+            state["productos_tienda"] = [p for p in productos if int(p.get("id_producto", 0)) != int(id_producto)]
+            return None
 
-        self.context.change(_fn)
+        return self.context.change(_fn)
 
     def pedidos_tienda(self) -> list[dict[str, Any]]:
         return self.context.state.get("pedidos_tienda", [])
