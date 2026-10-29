@@ -1,3 +1,5 @@
+import { validateAccountForm } from "../../../domain/utils/formValidation.js";
+import { useFormValidation } from "../useFormValidation.js";
 import { computed, reactive, ref } from "vue";
 import {
   clientMembershipGroup,
@@ -58,6 +60,9 @@ export const useClientEditor = ({
     pagar_con_stripe: false,
   });
 
+  const { fieldErrors, validateField, revalidateField, validateForm, resetValidation } = useFormValidation(form,
+    value => validateAccountForm(value, { requirePassword: !editingId.value }));
+
   const availablePromotions = computed(() => {
     const active = gymStore.activePromotions;
     if (form.id_promocion) {
@@ -92,6 +97,7 @@ export const useClientEditor = ({
   });
 
   const resetForm = () => {
+    resetValidation();
     editingId.value = "";
 
     form.nombre = "";
@@ -119,6 +125,7 @@ export const useClientEditor = ({
   };
 
   const editClient = (client) => {
+    resetValidation();
     submitError.value = "";
     editingId.value = client.id;
 
@@ -141,12 +148,13 @@ export const useClientEditor = ({
     const isNewClient = !editingId.value;
     submitError.value = "";
     try {
+      if (!validateForm()) throw new Error(Object.values(fieldErrors)[0]);
       const saved = await gymStore.upsertClient({
         id_usuario: editingId.value || undefined,
 
         nombre: form.nombre,
 
-        correo: form.correo,
+        correo: form.correo.trim().toLowerCase(),
 
         telefono: form.telefono,
 
@@ -187,6 +195,7 @@ export const useClientEditor = ({
         error instanceof Error
           ? error.message
           : "No se pudo guardar el cliente.";
+      Object.assign(fieldErrors, error?.fieldErrors || {});
       submitError.value = feedbackMessage.value;
     } finally {
       savingClient.value = false;
@@ -194,6 +203,9 @@ export const useClientEditor = ({
   };
 
   return {
+    fieldErrors,
+    validateField,
+    revalidateField,
     editingId,
     isEditorOpen,
     savingClient,

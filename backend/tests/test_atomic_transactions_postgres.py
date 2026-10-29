@@ -84,7 +84,7 @@ def service(database, monkeypatch):
 def test_sequence_permission_migration_repairs_real_insert_failure_without_granting_other_roles(database, monkeypatch):
     database.sql('revoke update on sequence public."USUARIO_id_usuario_seq" from service_role;')
     gym = service(database, monkeypatch)
-    payload = dict(nombre='Prueba visual', correo='visual@example.com', password='solo-pruebas', rol='admin')
+    payload = dict(nombre='Prueba visual', correo='visual@gmail.com', password='solo-pruebas', rol='admin')
     with pytest.raises(RuntimeError, match='permission denied for sequence'):
         gym.upsert_usuario(payload)
     assert database.rows('USUARIO') == []
@@ -138,8 +138,8 @@ def test_private_rpc_cannot_be_called_as_anon(database):
 
 def test_user_ids_survive_role_change_and_are_not_reused_after_delete(database, monkeypatch):
     gym = service(database, monkeypatch)
-    first = gym.upsert_usuario(dict(nombre='Admin', correo='admin@example.com', rol='admin', password='secret123'))
-    second = gym.upsert_usuario(dict(nombre='Trainer', correo='trainer@example.com', rol='trainer', password='secret123'))
+    first = gym.upsert_usuario(dict(nombre='Admin', correo='admin@gmail.com', rol='admin', password='secret123'))
+    second = gym.upsert_usuario(dict(nombre='Trainer', correo='trainer@gmail.com', rol='trainer', password='secret123'))
     assert (first['id_usuario'], second['id_usuario']) == ('SGADM001', 'SGTRA002')
     changed = gym.upsert_usuario({**first, 'rol': 'staff'})
     gym.repository._last_refresh_at = 0
@@ -147,7 +147,7 @@ def test_user_ids_survive_role_change_and_are_not_reused_after_delete(database, 
     assert gym.get_usuario(first['id_usuario'])['rol'] == 'staff'
     assert changed['id_usuario'] == first['id_usuario']
     gym.delete_usuario(second['id_usuario'])
-    third = gym.upsert_usuario(dict(nombre='Staff', correo='staff@example.com', rol='staff', password='secret123'))
+    third = gym.upsert_usuario(dict(nombre='Staff', correo='staff@gmail.com', rol='staff', password='secret123'))
     assert third['id_usuario'] == 'SGSTA003'
     assert {row['id_usuario'] for row in database.rows('USUARIO')} == {1, 3}
 
@@ -213,7 +213,7 @@ def test_two_instances_allocate_distinct_user_ids(database, monkeypatch):
             return super().rpc(name, body)
     first.repository.supabase, second.repository.supabase = Concurrent(), Concurrent()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        futures = [pool.submit(gym.upsert_usuario, dict(nombre=role, correo=role+'@example.com', rol=role, password='secret123'))
+        futures = [pool.submit(gym.upsert_usuario, dict(nombre=role, correo=role+'@gmail.com', rol=role, password='secret123'))
                    for gym, role in [(first, 'admin'), (second, 'trainer')]]
         users = [future.result() for future in futures]
     assert len({user['id_usuario'] for user in users}) == 2
@@ -226,8 +226,8 @@ def test_promotions_and_membership_association_survive_database_reload(database,
     promotion = gym.upsert_promocion({'nombre': 'Flash', 'tipo_descuento': 'porcentaje', 'valor_descuento': 10,
         'planes_aplicables': [1], 'activo': True, 'limite_cupos': 2, 'usos_actuales': 0,
         'icono_etiqueta': 'x', 'palabra_clave': 'FLASH'})
-    saved = gym.registrar_cliente_publico({'nombre': 'Ana', 'correo': 'ana@example.com', 'dni': '12345678',
-                                          'password': 'secret123', 'plan': 'MENSUAL'})
+    saved = gym.registrar_cliente_publico({'nombre': 'Ana', 'correo': 'ana@gmail.com', 'dni': '12345678',
+                                          'password': 'secret123', 'telefono': '987654321', 'plan': 'MENSUAL'})
     assert saved['membresia']['monto_pago'] == 71.10
     gym.repository._last_refresh_at = 0
     gym.ensure_fresh()
@@ -249,9 +249,9 @@ def test_migration_backfills_the_same_codes_for_nullable_or_padded_roles(databas
 
 def test_client_registration_date_survives_edit_and_database_reload(database, monkeypatch):
     database.sql('''insert into public."CLIENTES" (id_cliente,"Nombres","Correo","Estado","Fecha_Registro")
-                   values (1,'Ana','ana@example.com',false,'2021-02-03');''')
+                   values (1,'Ana','ana@gmail.com',false,'2021-02-03');''')
     gym = service(database, monkeypatch)
-    gym.upsert_cliente(dict(id_usuario='SGCLI001', nombre='Ana editada', correo='ana@example.com', estado='EN_TRAMITE'))
+    gym.upsert_cliente(dict(id_usuario='SGCLI001', nombre='Ana editada', correo='ana@gmail.com', estado='EN_TRAMITE'))
     gym.repository.cache.invalidate()
     assert gym.get_cliente(1)['fecha_registro'] == '2021-02-03'
     assert database.rows('CLIENTES')[0]['Fecha_Registro'] == '2021-02-03'
@@ -272,10 +272,10 @@ def test_inactive_internal_account_stays_disabled_after_database_edit(database, 
     from application.services.auth_service import AuthService
     from infrastructure.authentication import SignedSessionProvider
     database.sql('''insert into public."USUARIO" (id_usuario,codigo_usuario,"Nombre","Correo","Rol","Estado")
-                   values (1,'SGADM001','Admin','admin@example.com','admin',false);''')
+                   values (1,'SGADM001','Admin','admin@gmail.com','admin',false);''')
     gym = service(database, monkeypatch)
     gym.sessions = SignedSessionProvider()
-    gym.upsert_usuario(dict(id_usuario='SGADM001', nombre='Admin editado', correo='admin@example.com', rol='admin'))
+    gym.upsert_usuario(dict(id_usuario='SGADM001', nombre='Admin editado', correo='admin@gmail.com', rol='admin'))
     gym.repository.cache.invalidate()
     with pytest.raises(ValueError, match='inactiva'):
         AuthService(gym).user_from_payload({'sub': 'SGADM001'})

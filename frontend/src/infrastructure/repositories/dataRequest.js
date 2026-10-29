@@ -8,7 +8,8 @@ export const dataRequest = async (http, url, options = {}, token = '') => {
       ...options,
       headers: http.authHeaders(token),
     });
-  } catch {
+  } catch (error) {
+    if (error?.code) throw error;
     throw new Error('No se pudo contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.');
   }
   if (!response.ok) throw await parseError(response);
@@ -16,5 +17,9 @@ export const dataRequest = async (http, url, options = {}, token = '') => {
   if (!(response.headers.get('content-type') || '').includes('application/json')) {
     throw new Error('El servidor no devolvió los datos esperados. Inténtalo de nuevo.');
   }
-  return response.json();
+  try {
+    return await response.json();
+  } catch {
+    throw new Error('El servidor devolvió datos inválidos. Actualiza la vista antes de repetir la operación.');
+  }
 };

@@ -142,16 +142,12 @@
           <span class="inv-label" :class="{ 'inv-required': stockEditable }">{{
             stockEditable ? "Stock inicial en Tienda" : "Stock en Tienda"
           }}</span>
-          <input
+          <QuantityInput
             v-if="stockEditable"
-            :value="form.cantidad"
-            type="text"
-            inputmode="numeric"
+            v-model="form.cantidad"
             class="field-input"
             :class="{ 'is-invalid': formErrors.includes('Stock inicial') }"
             placeholder="0"
-            @beforeinput="blockStockChars"
-            @input="cleanStock($event, 'cantidad')"
           />
           <input
             v-else
@@ -163,18 +159,14 @@
         </label>
         <label class="space-y-2">
           <span class="inv-label">Stock minimo</span>
-          <input
-            :value="form.minimo"
-            type="text"
-            inputmode="numeric"
+          <QuantityInput
+            v-model="form.minimo"
             class="field-input"
-            @beforeinput="blockStockChars"
-            @input="cleanStock($event, 'minimo')"
           />
           <p v-if="warnings.stock" class="inv-field-error">{{ warnings.stock }}</p>
         </label>
 
-        <div class="inv-info sm:col-span-2">
+        <div class="app-notice app-notice--info inv-info sm:col-span-2">
           <Info :size="16" aria-hidden="true" />
           <div>
             <p v-if="stockEditable">
@@ -331,9 +323,7 @@
             v-if="imageFeedback"
             class="rounded-xl border px-3 py-2 text-xs"
             :class="
-              imageFeedbackTone === 'error'
-                ? 'border-rose-400/20 bg-rose-400/10 text-rose-200'
-                : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
+              feedbackClass(imageFeedbackTone)
             "
           >
             {{ imageFeedback }}
@@ -377,6 +367,8 @@
 </template>
 
 <script setup>
+import QuantityInput from "../QuantityInput.vue";
+import { feedbackClass } from "../../utils/feedback.js";
 import { reactive } from "vue";
 import {
   AlertCircle,
@@ -391,10 +383,9 @@ import {
 } from "lucide-vue-next";
 import ResourceModal from "../ResourceModal.vue";
 import ExtensibleSelect from "../common/ExtensibleSelect.vue";
-import { blockNonDecimal, blockNonInteger, blockSpecialChars } from "../../utils/inputGuards.js";
+import { blockNonDecimal, blockSpecialChars } from "../../utils/inputGuards.js";
 import {
   cleanDecimal,
-  cleanInteger,
   cleanText,
   missingFieldsMessage,
   NAME_MAX_LENGTH,
@@ -437,7 +428,6 @@ const props = defineProps([
 const warnings = reactive({ nombre: "", precio: "", stock: "" });
 const blockNameChars = blockSpecialChars((message) => { warnings.nombre = message; });
 const blockPriceChars = blockNonDecimal((message) => { warnings.precio = message; });
-const blockStockChars = blockNonInteger((message) => { warnings.stock = message; });
 
 const cleanName = (event) => {
   const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
@@ -453,12 +443,6 @@ const cleanPrice = (event) => {
   warnings.precio = "";
 };
 
-const cleanStock = (event, key) => {
-  const value = cleanInteger(event.target.value);
-  if (value !== event.target.value) event.target.value = value;
-  props.form[key] = value === "" ? "" : Number(value);
-  warnings.stock = "";
-};
 </script>
 
 <style scoped src="../../styles/store-view.css"></style>

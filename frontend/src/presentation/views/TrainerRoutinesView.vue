@@ -108,7 +108,7 @@
           <!-- Buscador -->
           <div class="relative w-full sm:w-64">
             <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-            <input v-model="searchQuery" type="text" placeholder="Buscar por nombre, zona o ejercicio..." class="field-input search-input text-xs pr-4 py-2.5" />
+            <SearchInput v-model="searchQuery" placeholder="Buscar por nombre, zona o ejercicio..." class="field-input search-input text-xs pr-4 py-2.5" />
           </div>
         </div>
       </div>
@@ -244,9 +244,9 @@
           </div>
 
           <!-- Aviso de edición -->
-          <div v-if="routineForm.id_rutina" class="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-50">
+          <div v-if="routineForm.id_rutina" class="rounded-2xl border border-orange-400/30 bg-orange-400/10 px-4 py-3 text-xs text-orange-50">
             <p class="font-bold">Editando: {{ editingName || 'Rutina' }}</p>
-            <p v-if="editingAssignedCount > 0" class="mt-1 text-amber-100/80">
+            <p v-if="editingAssignedCount > 0" class="mt-1 text-orange-100/80">
               Esta rutina está asignada a {{ editingAssignedCount }} {{ editingAssignedCount === 1 ? 'cliente' : 'clientes' }}. Los cambios los afectarán.
             </p>
           </div>
@@ -479,6 +479,7 @@
 </template>
 
 <script setup>
+import SearchInput from "../components/SearchInput.vue";
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useGymStore } from '../../application/stores/gymStore';
 

@@ -1,5 +1,6 @@
 import { APP_CONFIG } from "../config/appConfig";
 import { parseError, parseResponse } from "./apiResponse.js";
+import { fetchWithTimeout } from "./httpTransport.js";
 
 export const createApiClient = (config = APP_CONFIG) => {
   /**
@@ -34,21 +35,15 @@ export const createApiClient = (config = APP_CONFIG) => {
 
   const request = async (path, options = {}, token = "") => {
     const { errorMessage, ...fetchOptions } = options;
-    let response;
-    try {
-      response = await fetch(buildUrl(path), {
-        ...fetchOptions,
-        headers: buildHeaders(token, fetchOptions.headers),
-      });
-    } catch {
-      throw new Error(
-        "No se pudo contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      );
-    }
+    const response = await fetchWithTimeout(buildUrl(path), {
+      ...fetchOptions,
+      headers: buildHeaders(token, fetchOptions.headers),
+    }, config.requestTimeoutMs);
 
     if (!response.ok) {
-      if (errorMessage) throw new Error(errorMessage);
-      throw await parseError(response);
+      const error = await parseError(response);
+      if (errorMessage) error.message = errorMessage;
+      throw error;
     }
 
     if (
@@ -71,7 +66,7 @@ export const createApiClient = (config = APP_CONFIG) => {
     request(path, { method: "DELETE" }, token);
 
   // Compatibilidad con operaciones que necesitan inspeccionar el estado HTTP.
-  const rawRequest = (url, options) => fetch(url, options);
+  const rawRequest = (url, options) => fetchWithTimeout(url, options, config.requestTimeoutMs);
   const authHeaders = (token = "") => buildHeaders(token);
 
   return {

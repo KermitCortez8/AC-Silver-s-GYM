@@ -91,7 +91,7 @@ def test_client_registration_uses_injected_repository_and_hasher():
     repository = RecordingRepository()
     service = GymService(repository, FakePasswords())
     result = ClientsService(service).register_admin_client({
-        "nombre": "Ana", "correo": "ana@example.com", "dni": "12345678",
+        "nombre": "Ana", "correo": "ana@gmail.com", "dni": "12345678",
         "password": "secreto123", "plan": "MENSUAL",
     })
     assert repository.writes == 1

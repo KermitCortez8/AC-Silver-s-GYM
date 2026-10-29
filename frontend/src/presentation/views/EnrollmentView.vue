@@ -39,10 +39,10 @@
       </div>
     </header>
 
-    <section v-if="isAdminUser" class="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4">
+    <section v-if="isAdminUser" class="rounded-2xl border border-orange-400/20 bg-orange-400/5 p-4">
       <form class="flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="loadAdminClient">
         <label class="flex-1 space-y-1.5">
-          <span class="text-xs font-bold uppercase tracking-wider text-amber-200">Cliente por DNI</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-orange-200">Cliente por DNI</span>
           <input
             v-model="dniSearch"
             inputmode="numeric"
@@ -53,7 +53,7 @@
         </label>
         <button
           type="submit"
-          class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-amber-300 disabled:cursor-wait disabled:opacity-60"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-orange-300 disabled:cursor-wait disabled:opacity-60"
           :disabled="isSearchingClient"
         >
           <Search class="h-4 w-4" />
@@ -169,7 +169,7 @@
                   <span class="text-xs font-bold text-slate-400">Buscar</span>
                   <div class="relative">
                     <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                    <input v-model="searchQuery" class="field-input pl-9" placeholder="Ejercicio, servicio u hora" />
+                    <SearchInput v-model="searchQuery" class="field-input pl-9" placeholder="Ejercicio, servicio u hora" />
                   </div>
                 </label>
                 <label class="space-y-1.5">
@@ -277,6 +277,8 @@
 </template>
 
 <script setup>
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
+import SearchInput from "../components/SearchInput.vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   AlertCircle,
@@ -458,11 +460,7 @@ const ownCalendarTitle = computed(() => {
   if (isAdminUser.value && !selectedClient.value) return 'Horario del cliente';
   return currentClient.value?.name ? `Horario de ${currentClient.value.name}` : 'Mi horario';
 });
-const feedbackClass = computed(() =>
-  feedbackTone.value === 'error'
-    ? 'border-rose-400/25 bg-rose-400/10 text-rose-100'
-    : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100',
-);
+const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 
 const setFeedback = (message, tone = 'success') => {
   feedback.value = message;

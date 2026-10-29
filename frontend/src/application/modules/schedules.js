@@ -1,3 +1,4 @@
+import { requireList, requireRecord } from '../services/responseValidation.js';
 import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
 /** Estado y operaciones del módulo schedules. */
@@ -16,6 +17,7 @@ export const createSchedulesModule = (ctx, repository) => {
 
     if (ctx.apiBase) {
       const saved = await remote.upsertRutina(rutina);
+      requireRecord(saved, 'id_rutina');
       const normalized = {
         id_rutina: saved.id_rutina,
         servicio: saved.servicio || rutina.servicio,
@@ -59,6 +61,7 @@ export const createSchedulesModule = (ctx, repository) => {
 
     if (ctx.apiBase) {
       const saved = await remote.upsertHorario(scheduleItem);
+      requireRecord(saved, 'id_horario');
       const normalized = {
         id_horario: saved.id_horario,
         id_cliente: saved.id_cliente,
@@ -159,14 +162,14 @@ export const createSchedulesModule = (ctx, repository) => {
 
     const response = await remote.refreshServiceSchedulesFromBackend();
 
-    ctx.serviceSchedules.value = response;
+    ctx.serviceSchedules.value = requireList(response, 'id_horario_servicio');
     return ctx.serviceSchedules.value;
   };
 
   const refreshRoutinesFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const list = await remote.refreshRoutinesFromBackend();
+    const list = requireList(await remote.refreshRoutinesFromBackend(), 'id_rutina');
     ctx.routines.value = list.map((r) => ({
       id_rutina: r.id_rutina,
       servicio: r.servicio || 'fitness',
@@ -186,7 +189,7 @@ export const createSchedulesModule = (ctx, repository) => {
       hora_fin: payload.hora_fin || '07:00',
       codigo_dia: payload.codigo_dia || '',
       dia: payload.dia || (Array.isArray(payload.dias) ? payload.dias[0] : 'lunes'),
-      cupos: Number(payload.cupos || 10),
+      cupos: Number(payload.cupos ?? 10),
       activo: payload.activo !== false,
     };
     if (!body.id_rutina) {
@@ -195,6 +198,7 @@ export const createSchedulesModule = (ctx, repository) => {
 
     if (ctx.apiBase) {
       const saved = await remote.upsertServiceSchedule(body);
+      requireRecord(saved, 'id_horario_servicio');
       const index = ctx.serviceSchedules.value.findIndex((entry) => Number(entry.id_horario_servicio) === Number(saved.id_horario_servicio));
       if (index >= 0) {
         ctx.serviceSchedules.value[index] = saved;
@@ -228,7 +232,7 @@ export const createSchedulesModule = (ctx, repository) => {
   const refreshScheduleClientsFromBackend = async () => {
     const isClient = (ctx.authStore.userRole || ctx.authStore.user?.role) === 'user';
     const data = await remote.loadClients(isClient);
-    ctx.members.value = (isClient ? [data] : data).map(normalizeBackendClientToMember);
+    ctx.members.value = requireList(isClient ? [data] : data).map(normalizeBackendClientToMember);
     return ctx.members.value;
   };
 
@@ -239,7 +243,7 @@ export const createSchedulesModule = (ctx, repository) => {
     /**
      * Gestiona esta acción de la vista.
      */
-    const list = (response).map((entry) => ({
+    const list = requireList(response, 'id_matricula').map((entry) => ({
       ...entry,
       estado: String(entry.estado || 'ACTIVA').toUpperCase(),
     }));
@@ -269,7 +273,7 @@ export const createSchedulesModule = (ctx, repository) => {
       await ctx.trainerOverviewCache.load(scope, 'overview', async () => {
         const data = await remote.fetchTrainerOverview();
         if (generation !== ctx.generation || scope !== `${ctx.authStore.token}|${ctx.authStore.userRole}`) throw new Error('La sesión ha cambiado.');
-        ctx.trainerOverview.value = data;
+        ctx.trainerOverview.value = requireRecord(data);
       }, { force });
       return ctx.trainerOverview.value;
     } finally {
@@ -291,6 +295,7 @@ export const createSchedulesModule = (ctx, repository) => {
       ejercicios: Array.isArray(payload.ejercicios) ? payload.ejercicios : [],
     };
     const saved = await remote.upsertTrainerRoutine(body);
+    requireRecord(saved, 'id_rutina');
     const normalized = {
       id_rutina: saved.id_rutina,
       servicio: saved.servicio || body.servicio,
@@ -308,6 +313,7 @@ export const createSchedulesModule = (ctx, repository) => {
   const assignTrainerRoutine = async (idMatricula, idRutina) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const saved = await remote.assignTrainerRoutine(idMatricula, idRutina);
+    requireRecord(saved, 'id_matricula');
     const index = ctx.enrollments.value.findIndex((entry) => Number(entry.id_matricula) === Number(saved.id_matricula));
     if (index >= 0) ctx.enrollments.value[index] = { ...ctx.enrollments.value[index], ...saved };
     else ctx.enrollments.value.unshift(saved);
@@ -321,7 +327,7 @@ export const createSchedulesModule = (ctx, repository) => {
     try {
       ctx.activeSyncs += 1;
       ctx.isSyncing.value = true;
-      return await remote.fetchTrainerClientRoutines(String(dni || '').trim());
+      return requireRecord(await remote.fetchTrainerClientRoutines(String(dni || '').trim()));
     } finally {
       if (generation === ctx.generation) {
         ctx.activeSyncs -= 1;
@@ -339,12 +345,12 @@ export const createSchedulesModule = (ctx, repository) => {
       id_usuario: getCurrentRegistrarId(ctx.authStore) || undefined,
       ejercicios_detalle: Array.isArray(payload.ejercicios_detalle) ? payload.ejercicios_detalle : [],
     };
-    return await remote.markTrainerRoutineProgress(idMatricula, body);
+    return requireRecord(await remote.markTrainerRoutineProgress(idMatricula, body), 'id_progreso');
   };
 
   const enrollSchedule = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const savedResponse = await remote.enrollSchedule(payload);
+    const savedResponse = requireRecord(await remote.enrollSchedule(payload), 'id_matricula');
     const saved = {
       ...savedResponse,
       estado: String(savedResponse.estado || 'ACTIVA').toUpperCase(),

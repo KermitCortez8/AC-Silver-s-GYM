@@ -6,7 +6,7 @@
         <h2 class="mt-2 text-2xl font-black text-white">Movimientos de inventario</h2>
         <p class="mt-1 text-sm text-slate-400">Entradas, salidas y ajustes del stock de cada articulo.</p>
       </div>
-      <button type="button" class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] hover:bg-amber-300" @click="openNew">
+      <button type="button" class="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.02] hover:bg-orange-300" @click="openNew">
         + Registrar movimiento
       </button>
     </div>
@@ -171,15 +171,11 @@
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2">
             <span class="inv-label inv-required">{{ form.tipo_movimiento === 'ajuste' ? 'Stock exacto' : 'Cantidad' }}</span>
-            <input
-              v-model.number="form.cantidad"
-              type="text"
-              inputmode="numeric"
+            <QuantityInput
+              v-model="form.cantidad"
               class="field-input"
               :class="{ 'is-invalid': formErrors.includes('Cantidad') }"
               :disabled="lockedByOrder"
-              @beforeinput="blockQuantityChars"
-              @input="cleanQuantity"
             />
             <p v-if="quantityWarning" class="inv-field-error">{{ quantityWarning }}</p>
           </label>
@@ -238,6 +234,9 @@
 </template>
 
 <script setup>
+import QuantityInput from "../QuantityInput.vue";
+import { feedbackClass as noticeClassFor } from "../../utils/feedback.js";
+import { parseQuantity } from '../../../domain/utils/quantities.js';
 import { limaDate } from '../../../domain/utils/dates.js';
 import { computed, reactive, ref } from 'vue';
 import { AlertCircle, ArrowDownToLine, ArrowLeftRight, ArrowRight, ArrowUpFromLine, CalendarDays, Equal, Info, Package, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
@@ -245,8 +244,7 @@ import ResourceModal from '../ResourceModal.vue';
 import SortableTh from '../common/SortableTh.vue';
 import TablePager from '../common/TablePager.vue';
 import TableSearch from '../common/TableSearch.vue';
-import { blockNonInteger } from '../../utils/inputGuards.js';
-import { cleanInteger, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, sortRows } from '../../../domain/utils/inputRules.js';
+import { DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, sortRows } from '../../../domain/utils/inputRules.js';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { useGymStore } from '../../../application/stores/gymStore';
 
@@ -275,9 +273,7 @@ const editingMovement = ref(null);
 const inventory = computed(() => gymStore.inventory);
 const products = computed(() => gymStore.productos_tienda || []);
 const movements = computed(() => gymStore.inventoryMovements || []);
-const feedbackClass = computed(() => feedbackTone.value === 'error'
-  ? 'border-rose-400/20 bg-rose-400/10 text-rose-50'
-  : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
+const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 const today = () => limaDate();
 const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, destino: '', fecha_movimiento: today(), descripcion: '' });
 const form = reactive(emptyForm());
@@ -387,14 +383,6 @@ const pagedMovements = computed(() => {
 // Validacion del formulario: campos obligatorios y cantidad entera.
 const formErrors = ref([]);
 const quantityWarning = ref('');
-const blockQuantityChars = blockNonInteger((message) => { quantityWarning.value = message; });
-const cleanQuantity = (event) => {
-  const value = cleanInteger(event.target.value);
-  if (value !== event.target.value) event.target.value = value;
-  form.cantidad = value === '' ? '' : Number(value);
-  quantityWarning.value = '';
-  formErrors.value = formErrors.value.filter((label) => label !== 'Cantidad');
-};
 
 /**
  * Abre el modal para registrar un movimiento nuevo.
@@ -437,13 +425,19 @@ const closeModal = () => {
  * Gestiona esta acción de la vista.
  */
 const save = async () => {
+  if (isSaving.value) return;
   modalError.value = '';
   formErrors.value = missingFields(form, [
     { key: 'id_item', label: 'Articulo', isEmpty: (value) => !Number(value) },
     { key: 'cantidad', label: 'Cantidad', isEmpty: (value) => !(Number(value) >= 1) },
   ]);
-  if (formErrors.value.length) return;
+  if (formErrors.value.length) {
+    modalError.value = missingFieldsMessage(formErrors.value);
+    return;
+  }
   try {
+    const cantidad = lockedByOrder.value ? undefined : parseQuantity(form.cantidad, { min: 1 });
+    if (!form.id_item) throw new Error('Selecciona un articulo de inventario.');
     if (!lockedByOrder.value && projectedStock.value < 0) throw new Error('No hay stock suficiente en Inventario para este movimiento.');
     if (!lockedByOrder.value && projectedStoreStock.value < 0) throw new Error('La Tienda ya vendio esas unidades; no puedes reducir la reposicion.');
     const destino = form.tipo_movimiento === 'salida' ? form.destino : '';
@@ -451,12 +445,13 @@ const save = async () => {
     if (editingMovement.value) {
       const payload = lockedByOrder.value
         ? { fecha_movimiento: form.fecha_movimiento, descripcion: form.descripcion }
-        : { ...form, destino };
+        : { ...form, cantidad, destino };
       await gymStore.updateInventoryMovement(editingMovement.value.id_mov, payload);
       feedback.value = 'Movimiento actualizado y stock recalculado.';
     } else {
       await gymStore.registrarMovimientoToServer({
         ...form,
+        cantidad,
         destino: destino || null,
         id_usuario: authStore.user?.id_usuario || authStore.user?.id || 1,
       });

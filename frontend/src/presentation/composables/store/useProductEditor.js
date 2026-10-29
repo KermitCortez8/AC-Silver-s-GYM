@@ -1,6 +1,8 @@
+import { amountError, requiredTextError } from "../../../domain/utils/formValidation.js";
+import { parseQuantity } from "../../../domain/utils/quantities.js";
 import { computed, reactive, ref } from "vue";
 import { useStoreImagePicker } from "./useStoreImagePicker.js";
-import { missingFields } from "../../../domain/utils/inputRules.js";
+import { missingFields, missingFieldsMessage } from "../../../domain/utils/inputRules.js";
 
 const isBlank = (value) => String(value ?? "").trim() === "";
 // Obligatorios del TP2: nombre, categoria, precio y stock inicial (solo al crear).
@@ -154,10 +156,16 @@ export const useProductEditor = ({
   const handleSubmit = async () => {
     if (isSaving.value || isUploadingImage.value) return;
     formErrors.value = missingFields(form, requiredProductFields(!editingId.value));
-    if (formErrors.value.length) return;
+    if (formErrors.value.length) {
+      feedbackTone.value = "error";
+      feedbackMessage.value = missingFieldsMessage(formErrors.value);
+      return;
+    }
     isSaving.value = true;
     feedbackMessage.value = "";
     try {
+      const invalid = requiredTextError(form.nombre, 'El nombre del producto') || amountError(form.precio);
+      if (invalid) throw new Error(invalid);
       await gymStore.upsertProductoTienda({
         id_producto: editingId.value || undefined,
         nombre: String(form.nombre).trim(),
@@ -166,8 +174,8 @@ export const useProductEditor = ({
         id_item: form.id_item || null,
         unidad_venta: form.unidad_venta,
         precio: Number(form.precio),
-        cantidad: Number(form.cantidad || 0),
-        minimo: Number(form.minimo || 0),
+        cantidad: parseQuantity(form.cantidad, { label: "El stock inicial" }),
+        minimo: parseQuantity(form.minimo, { label: "El stock mínimo" }),
         estado: form.estado,
         imagen_url: form.imagen_url,
       });

@@ -3,12 +3,12 @@
     <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p class="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Recursos &middot; Gestion de inventario</p>
+          <p class="text-xs font-bold uppercase tracking-[0.3em] text-orange-300">Recursos &middot; Gestion de inventario</p>
           <h1 class="mt-2 text-3xl font-black text-white">Inventario</h1>
           <p class="mt-2 text-slate-300">Controla stock, ubicacion, estado operativo y observaciones de cada recurso del gimnasio.</p>
         </div>
 
-        <button v-if="activeTab === 'articulos'" class="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] hover:bg-amber-300" @click="openNewItem">
+        <button v-if="activeTab === 'articulos'" class="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.02] hover:bg-orange-300" @click="openNewItem">
           + Ingresar Nuevo Articulo
         </button>
       </div>
@@ -19,14 +19,14 @@
           :key="tab.value"
           type="button"
           class="relative px-5 py-3 text-sm font-bold transition-colors duration-200"
-          :class="activeTab === tab.value ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'"
+          :class="activeTab === tab.value ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200'"
           :aria-current="activeTab === tab.value ? 'page' : undefined"
           @click="activeTab = tab.value"
         >
           {{ tab.label }}
           <span
             v-if="activeTab === tab.value"
-            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-amber-400"
+            class="absolute bottom-0 left-0 h-0.5 w-full rounded-full bg-orange-400"
           ></span>
         </button>
       </nav>
@@ -63,13 +63,13 @@
         </div>
         <button
           type="button"
-          class="flex items-center gap-3 rounded-2xl border-l-4 border-l-yellow-400 bg-slate-900/80 px-4 py-3 text-left transition hover:bg-slate-800/80"
-          :class="isLowStockFilter ? 'ring-2 ring-yellow-400/70' : ''"
+          class="flex items-center gap-3 rounded-2xl border-l-4 border-l-orange-400 bg-slate-900/80 px-4 py-3 text-left transition hover:bg-slate-800/80"
+          :class="isLowStockFilter ? 'ring-2 ring-orange-400/70' : ''"
           :aria-pressed="isLowStockFilter"
           :title="isLowStockFilter ? 'Quitar filtro de stock minimo' : 'Ver solo articulos en su stock minimo o por debajo'"
           @click="toggleLowStockFilter"
         >
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
             <TrendingDown :size="20" stroke-width="2.5" />
           </span>
           <div>
@@ -92,7 +92,7 @@
         <button
           type="button"
           class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
-          :class="selectedCategory === 'all' ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
+          :class="selectedCategory === 'all' ? 'border-orange-400 bg-orange-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
           @click="selectedCategory = 'all'; paginaActual = 1"
         >
           Todas las categorias <span :class="selectedCategory === 'all' ? 'text-slate-900/70' : 'text-slate-500'">{{ inventory.length }}</span>
@@ -102,7 +102,7 @@
           :key="entry.name"
           type="button"
           class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition"
-          :class="selectedCategory === entry.name ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
+          :class="selectedCategory === entry.name ? 'border-orange-400 bg-orange-400 text-slate-950' : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'"
           @click="selectedCategory = entry.name; paginaActual = 1"
         >
           <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ background: categoryDotColor(entry.name) }"></span>
@@ -113,8 +113,8 @@
       <div class="mt-4 grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr]">
         <TableSearch
           v-model="searchQuery"
-          label="Buscar articulos por N° o nombre"
-          placeholder="Buscar por N° de articulo o nombre"
+          label="Buscar articulos por N°, nombre o categoria"
+          placeholder="Buscar por N°, nombre o categoria"
           @update:model-value="paginaActual = 1"
         />
         <select v-model="selectedLocation" class="field-input" aria-label="Filtrar por ubicacion" @change="paginaActual = 1">
@@ -222,6 +222,7 @@
       :title="editingId ? 'Editar articulo' : 'Nuevo articulo'"
       :subtitle="editingId ? `N° de articulo ${currentInventoryCode}` : 'Los campos con * son obligatorios.'"
       size="xl"
+      :busy="isSaving"
       @close="closeEditor"
       @submit="handleSubmit"
     >
@@ -264,7 +265,7 @@
             <ExtensibleSelect
               id="inv-location"
               v-model="form.location"
-              :options="locationChoices"
+              :options="editorLocationOptions"
               placeholder="Selecciona una ubicacion"
               add-label="Agregar nueva ubicacion"
               add-placeholder="Ej. Sala 3"
@@ -280,19 +281,15 @@
           <div class="space-y-2">
             <label for="inv-quantity" class="inv-label" :class="{ 'inv-required': !editingId }">{{ editingId ? 'Stock actual' : 'Stock inicial' }}</label>
             <div v-if="!editingId" class="flex items-center gap-2">
-              <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" aria-label="Restar una unidad" @click="form.quantity = Math.max(0, Number(form.quantity || 0) - 1)">−</button>
-              <input
+              <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" aria-label="Restar una unidad" @click="stepQuantity(-1)" :disabled="isSaving">−</button>
+              <QuantityInput
                 id="inv-quantity"
-                v-model.number="form.quantity"
-                type="text"
-                inputmode="numeric"
+                v-model="form.quantity"
                 class="field-input flex-1 text-center"
                 :class="{ 'is-invalid': formErrors.includes('Stock inicial') }"
                 placeholder="0"
-                @beforeinput="blockQuantityChars"
-                @input="cleanIntegerField($event, 'quantity')"
               />
-              <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" aria-label="Sumar una unidad" @click="form.quantity = Number(form.quantity || 0) + 1">+</button>
+              <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" aria-label="Sumar una unidad" @click="stepQuantity(1)" :disabled="isSaving">+</button>
             </div>
             <input v-else id="inv-quantity" :value="form.quantity" type="text" class="field-input cursor-not-allowed text-center opacity-70" readonly />
             <p v-if="numberWarning.quantity" class="inv-field-error">{{ numberWarning.quantity }}</p>
@@ -302,14 +299,10 @@
               <span class="inv-label">Stock minimo</span>
               <span v-if="Number(form.quantity || 0) <= Number(form.minQuantity || 0)" class="rounded-full border border-yellow-400/40 bg-yellow-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-yellow-800">Alerta activa</span>
             </label>
-            <input
+            <QuantityInput
               id="inv-min"
-              v-model.number="form.minQuantity"
-              type="text"
-              inputmode="numeric"
+              v-model="form.minQuantity"
               class="field-input"
-              @beforeinput="blockMinChars"
-              @input="cleanIntegerField($event, 'minQuantity')"
             />
             <p v-if="numberWarning.minQuantity" class="inv-field-error">{{ numberWarning.minQuantity }}</p>
           </div>
@@ -380,10 +373,12 @@
         </div>
       </fieldset>
 
+      <p v-if="editorError" role="alert" class="app-notice app-notice--error rounded-2xl border px-4 py-3 text-sm">{{ editorError }}</p>
+
       <template #footer>
-        <button type="button" class="rm-btn-secondary" @click="closeEditor">Cancelar</button>
-        <button type="submit" class="rounded-2xl bg-amber-400 px-5 py-3 text-base font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300">
-          {{ editingId ? 'Guardar cambios' : 'Agregar articulo' }}
+        <button type="button" class="rm-btn-secondary" :disabled="isSaving" @click="closeEditor">Cancelar</button>
+        <button type="submit" :disabled="isSaving" class="rounded-2xl bg-amber-400 px-5 py-3 text-base font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300">
+          {{ isSaving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Agregar articulo' }}
         </button>
       </template>
     </ResourceModal>
@@ -454,7 +449,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import QuantityInput from "../components/QuantityInput.vue";
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { AlertCircle, Boxes, CheckCircle2, ClipboardCheck, Eye, History, Info, Package, TrendingDown, Wrench } from 'lucide-vue-next';
 import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
@@ -463,9 +460,8 @@ import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
 import SortableTh from '../components/common/SortableTh.vue';
 import TablePager from '../components/common/TablePager.vue';
 import TableSearch from '../components/common/TableSearch.vue';
-import { blockNonInteger, blockSpecialChars } from '../utils/inputGuards.js';
+import { blockSpecialChars } from '../utils/inputGuards.js';
 import {
-  cleanInteger,
   cleanText,
   DEFAULT_PAGE_SIZE,
   matchesSearch,
@@ -473,9 +469,11 @@ import {
   missingFieldsMessage,
   NAME_MAX_LENGTH,
   sortRows,
-  uniqueOptions,
 } from '../../domain/utils/inputRules.js';
 import { useGymStore } from '../../application/stores/gymStore';
+
+import { parseQuantity, MAX_QUANTITY } from '../../domain/utils/quantities.js';
+import { INVENTORY_CATEGORIES, INVENTORY_LOCATIONS, INVENTORY_UNITS, inventoryOptions } from '../utils/inventoryOptions.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -495,7 +493,6 @@ const lowStock = computed(() => inventory.value.filter(isLowStockAlert));
 const maintenanceItems = computed(() => inventory.value.filter((item) => item.status === 'En mantenimiento').length);
 
 // Unidades sugeridas por el TP2; se suman las que ya existen en la base.
-const BASE_UNITS = ['Unidad', 'Paquete', 'Docena', 'Caja', 'Combo'];
 const DEFAULT_MIN_QUANTITY = 10;
 
 // Filtros de la tabla (solo lectura, no afectan el store).
@@ -521,13 +518,11 @@ const locationOptions = computed(() => {
   const set = new Set(inventory.value.map((item) => item.location).filter(Boolean));
   return Array.from(set);
 });
-const categoryOptions = computed(() => uniqueOptions('Tienda', inventory.value.map((item) => item.category)));
-const locationChoices = computed(() => uniqueOptions('Recepcion', locationOptions.value));
-const unitOptions = computed(() => uniqueOptions(BASE_UNITS, inventory.value.map((item) => item.unidad_venta)));
+const locationChoices = computed(() => inventoryOptions(INVENTORY_LOCATIONS, locationOptions.value, form.location));
 
-// El buscador solo mira el N° de articulo y el nombre.
+// Buscar por codigo, nombre o categoria, conservando los filtros de la tabla.
 const filteredInventory = computed(() => inventory.value.filter((item) => {
-  const matchesQuery = matchesSearch(searchQuery.value, [item.inventoryCode, item.name]);
+  const matchesQuery = matchesSearch(searchQuery.value, [item.inventoryCode, item.name, item.category]);
   const matchesCategory = selectedCategory.value === 'all' || (item.category || 'General') === selectedCategory.value;
   const matchesLocation = selectedLocation.value === 'all' || item.location === selectedLocation.value;
   const matchesStatus = selectedStatus.value === 'all' || item.status === selectedStatus.value;
@@ -557,7 +552,11 @@ const sortedInventory = computed(() => {
 const paginaActual = ref(1);
 const porPagina = ref(DEFAULT_PAGE_SIZE);
 const paginaInicio = computed(() => (paginaActual.value - 1) * porPagina.value);
+const totalPages = computed(() => Math.max(1, Math.ceil(sortedInventory.value.length / porPagina.value)));
 const inventoryPaginado = computed(() => sortedInventory.value.slice(paginaInicio.value, paginaInicio.value + porPagina.value));
+
+watch([searchQuery, selectedCategory, selectedLocation, selectedStatus], () => { paginaActual.value = 1; });
+watch(totalPages, (pages) => { paginaActual.value = Math.max(1, Math.min(paginaActual.value, pages)); });
 
 // Derivados de inventory, solo lectura.
 const operationalPercent = computed(() => {
@@ -575,6 +574,8 @@ const categorySummary = computed(() => {
 });
 const editingId = ref('');
 const isEditorOpen = ref(false);
+const isSaving = ref(false);
+const editorError = ref('');
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
 const formErrors = ref([]);
@@ -593,6 +594,16 @@ const form = reactive({
   observations: '',
 });
 
+const categoryOptions = computed(() => inventoryOptions(INVENTORY_CATEGORIES, inventory.value.map(item => item.category), form.category));
+const editorLocationOptions = computed(() => inventoryOptions(INVENTORY_LOCATIONS, inventory.value.map(item => item.location), form.location));
+const unitOptions = computed(() => inventoryOptions(INVENTORY_UNITS, inventory.value.map(item => item.unidad_venta), form.unidad_venta));
+const stepQuantity = (delta) => {
+  try {
+    form.quantity = Math.min(MAX_QUANTITY, Math.max(0, parseQuantity(form.quantity) + delta));
+    editorError.value = '';
+  } catch (error) { editorError.value = error.message; }
+};
+
 const isTiendaForm = computed(() => String(form.category || '').trim().toLowerCase() === 'tienda');
 // En articulos de Tienda el estado lo calcula el backend; solo se marca o desmarca Descontinuado.
 const isDiscontinuedForm = computed({
@@ -605,11 +616,7 @@ const statusPreview = computed(() => {
   return editingId.value && current && current !== 'Descontinuado' ? current : 'Automatico';
 });
 
-const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50';
-  if (feedbackTone.value === 'error') return 'border-rose-400/20 bg-rose-400/10 text-rose-50';
-  return 'border-sky-400/20 bg-sky-400/10 text-sky-50';
-});
+const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
 
 /**
  * Valida los datos recibidos.
@@ -643,7 +650,7 @@ const inventoryStatusClass = (status) => {
   if (status === 'Operativo') return 'bg-green-100 text-green-700 border-green-300';
   if (status === 'Disponible') return 'bg-blue-100 text-blue-700 border-blue-300';
   if (status === 'En mantenimiento') return 'bg-violet-100 text-violet-700 border-violet-300';
-  if (status === 'Stock bajo') return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+  if (status === 'Stock bajo') return 'bg-orange-100 text-orange-800 border-orange-300';
   if (status === 'Agotado') return 'bg-rose-100 text-rose-700 border-rose-300';
   if (status === 'Descontinuado') return 'bg-slate-300 text-slate-600 border-slate-400 line-through';
   return 'bg-slate-200 text-slate-700 border-slate-300';
@@ -659,8 +666,6 @@ const currentInventoryCode = computed(() => {
 
 // Bloqueo al escribir: nombre sin caracteres especiales y stock solo con enteros.
 const blockNameChars = blockSpecialChars((message) => { nameWarning.value = message; });
-const blockQuantityChars = blockNonInteger((message) => { numberWarning.quantity = message; });
-const blockMinChars = blockNonInteger((message) => { numberWarning.minQuantity = message; });
 
 const cleanNameField = (event) => {
   const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
@@ -670,14 +675,6 @@ const cleanNameField = (event) => {
   }
   nameWarning.value = rejected ? 'Sin caracteres especiales: solo letras, numeros y espacios.' : '';
   formErrors.value = formErrors.value.filter((label) => label !== 'Nombre');
-};
-
-const cleanIntegerField = (event, key) => {
-  const value = cleanInteger(event.target.value);
-  if (value !== event.target.value) event.target.value = value;
-  form[key] = value === '' ? '' : Number(value);
-  numberWarning[key] = '';
-  if (key === 'quantity') formErrors.value = formErrors.value.filter((label) => label !== 'Stock inicial');
 };
 
 const clearFormWarnings = () => {
@@ -709,6 +706,7 @@ const resetForm = () => {
  */
 const openNewItem = () => {
   resetForm();
+  editorError.value = '';
   feedbackMessage.value = '';
   isEditorOpen.value = true;
 };
@@ -717,6 +715,8 @@ const openNewItem = () => {
  * Gestiona esta acción de la vista.
  */
 const closeEditor = () => {
+  if (isSaving.value) return;
+  editorError.value = '';
   isEditorOpen.value = false;
   resetForm();
 };
@@ -725,6 +725,7 @@ const closeEditor = () => {
  * Gestiona esta acción de la vista.
  */
 const editItem = (item) => {
+  editorError.value = '';
   editingId.value = item.id;
   form.name = item.name;
   form.category = item.category || 'General';
@@ -750,22 +751,26 @@ const requiredFields = () => [
  * Gestiona esta acción de la vista.
  */
 const handleSubmit = async () => {
-  formErrors.value = missingFields(form, requiredFields());
-  if (formErrors.value.length) return;
+  if (isSaving.value) return;
+  editorError.value = '';
   try {
-    await gymStore.upsertInventoryItem({
-      id: editingId.value || undefined,
-      ...form,
-      name: form.name.trim(),
-      minQuantity: Number(form.minQuantity || 0),
-    });
+    if (!form.name.trim()) throw new Error('El nombre del artículo es obligatorio.');
+    const quantity = parseQuantity(form.quantity, { label: 'El stock inicial' });
+    const minQuantity = parseQuantity(form.minQuantity, { label: 'El stock mínimo' });
+    formErrors.value = missingFields(form, requiredFields());
+    if (formErrors.value.length) return;
+    isSaving.value = true;
+    await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form, name: form.name.trim(), quantity, minQuantity });
     const savedLabel = editingId.value ? 'Articulo actualizado.' : 'Articulo registrado.';
+    isSaving.value = false;
     closeEditor();
     feedbackTone.value = 'success';
     feedbackMessage.value = savedLabel;
   } catch (error) {
     feedbackTone.value = 'error';
-    feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo guardar el articulo.';
+    editorError.value = error instanceof Error ? error.message : 'No se pudo guardar el articulo.';
+  } finally {
+    isSaving.value = false;
   }
 };
 

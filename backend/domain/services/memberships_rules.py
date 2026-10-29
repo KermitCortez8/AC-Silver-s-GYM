@@ -1,5 +1,6 @@
 """Reglas de memberships sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.validation import account_email, dni_number, phone_number
 from domain.validation import nonnegative, required_text, date_range
 
 import re
@@ -167,7 +168,7 @@ class MembershipsRules:
             item["nombre_plan"] = required_text(item.get("nombre_plan")).upper()
             item["duracion"] = str(item.get("duracion") or "30 dias").strip()
             self._duration_days(item)
-            item["precio"] = int(nonnegative(item.get("precio", 0), "Precio"))
+            item["precio"] = cents(nonnegative(item.get("precio", 0), "Precio")) / 100
             item["activo"] = bool(item.get("activo", True))
             idx = next((i for i, row in enumerate(state["planes_membresia"]) if int(row.get("id_pm", 0)) == int(item_id)), -1)
             if idx >= 0:
@@ -583,9 +584,9 @@ class MembershipsRules:
         origen_registro: str = "PUBLICO",
     ) -> dict[str, Any]:
         nombre = str(payload.get("nombre") or "").strip()
-        correo = str(payload.get("correo") or "").strip().lower()
-        telefono = str(payload.get("telefono") or "").strip()
-        dni = str(payload.get("dni") or "").strip()
+        correo = account_email(payload.get("correo"))
+        telefono = phone_number(payload.get("telefono"), required=origen_registro == "PUBLICO")
+        dni = dni_number(payload.get("dni"), required=True)
         password = str(payload.get("password") or payload.get("contrasena") or "").strip()
         plan_name = str(payload.get("plan") or "MENSUAL").strip().upper()
         # Este valor lo incorpora ClientsService después de verificar la credencial.
@@ -593,10 +594,6 @@ class MembershipsRules:
 
         if not nombre:
             raise ValueError("Ingresa tu nombre")
-        if not correo or "@" not in correo:
-            raise ValueError("Ingresa un correo valido")
-        if not dni:
-            raise ValueError("Ingresa tu DNI")
         if not google_sub and len(password) < 6:
             raise ValueError("La contraseña debe tener al menos 6 caracteres")
         if self.dependencies.get_cliente_by_dni(dni):

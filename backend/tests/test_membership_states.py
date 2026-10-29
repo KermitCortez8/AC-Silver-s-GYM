@@ -11,7 +11,7 @@ def test_registration_payment_activation_and_expiry_use_only_three_states(monkey
     monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-01')
     gym = LocalGymService()
     result = ClientsService(gym).register_admin_client({
-        'nombre': 'Estados Cliente', 'correo': 'estados@example.com',
+        'nombre': 'Estados Cliente', 'correo': 'estados@gmail.com',
         'dni': '12345678', 'password': 'secreto123', 'plan': 'MENSUAL',
     })
     client_id = result['cliente']['id_cliente']
@@ -54,7 +54,7 @@ def test_legacy_pending_state_does_not_become_paid_when_normalized():
 def test_new_membership_stays_in_progress_until_paid_and_activated():
     gym = LocalGymService()
     result = ClientsService(gym).register_admin_client({
-        'nombre': 'Renovacion Cliente', 'correo': 'renovacion@example.com',
+        'nombre': 'Renovacion Cliente', 'correo': 'renovacion@gmail.com',
         'dni': '87654321', 'password': 'secreto123', 'plan': 'MENSUAL',
     })
     membership = gym.crear_membresia({
@@ -71,7 +71,7 @@ def test_editing_or_loading_expired_client_does_not_create_an_active_renewal(mon
     monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-01')
     gym = LocalGymService()
     client = gym.upsert_cliente({
-        'nombre': 'Cliente Anterior', 'correo': 'anterior@example.com',
+        'nombre': 'Cliente Anterior', 'correo': 'anterior@gmail.com',
         'dni': '11223344', 'estado': 'ACTIVO', 'password': 'secreto123',
     })
     membership = gym.state['membresia'][0]

@@ -1,5 +1,6 @@
 import { ref, onMounted, onScopeDispose } from 'vue';
 import { useAttendanceLookup } from './useAttendanceLookup.js';
+import { requireRecord } from '../../../application/services/responseValidation.js';
 
 /** Coordina lecturas y escrituras sin borrar la última ficha durante un refresco. */
 export const useAttendanceControl = ({
@@ -26,7 +27,7 @@ export const useAttendanceControl = ({
     const request = ++summaryNumber;
     refreshing.value = true;
     try {
-      const data = await attendanceGet('/resumen', {}, token.value);
+      const data = requireRecord(await attendanceGet('/resumen', {}, token.value));
       if (request === summaryNumber) summary.value = data;
     } catch (err) {
       // Se conserva el último resumen cargado; solo se avisa del error.

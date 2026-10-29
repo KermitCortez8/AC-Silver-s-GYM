@@ -52,11 +52,10 @@
         </div>
         <label class="ws-search max-w-md"
           ><span class="sr-only">Buscar usuarios</span
-          ><Search :size="18" /><input
+          ><Search :size="18" /><SearchInput
             v-model="search"
             class="ws-input"
-            type="search"
-            placeholder="Nombre, correo, DNI o teléfono"
+            placeholder="Nombre, correo, DNI, teléfono o ID"
         /></label>
       </div>
       <div
@@ -259,7 +258,7 @@
       :busy="isSaving"
       @close="closeEditor"
     >
-      <form @submit.prevent="handleSubmit">
+      <form novalidate @submit.prevent="handleSubmit">
         <p class="ws-muted text-sm mb-5">
           Define los datos y el rol de acceso de esta persona.
         </p>
@@ -275,26 +274,37 @@
             ><span class="ws-field-label">Nombre</span
             ><input
               v-model="form.nombre"
+              :aria-invalid="Boolean(fieldErrors.nombre)"
+              :aria-describedby="fieldErrors.nombre ? 'user-nombre-error' : undefined"
+              @blur="validateField('nombre')" @input="revalidateField('nombre')"
               class="ws-input"
               autocomplete="name"
               required
               placeholder="Nombre y apellidos"
-          /></label>
+          />
+            <FieldError id="user-nombre-error" :message="fieldErrors.nombre" /></label>
           <label class="sm:col-span-2"
             ><span class="ws-field-label">Correo electrónico</span
             ><input
               v-model="form.correo"
+              :aria-invalid="Boolean(fieldErrors.correo)"
+              :aria-describedby="fieldErrors.correo ? 'user-correo-error' : undefined"
+              @blur="validateField('correo')" @input="revalidateField('correo')"
               class="ws-input"
               type="email"
               autocomplete="email"
               required
-              placeholder="usuario@correo.com"
-          /></label>
+              placeholder="nombre@gmail.com"
+          />
+            <FieldError id="user-correo-error" :message="fieldErrors.correo" /></label>
           <label class="sm:col-span-2"
             ><span class="ws-field-label"
               >Contraseña {{ editingId ? '(opcional)' : '' }}</span
             ><input
               v-model="form.password"
+              :aria-invalid="Boolean(fieldErrors.password)"
+              :aria-describedby="fieldErrors.password ? 'user-password-error' : undefined"
+              @blur="validateField('password')" @input="revalidateField('password')"
               class="ws-input"
               type="password"
               autocomplete="new-password"
@@ -305,25 +315,34 @@
                   ? 'Dejar vacía para conservar la actual'
                   : 'Mínimo 6 caracteres'
               "
-          /></label>
+          />
+            <FieldError id="user-password-error" :message="fieldErrors.password" /></label>
           <label
             ><span class="ws-field-label">Teléfono</span
             ><input
               v-model="form.telefono"
+              :aria-invalid="Boolean(fieldErrors.telefono)"
+              :aria-describedby="fieldErrors.telefono ? 'user-telefono-error' : undefined"
+              @blur="validateField('telefono')" @input="revalidateField('telefono')"
               class="ws-input"
               type="tel"
               autocomplete="tel"
-              placeholder="999 111 222"
-          /></label>
+              placeholder="999111222"
+          />
+            <FieldError id="user-telefono-error" :message="fieldErrors.telefono" /></label>
           <label
             ><span class="ws-field-label">DNI</span
             ><input
               v-model="form.dni"
+              :aria-invalid="Boolean(fieldErrors.dni)"
+              :aria-describedby="fieldErrors.dni ? 'user-dni-error' : undefined"
+              @blur="validateField('dni')" @input="revalidateField('dni')"
               class="ws-input"
               inputmode="numeric"
               maxlength="8"
               placeholder="12345678"
-          /></label>
+          />
+            <FieldError id="user-dni-error" :message="fieldErrors.dni" /></label>
           <label class="sm:col-span-2"
             ><span class="ws-field-label">Rol</span
             ><select v-model="form.rol" class="ws-input">
@@ -390,6 +409,11 @@
   </div>
 </template>
 <script setup>
+import FieldError from '../components/FieldError.vue';
+import { validateAccountForm } from '../../domain/utils/formValidation.js';
+import { useFormValidation } from '../composables/useFormValidation.js';
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
+import SearchInput from "../components/SearchInput.vue";
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import {
@@ -439,6 +463,9 @@ const form = reactive({
   rol: 'staff',
 });
 
+const { fieldErrors, validateField, revalidateField, validateForm, resetValidation } = useFormValidation(form,
+  value => validateAccountForm(value, { requirePassword: !editingId.value, requireDni: false }));
+
 const filteredUsers = computed(() => {
   const query = search.value.trim().toLowerCase();
 
@@ -467,22 +494,13 @@ const usersWithPassword = computed(
   () => users.value.filter((systemUser) => systemUser.hasPassword).length,
 );
 
-const feedbackToneClass = computed(() => {
-  if (feedbackTone.value === 'success') {
-    return 'ws-border-success ws-tint-success ws-success';
-  }
-
-  if (feedbackTone.value === 'error') {
-    return 'ws-border-danger ws-tint-danger ws-danger';
-  }
-
-  return 'ws-border-info ws-tint-info ws-info';
-});
+const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
 
 /**
  * Restablece los datos del formulario.
  */
 const resetForm = () => {
+  resetValidation();
   editingId.value = '';
 
   form.nombre = '';
@@ -517,6 +535,7 @@ const closeEditor = () => {
  * Carga los datos del usuario seleccionado para editarlo.
  */
 const editUser = (systemUser) => {
+  resetValidation();
   editingId.value = systemUser.id_usuario;
 
   form.nombre = systemUser.nombre || '';
@@ -591,12 +610,13 @@ const handleSubmit = async () => {
   isSaving.value = true;
   feedbackMessage.value = '';
   try {
+    if (!validateForm()) throw new Error(Object.values(fieldErrors)[0]);
     const saved = await gymStore.upsertUser({
       id_usuario: editingId.value || undefined,
 
       nombre: form.nombre,
 
-      correo: form.correo,
+      correo: form.correo.trim().toLowerCase(),
 
       telefono: form.telefono,
 
@@ -618,6 +638,7 @@ const handleSubmit = async () => {
 
     feedbackMessage.value =
       error instanceof Error ? error.message : 'No se pudo guardar el usuario.';
+    Object.assign(fieldErrors, error?.fieldErrors || {});
   } finally {
     isSaving.value = false;
   }

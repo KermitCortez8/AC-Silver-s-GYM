@@ -7,7 +7,7 @@ from typing import Callable
 from domain.services.rule_context import RuleContext
 from domain.services.client_identifiers import parse_client_id
 from typing import Any
-from domain.validation import required_text, email_address
+from domain.validation import required_text, account_email, dni_number, phone_number
 from domain.services.membership_lifecycle import normalize_membership_status, project_memberships
 
 
@@ -153,7 +153,7 @@ class AccountsRules:
                 item_id = f"SG{prefix}{self._next_usuario_code(state):03d}"
 
             nombre = required_text(payload.get("nombre"))
-            correo = email_address(payload.get("correo"))
+            correo = account_email(payload.get("correo"))
             password = str(payload.get("password") or payload.get("contrasena") or "").strip()
             idx = next((i for i, row in enumerate(state["usuario"]) if self._normalize_usuario_id(row.get("id_usuario")) == item_id), -1)
             existing = state["usuario"][idx] if idx >= 0 else {}
@@ -165,13 +165,15 @@ class AccountsRules:
                 "id_usuario": item_id,
                 "nombre": nombre,
                 "correo": correo,
-                "telefono": str(payload.get("telefono") or "").strip(),
-                "dni": str(payload.get("dni") or "").strip(),
+                "telefono": phone_number(payload.get("telefono")),
+                "dni": dni_number(payload.get("dni")),
                 "rol": rol,
                 "estado": "ACTIVO" if internal_account_active({"estado": existing.get("estado", "ACTIVO")}) else "INACTIVO",
                 "password_hash": self.context.passwords.hash(password) if password else str(existing.get("password_hash") or ""),
                 "google_sub": str(existing.get("google_sub") or ""),
             }
+
+            self._check_duplicate_accounts(state["usuario"], item, "id_usuario")
 
             if idx >= 0:
                 state["usuario"][idx] = item
@@ -180,6 +182,16 @@ class AccountsRules:
             return item
 
         return self._change_users(_fn)
+
+    @staticmethod
+    def _check_duplicate_accounts(accounts, item, identity):
+        for account in accounts:
+            if account.get(identity) == item.get(identity):
+                continue
+            if str(account.get("correo") or "").strip().lower() == item["correo"]:
+                raise ValueError("Ya existe una cuenta con ese correo.")
+            if item["dni"] and str(account.get("dni") or "").strip() == item["dni"]:
+                raise ValueError("Ya existe una cuenta con ese DNI.")
 
     def delete_usuario(self, id_usuario: Any) -> None:
         usuario_id = self._normalize_usuario_id(id_usuario)
@@ -310,9 +322,9 @@ class AccountsRules:
                 "id_cliente": int(item_id),
                 "id_usuario": id_usuario,
                 "nombre": required_text(payload.get("nombre")),
-                "correo": email_address(payload.get("correo") or payload.get("email")),
-                "telefono": str(payload.get("telefono") or "").strip(),
-                "dni": str(payload.get("dni") or "").strip(),
+                "correo": account_email(payload.get("correo") or payload.get("email")),
+                "telefono": phone_number(payload.get("telefono")),
+                "dni": dni_number(payload.get("dni")),
                 "plan": str(payload.get("plan") or "MENSUAL").strip() or "MENSUAL",
                 "promocion": str(payload.get("promocion") or "SIN PROMOCION").strip() or "SIN PROMOCION",
                 "estado": estado,
@@ -325,6 +337,7 @@ class AccountsRules:
                 raise ValueError("Ingresa una contraseña para el cliente")
             if password and len(password) < 6:
                 raise ValueError("La contraseña debe tener al menos 6 caracteres")
+            self._check_duplicate_accounts(state["clientes"], item, "id_cliente")
             item["password_hash"] = self.context.passwords.hash(password) if password else str(existing.get("password_hash") or "")
             item["google_sub"] = str(existing.get("google_sub") or "")
             item["origen_registro"] = str(existing.get("origen_registro") or "") if existing else "ADMIN"

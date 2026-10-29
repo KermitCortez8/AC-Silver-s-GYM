@@ -1,0 +1,10 @@
+# Preferencias personales de Codex
+
+Ejemplo opcional para copiar como `.specify/AGENTS.local.md`, ignorado por Git.
+El índice requiere leer ese archivo si existe; no es un nombre de descubrimiento
+automático de Codex ni reemplaza el índice compartido.
+
+- Preferencia de comunicación: [formato o nivel de detalle].
+- Entorno personal: [herramientas disponibles, sin credenciales ni datos privados].
+
+Conservar el alcance pedido, las reglas compartidas y la constitución.

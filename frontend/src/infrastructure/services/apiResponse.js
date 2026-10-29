@@ -1,3 +1,5 @@
+import { validationIssue } from './validationMessages.js';
+
 /**
  * Gestiona esta acción de la vista.
  */
@@ -8,7 +10,11 @@ export const parseResponse = async (response) => {
 
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
-    return response.json();
+    try {
+      return await response.json();
+    } catch {
+      throw new Error('El servidor devolvió datos inválidos. Actualiza la vista antes de repetir la operación.');
+    }
   }
 
   return response.text();
@@ -17,7 +23,7 @@ export const parseResponse = async (response) => {
 /**
  * Gestiona esta acción de la vista.
  */
-export const parseError = async (response) => {
+const readError = async (response) => {
   if (response.status === 504) {
     return new Error('El servidor tardó demasiado en responder (504). Inténtalo de nuevo en unos momentos.');
   }
@@ -34,7 +40,10 @@ export const parseError = async (response) => {
         return error;
       }
       if (Array.isArray(body.detail)) {
-        return new Error(body.detail.map((item) => `${(item.loc || []).filter((part) => part !== 'body').join('.')}: ${item.msg || 'Valor inválido'}`).join(' '));
+        const issues = body.detail.map(validationIssue);
+        const error = new Error(issues.map(issue => issue.text).join(' '));
+        error.fieldErrors = Object.fromEntries(issues.filter(issue => issue.field).map(issue => [issue.field, issue.message]));
+        return error;
       }
       return new Error(String(body.detail));
     }
@@ -49,4 +58,10 @@ export const parseError = async (response) => {
   }
 
   return new Error(`Error HTTP ${response.status}`);
+};
+
+export const parseError = async (response) => {
+  const error = await readError(response);
+  error.status = response.status;
+  return error;
 };

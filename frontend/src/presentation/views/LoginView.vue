@@ -100,13 +100,13 @@
         <!-- ERRORES -->
         <div
           v-if="googleError"
-          class="mb-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+          role="alert" class="mb-4 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-900"
         >
           {{ googleError }}
         </div>
 
         <!-- LOGIN CORREO / PASSWORD -->
-        <form class="space-y-4" @submit.prevent="handlePasswordLogin">
+        <form novalidate class="space-y-4" @submit.prevent="handlePasswordLogin">
           <label class="block space-y-2 text-left">
             <span class="text-sm font-semibold text-slate-700">
               Correo
@@ -267,6 +267,7 @@
 </template>
 
 <script setup>
+import { emailError } from "../../domain/utils/formValidation.js";
 import {
   nextTick,
   onMounted,
@@ -427,6 +428,9 @@ const handlePasswordLogin = async () => {
   googleError.value = '';
 
   try {
+    const invalid = emailError(passwordForm.correo, { account: false });
+    if (invalid) throw new Error(invalid);
+    if (!passwordForm.password) throw new Error('La contraseña es obligatoria.');
     const result = await authenticateWithPassword({
       correo: passwordForm.correo.trim(),
       password: passwordForm.password,

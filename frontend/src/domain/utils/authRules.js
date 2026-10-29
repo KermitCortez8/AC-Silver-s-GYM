@@ -1,7 +1,8 @@
 /** Reglas de autenticación sin acceso a almacenamiento ni red. */
+import { emailError } from './formValidation.js';
+
 export const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return !emailError(email, { account: false });
 };
 
 export const getUserRole = (email) => {

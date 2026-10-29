@@ -1,3 +1,4 @@
+import { requireList, requireRecord } from '../services/responseValidation.js';
 /** Estado y operaciones del módulo synchronization. */
 import { normalizeBackendClientToMember, normalizeUser, normalizePlanFromBackend } from '../../domain/utils/gymRules.js';
 import { syncResources } from '../services/syncResources.js';
@@ -9,7 +10,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
 
   const readBackendError = async (response, fallbackMessage) => {
     const error = await parseError(response);
-    return error.message || fallbackMessage;
+    return error?.message || fallbackMessage;
   };
 
   const fetchFromBackend = ({ force = false, section = 'all' } = {}) => {
@@ -35,7 +36,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
       const getList = async (path) => {
         assertCurrent();
         const data = await apiGet(path, ctx.authStore.token);
-        if (!Array.isArray(data)) throw new Error('El servidor devolvió una lista de datos inválida.');
+        requireList(data);
         return data;
       };
       const tasks = [];
@@ -48,12 +49,12 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
         }]);
       } else if (role === 'user') {
         tasks.push(['Mi perfil', () => clientsReady = (async () => {
-          ctx.members.value = [normalizeBackendClientToMember(await apiGet('/clientes/me', ctx.authStore.token))];
+          ctx.members.value = [normalizeBackendClientToMember(requireRecord(await apiGet('/clientes/me', ctx.authStore.token)))];
         })()]);
       }
 
       if (internal) tasks.push(['Inventario', async () => {
-        ctx.inventory.value = (await getList('/inventario')).map((i) => ({
+        ctx.inventory.value = requireList(await getList('/inventario'), 'id_item').map((i) => ({
           id: `item-${i.id_item}`,
           inventoryCode: `ACT-${String(i.n_activo || i.id_item).padStart(4, '0')}`,
           n_activo: i.n_activo || i.id_item,
@@ -78,9 +79,9 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
 
       if (internal) {
         tasks.push(['Pagos de membresías', async () => {
-          ctx.membershipPayments.value = await getList('/pagos/membresias');
+          ctx.membershipPayments.value = requireList(await getList('/pagos/membresias'), 'id_membresia');
         }], ['Configuración', ctx.refreshGymSettingsFromBackend], ['Horarios', async () => {
-          ctx.schedule.value = (await getList('/gym/horarios')).map((h) => ({
+          ctx.schedule.value = requireList(await getList('/gym/horarios'), 'id_horario').map((h) => ({
             ...h,
             capacidad_maxima: Number(h.capacidad_maxima ?? 1),
             cupos_usados: Number(h.cupos_usados ?? 1),
@@ -125,7 +126,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
           await ctx.resourceCache.load(scope, label, () => { assertCurrent(); return load(); }, { force });
           if (scope === ctx.errorScope && generation === ctx.generation) ctx.resourceErrors.delete(label);
         } catch (error) {
-          if (scope === ctx.errorScope && generation === ctx.generation) ctx.resourceErrors.set(label, `${label}: ${error.message || 'No se pudieron cargar los datos.'}`);
+          if (scope === ctx.errorScope && generation === ctx.generation) ctx.resourceErrors.set(label, `${label}: ${error?.message || 'No se pudieron cargar los datos.'}`);
           throw error;
         } finally {
           if (scope === ctx.errorScope && generation === ctx.generation) ctx.syncError.value = [...ctx.resourceErrors.values()].join(' ');

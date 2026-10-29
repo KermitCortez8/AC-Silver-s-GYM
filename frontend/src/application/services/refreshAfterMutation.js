@@ -10,7 +10,7 @@ export const refreshAfterMutation = async (ctx, refresh, label = 'Datos relacion
     return true;
   } catch (error) {
     if (generation !== ctx.generation) return false;
-    const message = `El cambio se guardó, pero no se pudo actualizar ${label.toLowerCase()}: ${error.message || 'Inténtalo de nuevo.'}`;
+    const message = `El cambio se guardó, pero no se pudo actualizar ${label.toLowerCase()}: ${error?.message || 'Inténtalo de nuevo.'}`;
     ctx.resourceErrors?.set(key, message);
     if (ctx.syncError) ctx.syncError.value = [...(ctx.resourceErrors?.values() || [message])].join(' ');
     return false;

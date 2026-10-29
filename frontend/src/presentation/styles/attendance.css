@@ -530,8 +530,9 @@
   color: var(--app-accent-text);
 }
 .att-message.is-success {
-  background: var(--att-good-bg);
-  color: var(--att-good);
+  background: var(--app-notice-info-bg);
+  color: var(--app-notice-info);
+  border-color: var(--app-notice-info-border);
 }
 .att-filters {
   display: flex;

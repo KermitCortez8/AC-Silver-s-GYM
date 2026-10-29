@@ -4,6 +4,8 @@
 # Delega el cálculo de vigencia al dominio del gimnasio.
 from __future__ import annotations
 
+from presentation.error_handlers import http_error
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from presentation.dependencies import get_gym_service, require_admin_or_staff, get_current_user
@@ -25,7 +27,7 @@ def upsert_plan_membresia(payload: PlanMembresiaInput, gym_service: GymService =
     try:
         return gym_service.upsert_plan_membresia(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        raise http_error(error, validation_status=400) from error
 
 
 @router.put("/planes-membresia/{id_pm}", dependencies=[Depends(require_admin_or_staff)])
@@ -36,7 +38,7 @@ def update_plan_membresia(id_pm: int, payload: PlanMembresiaInput, gym_service: 
     try:
         return gym_service.upsert_plan_membresia(data)
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        raise http_error(error, validation_status=400) from error
 
 
 @router.delete("/planes-membresia/{id_pm}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin_or_staff)])
@@ -45,7 +47,7 @@ def delete_plan_membresia(id_pm: int, gym_service: GymService = Depends(get_gym_
     try:
         gym_service.delete_plan_membresia(id_pm)
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.get("/membresias")
@@ -62,7 +64,7 @@ def crear_membresia(payload: MembresiaInput, gym_service: GymService = Depends(g
     try:
         return gym_service.crear_membresia(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.get("/clientes/{id_cliente}/membresias")
@@ -83,4 +85,4 @@ def registrar_cliente_membresia(
     try:
         return gym_service.registrar_cliente_con_membresia(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error

@@ -1,3 +1,5 @@
+import { requireList, requireRecord } from '../services/responseValidation.js';
+import { parseQuantity } from '../../domain/utils/quantities.js';
 import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
 /** Estado y operaciones del módulo inventory. */
@@ -11,6 +13,7 @@ export const createInventoryModule = (ctx, repository) => {
   );
 
   const upsertInventoryItem = (payload) => {
+    payload = { ...payload, quantity: parseQuantity(payload.quantity ?? 0), minQuantity: parseQuantity(payload.minQuantity ?? payload.stock_minimo ?? 1) };
     if (ctx.apiBase) {
       // map frontend payload to backend InventarioInput
       const body = {
@@ -27,6 +30,7 @@ export const createInventoryModule = (ctx, repository) => {
         observaciones: payload.observations || '',
       };
       return upsertInventoryToServer(body).then((res) => {
+        requireRecord(res, 'id_item');
         const id_item = requireNumericId(res.id_item, 'un artículo');
         const item = {
           id: `item-${id_item}`,
@@ -77,7 +81,7 @@ export const createInventoryModule = (ctx, repository) => {
   const deleteInventoryItem = async (id) => {
     if (ctx.apiBase && /^item-\d+$/.test(id)) {
       const id_item = Number(id.split('-')[1]);
-      await remote.deleteInventoryItem(id_item);
+      const response = await remote.deleteInventoryItem(id_item);
 
       // Con historial o producto en tienda el backend no borra: lo marca como Descontinuado.
       const result = response;
@@ -96,7 +100,7 @@ export const createInventoryModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const response = await remote.refreshInventoryMovementsFromBackend();
 
-    ctx.inventoryMovements.value = response;
+    ctx.inventoryMovements.value = requireList(response, 'id_mov');
     return ctx.inventoryMovements.value;
   };
 
@@ -107,15 +111,20 @@ export const createInventoryModule = (ctx, repository) => {
 
   const registrarMovimientoToServer = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const saved = await remote.registrarMovimientoToServer(payload);
-    if (saved?.movimiento) ctx.inventoryMovements.value.unshift(saved.movimiento);
+    const saved = await remote.registrarMovimientoToServer({ ...payload, cantidad: parseQuantity(payload.cantidad ?? 1, { min: 1 }) });
+    requireRecord(saved);
+    requireRecord(saved.movimiento, 'id_mov');
+    ctx.inventoryMovements.value.unshift(saved.movimiento);
     await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
     return saved;
   };
 
   const updateInventoryMovement = async (idMov, payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const saved = await remote.updateInventoryMovement(idMov, payload);
+    const body = payload.cantidad === undefined ? payload : { ...payload, cantidad: parseQuantity(payload.cantidad, { min: 1 }) };
+    const saved = await remote.updateInventoryMovement(idMov, body);
+    requireRecord(saved);
+    requireRecord(saved.movimiento, 'id_mov');
     await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
     return saved;
   };

@@ -22,6 +22,32 @@ const context = () => ({
   inventory: ref([]), inventoryMovements: ref([]), syncError: ref(''), resourceErrors: new Map(),
 });
 
+test('deleting inventory preserves discontinued records and reports the server response', async () => {
+  setActivePinia(createPinia());
+  const ctx = context();
+  ctx.inventory.value = [{ id: 'item-1', name: 'Agua', status: 'Disponible' }];
+  ctx.fetchFromBackend = async () => {};
+  const result = { accion: 'descontinuado', item: { estado: 'Descontinuado' } };
+  const module = createInventoryModule(ctx, {
+    deleteInventoryItem: async (id, token) => {
+      assert.equal(id, 1);
+      assert.equal(token, 'session');
+      return result;
+    },
+  });
+  assert.deepEqual(await module.deleteInventoryItem('item-1'), result);
+  assert.equal(ctx.inventory.value[0].status, 'Descontinuado');
+});
+
+test('deleting inventory without history removes the record after a successful response', async () => {
+  setActivePinia(createPinia());
+  const ctx = context();
+  ctx.inventory.value = [{ id: 'item-1' }];
+  const module = createInventoryModule(ctx, { deleteInventoryItem: async () => null });
+  await module.deleteInventoryItem('item-1');
+  assert.equal(ctx.inventory.value.length, 0);
+});
+
 const operations = [
   ['attendance', createAttendanceModule, 'checkinByDniServer', [{ dni: '12345678' }], { id_asistencia: 1 }],
   ['clients', createClientsModule, 'upsertClienteToServer', [{ nombre: 'Ana' }], { id_cliente: 1 }],
@@ -135,7 +161,7 @@ test('data repositories reject HTML gateways and explain validation failures', a
   http.rawRequest = async () => new Response(JSON.stringify({ detail: [{ loc: ['body', 'precio'], msg: 'Debe ser positivo' }] }), {
     status: 422, headers: { 'content-type': 'application/json' },
   });
-  await assert.rejects(dataRequest(http, '/api'), /precio: Debe ser positivo/);
+  await assert.rejects(dataRequest(http, '/api'), /Precio: Debe ser positivo/);
 });
 
 test('partial client edits preserve membership and payment details while accepting a zero amount', () => {

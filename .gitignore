@@ -51,6 +51,7 @@ frontend/.env
 backend/.venv/
 .venv/
 venv/
+.tools/
 **/__pycache__/
 *.pyc
 backend/db/state.json
@@ -61,3 +62,9 @@ supabase/.temp/
 supabase/.branches/
 
 .vscode/
+
+# Preferencias personales de Codex (reemplazan AGENTS.md en su directorio)
+AGENTS.override.md
+
+# Preferencias personales complementarias de Spec Driven
+.specify/AGENTS.local.md

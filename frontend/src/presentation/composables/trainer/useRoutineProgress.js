@@ -1,5 +1,6 @@
 import { reactive, ref } from 'vue';
 import { isEnrollmentActive } from '../../utils/trainerRoutines.js';
+import { refreshSavedView } from '../../utils/refreshSavedView.js';
 
 /** Borradores por matrícula/rutina; solo se limpian tras confirmar el guardado. */
 export const useRoutineProgress = ({
@@ -48,10 +49,8 @@ export const useRoutineProgress = ({
         observacion: 'Rutina marcada como realizada por el entrenador.',
         ejercicios_detalle: [],
       });
-      await reloadClient();
-      notify(
+      await refreshSavedView(reloadClient, notify,
         'Rutina marcada como realizada.',
-        'success',
         'Rutina completada correctamente.',
       );
     } catch (error) {
@@ -95,11 +94,10 @@ export const useRoutineProgress = ({
         observacion,
         ejercicios_detalle,
       });
-      await reloadClient();
       delete trackerMap[`${item.id_matricula}_${item.id_rutina}`];
       delete observationsMap[item.id_matricula];
       showExercisesModal.value = false;
-      notify('Progreso de rutina registrado en el sistema.');
+      await refreshSavedView(reloadClient, notify, 'Progreso de rutina registrado en el sistema.');
     } catch (error) {
       const message =
         error instanceof Error

@@ -241,9 +241,9 @@ test('section changes reuse synced data; refresh and a new session fetch it agai
   auth.userRole = 'admin';
 
   let calls = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
     calls++;
-    return json([]);
+    return json(url.endsWith('/gym/configuracion') ? { capacidad_total: 30, capacidad_por_hora: 10 } : []);
   };
 
   await Promise.all([gym.fetchFromBackend(), gym.fetchFromBackend()]);
@@ -303,7 +303,7 @@ test('users finish loading while a previous section still has pending requests',
     if (url.endsWith('/clientes')) {
       await clients.promise;
     }
-    return json([]);
+    return json(url.endsWith('/gym/configuracion') ? { capacidad_total: 30, capacidad_por_hora: 10 } : []);
   };
 
   const previous = gym.fetchFromBackend({ section: 'clients' });
@@ -349,9 +349,9 @@ test('synced data expires after thirty seconds', async (t) => {
   auth.userRole = 'admin';
 
   let calls = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
     calls++;
-    return json([]);
+    return json(url.endsWith('/gym/configuracion') ? { capacidad_total: 30, capacidad_por_hora: 10 } : []);
   };
 
   await gym.fetchFromBackend();
@@ -380,7 +380,7 @@ test('failed forced refresh is not cached and a later navigation retries it', as
         return json({ detail: 'Sin conexión' }, 503);
       }
     }
-    return json([]);
+    return json(url.endsWith('/gym/configuracion') ? { capacidad_total: 30, capacidad_por_hora: 10 } : []);
   };
 
   await gym.fetchFromBackend();
@@ -432,7 +432,7 @@ test('attendance waits for client names and forced refresh runs after the pendin
       }]);
     }
 
-    return json([]);
+    return json(url.endsWith('/gym/configuracion') ? { capacidad_total: 30, capacidad_por_hora: 10 } : []);
   };
 
   const initial = gym.fetchFromBackend();
@@ -698,7 +698,7 @@ test('trainer progress requests preserve state and exercise performance', async 
     assert.equal(body.fecha, '2026-10-01');
     assert.deepEqual(body.ejercicios_detalle, details);
 
-    return json({ ...body, id_matricula: 10 });
+    return json({ ...body, id_matricula: 10, id_progreso: 1 });
   };
 
   const result = await gym.markTrainerRoutineProgress(10, {

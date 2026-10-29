@@ -17,6 +17,8 @@ export const useStoreImagePicker = ({ form }) => {
   const bucketImages = ref([]);
 
   const loadBucketImages = async () => {
+    if (isLoadingBucketImages.value) return;
+    imageFeedback.value = '';
     isLoadingBucketImages.value = true;
     try {
       bucketImages.value = await listStoreImages();
@@ -26,7 +28,6 @@ export const useStoreImagePicker = ({ form }) => {
         error instanceof Error
           ? error.message
           : "No se pudieron cargar las imagenes del bucket.";
-      bucketImages.value = [];
     } finally {
       isLoadingBucketImages.value = false;
     }

@@ -4,7 +4,9 @@
 # Organiza el progreso registrado para cada cliente.
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from presentation.error_handlers import http_error
+
+from fastapi import APIRouter, Depends, Query, status
 
 from presentation.dependencies import get_gym_service, require_internal_viewer
 from domain.errors import MembershipRequired
@@ -32,8 +34,8 @@ def upsert_trainer_rutina(
 ):
     try:
         return gym_service.upsert_rutina(payload.model_dump())
-    except (ValueError, RuntimeError) as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    except (ValueError, RuntimeError, OSError, PermissionError) as error:
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.post("/matriculas/{id_matricula}/rutina")
@@ -46,24 +48,27 @@ def assign_trainer_rutina(
 ):
     try:
         return gym_service.asignar_rutina_matricula(id_matricula, payload.id_rutina)
-    except (ValueError, RuntimeError) as error:
+    except (ValueError, RuntimeError, OSError, PermissionError) as error:
         detail = str(error)
         if isinstance(error, MembershipRequired):
             detail = "El cliente no cuenta con una membresía activa para asignarle rutinas."
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from error
+        translated = http_error(error)
+        if isinstance(error, MembershipRequired):
+            translated.detail = detail
+        raise translated from error
 
 
 @router.get("/clientes-rutinas")
 # Procesa esta operación.
 def trainer_cliente_rutinas(
-    dni: str,
+    dni: str = Query(pattern=r"^[0-9]{8}$"),
     gym_service: GymService = Depends(get_gym_service),
     _current_user=Depends(require_internal_viewer),
 ):
     try:
         return gym_service.trainer_rutinas_cliente(dni)
-    except (ValueError, RuntimeError) as error:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except (ValueError, RuntimeError, OSError, PermissionError) as error:
+        raise http_error(error) from error
 
 
 @router.post("/matriculas/{id_matricula}/progreso")
@@ -78,8 +83,11 @@ def trainer_rutina_progreso(
         data = payload.model_dump()
         data["id_usuario"] = current_user.id_usuario or current_user.id
         return gym_service.registrar_progreso_rutina(id_matricula, data)
-    except (ValueError, RuntimeError) as error:
+    except (ValueError, RuntimeError, OSError, PermissionError) as error:
         detail = str(error)
         if isinstance(error, MembershipRequired):
             detail = "El cliente no cuenta con una membresía activa para registrar progresos."
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from error
+        translated = http_error(error)
+        if isinstance(error, MembershipRequired):
+            translated.detail = detail
+        raise translated from error
