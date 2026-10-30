@@ -137,7 +137,7 @@
               placeholder="nombre@gmail.com"
             />
             <FieldError id="register-correo-error" :message="fieldErrors.correo" />
-            <p class="text-xs text-slate-600">Solo se permiten correos @gmail.com o @hotmail.com.</p>
+            <p class="text-xs text-slate-600">Solo se permiten correos que terminen en .com.</p>
           </label>
 
           <!-- CONTRASEÑA -->

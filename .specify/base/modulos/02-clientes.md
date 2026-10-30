@@ -88,3 +88,8 @@ En la ficha, la confirmación manual muestra «Confirmando pago…» y bloquea n
 envíos mientras está en curso. Tras activar, la ficha se actualiza con la respuesta
 del servidor y sustituye la acción de activar por la de notificar. Regresiones en
 [36-client-flow-control.test.js](../../../frontend/tests/36-client-flow-control.test.js).
+
+El correo de cuenta acepta cualquier dominio terminado en `.com`, con una sola
+`@` y formato válido. La misma regla reutilizable se aplica en el preregistro
+(incluido Google), formularios de cuentas y servidor; ya no se limita a Gmail/Hotmail.
+Regresión: `test_basic_form_validation.py` y `34-form-validation.test.js`.

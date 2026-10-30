@@ -20,7 +20,7 @@ from presentation.routes import clients_routes, users_routes
 VALID = dict(nombre='Ana', correo='ana@gmail.com', dni='01234567', telefono='987654321', password='secreto123')
 
 
-@pytest.mark.parametrize('email', ['ana@gmail.com', 'ana@hotmail.com', '  ANA@GMAIL.COM  '])
+@pytest.mark.parametrize('email', ['ana@gmail.com', 'ana@hotmail.com', 'ana@example.com', 'ana@outlook.com', 'ana@company.com', 'ana@sub.gmail.com', 'ana@gmail.com.evil.com', '  ANA@GMAIL.COM  '])
 def test_approved_account_email_is_normalized(email):
     assert account_email(email) == email.strip().lower()
 
@@ -33,11 +33,10 @@ def test_malformed_account_email_has_an_actionable_message(email):
         account_email(email)
 
 
-@pytest.mark.parametrize('email', ['ana@example.com', 'ana@outlook.com', 'ana@gmail.com.evil.com',
-                                  'ana@sub.gmail.com', 'ana@fakegmail.com', 'ana@gmail.co'])
+@pytest.mark.parametrize('email', ['ana@example.org', 'ana@example.com.pe', 'ana@gmail.co'])
 @pytest.mark.parametrize('model', [ClienteInput, UsuarioInput, RegistroPublicoClienteInput])
 def test_every_account_write_schema_rejects_unapproved_domains(email, model):
-    with pytest.raises(ValidationError, match='Solo se permiten correos @gmail.com o @hotmail.com'):
+    with pytest.raises(ValidationError, match='Solo se permiten correos que terminen en .com'):
         model.model_validate({**VALID, 'correo': email, 'rol': 'staff'})
 
 
@@ -54,7 +53,7 @@ def test_public_registration_reports_specific_field_errors(field, value, expecte
 
 
 @pytest.mark.parametrize('path', ['/api/registro-publico', '/api/clientes', '/api/clientes/registro-admin', '/api/usuarios'])
-@pytest.mark.parametrize('field,value', [('correo', 'ana@gmail.com.evil.com'), ('dni', 'bad'), ('telefono', 'bad')])
+@pytest.mark.parametrize('field,value', [('correo', 'ana@example.org'), ('dni', 'bad'), ('telefono', 'bad')])
 def test_invalid_account_requests_do_not_reach_writes_or_checkout(path, field, value):
     calls = []
     def record(*args, **kwargs):
@@ -81,17 +80,17 @@ def test_domain_commands_cannot_bypass_email_validation(method):
     gym = LocalGymService()
     before = deepcopy(gym.state)
     with pytest.raises(ValueError, match='Solo se permiten correos'):
-        getattr(gym, method)({**VALID, 'correo': 'ana@example.com', 'rol': 'staff'})
+        getattr(gym, method)({**VALID, 'correo': 'ana@example.org', 'rol': 'staff'})
     # The repository initializes identity metadata on its first command.
     assert {key: value for key, value in gym.state.items() if not key.startswith('_')} == before
 
 
 def test_verified_google_email_cannot_bypass_domain_validation():
     gym = LocalGymService()
-    gym.identity = SimpleNamespace(verify=lambda _: dict(email='ana@company.com', sub='verified', name='Ana'))
+    gym.identity = SimpleNamespace(verify=lambda _: dict(email='ana@company.org', sub='verified', name='Ana'))
     gym.sessions = SimpleNamespace(validate_configuration=lambda: None)
     with pytest.raises(ValueError, match='Solo se permiten correos'):
-        ClientsService(gym).register_public_client({**VALID, 'correo': 'ana@company.com', 'google_credential': 'fake'})
+        ClientsService(gym).register_public_client({**VALID, 'correo': 'ana@company.org', 'google_credential': 'fake'})
     assert gym.state['clientes'] == []
     assert gym.state['membresia'] == []
 
@@ -117,7 +116,7 @@ def test_plan_price_preserves_cents_from_http_schema_through_domain_save():
     assert saved['precio'] == 79.90
 
 
-@pytest.mark.parametrize('field,value,expected', [('cliente_correo', 'ana@gmail.com.evil.com', 'Solo se permiten correos'),
+@pytest.mark.parametrize('field,value,expected', [('cliente_correo', 'ana@example.org', 'Solo se permiten correos'),
                                                  ('cliente_dni', '123abc', 'exactamente 8')])
 def test_order_customer_details_reject_invalid_email_and_dni(field, value, expected):
     from domain.models.gym import PedidoTiendaInput, PedidoTiendaCheckoutInput
