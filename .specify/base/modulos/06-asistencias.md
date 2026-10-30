@@ -76,3 +76,11 @@ historial. No publicar auditoría al cliente ni mezclar fechas de clases semanal
 Verificar privacidad, aforo, reintentos, auditoría, reloj y paginación afectados.
 Para cambios de UI, reutilizar [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js)
 y registrar revisión visual. Cumplir el [DoD](../../docs/DoD.md).
+
+### Vigencia compartida (feature 001)
+
+La selección de membresía en asistencia reutiliza membership_current, igual que
+autenticación: exige pago confirmado y fechas civiles válidas con día final inclusivo.
+Fechas ausentes o imposibles no autorizan entradas ni consumen aforo.
+Regresiones y recorrido integrado en
+[test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).

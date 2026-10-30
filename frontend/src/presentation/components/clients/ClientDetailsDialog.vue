@@ -129,7 +129,7 @@
           v-if="canPayClientWithStripe(viewingClient)"
           type="button"
           class="w-full rounded-xl ws-primary px-4 py-3 font-bold disabled:opacity-50"
-          :disabled="Boolean(payingClientId)"
+          :disabled="Boolean(payingClientId || confirmingPaymentClientId)"
           @click="payWithStripe(viewingClient)"
         >
           {{
@@ -142,9 +142,11 @@
           v-if="viewingClient.paymentStatus === 'PENDIENTE'"
           type="button"
           class="w-full rounded-xl border ws-border-warning ws-tint-warning px-4 py-3 font-bold ws-warning transition ws-hover"
+          :disabled="Boolean(confirmingPaymentClientId || payingClientId)"
+          :aria-busy="Boolean(confirmingPaymentClientId)"
           @click="markAsPaidManual(viewingClient)"
         >
-          Confirmar Pago (Manual/Efectivo)
+          {{ confirmingPaymentClientId ? 'Confirmando pago…' : 'Confirmar Pago (Manual/Efectivo)' }}
         </button>
         <button
           v-if="
@@ -176,6 +178,7 @@ defineProps([
   "markAsPaidManual",
   "membershipBadgeClass",
   "notifyingClientId",
+  "confirmingPaymentClientId",
   "payWithStripe",
   "payingClientId",
   "paymentError",

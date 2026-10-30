@@ -79,3 +79,18 @@ una membresía vencida mediante edición o evento Stripe duplicado.
 Verificar criterios económicos y temporales afectados, idempotencia, permisos e
 historial. Usar servicios de prueba sin cobrar cuentas reales; registrar por
 separado cualquier comprobación de proveedor. Cumplir el [DoD](../../docs/DoD.md).
+
+### Protección de compras y edición (feature 001)
+
+La edición genérica rechaza membresías pagadas, activas o vencidas y nunca transfiere
+una membresía a otro cliente. Las pendientes editadas conservan EN_TRAMITE/PENDIENTE
+y fechas vacías: el pago y la activación siguen sus comandos específicos.
+La confirmación conserva el importe contratado cero y rechaza un cobro positivo que
+intente reemplazarlo; el fallback al plan solo se conserva para importe ausente/null
+histórico. No se incorpora una pasarela de compras gratuitas.
+Regresiones en [test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+
+El retorno de pago distingue comprobación en curso, pendiente, error y confirmado.
+Permite volver a verificar la misma sesión sin iniciar otro cobro, rechaza una
+confirmación de otro cliente y descarta respuestas de rutas anteriores. Regresiones
+en [36-client-flow-control.test.js](../../../frontend/tests/36-client-flow-control.test.js).

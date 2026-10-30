@@ -420,6 +420,7 @@
       :mark-as-paid-manual="markAsPaidManual"
       :membership-badge-class="membershipBadgeClass"
       :notifying-client-id="notifyingClientId"
+      :confirming-payment-client-id="confirmingPaymentClientId"
       :pay-with-stripe="payWithStripe"
       :paying-client-id="payingClientId"
       :payment-error="paymentError"
@@ -660,7 +661,7 @@ const confirmDelete = async (client) => {
   }
 };
 
-const { activatingClientId, pendingActivation, activationError, notifyingClientId, payingClientId, paymentError, requestActivation, cancelActivation, notificationMessage, retryActivationEmail, markAsPaidManual, activateMembership, payWithStripe, initializeDirectory } = useClientMembershipActions({ gymStore, authStore, feedbackMessage, feedbackTone, viewingClient, route, router, refreshClients });
+const { activatingClientId, pendingActivation, activationError, notifyingClientId, payingClientId, confirmingPaymentClientId, paymentError, requestActivation, cancelActivation, notificationMessage, retryActivationEmail, markAsPaidManual, activateMembership, payWithStripe, initializeDirectory } = useClientMembershipActions({ gymStore, authStore, feedbackMessage, feedbackTone, viewingClient, route, router, refreshClients });
 const { fieldErrors, validateField, revalidateField, editingId, isEditorOpen, savingClient, submitError, editingClient, editingMembershipLabel, editingNeedsActivation, editingExpired, form, availablePromotions, estimatedCharge, resetForm, openNewClient, closeEditor, editClient, handleSubmit } = useClientEditor({ gymStore, clients, feedbackMessage, feedbackTone, resetFilters, sortOrder, openDetails, paymentError, normalizeStatus });
 onMounted(initializeDirectory);
 </script>

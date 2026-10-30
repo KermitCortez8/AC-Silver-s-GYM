@@ -1,0 +1,12 @@
+{
+  "paymentRequests": 2,
+  "duplicateManualClickBlocked": true,
+  "detailsUpdatedAfterActivation": true,
+  "horizontalOverflow": false,
+  "pageErrors": [],
+  "viewports": [
+    "1440x1000",
+    "390x844"
+  ],
+  "api": "simulada; sin proveedores reales"
+}

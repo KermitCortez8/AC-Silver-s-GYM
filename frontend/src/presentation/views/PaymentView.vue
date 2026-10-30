@@ -16,7 +16,7 @@
         <h1 class="mt-3 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{{ resultStyle.title }}</h1>
         <p class="mx-auto mt-4 max-w-xl leading-7 text-slate-600">{{ resultStyle.description }}</p>
 
-        <p v-if="confirmationError" class="mx-auto mt-4 max-w-xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+        <p v-if="confirmationError" role="alert" class="mx-auto mt-4 max-w-xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
           {{ confirmationError }}
         </p>
 
@@ -32,6 +32,13 @@
         </div>
 
         <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <button
+            v-if="canRetryConfirmation"
+            type="button"
+            class="btn-cta rounded-full bg-orange-500 px-6 py-3 text-sm text-white disabled:opacity-50"
+            :disabled="confirmationState === 'verifying'"
+            @click="confirmPaidCheckout"
+          >{{ confirmationState === 'verifying' ? 'Verificando…' : 'Volver a verificar el pago' }}</button>
           <router-link to="/login" class="btn-cta rounded-full bg-orange-500 px-6 py-3 text-sm text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600">Ir al acceso</router-link>
           <router-link :to="result === 'failure' ? '/registro' : '/'" class="btn-cta rounded-full border border-slate-300 px-6 py-3 text-sm text-slate-700 transition hover:border-orange-300 hover:text-orange-600">
             {{ result === 'failure' ? 'Intentar nuevamente' : 'Volver al inicio' }}
@@ -47,7 +54,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onScopeDispose, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useClientPayments } from '../../application/services/clientPayments.js';
 
@@ -58,9 +65,16 @@ const idCliente = computed(() => Number(route.params.idCliente || 0));
 const result = computed(() => String(route.query.result || 'pending').toLowerCase());
 const confirmationState = ref('idle');
 const confirmationError = ref('');
+let confirmationNumber = 0;
+const checkoutKey = () => `${route.params.idCliente}|${route.query.result}|${route.query.session_id}`;
+const canRetryConfirmation = computed(() =>
+  ['success', 'pending'].includes(result.value) &&
+  Boolean(String(route.query.session_id || '').trim()) &&
+  confirmationState.value !== 'confirmed',
+);
 
 const resultStyle = computed(() => {
-  if (result.value === 'success') {
+  if (['success', 'pending'].includes(result.value)) {
     if (confirmationState.value === 'confirmed') {
       return {
         icon: '✓', title: 'Pago confirmado',
@@ -69,10 +83,22 @@ const resultStyle = computed(() => {
         iconBackground: 'bg-emerald-100 text-emerald-700', labelColor: 'text-emerald-700',
       };
     }
+    if (confirmationState.value === 'error') return {
+      icon: '!', title: 'No se pudo verificar el pago',
+      description: 'Puedes volver a consultar el estado de la misma operación. No necesitas realizar otro pago.',
+      status: 'Confirmación sin verificar', border: 'border-rose-200',
+      iconBackground: 'bg-rose-100 text-rose-700', labelColor: 'text-rose-700',
+    };
+    if (confirmationState.value === 'pending') return {
+      icon: '…', title: 'Pago pendiente de confirmación',
+      description: 'La operación todavía no está confirmada. Vuelve a verificar antes de intentar pagar otra vez.',
+      status: 'Pendiente de confirmación', border: 'border-orange-200',
+      iconBackground: 'bg-orange-100 text-orange-700', labelColor: 'text-orange-700',
+    };
     return {
       icon: '…', title: 'Confirmando el pago',
       description: 'Estamos verificando la operación directamente con Stripe.',
-      status: confirmationState.value === 'error' ? 'Confirmación pendiente' : 'Verificando', border: 'border-orange-200',
+      status: 'Verificando', border: 'border-orange-200',
       iconBackground: 'bg-orange-100 text-orange-700', labelColor: 'text-orange-700',
     };
   }
@@ -93,31 +119,46 @@ const resultStyle = computed(() => {
 });
 
 const confirmPaidCheckout = async () => {
-  if (result.value !== 'success') return;
+  if (!['success', 'pending'].includes(result.value) || confirmationState.value === 'verifying') return;
+  const request = ++confirmationNumber;
+  const key = checkoutKey();
+  const expectedClient = idCliente.value;
+  const isCurrent = () => request === confirmationNumber && key === checkoutKey();
+  confirmationError.value = '';
 
   const sessionId = String(route.query.session_id || '').trim();
-  if (!sessionId) {
+  if (!sessionId || !Number.isInteger(expectedClient) || expectedClient <= 0) {
     confirmationState.value = 'error';
-    confirmationError.value = 'Stripe no devolvió el identificador de la sesión. La confirmación continuará mediante el webhook.';
+    confirmationError.value = 'El enlace de pago está incompleto. Revisa el enlace de retorno o consulta con administración.';
     return;
   }
 
   confirmationState.value = 'verifying';
   try {
     const response = await confirmMembershipPayment(sessionId);
-    if (response?.confirmed) {
+    if (!isCurrent()) return;
+    if (response?.confirmed === true) {
+      if (Number(response.id_cliente) !== expectedClient)
+        throw new Error('La confirmación no corresponde a esta solicitud. Revisa el enlace de pago.');
       confirmationState.value = 'confirmed';
       return;
     }
-    confirmationState.value = 'error';
-    confirmationError.value = 'El pago todavía no aparece aprobado. La cuenta permanecerá pendiente hasta recibir la confirmación.';
+    confirmationState.value = 'pending';
   } catch (error) {
+    if (!isCurrent()) return;
     confirmationState.value = 'error';
     confirmationError.value = error instanceof Error ? error.message : 'No se pudo confirmar el pago en este momento.';
   }
 };
 
 onMounted(confirmPaidCheckout);
+watch(checkoutKey, () => {
+  confirmationNumber++;
+  confirmationState.value = 'idle';
+  confirmationError.value = '';
+  confirmPaidCheckout();
+});
+onScopeDispose(() => { confirmationNumber++; });
 </script>
 
 <style scoped>

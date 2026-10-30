@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from "vue";
+import { ref } from "vue";
 import { useClientPayments } from "../../../application/services/clientPayments.js";
 import { canPayClientWithStripe } from "../../../domain/utils/adminClientPayment.js";
 
@@ -26,6 +26,7 @@ export const useClientMembershipActions = ({
   const notifyingClientId = ref("");
 
   const payingClientId = ref("");
+  const confirmingPaymentClientId = ref("");
 
   const paymentError = ref("");
 
@@ -72,6 +73,7 @@ export const useClientMembershipActions = ({
   };
 
   const markAsPaidManual = async (client) => {
+    if (confirmingPaymentClientId.value || payingClientId.value) return;
     if (
       !client ||
       !window.confirm(
@@ -83,8 +85,13 @@ export const useClientMembershipActions = ({
       client.id_cliente ||
       Number(String(client.id || "").replace(/^SGCLI/i, ""));
 
-    if (!idCliente) return;
+    if (!idCliente) {
+      feedbackTone.value = "error";
+      feedbackMessage.value = "No se encontró el identificador del cliente.";
+      return;
+    }
 
+    confirmingPaymentClientId.value = client.id || String(idCliente);
     try {
       const saved = await gymStore.confirmarPagoEfectivo(idCliente);
       if (viewingClient.value && viewingClient.value.id === saved.id) {
@@ -98,6 +105,8 @@ export const useClientMembershipActions = ({
         error instanceof Error
           ? error.message
           : "No se pudo registrar el pago.";
+    } finally {
+      confirmingPaymentClientId.value = "";
     }
   };
 
@@ -121,6 +130,9 @@ export const useClientMembershipActions = ({
 
     try {
       const saved = await gymStore.activateClientMembership(idCliente);
+      if (viewingClient.value?.id === saved.id) {
+        viewingClient.value = { ...saved };
+      }
 
       feedbackTone.value = "success";
 
@@ -140,7 +152,7 @@ export const useClientMembershipActions = ({
   };
 
   const payWithStripe = async (client) => {
-    if (payingClientId.value || !canPayClientWithStripe(client)) return;
+    if (payingClientId.value || confirmingPaymentClientId.value || !canPayClientWithStripe(client)) return;
     payingClientId.value = client.id;
     paymentError.value = "";
     try {
@@ -197,6 +209,7 @@ export const useClientMembershipActions = ({
     activationError,
     notifyingClientId,
     payingClientId,
+    confirmingPaymentClientId,
     paymentError,
     requestActivation,
     cancelActivation,
