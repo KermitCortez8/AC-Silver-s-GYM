@@ -69,7 +69,6 @@ test('editing inventory preserves a zero threshold and uses one only when the va
   const item = { id: 'item-1', name: 'Pesas', category: 'Equipo', quantity: 1, minQuantity: 0, status: 'Operativo' };
   setup.editItem(item);
   assert.equal(setup.form.minQuantity, 0);
-  assert.equal(setup.stockBarPercent(item), 100);
   setup.editItem({ ...item, minQuantity: undefined });
   assert.equal(setup.form.minQuantity, 1);
   setup.editItem(item);
@@ -181,6 +180,11 @@ test('inventory keeps server errors inside the editor and prevents duplicate sav
     saves++;
     return new Promise((resolve, fail) => { reject = fail; });
   };
+  // Sin stock minimo no se guarda: no hay valor por defecto.
+  await setup.handleSubmit();
+  assert.equal(saves, 0);
+  assert.deepEqual(setup.formErrors, ['Stock minimo']);
+  setup.form.minQuantity = '5';
   const pending = setup.handleSubmit();
   await setup.handleSubmit();
   setup.closeEditor();
@@ -420,4 +424,21 @@ test('checkout validates customer data and prevents duplicate payments while pre
   assert.equal(setup.isSubmitting, false);
   assert.equal(setup.payment.reference, 'PAY-1');
   assert.equal(gym.cart.length, 1);
+});
+
+test('client quantities never exceed the available stock and out-of-stock products are hidden', async () => {
+  const { setup, gym } = await setupView('StoreView', '/user/store');
+  const product = { id_producto: 1, nombre: 'Toalla', precio: 10, cantidad: 3, estado: 'Disponible' };
+  gym.productos_tienda = [product, { id_producto: 2, nombre: 'Guantes', precio: 5, cantidad: 0, estado: 'Agotado' }];
+  assert.deepEqual(setup.catalogProducts.map((p) => p.id_producto), [1]);
+  const event = { target: { value: '9' } };
+  setup.setQuantity(product, event);
+  assert.equal(event.target.value, '3');
+  assert.equal(setup.cantidadInput[1], 3);
+  assert.match(setup.stockWarning[1], /Solo hay 3/);
+  setup.agregarAlCarrito(product);
+  assert.equal(gym.cart[0].cantidad, 3);
+  assert.equal(setup.availableFor(product), 0);
+  setup.updateCart(1, '9');
+  assert.equal(gym.cart[0].cantidad, 3);
 });

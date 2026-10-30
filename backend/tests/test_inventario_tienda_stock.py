@@ -581,3 +581,55 @@ def test_estados_calculados_se_guardan_en_supabase_al_leer() -> None:
     service._guardar_estados_automaticos(rows, service.state)
 
     assert ("update", "INVENTARIO", (item["id_item"], {"Estado": "Stock bajo"})) in fake.calls
+
+
+def test_borrar_producto_con_ventas_lo_archiva_y_conserva_la_venta() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
+    producto = _publicar(service, item["id_item"])
+    _reponer(service, item["id_item"], 5)
+    _vender(service, producto["id_producto"], 2)
+
+    resultado = service.delete_producto_tienda(producto["id_producto"])
+
+    assert resultado is not None and resultado["archivado"] is True
+    archivado = _producto_de(service, item["id_item"])
+    assert archivado["archivado"] is True and archivado["estado"] == "Descatalogado"
+    assert len(service.pedidos_tienda()) == 1
+    with pytest.raises(ValueError, match="no disponible"):
+        _vender(service, producto["id_producto"], 1)
+
+
+def test_borrar_producto_sin_ventas_lo_elimina() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service)
+    producto = _publicar(service, item["id_item"])
+
+    assert service.delete_producto_tienda(producto["id_producto"]) is None
+    assert all(p["id_producto"] != producto["id_producto"] for p in service.productos_tienda())
+
+
+def test_borrar_item_con_historial_archiva_el_item_y_su_producto() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service)
+    _publicar(service, item["id_item"])
+
+    resultado = service.delete_inventario(item["id_item"])
+
+    assert resultado is not None and resultado["archivado"] is True
+    assert _producto_de(service, item["id_item"])["archivado"] is True
+    with pytest.raises(ValueError, match="archivado"):
+        service.registrar_movimiento_inventario(
+            {"id_item": item["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "entrada", "cantidad": 1}
+        )
+
+
+def test_mapeo_remoto_solo_envia_archivado_al_archivar() -> None:
+    service = object.__new__(SupabaseGymService)
+
+    assert "archivado" not in service._product_to_remote({"id_producto": 1})
+    assert "archivado" not in service._inventory_to_remote({"id_item": 1})
+    assert service._product_to_remote({"id_producto": 1, "archivado": True})["archivado"] is True
+    assert service._inventory_to_remote({"id_item": 1, "archivado": True})["archivado"] is True
+    assert service._map_product({"id_producto": 1})["archivado"] is False
+    assert service._map_inventory({"id_item": 1, "archivado": True})["archivado"] is True

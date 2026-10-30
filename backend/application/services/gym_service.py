@@ -112,7 +112,7 @@ class GymService:
     def upsert_producto_tienda(self, payload: dict[str, Any], actor: Any=None) -> dict[str, Any]:
         return StoreOperations(self.executor).upsert_producto_tienda(payload, actor)
 
-    def delete_producto_tienda(self, id_producto: int) -> None:
+    def delete_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
         return StoreOperations(self.executor).delete_producto_tienda(id_producto)
 
     def pedidos_tienda(self) -> list[dict[str, Any]]:

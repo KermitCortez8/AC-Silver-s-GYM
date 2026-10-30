@@ -22,12 +22,12 @@ const context = () => ({
   inventory: ref([]), inventoryMovements: ref([]), syncError: ref(''), resourceErrors: new Map(),
 });
 
-test('deleting inventory preserves discontinued records and reports the server response', async () => {
+test('deleting inventory with history archives the record and reports the server response', async () => {
   setActivePinia(createPinia());
   const ctx = context();
   ctx.inventory.value = [{ id: 'item-1', name: 'Agua', status: 'Disponible' }];
   ctx.fetchFromBackend = async () => {};
-  const result = { accion: 'descontinuado', item: { estado: 'Descontinuado' } };
+  const result = { accion: 'archivado', item: { estado: 'Descontinuado', archivado: true } };
   const module = createInventoryModule(ctx, {
     deleteInventoryItem: async (id, token) => {
       assert.equal(id, 1);
@@ -37,6 +37,7 @@ test('deleting inventory preserves discontinued records and reports the server r
   });
   assert.deepEqual(await module.deleteInventoryItem('item-1'), result);
   assert.equal(ctx.inventory.value[0].status, 'Descontinuado');
+  assert.equal(ctx.inventory.value[0].archived, true);
 });
 
 test('deleting inventory without history removes the record after a successful response', async () => {

@@ -96,62 +96,13 @@
     >
       {{ feedbackMessage }}
     </p>
-    <StoreMovementsPanel v-if="isAdmin && activeTab === 'movimientos'" />
+    <StoreMovementsPanel v-if="isAdmin && activeTab === 'ventas'" />
 
     <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
           <h2 class="mt-2 text-2xl font-black text-white">Listado de productos</h2>
-        </div>
-      </div>
-
-      <!-- Stats cards con iconos (estilo Inventario) -->
-      <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-blue-400 bg-slate-900/80 px-4 py-3">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-            <ShoppingBag :size="20" stroke-width="2.5" />
-          </span>
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Total productos</p>
-            <p class="text-2xl font-black text-white">{{ productos.length }}</p>
-          </div>
-
-        </div>
-        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-green-400 bg-slate-900/80 px-4 py-3">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-600">
-            <BarChart3 :size="20" stroke-width="2.5" />
-          </span>
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Disponibilidad</p>
-            <p class="text-2xl font-black text-white">{{ disponibilidadPct }}%</p>
-          </div>
-         </div>
-        <button
-          type="button"
-          class="flex items-center gap-3 rounded-2xl border-l-4 border-l-orange-400 bg-slate-900/80 px-4 py-3 text-left transition hover:bg-slate-800/80"
-          :class="soloStockBajo ? 'ring-2 ring-orange-400/70' : ''"
-          :aria-pressed="soloStockBajo"
-          :title="soloStockBajo ? 'Quitar filtro de stock bajo' : 'Ver solo productos por reponer desde Inventario'"
-          @click="toggleStockBajo"
-        >
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
-            <TrendingDown :size="20" stroke-width="2.5" />
-          </span>
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Stock bajo</p>
-            <p class="text-2xl font-black" :class="lowStockCount > 0 ? 'text-rose-300' : 'text-white'">{{ lowStockCount }}</p>
-          </div>
-        </button>
-
-        <div class="flex items-center gap-3 rounded-2xl border-l-4 border-l-rose-400 bg-slate-900/80 px-4 py-3">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
-            <AlertTriangle :size="20" stroke-width="2.5" />
-          </span>
-          <div>
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Agotados</p>
-            <p class="text-2xl font-black" :class="agotadosCount > 0 ? 'text-rose-300' : 'text-white'">{{ agotadosCount }}</p>
-          </div>
         </div>
       </div>
 
@@ -193,6 +144,9 @@
           <option>Descatalogado</option>
         </select>
       </div>
+      <button v-if="soloStockBajo" type="button" class="inv-btn-ghost mt-3 inline-flex items-center gap-1.5 whitespace-nowrap" @click="toggleStockBajo">
+        Mostrando solo stock bajo <X :size="14" aria-hidden="true" />
+      </button>
 
       <!-- Feedback -->
       <p v-if="feedbackMessage" class="mt-4 rounded-2xl border px-4 py-3 text-sm" :class="feedbackToneClass">
@@ -250,14 +204,11 @@
                   S/. {{ Number(producto.precio || 0).toFixed(2) }}
                 </td>
 
-                <!-- Stock con barra -->
+                <!-- Stock -->
                 <td data-label="Stock" class="px-4 py-4 align-top">
                   <p class="font-bold" :class="isProductLowStock(producto) ? 'text-rose-300' : 'text-white'">
                     {{ producto.cantidad }} {{ producto.unidad_venta || 'unidad' }}
                   </p>
-                  <div class="mt-1.5 h-1.5 w-24 overflow-hidden rounded-full ws-inset">
-                    <div class="h-full rounded-full transition-all" :class="isProductLowStock(producto) ? 'bg-rose-500' : 'bg-green-500'" :style="{ width: stockBarWidth(producto) + '%' }"></div>
-                  </div>
                   <p class="mt-1 text-xs text-slate-400">Minimo: {{ producto.minimo || 0 }}</p>
                 </td>
 
@@ -390,22 +341,29 @@
                 "
                 class="mt-4 flex gap-2"
               >
-                <QuantityInput
-                  :model-value="cantidadInput[producto.id_producto] ?? 1"
-                  @update:model-value="cantidadInput[producto.id_producto] = $event"
-                  :aria-label="`Cantidad de ${producto.nombre}`"
+                <input
+                  :value="cantidadInput[producto.id_producto] ?? 1"
+                  :aria-label="`Cantidad de ${producto.nombre}, maximo ${availableFor(producto)}`"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="10"
                   class="ws-input flex-1 px-3 py-2 text-sm"
+                  :disabled="!availableFor(producto)"
+                  @beforeinput="blockQuantityChars"
+                  @input="setQuantity(producto, $event)"
                 />
                 <button
-                  class="flex-1 rounded-xl ws-primary px-3 py-2 text-sm font-bold ws-onaccent transition ws-primary-hover"
+                  class="flex-1 rounded-xl ws-primary px-3 py-2 text-sm font-bold ws-onaccent transition ws-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="!availableFor(producto)"
                   @click="agregarAlCarrito(producto)"
                 >
-                  Agregar
+                  {{ availableFor(producto) ? 'Agregar' : 'Todo en tu carrito' }}
                 </button>
               </div>
               <div v-else class="mt-4 rounded-xl ws-inset px-3 py-2 text-center text-sm ws-muted">
                 {{ producto.estado !== 'Disponible' ? producto.estado : 'Agotado' }}
               </div>
+              <p v-if="stockWarning[producto.id_producto]" class="mt-2 text-xs ws-warning">{{ stockWarning[producto.id_producto] }}</p>
             </article>
           </div>
 
@@ -480,6 +438,8 @@
                 <button
                   class="rounded ws-inset px-2 py-1 text-sm ws-text ws-hover"
                   :aria-label="`Aumentar cantidad de ${item.nombre}`"
+                  :disabled="item.cantidad >= cartItemStock(item)"
+                  :title="item.cantidad >= cartItemStock(item) ? `Maximo disponible: ${cartItemStock(item)}` : ''"
                   @click="
                     () =>
                       updateCart(
@@ -595,8 +555,16 @@
                   @beforeinput="blockQuantityChars"
                   @input="setDetailQuantity($event)"
                 />
-                <button type="button" class="inv-btn-ghost h-11 w-11 text-lg" aria-label="Sumar uno" @click="stepDetailQuantity(1)">+</button>
+                <button
+                  type="button"
+                  class="inv-btn-ghost h-11 w-11 text-lg disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Sumar uno"
+                  :disabled="detailQuantity >= availableFor(clientDetail)"
+                  @click="stepDetailQuantity(1)"
+                >+</button>
               </div>
+              <p class="text-xs ws-muted">Maximo {{ availableFor(clientDetail) }}{{ inCart(clientDetail) ? ` (ya tienes ${inCart(clientDetail)} en tu carrito)` : '' }}</p>
+              <p v-if="stockWarning[clientDetail.id_producto]" class="text-xs ws-warning">{{ stockWarning[clientDetail.id_producto] }}</p>
             </div>
             <p v-else class="inv-error">Este producto no esta disponible por ahora.</p>
           </div>
@@ -721,7 +689,7 @@ import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { useProductEditor } from '../composables/store/useProductEditor.js';
 import ProductEditorDialog from '../components/store/ProductEditorDialog.vue';
 import { computed, onMounted, ref } from 'vue';
-import { Eye, Heart, Package, ShoppingBag, TrendingDown, AlertTriangle, BarChart3 } from 'lucide-vue-next';
+import { Eye, Heart, Package, ShoppingBag, X } from 'lucide-vue-next';
 import { useStoreFavorites } from '../composables/store/useStoreFavorites.js';
 import { blockNonInteger } from '../utils/inputGuards.js';
 import { useAuthStore } from '../../application/stores/authStore';
@@ -741,10 +709,11 @@ const gymStore = useGymStore();
 const isAdmin = computed(() => route.path.startsWith('/admin/store'));
 const tabs = [
   { value: 'productos', label: 'Productos' },
-  { value: 'movimientos', label: 'Movimientos' },
+  { value: 'ventas', label: 'Ventas' },
 ];
+// "movimientos" es el nombre anterior de la pestaña Ventas; los enlaces viejos siguen funcionando.
 const activeTab = computed({
-  get: () => (route.query.tab === 'movimientos' ? 'movimientos' : 'productos'),
+  get: () => (['ventas', 'movimientos'].includes(route.query.tab) ? 'ventas' : 'productos'),
   set: (tab) => router.replace({ query: { ...route.query, tab } }),
 });
 const productos = computed(() => gymStore.productos_tienda);
@@ -754,7 +723,8 @@ const categoryFilter = ref('');
 const catalogProducts = computed(() =>
   isAdmin.value
     ? productos.value
-    : productos.value.filter((p) => p.estado !== 'Descatalogado'),
+    // El cliente no ve productos descatalogados ni sin stock.
+    : productos.value.filter((p) => p.estado !== 'Descatalogado' && Number(p.cantidad || 0) > 0),
 );
 const categories = computed(() =>
   [
@@ -790,13 +760,29 @@ const clearClientFilters = () => {
   clientSort.value = 'recomendados';
 };
 
-// Cantidades: solo enteros entre 1 y el stock disponible.
+// Cantidades: solo enteros entre 1 y lo que queda disponible (stock menos lo que ya esta en el carrito).
 const blockQuantityChars = blockNonInteger();
-const clampQuantity = (value, producto) => Math.max(1, Math.min(Number(value) || 1, Number(producto?.cantidad || 1)));
+const inCart = (producto) => Number(gymStore.cart.find((item) => item.id_producto === producto?.id_producto)?.cantidad || 0);
+const availableFor = (producto) => Math.max(0, Number(producto?.cantidad || 0) - inCart(producto));
+const clampQuantity = (value, producto) => Math.max(1, Math.min(Number(value) || 1, availableFor(producto) || 1));
+const stockWarning = ref({});
+const warnStock = (producto, requested) => {
+  const max = availableFor(producto);
+  stockWarning.value[producto.id_producto] = Number(requested) > max
+    ? `Solo hay ${max} disponible${max === 1 ? '' : 's'}${inCart(producto) ? ' (descontando tu carrito)' : ''}.`
+    : '';
+};
 const setQuantity = (producto, event) => {
   const digits = cleanInteger(event.target.value);
-  event.target.value = digits;
-  if (digits) cantidadInput.value[producto.id_producto] = clampQuantity(digits, producto);
+  if (!digits) {
+    event.target.value = '';
+    cantidadInput.value[producto.id_producto] = '';
+    return;
+  }
+  warnStock(producto, digits);
+  const value = clampQuantity(digits, producto);
+  event.target.value = String(value);
+  cantidadInput.value[producto.id_producto] = value;
 };
 
 // Detalle del producto para el cliente.
@@ -807,12 +793,18 @@ const openClientDetail = (producto) => {
   detailQuantity.value = 1;
 };
 const stepDetailQuantity = (delta) => {
+  warnStock(clientDetail.value, detailQuantity.value + delta);
   detailQuantity.value = clampQuantity(detailQuantity.value + delta, clientDetail.value);
 };
 const setDetailQuantity = (event) => {
   const digits = cleanInteger(event.target.value);
-  event.target.value = digits;
-  if (digits) detailQuantity.value = clampQuantity(digits, clientDetail.value);
+  if (!digits) {
+    event.target.value = '';
+    return;
+  }
+  warnStock(clientDetail.value, digits);
+  detailQuantity.value = clampQuantity(digits, clientDetail.value);
+  event.target.value = String(detailQuantity.value);
 };
 const addDetailToCart = () => {
   const producto = clientDetail.value;
@@ -821,8 +813,9 @@ const addDetailToCart = () => {
   agregarAlCarrito(producto);
   clientDetail.value = null;
 };
-const inventario = computed(() => gymStore.inventory);
+const inventario = computed(() => gymStore.inventory.filter((item) => !item.archived));
 const cart = computed(() => gymStore.cart);
+const cartItemStock = (item) => Number(productos.value.find((p) => p.id_producto === item.id_producto)?.cantidad ?? item.cantidad);
 const cartTotal = computed(() => gymStore.cartTotal);
 
 // Búsqueda y filtro por categoría
@@ -844,7 +837,7 @@ function categoriaDotColor(cat) {
   const idx = categoriasUnicas.value.indexOf(cat);
   return CATEGORY_COLORS[idx % CATEGORY_COLORS.length] ?? '#94a3b8';
 }
-// Filtro de la tarjeta "Stock bajo": productos que hay que reponer desde Inventario.
+// Filtro "Stock bajo": productos que hay que reponer desde Inventario.
 // El enlace "Stock bajo" del Home llega con ?stock=bajo y abre la lista ya filtrada.
 const soloStockBajo = ref(route.query.stock === 'bajo');
 
@@ -904,18 +897,6 @@ const editFromDetails = () => {
   if (producto) editProducto(producto);
 };
 
-// Métricas
-const lowStockCount = computed(() => productos.value.filter((p) => isProductLowStock(p)).length);
-const disponiblesCount = computed(() => productos.value.filter((p) => p.estado === 'Disponible').length);
-const agotadosCount = computed(() => productos.value.filter((p) => p.estado === 'Agotado').length);
-const disponibilidadPct = computed(() => {
-  if (!productos.value.length) return 0;
-  return Math.round((disponiblesCount.value / productos.value.length) * 100);
-});
-
-// Stock max para la barra
-const maxStock = computed(() => Math.max(1, ...productos.value.map((p) => Number(p.cantidad || 0))));
-
 const cantidadInput = ref({});
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
@@ -943,11 +924,6 @@ const productStatusDot = (status) => {
   return 'bg-orange-400';
 };
 
-const stockBarWidth = (producto) => {
-  const cantidad = Number(producto.cantidad || 0);
-  return Math.round((cantidad / maxStock.value) * 100);
-};
-
 const stockBarColor = (producto) => {
   const cantidad = Number(producto.cantidad || 0);
   const minimo = Number(producto.minimo ?? 1);
@@ -957,11 +933,13 @@ const stockBarColor = (producto) => {
 };
 
 const deleteProducto = async (idProducto) => {
-  if (!window.confirm('Eliminar este producto?')) return;
+  if (!window.confirm('Eliminar este producto?\n\nSi ya tiene ventas no se borrara: se archivara (deja de mostrarse y venderse) y sus ventas se conservan.')) return;
   try {
-    await gymStore.deleteProductoTienda(idProducto);
+    const result = await gymStore.deleteProductoTienda(idProducto);
     feedbackTone.value = 'success';
-    feedbackMessage.value = 'Producto eliminado.';
+    feedbackMessage.value = result?.accion === 'archivado'
+      ? 'El producto tiene ventas registradas: se archivo y sus ventas se conservan.'
+      : 'Producto eliminado.';
   } catch (error) {
     feedbackTone.value = 'error';
     feedbackMessage.value =
@@ -975,11 +953,25 @@ const cartError = (error) => {
   feedbackTone.value = 'error';
   feedbackMessage.value = error instanceof Error ? error.message : 'No se pudo actualizar el carrito.';
 };
+// En el carrito un numero mayor al stock se ajusta al maximo y se avisa.
 const updateCart = (id, quantity) => {
+  const item = cart.value.find((entry) => entry.id_producto === id);
+  const max = item ? cartItemStock(item) : Infinity;
+  if (/^[0-9]+$/.test(String(quantity)) && Number(quantity) > max) {
+    quantity = max;
+    feedbackTone.value = 'error';
+    feedbackMessage.value = `Solo hay ${max} disponible${max === 1 ? '' : 's'} de ${item.nombre}.`;
+  }
   try { gymStore.updateCartQuantity(id, quantity); }
   catch (error) { cartError(error); }
 };
 const agregarAlCarrito = (producto) => {
+  if (!availableFor(producto)) {
+    feedbackTone.value = 'error';
+    feedbackMessage.value = `Ya tienes en el carrito todo el stock de ${producto.nombre}.`;
+    return;
+  }
+  stockWarning.value[producto.id_producto] = '';
   try {
     gymStore.addToCart(producto, cantidadInput.value[producto.id_producto] ?? 1);
     cantidadInput.value[producto.id_producto] = 1;

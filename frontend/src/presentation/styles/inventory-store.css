@@ -712,7 +712,6 @@
 
 .inv-search .inv-input {
   padding-left: 2.6rem;
-  padding-right: 3.6rem;
 }
 
 .inv-search-icon {
@@ -721,15 +720,6 @@
   top: 0.95rem;
   color: var(--inv-sort);
   pointer-events: none;
-}
-
-.inv-search-count {
-  position: absolute;
-  right: 0.95rem;
-  top: 0.85rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--inv-sort);
 }
 
 .inv-btn-ghost {

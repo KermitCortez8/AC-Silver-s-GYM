@@ -78,11 +78,11 @@ export const createStoreModule = (ctx, repository) => {
   };
 
   const deleteProductoTienda = async (id_producto) => {
-    if (ctx.apiBase) {
-      await remote.deleteProductoTienda(id_producto);
-    }
+    // Con ventas registradas el backend lo archiva: deja de mostrarse y sus ventas se conservan.
+    const result = ctx.apiBase ? await remote.deleteProductoTienda(id_producto) : null;
 
     ctx.productos_tienda.value = ctx.productos_tienda.value.filter((p) => p.id_producto !== id_producto);
+    return result;
   };
 
   const addToCart = (producto, cantidad = 1) => {
@@ -145,7 +145,10 @@ export const createStoreModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
     const list = requireList(await remote.refreshStoreProductsFromBackend(), 'id_producto');
-    ctx.productos_tienda.value = list.map((product) => normalizeStoreProductFromBackend(product));
+    // Los archivados no se muestran ni se venden; los pedidos guardan su propio nombre.
+    ctx.productos_tienda.value = list
+      .filter((product) => !product.archivado)
+      .map((product) => normalizeStoreProductFromBackend(product));
     return ctx.productos_tienda.value;
   };
 

@@ -20,7 +20,7 @@ class StoreOperations:
     def upsert_producto_tienda(self, payload: dict[str, Any], actor: Any=None) -> dict[str, Any]:
         return self.executor.execute(UpsertProductoTiendaCommand(payload, actor))
 
-    def delete_producto_tienda(self, id_producto: int) -> None:
+    def delete_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
         return self.executor.execute(DeleteProductoTiendaCommand(id_producto))
 
     def pedidos_tienda(self) -> list[dict[str, Any]]:

@@ -105,6 +105,9 @@ class InventoryRules:
         self._actualizar_estados_items_tienda(state)
         for producto in state.get("productos_tienda", []):
             stock = int(producto.get("cantidad_stock") or 0)
+            if producto.get("archivado"):
+                producto["estado"] = "Descatalogado"
+                continue
             if producto.get("id_item"):
                 item = self._find_item_in_state(state, producto["id_item"])
                 vendible = (
@@ -204,7 +207,12 @@ class InventoryRules:
             tiene_movimientos = any(int(m.get("id_item", 0) or 0) == int(id_item) for m in state["mov_inv"])
             tiene_producto = any(int(p.get("id_item") or 0) == int(id_item) for p in state.get("productos_tienda", []))
             if tiene_movimientos or tiene_producto:
+                # Se archiva: MOV_INV y TIENDA_PRODUCTOS lo referencian y su historial se conserva.
                 item["estado"] = ESTADO_DESCONTINUADO
+                item["archivado"] = True
+                for producto in state.get("productos_tienda", []):
+                    if int(producto.get("id_item") or 0) == int(id_item):
+                        producto["archivado"] = True
                 self._actualizar_estados_tienda(state)
                 return item
             state["inventario"] = [i for i in state["inventario"] if int(i.get("id_item", 0)) != int(id_item)]
@@ -220,8 +228,11 @@ class InventoryRules:
         id_usuario = self.dependencies.normalize_usuario_id(payload.get("id_usuario"))
         tipo = str(payload.get("tipo_movimiento", "")).lower()
 
-        if not self.get_item_inventario(id_item):
+        item_actual = self.get_item_inventario(id_item)
+        if not item_actual:
             raise EntityNotFound("Item de inventario no encontrado")
+        if item_actual.get("archivado"):
+            raise ValueError("El artículo está archivado y no admite movimientos")
         if not self.dependencies.get_usuario(id_usuario):
             raise EntityNotFound("Usuario no encontrado")
         if tipo not in {"entrada", "salida", "ajuste"}:
