@@ -1,5 +1,19 @@
+import { amountError, requiredTextError } from "../../../domain/utils/formValidation.js";
+import { parseQuantity } from "../../../domain/utils/quantities.js";
 import { computed, reactive, ref } from "vue";
 import { useStoreImagePicker } from "./useStoreImagePicker.js";
+import { missingFields, missingFieldsMessage } from "../../../domain/utils/inputRules.js";
+
+const isBlank = (value) => String(value ?? "").trim() === "";
+// Obligatorios del TP2: nombre, categoria, precio y stock inicial (solo al crear).
+const requiredProductFields = (creating) => [
+  { key: "nombre", label: "Nombre" },
+  { key: "categoria", label: "Categoria" },
+  { key: "precio", label: "Precio", isEmpty: (value) => isBlank(value) || !(Number(value) > 0) },
+  ...(creating
+    ? [{ key: "cantidad", label: "Stock inicial", isEmpty: (value) => isBlank(value) || !Number.isInteger(Number(value)) }]
+    : []),
+];
 
 export const useProductEditor = ({
   gymStore,
@@ -14,6 +28,8 @@ export const useProductEditor = ({
   const editingId = ref("");
 
   const isProductEditorOpen = ref(false);
+
+  const formErrors = ref([]);
 
   const form = reactive({
     nombre: "",
@@ -100,6 +116,7 @@ export const useProductEditor = ({
     form.minimo = 5;
     form.estado = "Disponible";
     form.imagen_url = "";
+    formErrors.value = [];
     imageFeedback.value = "";
     isBucketPickerOpen.value = false;
     bucketImages.value = [];
@@ -130,6 +147,7 @@ export const useProductEditor = ({
     form.estado = producto.estado || "Disponible";
     form.imagen_url = producto.imagen_url || "";
     feedbackMessage.value = "";
+    formErrors.value = [];
     imageFeedback.value = "";
     isBucketPickerOpen.value = false;
     isProductEditorOpen.value = true;
@@ -137,19 +155,27 @@ export const useProductEditor = ({
 
   const handleSubmit = async () => {
     if (isSaving.value || isUploadingImage.value) return;
+    formErrors.value = missingFields(form, requiredProductFields(!editingId.value));
+    if (formErrors.value.length) {
+      feedbackTone.value = "error";
+      feedbackMessage.value = missingFieldsMessage(formErrors.value);
+      return;
+    }
     isSaving.value = true;
     feedbackMessage.value = "";
     try {
+      const invalid = requiredTextError(form.nombre, 'El nombre del producto') || amountError(form.precio);
+      if (invalid) throw new Error(invalid);
       await gymStore.upsertProductoTienda({
         id_producto: editingId.value || undefined,
-        nombre: form.nombre,
+        nombre: String(form.nombre).trim(),
         descripcion: form.descripcion,
         categoria: form.categoria,
         id_item: form.id_item || null,
         unidad_venta: form.unidad_venta,
-        precio: form.precio,
-        cantidad: form.cantidad,
-        minimo: form.minimo,
+        precio: Number(form.precio),
+        cantidad: parseQuantity(form.cantidad, { label: "El stock inicial" }),
+        minimo: parseQuantity(form.minimo, { label: "El stock mínimo" }),
         estado: form.estado,
         imagen_url: form.imagen_url,
       });
@@ -176,6 +202,7 @@ export const useProductEditor = ({
     editingId,
     isProductEditorOpen,
     form,
+    formErrors,
     currentProductCode,
     itemNumber,
     findItem,

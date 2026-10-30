@@ -10,7 +10,7 @@
     <section class="schedule-workspace" aria-label="Calendario de clases">
       <div class="schedule-toolbar">
         <div class="schedule-metrics"><span><strong>{{ activeSchedules }}</strong> horarios activos</span><span><strong>{{ usedSlots }} / {{ totalSlots }}</strong> cupos ocupados</span></div>
-        <div class="schedule-search-actions"><label class="schedule-search"><Search :size="16" aria-hidden="true" /><input v-model="filters.search" placeholder="Buscar una clase…" aria-label="Buscar horario" /></label><button type="button" class="schedule-secondary" :aria-expanded="showFilters" aria-controls="schedule-filters" @click="showFilters = !showFilters"><SlidersHorizontal :size="15" />Filtros<span v-if="extraFilterCount" class="filter-count">{{ extraFilterCount }}</span></button></div>
+        <div class="schedule-search-actions"><label class="schedule-search"><Search :size="16" aria-hidden="true" /><SearchInput v-model="filters.search" placeholder="Servicio, rutina, día u hora…" aria-label="Buscar horario" /></label><button type="button" class="schedule-secondary" :aria-expanded="showFilters" aria-controls="schedule-filters" @click="showFilters = !showFilters"><SlidersHorizontal :size="15" />Filtros<span v-if="extraFilterCount" class="filter-count">{{ extraFilterCount }}</span></button></div>
       </div>
       <nav class="service-tabs" aria-label="Filtrar por servicio">
         <button v-for="service in serviceFilters" :key="service.value" type="button" :aria-pressed="filters.servicio === service.value" @click="filters.servicio = service.value">
@@ -211,7 +211,7 @@
             </label>
           </div>
 
-          <p class="mt-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm schedule-soft">
+          <p class="mt-3 rounded-2xl border border-orange-400/20 bg-orange-400/10 px-4 py-3 text-sm schedule-soft">
             Este horario se repite cada semana. Al editarlo, el cambio se aplica a las próximas clases y sus recordatorios. La duración debe ser de 1 o 2 horas.
           </p>
 
@@ -244,6 +244,7 @@
 </template>
 
 <script setup>
+import SearchInput from "../components/SearchInput.vue";
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ChevronDown, CircleAlert, CircleCheck, List, Plus, RefreshCw, Search, SlidersHorizontal, Trash2 } from 'lucide-vue-next';
 import ScheduleModal from '../components/ScheduleModal.vue';

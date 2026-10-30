@@ -299,7 +299,7 @@ def test_saving_and_deleting_users_does_not_load_other_sections(scoped_api):
     client, remote, service = scoped_api
     remote.rows['USUARIO'].append({'id_usuario': 2, 'Nombre': 'Trainer', 'Rol': 'trainer'})
     response = client.post('/api/usuarios', json={
-        'id_usuario': 'SGADM001', 'nombre': 'Admin actualizado', 'correo': 'admin@example.com', 'rol': 'admin',
+        'id_usuario': 'SGADM001', 'nombre': 'Admin actualizado', 'correo': 'admin@gmail.com', 'rol': 'admin',
     })
     assert response.status_code == 200
     assert response.json()['nombre'] == 'Admin actualizado'
@@ -321,7 +321,7 @@ def test_user_mutations_do_not_copy_unrelated_cached_histories():
     service = service_with_remote(remote)
     history = [UnrelatedHistory()]
     service.state['asistencia'] = history
-    service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Admin', 'correo': 'admin@example.com', 'rol': 'admin'})
+    service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Admin', 'correo': 'admin@gmail.com', 'rol': 'admin'})
     assert remote.calls == ['USUARIO']
     assert service.state['asistencia'] is history
 
@@ -338,7 +338,7 @@ def test_failed_user_update_restores_account_without_discarding_other_sections()
 
     remote.update = fail
     with pytest.raises(RuntimeError, match='Update failed'):
-        service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Otro nombre', 'correo': 'admin@example.com', 'rol': 'admin'})
+        service.upsert_usuario({'id_usuario': 'SGADM001', 'nombre': 'Otro nombre', 'correo': 'admin@gmail.com', 'rol': 'admin'})
     assert service.state['usuario'][0]['nombre'] == 'Admin'
     assert service.state['asistencia'] is history
     assert service._resource_refreshed_at == {}

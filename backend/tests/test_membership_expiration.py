@@ -25,7 +25,7 @@ def gym(monkeypatch):
         monkeypatch.setattr(f'{module}._today_iso', lambda: '2026-10-01')
     service = LocalGymService()
     result = ClientsService(service).register_admin_client({
-        'nombre': 'Cliente Vigente', 'correo': 'cliente@example.com', 'dni': '12345678',
+        'nombre': 'Cliente Vigente', 'correo': 'cliente@gmail.com', 'dni': '12345678',
         'password': 'secreto123', 'plan': 'MENSUAL',
     })
     client_id = result['cliente']['id_cliente']
@@ -83,7 +83,7 @@ def test_date_boundary_uses_peru_midnight(monkeypatch, instant, expected):
 
 def test_expired_password_login_and_existing_signed_token_are_blocked(gym):
     client = api(gym)
-    login = client.post('/auth/password', json={'correo': 'cliente@example.com', 'password': 'secreto123'})
+    login = client.post('/auth/password', json={'correo': 'cliente@gmail.com', 'password': 'secreto123'})
     assert login.status_code == 200
     headers = {'Authorization': f"Bearer {login.json()['token']}"}
     assert client.get('/private', headers=headers).status_code == 200
@@ -91,7 +91,7 @@ def test_expired_password_login_and_existing_signed_token_are_blocked(gym):
     for response in (
         client.get('/auth/me', headers=headers),
         client.get('/private', headers=headers),
-        client.post('/auth/password', json={'correo': 'cliente@example.com', 'password': 'secreto123'}),
+        client.post('/auth/password', json={'correo': 'cliente@gmail.com', 'password': 'secreto123'}),
     ):
         assert response.status_code == 403
         assert response.json()['detail']['code'] == 'membership_expired'
@@ -103,7 +103,7 @@ def test_linked_google_login_is_blocked_after_expiration(gym, monkeypatch):
     account = gym.state['clientes'][0]
     account['google_sub'] = 'google-client'
     monkeypatch.setattr(gym.identity, 'verify', lambda _: {
-        'sub': 'google-client', 'email': 'cliente@example.com', 'name': 'Cliente',
+        'sub': 'google-client', 'email': 'cliente@gmail.com', 'name': 'Cliente',
     })
     expire(gym)
     response = api(gym).post('/auth/google', json={'credential': 'signed-google-token'})
@@ -178,11 +178,12 @@ def test_new_paid_membership_can_restore_access_after_admin_activation(gym):
     assert old['fecha_fin'] == '2026-09-30'
 
 
-def test_no_change_expiration_does_not_write_or_extend_refresh_ttl(gym, monkeypatch):
-    def unexpected_write(_fn):
-        pytest.fail('La comprobación de vigencia no debe escribir sin cambios')
-    monkeypatch.setattr(gym, '_mutate', unexpected_write)
+def test_no_change_expiration_does_not_write_or_extend_refresh_ttl(gym):
+    # La fachada reenvía atributos al repositorio: no se parchea con monkeypatch,
+    # porque su limpieza fallaría y dejaría la fecha fija para otras pruebas.
+    before = {key: deepcopy(gym.state[key]) for key in ('clientes', 'membresia')}
     assert gym.expire_memberships() is False
+    assert {key: gym.state[key] for key in ('clientes', 'membresia')} == before
 
 
 def test_supabase_expiration_persists_membership_and_boolean_account_block(gym):

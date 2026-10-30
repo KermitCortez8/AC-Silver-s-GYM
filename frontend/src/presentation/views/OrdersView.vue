@@ -1,122 +1,146 @@
 <template>
-  <div class="space-y-6">
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Pedidos</p>
-          <h1 class="mt-2 text-3xl font-black text-white">Pedidos de tienda</h1>
-          <p class="mt-2 text-slate-300">Compras generadas desde la tienda del cliente.</p>
+  <div class="orders-theme space-y-6">
+    <section class="ord-hero">
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div class="flex items-start gap-4">
+          <span class="ord-hero-icon"><ClipboardList :size="24" aria-hidden="true" /></span>
+          <div>
+            <p class="ord-eyebrow">Tienda &middot; Pedidos</p>
+            <h1 class="ord-title">Pedidos de tienda</h1>
+            <p class="ord-subtitle">Compras pagadas desde la tienda del cliente: confirma, entrega o cancela cada pedido.</p>
+          </div>
         </div>
-        <button class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10" @click="refresh()">
-          Actualizar
+        <button type="button" class="ord-btn-secondary" @click="refresh()">
+          <RefreshCw :size="16" aria-hidden="true" /> Actualizar
         </button>
       </div>
     </section>
 
-    <section class="grid gap-4 md:grid-cols-3">
-      <article class="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-        <p class="text-sm text-slate-400">Pedidos</p>
-        <p class="mt-2 text-3xl font-black text-white">{{ orders.length }}</p>
+    <section class="grid gap-3 sm:grid-cols-3">
+      <article class="ord-stat">
+        <span class="ord-stat-icon"><ClipboardList :size="20" aria-hidden="true" /></span>
+        <div>
+          <p class="ord-stat-label">Pedidos</p>
+          <p class="ord-stat-value">{{ orders.length }}</p>
+        </div>
       </article>
-      <article class="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-        <p class="text-sm text-slate-400">Pendientes</p>
-        <p class="mt-2 text-3xl font-black text-amber-300">{{ pendingOrders.length }}</p>
+      <article class="ord-stat ord-stat--accent">
+        <span class="ord-stat-icon"><Clock :size="20" aria-hidden="true" /></span>
+        <div>
+          <p class="ord-stat-label">Pendientes</p>
+          <p class="ord-stat-value">{{ pendingOrders.length }}</p>
+        </div>
       </article>
-      <article class="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-        <p class="text-sm text-slate-400">Ventas</p>
-        <p class="mt-2 text-3xl font-black text-emerald-300">S/. {{ totalSales.toFixed(2) }}</p>
+      <article class="ord-stat">
+        <span class="ord-stat-icon"><Wallet :size="20" aria-hidden="true" /></span>
+        <div>
+          <p class="ord-stat-label">Ventas</p>
+          <p class="ord-stat-value">S/. {{ totalSales.toFixed(2) }}</p>
+        </div>
       </article>
     </section>
 
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="ord-panel">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
-          <h2 class="mt-2 text-2xl font-black text-white">Pedidos registrados</h2>
+          <p class="ord-eyebrow">Historial</p>
+          <h2 class="ord-panel-title">Pedidos registrados</h2>
         </div>
-        <label class="w-full space-y-2 lg:max-w-md">
-          <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Buscar</span>
-          <input v-model="search" class="field-input" placeholder="Cliente, DNI, pedido o producto" />
+        <label class="ord-search w-full lg:max-w-md">
+          <span class="sr-only">Buscar pedidos</span>
+          <Search :size="16" class="ord-search-icon" aria-hidden="true" />
+          <SearchInput v-model="search" class="ord-input" placeholder="Cliente, DNI, pedido o producto" />
         </label>
       </div>
 
-      <p v-if="feedback" class="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-50">
-        {{ feedback }}
-      </p>
+      <p v-if="feedback" role="alert" class="ord-error mt-4">{{ feedback }}</p>
 
       <div v-if="filteredOrders.length" class="mt-5 space-y-4">
-        <article v-for="order in filteredOrders" :key="order.id_pedido" class="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-          <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <article v-for="order in paginatedOrders" :key="order.id_pedido" class="ord-card" :class="{ 'ord-card--cancelled': isCancelled(order) }">
+          <div class="ord-card-head">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
-                <h3 class="text-xl font-black text-white">Pedido #{{ order.id_pedido }}</h3>
-                <span class="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-100">{{ order.estado_pago }}</span>
-                <span class="rounded-full bg-amber-400/15 px-3 py-1 text-xs font-black text-amber-100">{{ order.estado_pedido }}</span>
+                <h3 class="ord-card-title">Pedido #{{ order.id_pedido }}</h3>
+                <span class="ord-pill ord-pill--paid">{{ order.estado_pago }}</span>
+                <span class="ord-pill" :class="statusPillClass(order.estado_pedido)">{{ order.estado_pedido }}</span>
               </div>
-              <p class="mt-2 text-sm text-slate-300">{{ clientOf(order).name || 'Sin registrar' }} - {{ clientOf(order).email || 'Sin correo' }}</p>
-              <p class="mt-1 text-xs text-slate-500">DNI: {{ clientOf(order).dni || 'No registrado' }} | {{ formatDate(order.fecha_pedido) }}</p>
+              <p class="ord-client">{{ clientOf(order).name || 'Sin registrar' }} &middot; {{ clientOf(order).email || 'Sin correo' }}</p>
+              <p class="ord-meta">DNI: {{ clientOf(order).dni || 'No registrado' }} &middot; {{ formatDate(order.fecha_pedido) }}</p>
             </div>
-
-            <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right">
-              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Total</p>
-              <p class="mt-1 text-2xl font-black text-amber-300">S/. {{ Number(order.total || 0).toFixed(2) }}</p>
+            <div class="ord-total">
+              <p class="ord-total-label">Total</p>
+              <p class="ord-total-value">S/. {{ Number(order.total || 0).toFixed(2) }}</p>
             </div>
           </div>
 
-          <div class="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[180px_1fr_auto] md:items-end">
-            <label class="space-y-2">
-              <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Estado</span>
-              <select v-model="ensureDraft(order).estado_pedido" class="field-input" :disabled="isCancelled(order)">
-                <option>PENDIENTE</option>
-                <option>CONFIRMADO</option>
-                <option>ENTREGADO</option>
-                <option :disabled="!canCancel(order)">CANCELADO</option>
-              </select>
-              <span v-if="isCancelled(order)" class="block text-[11px] text-slate-500">Pedido cancelado: su stock ya fue devuelto.</span>
-              <span v-else-if="!canCancel(order)" class="block text-[11px] text-slate-500">Solo se cancelan pedidos PENDIENTE.</span>
-            </label>
-            <label class="space-y-2">
-              <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Observacion</span>
-              <input v-model="ensureDraft(order).observacion_admin" class="field-input" placeholder="Entrega, recojo, incidencia o anulacion" />
-            </label>
-            <button class="rounded-2xl bg-amber-400 px-4 py-3 font-black text-slate-950" @click="updateOrder(order)">
-              Guardar
-            </button>
-          </div>
-
-          <div class="mt-5 overflow-hidden rounded-2xl border border-white/10">
-            <div class="hidden grid-cols-[1fr_120px_130px_130px] bg-slate-900/80 px-4 py-3 text-xs uppercase tracking-[0.2em] text-slate-500 md:grid">
+          <div class="ord-items">
+            <div class="ord-items-head">
               <span>Producto</span>
               <span>Cantidad</span>
               <span>Precio</span>
               <span class="text-right">Subtotal</span>
             </div>
-            <div class="divide-y divide-white/10">
-              <div v-for="item in order.items" :key="`${order.id_pedido}-${item.id_producto}`" class="grid gap-2 px-4 py-3 text-sm text-slate-300 md:grid-cols-[1fr_120px_130px_130px]">
-                <span class="font-bold text-white">{{ item.nombre_producto }}</span>
-                <span>{{ item.cantidad }}</span>
-                <span>S/. {{ Number(item.precio_unitario || 0).toFixed(2) }}</span>
-                <span class="font-bold text-white md:text-right">S/. {{ Number(item.subtotal || 0).toFixed(2) }}</span>
-              </div>
+            <div v-for="item in order.items" :key="`${order.id_pedido}-${item.id_producto}`" class="ord-item-row">
+              <span class="ord-item-name">{{ item.nombre_producto }}</span>
+              <span>{{ item.cantidad }}</span>
+              <span>S/. {{ Number(item.precio_unitario || 0).toFixed(2) }}</span>
+              <span class="ord-item-subtotal">S/. {{ Number(item.subtotal || 0).toFixed(2) }}</span>
             </div>
+          </div>
+
+          <div class="ord-manage">
+            <label class="space-y-1.5">
+              <span class="ord-field-label">Estado</span>
+              <select v-model="ensureDraft(order).estado_pedido" class="ord-input" :disabled="isCancelled(order)">
+                <option>PENDIENTE</option>
+                <option>CONFIRMADO</option>
+                <option>ENTREGADO</option>
+                <option :disabled="!canCancel(order)">CANCELADO</option>
+              </select>
+              <span v-if="isCancelled(order)" class="ord-hint">Pedido cancelado: su stock ya fue devuelto.</span>
+              <span v-else-if="!canCancel(order)" class="ord-hint">Solo se cancelan pedidos PENDIENTE.</span>
+            </label>
+            <label class="space-y-1.5">
+              <span class="ord-field-label">Observacion</span>
+              <input v-model="ensureDraft(order).observacion_admin" class="ord-input" placeholder="Entrega, recojo, incidencia o anulacion" />
+            </label>
+            <button type="button" class="ord-btn-primary" :disabled="savingOrders.has(order.id_pedido)" @click="updateOrder(order)">
+              <Save :size="16" aria-hidden="true" /> {{ savingOrders.has(order.id_pedido) ? 'Guardando...' : 'Guardar' }}
+            </button>
           </div>
         </article>
       </div>
 
-      <p v-else class="mt-6 rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-slate-400">
-        No hay pedidos para mostrar.
-      </p>
+      <!-- Paginacion: 10 pedidos por pagina por defecto. -->
+      <div class="inv-store-theme">
+        <TablePager
+          v-model:page="paginaActual"
+          v-model:pageSize="porPagina"
+          :sizes="ORDER_PAGE_SIZES"
+          :total="filteredOrders.length"
+          item-label="pedidos"
+        />
+      </div>
+
+      <div v-if="!filteredOrders.length" class="ord-empty">
+        <ClipboardList :size="28" aria-hidden="true" />
+        <p>{{ search ? 'Ningun pedido coincide con la busqueda.' : 'No hay pedidos para mostrar.' }}</p>
+      </div>
     </section>
   </div>
 </template>
 
 <script setup>
+import SearchInput from "../components/SearchInput.vue";
+import TablePager from "../components/common/TablePager.vue";
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { ClipboardList, Clock, RefreshCw, Save, Search, Wallet } from 'lucide-vue-next';
 import { useGymStore } from '../../application/stores/gymStore';
 
 const gymStore = useGymStore();
 const search = ref('');
 const feedback = ref('');
+const savingOrders = reactive(new Set());
 const orderDrafts = reactive({});
 
 const orderStatus = (order) => String(order.estado_pedido || '').toUpperCase();
@@ -173,6 +197,27 @@ const filteredOrders = computed(() => {
   });
 });
 
+// Paginacion sobre la lista filtrada; vuelve a la primera pagina al buscar.
+const paginaActual = ref(1);
+// Pedidos muestra 10 por pagina (Inventario y Tienda usan 8).
+const ORDER_PAGE_SIZES = [10, 20, 30, 50];
+const porPagina = ref(ORDER_PAGE_SIZES[0]);
+const paginatedOrders = computed(() => filteredOrders.value
+  .slice((paginaActual.value - 1) * porPagina.value, paginaActual.value * porPagina.value));
+watch(search, () => { paginaActual.value = 1; });
+watch(() => filteredOrders.value.length, (total) => {
+  const pages = Math.max(1, Math.ceil(total / porPagina.value));
+  if (paginaActual.value > pages) paginaActual.value = pages;
+});
+
+// Color de la etiqueta segun el estado del pedido.
+const statusPillClass = (status) => ({
+  PENDIENTE: 'ord-pill--pending',
+  CONFIRMADO: 'ord-pill--confirmed',
+  ENTREGADO: 'ord-pill--delivered',
+  CANCELADO: 'ord-pill--cancelled',
+}[String(status || '').toUpperCase()] || 'ord-pill--pending');
+
 /**
  * Gestiona esta acción de la vista.
  */
@@ -218,6 +263,7 @@ const refresh = async (force = true) => {
 };
 
 const updateOrder = async (order) => {
+  if (savingOrders.has(order.id_pedido)) return;
   feedback.value = '';
   const draft = ensureDraft(order);
   if (draft.estado_pedido === 'CANCELADO' && !isCancelled(order)) {
@@ -231,28 +277,13 @@ const updateOrder = async (order) => {
       return;
     }
   }
+  savingOrders.add(order.id_pedido);
   try {
-    await gymStore.updateStoreOrderStatus(order.id_pedido, draft);
+    await gymStore.updateStoreOrderStatus(order.id_pedido, { ...draft });
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'No se pudo actualizar el pedido.';
-  }
+  } finally { savingOrders.delete(order.id_pedido); }
 };
 
 onMounted(() => refresh(false));
 </script>
-
-<style scoped>
-.field-input {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  background: rgba(2, 6, 23, 0.72);
-  padding: 0.75rem 1rem;
-  color: white;
-  outline: none;
-}
-
-.field-input::placeholder {
-  color: #64748b;
-}
-</style>

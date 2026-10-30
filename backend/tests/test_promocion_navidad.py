@@ -80,7 +80,7 @@ def test_promociones_vigentes_publicas_and_autoapply():
     # Test auto-aplicación en registro público del plan ANUAL
     result = service.registrar_cliente_publico({
         "nombre": "Cliente Navidad",
-        "correo": "navidad@gym.com",
+        "correo": "navidad@hotmail.com",
         "telefono": "999888777",
         "dni": "87654321",
         "password": "password123",

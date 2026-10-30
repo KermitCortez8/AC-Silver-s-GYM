@@ -116,7 +116,7 @@ def test_registration_keeps_the_saved_client_when_checkout_fails():
     assert len(calls) == 1
 
 
-@pytest.mark.parametrize('filename,mime', [('a.svg', 'image/svg+xml'), ('a.jpg', 'image/png'), ('a.png', 'text/plain')])
+@pytest.mark.parametrize('filename,mime', [('a.svg', 'image/svg+xml'), ('a.webp', 'image/webp'), ('a.gif', 'image/gif'), ('a.jpg', 'image/png'), ('a.png', 'text/plain')])
 def test_image_policy_rejects_unsupported_or_mismatched_formats(filename, mime):
     with pytest.raises(ValueError):
         validate_image(filename, b'image', mime)
@@ -135,3 +135,29 @@ def test_http_reports_a_late_repository_failure_as_503():
     response = TestClient(app).get('/read')
     assert response.status_code == 503
     assert 'detalle interno' not in response.text
+
+
+def test_http_reports_a_foreign_key_rejection_as_409():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from presentation.error_handlers import install_error_handlers
+    from infrastructure.http_transport import RemoteServiceError
+    app = FastAPI()
+    install_error_handlers(app)
+    @app.delete('/producto')
+    def delete():
+        raise RemoteServiceError('commit', 409, {'code': '23503', 'message': 'violates foreign key'})
+    response = TestClient(app).delete('/producto')
+    assert response.status_code == 409
+    assert 'historial' in response.json()['detail']
+    assert 'foreign key' not in response.text
+
+
+@pytest.mark.parametrize('filename,mime,extension', [('a.png', 'image/png', '.png'), ('a.JPG', 'image/jpeg', '.jpg'), ('a.jpeg', 'image/jpeg', '.jpeg')])
+def test_image_policy_accepts_only_png_and_jpg(filename, mime, extension):
+    assert validate_image(filename, b'image', mime) == extension
+
+
+def test_image_policy_tells_which_formats_are_allowed():
+    with pytest.raises(ValueError, match=r'\.png y \.jpg'):
+        validate_image('a.webp', b'image', 'image/webp')

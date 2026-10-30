@@ -28,7 +28,7 @@
           </span>
           <span
             v-else
-            class="rounded-full bg-amber-500/20 px-3 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30"
+            class="rounded-full bg-orange-500/20 px-3 py-0.5 text-[10px] font-bold text-orange-300 border border-orange-500/30"
           >
             Pendiente
           </span>

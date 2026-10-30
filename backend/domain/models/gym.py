@@ -7,11 +7,17 @@ from __future__ import annotations
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
-from domain.validation import required_text, email_address, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
+from domain.validation import account_email, dni_number, integer_quantity, phone_number
+from domain.validation import required_text, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
 
 
 class ValidatedInput(BaseModel):
     model_config = ConfigDict(allow_inf_nan=False)
+
+    @field_validator("cantidad_stock", "stock_minimo", "cantidad", "capacidad_total", "capacidad_por_hora", check_fields=False, mode="before")
+    @classmethod
+    def valid_integer_quantity(cls, value):
+        return integer_quantity(value) if value is not None else value
 
     @field_validator("nombre", "nombre_plan", "nombre_item", "nombre_producto", "nombre_rutina", "tipo", "duracion", check_fields=False)
     @classmethod
@@ -21,7 +27,27 @@ class ValidatedInput(BaseModel):
     @field_validator("correo", check_fields=False)
     @classmethod
     def valid_email(cls, value):
-        return email_address(value)
+        return account_email(value)
+
+    @field_validator("cliente_correo", check_fields=False)
+    @classmethod
+    def valid_order_email(cls, value):
+        return account_email(value) if value else ""
+
+    @field_validator("cliente_dni", check_fields=False)
+    @classmethod
+    def valid_order_dni(cls, value):
+        return dni_number(value)
+
+    @field_validator("dni", check_fields=False)
+    @classmethod
+    def valid_dni(cls, value):
+        return dni_number(value)
+
+    @field_validator("telefono", check_fields=False)
+    @classmethod
+    def valid_phone(cls, value):
+        return phone_number(value)
 
     @field_validator("precio", "precio_venta", "stock_minimo", "cantidad_stock", "valor_descuento", "peso_sugerido_kg", "peso_utilizado_kg", check_fields=False)
     @classmethod
@@ -104,7 +130,7 @@ class PlanMembresiaInput(ValidatedInput):
     id_pm: int | None = None
     nombre_plan: str
     duracion: str
-    precio: int = Field(ge=0)
+    precio: float = Field(ge=0)
     descripcion: str = ""
     beneficios: str = ""
     activo: bool = True
@@ -165,6 +191,14 @@ class RegistroPublicoClienteInput(ValidatedInput):
     plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
     promocion: str = "SIN PROMOCION"
     google_credential: str = ""
+
+    @model_validator(mode="after")
+    def complete_registration(self):
+        dni_number(self.dni, required=True)
+        phone_number(self.telefono, required=True)
+        if not self.google_credential and len((self.password or self.contrasena).strip()) < 6:
+            raise ValueError("La contraseña debe tener al menos 6 caracteres.")
+        return self
 
 
 class PagoPublicoClienteInput(ValidatedInput):

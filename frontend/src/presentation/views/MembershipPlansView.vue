@@ -46,7 +46,7 @@
         @cancel.prevent="closeEditor"
         @click="handleBackdrop"
       >
-        <form @submit.prevent="savePlan">
+        <form novalidate @submit.prevent="savePlan">
           <div class="flex items-start justify-between gap-4">
             <div>
               <p class="text-sm uppercase tracking-[0.35em] text-slate-400">{{ form.id_pm ? 'Editar' : 'Crear' }}</p>
@@ -92,6 +92,8 @@
 </template>
 
 <script setup>
+import { amountError, durationError, requiredTextError } from "../../domain/utils/formValidation.js";
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useGymStore } from '../../application/stores/gymStore';
 
@@ -102,7 +104,7 @@ const editor = ref(null);
 const editorError = ref('');
 const saving = ref(false);
 const plans = computed(() => gymStore.planCatalog);
-const feedbackClass = computed(() => feedbackTone.value === 'error' ? 'border-rose-400/20 bg-rose-400/10 text-rose-50' : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-50');
+const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 const form = reactive({ id_pm: null, name: '', duration: '30 dias', price: 0, description: '', benefits: '', active: true });
 
 /**
@@ -145,6 +147,8 @@ const savePlan = async () => {
   saving.value = true;
   editorError.value = '';
   try {
+    const invalid = requiredTextError(form.name, 'El nombre del plan') || durationError(form.duration) || amountError(form.price);
+    if (invalid) throw new Error(invalid);
     await gymStore.upsertPlan({ ...form });
     feedbackTone.value = 'success';
     feedback.value = 'Plan guardado correctamente.';

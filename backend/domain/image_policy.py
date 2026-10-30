@@ -3,11 +3,12 @@ from pathlib import PurePath
 
 IMAGE_MIME_TYPES = {
     ".jpg": {"image/jpeg", "image/jpg"}, ".jpeg": {"image/jpeg", "image/jpg"},
-    ".png": {"image/png"}, ".webp": {"image/webp"}, ".gif": {"image/gif"},
+    ".png": {"image/png"},
 }
 ALLOWED_IMAGE_EXTENSIONS = frozenset(IMAGE_MIME_TYPES)
-# Los SVG existentes siguen disponibles en el catálogo; no se admiten nuevas subidas.
-LIST_IMAGE_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS | {".svg"}
+ALLOWED_IMAGE_MESSAGE = "Formato no permitido. Solo se aceptan imágenes .png y .jpg"
+# Las imágenes ya subidas en otros formatos siguen visibles en la galería; no se admiten nuevas subidas.
+LIST_IMAGE_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS | {".webp", ".gif", ".svg"}
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 
@@ -21,7 +22,7 @@ def validate_image(filename, data, content_type):
         raise ValueError("La imagen supera 5 MB")
     extension = PurePath(filename or "producto.jpg").suffix.lower() or ".jpg"
     if extension not in ALLOWED_IMAGE_EXTENSIONS:
-        raise ValueError("Formato de imagen no permitido")
+        raise ValueError(ALLOWED_IMAGE_MESSAGE)
     if mime not in IMAGE_MIME_TYPES[extension]:
         raise ValueError("El tipo de imagen no coincide con su extensión")
     return extension

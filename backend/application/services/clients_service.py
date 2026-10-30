@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 from domain.money import cents
+from domain.validation import account_email, dni_number, phone_number
 
 from application.services.gym_service import GymService
 from domain.services.gym_domain_service import _today_iso
@@ -147,8 +148,11 @@ class ClientsService:
                 correo=email, nombre=str(payload.get("nombre") or claims.get("name") or email.split("@")[0]),
                 google_sub=str(claims["sub"]), password="", contrasena="",
             )
-        correo = str(payload.get("correo") or "").strip().lower()
-        dni = str(payload.get("dni") or "").strip()
+        correo = account_email(payload.get("correo"))
+        payload["correo"] = correo
+        payload["dni"] = dni_number(payload.get("dni"), required=True)
+        payload["telefono"] = phone_number(payload.get("telefono"), required=True)
+        dni = payload["dni"]
         existing = self.gym.get_cliente_by_email(correo) if correo else None
         if claims and existing and existing.get("google_sub") != claims["sub"]:
             raise ValueError("Ya tienes una cuenta con ese correo. Ve a Acceso para vincular Google con tu contraseña.")

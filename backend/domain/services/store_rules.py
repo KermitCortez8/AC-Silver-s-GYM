@@ -1,6 +1,6 @@
 """Reglas de store sobre el agregado en memoria."""
 from __future__ import annotations
-from domain.validation import nonnegative, required_text
+from domain.validation import integer_quantity, nonnegative, required_text
 from domain.errors import EntityNotFound
 
 from datetime import datetime, timezone
@@ -90,8 +90,8 @@ class StoreRules:
             producto["unidad_venta"] = str(producto.get("unidad_venta") or "unidad")
             required_text(producto.get("nombre_producto"))
             producto["precio_venta"] = float(nonnegative(producto.get("precio_venta") or 0, "Precio"))
-            producto["stock_minimo"] = int(nonnegative(producto.get("stock_minimo") or 0, "Stock mínimo"))
-            stock_solicitado = int(nonnegative(producto.get("cantidad_stock") or 0, "Stock"))
+            producto["stock_minimo"] = integer_quantity(producto["stock_minimo"] if producto.get("stock_minimo") is not None else 0, "Stock mínimo")
+            stock_solicitado = integer_quantity(producto.get("cantidad_stock", 0), "Stock")
 
             id_item = int(producto["id_item"]) if producto.get("id_item") else None
             if previo and previo.get("id_item"):
@@ -152,13 +152,26 @@ class StoreRules:
 
         return self.context.change(_fn)
 
-    def delete_producto_tienda(self, id_producto: int) -> None:
-        # Procesa esta operación.
+    def delete_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
+        # Con ventas registradas se archiva: DETALLE_VENTA lo referencia y las ventas se conservan.
         def _fn(state: dict[str, Any]):
-            if "productos_tienda" in state:
-                state["productos_tienda"] = [p for p in state["productos_tienda"] if int(p.get("id_producto", 0)) != int(id_producto)]
+            productos = state.get("productos_tienda", [])
+            producto = next((p for p in productos if int(p.get("id_producto", 0)) == int(id_producto)), None)
+            if not producto:
+                return None
+            tiene_ventas = any(
+                int(linea.get("id_producto") or 0) == int(id_producto)
+                for pedido in state.get("pedidos_tienda", [])
+                for linea in pedido.get("items", [])
+            )
+            if tiene_ventas:
+                producto["archivado"] = True
+                producto["estado"] = "Descatalogado"
+                return producto
+            state["productos_tienda"] = [p for p in productos if int(p.get("id_producto", 0)) != int(id_producto)]
+            return None
 
-        self.context.change(_fn)
+        return self.context.change(_fn)
 
     def pedidos_tienda(self) -> list[dict[str, Any]]:
         return self.context.state.get("pedidos_tienda", [])
@@ -185,7 +198,7 @@ class StoreRules:
             solicitado: dict[int, int] = {}
             for raw_item in raw_items:
                 id_producto = int(raw_item.get("id_producto") or 0)
-                cantidad = max(1, int(raw_item.get("cantidad") or 1))
+                cantidad = integer_quantity(raw_item.get("cantidad", 1), minimum=1)
                 producto = next(
                     (
                         row

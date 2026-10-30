@@ -72,8 +72,8 @@ const resultStyle = computed(() => {
     return {
       icon: '…', title: 'Confirmando el pago',
       description: 'Estamos verificando la operación directamente con Stripe.',
-      status: confirmationState.value === 'error' ? 'Confirmación pendiente' : 'Verificando', border: 'border-amber-200',
-      iconBackground: 'bg-amber-100 text-amber-700', labelColor: 'text-amber-700',
+      status: confirmationState.value === 'error' ? 'Confirmación pendiente' : 'Verificando', border: 'border-orange-200',
+      iconBackground: 'bg-orange-100 text-orange-700', labelColor: 'text-orange-700',
     };
   }
   if (result.value === 'failure') {
@@ -87,8 +87,8 @@ const resultStyle = computed(() => {
   return {
     icon: '…', title: 'Pago pendiente',
     description: 'Stripe está procesando la operación. La membresía se actualizará automáticamente cuando exista una respuesta definitiva.',
-    status: 'Pendiente', border: 'border-amber-200',
-    iconBackground: 'bg-amber-100 text-amber-700', labelColor: 'text-amber-700',
+    status: 'Pendiente', border: 'border-orange-200',
+    iconBackground: 'bg-orange-100 text-orange-700', labelColor: 'text-orange-700',
   };
 });
 

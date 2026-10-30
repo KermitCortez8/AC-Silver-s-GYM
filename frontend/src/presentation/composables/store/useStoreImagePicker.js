@@ -1,5 +1,6 @@
 import { computed, reactive, ref } from "vue";
 import { useStoreImages } from "../../../application/services/storeImages.js";
+import { ALLOWED_IMAGE_MESSAGE, isAllowedImageFile } from "../../../domain/utils/inputRules.js";
 
 export const useStoreImagePicker = ({ form }) => {
   const { uploadStoreImage, listStoreImages } = useStoreImages();
@@ -16,6 +17,8 @@ export const useStoreImagePicker = ({ form }) => {
   const bucketImages = ref([]);
 
   const loadBucketImages = async () => {
+    if (isLoadingBucketImages.value) return;
+    imageFeedback.value = '';
     isLoadingBucketImages.value = true;
     try {
       bucketImages.value = await listStoreImages();
@@ -25,7 +28,6 @@ export const useStoreImagePicker = ({ form }) => {
         error instanceof Error
           ? error.message
           : "No se pudieron cargar las imagenes del bucket.";
-      bucketImages.value = [];
     } finally {
       isLoadingBucketImages.value = false;
     }
@@ -57,6 +59,12 @@ export const useStoreImagePicker = ({ form }) => {
   const handleLocalImageUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!isAllowedImageFile(file)) {
+      imageFeedbackTone.value = "error";
+      imageFeedback.value = ALLOWED_IMAGE_MESSAGE;
+      event.target.value = "";
+      return;
+    }
 
     isUploadingImage.value = true;
     imageFeedback.value = "";

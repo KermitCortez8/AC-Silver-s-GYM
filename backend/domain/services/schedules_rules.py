@@ -1,6 +1,6 @@
 """Reglas de schedules sobre el agregado en memoria."""
 from __future__ import annotations
-from domain.validation import validate_exercises
+from domain.validation import integer_quantity, validate_exercises
 from domain.errors import EntityNotFound, MembershipRequired, EnrollmentConflict
 
 import re
@@ -334,8 +334,9 @@ class SchedulesRules:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             cfg = state.setdefault("configuracion_gimnasio", {})
-            cfg["capacidad_total"] = max(1, int(payload.get("capacidad_total", cfg.get("capacidad_total", 30))))
-            cfg["capacidad_por_hora"] = max(1, int(payload.get("capacidad_por_hora", cfg.get("capacidad_por_hora", 10))))
+            total = integer_quantity(payload.get("capacidad_total", cfg.get("capacidad_total", 30)), "Capacidad total", minimum=1)
+            hourly = integer_quantity(payload.get("capacidad_por_hora", cfg.get("capacidad_por_hora", 10)), "Capacidad por hora", minimum=1)
+            cfg.update(capacidad_total=total, capacidad_por_hora=hourly)
             return cfg
 
         return self.context.change(_fn)

@@ -260,8 +260,8 @@ def test_activating_an_active_membership_does_not_extend_its_dates(monkeypatch) 
 def test_public_registration_ignores_payment_fields_from_browser() -> None:
     payload = RegistroPublicoClienteInput.model_validate({
         "nombre": "Cliente",
-        "correo": "cliente@example.com",
-        "dni": "12345678",
+        "correo": "cliente@gmail.com",
+        "dni": "12345678", "telefono": "987654321",
         "password": "secreto",
         "metodo_pago": "atacante",
         "referencia_pago": "referencia-repetida",

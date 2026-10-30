@@ -41,7 +41,7 @@
         </button>
         <button
           v-else
-          class="rounded-xl bg-amber-500 px-3.5 py-1.5 font-black text-slate-950 text-xs hover:bg-amber-400 transition flex items-center gap-1.5"
+          class="rounded-xl bg-orange-500 px-3.5 py-1.5 font-black text-slate-950 text-xs hover:bg-orange-400 transition flex items-center gap-1.5"
           @click="timer.pause"
         >
           <i class="fa-solid fa-pause text-[10px]"></i>

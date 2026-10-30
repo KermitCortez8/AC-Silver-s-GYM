@@ -4,7 +4,9 @@
 # Restringe estas acciones a administradores y personal autorizado.
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from presentation.error_handlers import http_error
+
+from fastapi import APIRouter, Depends, status
 
 from presentation.dependencies import get_users_service, require_admin_or_staff
 from domain.models.gym import UsuarioInput
@@ -32,7 +34,7 @@ def upsert_usuario(
     try:
         return users_service.upsert_user(payload.model_dump())
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
 
 @router.delete("/usuarios/{id_usuario}", status_code=status.HTTP_204_NO_CONTENT)

@@ -16,10 +16,10 @@
     <!-- Modal de Notificación / Alerta -->
     <Teleport to="body">
       <div v-if="feedback" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all">
-        <div class="w-full max-w-md rounded-3xl border bg-slate-900 p-6 shadow-2xl space-y-5" :class="feedbackTone === 'error' ? 'border-rose-500/40' : 'border-emerald-500/40'">
+        <div class="w-full max-w-md rounded-3xl border bg-slate-900 p-6 shadow-2xl space-y-5" :class="feedbackTone === 'error' ? 'border-rose-500/40' : 'border-blue-500/40'">
           <div class="flex items-start justify-between gap-4">
             <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-inner" :class="feedbackTone === 'error' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'">
+              <div class="h-10 w-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-inner" :class="feedbackTone === 'error' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'">
                 <i :class="feedbackTone === 'error' ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-check'"></i>
               </div>
               <div>
@@ -34,14 +34,14 @@
             </button>
           </div>
 
-          <div class="p-4 rounded-2xl bg-slate-950/70 border border-white/5">
+          <div class="app-notice p-4 rounded-2xl border" :class="feedbackTone === 'error' ? 'app-notice--error' : 'app-notice--info'">
             <p class="text-sm font-medium text-slate-200 leading-relaxed">
               {{ feedback }}
             </p>
           </div>
 
           <div class="flex justify-end pt-1">
-            <button type="button" @click="feedback = ''" :class="feedbackTone === 'error' ? 'bg-rose-500 hover:bg-rose-400 shadow-rose-500/25' : 'bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/25'" class="w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-white transition-all shadow-lg cursor-pointer">
+            <button type="button" @click="feedback = ''" :class="feedbackTone === 'error' ? 'bg-rose-500 hover:bg-rose-400 shadow-rose-500/25' : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/25'" class="w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-white transition-all shadow-lg cursor-pointer">
               Entendido
             </button>
           </div>
@@ -63,7 +63,7 @@
                 <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Confirmación requerida</p>
               </div>
             </div>
-            <button type="button" class="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-base transition cursor-pointer" @click="promoToDelete = null" title="Cerrar">
+            <button type="button" class="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-base transition cursor-pointer" :disabled="deleting" @click="promoToDelete = null" title="Cerrar">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -75,11 +75,12 @@
             <p class="text-xs text-rose-400/80 font-semibold">Esta acción no se puede deshacer.</p>
           </div>
 
+          <p v-if="deleteError" role="alert" class="app-notice app-notice--error rounded-xl border px-4 py-3 text-sm">{{ deleteError }}</p>
           <div class="flex items-center justify-end gap-3 pt-1">
-            <button type="button" class="px-5 py-2.5 rounded-xl border border-white/10 bg-slate-800 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer" @click="promoToDelete = null">
+            <button type="button" class="px-5 py-2.5 rounded-xl border border-white/10 bg-slate-800 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 transition cursor-pointer" :disabled="deleting" @click="promoToDelete = null">
               Cancelar
             </button>
-            <button type="button" class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-xs font-black uppercase tracking-wider text-white transition shadow-lg shadow-rose-500/25 flex items-center gap-2 cursor-pointer" @click="confirmDelete">
+            <button type="button" class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-xs font-black uppercase tracking-wider text-white transition shadow-lg shadow-rose-500/25 flex items-center gap-2 cursor-pointer" :disabled="deleting" @click="confirmDelete">
               <i class="fa-solid fa-trash-can"></i> Sí, Eliminar
             </button>
           </div>
@@ -100,7 +101,7 @@
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
         <div class="flex justify-between items-start">
           <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Descuentos Aplicados</p>
-          <i class="fa-solid fa-dollar-sign text-amber-500 bg-amber-400/10 p-2 rounded-full text-xs px-3"></i>
+          <i class="fa-solid fa-dollar-sign text-orange-500 bg-orange-400/10 p-2 rounded-full text-xs px-3"></i>
         </div>
         <p class="mt-4 text-3xl font-black text-white">S/. {{ totalAhorrado.toFixed(2) }}</p>
         <p class="mt-2 text-xs text-slate-400">Ahorrados a clientes este mes</p>
@@ -162,7 +163,7 @@
                       :class="{
                         'bg-emerald-500/15 text-emerald-400 border-emerald-500/30': getPromoStatus(promo).tone === 'emerald',
                         'bg-slate-700/40 text-slate-400 border-slate-600/30': getPromoStatus(promo).tone === 'slate',
-                        'bg-amber-500/15 text-amber-400 border-amber-500/30': getPromoStatus(promo).tone === 'amber',
+                        'bg-orange-500/15 text-orange-400 border-orange-500/30': getPromoStatus(promo).tone === 'amber',
                         'bg-rose-500/15 text-rose-400 border-rose-500/30': getPromoStatus(promo).tone === 'rose'
                       }"
                       class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider"
@@ -184,7 +185,7 @@
                 {{ promo.discountType === 'fixed' ? `S/. ${promo.discountValue}` : `${promo.discountValue}%` }}
               </td>
               <td class="px-6 py-4 text-xs">
-                <span v-if="getPromoStatus(promo).label === 'Terminada'" class="inline-flex items-center gap-1 font-extrabold text-amber-400">
+                <span v-if="getPromoStatus(promo).label === 'Terminada'" class="inline-flex items-center gap-1 font-extrabold text-orange-400">
                   <i class="fa-solid fa-ban text-[11px]"></i> No aplica (Terminada)
                 </span>
                 <span v-else class="text-slate-400">
@@ -202,7 +203,7 @@
                   <div class="w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
                     <div 
                       class="h-full rounded-full transition-all" 
-                      :class="(promo.usos_actuales || 0) >= promo.limite_cupos ? 'bg-amber-400' : 'bg-rose-500'" 
+                      :class="(promo.usos_actuales || 0) >= promo.limite_cupos ? 'bg-orange-400' : 'bg-rose-500'"
                       :style="{ width: Math.min(100, Math.round(((promo.usos_actuales || 0) / promo.limite_cupos) * 100)) + '%' }"
                     ></div>
                   </div>
@@ -243,7 +244,7 @@
     <!-- Modal Form con Preview y Plan Único -->
     <Teleport to="body">
       <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-opacity">
-        <form class="w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto max-h-[92vh]" @submit.prevent="save">
+        <form class="w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto max-h-[92vh]" novalidate @submit.prevent="save">
           <!-- Top gradient border -->
           <div class="h-1 w-full bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 rounded-t-3xl"></div>
           
@@ -369,7 +370,7 @@
                     <label class="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-widest">
                       <i class="fa-regular fa-credit-card"></i> SELECCIONA EL PLAN APLICABLE
                     </label>
-                    <span class="text-[10px] text-amber-400 font-bold bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+                    <span class="text-[10px] text-orange-400 font-bold bg-orange-400/10 px-2.5 py-0.5 rounded-full border border-orange-400/20">
                       1 solo plan
                     </span>
                   </div>
@@ -456,7 +457,7 @@
                         <span class="text-slate-300">{{ selectedPlan?.duration || '30 dias' }}</span>
                       </div>
                       <div>
-                        <span v-if="form.limite_cupos && form.limite_cupos > 0" :class="form.usos_actuales >= form.limite_cupos ? 'text-amber-400 bg-amber-500/10 border-amber-500/30' : 'text-amber-400 bg-amber-400/10 border-amber-400/30'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold">
+                        <span v-if="form.limite_cupos && form.limite_cupos > 0" :class="form.usos_actuales >= form.limite_cupos ? 'text-orange-400 bg-orange-500/10 border-orange-500/30' : 'text-orange-400 bg-orange-400/10 border-orange-400/30'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold">
                           <i :class="form.usos_actuales >= form.limite_cupos ? 'fa-solid fa-flag-checkered' : 'fa-solid fa-fire'"></i>
                           {{ form.usos_actuales >= form.limite_cupos ? 'Terminada' : `Quedan ${Math.max(0, form.limite_cupos - (form.usos_actuales || 0))} de ${form.limite_cupos} cupos` }}
                         </span>
@@ -485,11 +486,12 @@
               </div>
             </div>
             
+            <p v-if="modalError" role="alert" class="app-notice app-notice--error rounded-xl border px-4 py-3 text-sm">{{ modalError }}</p>
             <!-- Actions -->
             <div class="mt-10 flex justify-end items-center gap-6">
               <button type="button" class="text-sm font-bold text-slate-300 hover:text-white transition cursor-pointer" @click="closeModal">Cancelar</button>
-              <button type="submit" class="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-3 text-sm font-black text-white hover:bg-rose-400 transition shadow-lg shadow-rose-500/20 cursor-pointer">
-                <i class="fa-solid fa-check"></i> Guardar y Activar Regla
+              <button type="submit" :disabled="saving" class="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-3 text-sm font-black text-white hover:bg-rose-400 transition shadow-lg shadow-rose-500/20 cursor-pointer">
+                <i class="fa-solid fa-check"></i> {{ saving ? 'Guardando…' : 'Guardar y Activar Regla' }}
               </button>
             </div>
           </div>
@@ -500,6 +502,7 @@
 </template>
 
 <script setup>
+import { promotionErrors } from "../../domain/utils/formValidation.js";
 import { limaDate } from '../../domain/utils/dates.js';
 import { discountedPrice } from '../../domain/utils/money.js';
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -624,11 +627,17 @@ const getPromoStatus = (promo) => {
 };
 
 const isModalOpen = ref(false);
+const saving = ref(false);
+const modalError = ref('');
+const deleting = ref(false);
+const deleteError = ref('');
 const openNewModal = () => {
   reset();
+  modalError.value = '';
   isModalOpen.value = true;
 };
 const closeModal = () => {
+  if (saving.value) return;
   isModalOpen.value = false;
 };
 const editModal = (promo) => {
@@ -637,6 +646,7 @@ const editModal = (promo) => {
     feedback.value = 'Las promociones terminadas no se pueden editar, únicamente eliminar.';
     return;
   }
+  modalError.value = '';
   edit(promo);
   isModalOpen.value = true;
 };
@@ -749,40 +759,49 @@ const edit = (promo) => {
 };
 
 const save = async () => {
-  if (!form.appliesTo || !form.appliesTo.length) {
+  if (saving.value) return;
+  modalError.value = '';
+  const invalid = Object.values(promotionErrors(form))[0];
+  if (invalid) {
     feedbackTone.value = 'error';
-    feedback.value = 'Debes seleccionar exactamente un plan para la promoción.';
+    modalError.value = invalid;
     return;
   }
+  saving.value = true;
   try {
     await gymStore.upsertPromotion({ ...form });
     feedbackTone.value = 'success';
     feedback.value = 'Promoción guardada exitosamente.';
+    saving.value = false;
     closeModal();
   } catch (error) {
     feedbackTone.value = 'error';
-    feedback.value = error instanceof Error ? error.message : 'No se pudo guardar la promoción.';
-  }
+    modalError.value = error instanceof Error ? error.message : 'No se pudo guardar la promoción.';
+  } finally { saving.value = false; }
 };
 
 const promoToDelete = ref(null);
 
 const requestDelete = (promo) => {
+  if (deleting.value) return;
+  deleteError.value = '';
   promoToDelete.value = promo;
 };
 
 const confirmDelete = async () => {
-  if (!promoToDelete.value) return;
+  if (!promoToDelete.value || deleting.value) return;
   const target = promoToDelete.value;
-  promoToDelete.value = null;
+  deleting.value = true;
+  deleteError.value = '';
   try {
     await gymStore.deletePromotion(target.id_promocion);
+    promoToDelete.value = null;
     feedbackTone.value = 'success';
     feedback.value = 'Promoción eliminada exitosamente.';
   } catch (error) {
     feedbackTone.value = 'error';
-    feedback.value = error instanceof Error ? error.message : 'No se pudo eliminar la promoción.';
-  }
+    deleteError.value = error instanceof Error ? error.message : 'No se pudo eliminar la promoción.';
+  } finally { deleting.value = false; }
 };
 
 onMounted(() => gymStore.fetchFromBackend?.({ section: 'promotions' }).catch(() => {}));

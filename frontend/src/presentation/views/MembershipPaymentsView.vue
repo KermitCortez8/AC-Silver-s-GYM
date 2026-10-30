@@ -47,7 +47,7 @@
       <div class="payment-filters">
         <label class="payment-search">
           <span class="ws-field-label">Buscar</span>
-          <input v-model="filters.search" type="search" class="ws-input" placeholder="Cliente, DNI, plan o referencia" />
+          <SearchInput v-model="filters.search" class="ws-input" placeholder="Cliente, DNI, plan o referencia" />
         </label>
         <label>
           <span class="ws-field-label">Estado del pago</span>
@@ -130,6 +130,7 @@
 </template>
 
 <script setup>
+import SearchInput from "../components/SearchInput.vue";
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { CreditCard, RefreshCw } from 'lucide-vue-next';
 import { useGymStore } from '../../application/stores/gymStore';

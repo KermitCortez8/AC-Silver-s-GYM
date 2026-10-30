@@ -4,7 +4,7 @@
     <template v-else>
       <p v-if="loading" role="status" class="text-center text-sm text-slate-500">Cargando Google...</p>
       <div ref="container" :inert="disabled || loading" :class="{ 'pointer-events-none opacity-60': disabled }" class="flex min-h-[44px] justify-center"></div>
-      <div v-if="error" role="alert" class="text-center text-sm text-amber-900">
+      <div v-if="error" role="alert" class="text-center text-sm text-red-700">
         <p>{{ error }}</p>
         <button type="button" class="mt-2 font-bold underline" :disabled="disabled" @click="renderButton">Reintentar Google</button>
       </div>

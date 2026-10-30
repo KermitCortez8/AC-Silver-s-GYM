@@ -22,7 +22,7 @@
           <h2 class="mt-2 text-2xl font-black text-white">Salidas por ventas</h2>
           <p class="mt-1 text-sm text-slate-400">Cada producto vendido en un pedido descuenta stock de la tienda.</p>
         </div>
-        <input v-model="search" class="field-input md:max-w-xs" placeholder="Buscar producto, cliente o pedido" />
+        <SearchInput v-model="search" class="field-input md:max-w-xs" placeholder="Buscar producto, cliente o pedido" />
       </div>
 
       <div v-if="filteredMovements.length" class="mt-5 overflow-hidden rounded-2xl border border-white/10">
@@ -42,7 +42,7 @@
               <tr v-for="movement in filteredMovements" :key="movement.key" :class="movement.isCancelled ? 'opacity-60' : ''">
                 <td class="px-4 py-3 text-slate-300">{{ formatDate(movement.fecha) }}</td>
                 <td class="px-4 py-3 font-bold text-white">{{ movement.producto }}</td>
-                <td class="px-4 py-3 text-amber-200">-{{ movement.cantidad }}</td>
+                <td class="px-4 py-3 text-orange-200">-{{ movement.cantidad }}</td>
                 <td class="px-4 py-3 text-emerald-300">S/. {{ movement.subtotal.toFixed(2) }}</td>
                 <td class="px-4 py-3">
                   <p class="font-bold text-white">#{{ movement.idPedido }}</p>
@@ -63,6 +63,7 @@
 </template>
 
 <script setup>
+import SearchInput from "../components/SearchInput.vue";
 import { computed, ref } from 'vue';
 import { useGymStore } from '../../stores/gymStore';
 
@@ -130,7 +131,7 @@ const orderStatusClass = (status) => {
   if (status === 'ENTREGADO') return 'bg-emerald-400/15 text-emerald-200';
   if (status === 'CANCELADO') return 'bg-slate-400/15 text-slate-300';
   if (status === 'CONFIRMADO') return 'bg-cyan-400/15 text-cyan-200';
-  return 'bg-amber-400/15 text-amber-200';
+  return 'bg-orange-400/15 text-orange-200';
 };
 </script>
 

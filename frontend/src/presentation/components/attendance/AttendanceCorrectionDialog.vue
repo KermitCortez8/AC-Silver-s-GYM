@@ -6,7 +6,7 @@
     @cancel="cancel"
     @click="backdrop"
   >
-    <form class="att-dialog-body" @submit.prevent="save">
+    <form novalidate class="att-dialog-body" @submit.prevent="save">
       <div class="att-heading-row">
         <div>
           <p class="att-eyebrow">Revisión del registro</p>
@@ -212,6 +212,15 @@ const save = async () => {
   busy.value = true;
   error.value = '';
   try {
+    if (form.motivo.trim().length < 5 || form.motivo.trim().length > 500) {
+      throw new Error('Escribe un motivo de entre 5 y 500 caracteres.');
+    }
+    if (!props.annulling) {
+      if (!form.fecha || !form.hora_entrada) throw new Error('Indica la fecha y la hora de entrada.');
+      if (Boolean(form.fecha_salida) !== Boolean(form.hora_salida)) throw new Error('Indica la fecha y la hora de salida, o deja ambas vacías.');
+      if (form.fecha > today || form.fecha_salida > today) throw new Error('La asistencia no puede tener fechas futuras.');
+      if (timeProblem.value) throw new Error(timeProblem.value);
+    }
     const base = { version: props.record.version, motivo: form.motivo.trim() };
     const saved = props.annulling
       ? await attendanceAnnul(props.record.id_asistencia, base, token.value)

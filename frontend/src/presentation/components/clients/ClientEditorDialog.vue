@@ -5,17 +5,21 @@
     :title="editingId ? 'Editar cliente' : 'Nuevo cliente'"
     @close="closeEditor"
   >
-    <form @submit.prevent="handleSubmit">
+    <form novalidate @submit.prevent="handleSubmit">
       <fieldset :disabled="savingClient" class="mt-6 grid gap-4 sm:grid-cols-2">
         <label class="space-y-2 sm:col-span-2">
           <span class="text-sm ws-soft">Nombre</span>
 
           <input
             v-model="form.nombre"
+            :aria-invalid="Boolean(fieldErrors.nombre)"
+            :aria-describedby="fieldErrors.nombre ? 'client-nombre-error' : undefined"
+            @blur="validateField('nombre')" @input="revalidateField('nombre')"
             required
             class="ws-input"
             placeholder="Jose Perez"
           />
+          <FieldError id="client-nombre-error" :message="fieldErrors.nombre" />
         </label>
 
         <label class="space-y-2 sm:col-span-2">
@@ -23,11 +27,15 @@
 
           <input
             v-model="form.correo"
+            :aria-invalid="Boolean(fieldErrors.correo)"
+            :aria-describedby="fieldErrors.correo ? 'client-correo-error' : undefined"
+            @blur="validateField('correo')" @input="revalidateField('correo')"
             required
             type="email"
             class="ws-input"
-            placeholder="cliente@correo.com"
+            placeholder="nombre@gmail.com"
           />
+          <FieldError id="client-correo-error" :message="fieldErrors.correo" />
         </label>
 
         <label class="space-y-2 sm:col-span-2">
@@ -35,6 +43,9 @@
 
           <input
             v-model="form.password"
+            :aria-invalid="Boolean(fieldErrors.password)"
+            :aria-describedby="fieldErrors.password ? 'client-password-error' : undefined"
+            @blur="validateField('password')" @input="revalidateField('password')"
             :required="!editingId"
             minlength="6"
             type="password"
@@ -46,25 +57,34 @@
                 : 'Minimo 6 caracteres'
             "
           />
+          <FieldError id="client-password-error" :message="fieldErrors.password" />
         </label>
 
         <label class="space-y-2">
           <span class="text-sm ws-soft">Teléfono</span>
           <input
             v-model="form.telefono"
+            :aria-invalid="Boolean(fieldErrors.telefono)"
+            :aria-describedby="fieldErrors.telefono ? 'client-telefono-error' : undefined"
+            @blur="validateField('telefono')" @input="revalidateField('telefono')"
             class="ws-input"
-            placeholder="999 111 222"
+            placeholder="999111222"
           />
+          <FieldError id="client-telefono-error" :message="fieldErrors.telefono" />
         </label>
 
         <label class="space-y-2">
           <span class="text-sm ws-soft">DNI</span>
           <input
             v-model="form.dni"
+            :aria-invalid="Boolean(fieldErrors.dni)"
+            :aria-describedby="fieldErrors.dni ? 'client-dni-error' : undefined"
+            @blur="validateField('dni')" @input="revalidateField('dni')"
             required
             class="ws-input"
             placeholder="12345678"
           />
+          <FieldError id="client-dni-error" :message="fieldErrors.dni" />
         </label>
 
         <label class="space-y-2">
@@ -122,7 +142,7 @@
         </label>
       </fieldset>
 
-      <p v-if="submitError" role="alert" class="mt-4 text-sm ws-warning">
+      <p v-if="submitError" role="alert" class="app-notice app-notice--error mt-4 rounded-xl border px-4 py-3 text-sm">
         {{ submitError }}
       </p>
 
@@ -146,8 +166,12 @@
 </template>
 
 <script setup>
+import FieldError from "../FieldError.vue";
 import WorkspaceDialog from "../WorkspaceDialog.vue";
 defineProps([
+  "fieldErrors",
+  "validateField",
+  "revalidateField",
   "availablePromotions",
   "closeEditor",
   "editingExpired",

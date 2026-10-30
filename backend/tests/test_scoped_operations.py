@@ -29,10 +29,10 @@ def test_accounts_component_can_run_with_an_explicit_membership_policy_only():
                           today_provider=lambda: '2026-10-23')
     policy = AccountsDependencies(ensure_membership_for_active_client=lambda *args: calls.append(args))
     accounts = AccountsRules(context, policy)
-    saved = accounts.upsert_cliente({'nombre': 'Ana', 'correo': 'ana@example.com', 'estado': 'EN_TRAMITE', 'password': 'secreto123'})
+    saved = accounts.upsert_cliente({'nombre': 'Ana', 'correo': 'ana@gmail.com', 'estado': 'EN_TRAMITE', 'password': 'secreto123'})
     assert saved['nombre'] == 'Ana'
     assert context.state['clientes'][0]['id_cliente'] == 1
-    assert accounts.get_cliente(1)['correo'] == 'ana@example.com'
+    assert accounts.get_cliente(1)['correo'] == 'ana@gmail.com'
     assert len(calls) == 1
 
 

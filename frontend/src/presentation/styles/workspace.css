@@ -9,11 +9,11 @@
   --ws-hover: #2c2d32;
   --ws-success: #6ee7b7;
   --ws-danger: #fda4af;
-  --ws-warning: #fcd34d;
+  --ws-warning: #fdba74;
   --ws-info: #93c5fd;
   --ws-success-bg: #19352d;
   --ws-danger-bg: #3c242d;
-  --ws-warning-bg: #37301e;
+  --ws-warning-bg: #3c281c;
   --ws-info-bg: #202f45;
   color: var(--ws-text);
   min-width: 0;
@@ -28,11 +28,11 @@
   --ws-hover: #edf0f5;
   --ws-success: #076749;
   --ws-danger: #b42340;
-  --ws-warning: #845400;
+  --ws-warning: #9a3412;
   --ws-info: #215cb0;
   --ws-success-bg: #e9f7ef;
   --ws-danger-bg: #fcecf0;
-  --ws-warning-bg: #fff5d9;
+  --ws-warning-bg: #fff1e6;
   --ws-info-bg: #ebf2ff;
 }
 .workspace-view .ws-text {

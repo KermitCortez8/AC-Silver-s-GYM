@@ -96,7 +96,7 @@
             >
               <option :value="0">Selecciona un artículo...</option>
               <option
-                v-for="item in inventory"
+                v-for="item in activeInventory"
                 :key="item.id"
                 :value="itemId(item)"
               >
@@ -154,11 +154,9 @@
               >
                 -
               </button>
-              <input
-                v-model.number="form.cantidad"
+              <QuantityInput
+                v-model="form.cantidad"
                 aria-label="Cantidad del movimiento"
-                type="number"
-                min="1"
                 class="w-full border-x ws-border bg-transparent px-3 py-3 text-center ws-text outline-none"
               />
               <button
@@ -237,9 +235,8 @@
               :size="16"
               class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 ws-muted"
             />
-            <input
+            <SearchInput
               v-model="search"
-              type="search"
               aria-label="Buscar movimientos"
               class="ws-input"
               placeholder="Artículo, tipo u observación"
@@ -447,6 +444,10 @@
 </template>
 
 <script setup>
+import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
+import { MAX_QUANTITY, parseQuantity } from '../../domain/utils/quantities.js';
+import QuantityInput from "../components/QuantityInput.vue";
+import SearchInput from "../components/SearchInput.vue";
 import { limaDate } from '../../domain/utils/dates.js';
 import {
   computed,
@@ -489,6 +490,7 @@ const pageSize = 8;
 const errors = reactive({ id_item: '', cantidad: '' });
 
 const inventory = computed(() => gymStore.inventory);
+const activeInventory = computed(() => inventory.value.filter((item) => !item.archived));
 const movements = computed(() =>
   [...(gymStore.inventoryMovements || [])].sort(
     (a, b) =>
@@ -527,11 +529,7 @@ const movementTypes = [
   },
 ];
 
-const feedbackClass = computed(() =>
-  feedbackTone.value === 'error'
-    ? 'ws-border-danger ws-tint-danger ws-danger'
-    : 'ws-border-success ws-tint-success ws-success',
-);
+const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 
 /**
  * Devuelve el id numerico normalizado de un item de inventario.
@@ -715,7 +713,12 @@ const resultingStock = computed(() => {
  * Incrementa o decrementa la cantidad del formulario.
  */
 const stepCantidad = (delta) => {
-  form.cantidad = Math.max(1, Number(form.cantidad || 0) + delta);
+  try {
+    form.cantidad = Math.min(MAX_QUANTITY, Math.max(1, parseQuantity(form.cantidad, { min: 1 }) + delta));
+    errors.cantidad = '';
+  } catch (error) {
+    errors.cantidad = error.message;
+  }
 };
 
 /**
@@ -765,7 +768,9 @@ const exportCsv = () => {
  */
 const validate = () => {
   errors.id_item = form.id_item ? '' : 'Selecciona un artículo de inventario.';
-  errors.cantidad = form.cantidad > 0 ? '' : 'La cantidad debe ser mayor a 0.';
+  errors.cantidad = '';
+  try { parseQuantity(form.cantidad, { min: 1 }); }
+  catch (error) { errors.cantidad = error.message; }
   return !errors.id_item && !errors.cantidad;
 };
 
@@ -778,6 +783,7 @@ const save = async () => {
   try {
     await gymStore.registrarMovimientoToServer({
       ...form,
+      cantidad: parseQuantity(form.cantidad, { min: 1 }),
       id_usuario: authStore.user?.id_usuario || authStore.user?.id || 1,
     });
     feedbackTone.value = 'success';

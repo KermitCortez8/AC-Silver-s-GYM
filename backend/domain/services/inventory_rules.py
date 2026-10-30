@@ -1,7 +1,7 @@
 """Reglas de inventory sobre el agregado en memoria."""
 from __future__ import annotations
 from domain.errors import EntityNotFound
-from domain.validation import nonnegative, required_text
+from domain.validation import nonnegative, required_text, integer_quantity
 
 from typing import Any
 from domain.services.gym_values import TIPO_TIENDA, ESTADO_DESCONTINUADO, ESTADO_DISPONIBLE, ESTADO_STOCK_BAJO, ESTADO_AGOTADO, DESTINO_TIENDA, DESTINO_VENTA, _MOVIMIENTO_PEDIDO
@@ -61,7 +61,7 @@ class InventoryRules:
         tipo = str(tipo or "").lower()
         if tipo not in {"entrada", "salida", "ajuste"}:
             raise ValueError("Tipo de movimiento inválido")
-        cantidad = max(1, int(cantidad or 1))
+        cantidad = integer_quantity(cantidad, minimum=1)
         stock_actual = int(item.get("cantidad_stock", 0) or 0)
         if tipo == "entrada":
             nuevo_stock = stock_actual + cantidad
@@ -105,6 +105,9 @@ class InventoryRules:
         self._actualizar_estados_items_tienda(state)
         for producto in state.get("productos_tienda", []):
             stock = int(producto.get("cantidad_stock") or 0)
+            if producto.get("archivado"):
+                producto["estado"] = "Descatalogado"
+                continue
             if producto.get("id_item"):
                 item = self._find_item_in_state(state, producto["id_item"])
                 vendible = (
@@ -119,18 +122,14 @@ class InventoryRules:
             producto["estado"] = "Disponible" if stock > 0 else "Agotado"
 
     def _actualizar_estados_items_tienda(self, state: dict[str, Any]) -> None:
-        minimos = {
-            int(p["id_item"]): int(p.get("stock_minimo") or 0)
-            for p in state.get("productos_tienda", [])
-            if p.get("id_item")
-        }
+        # Cada ítem usa su propio stock mínimo; el del producto solo aplica al stock de la tienda.
         for item in state.get("inventario", []):
             if not self._es_item_tienda(item) or str(item.get("estado") or "") == ESTADO_DESCONTINUADO:
                 continue
             stock = int(item.get("cantidad_stock", 0) or 0)
             if stock <= 0:
                 item["estado"] = ESTADO_AGOTADO
-            elif stock <= minimos.get(int(item["id_item"]), 0):
+            elif stock <= int(item.get("stock_minimo") or 0):
                 item["estado"] = ESTADO_STOCK_BAJO
             else:
                 item["estado"] = ESTADO_DISPONIBLE
@@ -172,8 +171,8 @@ class InventoryRules:
             if str(item.get("tipo") or "").strip().lower() == TIPO_TIENDA.lower():
                 item["tipo"] = TIPO_TIENDA
             required_text(item.get("nombre_item"))
-            stock_inicial = int(nonnegative(item.get("cantidad_stock", 0), "Stock"))
-            item["stock_minimo"] = int(nonnegative(item["stock_minimo"] if item.get("stock_minimo") is not None else 1, "Stock mínimo"))
+            stock_inicial = integer_quantity(item.get("cantidad_stock", 0), "Stock")
+            item["stock_minimo"] = integer_quantity(item["stock_minimo"] if item.get("stock_minimo") is not None else 1, "Stock mínimo")
             item["unidad_venta"] = str(item.get("unidad_venta") or "unidad")
             item["precio_venta"] = float(nonnegative(item.get("precio_venta") or 0, "Precio"))
             item["ubicacion"] = str(item.get("ubicacion") or "Almacén")
@@ -208,7 +207,12 @@ class InventoryRules:
             tiene_movimientos = any(int(m.get("id_item", 0) or 0) == int(id_item) for m in state["mov_inv"])
             tiene_producto = any(int(p.get("id_item") or 0) == int(id_item) for p in state.get("productos_tienda", []))
             if tiene_movimientos or tiene_producto:
+                # Se archiva: MOV_INV y TIENDA_PRODUCTOS lo referencian y su historial se conserva.
                 item["estado"] = ESTADO_DESCONTINUADO
+                item["archivado"] = True
+                for producto in state.get("productos_tienda", []):
+                    if int(producto.get("id_item") or 0) == int(id_item):
+                        producto["archivado"] = True
                 self._actualizar_estados_tienda(state)
                 return item
             state["inventario"] = [i for i in state["inventario"] if int(i.get("id_item", 0)) != int(id_item)]
@@ -224,8 +228,11 @@ class InventoryRules:
         id_usuario = self.dependencies.normalize_usuario_id(payload.get("id_usuario"))
         tipo = str(payload.get("tipo_movimiento", "")).lower()
 
-        if not self.get_item_inventario(id_item):
+        item_actual = self.get_item_inventario(id_item)
+        if not item_actual:
             raise EntityNotFound("Item de inventario no encontrado")
+        if item_actual.get("archivado"):
+            raise ValueError("El artículo está archivado y no admite movimientos")
         if not self.dependencies.get_usuario(id_usuario):
             raise EntityNotFound("Usuario no encontrado")
         if tipo not in {"entrada", "salida", "ajuste"}:
@@ -244,7 +251,7 @@ class InventoryRules:
                 state,
                 item,
                 tipo,
-                int(payload.get("cantidad", 1) or 1),
+                integer_quantity(payload.get("cantidad", 1), minimum=1),
                 str(payload.get("descripcion") or ""),
                 id_usuario=id_usuario,
                 fecha=str(payload.get("fecha_movimiento") or ""),
@@ -274,7 +281,7 @@ class InventoryRules:
             item_actual = int(mov.get("id_item") or 0)
             destino_actual = str(mov.get("destino") or "").strip().upper() or None
             nuevo_tipo = str(payload.get("tipo_movimiento") or tipo_actual).lower()
-            nueva_cantidad = max(1, int(payload.get("cantidad") or cantidad_actual))
+            nueva_cantidad = integer_quantity(payload.get("cantidad", cantidad_actual), minimum=1)
             nuevo_item = int(payload.get("id_item") or item_actual)
             if nuevo_tipo not in {"entrada", "salida", "ajuste"}:
                 raise ValueError("Tipo de movimiento inválido")

@@ -71,7 +71,7 @@
                 ejercicios)
               </option>
             </select>
-            <p v-if="!routines.length" class="text-xs text-amber-300">
+            <p v-if="!routines.length" class="text-xs text-orange-300">
               No hay rutinas compatibles con el servicio seleccionado.
             </p>
           </label>

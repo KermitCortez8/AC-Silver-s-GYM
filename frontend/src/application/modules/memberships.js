@@ -1,3 +1,4 @@
+import { requireList, requireRecord } from '../services/responseValidation.js';
 import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
 import { addDays } from '../../domain/utils/dates.js';
@@ -76,6 +77,7 @@ export const createMembershipsModule = (ctx, repository) => {
   };
 
   const mergePlan = (plan) => {
+    requireRecord(plan, 'id_pm');
     const normalized = normalizePlanFromBackend(plan);
     const index = ctx.planCatalog.value.findIndex((entry) => Number(entry.id_pm) === Number(normalized.id_pm));
     if (index >= 0) ctx.planCatalog.value[index] = normalized; else ctx.planCatalog.value.unshift(normalized);
@@ -113,6 +115,7 @@ export const createMembershipsModule = (ctx, repository) => {
   };
 
   const mergePromotion = (promotion) => {
+    requireRecord(promotion, 'id_promocion');
     const normalized = normalizePromotionFromBackend(promotion);
     const index = ctx.promotions.value.findIndex((entry) => Number(entry.id_promocion) === Number(normalized.id_promocion));
     if (index >= 0) ctx.promotions.value[index] = normalized; else ctx.promotions.value.unshift(normalized);
@@ -141,7 +144,8 @@ export const createMembershipsModule = (ctx, repository) => {
 
     if (ctx.apiBase) {
       const saved = await remote.upsertPromotion(idPromocion, body);
-      return mergePromotion({ ...body, ...(saved || {}) });
+      requireRecord(saved, 'id_promocion');
+      return mergePromotion({ ...body, ...saved });
     }
 
     return mergePromotion({ ...body, id_promocion: idPromocion || Date.now() });
@@ -189,6 +193,7 @@ export const createMembershipsModule = (ctx, repository) => {
       const payload = { id_cliente, id_pm, fecha_inicio: startDate, fecha_fin: endDate, id_promocion };
       return remote.assignPlanToMember(payload)
         .then((memb) => {
+          requireRecord(memb, 'id_membresia');
           // actualizar estado local mínimo
           ctx.members.value[index] = { ...member, plan: getPlanById(planId)?.name || member.plan, planId, membershipStart: startDate, membershipEnd: endDate, membershipPrice: memb.monto_pago ?? member.membershipPrice, id_membresia: memb.id_membresia, paymentStatus: memb.estado_pago || 'PENDIENTE', membershipStatus: normalizeMembershipStatus(memb.estado) };
           ctx.logMemberEvent(memberId, { action: memb.id_membresia ? 'Asignación' : 'Renovación', fields: ['plan', 'planId', 'membershipStart', 'membershipEnd', 'membershipPrice', 'status'], note });
@@ -249,7 +254,7 @@ export const createMembershipsModule = (ctx, repository) => {
 
   const refreshPromotionsFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
-    const list = await remote.refreshPromotionsFromBackend();
+    const list = requireList(await remote.refreshPromotionsFromBackend(), 'id_promocion');
     ctx.promotions.value = list.map((promotion) => normalizePromotionFromBackend(promotion));
     return ctx.promotions.value;
   };
@@ -257,7 +262,9 @@ export const createMembershipsModule = (ctx, repository) => {
   const activateClientMembership = async (idCliente) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const saved = await remote.activateClientMembership(idCliente);
-    const membership = saved.membresia || {};
+    requireRecord(saved);
+    requireRecord(saved.cliente);
+    const membership = requireRecord(saved.membresia, 'id_membresia');
     const client = ctx.mergeClient({
       ...(saved.cliente || {}),
       id_membresia: membership.id_membresia,

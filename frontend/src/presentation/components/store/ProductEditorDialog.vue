@@ -1,469 +1,378 @@
 <template>
-  <Teleport to="body">
-    <div
-      v-if="isAdmin && isProductEditorOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm"
-    >
-      <form
-        class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 shadow-2xl"
-        @submit.prevent="handleSubmit"
-      >
-        <!-- Modal header -->
-        <div
-          class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 bg-slate-950 px-6 py-4"
-        >
+  <ResourceModal
+    :open="isAdmin && isProductEditorOpen"
+    :icon="ShoppingBag"
+    :eyebrow="editingId ? 'Tienda · Edicion de registro' : 'Tienda · Nuevo registro'"
+    :title="editingId ? 'Editar producto' : 'Nuevo producto'"
+    subtitle="Define precio, stock e imagen del producto que veran los clientes."
+    size="xl"
+    :busy="isSaving || isUploadingImage"
+    @close="closeProductEditor"
+    @submit="handleSubmit"
+  >
+    <div v-if="formErrors.length" role="alert" class="inv-error">
+      <AlertCircle :size="16" aria-hidden="true" />
+      <p>{{ missingFieldsMessage(formErrors) }}</p>
+    </div>
+
+    <!-- Sección: Informacion básica -->
+    <fieldset class="rm-section">
+      <legend class="sr-only">Informacion del producto</legend>
+      <p class="rm-section-title">
+        <Info :size="14" aria-hidden="true" /> Informacion del producto
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="space-y-2 sm:col-span-2">
+          <span class="inv-label inv-required">Nombre del producto</span>
+          <input
+            v-model="form.nombre"
+            class="field-input"
+            :class="{ 'is-invalid': formErrors.includes('Nombre') || warnings.nombre }"
+            :maxlength="NAME_MAX_LENGTH"
+            placeholder="Proteina Whey, Bebida Energetica, etc."
+            @beforeinput="blockNameChars"
+            @input="cleanName"
+          />
+          <p v-if="warnings.nombre" class="inv-field-error">{{ warnings.nombre }}</p>
+        </label>
+        <label class="space-y-2 sm:col-span-2">
+          <span class="inv-label">Descripcion</span>
+          <textarea
+            v-model="form.descripcion"
+            rows="2"
+            class="field-input"
+            placeholder="Descripcion breve del producto..."
+          ></textarea>
+        </label>
+        <div class="space-y-2">
+          <label for="product-category" class="inv-label inv-required">Categoria</label>
+          <ExtensibleSelect
+            id="product-category"
+            v-model="form.categoria"
+            :options="categoryOptions"
+            :invalid="formErrors.includes('Categoria')"
+            placeholder="Selecciona una categoria"
+            add-label="Agregar nueva categoria"
+            add-placeholder="Ej. Suplementos"
+          />
+        </div>
+        <label class="space-y-2">
+          <span class="inv-label">Item de inventario</span>
+          <input
+            v-if="editingLinked"
+            :value="linkedItemLabel"
+            class="field-input cursor-not-allowed opacity-70"
+            readonly
+          />
+          <select v-else v-model="form.id_item" class="field-input">
+            <option :value="null">
+              {{
+                editingId
+                  ? "Sin vincular"
+                  : "Crear nuevo item en Inventario (Tipo Tienda)"
+              }}
+            </option>
+            <option
+              v-for="item in availableTiendaItems"
+              :key="item.id"
+              :value="itemNumber(item)"
+            >
+              {{ item.inventoryCode }} - {{ item.name }} (reserva
+              {{ item.quantity }})
+            </option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- Sección: Precios y stock -->
+    <fieldset class="rm-section">
+      <legend class="sr-only">Precios y stock</legend>
+      <p class="rm-section-title">
+        <Wallet :size="14" aria-hidden="true" /> Precios y stock
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="space-y-2">
+          <span class="inv-label inv-required">Precio (S/.)</span>
+          <input
+            :value="form.precio"
+            type="text"
+            inputmode="decimal"
+            class="field-input"
+            :class="{ 'is-invalid': formErrors.includes('Precio') }"
+            placeholder="0.00"
+            @beforeinput="blockPriceChars"
+            @input="cleanPrice"
+          />
+          <p v-if="warnings.precio" class="inv-field-error">{{ warnings.precio }}</p>
+        </label>
+        <div class="space-y-2">
+          <label for="product-unit" class="inv-label">Unidad de venta</label>
+          <ExtensibleSelect
+            id="product-unit"
+            v-model="form.unidad_venta"
+            :options="unitOptions"
+            placeholder="Selecciona una unidad"
+            add-label="Agregar nueva unidad"
+            add-placeholder="Ej. Botella"
+          />
+        </div>
+        <label class="space-y-2">
+          <span class="inv-label" :class="{ 'inv-required': stockEditable }">{{
+            stockEditable ? "Stock inicial en Tienda" : "Stock en Tienda"
+          }}</span>
+          <QuantityInput
+            v-if="stockEditable"
+            v-model="form.cantidad"
+            class="field-input"
+            :class="{ 'is-invalid': formErrors.includes('Stock inicial') }"
+            placeholder="0"
+          />
+          <input
+            v-else
+            :value="stockMostrado"
+            type="text"
+            class="field-input cursor-not-allowed opacity-70"
+            readonly
+          />
+        </label>
+        <label class="space-y-2">
+          <span class="inv-label">Stock minimo</span>
+          <QuantityInput
+            v-model="form.minimo"
+            class="field-input"
+          />
+          <p v-if="warnings.stock" class="inv-field-error">{{ warnings.stock }}</p>
+        </label>
+
+        <div class="app-notice app-notice--info inv-info sm:col-span-2">
+          <Info :size="16" aria-hidden="true" />
           <div>
-            <p
-              class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.35em] text-slate-500"
-            >
-              <span class="text-amber-400">Producto</span>
-              <span>•</span>
-              <span>{{
-                editingId ? "Edicion de registro" : "Nuevo registro"
-              }}</span>
+            <p v-if="stockEditable">
+              El stock inicial queda en la Tienda; la reserva de Inventario no
+              cambia.
             </p>
-            <h2 class="mt-1 text-xl font-black text-white">
-              {{ editingId ? "Editar producto" : "Nuevo producto" }}
-            </h2>
+            <p v-else class="font-bold">
+              La Tienda tiene su propio stock: baja con las ventas y sube cuando
+              Inventario la repone (Inventario &rarr; Movimientos, salida con
+              destino Tienda).
+            </p>
+
+            <p class="mt-1">
+              El estado se calcula solo:
+              <span class="font-bold">Disponible</span> con stock,
+              <span class="font-bold">Agotado</span> sin stock y
+              <span class="font-bold">Descatalogado</span> (oculto a clientes)
+              si no tiene precio o el item ya no es Tipo Tienda o esta
+              Descontinuado.
+            </p>
           </div>
-          <button
-            type="button"
-            class="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-slate-400 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
-            @click="closeProductEditor"
-          >
-            <svg
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Cerrar
-          </button>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Sección: Imagen -->
+    <fieldset class="rm-section">
+      <legend class="sr-only">Imagen del producto</legend>
+      <p class="rm-section-title">
+        <ImageIcon :size="14" aria-hidden="true" /> Imagen del producto
+      </p>
+      <div class="grid gap-4 sm:grid-cols-[160px_1fr]">
+        <!-- Preview -->
+        <div
+          class="mx-auto flex aspect-square w-40 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/20 bg-white/[0.04] p-2 sm:mx-0"
+        >
+          <img
+            v-if="form.imagen_url"
+            :src="form.imagen_url"
+            :alt="form.nombre || 'Producto'"
+            class="h-full w-full object-contain"
+          />
+          <div v-else class="flex flex-col items-center gap-2 px-4 text-center">
+            <ImageIcon :size="32" class="text-slate-500" aria-hidden="true" />
+            <p class="text-[11px] text-slate-500">Sin imagen</p>
+          </div>
         </div>
 
-        <div class="p-6 space-y-6">
-          <!-- Identificador -->
-          <div
-            class="flex items-center gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/8 px-4 py-3"
+        <!-- Controles -->
+        <div class="space-y-3">
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-200 transition hover:bg-amber-400/20"
+              :disabled="isLoadingBucketImages"
+              @click="openBucketPicker"
+            >
+              <Images :size="16" aria-hidden="true" />
+              {{
+                isLoadingBucketImages ? "Cargando..." : "Elegir de la galería"
+              }}
+            </button>
+            <button
+              v-if="form.imagen_url"
+              type="button"
+              class="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-slate-300 transition hover:bg-white/5"
+              @click="clearSelectedImage"
+            >
+              <Trash2 :size="16" aria-hidden="true" />
+              Quitar imagen
+            </button>
+          </div>
+
+          <label class="block space-y-2">
+            <span class="inv-label">Subir desde local (.png o .jpg)</span>
+            <input
+              type="file"
+              accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+              class="field-input"
+              :disabled="isUploadingImage"
+              @change="handleLocalImageUpload"
+            />
+          </label>
+
+          <p
+            v-if="isUploadingImage"
+            class="flex items-center gap-2 text-xs font-semibold text-amber-300"
           >
-            <div
-              class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-400/20"
-            >
-              <svg
-                class="h-4 w-4 text-amber-300"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p
-                class="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300"
-              >
-                Identificador unico
-              </p>
-              <p class="mt-0.5 font-black text-white">
-                {{ currentProductCode }}
-              </p>
-            </div>
-          </div>
+            <Loader2 :size="14" class="animate-spin" aria-hidden="true" />
+            Subiendo imagen a Supabase...
+          </p>
 
-          <!-- Sección: Informacion básica -->
-          <div>
-            <p
-              class="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500"
-            >
-              Informacion del producto
-            </p>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="space-y-2 sm:col-span-2">
-                <span
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >Nombre del producto</span
+          <!-- Bucket picker -->
+          <div
+            v-if="isBucketPickerOpen"
+            class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+          >
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p
+                  class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500"
                 >
-                <input
-                  v-model="form.nombre"
-                  required
-                  class="field-input"
-                  placeholder="Proteina Whey, Bebida Energetica, etc."
-                />
-              </label>
-              <label class="space-y-2 sm:col-span-2">
-                <span
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >Descripcion</span
-                >
-                <textarea
-                  v-model="form.descripcion"
-                  rows="2"
-                  class="field-input"
-                  placeholder="Descripcion breve del producto..."
-                ></textarea>
-              </label>
-              <label class="space-y-2">
-                <span
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >Categoria</span
-                >
-                <input
-                  v-model="form.categoria"
-                  class="field-input"
-                  placeholder="Suplementos, Bebidas..."
-                />
-              </label>
-              <label class="space-y-2">
-                <span
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >Item de inventario</span
-                >
-                <input
-                  v-if="editingLinked"
-                  :value="linkedItemLabel"
-                  class="field-input cursor-not-allowed opacity-70"
-                  readonly
-                />
-                <select v-else v-model="form.id_item" class="field-input">
-                  <option :value="null">
-                    {{
-                      editingId
-                        ? "Sin vincular"
-                        : "Crear nuevo item en Inventario (Tipo Tienda)"
-                    }}
-                  </option>
-                  <option
-                    v-for="item in availableTiendaItems"
-                    :key="item.id"
-                    :value="itemNumber(item)"
-                  >
-                    {{ item.inventoryCode }} - {{ item.name }} (reserva
-                    {{ item.quantity }})
-                  </option>
-                </select>
-              </label>
-            </div>
-          </div>
-
-          <div class="border-t border-white/10"></div>
-
-          <!-- Sección: Precios y stock -->
-          <div>
-            <p
-              class="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500"
-            >
-              Precios y stock
-            </p>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="space-y-2">
-                <span
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >Unidad de venta</span
-                >
-                <input
-                  v-model="form.unidad_venta"
-                  class="field-input"
-                  placeholder="unidad, botella, paquete..."
-                />
-              </label>
-              <label class="space-y-2">
-                <span
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >Precio (S/.)</span
-                >
-                <input
-                  v-model.number="form.precio"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  class="field-input"
-                />
-              </label>
-              <label class="space-y-2">
-                <span
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >{{
-                    stockEditable
-                      ? "Stock inicial en Tienda"
-                      : "Stock en Tienda"
-                  }}</span
-                >
-                <input
-                  v-if="stockEditable"
-                  v-model.number="form.cantidad"
-                  type="number"
-                  min="0"
-                  class="field-input"
-                />
-                <input
-                  v-else
-                  :value="stockMostrado"
-                  type="number"
-                  class="field-input cursor-not-allowed opacity-70"
-                  readonly
-                />
-              </label>
-              <label class="space-y-2">
-                <span
-                  class="text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >Stock minimo</span
-                >
-                <input
-                  v-model.number="form.minimo"
-                  type="number"
-                  min="0"
-                  class="field-input"
-                />
-              </label>
-
-              <div
-                class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-slate-200 sm:col-span-2"
-              >
-                <p v-if="stockEditable">
-                  El stock inicial queda en la Tienda; la reserva de Inventario
-                  no cambia.
+                  Bucket Supabase
                 </p>
-                <p v-else class="font-bold">
-                  La Tienda tiene su propio stock: baja con las ventas y sube
-                  cuando Inventario la repone (Inventario &rarr; Movimientos,
-                  salida con destino Tienda).
-                </p>
-
-                <p class="mt-1">
-                  El estado se calcula solo:
-                  <span class="font-bold">Disponible</span> con stock,
-                  <span class="font-bold">Agotado</span> sin stock y
-                  <span class="font-bold">Descatalogado</span> (oculto a
-                  clientes) si no tiene precio o el item ya no es Tipo Tienda o
-                  esta Descontinuado.
+                <p class="mt-0.5 text-sm font-semibold text-white">
+                  imagenestienda
                 </p>
               </div>
+              <button
+                type="button"
+                class="rm-btn-secondary"
+                style="padding: 0.4rem 0.75rem; font-size: 0.75rem"
+                @click="closeBucketPicker"
+              >
+                Cerrar galería
+              </button>
             </div>
-          </div>
-
-          <div class="border-t border-white/10"></div>
-
-          <!-- Sección: Imagen -->
-          <div>
-            <p
-              class="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500"
+            <div
+              v-if="bucketImages.length"
+              class="grid max-h-56 grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4"
             >
-              Imagen del producto
-            </p>
-            <div class="grid gap-4 lg:grid-cols-[160px_1fr]">
-              <!-- Preview -->
-              <div
-                class="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-slate-900 p-2"
+              <button
+                v-for="image in bucketImages"
+                :key="image.path || image.name"
+                type="button"
+                class="overflow-hidden rounded-xl border transition hover:border-amber-400"
+                :class="
+                  form.imagen_url === image.url
+                    ? 'border-amber-400 ring-2 ring-amber-400/40'
+                    : 'border-white/10'
+                "
+                :aria-pressed="form.imagen_url === image.url"
+                @click="selectBucketImage(image)"
               >
                 <img
-                  v-if="form.imagen_url"
-                  :src="form.imagen_url"
-                  :alt="form.nombre || 'Producto'"
-                  class="h-full w-full object-contain"
+                  :src="image.url"
+                  :alt="image.name"
+                  class="aspect-square h-full w-full object-contain p-1"
                 />
-                <div
-                  v-else
-                  class="flex flex-col items-center gap-2 px-4 text-center"
-                >
-                  <svg
-                    class="h-8 w-8 text-slate-700"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p class="text-[10px] text-slate-600">Sin imagen</p>
-                </div>
-              </div>
-
-              <!-- Controles -->
-              <div class="space-y-3">
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    class="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-200 transition hover:bg-amber-400/20"
-                    :disabled="isLoadingBucketImages"
-                    @click="openBucketPicker"
-                  >
-                    {{
-                      isLoadingBucketImages
-                        ? "Cargando..."
-                        : "Elegir de la galería"
-                    }}
-                  </button>
-                  <button
-                    v-if="form.imagen_url"
-                    type="button"
-                    class="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-slate-300 transition hover:bg-white/5"
-                    @click="clearSelectedImage"
-                  >
-                    Quitar imagen
-                  </button>
-                </div>
-
-                <label class="block space-y-2">
-                  <span
-                    class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500"
-                    >Subir desde local</span
-                  >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    class="field-input"
-                    :disabled="isUploadingImage"
-                    @change="handleLocalImageUpload"
-                  />
-                </label>
-
-                <p
-                  v-if="isUploadingImage"
-                  class="flex items-center gap-2 text-xs font-semibold text-amber-300"
-                >
-                  <svg
-                    class="h-3.5 w-3.5 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    />
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8z"
-                    />
-                  </svg>
-                  Subiendo imagen a Supabase...
+                <p class="truncate px-2 py-1 text-[10px] text-slate-400">
+                  {{ image.name }}
                 </p>
-
-                <!-- Bucket picker -->
-                <div
-                  v-if="isBucketPickerOpen"
-                  class="rounded-2xl border border-white/10 bg-slate-900/80 p-4"
-                >
-                  <div class="mb-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p
-                        class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500"
-                      >
-                        Bucket Supabase
-                      </p>
-                      <p class="mt-0.5 text-sm font-semibold text-white">
-                        imagenestienda
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      class="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/5"
-                      @click="closeBucketPicker"
-                    >
-                      Cerrar
-                    </button>
-                  </div>
-                  <div
-                    v-if="bucketImages.length"
-                    class="grid max-h-56 grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4"
-                  >
-                    <button
-                      v-for="image in bucketImages"
-                      :key="image.path || image.name"
-                      type="button"
-                      class="overflow-hidden rounded-xl border transition ws-hover-border"
-                      :class="
-                        form.imagen_url === image.url
-                          ? 'ws-border-warning ring-2 ws-ring'
-                          : 'ws-border'
-                      "
-                      @click="selectBucketImage(image)"
-                    >
-                      <img
-                        :src="image.url"
-                        :alt="image.name"
-                        class="aspect-square h-full w-full bg-slate-950/60 object-contain p-1"
-                      />
-                      <p class="truncate px-2 py-1 text-[10px] text-slate-400">
-                        {{ image.name }}
-                      </p>
-                    </button>
-                  </div>
-                  <p
-                    v-else
-                    class="rounded-xl border border-dashed ws-border px-4 py-6 text-center text-xs ws-muted"
-                  >
-                    Todavía no hay imágenes en la galería.
-                  </p>
-                </div>
-
-                <p
-                  v-if="imageFeedback"
-                  class="rounded-xl border px-3 py-2 text-xs"
-                  :class="
-                    imageFeedbackTone === 'error'
-                      ? 'border-rose-400/20 bg-rose-400/10 text-rose-200'
-                      : 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
-                  "
-                >
-                  {{ imageFeedback }}
-                </p>
-              </div>
+              </button>
             </div>
+            <p
+              v-else
+              class="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-400"
+            >
+              Todavía no hay imágenes en la galería.
+            </p>
           </div>
-        </div>
 
-        <p
-          v-if="feedbackMessage && feedbackTone === 'error'"
-          role="alert"
-          class="mx-6 mt-4 rounded-xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
-        >
-          {{ feedbackMessage }}
-        </p>
-
-        <!-- Modal footer -->
-        <div class="border-t border-white/10 bg-slate-950/80 px-6 py-4">
-          <button
-            :disabled="isSaving || isUploadingImage"
-            type="submit"
-            class="w-full rounded-2xl bg-amber-400 px-4 py-3.5 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 hover:shadow-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60"
+          <p
+            v-if="imageFeedback"
+            class="rounded-xl border px-3 py-2 text-xs"
+            :class="
+              feedbackClass(imageFeedbackTone)
+            "
           >
-            {{
-              isSaving
-                ? "Guardando…"
-                : editingId
-                  ? "Guardar cambios"
-                  : "Registrar producto"
-            }}
-          </button>
+            {{ imageFeedback }}
+          </p>
         </div>
-      </form>
-    </div>
-  </Teleport>
+      </div>
+    </fieldset>
+
+    <p
+      v-if="feedbackMessage && feedbackTone === 'error'"
+      role="alert"
+      class="rounded-xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+    >
+      {{ feedbackMessage }}
+    </p>
+
+    <template #footer>
+      <button
+        type="button"
+        class="rm-btn-secondary"
+        :disabled="isSaving || isUploadingImage"
+        @click="closeProductEditor"
+      >
+        Cancelar
+      </button>
+      <button
+        :disabled="isSaving || isUploadingImage"
+        type="submit"
+        class="rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {{
+          isSaving
+            ? "Guardando…"
+            : editingId
+              ? "Guardar cambios"
+              : "Registrar producto"
+        }}
+      </button>
+    </template>
+  </ResourceModal>
 </template>
 
 <script setup>
-defineProps([
+import QuantityInput from "../QuantityInput.vue";
+import { feedbackClass } from "../../utils/feedback.js";
+import { reactive } from "vue";
+import {
+  AlertCircle,
+  Image as ImageIcon,
+  Images,
+  Info,
+  Loader2,
+  ShoppingBag,
+  Trash2,
+  Wallet,
+} from "lucide-vue-next";
+import ResourceModal from "../ResourceModal.vue";
+import ExtensibleSelect from "../common/ExtensibleSelect.vue";
+import { blockNonDecimal, blockSpecialChars } from "../../utils/inputGuards.js";
+import {
+  cleanDecimal,
+  cleanText,
+  missingFieldsMessage,
+  NAME_MAX_LENGTH,
+} from "../../../domain/utils/inputRules.js";
+
+const props = defineProps([
+  "categoryOptions",
+  "unitOptions",
+  "formErrors",
   "availableTiendaItems",
   "bucketImages",
   "clearSelectedImage",
@@ -492,6 +401,26 @@ defineProps([
   "stockEditable",
   "stockMostrado",
 ]);
+
+// Avisos al escribir: el campo bloquea lo no permitido y explica por que.
+const warnings = reactive({ nombre: "", precio: "", stock: "" });
+const blockNameChars = blockSpecialChars((message) => { warnings.nombre = message; });
+const blockPriceChars = blockNonDecimal((message) => { warnings.precio = message; });
+
+const cleanName = (event) => {
+  const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
+  if (value !== event.target.value) event.target.value = value;
+  props.form.nombre = value;
+  warnings.nombre = rejected ? "Sin caracteres especiales: solo letras, numeros y espacios." : "";
+};
+
+const cleanPrice = (event) => {
+  const value = cleanDecimal(event.target.value);
+  if (value !== event.target.value) event.target.value = value;
+  props.form.precio = value;
+  warnings.precio = "";
+};
+
 </script>
 
 <style scoped src="../../styles/store-view.css"></style>

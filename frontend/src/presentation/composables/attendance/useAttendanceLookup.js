@@ -1,4 +1,5 @@
 import { ref, onScopeDispose } from 'vue';
+import { requireRecord } from '../../../application/services/responseValidation.js';
 
 /** Búsqueda por DNI; descarta respuestas reemplazadas o recibidas tras desmontar. */
 export const useAttendanceLookup = ({
@@ -41,7 +42,8 @@ export const useAttendanceLookup = ({
       clientData.value = null;
     }
     try {
-      const data = await attendanceGet('/cliente', { dni: query }, token.value);
+      const data = requireRecord(await attendanceGet('/cliente', { dni: query }, token.value));
+      requireRecord(data.cliente);
       if (request === searchNumber) {
         clientData.value = data;
       }
