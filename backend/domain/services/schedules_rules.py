@@ -33,13 +33,15 @@ class SchedulesRules:
         value = value.replace("a. m.", "am").replace("p. m.", "pm")
         value = value.replace("a.m.", "am").replace("p.m.", "pm")
         value = value.replace("a. m", "am").replace("p. m", "pm")
-        match = re.search(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", value)
+        match = re.fullmatch(r"(\d{1,2})(?::(\d{2}))?(?::00(?:\.0+)?)?\s*(am|pm)?", value)
         if not match:
             raise ValueError("Hora invalida")
 
         hour = int(match.group(1))
         minute = int(match.group(2) or 0)
         suffix = match.group(3)
+        if suffix and not 1 <= hour <= 12:
+            raise ValueError("Hora invalida")
         if suffix == "pm" and hour < 12:
             hour += 12
         elif suffix == "am" and hour == 12:
@@ -387,10 +389,11 @@ class SchedulesRules:
 
         hora_inicio = str(payload.get("hora_inicio") or "").strip()
         hora_fin = str(payload.get("hora_fin") or "").strip()
-        self._validate_short_service_schedule_range(hora_inicio, hora_fin)
+        start, end = self._validate_short_service_schedule_range(hora_inicio, hora_fin)
+        hora_inicio, hora_fin = self._minutes_to_time(start), self._minutes_to_time(end)
         dia = self._normalize_day(payload.get("dia") or (payload.get("dias") or [""])[0])
-        if not dia:
-            raise ValueError("Selecciona un dia")
+        if dia not in {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"}:
+            raise ValueError("Selecciona un dia valido de la semana")
         id_rutina = int(payload.get("id_rutina", 0) or 0)
         routine = next((r for r in self.context.state["catalogo_rutina"] if int(r.get("id_rutina", 0) or 0) == id_rutina), None)
         if not routine:

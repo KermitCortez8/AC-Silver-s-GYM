@@ -1,0 +1,24 @@
+<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="app"></div><script type="module">
+import { createApp, h, ref } from 'vue';
+import { createPinia } from 'pinia';
+import { installServices } from '/src/bootstrap.js';
+import Dialog from '/src/presentation/components/clients/ClientDetailsDialog.vue';
+import Confirm from '/src/presentation/components/ConfirmDialog.vue';
+import { useClientMembershipActions } from '/src/presentation/composables/clients/useClientMembershipActions.js';
+import { clientMembershipGroup, clientMembershipLabel } from '/src/domain/utils/clientDirectory.js';
+import '/src/presentation/style.css';
+import '/src/presentation/styles/workspace.css';
+const pinia=createPinia(); installServices(pinia,{http:{apiPost:async()=>({})}});
+const App={setup(){
+ const viewingClient=ref({id:'SGCLI001',id_cliente:1,name:'Cliente de prueba',email:'cliente@gmail.com',dni:'01234567',plan:'MENSUAL',status:'EN_TRAMITE',membershipStatus:'EN_TRAMITE',paymentStatus:'PENDIENTE',membershipPrice:120});
+ const feedbackMessage=ref(''), feedbackTone=ref('');
+ const gymStore={confirmarPagoEfectivo:async()=>{await new Promise(r=>setTimeout(r,900));return {...viewingClient.value,paymentStatus:'PAGADO'};},activateClientMembership:async()=>{await new Promise(r=>setTimeout(r,500));return {...viewingClient.value,status:'ACTIVO',membershipStatus:'ACTIVO',membershipStart:'2026-10-29',membershipEnd:'2026-11-28',notification:{status:'queued'}};}};
+ const actions=useClientMembershipActions({gymStore,authStore:{token:'sintetico'},feedbackMessage,feedbackTone,viewingClient,route:{query:{}},router:{},refreshClients:async()=>{}});
+ return()=>h('div',{class:'clients-page',style:'min-height:100vh;background:var(--app-canvas);padding:30px'},[
+ h('p',{style:'color:var(--app-text)'},feedbackMessage.value),
+ h(Dialog,{viewingClient:viewingClient.value,isDetailsOpen:true,closeDetails:()=>{},getPlanPrice:()=>150,clientMembershipGroup,clientMembershipLabel,membershipBadgeClass:()=>'',isActiveStatus:v=>v==='ACTIVO',canPayClientWithStripe:()=>false,...Object.fromEntries(Object.entries(actions).map(([k,v])=>[k,v?.__v_isRef?v.value:v]))}),
+ actions.pendingActivation.value?h(Confirm,{title:'¿Estás seguro de la activación?',message:'Activar membresía de prueba',confirmLabel:'Sí, activar',busy:!!actions.activatingClientId.value,onConfirm:()=>actions.activateMembership(actions.pendingActivation.value),onCancel:actions.cancelActivation}):null
+ ]);
+}};
+createApp(App).use(pinia).mount('#app');
+</script></body></html>

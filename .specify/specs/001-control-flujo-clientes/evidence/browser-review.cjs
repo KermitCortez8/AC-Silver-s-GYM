@@ -1,0 +1,48 @@
+const {chromium}=require(process.env.GYM_PLAYWRIGHT_MODULE || '/tmp/gym-browser/node_modules/playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+(async()=>{
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const dir=require('node:path').join(process.cwd(), '.specify/specs/001-control-flujo-clientes/evidence');
+ const errors=[];
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ page.on('pageerror',e=>errors.push(e.message));
+ let confirmations=0;
+ await page.route('**/api/**',async route=>{
+  if(route.request().url().includes('confirmar-retorno')){
+   confirmations++;
+   await route.fulfill(confirmations===1?{status:503,contentType:'application/json',body:JSON.stringify({detail:'El servicio no está disponible temporalmente.'})}:{status:200,contentType:'application/json',body:JSON.stringify({confirmed:true,id_cliente:1})});
+  }else await route.fulfill({status:200,contentType:'application/json',body:'[]'});
+ });
+ await page.goto('http://127.0.0.1:5173/registro/pago/1?result=success&session_id=cs_sintetica');
+ await page.getByRole('heading',{name:'No se pudo verificar el pago'}).waitFor();
+ await page.screenshot({path:dir+'/pago-error-escritorio.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:dir+'/pago-error-movil.png',fullPage:true});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+ await page.getByRole('button',{name:'Volver a verificar el pago'}).click();
+ await page.getByRole('heading',{name:'Pago confirmado',exact:true}).waitFor();
+ assert.equal(confirmations,2);
+ await page.screenshot({path:dir+'/pago-confirmado-movil.png',fullPage:true});
+ await page.setViewportSize({width:1440,height:1000});
+ await page.goto('http://127.0.0.1:5173/.flow-review.html');
+ page.on('dialog',d=>d.accept());
+ await page.getByRole('button',{name:'Confirmar Pago (Manual/Efectivo)'}).click();
+ const busy=page.getByRole('button',{name:'Confirmando pago…'});
+ await busy.waitFor(); assert(await busy.isDisabled());
+ await page.screenshot({path:dir+'/cliente-pago-en-curso.png',fullPage:true});
+ await page.getByRole('button',{name:'Activar Membresía',exact:true}).click();
+ await page.getByRole('button',{name:'Sí, activar'}).click();
+ await page.getByRole('button',{name:'Notificar activación'}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Activar Membresía',exact:true}).count(),0);
+ await page.screenshot({path:dir+'/cliente-activado-oscuro.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ await page.evaluate(()=>document.documentElement.dataset.theme='light');
+ await page.waitForTimeout(250);
+ await page.screenshot({path:dir+'/cliente-activado-movil-claro.png',fullPage:true});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+ assert.deepEqual(errors,[]);
+ fs.writeFileSync(dir+'/browser-results.json',JSON.stringify({paymentRequests:confirmations,duplicateManualClickBlocked:true,detailsUpdatedAfterActivation:true,horizontalOverflow:false,pageErrors:errors,viewports:['1440x1000','390x844'],api:'simulada; sin proveedores reales'},null,2));
+ await browser.close();
+ console.log('Navegador: reintento, carga manual, activación, escritorio/móvil y 6 capturas correctos.');
+})().catch(e=>{console.error(e);process.exit(1)});

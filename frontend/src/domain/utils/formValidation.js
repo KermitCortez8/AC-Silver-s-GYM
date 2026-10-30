@@ -1,5 +1,4 @@
-export const ACCOUNT_EMAIL_DOMAINS = ['gmail.com', 'hotmail.com'];
-export const EMAIL_DOMAIN_MESSAGE = 'Solo se permiten correos @gmail.com o @hotmail.com.';
+export const EMAIL_DOMAIN_MESSAGE = 'Solo se permiten correos que terminen en .com.';
 
 export const emailError = (value, { account = true } = {}) => {
   const email = String(value ?? '').trim();
@@ -12,7 +11,7 @@ export const emailError = (value, { account = true } = {}) => {
     || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(domain)) {
     return 'Ingresa un correo válido, por ejemplo nombre@gmail.com.';
   }
-  if (account && !ACCOUNT_EMAIL_DOMAINS.includes(domain.toLowerCase())) return EMAIL_DOMAIN_MESSAGE;
+  if (account && !/\.com$/i.test(domain)) return EMAIL_DOMAIN_MESSAGE;
   return '';
 };
 

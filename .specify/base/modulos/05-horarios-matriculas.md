@@ -74,3 +74,12 @@ con [test_schedule_calendar.py](../../../backend/tests/test_schedule_calendar.py
 [11-schedule-enrollment.test.js](../../../frontend/tests/11-schedule-enrollment.test.js)
 y [13-schedule-calendar.test.js](../../../frontend/tests/13-schedule-calendar.test.js)
 según el cambio. Cumplir el [DoD](../../docs/DoD.md).
+
+### Validación de horarios (feature 001)
+
+Al guardar se exige un día de lunes a domingo y una hora completa; se rechaza texto
+sobrante, AM/PM fuera de 1–12 y segundos no cero. Las horas admitidas se guardan
+como HH:MM de 24 horas para su uso por asistencia. Se mantiene lectura de AM/PM
+histórico y duración de 60 o 120 minutos.
+Regresiones y recorrido de cupos/cancelación en
+[test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).

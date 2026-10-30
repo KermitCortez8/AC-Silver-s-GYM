@@ -360,7 +360,7 @@ test('failed gallery refresh preserves previously loaded images', async (t) => {
 
 test('public registration rejects invalid email inline before sending a request', async () => {
   const { setup, gym, html } = await setupView('RegisterView', '/registro', setup => {
-    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@gmail.com.otro.com', dni: '12345678', telefono: '987654321', password: 'secreto123' });
+    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@example.com.pe', dni: '12345678', telefono: '987654321', password: 'secreto123' });
     setup.validateField('correo');
   });
   let calls = 0;
@@ -369,7 +369,7 @@ test('public registration rejects invalid email inline before sending a request'
   assert.equal(calls, 0);
   assert.equal(setup.feedbackTone, 'error');
   assert.match(setup.feedback, /Solo se permiten correos/);
-  assert.equal(setup.form.correo, 'ana@gmail.com.otro.com');
+  assert.equal(setup.form.correo, 'ana@example.com.pe');
   assert.equal(setup.isSubmitting, false);
   assert.match(html, /aria-invalid="true"/);
   assert.match(html, /id="register-correo-error" role="alert"/);
@@ -382,7 +382,7 @@ test('client and user editors keep invalid drafts open and do not call the serve
   ]) {
     const { setup, gym } = await setupView(view, path);
     setup[open]();
-    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@company.com', dni: 'bad', telefono: 'bad', password: '123' });
+    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@company.org', dni: 'bad', telefono: 'bad', password: '123' });
     let calls = 0;
     gym[save] = async () => { calls++; };
     await setup.handleSubmit();
@@ -397,7 +397,7 @@ test('client and user editors keep invalid drafts open and do not call the serve
 test('checkout validates customer data and prevents duplicate payments while preserving failed drafts', async () => {
   const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
   gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
-  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@gmail.com.otro.com', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@example.com.pe', dni: '12345678', method: 'yape', reference: 'PAY-1' });
   let calls = 0;
   let rejectSave;
   gym.createStoreOrder = () => { calls++; return new Promise((_resolve, reject) => { rejectSave = reject; }); };

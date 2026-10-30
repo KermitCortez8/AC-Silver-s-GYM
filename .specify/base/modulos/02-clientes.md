@@ -75,3 +75,21 @@ comando de eliminación. Listado y escritura administrativa exigen `admin/staff`
 Verificar los criterios afectados, la conservación de campos tras recarga y
 los flujos del directorio. Si cambia el borrado, comprobar su atomicidad en
 PostgreSQL aislado. Actualizar este contrato y el [DoD](../../docs/DoD.md) aplicable.
+
+### Control de errores del flujo (feature 001)
+
+El borrado administrativo propaga fallos del comando: un problema de persistencia
+produce 503 sanitizado mediante el manejador HTTP, sin comunicar 204 falso. El servicio
+rechaza identificadores inválidos antes de ejecutar la cascada existente.
+Regresiones y recorrido desde registro público/administrativo en
+[test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+
+En la ficha, la confirmación manual muestra «Confirmando pago…» y bloquea nuevos
+envíos mientras está en curso. Tras activar, la ficha se actualiza con la respuesta
+del servidor y sustituye la acción de activar por la de notificar. Regresiones en
+[36-client-flow-control.test.js](../../../frontend/tests/36-client-flow-control.test.js).
+
+El correo de cuenta acepta cualquier dominio terminado en `.com`, con una sola
+`@` y formato válido. La misma regla reutilizable se aplica en el preregistro
+(incluido Google), formularios de cuentas y servidor; ya no se limita a Gmail/Hotmail.
+Regresión: `test_basic_form_validation.py` y `34-form-validation.test.js`.
