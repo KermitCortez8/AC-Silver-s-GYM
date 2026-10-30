@@ -6,6 +6,7 @@ import { nowISO, normalizeBackendClientToMember, todayISO, getCurrentRegistrarId
 
 export const createSchedulesModule = (ctx, repository) => {
   const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
+  let enrollmentRevision = 0;
   const upsertRutina = async (payload) => {
     const rutina = {
       id_rutina: payload.id_rutina || payload.id || null,
@@ -238,6 +239,7 @@ export const createSchedulesModule = (ctx, repository) => {
 
   const refreshEnrollmentsFromBackend = async (filters = {}) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
+    const revision = ++enrollmentRevision;
     const response = await remote.refreshEnrollmentsFromBackend(filters);
 
     /**
@@ -247,6 +249,7 @@ export const createSchedulesModule = (ctx, repository) => {
       ...entry,
       estado: String(entry.estado || 'ACTIVA').toUpperCase(),
     }));
+    if (revision !== enrollmentRevision) return list;
     if (filters.id_cliente || filters.dni) {
       const incomingIds = new Set(list.map((entry) => Number(entry.id_matricula)));
       const filteredClientId = Number(filters.id_cliente || list[0]?.id_cliente || 0);
@@ -351,6 +354,7 @@ export const createSchedulesModule = (ctx, repository) => {
   const enrollSchedule = async (payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const savedResponse = requireRecord(await remote.enrollSchedule(payload), 'id_matricula');
+    enrollmentRevision++;
     const saved = {
       ...savedResponse,
       estado: String(savedResponse.estado || 'ACTIVA').toUpperCase(),
@@ -369,6 +373,7 @@ export const createSchedulesModule = (ctx, repository) => {
     if (ctx.apiBase) {
       await remote.deleteEnrollment(idMatricula);
     }
+    enrollmentRevision++;
     ctx.enrollments.value = ctx.enrollments.value.map((entry) =>
       Number(entry.id_matricula) === Number(idMatricula) ? { ...entry, estado: 'CANCELADA' } : entry,
     );

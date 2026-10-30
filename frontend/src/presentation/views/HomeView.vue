@@ -261,6 +261,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'vue-chartjs';
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
+import { useVisibleRefresh } from '../composables/useVisibleRefresh.js';
 import { RouterLink } from 'vue-router';
 import {
   ArrowUpRight,
@@ -776,7 +777,8 @@ const refreshDashboard = async (force = false) => {
   }
 };
 
-onMounted(() => refreshDashboard());
+onMounted(() => { if (isAdmin.value) refreshDashboard(); });
+useVisibleRefresh(() => refreshDashboard(true), { canRefresh: () => !isAdmin.value });
 </script>
 
 <style scoped>

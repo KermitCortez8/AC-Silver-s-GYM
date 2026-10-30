@@ -28,6 +28,11 @@ sintéticos, comprobar ocupación y cancelar una matrícula propia.
    deniega; una cancelación propia libera su plaza.
 5. **CA-05.** Dada una persistencia sin RPC de matrícula, al guardar se informa
    fallo y no se realiza un INSERT sin locks.
+6. **CA-06.** En el portal del cliente, al abrir o volver a una pestaña visible
+   se consultan sus matrículas; mientras permanezca visible se actualizan cada
+   30 segundos. El panel vuelve a consultar al navegar hacia él, sin reutilizar una
+   respuesta anterior a un cambio de matrícula. Una lectura iniciada antes de
+   guardar/cancelar no puede sobrescribir ese cambio confirmado.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -36,6 +41,7 @@ sintéticos, comprobar ocupación y cancelar una matrícula propia.
 | CA-03 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_user_routes_always_use_client_from_authenticated_session`. |
 | CA-04 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_client_can_only_cancel_own_enrollment`. |
 | CA-05 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_enrollment_requires_atomic_rpc_before_writing`; [test_enrollment_errors.py](../../../backend/tests/test_enrollment_errors.py). |
+| CA-06 | [31-module-error-control.test.js](../../../frontend/tests/31-module-error-control.test.js): respuestas anteriores a guardar/cancelar y lecturas fuera de orden; [revisión del portal](../validaciones/horarios-cliente/validation.md): foco, intervalo, navegación y conservación ante errores. |
 
 ## 4. Technical Constraints
 
@@ -66,6 +72,9 @@ No confundir una recurrencia semanal con una asistencia de otra fecha.
 - Cruce de semana, mes o fecha UTC: representar la fecha de Perú en calendario y correo.
 - Correo fallido tras matrícula confirmada: conservar matrícula y aviso pendiente.
 - Eliminación de cliente: liberar capacidad junto con sus dependencias; ver MOD-02.
+- La actualización automática se detiene al ocultar o desmontar la vista y no
+  interrumpe una operación de matrícula ni el selector abierto. Si falla una consulta,
+  se conserva el último horario válido y se muestra el error existente.
 
 ## 7. Definition of Done
 

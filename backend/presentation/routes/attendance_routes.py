@@ -29,7 +29,7 @@ def run(action):
     except (RuntimeError, OSError) as error:
         # Deja en el log la causa real (RPC inexistente, tipo de dato, conexión…).
         logger.exception("Fallo al guardar o leer asistencia")
-        raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y las migraciones de asistencia 005 y 013 en Supabase.") from error
+        raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y las migraciones de asistencia 005, 013 y 018 en Supabase.") from error
 
 
 @router.get("")
@@ -57,6 +57,16 @@ def export_history(filters: AttendanceFilters = Depends(), user=Depends(reader),
 @router.get("/cliente")
 def lookup(dni: str = Query(pattern=r"^\d{8}$"), user=Depends(administrator), attendance=Depends(service)):
     return run(lambda: attendance.lookup(dni))
+
+
+@router.get("/horarios")
+def schedules(user=Depends(administrator), attendance=Depends(service)):
+    return run(attendance.schedules)
+
+
+@router.get("/horarios/{schedule_id}/clientes")
+def roster(schedule_id: int, user=Depends(administrator), attendance=Depends(service)):
+    return run(lambda: attendance.roster(schedule_id))
 
 
 @router.get("/mi-semana")

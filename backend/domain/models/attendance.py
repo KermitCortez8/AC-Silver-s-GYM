@@ -26,7 +26,7 @@ class AttendanceFilters(BaseModel):
     dni: str = Field(default="", pattern=r"^(\d{8})?$")
     servicio: Literal["", "fitness", "musculacion", "cardio", "baile", "gimnasio"] = ""
     tipo: Literal["", "general", "horario"] = ""
-    estado: Literal["", "dentro", "completada", "anulada"] = ""
+    estado: Literal["", "dentro", "completada", "incompleta", "anulada"] = ""
 
 
 class GeneralAttendanceEntry(BaseModel):

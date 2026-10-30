@@ -8,6 +8,59 @@
   color: var(--app-text);
   min-width: 0;
 }
+.attendance-page .att-badge.incompleta,
+.attendance-page .att-message.is-warning {
+  color: var(--att-warm);
+  background: var(--att-warm-bg);
+  border: 1px solid var(--att-warm);
+}
+.attendance-page .att-late-notice {
+  display: block;
+  margin-top: 8px;
+  color: var(--att-warm);
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 340px;
+  white-space: normal;
+}
+.attendance-page .att-roster {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--app-border);
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.attendance-page .att-day-filter {
+  display: grid;
+  gap: 6px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+}
+.attendance-page .att-day-filter select {
+  background: var(--app-surface-soft);
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+.attendance-page .att-schedules-table tbody tr { cursor: pointer; }
+.attendance-page .att-schedules-table tbody tr:hover,
+.attendance-page .att-schedules-table .is-selected { background: var(--app-surface-soft); }
+.attendance-page .att-schedules-table .is-selected { box-shadow: inset 3px 0 var(--app-accent); }
+.attendance-page .att-schedule-control > .att-heading-row { margin-bottom: 20px; flex-wrap: wrap; }
+.attendance-page .att-attendance-controls { display: grid; gap: 24px; }
+@media (max-width: 640px) {
+  .attendance-page .att-schedules-table td[data-label='Clase'],
+  .attendance-page .att-schedules-table td[data-label='Seleccionar'],
+  .attendance-page .att-roster-table td[data-label='Acción'] { grid-column: 1 / -1; }
+  .attendance-page .att-schedules-table td[data-label='Día']::before,
+  .attendance-page .att-schedules-table td[data-label='Horario']::before,
+  .attendance-page .att-schedules-table td[data-label='Matriculados']::before {
+    content: attr(data-label); display: block; color: var(--app-text-muted); font-size: 10px; margin-bottom: 5px;
+  }
+}
 :root[data-theme='light'] .attendance-page {
   --att-good: #176446;
   --att-good-bg: #e6f5ed;

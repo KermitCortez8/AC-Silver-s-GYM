@@ -14,6 +14,12 @@ import { createResourceCache } from '../src/application/services/resourceCache.j
 
 const snapshot = value => JSON.parse(JSON.stringify(value));
 
+const deferred = () => {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+};
+
 const context = () => {
   const pinia = createPinia();
   setActivePinia(pinia);
@@ -48,6 +54,55 @@ const reads = [
   ['dashboard settings', createDashboardModule, 'refreshGymSettingsFromBackend', 'gymSettings', 'load'],
   ['trainer overview', createSchedulesModule, 'fetchTrainerOverview', 'trainerOverview'],
 ];
+
+test('una lectura anterior no borra la matrícula que acaba de guardarse', async () => {
+  const ctx = context();
+  ctx.enrollments.value = [];
+  const pending = deferred();
+  const saved = { id_matricula: 7, id_cliente: 1, id_horario_servicio: 2, estado: 'ACTIVA' };
+  const module = createSchedulesModule(ctx, {
+    refreshEnrollmentsFromBackend: () => pending.promise,
+    enrollSchedule: async () => saved,
+    refreshServiceSchedulesFromBackend: async () => [],
+  });
+  const oldRead = module.refreshEnrollmentsFromBackend({ id_cliente: 1 });
+  await module.enrollSchedule({ id_cliente: 1, id_horario_servicio: 2 });
+  pending.resolve([]);
+  await oldRead;
+  assert.deepEqual(ctx.enrollments.value, [saved]);
+});
+
+test('una respuesta anterior no reactiva una matrícula recién cancelada', async () => {
+  const ctx = context();
+  const saved = { id_matricula: 7, id_cliente: 1, estado: 'ACTIVA' };
+  ctx.enrollments.value = [saved];
+  const pending = deferred();
+  const module = createSchedulesModule(ctx, {
+    refreshEnrollmentsFromBackend: () => pending.promise,
+    deleteEnrollment: async () => {},
+    refreshServiceSchedulesFromBackend: async () => [],
+  });
+  const oldRead = module.refreshEnrollmentsFromBackend({ id_cliente: 1 });
+  await module.deleteEnrollment(7);
+  pending.resolve([saved]);
+  await oldRead;
+  assert.equal(ctx.enrollments.value[0].estado, 'CANCELADA');
+});
+
+test('la respuesta más reciente sustituye las matrículas y permite quedar sin clases', async () => {
+  const ctx = context();
+  const responses = [deferred(), deferred()];
+  let call = 0;
+  const module = createSchedulesModule(ctx, { refreshEnrollmentsFromBackend: () => responses[call++].promise });
+  ctx.enrollments.value = [{ id_matricula: 7, id_cliente: 1, estado: 'ACTIVA' }];
+  const first = module.refreshEnrollmentsFromBackend({ id_cliente: 1 });
+  const last = module.refreshEnrollmentsFromBackend({ id_cliente: 1 });
+  responses[1].resolve([]);
+  await last;
+  responses[0].resolve([{ id_matricula: 7, id_cliente: 1, estado: 'ACTIVA' }]);
+  await first;
+  assert.deepEqual(ctx.enrollments.value, []);
+});
 
 for (const [label, create, method, field, repositoryMethod = method] of reads) {
   test(`${label}: failed or malformed reads retain the last valid state and clear loading`, async () => {

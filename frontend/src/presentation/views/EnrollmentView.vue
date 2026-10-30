@@ -296,6 +296,7 @@ import { dateLabel } from '../utils/attendance.js';
 import { calendarDate } from '../../domain/utils/scheduleCalendar.js';
 import { useAuth } from '../../application/composables/useAuth';
 import { useGymStore } from '../../application/stores/gymStore';
+import { useVisibleRefresh } from '../composables/useVisibleRefresh.js';
 import {
   buildClientIdentityFromUser,
   findClientForUser,
@@ -621,7 +622,11 @@ watch(isPickerOpen, (isOpen) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleEscape);
-  refreshAll();
+  if (isAdminUser.value) refreshAll();
+});
+
+useVisibleRefresh(refreshAll, {
+  canRefresh: () => !isAdminUser.value && !actionBusy.value && !isSearchingClient.value && !isPickerOpen.value,
 });
 
 onBeforeUnmount(() => {

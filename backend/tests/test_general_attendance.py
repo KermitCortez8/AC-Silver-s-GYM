@@ -49,6 +49,77 @@ def enroll(service):
                                              "servicio": "fitness", "activo": True}]
 
 
+@pytest.mark.parametrize("hour", ["14:00:00", "14:00:01", "23:59:59"])
+def test_expired_class_rejects_entry_and_explains_why(attendance, admin, hour):
+    enroll(attendance)
+    attendance.clock = lambda: datetime.fromisoformat(f"2026-10-07T{hour}-05:00")
+    before = deepcopy(attendance.gym.state)
+    with pytest.raises(ValueError, match="La hora de esta clase ya pasó"):
+        attendance.enter({"id_matricula": 1}, admin)
+    schedule = attendance.lookup("11111111")["horarios"][0]
+    assert schedule["puede_entrar"] is False
+    assert schedule["asistencia"] is None
+    assert "La hora de esta clase ya pasó" in schedule["motivo"]
+    assert attendance.gym.state == before
+
+
+@pytest.mark.parametrize("hour", ["10:00:00", "13:59:59"])
+def test_class_accepts_entry_within_schedule(attendance, admin, hour):
+    enroll(attendance)
+    attendance.clock = lambda: datetime.fromisoformat(f"2026-10-07T{hour}-05:00")
+    assert attendance.lookup("11111111")["horarios"][0]["puede_entrar"]
+    assert attendance.enter({"id_matricula": 1}, admin)["hora_entrada"] == hour
+
+
+def test_class_before_start_is_not_reported_as_expired(attendance, admin):
+    enroll(attendance)
+    attendance.clock = lambda: datetime(2026, 10, 7, 9, 59, 59, tzinfo=LIMA)
+    schedule = attendance.lookup("11111111")["horarios"][0]
+    assert not schedule["puede_entrar"]
+    assert "La entrada se habilita de 10:00 a 14:00" in schedule["motivo"]
+    with pytest.raises(ValueError, match="La entrada se habilita"):
+        attendance.enter({"id_matricula": 1}, admin)
+    assert attendance.gym.state["asistencia"] == []
+
+
+def test_schedule_retry_and_exit_still_work_after_class_end(attendance, admin):
+    enroll(attendance)
+    row = attendance.enter({"id_matricula": 1}, admin)
+    attendance.clock = lambda: datetime(2026, 10, 7, 14, 30, tzinfo=LIMA)
+    assert attendance.enter({"id_matricula": 1}, admin)["id_asistencia"] == row["id_asistencia"]
+    assert len(attendance.gym.state["asistencia"]) == 1
+    assert attendance.exit(row["id_asistencia"], admin)["hora_salida"] == "14:30:00"
+
+
+def test_class_uses_lima_server_time_instead_of_submitted_time(attendance, admin):
+    enroll(attendance)
+    # 19:00 UTC corresponde al cierre de las 14:00 en Perú.
+    attendance.clock = lambda: datetime.fromisoformat("2026-10-07T19:00:00+00:00")
+    with pytest.raises(ValueError, match="La hora de esta clase ya pasó"):
+        attendance.enter({"id_matricula": 1, "fecha": "2026-10-07", "hora_entrada": "10:30:00"}, admin)
+    assert attendance.gym.state["asistencia"] == []
+
+
+def test_class_expiring_between_lookup_and_entry_is_rejected(attendance, admin):
+    enroll(attendance)
+    assert attendance.lookup("11111111")["horarios"][0]["puede_entrar"]
+    attendance.clock = lambda: datetime(2026, 10, 7, 14, tzinfo=LIMA)
+    with pytest.raises(ValueError, match="La hora de esta clase ya pasó"):
+        attendance.enter({"id_matricula": 1}, admin)
+    assert attendance.gym.state["asistencia"] == []
+
+
+def test_transaction_revalidates_class_expiration(attendance, admin):
+    enroll(attendance)
+    row = attendance.enter({"id_matricula": 1}, admin)
+    row.pop("id_asistencia")
+    attendance.gym.state["asistencia"].clear()
+    attendance.clock = lambda: datetime(2026, 10, 7, 14, tzinfo=LIMA)
+    with pytest.raises(ValueError, match="La hora de esta clase ya pasó"):
+        attendance.save(row, None, "entrada", admin)
+    assert attendance.gym.state["asistencia"] == []
+
+
 def test_entry_without_enrollment_and_exit_use_server_clock(attendance, admin):
     lookup = attendance.lookup("11111111")
     assert lookup["horarios"] == []
@@ -188,6 +259,21 @@ def api(attendance, admin):
     app.dependency_overrides[attendance_routes.service] = lambda: attendance
     app.dependency_overrides[get_current_user] = lambda: admin
     return TestClient(app), app
+
+
+@pytest.mark.parametrize("path,payload", [
+    ("/asistencia/entrada", {"id_matricula": 1}),
+    ("/asistencia/checkin", {"id_cliente": 1}),
+    ("/asistencia/checkin-dni", {"dni": "11111111"}),
+])
+def test_expired_class_api_returns_error_without_saving(api, attendance, path, payload):
+    enroll(attendance)
+    attendance.clock = lambda: datetime(2026, 10, 7, 14, tzinfo=LIMA)
+    client, _ = api
+    response = client.post(path, json=payload)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "La hora de esta clase ya pasó. No se puede registrar la asistencia."
+    assert attendance.gym.state["asistencia"] == []
 
 
 def test_general_api_validates_payload_and_preserves_schedule_endpoint(api):

@@ -1,6 +1,7 @@
 import { ref, onMounted, onScopeDispose } from 'vue';
 import { useAttendanceLookup } from './useAttendanceLookup.js';
 import { requireRecord } from '../../../application/services/responseValidation.js';
+import { useScheduleRoster } from './useScheduleRoster.js';
 
 /** Coordina lecturas y escrituras sin borrar la última ficha durante un refresco. */
 export const useAttendanceControl = ({
@@ -13,6 +14,7 @@ export const useAttendanceControl = ({
   const summary = ref(null);
   const error = ref('');
   const feedback = ref('');
+  const feedbackWarning = ref(false);
   const generalRequests = new Map();
   const refreshing = ref(false);
   const busy = ref('');
@@ -22,6 +24,7 @@ export const useAttendanceControl = ({
   const now = ref(Date.now());
 
   const lookup = useAttendanceLookup({ attendanceGet, token, error, feedback });
+  const schedules = useScheduleRoster({ attendanceGet, token });
   const { clientData, lookupClient, searching } = lookup;
   const loadSummary = async () => {
     const request = ++summaryNumber;
@@ -40,6 +43,8 @@ export const useAttendanceControl = ({
     error.value = '';
     const results = await Promise.allSettled([
       loadSummary(),
+      schedules.loadSchedules(),
+      schedules.loadRoster(),
       ...(clientData.value ? [lookupClient({ silent: true })] : []),
     ]);
     results.forEach((result) => {
@@ -53,11 +58,13 @@ export const useAttendanceControl = ({
     busy.value = key;
     error.value = '';
     feedback.value = '';
+    feedbackWarning.value = false;
     savedKey.value = '';
     clearTimeout(feedbackTimer);
     try {
-      await action();
-      feedback.value = message;
+      const result = await action();
+      feedback.value = result?.aviso || message;
+      feedbackWarning.value = Boolean(result?.aviso);
       savedKey.value = key;
       feedbackTimer = setTimeout(() => {
         feedback.value = '';
@@ -103,10 +110,11 @@ export const useAttendanceControl = ({
     mutate(
       `exit-${record.id_asistencia}`,
       async () => {
-        await attendanceExit(record.id_asistencia, token.value);
+        const result = await attendanceExit(record.id_asistencia, token.value);
         // Una visita cerrada permite iniciar un nuevo intento de entrada.
         if (record.tipo === 'general')
           generalRequests.delete(record.cliente_dni);
+        return result;
       },
       'Salida registrada correctamente.',
     );
@@ -130,11 +138,13 @@ export const useAttendanceControl = ({
   });
   return {
     ...lookup,
+    ...schedules,
     summary,
     refreshing,
     busy,
     error,
     feedback,
+    feedbackWarning,
     savedKey,
     now,
     refresh,

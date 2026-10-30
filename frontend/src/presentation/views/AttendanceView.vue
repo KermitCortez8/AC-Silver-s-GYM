@@ -55,7 +55,7 @@
       >
     </div>
     <p v-if="error" role="alert" class="att-message is-error">{{ error }}</p>
-    <p v-if="feedback" role="status" class="att-message is-success">
+    <p v-if="feedback" role="status" class="att-message" :class="feedbackWarning ? 'is-warning' : 'is-success'">
       {{ feedback }}
     </p>
     <div
@@ -63,9 +63,15 @@
       id="control-panel"
       role="tabpanel"
       :aria-labelledby="`${tab}-tab`"
-      class="att-control-grid"
+      class="att-attendance-controls" :class="{ 'att-control-grid': isGeneral }"
     >
+      <AttendanceScheduleRoster v-show="tab === 'today'"
+        :schedule-data="scheduleData" :selected-schedule="selectedSchedule" :roster="roster"
+        :schedules-loading="schedulesLoading" :roster-loading="rosterLoading"
+        :schedules-error="schedulesError" :roster-error="rosterError" :busy="busy" :saved-key="savedKey"
+        @select="selectSchedule" @reload="loadSchedules" @retry="loadRoster" @entry="enter" @exit="exitRecord" />
       <AttendanceClientLookup
+        v-if="isGeneral"
         v-model:dni="dni"
         :client-data="clientData"
         :is-general="isGeneral"
@@ -118,6 +124,7 @@ import AttendanceHistory from '../components/attendance/AttendanceHistory.vue';
 import AttendanceSummary from '../components/attendance/AttendanceSummary.vue';
 import AttendanceClientLookup from '../components/attendance/AttendanceClientLookup.vue';
 import AttendancePendingVisits from '../components/attendance/AttendancePendingVisits.vue';
+import AttendanceScheduleRoster from '../components/attendance/AttendanceScheduleRoster.vue';
 import '../styles/attendance.css';
 import '../styles/attendance-control.css';
 const { token } = useAuth();
@@ -134,12 +141,23 @@ const {
   busy,
   error,
   feedback,
+  feedbackWarning,
   savedKey,
   now,
   refresh,
   enter,
   enterGeneral,
   exitRecord,
+  scheduleData,
+  selectedSchedule,
+  roster,
+  schedulesLoading,
+  rosterLoading,
+  schedulesError,
+  rosterError,
+  loadSchedules,
+  loadRoster,
+  selectSchedule,
 } = useAttendanceControl({ ...useAttendance(), token });
 const attendanceTabs = [
   { key: 'today', label: 'Por horarios', icon: ScanLine },

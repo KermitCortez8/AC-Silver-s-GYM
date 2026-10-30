@@ -17,6 +17,7 @@ export const days = {
 export const states = {
   dentro: 'Dentro del gimnasio',
   completada: 'Visita completada',
+  incompleta: 'Incompleta',
   anulada: 'Anulada',
 };
 export const shortTime = (value) => (value ? value.slice(0, 5) : '—');

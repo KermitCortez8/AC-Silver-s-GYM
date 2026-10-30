@@ -55,6 +55,7 @@
           <option value="">Todos</option>
           <option value="dentro">Dentro</option>
           <option value="completada">Completada</option>
+          <option value="incompleta">Incompleta</option>
           <option v-if="admin" value="anulada">Anulada</option>
         </select></label
       >
@@ -116,6 +117,7 @@
               <span class="att-badge" :class="record.estado">{{
                 states[record.estado]
               }}</span>
+              <small v-if="record.aviso" class="att-late-notice">{{ record.aviso }}</small>
             </td>
             <td v-if="admin" data-label="Acciones">
               <div v-if="!record.anulado" class="att-row-actions">

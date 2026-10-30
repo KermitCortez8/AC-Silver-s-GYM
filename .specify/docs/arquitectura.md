@@ -143,6 +143,16 @@ no puede ejecutar las RPC privadas. No ejecutar los archivos de rollback como
 migraciones normales ni aplicar todos los SQL indiscriminadamente. La preparación
 y comprobación de cambios SQL se define en el [DoD](DoD.md).
 
+El control de asistencia por horario requiere además
+[018](../../backend/migrations/018_attendance_schedule_exit_deadline.sql), dependiente
+de `005_harden_attendance.sql` y `013_general_attendance.sql`. Guarda el límite de
+salida por visita y calcula si una salida fue tardía en la RPC. Las visitas abiertas
+superado el límite se presentan como incompletas al consultar; continúan consumiendo
+aforo hasta registrar una salida real. No requiere una tarea programada.
+El repositorio comprueba las columnas nuevas antes de escribir para evitar perder
+el límite si falta la migración. El orden y recuperación están en el SQL y la
+[validación de asistencia](../base/validaciones/asistencias/validation.md).
+
 ## Frontend
 
 | Capa | Ubicación | Responsabilidad |

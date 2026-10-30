@@ -25,6 +25,7 @@ class AttendanceCriteria:
     status: str = ""
     kind: str = ""
     include_annulled: bool = True
+    at: str = ""
 
 
 @dataclass(frozen=True)

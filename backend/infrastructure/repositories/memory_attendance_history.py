@@ -2,6 +2,8 @@
 from copy import deepcopy
 from application.read_models import AttendancePage, AttendanceSummaryData
 from domain.services.client_identifiers import parse_client_id
+from datetime import datetime
+from domain.services.attendance_status import attendance_status
 
 
 def attendance_summary(state, day, client_id=None):
@@ -24,7 +26,7 @@ def attendance_page(state, criteria, request):
     selected = []
     for row in state.get("asistencia", []):
         client_id = parse_id(row.get("id_cliente_num") or row.get("id_cliente"))
-        status = "anulada" if row.get("anulado") else "completada" if row.get("hora_salida") else "dentro"
+        status = attendance_status(row, datetime.fromisoformat(criteria.at) if criteria.at else None)
         kind = "general" if row.get("servicio") == "gimnasio" else "horario"
         if ((criteria.client_id is not None and client_id != criteria.client_id)
                 or (not criteria.include_annulled and row.get("anulado"))

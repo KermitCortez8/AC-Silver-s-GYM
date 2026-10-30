@@ -12,7 +12,7 @@ dependencias HTTP; no debe inferirse autorización desde menús visibles.
 | Registro público, Google, contraseña y confirmación de retorno de pago | Endpoints públicos con validaciones propias de identidad/pago. |
 | Clientes, pagos de membresía, planes editables, horarios editables, inventario, usuarios internos, resumen y configuración | `admin` o `staff`. |
 | Crear, editar o borrar promociones | Solo `admin`. |
-| Registrar/corregir/anular asistencia y consultar resumen/DNI de asistencia | Solo `admin`. |
+| Registrar/corregir/anular asistencia y consultar resumen/DNI, tabla de horarios o lista de matriculados de asistencia | Solo `admin`. |
 | Leer asistencia e historial/exportación | `admin` o `user`; `user` limitado a sí mismo y sin auditoría interna. |
 | Matrículas | `admin`, `staff`, `user`; el último opera sobre su identidad de sesión. |
 | Rutinas y seguimiento en `/trainer` | `admin`, `staff`, `trainer`. |
