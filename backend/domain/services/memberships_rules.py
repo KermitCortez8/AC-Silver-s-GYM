@@ -509,17 +509,27 @@ class MembershipsRules:
             if item_id is None:
                 item_id = self.context.next_int_id("membresia", "id_membresia")
 
+            existing = next((row for row in state["membresia"]
+                             if int(row.get("id_membresia", 0)) == int(item_id)), None)
+            if existing:
+                if int(existing.get("id_cliente", 0)) != id_cliente:
+                    raise ValueError("La membresía pertenece a otro cliente")
+                if (str(existing.get("estado_pago") or "").strip().upper() == "PAGADO"
+                        or normalize_membership_status(existing.get("estado")) != "EN_TRAMITE"):
+                    raise ValueError("No puedes editar una membresía confirmada; registra una nueva para renovar")
+
             item["id_membresia"] = int(item_id)
             item["id_cliente"] = id_cliente
             item["id_pm"] = id_pm
             item["id_promocion"] = id_promocion
-            item["fecha_inicio"] = self.context.safe_date(item.get("fecha_inicio", ""))
-            item["fecha_fin"] = self.context.safe_date(item.get("fecha_fin", ""))
-            item["estado"] = normalize_membership_status(item.get("estado") or "EN_TRAMITE")
+            item["fecha_inicio"] = ""
+            item["fecha_fin"] = ""
+            item["estado"] = "EN_TRAMITE"
             item["monto_pago"] = self._apply_promocion_discount(state, id_pm, id_promocion)
-            item["estado_pago"] = str(item.get("estado_pago") or "PENDIENTE").strip().upper()
+            item["estado_pago"] = "PENDIENTE"
             item["metodo_pago"] = str(item.get("metodo_pago") or "stripe")
-            item["referencia_pago"] = str(item.get("referencia_pago") or "")
+            item["referencia_pago"] = ""
+            item["fecha_pago"] = ""
 
             idx = next(
                 (
@@ -730,8 +740,8 @@ class MembershipsRules:
             if not membresia:
                 raise ValueError("Membresia no encontrada")
 
-            expected_amount = float(membresia.get("monto_pago", 0) or 0)
-            if expected_amount <= 0:
+            saved_amount = membresia.get("monto_pago")
+            if saved_amount is None:
                 plan = next(
                     (
                         row
@@ -740,7 +750,8 @@ class MembershipsRules:
                     ),
                     None,
                 )
-                expected_amount = float((plan or {}).get("precio", 0) or 0)
+                saved_amount = (plan or {}).get("precio", 0)
+            expected_amount = float(saved_amount or 0)
             if expected_amount <= 0 or cents(expected_amount) != cents(amount):
                 raise ValueError("El importe del pago no coincide con la membresía")
 

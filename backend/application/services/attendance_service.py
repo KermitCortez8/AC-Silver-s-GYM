@@ -10,6 +10,7 @@ DAYS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"
 
 
 from domain.errors import AttendanceConflict
+from domain.services.membership_lifecycle import membership_current
 from application.read_models import AttendanceCriteria, PageRequest
 
 
@@ -89,9 +90,7 @@ class AttendanceService:
     def membership(self, client_id, day):
         return next((m for m in self.gym.membresias_por_cliente(client_id)
                      if int(m.get("id_cliente") or 0) == client_id
-                     and str(m.get("estado", "")).upper() in {"ACTIVA", "ACTIVO"}
-                     and str(m.get("estado_pago", "")).upper() == "PAGADO"
-                     and str(m.get("fecha_inicio", ""))[:10] <= day <= str(m.get("fecha_fin", ""))[:10]), None)
+                     and membership_current(m, day)), None)
 
     def capacity(self):
         return int(self.gym.configuracion_gimnasio().get("capacidad_total") or 30)

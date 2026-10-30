@@ -26,8 +26,8 @@ def email_address(value):
 
 def account_email(value):
     email = email_address(value)
-    if email.rsplit("@", 1)[1] not in {"gmail.com", "hotmail.com"}:
-        raise ValueError("Solo se permiten correos @gmail.com o @hotmail.com.")
+    if not email.endswith(".com"):
+        raise ValueError("Solo se permiten correos que terminen en .com.")
     return email
 
 

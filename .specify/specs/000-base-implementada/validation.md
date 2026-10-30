@@ -33,3 +33,18 @@ dependencias de configuración; no certifica sus resultados de ejecución actual
 No se instaló Specify CLI ni se generaron skills nativas en esta sesión. La base
 se utiliza directamente con `AGENTS.md`; los pasos para añadir la integración
 oficial están en [el flujo de trabajo](../../guias/spec-driven.md).
+
+### Corrección directa: correo del preregistro
+
+- Síntoma: la regla compartida limitaba las cuentas a Gmail/Hotmail.
+- Regresión: aceptar dominios `.com` con una sola `@` y formato válido;
+  rechazar otros sufijos, coma en lugar de punto y direcciones malformadas.
+- Frontend: 49 pruebas dirigidas aprobadas (`34-form-validation` y
+  `26-stock-edit-forms`); `npm run build` aprobado.
+- Backend: 10 casos directos de `account_email` aprobados. La suite pytest
+  no se ejecutó porque el entorno carece de `pytest`.
+- Validador documental y `git diff --check` aprobados. No se realizó revisión
+  visual en navegador; las pruebas ejercitan el formulario y su HTML renderizado.
+- La primera ejecución completa del frontend se interrumpió tras encontrar
+  un caso que todavía esperaba el rechazo de un subdominio `.com`; se actualizó
+  el caso y se aprobaron las 49 pruebas dirigidas. No se certifica la suite completa.

@@ -7,6 +7,8 @@ from __future__ import annotations
 from typing import Any
 from domain.money import cents
 from domain.validation import account_email, dni_number, phone_number
+from domain.validation import identifier
+from domain.services.client_identifiers import parse_client_id
 
 from application.services.gym_service import GymService
 from domain.services.gym_domain_service import _today_iso
@@ -211,10 +213,11 @@ class ClientsService:
                       else self.gym.latest_membership(int(id_cliente)))
         if not membership:
             return False
-        expected = float(membership.get("monto_pago", 0) or 0)
-        if expected <= 0:
+        saved_amount = membership.get("monto_pago")
+        if saved_amount is None:
             plan = self.gym.get_plan_membresia(int(membership.get("id_pm", 0) or 0))
-            expected = float((plan or {}).get("precio", 0) or 0)
+            saved_amount = (plan or {}).get("precio", 0)
+        expected = float(saved_amount or 0)
         return expected > 0 and cents(expected) == cents(amount)
 
     # Procesa esta operación.
@@ -223,11 +226,8 @@ class ClientsService:
 
     # Elimina el registro indicado.
     def delete_client(self, id_usuario: str) -> None:
-        try:
-            normalized = str(id_usuario or "").strip().upper()
-            if normalized.startswith("SGCLI"):
-                id_num = int(normalized.replace("SGCLI", ""))
-                self.gym.delete_cliente(int(id_num))
-        except Exception:
-            # best-effort: ignore
-            pass
+        identifier(id_usuario, client=True)
+        client_id = parse_client_id(id_usuario)
+        if client_id <= 0:
+            raise ValueError("El identificador del cliente debe ser positivo")
+        self.gym.delete_cliente(client_id)
