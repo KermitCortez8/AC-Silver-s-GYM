@@ -29,6 +29,10 @@ desactivar una cuenta y comprobar que su sesión deja de dar acceso.
    su código; al eliminar y crear usuarios no se reutiliza la identidad.
 5. **CA-05.** Dado un cambio/cierre de sesión, al llegar respuestas antiguas del
    frontend no se publican datos de la sesión previa.
+6. **CA-06.** Con o sin sesión, la landing `/` y sus anclas siguen siendo públicas.
+   Volver desde el panel o recargar la landing no cierra la sesión ni redirige al
+   panel/login. Acceder explícitamente a `/login` con sesión válida recupera el
+   panel del rol. La caducidad bloquea las rutas privadas y conserva su motivo.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -37,6 +41,7 @@ desactivar una cuenta y comprobar que su sesión deja de dar acceso.
 | CA-03 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_google_cannot_authenticate_or_link_an_inactive_internal_account`. |
 | CA-04 | [test_priority_fixes.py](../../../backend/tests/test_priority_fixes.py): `test_user_identity_is_unique_across_roles_and_stable_after_role_change`; concurrencia en [PostgreSQL](../../../backend/tests/test_atomic_transactions_postgres.py). |
 | CA-05 | [14-session-validation.test.js](../../../frontend/tests/14-session-validation.test.js) y [28-application-context.test.js](../../../frontend/tests/28-application-context.test.js). |
+| CA-06 | [37-public-navigation.test.js](../../../frontend/tests/37-public-navigation.test.js), [21-module-navigation.test.js](../../../frontend/tests/21-module-navigation.test.js) y [validación en navegador](../validaciones/navegacion-publica/validation.md). |
 
 ## 4. Technical Constraints
 
@@ -70,6 +75,8 @@ al personal interno. No regenerar códigos por cambio de rol.
   pagada y activada puede restaurarlo.
 - Sesión sustituida durante una carga: descartar la respuesta anterior y vaciar
   estado/cachés de negocio según el límite de sesión.
+- La sesión vence mientras se consulta una página pública: revocar la sesión sin
+  sacar al visitante de esa página. Solicitar login al intentar una ruta privada.
 
 ## 7. Definition of Done
 

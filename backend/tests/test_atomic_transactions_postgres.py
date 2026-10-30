@@ -62,7 +62,7 @@ def database():
     database = Postgres()
     database.sql((BACKEND / 'tests/fixtures/priority_schema.sql').read_text())
     for filename in ['014_preserve_business_fields.sql', '015_atomic_gym_transactions.sql',
-                     '016_transaction_sequence_permissions.sql']:
+                     '016_transaction_sequence_permissions.sql', '020_public_preregistrations.sql']:
         migration = (BACKEND / 'migrations' / filename).read_text()
         database.sql(migration)
         database.sql(migration)  # El despliegue repetido no debe borrar ni duplicar datos.
@@ -289,9 +289,10 @@ def test_client_deletion_cascades_atomically_with_restrictive_foreign_keys(datab
                      foreign key (id_matricula) references public."MATRICULAS_HORARIO" (id_matricula);''')
     try:
         database.sql('''insert into public."CLIENTES" (id_cliente,"Nombres","Estado") values (1,'Ana',false),(2,'Luis',false);
-                       insert into public."HORARIOS_SERVICIO" (id_horario_servicio,cupos,activo) values (1,2,true);
-                       insert into public."MATRICULAS_HORARIO" (id_matricula,id_cliente,id_horario_servicio,estado)
-                         values (1,1,1,'ACTIVA'),(2,2,1,'ACTIVA');
+                       insert into public."HORARIOS_SERVICIO" (id_horario_servicio,cupos,dia,activo) values (1,2,'lunes',true);
+                       insert into public."MATRICULAS_HORARIO" (id_matricula,id_cliente,id_horario_servicio,estado,fecha_clase)
+                         select i,i,1,'ACTIVA',current_date+((1-extract(isodow from current_date)::integer+7)%7)
+                         from generate_series(1,2) i;
                        insert into public."RUTINA_PROGRESO" (id_progreso,id_matricula) values (1,1),(2,2);
                        create function public.review_reject_client_delete() returns trigger language plpgsql as $$
                          begin raise exception 'review deletion rejected'; end $$;

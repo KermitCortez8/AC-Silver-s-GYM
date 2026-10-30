@@ -46,7 +46,7 @@
     <section v-else-if="!cart.length && !returnNotice" class="rounded-2xl border border-white/10 bg-white/5 p-10 text-center" data-test="empty-cart">
       <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Carrito</p>
       <h2 class="mt-2 text-2xl font-black text-white">No hay productos para pagar</h2>
-      <p class="mt-2 text-slate-400">Agrega articulos desde tienda para iniciar una compra.</p>
+      <p class="mt-2 text-slate-400">Agrega artículos desde tienda para iniciar una compra.</p>
       <button class="mt-6 rounded-2xl bg-orange-400 px-5 py-3 font-bold text-slate-950" @click="router.push('/user/store')">
         Ver tienda
       </button>
@@ -71,7 +71,7 @@
             <input v-model="payment.dni" class="field-input" maxlength="8" inputmode="numeric" />
           </label>
           <label class="space-y-2">
-            <span class="text-sm text-slate-300">Metodo de pago</span>
+            <span class="text-sm text-slate-300">Método de pago</span>
             <select v-model="payment.method" class="field-input" data-test="method">
               <option value="tarjeta">Tarjeta</option>
               <option value="yape">Yape</option>

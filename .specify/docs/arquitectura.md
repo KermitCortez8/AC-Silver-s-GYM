@@ -143,6 +143,16 @@ no puede ejecutar las RPC privadas. No ejecutar los archivos de rollback como
 migraciones normales ni aplicar todos los SQL indiscriminadamente. La preparación
 y comprobación de cambios SQL se define en el [DoD](DoD.md).
 
+El alta pública separada requiere después
+[020_public_preregistrations.sql](../../backend/migrations/020_public_preregistrations.sql).
+Añade una tabla privada de solicitudes con RLS y amplía las mismas RPC de 015;
+no crea clientes ni membresías hasta confirmar un pago. La conversión de solicitud,
+cliente y membresía es una unidad de trabajo. El mantenimiento del backend
+reconcilia solicitudes vencidas cada minuto con Stripe antes de archivarlas.
+No borra ni transforma clientes históricos ni invalida sus referencias de pago.
+La migración es independiente de 019 (sesiones de horario) y debe aplicarse antes
+de publicar el backend que usa el nuevo registro. Sin ella se informa 503 explícito.
+
 El control de asistencia por horario requiere además
 [018](../../backend/migrations/018_attendance_schedule_exit_deadline.sql), dependiente
 de `005_harden_attendance.sql` y `013_general_attendance.sql`. Guarda el límite de
@@ -201,10 +211,19 @@ se conectan desde infraestructura. Las vistas y las reglas no ejecutan `fetch`
 ni acceden a `localStorage`. Los cálculos de calendarios tampoco dependen de las
 utilidades de presentación.
 
-Las vistas de clientes y tienda delegan formularios, pagos de membresía y selección
-de imágenes en composables de presentación. Sus diálogos tienen componentes
-propios. El registro de asistencia por código resuelve al cliente y reutiliza la
-misma operación de registro por ID.
+Las vistas tienen un máximo de 500 líneas, comprobado por las pruebas de límites
+de capas. Ensamblan componentes y delegan estado, filtros, formularios y acciones
+en composables de presentación organizados por módulo. El panel separa además
+la configuración de sus gráficos en `useDashboardCharts`. Estos composables
+consumen los servicios de aplicación y conservan los ciclos de vida de cada vista.
+
+Los editores de rutinas y promociones y los listados de tienda tienen componentes
+propios con datos y eventos explícitos. Los componentes extraídos reutilizan los
+estilos acotados de sus vistas para conservar su apariencia. Clientes y tienda
+delegan también pagos de membresía y selección de imágenes. El registro de
+asistencia por código resuelve al cliente y reutiliza la misma operación por ID.
+La [validación de vistas modulares](../base/validaciones/views-modulares/validation.md)
+documenta la separación y la revisión en navegador.
 
 `TrainerRoutineMonitorView` ensambla búsqueda, asignaciones, progreso y descanso
 mediante composables con capacidades explícitas. La asignación directa y la del
@@ -392,8 +411,9 @@ todavía existen decisiones que limitan su independencia:
   completas. La paginación de asistencia y su resumen especializado no equivalen
   a paginación uniforme de toda la API.
 - Los módulos del frontend conservan coordinación explícita detrás de una fachada
-  de Pinia. Las vistas de clientes y tienda son más pequeñas, pero aún reúnen
-  listados, filtros y acciones; otras pantallas extensas requieren revisión propia.
+  de Pinia. El límite de líneas evita vistas extensas, pero los composables de cada
+  pantalla todavía coordinan varias acciones; su tamaño no demuestra por sí solo
+  que cada responsabilidad esté completamente separada.
 
 Las pruebas de imports comprueban dependencias entre capas; por sí solas no
 demuestran que todas las responsabilidades estén completamente separadas.

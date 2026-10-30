@@ -29,13 +29,13 @@
               Nosotros
             </span>
             <h1 class="mt-5 text-4xl font-black leading-[1.05] text-slate-950 sm:text-5xl">
-              Mas que un gimnasio,<br /><span class="text-orange-500">tu segundo lugar de entrenamiento.</span>
+              Más que un gimnasio,<br /><span class="text-orange-500">tu segundo lugar de entrenamiento.</span>
             </h1>
             <p class="mt-6 max-w-[52ch] text-lg leading-8 text-slate-600">
-              En Silver Gym Surco creemos que entrenar es mas facil cuando tienes un espacio cercano, ordenado y un equipo que conoce tu progreso. Por eso construimos una rutina completa: musculacion, cardio, clases grupales y una plataforma digital para llevar todo en un solo lugar.
+              En Silver Gym Surco creemos que entrenar es más fácil cuando tienes un espacio cercano, ordenado y un equipo que conoce tu progreso. Por eso construimos una rutina completa: musculación, cardio, clases grupales y una plataforma digital para llevar todo en un solo lugar.
             </p>
             <p class="mt-4 max-w-[52ch] text-lg leading-8 text-slate-600">
-              Nuestro objetivo no es solo que vengas a entrenar, sino que encuentres un lugar donde te sientas comodo para volver cada semana.
+              Nuestro objetivo no es solo que vengas a entrenar, sino que encuentres un lugar donde te sientas cómodo para volver cada semana.
             </p>
           </div>
           <div class="relative overflow-hidden rounded-[1.75rem] shadow-2xl shadow-red-950/10 lg:min-h-[24rem]">
@@ -74,7 +74,7 @@
           <div class="rounded-2xl border border-orange-100 bg-white p-8 shadow-[0_18px_40px_rgba(127,29,29,0.08)]">
             <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-500">
               <span class="h-[2px] w-[18px] bg-orange-500"></span>
-              Mision
+              Misión
             </span>
             <h2 class="mt-3 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">Impulsar el bienestar de cada socio.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
@@ -84,7 +84,7 @@
           <div class="rounded-2xl border border-orange-100 bg-white p-8 shadow-[0_18px_40px_rgba(127,29,29,0.08)]">
             <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-500">
               <span class="h-[2px] w-[18px] bg-orange-500"></span>
-              Vision
+              Visión
             </span>
             <h2 class="mt-3 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">Ser el gimnasio líder de Surco.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
@@ -99,7 +99,7 @@
         <div class="mx-auto max-w-[1600px]">
           <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-300">
             <span class="h-[2px] w-[18px] bg-orange-300"></span>
-            Por que entrenar aqui
+            Por qué entrenar aquí
           </span>
           <h2 class="mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">Lo que nos hace diferentes.</h2>
 
@@ -166,7 +166,7 @@
         <div class="grid gap-8 border-b border-white/10 pb-8 sm:grid-cols-3">
           <div>
             <p class="text-lg font-black italic text-white">Silver Gym Surco</p>
-            <p class="mt-3 max-w-[30ch] text-sm leading-6 text-white/45">Ubicacion, horarios y registro en un mismo lugar.</p>
+            <p class="mt-3 max-w-[30ch] text-sm leading-6 text-white/45">Ubicación, horarios y registro en un mismo lugar.</p>
           </div>
 
           <div>
@@ -174,8 +174,8 @@
             <nav class="mt-4 flex flex-col gap-2.5">
               <router-link :to="{ path: '/', hash: '#servicios' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Servicios</router-link>
               <router-link to="/nosotros" class="text-sm font-semibold text-white/65 transition hover:text-white">Nosotros</router-link>
-              <router-link :to="{ path: '/', hash: '#membresias' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Membresias</router-link>
-              <router-link :to="{ path: '/', hash: '#ubicacion' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Ubicacion</router-link>
+              <router-link :to="{ path: '/', hash: '#membresias' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Membresías</router-link>
+              <router-link :to="{ path: '/', hash: '#ubicacion' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Ubicación</router-link>
             </nav>
           </div>
 
@@ -217,22 +217,22 @@ const historiaImage = serviceImages.musculacion;
 const values = [
   {
     title: 'Entrenamiento guiado',
-    description: 'Rutinas y clases pensadas para cada nivel, desde el primer dia.',
+    description: 'Rutinas y clases pensadas para cada nivel, desde el primer día.',
     icon: '<path d="M9 12l2 2 4-4M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />',
   },
   {
     title: 'Ambiente cercano',
-    description: 'Un equipo que conoce tu progreso y te acompana en cada sesion.',
+    description: 'Un equipo que conoce tu progreso y te acompaña en cada sesión.',
     icon: '<path d="M20.8 8.6c0 4.6-8.8 10-8.8 10s-8.8-5.4-8.8-10a4.6 4.6 0 018.8-1.8 4.6 4.6 0 018.8 1.8z" />',
   },
   {
     title: 'Equipamiento completo',
-    description: 'Zona de musculacion, cardio y espacio para clases grupales.',
+    description: 'Zona de musculación, cardio y espacio para clases grupales.',
     icon: '<path d="M3 12h3M18 12h3M8 8v8M16 8v8M8 12h8" />',
   },
   {
     title: 'Horarios flexibles',
-    description: 'Bloques de lunes a sabado para que entrenes segun tu rutina.',
+    description: 'Bloques de lunes a sábado para que entrenes según tu rutina.',
     icon: '<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
   },
 ];

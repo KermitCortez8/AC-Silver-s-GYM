@@ -36,9 +36,12 @@ del componente cuando corresponda. No hay script `npm run lint` en este proyecto
 [test_atomic_transactions_postgres.py](../../backend/tests/test_atomic_transactions_postgres.py)
 requiere `GYM_TEST_POSTGRES_CONTAINER` apuntando a un PostgreSQL desechable con
 base `gym_test`, usuario `postgres` y acceso por `docker exec`. Su fixture trunca
-tablas y aplica 014/015/016; no apuntarlo a una base compartida. La preparación
+tablas y aplica 014/015/016/020; no apuntarlo a una base compartida. La preparación
 reproducible está en [pr-validation.yml](../../.github/workflows/pr-validation.yml).
 Sin esa variable estas pruebas se omiten, y debe informarse la omisión.
+El mismo job incluye
+[test_public_preregistrations_postgres.py](../../backend/tests/test_public_preregistrations_postgres.py),
+que comprueba privacidad, atomicidad y concurrencia de la conversión a cliente.
 
 El conjunto de migraciones presupone un esquema previo: no asumir que constituye
 una instalación completa de la base desde cero. Hay numeraciones `008`/`009`

@@ -182,6 +182,8 @@ class MembershipsRules:
     def delete_plan_membresia(self, id_pm: int) -> None:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
+            if any(int(r.get('id_pm', 0)) == int(id_pm) for r in state.get('preregistros', [])):
+                raise ValueError('No se puede eliminar un plan asociado a solicitudes de pago; puedes desactivarlo')
             if any(int(m.get("id_pm", 0)) == int(id_pm) for m in state.get("membresia", [])):
                 raise ValueError("No se puede eliminar un plan usado por membresías")
             state["planes_membresia"] = [p for p in state.get("planes_membresia", []) if int(p.get("id_pm", 0)) != int(id_pm)]
@@ -606,6 +608,9 @@ class MembershipsRules:
             raise ValueError("Ingresa tu nombre")
         if not google_sub and len(password) < 6:
             raise ValueError("La contraseña debe tener al menos 6 caracteres")
+        if any(r.get('estado') == 'PENDIENTE' and (r['correo'] == correo or r['dni'] == dni)
+               for r in self.context.state.get('preregistros', [])):
+            raise ValueError('Existe un preregistro pendiente con esos datos. Completa o espera la caducidad del pago.')
         if self.dependencies.get_cliente_by_dni(dni):
             raise ValueError("Ya existe un cliente registrado con ese DNI")
         if self.dependencies.get_cliente_by_email(correo):
@@ -710,6 +715,20 @@ class MembershipsRules:
             }
 
         return self.context.change(_fn)
+
+    def reserve_public_quote(self, plan_name):
+        """Reserva una promoción temporalmente sin crear un cliente ni una membresía."""
+        state = self.context.state
+        plan = self._ensure_plan_for_client(state, plan_name)
+        if not plan.get("activo", True):
+            raise ValueError("El plan seleccionado ya no está disponible")
+        promo = self.get_promocion_vigente_para_plan(state, int(plan['id_pm']))
+        promo_id = int(promo['id_promocion']) if promo else None
+        amount = self._apply_promocion_discount(state, int(plan['id_pm']), promo_id)
+        if cents(amount) <= 0:
+            raise ValueError("El importe del preregistro debe ser mayor que cero")
+        self._increment_promocion_usos(state, promo_id)
+        return dict(plan), promo_id, amount
 
     def confirmar_pago_cliente_publico(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(id_cliente)

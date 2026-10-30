@@ -4,6 +4,7 @@ from infrastructure.repositories.mappers import accounts, attendance, configurat
 
 def to_remote_body(state_key: str, row: dict[str, Any]) -> dict[str, Any]:
     return {
+        "preregistros": dict,
         "planes_membresia": memberships._plan_to_remote,
         "promociones": memberships._promotion_to_remote,
         "clientes": accounts._client_to_remote,

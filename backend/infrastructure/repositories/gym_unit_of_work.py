@@ -32,6 +32,8 @@ class GymUnitOfWork:
                 self.reader.refresh_if_stale(resources)
                 previous = self.snapshot(resources)
                 try:
+                    if "preregistros" in previous and "PREREGISTROS_MEMBRESIA" in self.metadata.missing_tables:
+                        raise SchemaNotReady("020_public_preregistrations.sql")
                     table_names = [CORE_TABLES[key][0] for key in previous if key in CORE_TABLES
                                    and CORE_TABLES[key][0] not in self.metadata.missing_tables]
                     if "pedidos_tienda" in previous:

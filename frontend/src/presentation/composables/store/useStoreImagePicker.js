@@ -27,7 +27,7 @@ export const useStoreImagePicker = ({ form }) => {
       imageFeedback.value =
         error instanceof Error
           ? error.message
-          : "No se pudieron cargar las imagenes del bucket.";
+          : "No se pudieron cargar las imágenes del bucket.";
     } finally {
       isLoadingBucketImages.value = false;
     }

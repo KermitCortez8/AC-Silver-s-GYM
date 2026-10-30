@@ -1,0 +1,65 @@
+.landing-page {
+  font-family: 'Manrope', 'Segoe UI', 'Trebuchet MS', sans-serif;
+}
+.landing-page h1,
+.landing-page h2,
+.landing-page h3 {
+  font-family: 'Anton', 'Manrope', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.landing-page .btn-cta {
+  font-family: 'Anton', 'Manrope', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.toast-slide-enter-active {
+  transition: all 0.4s cubic-bezier(0.34, 1.26, 0.64, 1);
+}
+.toast-slide-leave-active {
+  transition: all 0.25s ease-in;
+}
+.toast-slide-enter-from,
+.toast-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) translateX(12px) scale(0.96);
+}
+
+.toast-close:hover {
+  background-color: #d1fae5;
+}
+
+.schedule-panel-enter-active {
+  transition: all 0.38s cubic-bezier(0.34, 1.26, 0.64, 1);
+}
+.schedule-panel-leave-active {
+  transition: all 0.22s ease-in;
+}
+.schedule-panel-enter-from {
+  opacity: 0;
+  transform: translateY(-12px) scaleY(0.96);
+}
+.schedule-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scaleY(0.97);
+}
+
+.service-card {
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.sched-row:hover {
+  background-color: #b91c1c;
+}
+.sched-row:hover .sched-hour,
+.sched-row:hover .sched-name {
+  color: #ffffff !important;
+}
+.sched-row:hover .sched-icon {
+  color: rgba(255, 255, 255, 0.85) !important;
+}

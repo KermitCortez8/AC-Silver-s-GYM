@@ -33,6 +33,13 @@ sintéticos, comprobar ocupación y cancelar una matrícula propia.
    30 segundos. El panel vuelve a consultar al navegar hacia él, sin reutilizar una
    respuesta anterior a un cambio de matrícula. Una lectura iniciada antes de
    guardar/cancelar no puede sobrescribir ese cambio confirmado.
+7. **CA-07.** Cada matrícula reserva una sola `fecha_clase`. La programación se
+   repite semanalmente, pero sus clientes y cupos no se trasladan a otra fecha.
+   El mismo cliente puede reservar otras sesiones del mismo horario; el duplicado
+   y el límite de cupos se comprueban por horario y fecha dentro de la transacción.
+8. **CA-08.** Cancelar una matrícula libera solo su sesión. Se rechazan fechas
+   imposibles, pasadas, de otro día de semana o fuera de la vigencia de membresía.
+   Una reserva de una semana no impide reservar la siguiente.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -42,6 +49,8 @@ sintéticos, comprobar ocupación y cancelar una matrícula propia.
 | CA-04 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_client_can_only_cancel_own_enrollment`. |
 | CA-05 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_enrollment_requires_atomic_rpc_before_writing`; [test_enrollment_errors.py](../../../backend/tests/test_enrollment_errors.py). |
 | CA-06 | [31-module-error-control.test.js](../../../frontend/tests/31-module-error-control.test.js): respuestas anteriores a guardar/cancelar y lecturas fuera de orden; [revisión del portal](../validaciones/horarios-cliente/validation.md): foco, intervalo, navegación y conservación ante errores. |
+| CA-07 | [test_schedule_sessions.py](../../../backend/tests/test_schedule_sessions.py), [test_schedule_sessions_postgres.py](../../../backend/tests/test_schedule_sessions_postgres.py), [13-schedule-calendar.test.js](../../../frontend/tests/13-schedule-calendar.test.js). |
+| CA-08 | Las mismas regresiones y el [recorrido visual por sesiones](../validaciones/matriculas-sesiones/validation.md). |
 
 ## 4. Technical Constraints
 
@@ -51,7 +60,10 @@ sintéticos, comprobar ocupación y cancelar una matrícula propia.
   Datos `HORARIOS_SERVICIO`, `MATRICULAS_HORARIO`, clientes, membresías y catálogo.
 - Repositorio especializado:
   [schedule_enrollment_repository.py](../../../backend/infrastructure/repositories/schedule_enrollment_repository.py).
-  Dependencias SQL en `002_harden_schedule_enrollment.sql` y `006_schedule_email_notifications.sql`.
+  Dependencias SQL en `002_harden_schedule_enrollment.sql`, `006_schedule_email_notifications.sql`
+  y [019_schedule_sessions.sql](../../../backend/migrations/019_schedule_sessions.sql).
+  Las altas envían `fecha_clase`; un cliente antiguo sin fecha reserva únicamente
+  la siguiente sesión del día configurado. El catálogo incluye `ocupacion_por_fecha`.
 - UI: [ServiceSchedulesView.vue](../../../frontend/src/presentation/views/ServiceSchedulesView.vue),
   [EnrollmentView.vue](../../../frontend/src/presentation/views/EnrollmentView.vue),
   `/admin/service-schedules`, `/admin/enrollment`, `/user/schedule`.
@@ -64,12 +76,17 @@ No permitir cancelaciones ajenas ni confiar en el DNI enviado como identidad de
 autoservicio. No reducir cupos por debajo de matrículas activas ni eliminar un
 horario con matrículas activas. No sustituir la RPC por escrituras parciales.
 No confundir una recurrencia semanal con una asistencia de otra fecha.
+El día del horario no se puede cambiar mientras tenga sesiones pendientes;
+reducir cupos valida la mayor ocupación de sus sesiones futuras, sin sumarlas.
 
 ## 6. Edge Cases
 
 - Horario inactivo, cliente sin membresía admitida, duplicado o aforo lleno:
   rechazar conforme a la regla y conservar el significado del error HTTP.
 - Cruce de semana, mes o fecha UTC: representar la fecha de Perú en calendario y correo.
+- Matrículas históricas: asignar una sola fecha desde `fecha_matricula` y el día
+  configurado, nunca desde el día de despliegue. Sin fecha fiable, no autorizar
+  entrada ni trasladar el cliente a una semana nueva. Las visitas guardadas se conservan.
 - Correo fallido tras matrícula confirmada: conservar matrícula y aviso pendiente.
 - Eliminación de cliente: liberar capacidad junto con sus dependencias; ver MOD-02.
 - La actualización automática se detiene al ocultar o desmontar la vista y no

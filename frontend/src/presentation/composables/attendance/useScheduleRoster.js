@@ -5,6 +5,7 @@ import { requireRecord, requireList } from '../../../application/services/respon
 export const useScheduleRoster = ({ attendanceGet, token }) => {
   const scheduleData = ref(null);
   const selectedSchedule = ref(null);
+  const selectedSession = ref('');
   const roster = ref(null);
   const schedulesLoading = ref(false);
   const rosterLoading = ref(false);
@@ -23,6 +24,7 @@ export const useScheduleRoster = ({ attendanceGet, token }) => {
         scheduleData.value = data;
         if (selectedSchedule.value && !data.horarios.some((s) => s.id_horario_servicio === selectedSchedule.value)) {
           selectedSchedule.value = null;
+          selectedSession.value = '';
           roster.value = null;
           rosterRequest++;
           rosterLoading.value = false;
@@ -41,8 +43,12 @@ export const useScheduleRoster = ({ attendanceGet, token }) => {
     rosterLoading.value = true;
     rosterError.value = '';
     try {
-      const data = requireRecord(await attendanceGet(`/horarios/${selected}/clientes`, {}, token.value));
+      const data = requireRecord(await attendanceGet(`/horarios/${selected}/clientes`,
+        selectedSession.value ? { fecha: selectedSession.value } : {}, token.value));
       requireList(data.clientes);
+      if (selectedSession.value && data.fecha !== selectedSession.value) {
+        throw new Error('La respuesta no corresponde a la fecha seleccionada. Actualiza la asistencia.');
+      }
       if (id === rosterRequest) roster.value = data;
     } catch (err) {
       if (id === rosterRequest) {
@@ -53,9 +59,16 @@ export const useScheduleRoster = ({ attendanceGet, token }) => {
       if (id === rosterRequest) rosterLoading.value = false;
     }
   };
-  const selectSchedule = (id) => {
+  const selectSchedule = (id, fecha = '') => {
     selectedSchedule.value = id;
+    selectedSession.value = fecha;
     roster.value = null;
+    if (!id) {
+      rosterRequest++;
+      rosterLoading.value = false;
+      rosterError.value = '';
+      return;
+    }
     return loadRoster();
   };
   const clear = () => {
@@ -64,6 +77,7 @@ export const useScheduleRoster = ({ attendanceGet, token }) => {
     scheduleData.value = null;
     roster.value = null;
     selectedSchedule.value = null;
+    selectedSession.value = '';
     schedulesLoading.value = false;
     rosterLoading.value = false;
     schedulesError.value = '';
@@ -71,6 +85,6 @@ export const useScheduleRoster = ({ attendanceGet, token }) => {
   };
   watch(token, clear);
   onScopeDispose(clear);
-  return { scheduleData, selectedSchedule, roster, schedulesLoading, rosterLoading,
+  return { scheduleData, selectedSchedule, selectedSession, roster, schedulesLoading, rosterLoading,
     schedulesError, rosterError, loadSchedules, loadRoster, selectSchedule };
 };

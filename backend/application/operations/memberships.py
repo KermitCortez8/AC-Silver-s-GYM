@@ -40,7 +40,7 @@ class UpsertPlanMembresiaCommand:
 class DeletePlanMembresiaCommand:
     operation_kind: ClassVar[str] = 'command'
     id_pm: int
-    resources: ClassVar[tuple[Resource, ...]] = (Resource.PLANES_MEMBRESIA, Resource.CLIENTES, Resource.MEMBRESIA)
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.PLANES_MEMBRESIA, Resource.CLIENTES, Resource.MEMBRESIA, Resource.PREREGISTROS)
 
     def run(self, rules: DomainComponents) -> None:
         return rules.memberships.delete_plan_membresia(self.id_pm)

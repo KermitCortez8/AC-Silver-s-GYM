@@ -6,6 +6,14 @@
     @close="closeEditor"
   >
     <form novalidate @submit.prevent="handleSubmit">
+      <p v-if="catalogLoading" role="status" class="mt-4 text-sm ws-muted">Cargando planes de membresía y promociones…</p>
+      <div v-else-if="catalogError" role="alert" class="app-notice app-notice--error mt-4 rounded-xl border p-4">
+        <p>No se pudieron cargar los planes y promociones. {{ catalogError }}</p>
+        <button type="button" class="ws-btn mt-3" @click="refreshCatalog">Reintentar carga</button>
+      </div>
+      <p v-else-if="catalogReady && !editorPlans.length" role="status" class="mt-4 text-sm ws-warning">
+        No hay planes de membresía activos para registrar clientes.
+      </p>
       <fieldset :disabled="savingClient" class="mt-6 grid gap-4 sm:grid-cols-2">
         <label class="space-y-2 sm:col-span-2">
           <span class="text-sm ws-soft">Nombre</span>
@@ -17,7 +25,7 @@
             @blur="validateField('nombre')" @input="revalidateField('nombre')"
             required
             class="ws-input"
-            placeholder="Jose Perez"
+            placeholder="José Pérez"
           />
           <FieldError id="client-nombre-error" :message="fieldErrors.nombre" />
         </label>
@@ -53,8 +61,8 @@
             class="ws-input"
             :placeholder="
               editingId
-                ? 'Dejar vacio para conservar la actual'
-                : 'Minimo 6 caracteres'
+                ? 'Dejar vacío para conservar la actual'
+                : 'Mínimo 6 caracteres'
             "
           />
           <FieldError id="client-password-error" :message="fieldErrors.password" />
@@ -89,17 +97,18 @@
 
         <label class="space-y-2">
           <span class="text-sm ws-soft">Plan</span>
-          <select v-model="form.plan" class="ws-input">
-            <option value="MENSUAL">MENSUAL</option>
-            <option value="3 MESES">3 MESES</option>
-            <option value="ANUAL">ANUAL</option>
+          <select v-model="form.plan" class="ws-input" :disabled="Boolean(editingId) || !catalogReady || catalogLoading">
+            <option v-if="!form.plan" value="">Selecciona un plan disponible</option>
+            <option v-for="plan in editorPlans" :key="plan.id" :value="plan.name">
+              {{ plan.name }}{{ plan.duration ? ` · ${plan.duration}` : '' }}{{ !plan.active ? ' (plan registrado)' : '' }}
+            </option>
           </select>
         </label>
 
         <label class="space-y-2">
-          <span class="text-sm ws-soft">Promocion</span>
-          <select v-model="form.id_promocion" class="ws-input">
-            <option :value="0">SIN PROMOCION</option>
+          <span class="text-sm ws-soft">Promoción</span>
+          <select v-model="form.id_promocion" class="ws-input" :disabled="Boolean(editingId) || !catalogReady || catalogLoading">
+            <option :value="0">SIN PROMOCIÓN</option>
             <option
               v-for="p in availablePromotions"
               :key="p.id"
@@ -108,13 +117,22 @@
               {{ p.name }}
             </option>
           </select>
-          <p class="text-xs ws-muted">
-            Precio estimado: S/. {{ estimatedCharge.finalPrice }}
+          <p v-if="editingId" class="text-xs ws-muted">
+            Importe registrado: {{ registeredAmount == null ? 'Sin importe registrado' : `S/. ${Number(registeredAmount).toFixed(2)}` }}
+          </p>
+          <p v-else-if="catalogReady && form.plan" class="text-xs ws-muted">
+            Precio estimado: S/. {{ estimatedCharge.finalPrice.toFixed(2) }}
             <span v-if="estimatedCharge.discountAmount > 0" class="ws-warning">
               (descuento: S/. {{ estimatedCharge.discountAmount }})
             </span>
           </p>
+          <p v-if="!editingId && catalogReady && !availablePromotions.length" class="text-xs ws-muted">No hay promociones vigentes para este plan.</p>
         </label>
+
+        <p v-if="editingId" class="text-xs ws-muted sm:col-span-2">
+          La edición de los datos personales conserva el plan, la promoción y el importe contratado.
+          No renueva ni activa la membresía.
+        </p>
 
         <label v-if="editingId" class="space-y-2 sm:col-span-2">
           <span class="text-sm ws-soft">Estado de membresía</span>
@@ -148,7 +166,7 @@
 
       <button
         type="submit"
-        :disabled="savingClient"
+        :disabled="savingClient || !canSaveClient"
         class="mt-6 w-full rounded-2xl ws-primary px-4 py-3 font-bold transition disabled:opacity-50"
       >
         {{
@@ -173,6 +191,7 @@ defineProps([
   "validateField",
   "revalidateField",
   "availablePromotions",
+  "editorPlans", "catalogLoading", "catalogReady", "catalogError", "refreshCatalog", "canSaveClient", "registeredAmount",
   "closeEditor",
   "editingExpired",
   "editingId",

@@ -26,7 +26,8 @@ simular timeout y luego respuesta con ID; comprobar el estado persistido.
 3. **CA-03.** Dada una matrícula/horario que cambia antes del envío, al resolver
    su contexto se cancela el aviso obsoleto.
 4. **CA-04.** Dado un recordatorio de clase, el enlace apunta a la fecha de Perú
-   y la confirmación de matrícula conserva su recurrencia semanal.
+   y la confirmación de matrícula identifica una sola sesión con su fecha.
+   Los recordatorios no se vuelven a generar para otra semana de esa matrícula.
 5. **CA-05.** Dado un error HTTP de Resend, la respuesta/log seguro no expone
    el cuerpo sensible ni las credenciales; una respuesta sin ID no es entrega exitosa.
 
@@ -51,7 +52,8 @@ simular timeout y luego respuesta con ID; comprobar el estado persistido.
   [schedule-emails](../../../supabase/functions/schedule-emails/index.ts), con
   [worker.ts](../../../supabase/functions/schedule-emails/worker.ts).
 - Migraciones `004_membership_email_notifications.sql`,
-  `006_schedule_email_notifications.sql`, `007_schedule_emails_cron.sql`.
+  `006_schedule_email_notifications.sql`, `007_schedule_emails_cron.sql` y
+  [019_schedule_sessions.sql](../../../backend/migrations/019_schedule_sessions.sql).
 - Configuración de servidor: `RESEND_API_KEY`, `EMAIL_FROM`, nombre de remitente,
   URL pública frontend y Supabase; la función usa además su secreto de Cron.
   No copiar valores reales a documentación o al frontend.

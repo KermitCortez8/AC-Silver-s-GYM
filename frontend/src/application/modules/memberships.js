@@ -89,7 +89,7 @@ export const createMembershipsModule = (ctx, repository) => {
     const body = {
       id_pm: idPm || undefined,
       nombre_plan: String(payload.nombre_plan || payload.name || '').trim().toUpperCase() || 'SIN NOMBRE',
-      duracion: String(payload.duracion || payload.duration || `${payload.durationMonths || 1} dias`).trim(),
+      duracion: String(payload.duracion || payload.duration || `${payload.durationMonths || 1} días`).trim(),
       precio: Number(payload.precio ?? payload.price ?? 0),
       descripcion: payload.descripcion || payload.description || '',
       beneficios: payload.beneficios || payload.benefits || '',
@@ -126,7 +126,7 @@ export const createMembershipsModule = (ctx, repository) => {
     const idPromocion = payload.id_promocion || Number(String(payload.id || '').match(/(\d+)/)?.[1] || 0) || null;
     const body = {
       id_promocion: idPromocion || undefined,
-      nombre: String(payload.nombre || payload.name || '').trim() || 'Promocion',
+      nombre: String(payload.nombre || payload.name || '').trim() || 'Promoción',
       descripcion: payload.descripcion || payload.description || payload.note || '',
       tipo_descuento: payload.tipo_descuento || (payload.discountType === 'fixed' ? 'monto' : 'porcentaje'),
       valor_descuento: Number(payload.valor_descuento ?? payload.discountValue ?? 0),
@@ -153,7 +153,7 @@ export const createMembershipsModule = (ctx, repository) => {
 
   const deletePromotion = async (promotionId) => {
     const idPromocion = Number(String(promotionId || '').match(/(\d+)/)?.[1] || 0);
-    if (!idPromocion) throw new Error('Promocion no encontrada');
+    if (!idPromocion) throw new Error('Promoción no encontrada');
     if (ctx.apiBase) {
       await remote.deletePromotion(idPromocion);
     }

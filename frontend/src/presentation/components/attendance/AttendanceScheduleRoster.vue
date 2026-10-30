@@ -1,10 +1,10 @@
 <template>
-  <section class="att-panel att-schedule-control" aria-label="Asistencia por horario">
+  <section class="att-schedule-control" aria-label="Asistencia por horario">
     <div class="att-heading-row">
       <div>
         <p class="att-eyebrow">Asistencia por horario</p>
         <h2>Selecciona una clase</h2>
-        <p class="att-muted att-small">Abre un horario para registrar a sus clientes matriculados. Hora de Perú.</p>
+        <p class="att-muted att-small">Selecciona una fecha para consultar sus matriculados. Cada sesión tiene su propia lista; las entradas se registran el día de la clase, hora de Perú.</p>
       </div>
       <label class="att-day-filter">Día
         <select v-model="dayFilter">
@@ -17,37 +17,20 @@
       {{ schedulesError }} <button class="att-link" @click="$emit('reload')">Reintentar</button>
     </p>
     <div v-if="schedulesLoading && !scheduleData" class="att-empty" role="status">Cargando horarios…</div>
-    <div v-else-if="scheduleData" class="att-table-wrap">
-      <table class="att-table att-schedules-table">
-        <caption class="att-sr-only">Horarios disponibles para registrar asistencia</caption>
-        <thead><tr><th>Clase</th><th>Día</th><th>Horario</th><th>Matriculados</th><th>Seleccionar</th></tr></thead>
-        <tbody>
-          <tr v-for="item in visibleSchedules" :key="item.id_horario_servicio"
-            :class="{ 'is-selected': selectedSchedule === item.id_horario_servicio }"
-            @click="!busy && $emit('select', item.id_horario_servicio)">
-            <td data-label="Clase"><strong>{{ services[item.servicio] || item.servicio }}</strong><small>{{ item.rutina_nombre || item.nombre_rutina || '' }}</small></td>
-            <td data-label="Día">{{ days[item.dia] }} <span v-if="item.hoy" class="att-badge today">Hoy</span></td>
-            <td data-label="Horario">{{ shortTime(item.hora_inicio) }} – {{ shortTime(item.hora_fin) }}</td>
-            <td data-label="Matriculados">{{ item.matriculados }}</td>
-            <td data-label="Seleccionar"><button class="att-button" :disabled="Boolean(busy)"
-              :aria-pressed="selectedSchedule === item.id_horario_servicio"
-              :aria-label="`Ver matriculados de ${services[item.servicio] || item.servicio}, ${days[item.dia]}, ${shortTime(item.hora_inicio)}`"
-              @click.stop="$emit('select', item.id_horario_servicio)">
-              <Users :size="16" />{{ selectedSchedule === item.id_horario_servicio ? 'Seleccionado' : 'Ver clientes' }}
-            </button></td>
-          </tr>
-          <tr v-if="!visibleSchedules.length"><td colspan="5"><div class="att-empty">No hay horarios para este día.</div></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="att-roster" aria-live="polite" :aria-busy="rosterLoading">
+    <ExcelScheduleGrid v-else-if="scheduleData"
+      title="Calendario de clases" subtitle="Selecciona un bloque para consultar la asistencia de esa fecha."
+      :date="scheduleData.fecha" :items="visibleSchedules" :interactive="!busy"
+      :selected-item-id="selectedSchedule" file-name="horarios-asistencia.xlsx"
+      empty-message="No hay horarios con el filtro de día seleccionado."
+      @select="selectClass" @range-change="changeRange" />
+    <div ref="rosterPanel" class="att-panel att-roster" aria-live="polite" :aria-busy="rosterLoading">
       <div v-if="!selectedSchedule" class="att-empty"><CalendarDays :size="28" /><p>Selecciona un horario para ver sus matriculados.</p></div>
       <div v-else-if="rosterLoading && !roster" class="att-empty" role="status">Cargando matriculados…</div>
       <p v-else-if="rosterError" role="alert" class="att-message is-error">{{ rosterError }} <button class="att-link" @click="$emit('retry')">Reintentar</button></p>
       <template v-else-if="roster">
         <div class="att-heading-row">
           <div>
-            <p class="att-eyebrow">Clientes matriculados · {{ dateLabel(roster.fecha) }}</p>
+            <p class="att-eyebrow">Clientes matriculados · {{ dateLabel(roster.fecha, { weekday: 'long' }) }}</p>
             <h3>{{ services[roster.horario.servicio] }} · {{ days[roster.horario.dia] }} · {{ shortTime(roster.horario.hora_inicio) }} – {{ shortTime(roster.horario.hora_fin) }}</h3>
           </div>
           <span class="att-count">{{ roster.clientes.length }}</span>
@@ -56,7 +39,7 @@
         <div v-if="!roster.clientes.length" class="att-empty">Este horario todavía no tiene clientes matriculados.</div>
         <div v-else class="att-table-wrap">
           <table class="att-table att-roster-table">
-            <caption class="att-sr-only">Clientes matriculados y asistencia de hoy</caption>
+            <caption class="att-sr-only">Clientes matriculados y asistencia de la fecha seleccionada</caption>
             <thead><tr><th>Cliente</th><th>Entrada</th><th>Salida</th><th>Estado</th><th>Acción</th></tr></thead>
             <tbody>
               <tr v-for="student in roster.clientes" :key="student.id_matricula" :class="{ 'is-saved': savedKey === `entry-${student.id_matricula}` || savedKey === `exit-${student.asistencia?.id_asistencia}` }">
@@ -86,13 +69,29 @@
   </section>
 </template>
 <script setup>
-import { computed, ref } from 'vue';
-import { CalendarDays, Users, LogIn, LogOut } from 'lucide-vue-next';
+import { computed, nextTick, ref } from 'vue';
+import { CalendarDays, LogIn, LogOut } from 'lucide-vue-next';
+import ExcelScheduleGrid from '../ExcelScheduleGrid.vue';
 import { days, services, states, shortTime, dateLabel } from '../../utils/attendance.js';
-const props = defineProps({ scheduleData: Object, selectedSchedule: Number, roster: Object,
+const props = defineProps({ scheduleData: Object, selectedSchedule: Number, selectedSession: String, roster: Object,
   schedulesLoading: Boolean, rosterLoading: Boolean, schedulesError: String, rosterError: String,
   busy: String, savedKey: String });
-defineEmits(['select', 'reload', 'retry', 'entry', 'exit']);
+const emit = defineEmits(['select', 'reload', 'retry', 'entry', 'exit']);
 const dayFilter = ref('');
-const visibleSchedules = computed(() => (props.scheduleData?.horarios || []).filter((s) => !dayFilter.value || s.dia === dayFilter.value));
+const rosterPanel = ref(null);
+const visibleSchedules = computed(() => (props.scheduleData?.horarios || [])
+  .filter((s) => !dayFilter.value || s.dia === dayFilter.value)
+  .map((s) => ({ ...s, cupos_usados: s.matriculados,
+    rutina_nombre: s.rutina_nombre || s.nombre_rutina || '' })));
+const selectClass = async (item) => {
+  if (props.busy) return;
+  emit('select', item.id_horario_servicio, item.fecha);
+  await nextTick();
+  rosterPanel.value?.scrollIntoView({ block: 'start' });
+};
+const changeRange = (range) => {
+  if (props.selectedSession && (props.selectedSession < range.from || props.selectedSession > range.to)) {
+    emit('select', null);
+  }
+};
 </script>

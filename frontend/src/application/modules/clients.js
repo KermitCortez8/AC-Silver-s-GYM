@@ -169,7 +169,7 @@ export const createClientsModule = (ctx, repository) => {
       password: String(payload.password || payload.contrasena || '').trim(),
       plan: String(payload.plan || existingClient?.plan || 'MENSUAL').trim() || 'MENSUAL',
       // id_promocion NO va dentro del objeto cliente — va en la raíz del payload de registro
-      promocion: 'SIN PROMOCION',
+      promocion: existingClient?.promocion || 'SIN PROMOCION',
       estado: String(payload.estado || existingClient?.status || 'ACTIVO').trim().toUpperCase() || 'ACTIVO',
     };
 
@@ -281,6 +281,14 @@ export const createClientsModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const saved = await remote.registerPublicClient(payload);
     requireRecord(saved);
+    if (saved.preregistro) {
+      const request = requireRecord(saved.preregistro);
+      if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(String(request.token || ''))
+        || !['PENDIENTE', 'CONVERTIDO'].includes(request.estado) || !(Number(request.monto_pago) > 0)) {
+        throw new Error('El servidor no devolvió un preregistro pendiente válido.');
+      }
+      return { preregistration: request, payment: saved.payment || null };
+    }
     requireRecord(saved.cliente);
     const membership = requireRecord(saved.membresia, 'id_membresia');
     const client = mergeClient({

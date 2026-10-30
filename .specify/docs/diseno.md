@@ -10,6 +10,11 @@ Hay páginas públicas de inicio, nosotros, preguntas frecuentes, registro y pag
 `/auth/callback` resuelve el retorno de autenticación. `/tp-remix` es una ruta
 pública adicional existente, sin reglas de negocio propias en el backend.
 
+La landing y sus anclas permanecen accesibles con la sesión iniciada, incluso al
+volver desde el panel o recargar. El enlace de acceso a la plataforma recupera el
+panel del rol si la sesión sigue válida. Si vence en una página pública, se permite
+seguir navegando allí y se solicita autenticación al entrar en una ruta privada.
+
 | Área | Pantallas y acceso visual |
 | --- | --- |
 | `/admin` | Panel, usuarios, clientes, planes, promociones, pagos, horarios, matrículas, inventario, tienda y pedidos. `staff` comparte el panel según sus guards. |
@@ -56,6 +61,13 @@ tokens `--ws-*` y estados semánticos de paneles. Los estilos de asistencia,
 clientes, tienda y entrenador mantienen su alcance por pantalla.
 
 ## Verificación de cambios visuales
+
+Los textos visibles, incluidos menús, ayudas, etiquetas accesibles y mensajes de
+validación, se escriben con tildes y eñes. Los códigos internos como `musculacion`,
+`miercoles` y `PUBLICO` se conservan; sus etiquetas se presentan como «Musculación»,
+«Miércoles» y «Público» cuando corresponde. No corregir automáticamente nombres ni
+textos introducidos por usuarios. La [revisión ortográfica](../base/validaciones/ortografia/validation.md)
+registra el alcance y la comprobación de esta corrección.
 
 Conservar los patrones de temas, adaptación móvil y diálogos existentes.
 Verificar la pantalla afectada en escritorio/móvil y claro/oscuro cuando aplique.

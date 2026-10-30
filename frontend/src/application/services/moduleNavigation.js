@@ -46,7 +46,7 @@ export const createModuleLoader = ({
 // La comprobación sigue en segundo plano; la entrada inicial sí espera al servidor.
 export const prepareNavigationSession = async (auth, to, from) => {
   const needsCheck = !auth.isInitialized || (auth.isAuthenticated &&
-    (to.meta.requiresAuth || to.path === '/' || to.path === '/login'));
+    (to.meta.requiresAuth || to.path === '/login'));
   if (!needsCheck) return;
 
   const withinPanel = auth.isInitialized && auth.isAuthenticated && (

@@ -85,7 +85,7 @@ export const missingFieldsMessage = (labels) => {
 
 // La galeria de Tienda solo admite PNG y JPG (el backend aplica la misma regla).
 const IMAGE_TYPES = { '.png': ['image/png'], '.jpg': ['image/jpeg'], '.jpeg': ['image/jpeg'] };
-export const ALLOWED_IMAGE_MESSAGE = 'Formato no permitido. Solo se aceptan imagenes .png y .jpg.';
+export const ALLOWED_IMAGE_MESSAGE = 'Formato no permitido. Solo se aceptan imágenes .png y .jpg.';
 
 /** Acepta el archivo solo si su extension y su tipo son PNG o JPG. */
 export const isAllowedImageFile = (file) => {

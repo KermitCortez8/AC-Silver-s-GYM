@@ -63,6 +63,10 @@ No reescribir importes de membresías ya contratadas al editar un plan.
 - Campo opcional histórico ausente: normalizarlo y preservar cero cuando sea válido.
 - Oferta editada después de una compra: conservar descuento e importe guardados
   en esa membresía y su historial.
+- Formularios de clientes: cargar el catálogo remoto antes de habilitar el alta;
+  no ofrecer planes locales ante error o catálogo vacío. Filtrar las promociones
+  por plan, inicio, fin, estado y cupos. La edición de datos personales conserva
+  los valores contratados, incluso si ya no forman parte de la oferta activa.
 
 ## 7. Definition of Done
 

@@ -115,3 +115,15 @@ test('client sessions keep blocking validation before protected navigation', asy
   await navigation;
   assert.equal(ready, true);
 });
+
+test('volver a la landing con sesión iniciada no espera una revalidación privada', async () => {
+  let checks = 0;
+  const auth = {
+    isInitialized: true, isAuthenticated: true,
+    initializeAuth: async () => { checks++; },
+  };
+  await prepareNavigationSession(auth, { path: '/', meta: {} }, {
+    path: '/user/dashboard', meta: { requiresAuth: true },
+  });
+  assert.equal(checks, 0);
+});

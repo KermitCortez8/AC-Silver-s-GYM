@@ -13,6 +13,10 @@ export const fetchWithTimeout = async (url, options = {}, timeoutMs = 30_000) =>
   }, timeoutMs);
   try {
     const response = await fetch(url, { ...options, signal: controller.signal });
+    // Chromium puede exponer un stream vacío incluso para un 204. Esos estados
+    // no admiten cuerpo: reconstruirlos con un ArrayBuffer genera un TypeError.
+    if ([204, 205, 304].includes(response.status)
+      || String(options.method || 'GET').toUpperCase() === 'HEAD') return response;
     if (!response.body) return response;
 
     // These clients consume complete JSON/text responses. Keep the deadline and

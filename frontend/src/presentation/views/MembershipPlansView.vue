@@ -3,8 +3,8 @@
     <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Membresias</p>
-          <h1 class="mt-2 text-3xl font-black text-white">Planes de membresia</h1>
+          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Membresías</p>
+          <h1 class="mt-2 text-3xl font-black text-white">Planes de membresía</h1>
           <p class="mt-2 text-slate-300">Configura precios, vigencia, beneficios y disponibilidad comercial.</p>
         </div>
         <button class="rounded-2xl bg-cyan-400 px-5 py-3 font-black text-slate-950" @click="newPlan">Nuevo plan</button>
@@ -27,7 +27,7 @@
           </div>
           <p class="mt-4 text-3xl font-black text-emerald-300">S/. {{ Number(plan.price || 0).toFixed(2) }}</p>
           <p class="mt-2 text-sm text-slate-300">{{ plan.duration }}</p>
-          <p class="mt-4 min-h-12 text-sm leading-6 text-slate-400">{{ plan.description || 'Sin descripcion comercial.' }}</p>
+          <p class="mt-4 min-h-12 text-sm leading-6 text-slate-400">{{ plan.description || 'Sin descripción comercial.' }}</p>
           <p class="mt-3 text-xs text-cyan-100">{{ plan.benefits || 'Beneficios por definir.' }}</p>
           <div class="mt-5 flex gap-2">
             <button class="flex-1 rounded-xl border border-white/10 px-3 py-2 font-bold text-white hover:bg-white/10" @click="editPlan(plan)">Editar</button>
@@ -105,12 +105,12 @@ const editorError = ref('');
 const saving = ref(false);
 const plans = computed(() => gymStore.planCatalog);
 const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
-const form = reactive({ id_pm: null, name: '', duration: '30 dias', price: 0, description: '', benefits: '', active: true });
+const form = reactive({ id_pm: null, name: '', duration: '30 días', price: 0, description: '', benefits: '', active: true });
 
 /**
  * Gestiona esta acción de la vista.
  */
-const reset = () => Object.assign(form, { id_pm: null, name: '', duration: '30 dias', price: 0, description: '', benefits: '', active: true });
+const reset = () => Object.assign(form, { id_pm: null, name: '', duration: '30 días', price: 0, description: '', benefits: '', active: true });
 /**
  * Gestiona esta acción de la vista.
  */

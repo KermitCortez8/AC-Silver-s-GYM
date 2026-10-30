@@ -78,6 +78,7 @@ class GymDomainService:
             "pedidos_tienda": [],
             "usuario": [],
             "clientes": [],
+            "preregistros": [],
             "tickets_atencion": [],
             "horario": [],
             "horarios_servicio": [],
@@ -263,8 +264,8 @@ class GymDomainService:
     def normalize_schedule_day(self, day):
         return self._normalize_day(day)
 
-    def validate_enrollment(self, client_id, schedule_id):
-        return self._validate_new_schedule_enrollment(self.state, client_id, schedule_id)
+    def validate_enrollment(self, client_id, schedule_id, fecha_clase=None):
+        return self._validate_new_schedule_enrollment(self.state, client_id, schedule_id, fecha_clase)
 
     def _user_role_prefix(self, rol: str):
         return self.components.accounts._user_role_prefix(rol)
@@ -477,8 +478,8 @@ class GymDomainService:
     def trainer_overview(self):
         return self.components.schedules.trainer_overview()
 
-    def _validate_new_schedule_enrollment(self, state: dict[str, Any], id_cliente: int, id_horario: int):
-        return self.components.schedules._validate_new_schedule_enrollment(state, id_cliente, id_horario)
+    def _validate_new_schedule_enrollment(self, state: dict[str, Any], id_cliente: int, id_horario: int, fecha_clase=None):
+        return self.components.schedules._validate_new_schedule_enrollment(state, id_cliente, id_horario, fecha_clase)
 
     def matricular_cliente_horario(self, payload: dict[str, Any]):
         return self.components.schedules.matricular_cliente_horario(payload)

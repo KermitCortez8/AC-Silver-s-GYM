@@ -34,12 +34,16 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
    nueva entrada se rechaza con «La hora de esta clase ya pasó. No se puede
    registrar la asistencia.»; la consulta deshabilita la entrada y no se guarda
    asistencia. Una salida pendiente sigue permitida.
-8. **CA-08.** La pestaña por horarios muestra una tabla de clases activas con
-   filtro por día. Seleccionar una clase muestra solo sus matrículas activas,
-   con cliente, DNI, entrada, salida, estado y acciones individuales.
+8. **CA-08.** La pestaña por horarios reutiliza el calendario semanal del módulo
+   de horarios, con agenda móvil, colores por servicio, cupos y filtro por día.
+   Seleccionar un bloque muestra solo sus matrículas activas, con cliente, DNI,
+   entrada, salida, estado y acciones individuales para la fecha seleccionada.
+   Cada sesión consulta sus propios clientes; al cambiar de semana se limpia la
+   selección. Las entradas siguen usando el día y reloj actual del servidor de Perú.
 9. **CA-09.** La entrada se admite desde el inicio inclusive hasta el fin exclusivo
    de la clase en su día. Fuera del intervalo, se muestra el motivo y se rechaza
-   cualquier intento en el servidor sin guardar asistencia.
+   cualquier intento en el servidor sin guardar asistencia. La matrícula debe
+   corresponder exactamente a la fecha de entrada; una de otra semana no autoriza.
 10. **CA-10.** Pasada más de una hora desde el término original de la clase, una
    visita sin salida figura como incompleta y muestra un aviso. El administrador
    puede guardar la salida real; si es tardía, permanece incompleta. Exactamente
@@ -55,7 +59,7 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
 | CA-05 | [test_scoped_operations.py](../../../backend/tests/test_scoped_operations.py): `test_dni_filter_cannot_override_the_session_client`, `test_history_passes_client_scope_to_persistence_and_hides_audit`. |
 | CA-06 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_general_corrections_and_annulment_remain_audited`; [test_remaining_smells.py](../../../backend/tests/test_remaining_smells.py): `test_remote_summary_uses_counts_open_visits_and_eight_recent_records`. |
 | CA-07 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_expired_class_rejects_entry_and_explains_why`, `test_expired_class_api_returns_error_without_saving`, `test_transaction_revalidates_class_expiration`, `test_schedule_retry_and_exit_still_work_after_class_end`; [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js): error y actualización de ficha tras vencer la clase. |
-| CA-08 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario`, permisos y recorrido HTTP; [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js): tabla, selección y descarte de respuestas obsoletas. |
+| CA-08 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario`, permisos y recorrido HTTP; [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js): calendario compartido, cupos, filtro, selección, bloqueo al guardar y descarte de respuestas obsoletas. |
 | CA-09 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_lista_informa_si_la_entrada_esta_dentro_del_horario`; [test_attendance_deadline_postgres.py](../../../backend/tests/test_attendance_deadline_postgres.py): `test_rpc_rechaza_clase_terminada_sin_guardar`. |
 | CA-10 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): límites, cambio de día, historial privado, persistencia y cambio de horario; [test_attendance_deadline_postgres.py](../../../backend/tests/test_attendance_deadline_postgres.py): RPC, auditoría, límite inclusivo y migración repetible. |
 
@@ -65,10 +69,14 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
   bajo `/api/asistencia`: entrada, general/entrada, salida, historial, resumen,
   cliente, mi-semana, exportar, corrección y anulación.
   Solo `admin` consulta `/horarios` y `/horarios/{id}/clientes` para controlar asistencia.
+  Este último acepta `fecha=AAAA-MM-DD`, con validación civil; devuelve solo las
+  matrículas de esa sesión. Sin parámetro consulta el día actual.
 - Aplicación: [attendance_service.py](../../../backend/application/services/attendance_service.py),
   reloj `America/Lima`; reglas y repositorios de asistencia especializados.
 - SQL: `005_harden_attendance.sql`, después `013_general_attendance.sql` y
   [018_attendance_schedule_exit_deadline.sql](../../../backend/migrations/018_attendance_schedule_exit_deadline.sql).
+  [019_schedule_sessions.sql](../../../backend/migrations/019_schedule_sessions.sql)
+  agrega la reserva por fecha y revalida esa fecha dentro de `guardar_asistencia`.
   Se reutiliza `ASISTENCIA`; visita general lleva `servicio='gimnasio'` y
   matrícula/horario nulos. No hay tabla separada de visitas generales.
   `limite_salida` conserva fecha/hora de fin más una hora en cada nueva visita de clase;
@@ -78,6 +86,7 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
   [UserAttendanceView.vue](../../../frontend/src/presentation/views/UserAttendanceView.vue).
   Pestañas por horario, gimnasio general e historial; componentes y composables propios.
   Por horario utiliza [AttendanceScheduleRoster.vue](../../../frontend/src/presentation/components/attendance/AttendanceScheduleRoster.vue)
+  con [ExcelScheduleGrid.vue](../../../frontend/src/presentation/components/ExcelScheduleGrid.vue)
   y [useScheduleRoster.js](../../../frontend/src/presentation/composables/attendance/useScheduleRoster.js).
   El registro general mantiene la búsqueda por DNI.
 
@@ -107,6 +116,9 @@ historial. No publicar auditoría al cliente ni mezclar fechas de clases semanal
 - Actualización concurrente con versión antigua: informar conflicto sin sobrescribir.
 - Rango de historial invertido, página inválida o tamaño mayor de 100: rechazar.
 - Búsqueda reemplazada o vista desmontada: descartar respuesta obsoleta.
+- Mismo horario en otra semana: filtrar por `fecha_clase`, tanto en el listado
+  administrativo como en `mi-semana`. Una respuesta de otra fecha se descarta en
+  el frontend; un fallo de carga no muestra los clientes de la selección anterior.
 
 ## 7. Definition of Done
 

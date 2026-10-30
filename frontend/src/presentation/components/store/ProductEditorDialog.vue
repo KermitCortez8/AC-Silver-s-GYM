@@ -2,9 +2,9 @@
   <ResourceModal
     :open="isAdmin && isProductEditorOpen"
     :icon="ShoppingBag"
-    :eyebrow="editingId ? 'Tienda · Edicion de registro' : 'Tienda · Nuevo registro'"
+    :eyebrow="editingId ? 'Tienda · Edición de registro' : 'Tienda · Nuevo registro'"
     :title="editingId ? 'Editar producto' : 'Nuevo producto'"
-    subtitle="Define precio, stock e imagen del producto que veran los clientes."
+    subtitle="Define precio, stock e imagen del producto que verán los clientes."
     size="xl"
     :busy="isSaving || isUploadingImage"
     @close="closeProductEditor"
@@ -17,9 +17,9 @@
 
     <!-- Sección: Informacion básica -->
     <fieldset class="rm-section">
-      <legend class="sr-only">Informacion del producto</legend>
+      <legend class="sr-only">Información del producto</legend>
       <p class="rm-section-title">
-        <Info :size="14" aria-hidden="true" /> Informacion del producto
+        <Info :size="14" aria-hidden="true" /> Información del producto
       </p>
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="space-y-2 sm:col-span-2">
@@ -29,35 +29,35 @@
             class="field-input"
             :class="{ 'is-invalid': formErrors.includes('Nombre') || warnings.nombre }"
             :maxlength="NAME_MAX_LENGTH"
-            placeholder="Proteina Whey, Bebida Energetica, etc."
+            placeholder="Proteína Whey, Bebida Energética, etc."
             @beforeinput="blockNameChars"
             @input="cleanName"
           />
           <p v-if="warnings.nombre" class="inv-field-error">{{ warnings.nombre }}</p>
         </label>
         <label class="space-y-2 sm:col-span-2">
-          <span class="inv-label">Descripcion</span>
+          <span class="inv-label">Descripción</span>
           <textarea
             v-model="form.descripcion"
             rows="2"
             class="field-input"
-            placeholder="Descripcion breve del producto..."
+            placeholder="Descripción breve del producto..."
           ></textarea>
         </label>
         <div class="space-y-2">
-          <label for="product-category" class="inv-label inv-required">Categoria</label>
+          <label for="product-category" class="inv-label inv-required">Categoría</label>
           <ExtensibleSelect
             id="product-category"
             v-model="form.categoria"
             :options="categoryOptions"
-            :invalid="formErrors.includes('Categoria')"
-            placeholder="Selecciona una categoria"
-            add-label="Agregar nueva categoria"
+            :invalid="formErrors.includes('Categoría')"
+            placeholder="Selecciona una categoría"
+            add-label="Agregar nueva categoría"
             add-placeholder="Ej. Suplementos"
           />
         </div>
         <label class="space-y-2">
-          <span class="inv-label">Item de inventario</span>
+          <span class="inv-label">Ítem de inventario</span>
           <input
             v-if="editingLinked"
             :value="linkedItemLabel"
@@ -69,7 +69,7 @@
               {{
                 editingId
                   ? "Sin vincular"
-                  : "Crear nuevo item en Inventario (Tipo Tienda)"
+                  : "Crear nuevo ítem en Inventario (Tipo Tienda)"
               }}
             </option>
             <option
@@ -137,7 +137,7 @@
           />
         </label>
         <label class="space-y-2">
-          <span class="inv-label">Stock minimo</span>
+          <span class="inv-label">Stock mínimo</span>
           <QuantityInput
             v-model="form.minimo"
             class="field-input"
@@ -163,7 +163,7 @@
               <span class="font-bold">Disponible</span> con stock,
               <span class="font-bold">Agotado</span> sin stock y
               <span class="font-bold">Descatalogado</span> (oculto a clientes)
-              si no tiene precio o el item ya no es Tipo Tienda o esta
+              si no tiene precio o el ítem ya no es Tipo Tienda o está
               Descontinuado.
             </p>
           </div>
@@ -411,7 +411,7 @@ const cleanName = (event) => {
   const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
   if (value !== event.target.value) event.target.value = value;
   props.form.nombre = value;
-  warnings.nombre = rejected ? "Sin caracteres especiales: solo letras, numeros y espacios." : "";
+  warnings.nombre = rejected ? "Sin caracteres especiales: solo letras, números y espacios." : "";
 };
 
 const cleanPrice = (event) => {

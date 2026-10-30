@@ -1,0 +1,50 @@
+{
+  "results": [
+    {
+      "role": "admin",
+      "passwordLogin": true,
+      "backToLanding": true,
+      "sessionPreserved": true,
+      "hashAndReload": true,
+      "directLanding": true,
+      "explicitPanelReturn": true,
+      "publicPageAfterExpiration": null,
+      "privatePanelBlockedAfterExpiration": null
+    },
+    {
+      "role": "staff",
+      "passwordLogin": true,
+      "backToLanding": true,
+      "sessionPreserved": true,
+      "hashAndReload": true,
+      "directLanding": true,
+      "explicitPanelReturn": true,
+      "publicPageAfterExpiration": null,
+      "privatePanelBlockedAfterExpiration": null
+    },
+    {
+      "role": "trainer",
+      "passwordLogin": true,
+      "backToLanding": true,
+      "sessionPreserved": true,
+      "hashAndReload": true,
+      "directLanding": true,
+      "explicitPanelReturn": true,
+      "publicPageAfterExpiration": null,
+      "privatePanelBlockedAfterExpiration": null
+    },
+    {
+      "role": "user",
+      "passwordLogin": true,
+      "backToLanding": true,
+      "sessionPreserved": true,
+      "hashAndReload": true,
+      "directLanding": true,
+      "explicitPanelReturn": true,
+      "publicPageAfterExpiration": true,
+      "privatePanelBlockedAfterExpiration": true
+    }
+  ],
+  "pageErrors": [],
+  "source": "Navegador con rutas, formulario y stores reales; autenticación y API simuladas."
+}

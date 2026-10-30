@@ -44,7 +44,7 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   options: { type: Array, default: () => [] },
   id: { type: String, default: undefined },
-  placeholder: { type: String, default: 'Selecciona una opcion' },
+  placeholder: { type: String, default: 'Selecciona una opción' },
   addLabel: { type: String, default: 'Agregar nuevo' },
   addPlaceholder: { type: String, default: 'Escribe el nuevo valor' },
   invalid: Boolean,
@@ -75,7 +75,7 @@ const handleChange = async (value) => {
 const handleBeforeInput = (event) => {
   if (event.data && !isAllowedText(event.data)) {
     event.preventDefault();
-    error.value = 'Solo se permiten letras, numeros y espacios.';
+    error.value = 'Solo se permiten letras, números y espacios.';
   }
 };
 
@@ -86,7 +86,7 @@ const confirmNew = () => {
   const { value, rejected } = cleanText(draft.value, NAME_MAX_LENGTH);
   const text = value.trim().replace(/\s+/g, ' ');
   if (rejected) {
-    error.value = 'Solo se permiten letras, numeros y espacios.';
+    error.value = 'Solo se permiten letras, números y espacios.';
     draft.value = value;
     return;
   }

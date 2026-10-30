@@ -48,13 +48,13 @@ const warn = (text) => {
 const handleBeforeInput = (event) => {
   if (event.data && !isAllowedText(event.data)) {
     event.preventDefault();
-    warn('Solo se permiten letras, numeros y espacios.');
+    warn('Solo se permiten letras, números y espacios.');
     return;
   }
   const input = event.target;
   const selected = (input.selectionEnd ?? 0) - (input.selectionStart ?? 0);
   if (event.data && input.value.length - selected >= SEARCH_MAX_LENGTH) {
-    warn(`Maximo ${SEARCH_MAX_LENGTH} caracteres.`);
+    warn(`Máximo ${SEARCH_MAX_LENGTH} caracteres.`);
   }
 };
 
@@ -64,8 +64,8 @@ const handleBeforeInput = (event) => {
 const handleInput = (event) => {
   const { value, rejected, truncated } = cleanText(event.target.value);
   if (value !== event.target.value) event.target.value = value;
-  if (rejected) warn('Se quitaron los caracteres especiales: solo letras, numeros y espacios.');
-  else if (truncated) warn(`Maximo ${SEARCH_MAX_LENGTH} caracteres.`);
+  if (rejected) warn('Se quitaron los caracteres especiales: solo letras, números y espacios.');
+  else if (truncated) warn(`Máximo ${SEARCH_MAX_LENGTH} caracteres.`);
   emit('update:modelValue', value);
 };
 

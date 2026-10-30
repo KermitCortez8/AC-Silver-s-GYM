@@ -21,7 +21,9 @@ prueba, activarla y avanzar un reloj controlado hasta después del vencimiento.
 1. **CA-01.** Dado un registro nuevo, al recorrer pago, activación y expiración
    las escrituras de membresía usan `EN_TRAMITE`, `ACTIVO` y `VENCIDA`.
 2. **CA-02.** Dada una confirmación Stripe, solo se guarda el pago si sesión,
-   importe, metadatos y modo corresponden a esa membresía.
+   importe, metadatos y modo corresponden a esa membresía o solicitud pública.
+   Para solicitudes nuevas, el pago crea cliente y membresía pagada en trámite
+   de forma atómica, sin conceder acceso antes de la activación administrativa.
 3. **CA-03.** Dada una membresía sin pago confirmado, al activarla se rechaza;
    activarla otra vez después de estar activa no extiende sus fechas.
 4. **CA-04.** Dada una confirmación manual autorizada, al guardarla se registra
@@ -54,6 +56,8 @@ prueba, activarla y avanzar un reloj controlado hasta después del vencimiento.
   [stripe_service.py](../../../backend/infrastructure/services/stripe_service.py).
 - Datos: `MEMBRESIA`, `CLIENTES`, plan y promoción. Precondiciones SQL en
   `001`, `009_admin_client_stripe`, `010`, `011`, `014`, `015`, `016`, según esquema.
+  El registro público separado añade `PREREGISTROS_MEMBRESIA` y
+  [020_public_preregistrations.sql](../../../backend/migrations/020_public_preregistrations.sql).
 - UI: `/registro/pago/:idCliente`, `/admin/payments`, acciones de cliente en
   [useClientMembershipActions.js](../../../frontend/src/presentation/composables/clients/useClientMembershipActions.js).
 
@@ -70,6 +74,14 @@ una membresía vencida mediante edición o evento Stripe duplicado.
 - Membresía futura, impaga o cuenta sin activación: no conceder acceso por el
   mero flag de cuenta activa.
 - Fallo de checkout: conservar alta para reintento cuando ya se guardó.
+  En el registro público nuevo se conserva únicamente una solicitud privada.
+  Reintentos usan la misma sesión; una sesión expirada permite otro intento
+  después de verificar su estado. Una creación incierta de más de 24 horas se
+  busca en Stripe, sin crear otra sesión con una clave de idempotencia caducada.
+- Caducidad: el proceso del backend revisa solicitudes vencidas cada minuto;
+  cierra sesiones abiertas antes de archivar, reconcilia las pagadas y conserva
+  las completas sin pago definitivo o aquellas cuyo estado no se puede verificar.
+  Las promociones se reservan al solicitar y liberan una sola vez al archivar.
 - Pago correcto con correo fallido: conservar el pago; informar el resultado
   de notificación por separado.
 - Estados históricos: normalizar lectura; un pendiente antiguo no se vuelve pagado.

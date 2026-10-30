@@ -23,7 +23,7 @@
         <div class="mt-7 rounded-2xl bg-slate-50 p-5 text-left text-sm">
           <div class="flex justify-between gap-4">
             <span class="text-slate-500">Solicitud</span>
-            <span class="font-bold">SGCLI{{ String(idCliente).padStart(3, '0') }}</span>
+            <span class="font-bold">{{ requestLabel }}</span>
           </div>
           <div class="mt-3 flex justify-between gap-4">
             <span class="text-slate-500">Estado</span>
@@ -62,6 +62,15 @@ const { confirmMembershipPayment } = useClientPayments();
 
 const route = useRoute();
 const idCliente = computed(() => Number(route.params.idCliente || 0));
+const preregistrationToken = computed(() => {
+  const match = /^p-([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$/i.exec(String(route.params.idCliente || ''));
+  return match?.[1] || '';
+});
+const confirmedClientId = ref(null);
+const requestLabel = computed(() => confirmedClientId.value
+  ? `SGCLI${String(confirmedClientId.value).padStart(3, '0')}`
+  : preregistrationToken.value ? `Solicitud ${preregistrationToken.value.slice(0, 8)}`
+    : `SGCLI${String(idCliente.value).padStart(3, '0')}`);
 const result = computed(() => String(route.query.result || 'pending').toLowerCase());
 const confirmationState = ref('idle');
 const confirmationError = ref('');
@@ -105,8 +114,8 @@ const resultStyle = computed(() => {
   if (result.value === 'failure') {
     return {
       icon: '!', title: 'El pago no se completó',
-      description: 'No se realizó ningún cobro confirmado. Puedes volver al registro e intentarlo nuevamente.',
-      status: 'Rechazado o cancelado', border: 'border-rose-200',
+      description: 'Saliste del proceso de pago. Tu solicitud temporal permite retomarlo con los mismos datos. Si ya pagaste, consulta la confirmación antes de iniciar otro pago.',
+      status: 'Proceso interrumpido', border: 'border-rose-200',
       iconBackground: 'bg-rose-100 text-rose-700', labelColor: 'text-rose-700',
     };
   }
@@ -123,11 +132,12 @@ const confirmPaidCheckout = async () => {
   const request = ++confirmationNumber;
   const key = checkoutKey();
   const expectedClient = idCliente.value;
+  const expectedToken = preregistrationToken.value;
   const isCurrent = () => request === confirmationNumber && key === checkoutKey();
   confirmationError.value = '';
 
   const sessionId = String(route.query.session_id || '').trim();
-  if (!sessionId || !Number.isInteger(expectedClient) || expectedClient <= 0) {
+  if (!sessionId || (!expectedToken && (!Number.isInteger(expectedClient) || expectedClient <= 0))) {
     confirmationState.value = 'error';
     confirmationError.value = 'El enlace de pago está incompleto. Revisa el enlace de retorno o consulta con administración.';
     return;
@@ -138,8 +148,11 @@ const confirmPaidCheckout = async () => {
     const response = await confirmMembershipPayment(sessionId);
     if (!isCurrent()) return;
     if (response?.confirmed === true) {
-      if (Number(response.id_cliente) !== expectedClient)
+      if (expectedToken ? response.preregistration_token !== expectedToken : Number(response.id_cliente) !== expectedClient)
         throw new Error('La confirmación no corresponde a esta solicitud. Revisa el enlace de pago.');
+      if (!Number.isInteger(Number(response.id_cliente)) || Number(response.id_cliente) <= 0)
+        throw new Error('El servidor no devolvió el cliente del pago confirmado.');
+      confirmedClientId.value = Number(response.id_cliente);
       confirmationState.value = 'confirmed';
       return;
     }
@@ -155,6 +168,7 @@ onMounted(confirmPaidCheckout);
 watch(checkoutKey, () => {
   confirmationNumber++;
   confirmationState.value = 'idle';
+  confirmedClientId.value = null;
   confirmationError.value = '';
   confirmPaidCheckout();
 });

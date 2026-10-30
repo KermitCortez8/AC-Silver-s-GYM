@@ -9,8 +9,8 @@
         <nav class="hidden items-center gap-6 text-sm font-bold uppercase tracking-[0.04em] text-slate-700 lg:flex">
           <router-link :to="{ path: '/', hash: '#servicios' }" class="transition hover:text-orange-600">Servicios</router-link>
           <router-link to="/nosotros" class="transition hover:text-orange-600">Nosotros</router-link>
-          <router-link :to="{ path: '/', hash: '#membresias' }" class="transition hover:text-orange-600">Membresias</router-link>
-          <router-link :to="{ path: '/', hash: '#ubicacion' }" class="transition hover:text-orange-600">Ubicacion</router-link>
+          <router-link :to="{ path: '/', hash: '#membresias' }" class="transition hover:text-orange-600">Membresías</router-link>
+          <router-link :to="{ path: '/', hash: '#ubicacion' }" class="transition hover:text-orange-600">Ubicación</router-link>
         </nav>
 
         <div class="flex items-center gap-2">
@@ -33,7 +33,7 @@
           </span>
           <h1 class="mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">Preguntas Frecuentes.</h1>
           <p class="mt-4 max-w-2xl text-sm leading-7 text-white/60">
-            Resolvemos las dudas mas comunes sobre membresias, horarios y servicios de Silver Gym Surco.
+            Resolvemos las dudas más comunes sobre membresías, horarios y servicios de Silver Gym Surco.
           </p>
 
           <div class="mt-8 flex flex-col gap-3">
@@ -68,7 +68,7 @@
         <div class="grid gap-8 border-b border-white/10 pb-8 sm:grid-cols-3">
           <div>
             <p class="text-lg font-black italic text-white">Silver Gym Surco</p>
-            <p class="mt-3 max-w-[30ch] text-sm leading-6 text-white/45">Ubicacion, horarios y registro en un mismo lugar.</p>
+            <p class="mt-3 max-w-[30ch] text-sm leading-6 text-white/45">Ubicación, horarios y registro en un mismo lugar.</p>
           </div>
 
           <div>
@@ -76,8 +76,8 @@
             <nav class="mt-4 flex flex-col gap-2.5">
               <router-link :to="{ path: '/', hash: '#servicios' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Servicios</router-link>
               <router-link to="/nosotros" class="text-sm font-semibold text-white/65 transition hover:text-white">Nosotros</router-link>
-              <router-link :to="{ path: '/', hash: '#membresias' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Membresias</router-link>
-              <router-link :to="{ path: '/', hash: '#ubicacion' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Ubicacion</router-link>
+              <router-link :to="{ path: '/', hash: '#membresias' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Membresías</router-link>
+              <router-link :to="{ path: '/', hash: '#ubicacion' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Ubicación</router-link>
             </nav>
           </div>
 
@@ -120,7 +120,7 @@ const faqs = [
     answer: 'No, contamos con rutinas para todos los niveles. Nuestros entrenadores te guían desde el primer día para que entrenes de forma segura y efectiva.',
   },
   {
-    question: '¿Puedo cambiar de plan de membresia despues de inscribirme?',
+    question: '¿Puedo cambiar de plan de membresía después de inscribirme?',
     answer: 'Sí, puedes actualizar tu plan en cualquier momento desde la plataforma digital o consultando directamente en recepción.',
   },
   {
@@ -136,7 +136,7 @@ const faqs = [
     answer: 'Sí, contamos con estacionamiento cercano en la misma cuadra del gimnasio.',
   },
   {
-    question: '¿Cómo cancelo o pauso mi membresia?',
+    question: '¿Cómo cancelo o pauso mi membresía?',
     answer: 'Puedes hacerlo desde tu cuenta en la plataforma digital o acercándote a recepción, donde te orientaremos según tu plan actual.',
   },
 ];

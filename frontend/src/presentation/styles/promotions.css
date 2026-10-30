@@ -1,0 +1,12 @@
+.field-input {
+  width: 100%;
+  border: 1px solid var(--app-border, rgba(255,255,255,.1));
+  border-radius: 1rem;
+  background: var(--app-input, rgba(2,6,23,.72));
+  padding: .75rem 1rem;
+  color: var(--app-text, white);
+  outline: none;
+}
+.field-input::placeholder {
+  color: var(--app-text-faint, #64748b);
+}

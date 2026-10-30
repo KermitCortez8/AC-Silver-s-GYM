@@ -196,3 +196,34 @@ test('empty 204 responses remain readable by the API and repositories', async (t
   assert.equal(await client.apiDelete('/clientes/1'), null);
   assert.equal(await dataRequest(client, '/api/clientes/1', { method: 'DELETE' }), null);
 });
+
+// Chromium expone un stream vacío en respuestas 204; Node devuelve body=null.
+// Reconstruir ese stream con new Response(buffer, { status: 204 }) lanza TypeError.
+test('client deletion accepts browser 204 streams without reporting a network error', async (t) => {
+  let calls = 0;
+  t.mock.method(globalThis, 'fetch', async () => {
+    calls++;
+    return Object.defineProperties(new Response(null, { status: 204 }), {
+      body: { value: new ReadableStream({ start(controller) { controller.close(); } }) },
+      arrayBuffer: { value: async () => { assert.fail('Un 204 no tiene cuerpo que leer'); } },
+    });
+  });
+  const client = createApiClient({ authApiBaseUrl: '/api' });
+  assert.equal(await client.apiDelete('/clientes/1'), null);
+  assert.equal(await dataRequest(client, '/api/clientes/1', { method: 'DELETE' }), null);
+  assert.equal(calls, 2, 'Cada borrado se envía una sola vez');
+});
+
+test('bodyless HTTP responses preserve status and headers even when the browser exposes a stream', async (t) => {
+  for (const [status, method] of [[205, 'POST'], [304, 'GET'], [200, 'HEAD']]) {
+    const nativeResponse = Object.defineProperty(new Response(null, {
+      status, headers: { etag: 'version-local' },
+    }), 'body', { value: new ReadableStream({ start(controller) { controller.close(); } }) });
+    t.mock.method(globalThis, 'fetch', async () => nativeResponse);
+    const response = await fetchWithTimeout('/api/control', { method });
+    assert.equal(response, nativeResponse);
+    assert.equal(response.status, status);
+    assert.equal(response.headers.get('etag'), 'version-local');
+    assert.equal(response.bodyUsed, false);
+  }
+});

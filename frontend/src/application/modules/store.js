@@ -181,7 +181,7 @@ export const createStoreModule = (ctx, repository) => {
   const createStoreOrder = async (payload = {}) => {
     const items = requireList(payload.items === undefined ? ctx.cart.value : payload.items);
     if (!items.length) {
-      throw new Error('El carrito esta vacio');
+      throw new Error('El carrito está vacío');
     }
 
     const body = {
@@ -245,7 +245,7 @@ export const createStoreModule = (ctx, repository) => {
   const createStoreCheckout = async (payload = {}) => {
     const items = requireList(payload.items === undefined ? ctx.cart.value : payload.items);
     if (!items.length) {
-      throw new Error('El carrito esta vacio');
+      throw new Error('El carrito está vacío');
     }
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 

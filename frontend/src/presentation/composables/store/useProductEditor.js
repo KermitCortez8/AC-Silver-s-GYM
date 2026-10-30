@@ -8,7 +8,7 @@ const isBlank = (value) => String(value ?? "").trim() === "";
 // Obligatorios del TP2: nombre, categoria, precio y stock inicial (solo al crear).
 const requiredProductFields = (creating) => [
   { key: "nombre", label: "Nombre" },
-  { key: "categoria", label: "Categoria" },
+  { key: "categoria", label: "Categoría" },
   { key: "precio", label: "Precio", isEmpty: (value) => isBlank(value) || !(Number(value) > 0) },
   ...(creating
     ? [{ key: "cantidad", label: "Stock inicial", isEmpty: (value) => isBlank(value) || !Number.isInteger(Number(value)) }]
@@ -63,7 +63,7 @@ export const useProductEditor = ({
     if (editingId.value) {
       return productCode(editingId.value);
     }
-    return "Se generara automaticamente";
+    return "Se generará automáticamente";
   });
 
   const itemNumber = (item) => Number(String(item.id).replace("item-", ""));

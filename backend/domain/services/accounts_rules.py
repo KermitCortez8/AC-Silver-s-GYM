@@ -338,6 +338,9 @@ class AccountsRules:
             if password and len(password) < 6:
                 raise ValueError("La contraseña debe tener al menos 6 caracteres")
             self._check_duplicate_accounts(state["clientes"], item, "id_cliente")
+            if any(r.get('estado') == 'PENDIENTE' and (r['correo'] == item['correo'] or r['dni'] == item['dni'])
+                   for r in state.get('preregistros', [])):
+                raise ValueError('Existe un preregistro pendiente con esos datos. Espera la confirmación o caducidad del pago.')
             item["password_hash"] = self.context.passwords.hash(password) if password else str(existing.get("password_hash") or "")
             item["google_sub"] = str(existing.get("google_sub") or "")
             item["origen_registro"] = str(existing.get("origen_registro") or "") if existing else "ADMIN"

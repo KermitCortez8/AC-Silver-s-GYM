@@ -28,8 +28,8 @@ const router = useRouter();
 const items = [
   { id: 'servicios', label: 'Servicios', to: { path: '/', hash: '#servicios' } },
   { id: 'nosotros', label: 'Nosotros', to: '/nosotros' },
-  { id: 'membresias', label: 'Membresias', to: { path: '/', hash: '#membresias' } },
-  { id: 'ubicacion', label: 'Ubicacion', to: { path: '/', hash: '#ubicacion' } },
+  { id: 'membresias', label: 'Membresías', to: { path: '/', hash: '#membresias' } },
+  { id: 'ubicacion', label: 'Ubicación', to: { path: '/', hash: '#ubicacion' } },
 ];
 
 const selectItem = (event, item, navigate) => {

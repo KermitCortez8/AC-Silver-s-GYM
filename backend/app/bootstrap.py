@@ -66,3 +66,13 @@ async def process_pending_emails(settings):
 def create_client_payments_service(clients, gym, settings):
     from application.services.client_payments_service import ClientPaymentsService
     return ClientPaymentsService(clients, gym, settings, gateway_factory=create_payment_gateway, notify=notify_membership)
+
+
+async def process_pending_preregistrations(settings):
+    from application.services.clients_service import ClientsService
+    from application.services.preregistration_maintenance import maintain_preregistrations
+    def factory():
+        gym = create_gym_service(settings.supabase_url, settings.supabase_key)
+        return create_client_payments_service(ClientsService(gym), gym, settings)
+    if settings.has_supabase_credentials and settings.stripe_secret_key:
+        await maintain_preregistrations(factory)

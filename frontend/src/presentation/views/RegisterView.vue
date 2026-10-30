@@ -209,7 +209,7 @@
           <button
             type="submit"
             class="btn-cta w-full rounded-full bg-orange-500 px-5 py-4 text-sm text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="isSubmitting || googleProcessing || !planOptions.length"
+            :disabled="isSubmitting || googleProcessing || !canRegister"
           >
             {{
               isSubmitting ? 'Preparando pago seguro...' : 'Pagar con Stripe'
@@ -262,9 +262,17 @@
           </h2>
         </div>
 
+        <p v-if="catalogLoading" role="status" class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+          Cargando planes de membresía y promociones…
+        </p>
+        <div v-else-if="catalogError" role="alert" class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+          <p>No se pudieron cargar los planes y promociones. {{ catalogError }}</p>
+          <button type="button" class="mt-3 rounded-full border border-red-300 px-4 py-2 font-bold" @click="loadPlans">Reintentar carga</button>
+        </div>
+
         <!-- SIN PLANES -->
         <p
-          v-if="!planOptions.length"
+          v-if="catalogReady && !planOptions.length"
           class="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-bold text-slate-600"
         >
           Planes pendientes de configuración.
@@ -316,6 +324,14 @@
 
         <!-- CLIENTE REGISTRADO -->
         <div
+          v-if="registeredPreregistration"
+          class="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-5 text-sm text-orange-900"
+          role="status"
+        >
+          <p class="font-bold">Solicitud pendiente de pago</p>
+          <p class="mt-2">Tu solicitud se conserva durante 24 horas para que puedas retomar el pago con los mismos datos. La cuenta se creará cuando Stripe confirme el pago.</p>
+        </div>
+        <div
           v-if="registeredClient"
           class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950"
         >
@@ -343,395 +359,19 @@
 
 <script setup>
 import FieldError from '../components/FieldError.vue';
-import { emailError, validateAccountForm } from '../../domain/utils/formValidation.js';
-import { useFormValidation } from '../composables/useFormValidation.js';
-import { discountedPrice } from '../../domain/utils/money.js';
 import { clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
-import { computed, onMounted, reactive, ref } from 'vue';
-import { useRoute } from 'vue-router';
 import GoogleSignInButton from '../components/GoogleSignInButton.vue';
-import { useAuthentication } from '../../application/services/authentication.js';
-import { usePublicCatalog } from '../../application/services/publicCatalog.js';
-import { useGymStore } from '../../application/stores/gymStore';
-
-const { getVerifiedGoogleProfile } = useAuthentication();
-
-const { loadPublicSchedules, loadMembershipPlans, loadCurrentPromotions } = usePublicCatalog();
-
-/* -------------------------------------------------------------------------- */
-/* INSTANCIAS                                                                 */
-/* -------------------------------------------------------------------------- */
-
-const route = useRoute();
-
-const gymStore = useGymStore();
-
-/* -------------------------------------------------------------------------- */
-/* ESTADOS                                                                    */
-/* -------------------------------------------------------------------------- */
-
-const googleCredential = ref('');
-
-const googleProcessing = ref(false);
-
-const googleError = ref('');
-
-const feedback = ref('');
-
-const feedbackTone = ref('success');
-
-const isSubmitting = ref(false);
-
-const registeredClient = ref(null);
-
-const backendPlans = ref([]);
-
-/* -------------------------------------------------------------------------- */
-/* PLANES POR DEFECTO                                                         */
-/* -------------------------------------------------------------------------- */
-
-const defaultPlans = [
-  {
-    id_pm: 1,
-    nombre_plan: 'MENSUAL',
-    duracion: '30 dias',
-    precio: 79,
-    descripcion: 'Acceso completo por 30 dias.',
-    activo: true,
-  },
-
-  {
-    id_pm: 2,
-    nombre_plan: '3 MESES',
-    duracion: '90 dias',
-    precio: 199,
-    descripcion: 'Plan trimestral para progreso sostenido.',
-    activo: true,
-  },
-
-  {
-    id_pm: 3,
-    nombre_plan: 'ANUAL',
-    duracion: '365 dias',
-    precio: 699,
-    descripcion: 'Membresia anual con mejor precio acumulado.',
-    activo: true,
-  },
-];
-
-/* -------------------------------------------------------------------------- */
-/* UTILIDADES PLANES                                                          */
-/* -------------------------------------------------------------------------- */
-
-const normalizePlanName = (value) =>
-  String(value || '')
-    .trim()
-    .toUpperCase();
-
-const formatPlanLabel = (value) =>
-  normalizePlanName(value)
-    .toLowerCase()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-const activePromotions = ref([]);
-
-/* -------------------------------------------------------------------------- */
-/* OPCIONES DE PLAN                                                           */
-/* -------------------------------------------------------------------------- */
-
-const planOptions = computed(() =>
-  (backendPlans.value.length ? backendPlans.value : defaultPlans)
-    .filter((plan) => plan.activo ?? plan.active ?? true)
-    .map((plan) => {
-      const name = normalizePlanName(plan.nombre_plan || plan.name);
-
-      const duration = String(plan.duracion || plan.description || '').trim();
-
-      const originalPrice = Number(plan.precio ?? plan.price ?? 0);
-      const idPm = Number(plan.id_pm || 0);
-
-      const promo = activePromotions.value.find((p) => {
-        const applicable = p.planes_aplicables || [];
-        return !applicable.length || (idPm && applicable.includes(idPm));
-      });
-
-      let finalPrice = originalPrice;
-      let promoTag = null;
-
-      if (promo) {
-        const valor = Number(promo.valor_descuento || 0);
-        const icon = promo.icono_etiqueta || '🏷️';
-        const tagWord = promo.palabra_clave || promo.nombre || '';
-        if (promo.tipo_descuento === 'monto') {
-          finalPrice = discountedPrice(originalPrice, valor, 'fixed');
-          promoTag = `${icon} -S/${valor} ${tagWord}`.trim();
-        } else {
-          finalPrice = discountedPrice(originalPrice, valor);
-          promoTag = `${icon} -${valor}% ${tagWord}`.trim();
-        }
-      }
-
-      const tags = [];
-      if (promoTag) tags.push(promoTag);
-      if (duration) tags.push(duration);
-
-      return {
-        id: name,
-
-        label: formatPlanLabel(name),
-
-        price: finalPrice,
-
-        originalPrice: promo ? originalPrice : null,
-
-        hasPromo: Boolean(promo),
-
-        promoTag,
-
-        detail: duration
-          ? `Acceso por ${duration}.`
-          : 'Plan disponible para registro.',
-
-        tags,
-      };
-    })
-    .filter((plan) => plan.id),
-);
-
-/* -------------------------------------------------------------------------- */
-/* FORMULARIO                                                                 */
-/* -------------------------------------------------------------------------- */
-
-const form = reactive({
-  nombre: '',
-
-  correo: '',
-
-  telefono: '',
-
-  dni: '',
-
-  password: '',
-
-  plan: normalizePlanName(route.query.plan),
-});
-
-const { fieldErrors, validateField, revalidateField, validateForm } = useFormValidation(form,
-  value => validateAccountForm(value, { requirePhone: true, google: Boolean(googleCredential.value) }));
-
-const updateTelefono = (event) => {
-  form.telefono = event.target.value;
-  revalidateField('telefono');
-};
-
-/* -------------------------------------------------------------------------- */
-/* SINCRONIZAR PLAN SELECCIONADO                                              */
-/* -------------------------------------------------------------------------- */
-
-const syncSelectedPlan = () => {
-  if (!planOptions.value.length) {
-    form.plan = '';
-    return;
-  }
-
-  const planExists = planOptions.value.some((plan) => plan.id === form.plan);
-
-  if (!planExists) {
-    form.plan = planOptions.value[0].id;
-  }
-};
-
-/* -------------------------------------------------------------------------- */
-/* CARGAR PLANES                                                              */
-/* -------------------------------------------------------------------------- */
-
-const loadPlans = async () => {
-  try {
-    const list = await loadMembershipPlans();
-
-    backendPlans.value = Array.isArray(list) ? list : [];
-  } catch (error) {
-    console.error('No se pudieron cargar los planes:', error);
-
-    /*
-     * Mantiene la funcionalidad original:
-     * si falla el backend, se utilizan los planes locales.
-     */
-    backendPlans.value = defaultPlans;
-  } finally {
-    syncSelectedPlan();
-  }
-};
-
-/* -------------------------------------------------------------------------- */
-/* LIMPIAR CUENTA GOOGLE                                                      */
-/* -------------------------------------------------------------------------- */
-
-const clearGoogleAccount = () => {
-  googleCredential.value = '';
-
-  googleError.value = '';
-
-  /*
-   * El correo deja de estar bloqueado y el usuario
-   * puede introducir una cuenta manualmente.
-   */
-  form.correo = '';
-
-  form.password = '';
-};
-
-/* -------------------------------------------------------------------------- */
-/* SELECCIONAR CUENTA GOOGLE                                                  */
-/* -------------------------------------------------------------------------- */
-
-const selectGoogleAccount = async (credential) => {
-  if (isSubmitting.value || googleProcessing.value) {
-    return;
-  }
-
-  if (!credential) {
-    googleError.value = 'Google no devolvió una credencial válida.';
-
-    return;
-  }
-
-  googleProcessing.value = true;
-
-  googleError.value = '';
-
-  /*
-   * Eliminamos cualquier Google Credential anterior
-   * antes de verificar la nueva.
-   */
-  googleCredential.value = '';
-
-  try {
-    const profile = await getVerifiedGoogleProfile(credential);
-
-    if (!profile?.email) {
-      throw new Error('Google no devolvió un correo válido.');
-    }
-
-    const invalidEmail = emailError(profile.email);
-    if (invalidEmail) throw new Error(invalidEmail);
-    form.nombre = profile.name || form.nombre;
-
-    form.correo = profile.email;
-
-    /*
-     * Cuando esto tiene valor:
-     * - correo queda readonly
-     * - contraseña desaparece
-     * - credential se manda al backend.
-     */
-    googleCredential.value = credential;
-
-    /*
-     * No necesitamos contraseña local cuando
-     * el registro utiliza Google.
-     */
-    form.password = '';
-  } catch (error) {
-    googleCredential.value = '';
-
-    googleError.value =
-      error?.message || 'No se pudo verificar tu cuenta de Google';
-  } finally {
-    googleProcessing.value = false;
-  }
-};
-
-/* -------------------------------------------------------------------------- */
-/* ENVIAR REGISTRO                                                           */
-/* -------------------------------------------------------------------------- */
-
-const submitRegistration = async () => {
-  if (isSubmitting.value || googleProcessing.value) {
-    return;
-  }
-
-  isSubmitting.value = true;
-
-  feedback.value = '';
-
-  registeredClient.value = null;
-
-  try {
-    if (!validateForm()) throw new Error(Object.values(fieldErrors)[0]);
-    if (!form.plan) {
-      throw new Error('No hay planes configurados para registrar clientes.');
-    }
-
-    /*
-     * Conservamos ambas formas de registro:
-     *
-     * Registro tradicional:
-     * google_credential = ''
-     *
-     * Registro Google:
-     * google_credential = credencial Google
-     */
-    const result = await gymStore.registerPublicClient({
-      ...form,
-      correo: form.correo.trim().toLowerCase(),
-      google_credential: googleCredential.value,
-    });
-
-    const { client, payment } = result;
-
-    registeredClient.value = client;
-
-    /*
-     * Verificar que Stripe haya generado
-     * correctamente el Checkout.
-     */
-    if (!payment?.checkout_url) {
-      throw new Error(
-        payment?.message ||
-          'Stripe no está configurado. Contacta al administrador.',
-      );
-    }
-
-    feedbackTone.value = 'success';
-
-    feedback.value =
-      'Preregistro creado. Abriendo el checkout seguro de Stripe. Tu cuenta requerirá activación por el administrador.';
-
-    /*
-     * Redirección a Stripe Checkout.
-     */
-    window.location.assign(payment.checkout_url);
-  } catch (error) {
-    feedbackTone.value = 'error';
-    Object.assign(fieldErrors, error?.fieldErrors || {});
-
-    feedback.value =
-      error instanceof Error
-        ? error.message
-        : 'No se pudo completar el registro.';
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const loadPromotions = async () => {
-  try {
-    const list = await loadCurrentPromotions();
-    activePromotions.value = Array.isArray(list) ? list : [];
-  } catch {
-    activePromotions.value = [];
-  }
-};
-
-/* -------------------------------------------------------------------------- */
-/* INICIALIZACIÓN                                                             */
-/* -------------------------------------------------------------------------- */
-
-onMounted(() => {
-  loadPlans();
-  loadPromotions();
-});
+import { useRegistrationForm } from '../composables/auth/useRegistrationForm.js';
+
+const {
+  getVerifiedGoogleProfile, route, catalogLoading, catalogReady, catalogError, canRegister,
+  gymStore, googleCredential, googleProcessing, googleError, feedback,
+  feedbackTone, isSubmitting, registeredClient, registeredPreregistration, backendPlans,
+  normalizePlanName, formatPlanLabel, activePromotions, planOptions, form,
+  fieldErrors, validateField, revalidateField, validateForm, updateTelefono,
+  syncSelectedPlan, loadPlans, clearGoogleAccount, selectGoogleAccount, submitRegistration,
+  loadPromotions,
+} = useRegistrationForm();
 </script>
 
 <style scoped>

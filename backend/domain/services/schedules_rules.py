@@ -1,5 +1,6 @@
 """Reglas de schedules sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.services.schedule_sessions import enrollment_session, next_session, validate_session
 from domain.validation import integer_quantity, validate_exercises
 from domain.errors import EntityNotFound, MembershipRequired, EnrollmentConflict
 
@@ -159,7 +160,8 @@ class SchedulesRules:
             "id_cliente": int(row.get("id_cliente", 0) or 0),
             "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
             "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
-            "fecha_matricula": str(row.get("fecha_matricula") or self.context.today()),
+            "fecha_matricula": str(row.get("fecha_matricula") or ""),
+            "fecha_clase": row.get("fecha_clase"),
             "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
         }
 
@@ -179,16 +181,25 @@ class SchedulesRules:
         }
 
     def _recount_schedule_cupos(self, state: dict[str, Any]) -> None:
-        counts: dict[int, int] = {}
+        counts: dict[int, dict[str, int]] = {}
+        schedules = {int(s["id_horario_servicio"]): s for s in state.get("horarios_servicio", [])}
         for enrollment in state.get("matriculas_horario", []):
             if str(enrollment.get("estado") or "").upper() != "ACTIVA":
                 continue
             schedule_id = int(enrollment.get("id_horario_servicio", 0) or 0)
-            counts[schedule_id] = counts.get(schedule_id, 0) + 1
+            session = enrollment_session(enrollment, schedules.get(schedule_id, {}))
+            if session:
+                dates = counts.setdefault(schedule_id, {})
+                dates[session] = dates.get(session, 0) + 1
 
         for schedule in state.get("horarios_servicio", []):
             schedule_id = int(schedule.get("id_horario_servicio", 0) or 0)
-            schedule["cupos_usados"] = counts.get(schedule_id, 0)
+            schedule["ocupacion_por_fecha"] = counts.get(schedule_id, {})
+            try:
+                session = next_session(schedule, self.context.today())
+            except ValueError:
+                session = ""
+            schedule["cupos_usados"] = schedule["ocupacion_por_fecha"].get(session, 0)
 
     def _validate_service_schedule(self, state: dict[str, Any], servicio: str, fecha: str, hora: str) -> None:
         servicio = str(servicio or "fitness").strip().lower()
@@ -428,9 +439,14 @@ class SchedulesRules:
                 ),
                 -1,
             )
-            current_used = int(state["horarios_servicio"][idx].get("cupos_usados", 0) or 0) if idx >= 0 else 0
+            self._recount_schedule_cupos(state)
+            current = state["horarios_servicio"][idx] if idx >= 0 else {}
+            current_used = max((count for day, count in current.get("ocupacion_por_fecha", {}).items()
+                                if day >= self.context.today()), default=0)
             if current_used > item["cupos"]:
                 raise ValueError("No puedes reducir cupos por debajo de los matriculados")
+            if idx >= 0 and current.get("dia") != item["dia"] and current_used:
+                raise ValueError("No puedes cambiar el día de un horario con matrículas pendientes.")
             item["cupos_usados"] = current_used
             if idx >= 0:
                 state["horarios_servicio"][idx] = item
@@ -492,6 +508,7 @@ class SchedulesRules:
             result.append(
                 {
                     **enrollment,
+                    "fecha_clase": enrollment_session(enrollment, schedule),
                     "cliente_nombre": cliente.get("nombre", ""),
                     "cliente_dni": cliente.get("dni", ""),
                     "cliente_codigo": cliente.get("id_usuario", ""),
@@ -746,7 +763,8 @@ class SchedulesRules:
         state: dict[str, Any],
         id_cliente: int,
         id_horario: int,
-    ) -> None:
+        fecha_clase: str | None = None,
+    ) -> str:
         cliente = next(
             (
                 row
@@ -757,7 +775,8 @@ class SchedulesRules:
         )
         if not cliente:
             raise EntityNotFound("Cliente no encontrado")
-        if not self.dependencies.active_membership_for_cliente(state, id_cliente):
+        membership = self.dependencies.active_membership_for_cliente(state, id_cliente)
+        if not membership:
             raise MembershipRequired("Cliente sin membresia activa")
 
         schedule = next(
@@ -770,11 +789,15 @@ class SchedulesRules:
         )
         if not schedule or not bool(schedule.get("activo", True)):
             raise ValueError("Horario no disponible")
+        session = validate_session(schedule, fecha_clase, self.context.today())
+        if not str(membership.get("fecha_inicio") or "") <= session <= str(membership.get("fecha_fin") or ""):
+            raise MembershipRequired("La membresía no cubre la fecha de clase seleccionada.")
 
         active_enrollments = [
             row
             for row in state.get("matriculas_horario", [])
             if str(row.get("estado") or "").upper() == "ACTIVA"
+            and enrollment_session(row, schedule) == session
         ]
         if any(
             int(row.get("id_cliente", 0) or 0) == id_cliente
@@ -790,6 +813,7 @@ class SchedulesRules:
         )
         if used >= int(schedule.get("cupos", 1) or 1):
             raise EnrollmentConflict("Horario sin cupos disponibles")
+        return session
 
     def matricular_cliente_horario(self, payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get("dni"):
@@ -804,12 +828,13 @@ class SchedulesRules:
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
-            self._validate_new_schedule_enrollment(state, id_cliente, id_horario)
+            session = self._validate_new_schedule_enrollment(state, id_cliente, id_horario, payload.get("fecha_clase"))
             enrollment = {
                 "id_matricula": self.context.next_int_id_in_state(state, "matriculas_horario", "id_matricula"),
                 "id_cliente": id_cliente,
                 "id_horario_servicio": id_horario,
                 "fecha_matricula": self.context.today(),
+                "fecha_clase": session,
                 "estado": "ACTIVA",
             }
             state.setdefault("matriculas_horario", []).insert(0, enrollment)

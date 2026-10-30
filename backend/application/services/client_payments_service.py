@@ -5,6 +5,7 @@ from application.services.membership_checkout_service import confirm_verified_ch
 from application.services.store_checkout_service import cancelar_por_sesion_expirada, confirmar_sesion_tienda
 from domain.errors import EntityNotFound
 from domain.services.gym_domain_service import PedidoCanceladoConPagoError
+from application.services.public_preregistration_service import PublicPreregistrationService
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +25,10 @@ class ClientPaymentsService:
         if not gateway.configured:
             raise RuntimeError("Stripe no está configurado en backend/.env")
         gateway.validate_configuration()
-        result = self.clients.register_public_client(payload)
-        try:
-            payment = gateway.create_membership_checkout(result)
-        except RuntimeError as error:
-            payment = {"configured": True, "message": str(error)}
-        return {**result, "payment": payment}
+        return PublicPreregistrationService(self.clients, gateway, self.settings).register(payload, self.confirm_membership)
+
+    def archive_due_preregistrations(self, now=None):
+        return PublicPreregistrationService(self.clients, self.gateway(), self.settings).archive_due(self.confirm_membership, now)
 
     def register_admin(self, payload):
         gateway = self.gateway()
@@ -72,6 +71,17 @@ class ClientPaymentsService:
         session_id = str(_value(checkout, "id", "") or "")
         if not session_id:
             raise ValueError("El webhook de Stripe no contiene una sesión")
+        metadata = _value(checkout, 'metadata', {}) or {}
+        if _value(metadata, 'purpose') == 'membership_preregistration' and event_type == 'checkout.session.expired':
+            from application.operations.preregistrations import PreregistrationQuery
+            token = str(_value(metadata, 'preregistration_token', '') or '')
+            row = self.clients.gym.executor.query(PreregistrationQuery(token))
+            verified = gateway.get_checkout_session(session_id)
+            if _value(verified, 'payment_status') == 'paid':
+                self.confirm_membership(session_id, verified)
+            else:
+                PublicPreregistrationService(self.clients, gateway, self.settings).expire_verified(row, verified)
+            return {'received': True}
         if _is_store_checkout(checkout):
             if event_type == "checkout.session.expired":
                 cancelar_por_sesion_expirada(checkout, self.gym)

@@ -336,6 +336,12 @@ class MatriculaHorarioInput(ValidatedInput):
     id_cliente: str | int | None = None
     dni: str = ""
     id_horario_servicio: int
+    fecha_clase: str | None = None
+
+    @field_validator("fecha_clase")
+    @classmethod
+    def valid_class_date(cls, value):
+        return civil_date(value) if value is not None else None
 
 
 class MatriculaRutinaInput(ValidatedInput):

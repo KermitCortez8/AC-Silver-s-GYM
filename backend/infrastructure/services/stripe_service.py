@@ -137,6 +137,47 @@ class StripeService:
             "currency": "PEN",
         }
 
+    def find_preregistration_checkout(self, row):
+        """Recupera una creación incierta sin reutilizar una clave de idempotencia ya caducada."""
+        from datetime import datetime
+        self.validate_configuration()
+        try:
+            created = int(datetime.fromisoformat(row['creado_en']).timestamp())
+            sessions = stripe.checkout.Session.list(api_key=self.settings.stripe_secret_key,
+                created={'gte': created - 300, 'lte': created + 24 * 3600 + 300}, limit=100)
+            matches = [s for s in sessions.auto_paging_iter()
+                       if _value(s, 'client_reference_id') == f"preregistration:{row['token']}"
+                       and str(_value(_value(s, 'metadata', {}), 'attempt')) == str(row['intento'])]
+        except Exception as error:
+            raise RuntimeError('No se pudo reconciliar la solicitud con Stripe') from error
+        if len(matches) > 1:
+            raise RuntimeError('La solicitud requiere revisión de sus sesiones de pago')
+        return matches[0] if matches else None
+
+    def create_preregistration_checkout(self, row: dict[str, Any]) -> dict[str, Any]:
+        self.validate_configuration()
+        token, attempt = row['token'], int(row['intento'])
+        amount = self._amount_in_cents(row['monto_pago'])
+        metadata = {'purpose': 'membership_preregistration', 'preregistration_token': token, 'attempt': str(attempt)}
+        return_url = f"{self.settings.frontend_public_url}/registro/pago/p-{token}"
+        params = dict(
+            mode='payment', payment_method_types=['card'], client_reference_id=f'preregistration:{token}',
+            customer_email=row['correo'], metadata=metadata, payment_intent_data={'metadata': metadata},
+            line_items=[{'price_data': {'currency': 'pen', 'unit_amount': amount,
+                         'product_data': {'name': f"Membresía {row['plan']['nombre_plan']}"}}, 'quantity': 1}],
+            success_url=f'{return_url}?result=success&session_id={{CHECKOUT_SESSION_ID}}',
+            cancel_url=f'{return_url}?result=failure', locale='es', submit_type='pay',
+        )
+        try:
+            session = stripe.checkout.Session.create(api_key=self.settings.stripe_secret_key,
+                idempotency_key=f'preregistration-v1-{token}-{attempt}', **params)
+        except Exception as error:
+            raise RuntimeError('Stripe rechazó la creación del checkout') from error
+        sid, url = str(_value(session, 'id', '') or ''), str(_value(session, 'url', '') or '')
+        if not sid or not url:
+            raise RuntimeError('Stripe no devolvió una sesión de pago válida')
+        return {'configured': True, 'session_id': sid, 'checkout_url': url, 'amount': amount / 100, 'currency': 'PEN'}
+
     def create_store_checkout(
         self,
         pedido: dict[str, Any],

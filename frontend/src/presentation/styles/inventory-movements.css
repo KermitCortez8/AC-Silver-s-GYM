@@ -1,0 +1,22 @@
+.movement-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.movement-date {
+  width: 100%;
+}
+@media (min-width: 1024px) {
+  .movement-date {
+    width: 155px;
+    flex-shrink: 0;
+  }
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

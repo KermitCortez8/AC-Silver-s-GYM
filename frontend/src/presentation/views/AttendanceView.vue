@@ -66,7 +66,7 @@
       class="att-attendance-controls" :class="{ 'att-control-grid': isGeneral }"
     >
       <AttendanceScheduleRoster v-show="tab === 'today'"
-        :schedule-data="scheduleData" :selected-schedule="selectedSchedule" :roster="roster"
+        :schedule-data="scheduleData" :selected-schedule="selectedSchedule" :selected-session="selectedSession" :roster="roster"
         :schedules-loading="schedulesLoading" :roster-loading="rosterLoading"
         :schedules-error="schedulesError" :roster-error="rosterError" :busy="busy" :saved-key="savedKey"
         @select="selectSchedule" @reload="loadSchedules" @retry="loadRoster" @entry="enter" @exit="exitRecord" />
@@ -150,6 +150,7 @@ const {
   exitRecord,
   scheduleData,
   selectedSchedule,
+  selectedSession,
   roster,
   schedulesLoading,
   rosterLoading,

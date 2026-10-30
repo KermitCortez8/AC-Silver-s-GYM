@@ -135,8 +135,7 @@ class ClientsService:
             cliente["has_password"] = bool((result.get("cliente") or {}).get("password_hash"))
         return {**result, "cliente": cliente}
 
-    # Crea el registro correspondiente.
-    def register_public_client(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def _verified_registration_payload(self, payload):
         payload = dict(payload)
         payload.pop("google_sub", None)
         credential = payload.pop("google_credential", "")
@@ -154,7 +153,28 @@ class ClientsService:
         payload["correo"] = correo
         payload["dni"] = dni_number(payload.get("dni"), required=True)
         payload["telefono"] = phone_number(payload.get("telefono"), required=True)
-        dni = payload["dni"]
+        return payload, claims
+
+    def prepare_public_registration(self, payload):
+        """El nuevo alta pública solo guarda una solicitud temporal."""
+        from uuid import uuid4
+        from application.operations.preregistrations import PreparePreregistrationCommand
+        from domain.services.preregistration_rules import utc_now
+        verified, claims = self._verified_registration_payload(payload)
+        # Compatibilidad: sesiones de Stripe creadas antes de la separación.
+        if self.gym.get_cliente_by_email(verified['correo']):
+            return self._register_verified_legacy(verified, claims)
+        row = self.gym.executor.execute(PreparePreregistrationCommand(verified, str(uuid4()), utc_now()))
+        return {'preregistro': row}
+
+    # Compatibilidad de registros anteriores; el endpoint público prepara una solicitud.
+    def register_public_client(self, payload: dict[str, Any]) -> dict[str, Any]:
+        verified, claims = self._verified_registration_payload(payload)
+        return self._register_verified_legacy(verified, claims)
+
+    def _register_verified_legacy(self, payload, claims):
+        correo = payload['correo']
+        dni = payload['dni']
         existing = self.gym.get_cliente_by_email(correo) if correo else None
         if claims and existing and existing.get("google_sub") != claims["sub"]:
             raise ValueError("Ya tienes una cuenta con ese correo. Ve a Acceso para vincular Google con tu contraseña.")
@@ -173,6 +193,11 @@ class ClientsService:
             result = self.gym.registrar_cliente_publico(payload)
         # El preregistro solo crea la solicitud y permite pagar; no inicia una sesión.
         return self._safe_registration_result(result)
+
+    def confirm_preregistration_payment(self, token, attempt, session_id, amount):
+        from application.operations.preregistrations import ConvertPreregistrationCommand
+        return self._safe_registration_result(self.gym.executor.execute(
+            ConvertPreregistrationCommand(token, attempt, session_id, amount)))
 
     # Procesa esta operación.
     def confirm_public_payment(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:

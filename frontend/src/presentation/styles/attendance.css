@@ -30,6 +30,7 @@
   display: grid;
   gap: 14px;
   min-width: 0;
+  scroll-margin-top: 24px;
 }
 .attendance-page .att-day-filter {
   display: grid;
@@ -45,21 +46,11 @@
   min-height: 40px;
   padding: 8px 12px;
 }
-.attendance-page .att-schedules-table tbody tr { cursor: pointer; }
-.attendance-page .att-schedules-table tbody tr:hover,
-.attendance-page .att-schedules-table .is-selected { background: var(--app-surface-soft); }
-.attendance-page .att-schedules-table .is-selected { box-shadow: inset 3px 0 var(--app-accent); }
+.attendance-page .att-schedule-control { min-width: 0; }
 .attendance-page .att-schedule-control > .att-heading-row { margin-bottom: 20px; flex-wrap: wrap; }
 .attendance-page .att-attendance-controls { display: grid; gap: 24px; }
 @media (max-width: 640px) {
-  .attendance-page .att-schedules-table td[data-label='Clase'],
-  .attendance-page .att-schedules-table td[data-label='Seleccionar'],
   .attendance-page .att-roster-table td[data-label='Acción'] { grid-column: 1 / -1; }
-  .attendance-page .att-schedules-table td[data-label='Día']::before,
-  .attendance-page .att-schedules-table td[data-label='Horario']::before,
-  .attendance-page .att-schedules-table td[data-label='Matriculados']::before {
-    content: attr(data-label); display: block; color: var(--app-text-muted); font-size: 10px; margin-bottom: 5px;
-  }
 }
 :root[data-theme='light'] .attendance-page {
   --att-good: #176446;
@@ -188,7 +179,7 @@
   outline: 3px solid var(--app-accent);
   outline-offset: 3px;
 }
-.attendance-page label,
+.attendance-page label:not(:where(.excel-shell *)),
 .att-dialog label {
   display: flex;
   flex-direction: column;
@@ -198,8 +189,8 @@
   color: var(--app-text-soft);
   min-width: 0;
 }
-.attendance-page input,
-.attendance-page select,
+.attendance-page input:not(:where(.excel-shell *)),
+.attendance-page select:not(:where(.excel-shell *)),
 .att-dialog input,
 .att-dialog textarea {
   width: 100%;
@@ -211,8 +202,8 @@
   color: var(--app-text);
   background: var(--app-input);
 }
-.attendance-page input:focus,
-.attendance-page select:focus,
+.attendance-page input:focus:not(:where(.excel-shell *)),
+.attendance-page select:focus:not(:where(.excel-shell *)),
 .att-dialog input:focus,
 .att-dialog textarea:focus {
   outline: 2px solid var(--app-accent);

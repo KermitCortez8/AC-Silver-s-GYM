@@ -73,7 +73,7 @@ jobs:
             sleep 1
           done
           exit 1
-      - run: python -m pytest backend/tests/test_atomic_transactions_postgres.py -q
+      - run: python -m pytest backend/tests/test_atomic_transactions_postgres.py backend/tests/test_public_preregistrations_postgres.py -q
       - name: Limpiar PostgreSQL
         if: always()
         run: docker rm --force gym-pr-postgres

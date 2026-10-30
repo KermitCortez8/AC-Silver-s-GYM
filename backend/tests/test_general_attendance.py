@@ -43,7 +43,7 @@ def enter(service, actor, dni="11111111"):
 
 def enroll(service):
     service.gym.state["matriculas_horario"] = [{"id_matricula": 1, "id_cliente": 1,
-                                               "id_horario_servicio": 1, "estado": "ACTIVA"}]
+                                               "id_horario_servicio": 1, "estado": "ACTIVA", "fecha_clase": "2026-10-07"}]
     service.gym.state["horarios_servicio"] = [{"id_horario_servicio": 1, "dia": "miercoles",
                                              "hora_inicio": "10:00", "hora_fin": "14:00",
                                              "servicio": "fitness", "activo": True}]

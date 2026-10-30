@@ -1,5 +1,9 @@
 # Validación del control de asistencia por horario
 
+La separación actual de matrículas, cupos y asistencia por fecha se documenta en
+[matrículas por sesión](../matriculas-sesiones/validation.md). Las comprobaciones
+de abajo conservan la evidencia histórica de la implementación y del calendario.
+
 Fecha: 2026-10-29. Implementación directa de MOD-06 por petición del usuario,
 sin activar Spec Kit ni generar specs, planes o tareas.
 
@@ -102,3 +106,52 @@ avisos de contexto Pinia, rutas de prueba y antigüedad de Browserslist; no impi
 las suites ni la compilación. Deno no se ejecuta porque no cambió la Edge Function.
 
 El contenedor desechable se eliminó al terminar. El servidor Vite de revisión se detuvo.
+
+## Mejora visual del calendario · 2026-10-30
+
+Síntoma: el control por horario añadido en el commit `b5f6d12` mostraba una tabla
+en lugar del calendario del módulo de horarios. Se sustituye por el mismo
+`ExcelScheduleGrid`: semanas/meses, cuadrícula por horas, colores por servicio,
+cupos, agenda y exportación semanal. El filtro por día continúa disponible.
+El calendario usa la fecha del catálogo recibido del servidor al abrirse.
+
+Seleccionar una clase resalta su bloque y desplaza la pantalla hasta sus
+matriculados, conservando las acciones individuales y el bloqueo durante un
+guardado. El listado indica explícitamente que la asistencia corresponde a hoy,
+aunque se consulte la programación recurrente de otra semana. La navegación
+del calendario no crea asistencias ni cambia la fecha de las escrituras.
+
+La revisión encontró interferencias de los estilos generales de formularios con
+el selector de mes; se excluyen los controles del calendario compartido de esas
+reglas. También se hace reactivo el cálculo de clases visuales de FullCalendar
+para que el resaltado se actualice al seleccionar y guardar.
+
+Criterio de regresión: misma cuadrícula/agenda que Horarios, filtro por día,
+cupos calculados con el número de matriculados, selección del identificador
+correcto y conservación de entrada/salida e historial.
+
+| Comando / procedimiento | Resultado de esta revisión |
+| --- | --- |
+| `npm test` desde frontend | 268 aprobados, 0 fallos, 0 omitidos |
+| `npm run build` desde frontend | Compilación correcta |
+| Chromium/Playwright en `/admin/attendance` con sesión/API sintéticas | Cuadrícula, agenda, filtro/vacío, navegación mensual, selección por teclado y móvil, entrada y salida tardía, bloqueo por membresía/día e historial comprobados; sin errores de página ni desbordamiento horizontal |
+| `python .specify/.codex/hooks/validate.py` | Documentación válida |
+| `python -B -m unittest discover -s .specify/tests -v` | 13 aprobados |
+| `git diff --check` | Sin errores de espacios |
+
+Revisión visual propia: escritorio 1440×1100 y móvil 390×844, temas claro y oscuro.
+Capturas de [escritorio claro](evidence/calendario/calendario-escritorio-claro.png),
+[escritorio oscuro](evidence/calendario/calendario-escritorio-oscuro.png),
+[clase y matriculados](evidence/calendario/calendario-clientes-escritorio.png),
+[móvil claro](evidence/calendario/calendario-movil-claro.png) y
+[móvil oscuro](evidence/calendario/calendario-movil-oscuro.png).
+Se conservan los [resultados](evidence/calendario/browser-results.json) y el
+[script reproducible](evidence/calendario/browser-review.cjs), que usa el mismo
+arranque de Vite y la instalación externa de Playwright descritos arriba.
+En este entorno fue necesario instalar Chromium y sus dependencias para ejecutar
+la revisión; no se agregaron dependencias al producto.
+
+Las comprobaciones de backend/PostgreSQL de las secciones anteriores son
+históricas: no se repitieron en este cambio de presentación. No se modificaron
+API, permisos ni reglas de asistencia, ni se contactó Supabase remoto.
+La suite conserva avisos de Pinia, rutas de prueba y antigüedad de Browserslist.

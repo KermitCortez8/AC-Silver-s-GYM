@@ -8,6 +8,7 @@ from presentation.dependencies import get_gym_service, require_roles
 from domain.models.attendance import AttendanceAnnulment, AttendanceCorrection, AttendanceFilters, GeneralAttendanceEntry
 from domain.models.gym import AsistenciaEntradaInput, AsistenciaSalidaInput, CheckinAsistenciaDniInput, CheckinAsistenciaInput
 from application.services.attendance_service import AttendanceService, AttendanceConflict, DAYS
+from domain.services.schedule_sessions import enrollment_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/asistencia", tags=["asistencia"])
@@ -29,7 +30,7 @@ def run(action):
     except (RuntimeError, OSError) as error:
         # Deja en el log la causa real (RPC inexistente, tipo de dato, conexión…).
         logger.exception("Fallo al guardar o leer asistencia")
-        raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y las migraciones de asistencia 005, 013 y 018 en Supabase.") from error
+        raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y las migraciones de asistencia 005, 013, 018 y 019 en Supabase.") from error
 
 
 @router.get("")
@@ -65,8 +66,8 @@ def schedules(user=Depends(administrator), attendance=Depends(service)):
 
 
 @router.get("/horarios/{schedule_id}/clientes")
-def roster(schedule_id: int, user=Depends(administrator), attendance=Depends(service)):
-    return run(lambda: attendance.roster(schedule_id))
+def roster(schedule_id: int, fecha: date | None = None, user=Depends(administrator), attendance=Depends(service)):
+    return run(lambda: attendance.roster(schedule_id, fecha))
 
 
 @router.get("/mi-semana")
@@ -83,7 +84,7 @@ def week(inicio: date | None = None, user=Depends(require_roles("user")), attend
         if not schedule.get("activo") or schedule.get("dia") not in DAYS:
             continue
         day = (start + timedelta(days=DAYS.index(schedule["dia"]))).isoformat()
-        if str(enrollment.get("fecha_matricula") or "")[:10] > day:
+        if enrollment_session(enrollment, schedule) != day:
             continue
         record = next((r for r in rows if r.get("id_matricula") == enrollment["id_matricula"] and r["fecha"] == day), None)
         items.append({**schedule, "id_matricula": enrollment["id_matricula"], "fecha": day, "asistencia": record})

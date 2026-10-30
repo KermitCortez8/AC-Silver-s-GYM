@@ -119,7 +119,7 @@ export const useClientMembershipActions = ({
     if (!idCliente) {
       feedbackTone.value = "error";
 
-      feedbackMessage.value = "No se encontro el ID numerico del cliente.";
+      feedbackMessage.value = "No se encontró el ID numérico del cliente.";
       activationError.value = feedbackMessage.value;
 
       return;
@@ -144,7 +144,7 @@ export const useClientMembershipActions = ({
       feedbackMessage.value =
         error instanceof Error
           ? error.message
-          : "No se pudo activar la membresia.";
+          : "No se pudo activar la membresía.";
       activationError.value = feedbackMessage.value;
     } finally {
       activatingClientId.value = "";

@@ -26,7 +26,8 @@ after(async () => { await server?.close(); });
 const setupView = async (filename, path, prepare) => {
   const { default: View } = await server.ssrLoadModule(`/src/presentation/views/${filename}.vue`);
   const pinia = createPinia();
-  installServices(pinia);
+  installServices(pinia, { http: { apiGet: async (path) => path === '/planes-membresia'
+    ? [{ id_pm: 1, nombre_plan: 'MENSUAL', duracion: '30 días', precio: 79, activo: true }] : [] } });
   const router = createRouter({ history: createMemoryHistory(), routes: [
     { path, component: View },
     { path: '/inventory', name: 'Inventory', component: { render: () => null } },
@@ -83,7 +84,7 @@ test('client editor and membership actions preserve the actual view flow after e
   const { setup, gym } = await setupView('ClientsView', '/admin/clients');
   const client = { id: 'SGCLI001', id_cliente: 1, name: 'Ana', email: 'ana@gmail.com', dni: '12345678', status: 'EN_TRAMITE', paymentStatus: 'PAGADO' };
   gym.members = [client];
-  setup.editClient(client);
+  await setup.editClient(client);
   setup.form.nombre = 'Ana editada';
   let submitted;
   gym.upsertClient = async payload => { submitted = payload; return { ...client, name: payload.nombre }; };
@@ -183,7 +184,7 @@ test('inventory keeps server errors inside the editor and prevents duplicate sav
   // Sin stock minimo no se guarda: no hay valor por defecto.
   await setup.handleSubmit();
   assert.equal(saves, 0);
-  assert.deepEqual(setup.formErrors, ['Stock minimo']);
+  assert.deepEqual(setup.formErrors, ['Stock mínimo']);
   setup.form.minQuantity = '5';
   const pending = setup.handleSubmit();
   await setup.handleSubmit();

@@ -19,11 +19,11 @@ const deferred = () => { let resolve; const promise = new Promise(done => { reso
 const services = (apiPost = async () => ({})) => {
   const pinia = createPinia(); setActivePinia(pinia); installServices(pinia, { http: { apiPost } }); return pinia;
 };
-const paymentView = async (apiPost, query = '?result=success&session_id=cs_test') => {
+const paymentView = async (apiPost, query = '?result=success&session_id=cs_test', requestId = '1') => {
   const { default: View } = await server.ssrLoadModule('/src/presentation/views/PaymentView.vue');
   const pinia = services(apiPost);
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/registro/pago/:idCliente', component: View }] });
-  await router.push(`/registro/pago/1${query}`);
+  await router.push(`/registro/pago/${requestId}${query}`);
   let setup, instance;
   const app = createSSRApp({ render: () => h(View) }); app.use(pinia).use(router);
   app.mixin({ created() { if (this.$.type === View) { setup = this.$.setupState; instance = this.$; } } });
@@ -52,6 +52,24 @@ test('no muestra confirmado el pago de otro cliente', async () => {
   const view = await paymentView(async () => ({ confirmed: true, id_cliente: 2 }));
   await view.setup.confirmPaidCheckout(); assert.equal(view.setup.confirmationState, 'error');
   assert.match(view.setup.confirmationError, /no corresponde/); view.dispose();
+});
+test('retorno de preregistro usa su token y muestra el cliente solo después de confirmar', async () => {
+  const token = '12345678-1234-4234-8234-123456789abc';
+  const view = await paymentView(async () => ({ confirmed: true, id_cliente: 42, preregistration_token: token }),
+    '?result=success&session_id=cs_test', `p-${token}`);
+  assert.equal(view.setup.requestLabel, 'Solicitud 12345678');
+  await view.setup.confirmPaidCheckout();
+  assert.equal(view.setup.confirmationState, 'confirmed');
+  assert.equal(view.setup.requestLabel, 'SGCLI042');
+  view.dispose();
+});
+test('retorno de preregistro rechaza el token de otra solicitud', async () => {
+  const view = await paymentView(async () => ({ confirmed: true, id_cliente: 42, preregistration_token: 'ajeno' }),
+    '?result=success&session_id=cs_test', 'p-12345678-1234-4234-8234-123456789abc');
+  await view.setup.confirmPaidCheckout();
+  assert.equal(view.setup.confirmationState, 'error');
+  assert.match(view.setup.confirmationError, /no corresponde/);
+  view.dispose();
 });
 test('solo permite una verificación en curso', async () => {
   const pending = deferred(); let calls = 0;

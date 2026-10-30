@@ -175,9 +175,9 @@ const stats = computed(() => overview.value.stats || {});
 
 const cards = computed(() => [
   { label: 'Clientes', value: stats.value.clientes_en_horario || 0, detail: 'con horario activo', tone: 'text-emerald-500 dark:text-emerald-400', icon: 'fa-solid fa-users' },
-  { label: 'Matriculas', value: stats.value.matriculas_activas || 0, detail: 'activas', tone: 'text-red-500 dark:text-red-400', icon: 'fa-solid fa-id-card' },
+  { label: 'Matrículas', value: stats.value.matriculas_activas || 0, detail: 'activas', tone: 'text-red-500 dark:text-red-400', icon: 'fa-solid fa-id-card' },
   { label: 'Rutinas', value: stats.value.rutinas || 0, detail: 'catalogadas', tone: 'text-red-500 dark:text-red-400', icon: 'fa-solid fa-dumbbell' },
-  { label: 'Asignaciones', value: stats.value.rutinas_asignadas || 0, detail: 'en supervision', tone: 'text-red-500 dark:text-red-400', icon: 'fa-solid fa-layer-group' },
+  { label: 'Asignaciones', value: stats.value.rutinas_asignadas || 0, detail: 'en supervisión', tone: 'text-red-500 dark:text-red-400', icon: 'fa-solid fa-layer-group' },
 ]);
 
 const filteredSchedules = computed(() => {

@@ -29,7 +29,7 @@ def test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario(attendance):
     ])
     state["matriculas_horario"].extend([
         {"id_matricula": 2, "id_cliente": 2, "id_horario_servicio": 1, "estado": "CANCELADA"},
-        {"id_matricula": 3, "id_cliente": 2, "id_horario_servicio": 2, "estado": "ACTIVA"},
+        {"id_matricula": 3, "id_cliente": 2, "id_horario_servicio": 2, "estado": "ACTIVA", "fecha_clase": "2026-10-08"},
     ])
     catalog = attendance.schedules()
     assert [s["id_horario_servicio"] for s in catalog["horarios"]] == [1, 2]
@@ -39,7 +39,8 @@ def test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario(attendance):
     assert [s["cliente"]["dni"] for s in roster["clientes"]] == ["11111111"]
     assert roster["clientes"][0]["puede_entrar"]
     assert "password_hash" not in roster["clientes"][0]["cliente"]
-    assert "no corresponde a hoy" in attendance.roster(2)["clientes"][0]["motivo"]
+    assert attendance.roster(2)["clientes"] == []
+    assert "el día de esta sesión" in attendance.roster(2, "2026-10-08")["clientes"][0]["motivo"]
     with pytest.raises(ValueError, match="no está disponible"):
         attendance.roster(3)
 

@@ -1,0 +1,80 @@
+{
+  "results": [
+    {
+      "view": "preguntas",
+      "expected": [
+        "membresías",
+        "Ubicación"
+      ],
+      "correctedTextVisible": true
+    },
+    {
+      "view": "nosotros",
+      "expected": [
+        "Misión",
+        "Visión",
+        "Por qué entrenar aquí",
+        "acompaña"
+      ],
+      "correctedTextVisible": true
+    },
+    {
+      "view": "landing",
+      "expected": [
+        "Membresías",
+        "Ubicación",
+        "acompañe",
+        "musculación"
+      ],
+      "correctedTextVisible": true
+    },
+    {
+      "view": "registro",
+      "expected": [
+        "Teléfono",
+        "Contraseña"
+      ],
+      "correctedTextVisible": true
+    },
+    {
+      "view": "inventario",
+      "expected": [
+        "Gestión de inventario",
+        "Categoría",
+        "Ubicación",
+        "Artículo"
+      ],
+      "correctedTextVisible": true
+    },
+    {
+      "view": "tienda",
+      "expected": [
+        "Catálogo",
+        "Sesión activa",
+        "Navegación"
+      ],
+      "correctedTextVisible": true
+    },
+    {
+      "view": "carrito",
+      "expected": [
+        "Tu carrito está vacío.",
+        "Categoría",
+        "Catálogo"
+      ],
+      "correctedTextVisible": true
+    }
+  ],
+  "pageErrors": [],
+  "rawScheduleCodes": [
+    "miercoles",
+    "sabado",
+    "musculacion"
+  ],
+  "visibleScheduleLabels": [
+    "Miércoles",
+    "Sábado",
+    "Musculación"
+  ],
+  "source": "Textos, rutas y formularios reales con API y sesiones sintéticas; recursos externos bloqueados."
+}

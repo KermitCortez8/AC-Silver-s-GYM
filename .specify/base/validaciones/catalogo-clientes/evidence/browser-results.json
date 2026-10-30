@@ -1,0 +1,42 @@
+{
+  "results": [
+    "Edición: nueva consulta, plan y promoción seleccionados, importe contratado y guardado personal conservados.",
+    "Error y reintento: guardado bloqueado y borrador conservado.",
+    "Alta administrativa: planes personalizados, promociones por plan y payload correctos.",
+    "Registro público: catálogo remoto y promoción aplicable visibles en móvil.",
+    "Registro público vacío/fallido: sin planes locales; reintento y bloqueo del alta correctos."
+  ],
+  "pageErrors": [],
+  "writes": [
+    {
+      "endpoint": "/clientes",
+      "payload": {
+        "id_usuario": "SGCLI001",
+        "nombre": "Ana editada",
+        "correo": "ana@example.com",
+        "telefono": "999111222",
+        "dni": "12345678",
+        "password": "",
+        "plan": "PLAN MAÑANA",
+        "promocion": "Oferta actual",
+        "estado": "EN_TRAMITE"
+      }
+    },
+    {
+      "endpoint": "/clientes/registro-admin",
+      "payload": {
+        "nombre": "Cliente nuevo",
+        "correo": "nuevo@example.com",
+        "telefono": "",
+        "dni": "87654321",
+        "password": "[contraseña sintética omitida]",
+        "plan": "PLAN MAÑANA",
+        "promocion": "SIN PROMOCION",
+        "estado": "EN_TRAMITE",
+        "id_promocion": 8,
+        "pagar_con_stripe": false
+      }
+    }
+  ],
+  "source": "Interfaz real con API y perfiles sintéticos; ningún guardado ni cobro real."
+}

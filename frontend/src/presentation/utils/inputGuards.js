@@ -11,6 +11,6 @@ const guard = (isAllowed, message) => (onReject) => (event) => {
   }
 };
 
-export const blockNonInteger = guard(isAllowedInteger, 'Solo numeros enteros positivos.');
-export const blockNonDecimal = guard(isAllowedDecimal, 'Solo numeros y punto decimal.');
-export const blockSpecialChars = guard(isAllowedText, 'Sin caracteres especiales: solo letras, numeros y espacios.');
+export const blockNonInteger = guard(isAllowedInteger, 'Solo números enteros positivos.');
+export const blockNonDecimal = guard(isAllowedDecimal, 'Solo números y punto decimal.');
+export const blockSpecialChars = guard(isAllowedText, 'Sin caracteres especiales: solo letras, números y espacios.');

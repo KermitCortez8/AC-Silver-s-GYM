@@ -12,14 +12,14 @@
           </h1>
 
           <p class="mt-3 text-sm leading-6 text-slate-300">
-            Gestion central para clientes, horarios, asistencia y ventas.
+            Gestión central para clientes, horarios, asistencia y ventas.
           </p>
         </div>
 
         <div class="border-b border-red-500/20 p-5 2xl:p-6">
           <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
             <p class="text-xs uppercase tracking-[0.3em] text-slate-400">
-              Sesion activa
+              Sesión activa
             </p>
 
             <div class="mt-4 flex min-w-0 items-center gap-3">
@@ -61,7 +61,7 @@
 
         <nav class="min-h-0 flex-1 overflow-y-auto p-4">
           <p class="px-3 text-xs uppercase tracking-[0.3em] text-slate-500">
-            Navegacion
+            Navegación
           </p>
 
           <div class="mt-4 space-y-2">
@@ -125,7 +125,7 @@
             class="w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 font-semibold text-white transition hover:border-red-500/40 hover:bg-red-500/10"
             @click="handleLogout"
           >
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </div>
       </aside>
@@ -155,7 +155,7 @@
                   {{
                     user?.id_usuario ||
                     user?.email ||
-                    'Sesion activa'
+                    'Sesión activa'
                   }}
                 </p>
               </div>
@@ -329,7 +329,7 @@ const navigationLinks = computed(() => {
   if (props.mode === 'trainer' || isTrainer.value) {
     return [
       {
-        label: 'Supervision',
+        label: 'Supervisión',
         to: '/trainer/dashboard',
         icon: Home,
       },
@@ -379,7 +379,7 @@ const navigationLinks = computed(() => {
         icon: CalendarDays,
       },
       {
-        label: 'Matricula',
+        label: 'Matrícula',
         to: '/admin/enrollment',
         icon: TicketCheck,
       },

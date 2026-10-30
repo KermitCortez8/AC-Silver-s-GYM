@@ -12,6 +12,7 @@ DAYS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"
 from domain.errors import AttendanceConflict
 from domain.services.membership_lifecycle import membership_current
 from domain.services.attendance_status import attendance_status, LATE_EXIT_MESSAGE
+from domain.services.schedule_sessions import enrollment_session, next_session
 from application.read_models import AttendanceCriteria, PageRequest
 
 
@@ -127,6 +128,8 @@ class AttendanceService:
         schedule = self.gym.get_horario_servicio(int(enrollment.get("id_horario_servicio") or 0))
         if not schedule or not schedule.get("activo"):
             raise ValueError("El horario no está disponible.")
+        if enrollment_session(enrollment, schedule) != now.date().isoformat():
+            raise ValueError("La matrícula no corresponde a la fecha de esta clase.")
         if schedule.get("dia") != DAYS[now.weekday()]:
             raise ValueError("Este horario no corresponde a hoy.")
         try:
@@ -159,7 +162,8 @@ class AttendanceService:
             except ValueError as error:
                 reason = str(error)
             schedules.append({**schedule, "id_matricula": enrollment["id_matricula"],
-                              "hoy": schedule.get("dia") == DAYS[now.weekday()],
+                              "fecha_clase": enrollment_session(enrollment, schedule),
+                              "hoy": enrollment_session(enrollment, schedule) == now.date().isoformat(),
                               "asistencia": self.present(record) if record else None,
                               "puede_entrar": not record and not reason,
                               "motivo": LATE_EXIT_MESSAGE if record and self.status(record) == "incompleta"
@@ -184,17 +188,16 @@ class AttendanceService:
 
     def schedules(self):
         now = self.now()
-        enrollments = self.gym.attendance_enrollments()
         schedules = [{**s, "hoy": s.get("dia") == DAYS[now.weekday()],
-                      "matriculados": sum(e.get("estado") == "ACTIVA" and
-                          e.get("id_horario_servicio") == s["id_horario_servicio"] for e in enrollments)}
+                      "matriculados": s.get("ocupacion_por_fecha", {}).get(next_session(s, now.date()), 0)}
                      for s in self.gym.horarios_servicio() if s.get("activo")]
         schedules.sort(key=lambda s: (not s["hoy"], DAYS.index(s["dia"]) if s.get("dia") in DAYS else 7,
                                       s.get("hora_inicio", ""), s["id_horario_servicio"]))
         return {"horarios": schedules, "fecha": now.date().isoformat(), "server_now": now.isoformat()}
 
-    def roster(self, schedule_id):
+    def roster(self, schedule_id, fecha=None):
         now = self.now()
+        day = date.fromisoformat(str(fecha)).isoformat() if fecha else now.date().isoformat()
         schedule = self.gym.get_horario_servicio(schedule_id)
         if not schedule or not schedule.get("activo"):
             raise ValueError("El horario no está disponible.")
@@ -202,20 +205,25 @@ class AttendanceService:
         for enrollment in self.gym.attendance_enrollments():
             if enrollment.get("id_horario_servicio") != schedule_id or enrollment.get("estado") != "ACTIVA":
                 continue
+            if enrollment_session(enrollment, schedule) != day:
+                continue
             client = self.gym.get_cliente(int(enrollment["id_cliente"])) or {}
-            record = self.existing(enrollment, now.date().isoformat())
+            record = self.existing(enrollment, day)
             reason = ""
             if not record:
-                try:
-                    self.entry_context(enrollment, now)
-                except ValueError as error:
-                    reason = str(error)
+                if day != now.date().isoformat():
+                    reason = "La entrada se habilita el día de esta sesión (hora de Perú)."
+                else:
+                    try:
+                        self.entry_context(enrollment, now)
+                    except ValueError as error:
+                        reason = str(error)
             students.append({"id_matricula": enrollment["id_matricula"],
                 "cliente": {k: client.get(k) for k in ("id_cliente", "nombre", "dni", "estado")},
                 "asistencia": self.present(record, client=client) if record else None,
                 "puede_entrar": not record and not reason, "motivo": reason})
         students.sort(key=lambda s: (str(s["cliente"].get("nombre") or "").casefold(), s["id_matricula"]))
-        return {"horario": schedule, "clientes": students, "fecha": now.date().isoformat(), "server_now": now.isoformat()}
+        return {"horario": schedule, "clientes": students, "fecha": day, "server_now": now.isoformat()}
 
     @staticmethod
     def exit_deadline(schedule, day):
@@ -252,6 +260,7 @@ class AttendanceService:
             matches = [e for e in self.gym.attendance_enrollments()
                        if int(e.get("id_cliente") or 0) == client_id and e.get("estado") == "ACTIVA"
                        and (not payload.get("id_horario_servicio") or e["id_horario_servicio"] == payload["id_horario_servicio"])
+                       and enrollment_session(e, self.gym.get_horario_servicio(e["id_horario_servicio"]) or {}) == now.date().isoformat()
                        and (self.gym.get_horario_servicio(e["id_horario_servicio"]) or {}).get("dia") == DAYS[now.weekday()]
                        and (not payload.get("servicio") or (self.gym.get_horario_servicio(e["id_horario_servicio"]) or {}).get("servicio") == payload["servicio"])]
             if len(matches) != 1:

@@ -29,7 +29,16 @@ const context = {
   hora_inicio: "09:00",
   hora_fin: "10:00",
   class_start: null,
+  fecha_clase: "2026-11-02",
 };
+
+Deno.test("la confirmación reserva una sola fecha y no anuncia recurrencia semanal", () => {
+  const mail = scheduleMail(settings, context);
+  assert.match(mail.text, /02\/11\/2026/);
+  assert.match(mail.text, /fecha=2026-11-02/);
+  assert.doesNotMatch(mail.text, /Cada lunes/);
+  assert.match(mail.text, /Una sola sesión/);
+});
 
 Deno.test("HTTPS entrega al destinatario original con clave estable por proyecto y evento", async () => {
   const calls: RequestInit[] = [];
