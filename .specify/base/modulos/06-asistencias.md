@@ -136,3 +136,20 @@ Regresiones y recorrido integrado en
 
 Verificación del aviso de clase terminada y sus límites en
 [validation.md](../validaciones/asistencias/validation.md).
+
+### Límites de formularios
+
+El motivo de corrección o anulación admite entre 5 y 150 caracteres; el navegador
+bloquea la entrada adicional sin avisos ni contadores de longitud. Las búsquedas
+y filtros por DNI admiten solo dígitos, hasta 8, y conservan los ceros iniciales.
+
+Evidencia: [validación de límites](../validaciones/limites-formularios/validation.md).
+
+### Reloj compartido en pruebas
+
+La fixture de asistencia comparte su fecha simulada con las consultas del dominio
+mediante `monkeypatch`. Cuando un caso cambia `service.clock`, la proyección de
+membresías usa la misma fecha. La regresión comprueba el acceso en octubre y el
+vencimiento al pasar a noviembre sin modificar los datos guardados. Las pruebas
+PostgreSQL siguen siendo optativas localmente y los cuatro módulos SQL se ejecutan
+en el job dedicado de CI. Ver [validación de relojes y PostgreSQL](../validaciones/relojes-asistencia/validation.md).

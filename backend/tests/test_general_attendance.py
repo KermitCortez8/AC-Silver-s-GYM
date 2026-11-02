@@ -16,7 +16,7 @@ from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 
 @pytest.fixture
-def attendance():
+def attendance(monkeypatch):
     gym = LocalGymService()
     gym.state.update(
         clientes=[{"id_cliente": i, "nombre": f"Cliente {i}", "dni": str(i) * 8, "estado": "ACTIVO"}
@@ -28,6 +28,9 @@ def attendance():
     )
     current = [datetime(2026, 10, 7, 10, 30, tzinfo=LIMA)]
     service = AttendanceService(gym, clock=lambda: current[0])
+    # Las consultas de membresías deben seguir también los cambios de service.clock.
+    monkeypatch.setattr('domain.services.gym_domain_service._today_iso',
+                        lambda: service.now().date().isoformat())
     service.advance = lambda: current.__setitem__(0, current[0] + timedelta(hours=1))
     return service
 
@@ -35,6 +38,17 @@ def attendance():
 @pytest.fixture
 def admin():
     return SimpleNamespace(role="admin", id="admin", id_usuario="SGUSU001", name="Recepción", id_cliente=None)
+
+
+def test_membership_queries_follow_the_attendance_clock(attendance):
+    assert attendance.gym.get_cliente(1)["estado"] == "ACTIVO"
+    assert attendance.membership(1, attendance.now().date().isoformat())
+
+    attendance.clock = lambda: datetime(2026, 11, 1, 10, 30, tzinfo=LIMA)
+    assert attendance.gym.get_cliente(1)["estado"] == "VENCIDA"
+    assert attendance.membership(1, attendance.now().date().isoformat()) is None
+    # La lectura proyecta el vencimiento sin cambiar el registro guardado.
+    assert attendance.gym.state["clientes"][0]["estado"] == "ACTIVO"
 
 
 def enter(service, actor, dni="11111111"):

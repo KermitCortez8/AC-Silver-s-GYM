@@ -1,5 +1,7 @@
 """Reglas de schedules sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.form_limits import SHORT_TEXT_LIMIT
+from domain.validation import bounded_text
 from domain.services.schedule_sessions import enrollment_session, next_session, validate_session
 from domain.validation import integer_quantity, validate_exercises
 from domain.errors import EntityNotFound, MembershipRequired, EnrollmentConflict
@@ -419,7 +421,7 @@ class SchedulesRules:
             "id_rutina": id_rutina,
             "hora_inicio": hora_inicio,
             "hora_fin": hora_fin,
-            "codigo_dia": str(payload.get("codigo_dia") or self._day_code(dia)).strip().upper(),
+            "codigo_dia": bounded_text(payload.get("codigo_dia") or self._day_code(dia), SHORT_TEXT_LIMIT).upper(),
             "dia": dia,
             "cupos": max(1, int(payload.get("cupos") or 10)),
             "cupos_usados": 0,

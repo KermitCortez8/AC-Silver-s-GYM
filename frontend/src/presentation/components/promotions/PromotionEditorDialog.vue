@@ -28,14 +28,14 @@
                 <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
                   <i class="fa-solid fa-wand-magic-sparkles text-rose-400"></i> NOMBRE DE LA PROMOCIÓN
                 </label>
-                <input v-model="form.name" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Ej. Promo Verano" required />
+                <input :maxlength="FORM_LIMITS.shortText" v-model="form.name" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Ej. Promo Verano" required />
               </div>
               
               <div>
                 <label class="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
                   <i class="fa-regular fa-file-lines text-slate-400"></i> DESCRIPCIÓN INTERNA <span class="text-slate-500 lowercase normal-case">(opcional)</span>
                 </label>
-                <textarea v-model="form.description" rows="2" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Detalle o notas internas del descuento..."></textarea>
+                <textarea :maxlength="FORM_LIMITS.longText" v-model="form.description" rows="2" class="field-input focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" placeholder="Detalle o notas internas del descuento..."></textarea>
               </div>
               
               <div class="grid gap-4 sm:grid-cols-2">
@@ -98,22 +98,21 @@
                 <!-- Palabra Clave -->
                 <div>
                   <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">Palabra Clave / Tag</label>
-                  <input 
+                  <input :maxlength="FORM_LIMITS.shortText"
                     v-model="form.palabra_clave" 
                     @input="form.palabra_clave = form.palabra_clave.toUpperCase()"
                     class="field-input text-xs uppercase font-bold tracking-wider focus:border-rose-400 focus:ring-1 focus:ring-rose-400 transition" 
-                    placeholder="Ej. NAVIDAD, VERANO, FLASH" 
-                    maxlength="20"
+                    placeholder="Ej. NAVIDAD, VERANO, FLASH"
                   />
                 </div>
 
                 <!-- Vista Previa de la Etiqueta -->
                 <div class="pt-2 border-t border-white/5 flex items-center justify-between">
                   <span class="text-[11px] text-slate-400 font-semibold">Badge generado:</span>
-                  <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-slate-950 border border-slate-700 text-slate-200 tracking-wider shadow-inner">
+                  <span class="min-w-0 max-w-full inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-slate-950 border border-slate-700 text-slate-200 tracking-wider shadow-inner">
                     <span>🏷️</span>
                     <span class="text-rose-400 font-extrabold">{{ form.discountType === 'fixed' ? `-S/${form.discountValue || 0}` : `-${form.discountValue || 0}%` }}</span>
-                    <span v-if="form.palabra_clave" class="uppercase text-slate-200 font-bold ml-0.5">{{ form.palabra_clave }}</span>
+                    <span v-if="form.palabra_clave" class="min-w-0 truncate uppercase text-slate-200 font-bold ml-0.5">{{ form.palabra_clave }}</span>
                   </span>
                 </div>
               </div>
@@ -184,10 +183,10 @@
                       </h3>
                     </div>
                     <!-- Badge Promocional -->
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-slate-950 border border-slate-700 text-slate-200 tracking-wider shadow-md">
+                    <span class="min-w-0 max-w-full inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-slate-950 border border-slate-700 text-slate-200 tracking-wider shadow-md">
                       <span>{{ form.icono_etiqueta || '🏷️' }}</span>
                       <span class="text-rose-400 font-extrabold">{{ form.discountType === 'fixed' ? `-S/${form.discountValue || 0}` : `-${form.discountValue || 0}%` }}</span>
-                      <span v-if="form.palabra_clave" class="uppercase text-slate-200 font-bold ml-0.5">{{ form.palabra_clave }}</span>
+                      <span v-if="form.palabra_clave" class="min-w-0 truncate uppercase text-slate-200 font-bold ml-0.5">{{ form.palabra_clave }}</span>
                     </span>
                   </div>
 
@@ -257,6 +256,8 @@
   </Teleport>
 </template>
 <script setup>
+import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+
 defineProps({
   plans: Array, form: { type: Object, required: true }, selectedPlan: Object,
   previewCalculatedPrice: Number, previewSavings: Number, isModalOpen: Boolean,

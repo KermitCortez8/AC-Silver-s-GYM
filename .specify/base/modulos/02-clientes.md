@@ -120,3 +120,14 @@ El correo de cuenta acepta cualquier dominio terminado en `.com`, con una sola
 `@` y formato válido. La misma regla reutilizable se aplica en el preregistro
 (incluido Google), formularios de cuentas y servidor; ya no se limita a Gmail/Hotmail.
 Regresión: `test_basic_form_validation.py` y `34-form-validation.test.js`.
+
+
+### Límites de formularios
+
+Los formularios de alta pública, alta administrativa y edición limitan nombre y
+correo a 50 caracteres, DNI a 8 dígitos y teléfono a 9. DNI y teléfono conservan
+ceros iniciales y solo admiten dígitos. Los campos opcionales admiten vacío;
+si se completan deben tener su longitud exacta. La búsqueda general admite 50
+caracteres. El navegador bloquea el exceso sin avisos ni contadores de longitud.
+
+Evidencia: [validación de límites](../validaciones/limites-formularios/validation.md).

@@ -272,7 +272,7 @@
         <fieldset :disabled="isSaving" class="grid gap-4 sm:grid-cols-2">
           <label class="sm:col-span-2"
             ><span class="ws-field-label">Nombre</span
-            ><input
+            ><input :maxlength="FORM_LIMITS.shortText"
               v-model="form.nombre"
               :aria-invalid="Boolean(fieldErrors.nombre)"
               :aria-describedby="fieldErrors.nombre ? 'user-nombre-error' : undefined"
@@ -285,7 +285,7 @@
             <FieldError id="user-nombre-error" :message="fieldErrors.nombre" /></label>
           <label class="sm:col-span-2"
             ><span class="ws-field-label">Correo electrónico</span
-            ><input
+            ><input :maxlength="FORM_LIMITS.shortText"
               v-model="form.correo"
               :aria-invalid="Boolean(fieldErrors.correo)"
               :aria-describedby="fieldErrors.correo ? 'user-correo-error' : undefined"
@@ -319,7 +319,7 @@
             <FieldError id="user-password-error" :message="fieldErrors.password" /></label>
           <label
             ><span class="ws-field-label">Teléfono</span
-            ><input
+            ><input inputmode="numeric" v-digits :maxlength="FORM_LIMITS.phone"
               v-model="form.telefono"
               :aria-invalid="Boolean(fieldErrors.telefono)"
               :aria-describedby="fieldErrors.telefono ? 'user-telefono-error' : undefined"
@@ -332,14 +332,13 @@
             <FieldError id="user-telefono-error" :message="fieldErrors.telefono" /></label>
           <label
             ><span class="ws-field-label">DNI</span
-            ><input
+            ><input v-digits :maxlength="FORM_LIMITS.dni"
               v-model="form.dni"
               :aria-invalid="Boolean(fieldErrors.dni)"
               :aria-describedby="fieldErrors.dni ? 'user-dni-error' : undefined"
               @blur="validateField('dni')" @input="revalidateField('dni')"
               class="ws-input"
               inputmode="numeric"
-              maxlength="8"
               placeholder="12345678"
           />
             <FieldError id="user-dni-error" :message="fieldErrors.dni" /></label>
@@ -409,6 +408,9 @@
   </div>
 </template>
 <script setup>
+import { FORM_LIMITS } from "../../domain/utils/formLimits.js";
+import { vDigits } from "../directives/digits.js";
+
 import FieldError from '../components/FieldError.vue';
 import SearchInput from '../components/SearchInput.vue';
 import { Eye, LoaderCircle, Pencil, Plus, Search, Trash2, UsersRound } from 'lucide-vue-next';

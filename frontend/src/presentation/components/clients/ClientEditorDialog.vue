@@ -18,7 +18,7 @@
         <label class="space-y-2 sm:col-span-2">
           <span class="text-sm ws-soft">Nombre</span>
 
-          <input
+          <input :maxlength="FORM_LIMITS.shortText"
             v-model="form.nombre"
             :aria-invalid="Boolean(fieldErrors.nombre)"
             :aria-describedby="fieldErrors.nombre ? 'client-nombre-error' : undefined"
@@ -33,7 +33,7 @@
         <label class="space-y-2 sm:col-span-2">
           <span class="text-sm ws-soft">Correo</span>
 
-          <input
+          <input :maxlength="FORM_LIMITS.shortText"
             v-model="form.correo"
             :aria-invalid="Boolean(fieldErrors.correo)"
             :aria-describedby="fieldErrors.correo ? 'client-correo-error' : undefined"
@@ -70,8 +70,10 @@
 
         <label class="space-y-2">
           <span class="text-sm ws-soft">Teléfono</span>
-          <input
+          <input v-digits :maxlength="FORM_LIMITS.phone"
             v-model="form.telefono"
+            type="text"
+            inputmode="numeric"
             :aria-invalid="Boolean(fieldErrors.telefono)"
             :aria-describedby="fieldErrors.telefono ? 'client-telefono-error' : undefined"
             @blur="validateField('telefono')" @input="revalidateField('telefono')"
@@ -83,8 +85,10 @@
 
         <label class="space-y-2">
           <span class="text-sm ws-soft">DNI</span>
-          <input
+          <input v-digits :maxlength="FORM_LIMITS.dni"
             v-model="form.dni"
+            type="text"
+            inputmode="numeric"
             :aria-invalid="Boolean(fieldErrors.dni)"
             :aria-describedby="fieldErrors.dni ? 'client-dni-error' : undefined"
             @blur="validateField('dni')" @input="revalidateField('dni')"
@@ -184,6 +188,9 @@
 </template>
 
 <script setup>
+import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+import { vDigits } from "../../directives/digits.js";
+
 import FieldError from "../FieldError.vue";
 import WorkspaceDialog from "../WorkspaceDialog.vue";
 defineProps([

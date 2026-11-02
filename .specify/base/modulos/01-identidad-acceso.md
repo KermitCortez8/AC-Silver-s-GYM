@@ -83,3 +83,12 @@ al personal interno. No regenerar códigos por cambio de rol.
 Para cambios de este módulo, verificar los criterios afectados, permisos HTTP y
 aislamiento de sesión; actualizar este contrato y cumplir el [DoD](../../docs/DoD.md).
 La evidencia de la tabla identifica pruebas disponibles, no una ejecución nueva.
+
+### Límites de formularios
+
+Los formularios de usuarios internos limitan nombre y correo a 50 caracteres,
+DNI a 8 dígitos y teléfono a 9. Los datos de identidad opcionales admiten vacío;
+si se completan deben tener su longitud exacta. La búsqueda general admite 50
+caracteres. El navegador bloquea el exceso sin avisos ni contadores de longitud.
+
+Evidencia: [validación de límites](../validaciones/limites-formularios/validation.md).

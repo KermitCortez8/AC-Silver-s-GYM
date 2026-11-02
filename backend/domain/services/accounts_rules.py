@@ -7,6 +7,7 @@ from typing import Callable
 from domain.services.rule_context import RuleContext
 from domain.services.client_identifiers import parse_client_id
 from typing import Any
+from domain.form_limits import SHORT_TEXT_LIMIT
 from domain.validation import required_text, account_email, dni_number, phone_number
 from domain.services.membership_lifecycle import normalize_membership_status, project_memberships
 
@@ -152,7 +153,7 @@ class AccountsRules:
             else:
                 item_id = f"SG{prefix}{self._next_usuario_code(state):03d}"
 
-            nombre = required_text(payload.get("nombre"))
+            nombre = required_text(payload.get("nombre"), maximum=SHORT_TEXT_LIMIT)
             correo = account_email(payload.get("correo"))
             password = str(payload.get("password") or payload.get("contrasena") or "").strip()
             idx = next((i for i, row in enumerate(state["usuario"]) if self._normalize_usuario_id(row.get("id_usuario")) == item_id), -1)
@@ -321,7 +322,7 @@ class AccountsRules:
             item = {
                 "id_cliente": int(item_id),
                 "id_usuario": id_usuario,
-                "nombre": required_text(payload.get("nombre")),
+                "nombre": required_text(payload.get("nombre"), maximum=SHORT_TEXT_LIMIT),
                 "correo": account_email(payload.get("correo") or payload.get("email")),
                 "telefono": phone_number(payload.get("telefono")),
                 "dni": dni_number(payload.get("dni")),

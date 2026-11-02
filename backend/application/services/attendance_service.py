@@ -9,6 +9,8 @@ LIMA = ZoneInfo("America/Lima")
 DAYS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
 
 
+from domain.validation import bounded_text
+from domain.form_limits import LONG_TEXT_LIMIT
 from domain.errors import AttendanceConflict
 from domain.services.membership_lifecycle import membership_current
 from domain.services.attendance_status import attendance_status, LATE_EXIT_MESSAGE
@@ -317,7 +319,7 @@ class AttendanceService:
         if row.get("anulado"):
             raise ValueError("La asistencia ya está anulada.")
         expected = payload.pop("version")
-        reason = payload.pop("motivo").strip()
+        reason = bounded_text(payload.pop("motivo"), LONG_TEXT_LIMIT, "El motivo")
         if len(reason) < 5:
             raise ValueError("Escribe un motivo de al menos 5 caracteres.")
         if annul:

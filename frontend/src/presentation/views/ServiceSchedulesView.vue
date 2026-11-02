@@ -193,7 +193,7 @@
 
             <label class="space-y-2">
               <span class="text-sm schedule-soft">Código del día</span>
-              <input v-model="form.codigo_dia" class="field-input" placeholder="LUN" maxlength="10" />
+              <input :maxlength="FORM_LIMITS.shortText" v-model="form.codigo_dia" class="field-input" placeholder="LUN" />
             </label>
 
             <label class="space-y-2">
@@ -244,6 +244,8 @@
 </template>
 
 <script setup>
+import { FORM_LIMITS } from "../../domain/utils/formLimits.js";
+
 import SearchInput from '../components/SearchInput.vue';
 import {
   ChevronDown,

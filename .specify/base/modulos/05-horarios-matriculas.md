@@ -109,3 +109,11 @@ como HH:MM de 24 horas para su uso por asistencia. Se mantiene lectura de AM/PM
 histórico y duración de 60 o 120 minutos.
 Regresiones y recorrido de cupos/cancelación en
 [test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+
+### Límites de formularios
+
+El código editable del día y la búsqueda general admiten hasta 50 caracteres.
+La entrada adicional se bloquea sin avisos ni contadores de longitud. Horas,
+fechas, cupos y opciones del catálogo conservan su validación específica.
+
+Evidencia: [validación de límites](../validaciones/limites-formularios/validation.md).

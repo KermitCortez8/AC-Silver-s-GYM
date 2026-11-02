@@ -23,10 +23,9 @@
         <option value="horario">Por horario</option>
       </select></label>
       <label v-if="admin"
-        >DNI del cliente<input
+        >DNI del cliente<input v-digits :maxlength="FORM_LIMITS.dni"
           v-model="draft.dni"
           inputmode="numeric"
-          maxlength="8"
           pattern="[0-9]{8}"
           placeholder="8 dígitos"
       /></label>
@@ -190,6 +189,9 @@
   </section>
 </template>
 <script setup>
+import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+import { vDigits } from "../../directives/digits.js";
+
 import { computed, onMounted, reactive, ref } from 'vue';
 import {
   CalendarSearch,

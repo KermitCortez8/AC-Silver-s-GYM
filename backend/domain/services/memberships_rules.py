@@ -1,7 +1,8 @@
 """Reglas de memberships sobre el agregado en memoria."""
 from __future__ import annotations
 from domain.validation import account_email, dni_number, phone_number
-from domain.validation import nonnegative, required_text, date_range
+from domain.form_limits import SHORT_TEXT_LIMIT, LONG_TEXT_LIMIT
+from domain.validation import nonnegative, required_text, date_range, bounded_text
 
 import re
 from domain.money import cents, discounted_price
@@ -157,6 +158,11 @@ class MembershipsRules:
         return next((p for p in self.context.state.get("planes_membresia", []) if int(p.get("id_pm", 0)) == int(id_pm)), None)
 
     def upsert_plan_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
+        payload = {**payload,
+                   "nombre_plan": required_text(payload.get("nombre_plan"), maximum=SHORT_TEXT_LIMIT),
+                   "duracion": bounded_text(payload.get("duracion") or "30 dias", SHORT_TEXT_LIMIT),
+                   "descripcion": bounded_text(payload.get("descripcion"), LONG_TEXT_LIMIT),
+                   "beneficios": bounded_text(payload.get("beneficios"), LONG_TEXT_LIMIT)}
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             state.setdefault("planes_membresia", [])
@@ -235,7 +241,10 @@ class MembershipsRules:
         if tipo not in {"porcentaje", "monto"}:
             raise ValueError("Tipo de descuento invalido")
 
-        required_text(payload.get("nombre"))
+        payload = {**payload,
+                   "nombre": required_text(payload.get("nombre"), maximum=SHORT_TEXT_LIMIT),
+                   "descripcion": bounded_text(payload.get("descripcion"), LONG_TEXT_LIMIT),
+                   "palabra_clave": bounded_text(payload.get("palabra_clave"), SHORT_TEXT_LIMIT)}
         date_range(payload.get("fecha_inicio"), payload.get("fecha_fin"))
         valor = float(nonnegative(payload.get("valor_descuento", 0), "Descuento"))
         if tipo == "porcentaje" and valor > 100:

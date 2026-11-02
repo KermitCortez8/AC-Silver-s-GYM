@@ -95,7 +95,7 @@
               Nombre completo
             </span>
 
-            <input
+            <input :maxlength="FORM_LIMITS.shortText"
               v-model.trim="form.nombre"
               :aria-invalid="Boolean(fieldErrors.nombre)"
               :aria-describedby="fieldErrors.nombre ? 'register-nombre-error' : undefined"
@@ -124,7 +124,7 @@
               - colores naranja.
               - estilos nuevos.
             -->
-            <input
+            <input :maxlength="FORM_LIMITS.shortText"
               v-model.trim="form.correo"
               :aria-invalid="Boolean(fieldErrors.correo)"
               :aria-describedby="fieldErrors.correo ? 'register-correo-error' : undefined"
@@ -166,7 +166,7 @@
             <label class="block space-y-2">
               <span class="text-sm font-semibold text-slate-700"> DNI </span>
 
-              <input
+              <input v-digits :maxlength="FORM_LIMITS.dni"
                 v-model.trim="form.dni"
                 :aria-invalid="Boolean(fieldErrors.dni)"
                 :aria-describedby="fieldErrors.dni ? 'register-dni-error' : undefined"
@@ -174,7 +174,6 @@
                 required
                 inputmode="numeric"
                 pattern="[0-9]{8}"
-                maxlength="8"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
                 placeholder="12345678"
               />
@@ -186,7 +185,7 @@
                 Teléfono
               </span>
 
-              <input
+              <input v-digits :maxlength="FORM_LIMITS.phone"
                 :value="form.telefono"
                 :aria-invalid="Boolean(fieldErrors.telefono)"
                 :aria-describedby="fieldErrors.telefono ? 'register-telefono-error' : undefined"
@@ -195,8 +194,7 @@
                 required
                 type="tel"
                 inputmode="numeric"
-                pattern="[0-9]{7,9}"
-                maxlength="9"
+                pattern="[0-9]{9}"
                 autocomplete="tel"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
                 placeholder="999111222"
@@ -358,6 +356,9 @@
 </template>
 
 <script setup>
+import { FORM_LIMITS } from "../../domain/utils/formLimits.js";
+import { vDigits } from "../directives/digits.js";
+
 import FieldError from '../components/FieldError.vue';
 import { clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
 import GoogleSignInButton from '../components/GoogleSignInButton.vue';

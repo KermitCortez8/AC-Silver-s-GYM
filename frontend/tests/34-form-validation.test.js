@@ -62,3 +62,19 @@ test('API validation issues become Spanish inline errors without changing HTTP s
   assert.equal(error.fieldErrors.nombre, 'Este campo es obligatorio.');
   assert.doesNotMatch(error.message, /Value error|Field required|Input should/);
 });
+
+
+test('los límites de cuentas y promociones aceptan el máximo y rechazan un carácter adicional', () => {
+  const base = { nombre: 'Á'.repeat(50), correo: 'ana@example.com', dni: '01234567', telefono: '012345678', password: 'secreto' };
+  assert.deepEqual(validateAccountForm(base), {});
+  assert.ok(validateAccountForm({ ...base, nombre: 'Á'.repeat(51) }).nombre);
+  const email = length => 'a'.repeat(length - 12) + '@example.com';
+  assert.equal(emailError(email(50)), '');
+  assert.ok(emailError(email(51)));
+  for (const telefono of ['1234567', '12345678', '1234567890']) {
+    assert.ok(validateAccountForm({ ...base, telefono }).telefono);
+  }
+  const promotion = { name: 'P'.repeat(50), discountValue: 10, discountType: 'percent', appliesTo: [1] };
+  assert.deepEqual(promotionErrors(promotion), {});
+  assert.ok(promotionErrors({ ...promotion, name: 'P'.repeat(51) }).name);
+});

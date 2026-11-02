@@ -106,3 +106,11 @@ El retorno de pago distingue comprobación en curso, pendiente, error y confirma
 Permite volver a verificar la misma sesión sin iniciar otro cobro, rechaza una
 confirmación de otro cliente y descarta respuestas de rutas anteriores. Regresiones
 en [36-client-flow-control.test.js](../../../frontend/tests/36-client-flow-control.test.js).
+
+### Límites de formularios
+
+La búsqueda general del historial de pagos admite hasta 50 caracteres y bloquea
+la entrada adicional sin avisos de longitud. Los límites de edición de planes
+se describen en [MOD-04](04-planes-promociones.md).
+
+Evidencia: [validación de límites](../validaciones/limites-formularios/validation.md).
