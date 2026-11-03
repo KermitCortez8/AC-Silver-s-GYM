@@ -23,7 +23,7 @@ before(async () => {
 
 after(async () => { await server?.close(); });
 
-const setupView = async (filename, path, prepare) => {
+const setupView = async (filename, path, prepare, query = {}) => {
   const { default: View } = await server.ssrLoadModule(`/src/presentation/views/${filename}.vue`);
   const pinia = createPinia();
   installServices(pinia, { http: { apiGet: async (path) => path === '/planes-membresia'
@@ -32,7 +32,7 @@ const setupView = async (filename, path, prepare) => {
     { path, component: View },
     { path: '/inventory', name: 'Inventory', component: { render: () => null } },
   ] });
-  await router.push(path);
+  await router.push({ path, query });
   let setup;
   const app = createSSRApp({ render: () => h(View) });
   app.use(pinia);
@@ -78,6 +78,32 @@ test('editing inventory preserves a zero threshold and uses one only when the va
   await setup.handleSubmit();
   assert.equal(payload.minQuantity, 0);
   assert.equal(setup.feedbackTone, 'success');
+});
+
+test('inventario conserva los avisos en vivo al combinar las ramas', async () => {
+  const { setup } = await setupView('InventoryView', '/admin/inventory');
+  setup.openNewItem();
+  setup.touch('name');
+  assert.match(setup.warnings.name, /obligatorio/);
+  setup.form.name = 'Pesas';
+  assert.equal(setup.warnings.name, '');
+  setup.touch('minQuantity');
+  assert.match(setup.warnings.minQuantity, /obligatorio/);
+  setup.form.minQuantity = 0;
+  assert.equal(setup.warnings.minQuantity, '');
+  setup.form.minQuantity = '1.5';
+  assert.match(setup.warnings.minQuantity, /entero/);
+});
+
+test('la papelera conserva su pestaña y las acciones de restaurar y eliminar', async () => {
+  const { setup, html } = await setupView('StoreView', '/admin/store', (_setup, gym) => {
+    gym.papelera_tienda = [{ id_producto: 8, nombre: 'Agua archivada', precio: 3, cantidad: 4 }];
+  }, { tab: 'papelera' });
+  assert.equal(setup.activeTab, 'papelera');
+  assert.ok(setup.tabs.some(tab => tab.value === 'papelera'));
+  assert.match(html, /Agua archivada/);
+  assert.match(html, /Restaurar/);
+  assert.match(html, /Eliminar/);
 });
 
 test('client editor and membership actions preserve the actual view flow after extraction', async () => {
@@ -131,7 +157,7 @@ test('extracted client dialogs render their real form and membership details', a
   assert.match(dialogs, /Activar Membresía/);
 });
 
-test('extracted product dialog renders linked inventory and the image picker', async () => {
+test('extracted product dialog hides the inventory link and renders the image picker', async () => {
   const { dialogs } = await setupView('StoreView', '/admin/store', (setup, gym) => {
     gym.inventory = [{ id: 'item-1', name: 'Almacén Agua', inventoryCode: 'ACT-0001', category: 'Tienda' }];
     const product = { id_producto: 1, id_item: 1, nombre: 'Agua editada', precio: 3, cantidad: 4, minimo: 0, estado: 'Disponible' };
@@ -141,7 +167,8 @@ test('extracted product dialog renders linked inventory and the image picker', a
     setup.bucketImages = [{ name: 'agua.png', url: '/agua.png' }];
   });
   assert.match(dialogs, /Agua editada/);
-  assert.match(dialogs, /Almacén Agua/);
+  // El vinculo con Inventario se conserva por detras: el modal ya no lo muestra ni lo cambia.
+  assert.doesNotMatch(dialogs, /Item de inventario|Almacén Agua/);
   assert.match(dialogs, /agua.png/);
   assert.match(dialogs, /Guardar cambios/);
 });
@@ -361,7 +388,7 @@ test('failed gallery refresh preserves previously loaded images', async (t) => {
 
 test('public registration rejects invalid email inline before sending a request', async () => {
   const { setup, gym, html } = await setupView('RegisterView', '/registro', setup => {
-    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@example.com.pe', dni: '12345678', telefono: '987654321', password: 'secreto123' });
+    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@gmail.com.otro.org', dni: '12345678', telefono: '987654321', password: 'secreto123' });
     setup.validateField('correo');
   });
   let calls = 0;
@@ -370,7 +397,7 @@ test('public registration rejects invalid email inline before sending a request'
   assert.equal(calls, 0);
   assert.equal(setup.feedbackTone, 'error');
   assert.match(setup.feedback, /Solo se permiten correos/);
-  assert.equal(setup.form.correo, 'ana@example.com.pe');
+  assert.equal(setup.form.correo, 'ana@gmail.com.otro.org');
   assert.equal(setup.isSubmitting, false);
   assert.match(html, /aria-invalid="true"/);
   assert.match(html, /id="register-correo-error" role="alert"/);
@@ -398,7 +425,7 @@ test('client and user editors keep invalid drafts open and do not call the serve
 test('checkout validates customer data and prevents duplicate payments while preserving failed drafts', async () => {
   const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
   gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
-  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@example.com.pe', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@gmail.com.otro.org', dni: '12345678', method: 'yape', reference: 'PAY-1' });
   let calls = 0;
   let rejectSave;
   gym.createStoreOrder = () => { calls++; return new Promise((_resolve, reject) => { rejectSave = reject; }); };

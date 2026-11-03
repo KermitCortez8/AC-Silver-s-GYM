@@ -12,7 +12,8 @@ PRESERVED = {
 MIGRATIONS = {"fecha_clase": "019_schedule_sessions.sql",
               "origen_registro": "009_admin_client_stripe.sql", "google_sub": "003_add_google_identity.sql",
               "ejercicios": "012_trainer_exercises.sql", "ejercicios_detalle": "012_trainer_exercises.sql",
-              "archivado": "018_archivar_inventario_tienda.sql"}
+              "archivado": "018_archivar_inventario_tienda.sql",
+              "eliminado": "019_papelera_tienda.sql"}
 
 
 def missing_column(error):

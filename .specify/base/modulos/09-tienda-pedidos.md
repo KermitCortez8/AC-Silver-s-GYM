@@ -30,6 +30,9 @@ descuento de existencias y cancelar un pedido pendiente para recuperarlas.
    conserva su desglose; el cliente solo consulta sus propios pedidos.
 6. **CA-06.** Dada una subida de imagen, solo personal autorizado puede
    publicarla y deben pasar tamaño, extensión y MIME admitidos.
+7. **CA-07.** Al eliminar un producto se envían el producto y su artículo a
+   Papelera; restaurarlo recupera ambos. La eliminación definitiva exige que
+   esté archivado y conserva las ventas y movimientos históricos.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -39,6 +42,7 @@ descuento de existencias y cancelar un pedido pendiente para recuperarlas.
 | CA-04 | [test_partial_smell_fixes.py](../../../backend/tests/test_partial_smell_fixes.py): `test_failed_close_or_a_payment_race_does_not_cancel_the_order`; [store_rules.py](../../../backend/domain/services/store_rules.py). |
 | CA-05 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_order_breakdown_survives_persistence_using_its_saved_lines`; [test_priority_fixes.py](../../../backend/tests/test_priority_fixes.py): `test_orders_and_memberships_are_private_and_filtered`. |
 | CA-06 | [test_store_images.py](../../../backend/tests/test_store_images.py), [test_priority_fixes.py](../../../backend/tests/test_priority_fixes.py): `test_image_upload_requires_staff_but_listing_remains_public`. |
+| CA-07 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_borrar_producto_lo_manda_a_la_papelera_con_su_item`, `test_restaurar_producto_lo_devuelve_con_su_item`, `test_eliminar_definitivo_exige_pasar_antes_por_la_papelera`, `test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos`; [26-stock-edit-forms.test.js](../../../frontend/tests/26-stock-edit-forms.test.js) verifica la pestaña de Papelera tras la extracción de la vista. |
 
 ## 4. Technical Constraints
 
@@ -51,6 +55,11 @@ descuento de existencias y cancelar un pedido pendiente para recuperarlas.
 - Datos: `TIENDA_PRODUCTOS`, `VENTAS`, `DETALLE_VENTA`, movimientos y relación
   opcional con inventario. Usar las migraciones de pago de tienda y atomicidad.
 - Imágenes: JPEG/PNG/WebP/GIF hasta 5 MiB; rutas locales o Supabase según adaptador.
+- Papelera: `POST /api/tienda/{id}/restaurar` y `DELETE /api/tienda/{id}/definitivo`,
+  solo `admin/staff`. Aplicar [018_archivar_inventario_tienda.sql](../../../backend/migrations/018_archivar_inventario_tienda.sql)
+  antes de [019_papelera_tienda.sql](../../../backend/migrations/019_papelera_tienda.sql).
+  La numeración 019 también identifica otra migración de horarios: elegir por nombre,
+  sin ejecutar todos los archivos por orden alfabético.
   Catálogo público; mutaciones de productos/imágenes y estado por `admin/staff`.
 - UI: `/admin/store`, `/admin/orders`, `/user/store`, `/user/store/payment`,
   [StoreView.vue](../../../frontend/src/presentation/views/StoreView.vue),

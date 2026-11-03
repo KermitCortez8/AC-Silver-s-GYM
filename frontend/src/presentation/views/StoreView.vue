@@ -98,6 +98,8 @@
     </p>
     <StoreMovementsPanel v-if="isAdmin && activeTab === 'ventas'" />
 
+    <StoreTrashPanel v-else-if="isAdmin && activeTab === 'papelera'" :product-code="productCode" />
+
     <StoreProductTable v-else-if="isAdmin" v-model:busqueda="busqueda" v-model:categoria-activa="categoriaActiva"
       v-model:filtro-estado="filtroEstado" v-model:pagina-actual="paginaActual" v-model:por-pagina="porPagina"
       :productos="productos" :categorias-unicas="categoriasUnicas" :categoria-dot-color="categoriaDotColor"
@@ -258,14 +260,12 @@
       :category-options="productCategoryOptions"
       :unit-options="productUnitOptions"
       :form-errors="productFormErrors"
-      :available-tienda-items="availableTiendaItems"
       :bucket-images="bucketImages"
       :clear-selected-image="clearSelectedImage"
       :close-bucket-picker="closeBucketPicker"
       :close-product-editor="closeProductEditor"
       :current-product-code="currentProductCode"
       :editing-id="editingId"
-      :editing-linked="editingLinked"
       :feedback-message="feedbackMessage"
       :feedback-tone="feedbackTone"
       :form="form"
@@ -279,8 +279,6 @@
       :is-product-editor-open="isProductEditorOpen"
       :is-saving="isSaving"
       :is-uploading-image="isUploadingImage"
-      :item-number="itemNumber"
-      :linked-item-label="linkedItemLabel"
       :open-bucket-picker="openBucketPicker"
       :select-bucket-image="selectBucketImage"
       :stock-editable="stockEditable"
@@ -304,6 +302,7 @@ import ResourceModal from '../components/ResourceModal.vue';
 
 import TableSearch from '../components/common/TableSearch.vue';
 import StoreMovementsPanel from '../components/store/StoreMovementsPanel.vue';
+import StoreTrashPanel from '../components/store/StoreTrashPanel.vue';
 import { useStoreCatalog } from '../composables/store/useStoreCatalog.js';
 
 const {
@@ -323,8 +322,7 @@ const {
   feedbackToneClass, productCode, isProductLowStock, productStatusClass, productStatusDot,
   stockBarColor, deleteProducto, cartError, updateCart, agregarAlCarrito,
   goToCheckout, isSaving, editingId, isProductEditorOpen, form,
-  productFormErrors, currentProductCode, itemNumber, findItem, availableTiendaItems,
-  editingLinked, linkedItemLabel, stockEditable, stockMostrado, resetForm,
+  productFormErrors, currentProductCode, findItem, stockEditable, stockMostrado, resetForm,
   openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback,
   imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages,
   loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage,

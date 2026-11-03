@@ -139,13 +139,14 @@
         <p class="rm-section-title"><Package :size="14" aria-hidden="true" /> Artículo y tipo</p>
         <div class="grid gap-4">
           <label class="space-y-2">
-            <span class="inv-label inv-required">Artículo</span>
-            <select v-model.number="form.id_item" class="field-input" :class="{ 'is-invalid': formErrors.includes('Artículo') }" :disabled="lockedByOrder" @change="formErrors = formErrors.filter((label) => label !== 'Artículo')">
-              <option :value="0">Selecciona un artículo</option>
+            <span class="inv-label inv-required">Articulo</span>
+            <select v-model.number="form.id_item" class="field-input" :class="{ 'is-invalid': isInvalid('id_item', formErrors.includes('Artículo')) }" :disabled="lockedByOrder" @change="touch('id_item')">
+              <option :value="0">Selecciona un articulo</option>
               <option v-for="item in activeInventory" :key="item.id" :value="itemNumber(item)">
                 {{ item.inventoryCode }} - {{ item.name }} ({{ item.quantity }})
               </option>
             </select>
+            <FieldError class="inv-field-error" :message="warnings.id_item" />
           </label>
           <div role="radiogroup" aria-label="Tipo de movimiento" class="space-y-2">
             <span class="inv-label">Tipo</span>
@@ -174,10 +175,11 @@
             <QuantityInput
               v-model="form.cantidad"
               class="field-input"
-              :class="{ 'is-invalid': formErrors.includes('Cantidad') }"
+              :class="{ 'is-invalid': isInvalid('cantidad', formErrors.includes('Cantidad')) }"
               :disabled="lockedByOrder"
+              @update:model-value="touch('cantidad')"
             />
-            <p v-if="quantityWarning" class="inv-field-error">{{ quantityWarning }}</p>
+            <FieldError class="inv-field-error" :message="warnings.cantidad" />
           </label>
           <label class="space-y-2">
             <span class="inv-label">Fecha</span>
@@ -238,12 +240,15 @@ import QuantityInput from "../QuantityInput.vue";
 import { feedbackClass as noticeClassFor } from "../../utils/feedback.js";
 import { parseQuantity } from '../../../domain/utils/quantities.js';
 import { limaDate } from '../../../domain/utils/dates.js';
-import { computed, reactive, ref } from 'vue';
+import { quantityError } from '../../../domain/utils/formValidation.js';
+import { computed, reactive, ref, watch } from 'vue';
 import { AlertCircle, ArrowDownToLine, ArrowLeftRight, ArrowRight, ArrowUpFromLine, CalendarDays, Equal, Info, Package, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
 import ResourceModal from '../ResourceModal.vue';
 import SortableTh from '../common/SortableTh.vue';
 import TablePager from '../common/TablePager.vue';
 import TableSearch from '../common/TableSearch.vue';
+import FieldError from '../FieldError.vue';
+import { useLiveWarnings } from '../../composables/useLiveWarnings.js';
 import { DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, sortRows } from '../../../domain/utils/inputRules.js';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { useGymStore } from '../../../application/stores/gymStore';
@@ -383,7 +388,30 @@ const pagedMovements = computed(() => {
 
 // Validacion del formulario: campos obligatorios y cantidad entera.
 const formErrors = ref([]);
-const quantityWarning = ref('');
+const requiredMovementFields = [
+  { key: 'id_item', label: 'Artículo', isEmpty: (value) => !Number(value) },
+  { key: 'cantidad', label: 'Cantidad', isEmpty: (value) => !(Number(value) >= 1) },
+];
+
+// Avisos en vivo: la cantidad se revisa tambien contra el stock al cambiar articulo o tipo.
+const { warnings, touch, touchAll, reset: resetWarnings, isInvalid } = useLiveWarnings({
+  id_item: () => (Number(form.id_item) ? '' : 'Selecciona un articulo.'),
+  cantidad: () => {
+    if (lockedByOrder.value) return '';
+    const label = form.tipo_movimiento === 'ajuste' ? 'El stock exacto' : 'La cantidad';
+    const invalid = quantityError(form.cantidad, { label, min: 1 });
+    if (invalid || !selectedItem.value) return invalid;
+    if (projectedStock.value < 0) return `No hay stock suficiente: el articulo tiene ${selectedItem.value.quantity}.`;
+    if (projectedStoreStock.value < 0) return 'La Tienda ya vendio esas unidades; no puedes reducir la reposicion.';
+    return '';
+  },
+});
+
+// Tras un envio fallido el resumen se actualiza mientras se corrige.
+watch(form, () => {
+  if (formErrors.value.length) formErrors.value = missingFields(form, requiredMovementFields);
+  modalError.value = formErrors.value.length ? missingFieldsMessage(formErrors.value) : '';
+});
 
 /**
  * Abre el modal para registrar un movimiento nuevo.
@@ -393,7 +421,7 @@ const openNew = () => {
   Object.assign(form, emptyForm());
   modalError.value = '';
   formErrors.value = [];
-  quantityWarning.value = '';
+  resetWarnings();
   isModalOpen.value = true;
 };
 
@@ -412,7 +440,7 @@ const openEdit = (movement) => {
   });
   modalError.value = '';
   formErrors.value = [];
-  quantityWarning.value = '';
+  resetWarnings();
   isModalOpen.value = true;
 };
 
@@ -428,10 +456,8 @@ const closeModal = () => {
 const save = async () => {
   if (isSaving.value) return;
   modalError.value = '';
-  formErrors.value = missingFields(form, [
-    { key: 'id_item', label: 'Artículo', isEmpty: (value) => !Number(value) },
-    { key: 'cantidad', label: 'Cantidad', isEmpty: (value) => !(Number(value) >= 1) },
-  ]);
+  touchAll();
+  formErrors.value = missingFields(form, requiredMovementFields);
   if (formErrors.value.length) {
     modalError.value = missingFieldsMessage(formErrors.value);
     return;

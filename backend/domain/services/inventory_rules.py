@@ -24,7 +24,8 @@ class InventoryRules:
         self.dependencies = dependencies
 
     def inventario(self) -> list[dict[str, Any]]:
-        return self.context.state["inventario"]
+        # Los eliminados desde la papelera de Tienda solo se conservan por sus movimientos.
+        return [i for i in self.context.state["inventario"] if not i.get("eliminado")]
 
     def get_item_inventario(self, id_item: int) -> dict[str, Any] | None:
         return next((i for i in self.context.state["inventario"] if int(i.get("id_item", 0)) == int(id_item)), None)

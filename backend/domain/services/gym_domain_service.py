@@ -351,6 +351,12 @@ class GymDomainService:
     def delete_producto_tienda(self, id_producto: int):
         return self.components.store.delete_producto_tienda(id_producto)
 
+    def restaurar_producto_tienda(self, id_producto: int):
+        return self.components.store.restaurar_producto_tienda(id_producto)
+
+    def eliminar_producto_definitivo(self, id_producto: int):
+        return self.components.store.eliminar_producto_definitivo(id_producto)
+
     def pedidos_tienda(self):
         return self.components.store.pedidos_tienda()
 

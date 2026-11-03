@@ -192,13 +192,13 @@
               id="inv-name"
               v-model="form.name"
               class="field-input"
-              :class="{ 'is-invalid': formErrors.includes('Nombre') || nameWarning }"
+              :class="{ 'is-invalid': isInvalid('name', formErrors.includes('Nombre')) }"
               :maxlength="NAME_MAX_LENGTH"
               placeholder="Nombre del artículo"
               @beforeinput="blockNameChars"
               @input="cleanNameField"
             />
-            <p v-if="nameWarning" class="inv-field-error">{{ nameWarning }}</p>
+            <FieldError class="inv-field-error" :message="warnings.name" />
           </div>
           <div class="space-y-2">
             <label for="inv-category" class="inv-label">Categoría (Tipo)</label>
@@ -237,13 +237,14 @@
                 id="inv-quantity"
                 v-model="form.quantity"
                 class="field-input flex-1 text-center"
-                :class="{ 'is-invalid': formErrors.includes('Stock inicial') }"
+                :class="{ 'is-invalid': isInvalid('quantity', formErrors.includes('Stock inicial')) }"
                 placeholder="0"
+                @update:model-value="touch('quantity')"
               />
               <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" aria-label="Sumar una unidad" @click="stepQuantity(1)" :disabled="isSaving">+</button>
             </div>
             <input v-else id="inv-quantity" :value="form.quantity" type="text" class="field-input cursor-not-allowed text-center opacity-70" readonly />
-            <p v-if="numberWarning.quantity" class="inv-field-error">{{ numberWarning.quantity }}</p>
+            <FieldError class="inv-field-error" :message="warnings.quantity" />
           </div>
           <div class="space-y-2">
             <label for="inv-min" class="flex items-center justify-between gap-2">
@@ -255,10 +256,10 @@
               v-model="form.minQuantity"
               class="field-input"
               placeholder="Ej. 5"
-              :class="{ 'is-invalid': formErrors.includes('Stock mínimo') }"
-              @update:model-value="formErrors = formErrors.filter((label) => label !== 'Stock mínimo')"
+              :class="{ 'is-invalid': isInvalid('minQuantity', formErrors.includes('Stock mínimo')) }"
+              @update:model-value="touch('minQuantity')"
             />
-            <p v-if="numberWarning.minQuantity" class="inv-field-error">{{ numberWarning.minQuantity }}</p>
+            <FieldError class="inv-field-error" :message="warnings.minQuantity" />
           </div>
           <div class="space-y-2">
             <label for="inv-unit" class="inv-label">Unidad</label>
@@ -411,6 +412,7 @@ import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
 import SortableTh from '../components/common/SortableTh.vue';
 import TablePager from '../components/common/TablePager.vue';
 import TableSearch from '../components/common/TableSearch.vue';
+import FieldError from '../components/FieldError.vue';
 import { missingFieldsMessage, NAME_MAX_LENGTH } from '../../domain/utils/inputRules.js';
 import { useInventoryWorkspace } from '../composables/inventory/useInventoryWorkspace.js';
 
@@ -421,7 +423,7 @@ const {
   SORT_COLUMNS, toggleSort, sortedInventory, paginaActual, porPagina,
   paginaInicio, totalPages, inventoryPaginado, categorySummary, editingId,
   isEditorOpen, isSaving, editorError, feedbackMessage, feedbackTone,
-  formErrors, nameWarning, numberWarning, form, categoryOptions,
+  formErrors, warnings, touch, isInvalid, form, categoryOptions,
   editorLocationOptions, unitOptions, stepQuantity, isTiendaForm, isDiscontinuedForm,
   statusPreview, feedbackToneClass, isLowStock, categoryDotPalette, categoryDotColor,
   inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,

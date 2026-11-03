@@ -1,8 +1,10 @@
 import { feedbackClass as noticeClassFor } from '../../utils/feedback.js';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useLiveWarnings } from '../useLiveWarnings.js';
+import { quantityError, requiredTextError } from '../../../domain/utils/formValidation.js';
 import { blockSpecialChars } from '../../utils/inputGuards.js';
-import { cleanText, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, NAME_MAX_LENGTH, sortRows } from '../../../domain/utils/inputRules.js';
+import { cleanText, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, NAME_MAX_LENGTH, sortRows, SPECIAL_CHARS_MESSAGE } from '../../../domain/utils/inputRules.js';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { parseQuantity, MAX_QUANTITY } from '../../../domain/utils/quantities.js';
 import { INVENTORY_CATEGORIES, INVENTORY_LOCATIONS, INVENTORY_UNITS, inventoryOptions } from '../../utils/inventoryOptions.js';
@@ -87,8 +89,6 @@ export const useInventoryWorkspace = () => {
   const feedbackMessage = ref('');
   const feedbackTone = ref('info');
   const formErrors = ref([]);
-  const nameWarning = ref('');
-  const numberWarning = reactive({ quantity: '', minQuantity: '' });
 
   const form = reactive({
     name: '',
@@ -108,6 +108,7 @@ export const useInventoryWorkspace = () => {
   const stepQuantity = (delta) => {
     try {
       form.quantity = Math.min(MAX_QUANTITY, Math.max(0, parseQuantity(form.quantity) + delta));
+      touch('quantity');
       editorError.value = '';
     } catch (error) { editorError.value = error.message; }
   };
@@ -162,7 +163,12 @@ export const useInventoryWorkspace = () => {
   });
 
   // Bloqueo al escribir: nombre sin caracteres especiales y stock solo con enteros.
-  const blockNameChars = blockSpecialChars((message) => { nameWarning.value = message; });
+  const { warnings, touch, flash, touchAll, reset: resetWarnings, isInvalid } = useLiveWarnings({
+    name: () => requiredTextError(form.name, 'El nombre', NAME_MAX_LENGTH),
+    quantity: () => (editingId.value ? '' : quantityError(form.quantity, { label: 'El stock inicial' })),
+    minQuantity: () => quantityError(form.minQuantity, { label: 'El stock mínimo' }),
+  });
+  const blockNameChars = blockSpecialChars((message) => flash('name', message));
 
   const cleanNameField = (event) => {
     const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
@@ -170,15 +176,13 @@ export const useInventoryWorkspace = () => {
       event.target.value = value;
       form.name = value;
     }
-    nameWarning.value = rejected ? 'Sin caracteres especiales: solo letras, números y espacios.' : '';
-    formErrors.value = formErrors.value.filter((label) => label !== 'Nombre');
+    touch('name');
+    if (rejected) flash('name', SPECIAL_CHARS_MESSAGE);
   };
 
   const clearFormWarnings = () => {
     formErrors.value = [];
-    nameWarning.value = '';
-    numberWarning.quantity = '';
-    numberWarning.minQuantity = '';
+    resetWarnings();
   };
 
   /**
@@ -238,9 +242,15 @@ export const useInventoryWorkspace = () => {
     isEditorOpen.value = true;
   };
 
+  watch(form, () => {
+    if (formErrors.value.length) formErrors.value = missingFields(form, requiredFields());
+    editorError.value = '';
+  });
+
   // Obligatorios: nombre siempre y stock inicial al crear.
   const requiredFields = () => [
     { key: 'name', label: 'Nombre' },
+    { key: 'minQuantity', label: 'Stock mínimo' },
     ...(editingId.value ? [] : [{ key: 'quantity', label: 'Stock inicial', isEmpty: (value) => value === '' || value === null || !Number.isInteger(Number(value)) }]),
   ];
 
@@ -260,7 +270,10 @@ export const useInventoryWorkspace = () => {
       }
       const minQuantity = parseQuantity(form.minQuantity, { label: 'El stock mínimo' });
       formErrors.value = missingFields(form, requiredFields());
-      if (formErrors.value.length) return;
+      if (formErrors.value.length) {
+        touchAll();
+        return;
+      }
       isSaving.value = true;
       await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form, name: form.name.trim(), quantity, minQuantity });
       const savedLabel = editingId.value ? 'Artículo actualizado.' : 'Artículo registrado.';
@@ -271,6 +284,7 @@ export const useInventoryWorkspace = () => {
     } catch (error) {
       feedbackTone.value = 'error';
       editorError.value = error instanceof Error ? error.message : 'No se pudo guardar el artículo.';
+      touchAll();
     } finally {
       isSaving.value = false;
     }
@@ -334,7 +348,7 @@ export const useInventoryWorkspace = () => {
     SORT_COLUMNS, toggleSort, sortedInventory, paginaActual, porPagina,
     paginaInicio, totalPages, inventoryPaginado, categorySummary, editingId,
     isEditorOpen, isSaving, editorError, feedbackMessage, feedbackTone,
-    formErrors, nameWarning, numberWarning, form, categoryOptions,
+    formErrors, warnings, touch, isInvalid, form, categoryOptions,
     editorLocationOptions, unitOptions, stepQuantity, isTiendaForm, isDiscontinuedForm,
     statusPreview, feedbackToneClass, isLowStock, categoryDotPalette, categoryDotColor,
     inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,

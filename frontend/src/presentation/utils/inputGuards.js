@@ -1,4 +1,4 @@
-import { isAllowedDecimal, isAllowedInteger, isAllowedText } from '../../domain/utils/inputRules.js';
+import { isAllowedDecimal, isAllowedInteger, isAllowedText, SPECIAL_CHARS_MESSAGE } from '../../domain/utils/inputRules.js';
 
 /**
  * Crea un manejador de `beforeinput` que bloquea al escribir lo que no cumple la regla.
@@ -11,6 +11,6 @@ const guard = (isAllowed, message) => (onReject) => (event) => {
   }
 };
 
-export const blockNonInteger = guard(isAllowedInteger, 'Solo números enteros positivos.');
-export const blockNonDecimal = guard(isAllowedDecimal, 'Solo números y punto decimal.');
-export const blockSpecialChars = guard(isAllowedText, 'Sin caracteres especiales: solo letras, números y espacios.');
+export const blockNonInteger = guard(isAllowedInteger, 'Solo numeros enteros positivos.');
+export const blockNonDecimal = guard(isAllowedDecimal, 'Solo numeros y punto decimal.');
+export const blockSpecialChars = guard(isAllowedText, SPECIAL_CHARS_MESSAGE);

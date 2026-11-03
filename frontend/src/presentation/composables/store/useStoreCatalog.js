@@ -18,10 +18,14 @@ export const useStoreCatalog = () => {
   const tabs = [
     { value: 'productos', label: 'Productos' },
     { value: 'ventas', label: 'Ventas' },
+    { value: 'papelera', label: 'Papelera' },
   ];
   // "movimientos" es el nombre anterior de la pestaña Ventas; los enlaces viejos siguen funcionando.
   const activeTab = computed({
-    get: () => (['ventas', 'movimientos'].includes(route.query.tab) ? 'ventas' : 'productos'),
+    get: () => {
+      if (['ventas', 'movimientos'].includes(route.query.tab)) return 'ventas';
+      return route.query.tab === 'papelera' ? 'papelera' : 'productos';
+    },
     set: (tab) => router.replace({ query: { ...route.query, tab } }),
   });
   const productos = computed(() => gymStore.productos_tienda);
@@ -241,13 +245,11 @@ export const useStoreCatalog = () => {
   };
 
   const deleteProducto = async (idProducto) => {
-    if (!window.confirm('¿Eliminar este producto?\n\nSi ya tiene ventas no se borrará: se archivará (deja de mostrarse y venderse) y sus ventas se conservan.')) return;
+    if (!window.confirm('¿Enviar este producto a la Papelera?\n\nDeja de mostrarse y venderse, y su artículo de Inventario también se oculta. Puedes restaurarlo desde la pestaña Papelera.')) return;
     try {
-      const result = await gymStore.deleteProductoTienda(idProducto);
+      await gymStore.deleteProductoTienda(idProducto);
       feedbackTone.value = 'success';
-      feedbackMessage.value = result?.accion === 'archivado'
-        ? 'El producto tiene ventas registradas: se archivó y sus ventas se conservan.'
-        : 'Producto eliminado.';
+      feedbackMessage.value = 'Producto enviado a la Papelera. Puedes restaurarlo desde la pestaña Papelera.';
     } catch (error) {
       feedbackTone.value = 'error';
       feedbackMessage.value =
@@ -293,7 +295,7 @@ export const useStoreCatalog = () => {
     router.push('/user/store/payment');
   };
 
-  const { isSaving, editingId, isProductEditorOpen, form, formErrors: productFormErrors, currentProductCode, itemNumber, findItem, availableTiendaItems, editingLinked, linkedItemLabel, stockEditable, stockMostrado, resetForm, openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback, imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages, loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage, handleLocalImageUpload } = useProductEditor({ gymStore, productos, inventario, feedbackMessage, feedbackTone, productCode });
+  const { isSaving, editingId, isProductEditorOpen, form, formErrors: productFormErrors, currentProductCode, findItem, stockEditable, stockMostrado, resetForm, openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback, imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages, loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage, handleLocalImageUpload } = useProductEditor({ gymStore, productos, inventario, feedbackMessage, feedbackTone, productCode });
 
   onMounted(() => {
     gymStore
@@ -318,8 +320,7 @@ export const useStoreCatalog = () => {
     feedbackToneClass, productCode, isProductLowStock, productStatusClass, productStatusDot,
     stockBarColor, deleteProducto, cartError, updateCart, agregarAlCarrito,
     goToCheckout, isSaving, editingId, isProductEditorOpen, form,
-    productFormErrors, currentProductCode, itemNumber, findItem, availableTiendaItems,
-    editingLinked, linkedItemLabel, stockEditable, stockMostrado, resetForm,
+    productFormErrors, currentProductCode, findItem, stockEditable, stockMostrado, resetForm,
     openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback,
     imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages,
     loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage,

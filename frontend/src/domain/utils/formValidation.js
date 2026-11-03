@@ -1,3 +1,4 @@
+import { parseQuantity } from './quantities.js';
 import { FORM_LIMITS } from "./formLimits.js";
 
 export const EMAIL_DOMAIN_MESSAGE = 'Solo se permiten correos que terminen en .com.';
@@ -60,6 +61,17 @@ export const amountError = (value, label = 'El precio') => {
     return `${label} debe ser un número mayor o igual a 0, con hasta 2 decimales.`;
   }
   return '';
+};
+
+/** Cantidad entera de stock: vacia solo si no es obligatoria. */
+export const quantityError = (value, { label = 'La cantidad', min = 0, required = true } = {}) => {
+  if (value === '' || value == null) return required ? `${label} es ${/^la /i.test(label) ? 'obligatoria' : 'obligatorio'}.` : '';
+  try {
+    parseQuantity(value, { label, min });
+    return '';
+  } catch (error) {
+    return error.message;
+  }
 };
 
 export const durationError = (value) => {

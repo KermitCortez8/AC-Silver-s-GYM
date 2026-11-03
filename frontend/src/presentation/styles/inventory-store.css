@@ -605,7 +605,11 @@
   flex-shrink: 0;
 }
 
-.inv-field-error {
+/* p.inv-field-error: gana a los estilos base de FieldError dentro de Inventario y Tienda. */
+p.inv-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
   margin-top: 0.35rem;
   font-size: 0.72rem;
   font-weight: 600;

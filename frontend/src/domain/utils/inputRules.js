@@ -5,6 +5,8 @@ export const NAME_MAX_LENGTH = 80;
 export const PAGE_SIZES = [8, 16, 24, 50];
 export const DEFAULT_PAGE_SIZE = 8;
 
+export const SPECIAL_CHARS_MESSAGE = 'Sin caracteres especiales: solo letras, numeros y espacios.';
+
 // Letras (con tildes y ñ), números y espacio.
 const TEXT_CHAR = /[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]/;
 const DISALLOWED_TEXT = /[^A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]/g;

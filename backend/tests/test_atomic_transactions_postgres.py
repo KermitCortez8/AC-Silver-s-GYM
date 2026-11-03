@@ -62,7 +62,8 @@ def database():
     database = Postgres()
     database.sql((BACKEND / 'tests/fixtures/priority_schema.sql').read_text())
     for filename in ['014_preserve_business_fields.sql', '015_atomic_gym_transactions.sql',
-                     '016_transaction_sequence_permissions.sql', '020_public_preregistrations.sql']:
+                     '016_transaction_sequence_permissions.sql', '018_archivar_inventario_tienda.sql',
+                     '019_papelera_tienda.sql', '020_public_preregistrations.sql']:
         migration = (BACKEND / 'migrations' / filename).read_text()
         database.sql(migration)
         database.sql(migration)  # El despliegue repetido no debe borrar ni duplicar datos.
