@@ -8,7 +8,7 @@
     size="xl"
     :busy="isSaving || isUploadingImage"
     @close="closeProductEditor"
-    @submit="handleSubmit"
+    @submit="submit"
   >
     <div v-if="formErrors.length" role="alert" class="inv-error">
       <AlertCircle :size="16" aria-hidden="true" />
@@ -27,13 +27,13 @@
           <input
             v-model="form.nombre"
             class="field-input"
-            :class="{ 'is-invalid': formErrors.includes('Nombre') || warnings.nombre }"
+            :class="{ 'is-invalid': isInvalid('nombre', formErrors.includes('Nombre')) }"
             :maxlength="NAME_MAX_LENGTH"
             placeholder="Proteina Whey, Bebida Energetica, etc."
             @beforeinput="blockNameChars"
             @input="cleanName"
           />
-          <p v-if="warnings.nombre" class="inv-field-error">{{ warnings.nombre }}</p>
+          <FieldError class="inv-field-error" :message="warnings.nombre" />
         </label>
         <label class="space-y-2 sm:col-span-2">
           <span class="inv-label">Descripcion</span>
@@ -50,38 +50,14 @@
             id="product-category"
             v-model="form.categoria"
             :options="categoryOptions"
-            :invalid="formErrors.includes('Categoria')"
+            :invalid="isInvalid('categoria', formErrors.includes('Categoria'))"
             placeholder="Selecciona una categoria"
             add-label="Agregar nueva categoria"
             add-placeholder="Ej. Suplementos"
+            @update:model-value="touch('categoria')"
           />
+          <FieldError class="inv-field-error" :message="warnings.categoria" />
         </div>
-        <label class="space-y-2">
-          <span class="inv-label">Item de inventario</span>
-          <input
-            v-if="editingLinked"
-            :value="linkedItemLabel"
-            class="field-input cursor-not-allowed opacity-70"
-            readonly
-          />
-          <select v-else v-model="form.id_item" class="field-input">
-            <option :value="null">
-              {{
-                editingId
-                  ? "Sin vincular"
-                  : "Crear nuevo item en Inventario (Tipo Tienda)"
-              }}
-            </option>
-            <option
-              v-for="item in availableTiendaItems"
-              :key="item.id"
-              :value="itemNumber(item)"
-            >
-              {{ item.inventoryCode }} - {{ item.name }} (reserva
-              {{ item.quantity }})
-            </option>
-          </select>
-        </label>
       </div>
     </fieldset>
 
@@ -99,12 +75,12 @@
             type="text"
             inputmode="decimal"
             class="field-input"
-            :class="{ 'is-invalid': formErrors.includes('Precio') }"
+            :class="{ 'is-invalid': isInvalid('precio', formErrors.includes('Precio')) }"
             placeholder="0.00"
             @beforeinput="blockPriceChars"
             @input="cleanPrice"
           />
-          <p v-if="warnings.precio" class="inv-field-error">{{ warnings.precio }}</p>
+          <FieldError class="inv-field-error" :message="warnings.precio" />
         </label>
         <div class="space-y-2">
           <label for="product-unit" class="inv-label">Unidad de venta</label>
@@ -125,8 +101,9 @@
             v-if="stockEditable"
             v-model="form.cantidad"
             class="field-input"
-            :class="{ 'is-invalid': formErrors.includes('Stock inicial') }"
+            :class="{ 'is-invalid': isInvalid('cantidad', formErrors.includes('Stock inicial')) }"
             placeholder="0"
+            @update:model-value="touch('cantidad')"
           />
           <input
             v-else
@@ -135,22 +112,26 @@
             class="field-input cursor-not-allowed opacity-70"
             readonly
           />
+          <FieldError class="inv-field-error" :message="warnings.cantidad" />
         </label>
         <label class="space-y-2">
           <span class="inv-label">Stock minimo</span>
           <QuantityInput
             v-model="form.minimo"
             class="field-input"
+            :class="{ 'is-invalid': isInvalid('minimo') }"
+            @update:model-value="touch('minimo')"
           />
-          <p v-if="warnings.stock" class="inv-field-error">{{ warnings.stock }}</p>
+          <FieldError class="inv-field-error" :message="warnings.minimo" />
         </label>
 
         <div class="app-notice app-notice--info inv-info sm:col-span-2">
           <Info :size="16" aria-hidden="true" />
           <div>
             <p v-if="stockEditable">
-              El stock inicial queda en la Tienda; la reserva de Inventario no
-              cambia.
+              Al registrarlo se crea tambien su articulo en Inventario (Tipo
+              Tienda). El stock inicial queda en la Tienda; la reserva de
+              Inventario empieza en 0.
             </p>
             <p v-else class="font-bold">
               La Tienda tiene su propio stock: baja con las ventas y sube cuando
@@ -348,7 +329,7 @@
 <script setup>
 import QuantityInput from "../QuantityInput.vue";
 import { feedbackClass } from "../../utils/feedback.js";
-import { reactive } from "vue";
+import { watch } from "vue";
 import {
   AlertCircle,
   Image as ImageIcon,
@@ -361,26 +342,28 @@ import {
 } from "lucide-vue-next";
 import ResourceModal from "../ResourceModal.vue";
 import ExtensibleSelect from "../common/ExtensibleSelect.vue";
+import FieldError from "../FieldError.vue";
 import { blockNonDecimal, blockSpecialChars } from "../../utils/inputGuards.js";
+import { useLiveWarnings } from "../../composables/useLiveWarnings.js";
 import {
   cleanDecimal,
   cleanText,
   missingFieldsMessage,
   NAME_MAX_LENGTH,
+  SPECIAL_CHARS_MESSAGE,
 } from "../../../domain/utils/inputRules.js";
+import { amountError, quantityError, requiredTextError } from "../../../domain/utils/formValidation.js";
 
 const props = defineProps([
   "categoryOptions",
   "unitOptions",
   "formErrors",
-  "availableTiendaItems",
   "bucketImages",
   "clearSelectedImage",
   "closeBucketPicker",
   "closeProductEditor",
   "currentProductCode",
   "editingId",
-  "editingLinked",
   "feedbackMessage",
   "feedbackTone",
   "form",
@@ -394,31 +377,46 @@ const props = defineProps([
   "isProductEditorOpen",
   "isSaving",
   "isUploadingImage",
-  "itemNumber",
-  "linkedItemLabel",
   "openBucketPicker",
   "selectBucketImage",
   "stockEditable",
   "stockMostrado",
 ]);
 
-// Avisos al escribir: el campo bloquea lo no permitido y explica por que.
-const warnings = reactive({ nombre: "", precio: "", stock: "" });
-const blockNameChars = blockSpecialChars((message) => { warnings.nombre = message; });
-const blockPriceChars = blockNonDecimal((message) => { warnings.precio = message; });
+// Avisos en vivo: cada campo se revisa con lo que tiene escrito en ese momento.
+const { warnings, touch, flash, touchAll, reset, isInvalid } = useLiveWarnings({
+  nombre: () => requiredTextError(props.form.nombre, "El nombre", NAME_MAX_LENGTH),
+  categoria: () => (String(props.form.categoria ?? "").trim() ? "" : "La categoria es obligatoria."),
+  precio: () => amountError(props.form.precio) || (Number(props.form.precio) > 0 ? "" : "El precio debe ser mayor a 0."),
+  cantidad: () => (props.stockEditable ? quantityError(props.form.cantidad, { label: "El stock inicial" }) : ""),
+  minimo: () => quantityError(props.form.minimo, { label: "El stock mínimo", required: false }),
+});
+
+// Cada vez que se abre el editor empieza sin avisos.
+watch(() => [props.isProductEditorOpen, props.editingId], reset);
+
+// Al enviar se revisan todos los campos, aunque no se hayan tocado.
+const submit = () => {
+  touchAll();
+  return props.handleSubmit();
+};
+
+const blockNameChars = blockSpecialChars((message) => flash("nombre", message));
+const blockPriceChars = blockNonDecimal((message) => flash("precio", message));
 
 const cleanName = (event) => {
   const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
   if (value !== event.target.value) event.target.value = value;
   props.form.nombre = value;
-  warnings.nombre = rejected ? "Sin caracteres especiales: solo letras, numeros y espacios." : "";
+  touch("nombre");
+  if (rejected) flash("nombre", SPECIAL_CHARS_MESSAGE);
 };
 
 const cleanPrice = (event) => {
   const value = cleanDecimal(event.target.value);
   if (value !== event.target.value) event.target.value = value;
   props.form.precio = value;
-  warnings.precio = "";
+  touch("precio");
 };
 
 </script>

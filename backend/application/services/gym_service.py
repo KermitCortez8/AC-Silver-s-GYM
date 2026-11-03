@@ -115,6 +115,12 @@ class GymService:
     def delete_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
         return StoreOperations(self.executor).delete_producto_tienda(id_producto)
 
+    def restaurar_producto_tienda(self, id_producto: int) -> dict[str, Any]:
+        return StoreOperations(self.executor).restaurar_producto_tienda(id_producto)
+
+    def eliminar_producto_definitivo(self, id_producto: int) -> dict[str, Any]:
+        return StoreOperations(self.executor).eliminar_producto_definitivo(id_producto)
+
     def pedidos_tienda(self) -> list[dict[str, Any]]:
         return StoreOperations(self.executor).pedidos_tienda()
 

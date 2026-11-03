@@ -8,6 +8,12 @@ export const createStoreRepository = (http, apiBase) => ({
   deleteProductoTienda: (id_producto, token) => dataRequest(http, `${apiBase}/tienda/${id_producto}`, {
     method: 'DELETE'
   }, token),
+  restoreProductoTienda: (id_producto, token) => dataRequest(http, `${apiBase}/tienda/${Number(id_producto)}/restaurar`, {
+    method: 'POST'
+  }, token),
+  purgeProductoTienda: (id_producto, token) => dataRequest(http, `${apiBase}/tienda/${Number(id_producto)}/definitivo`, {
+    method: 'DELETE'
+  }, token),
   refreshStoreProductsFromBackend: token => dataRequest(http, `${apiBase}/tienda`, {}, token),
   refreshStoreOrdersFromBackend: token => dataRequest(http, `${apiBase}/tienda/pedidos`, {}, token),
   updateStoreOrderStatus: (idPedido, body, token) => dataRequest(http, `${apiBase}/tienda/pedidos/${idPedido}`, {

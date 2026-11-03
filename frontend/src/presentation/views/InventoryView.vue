@@ -192,13 +192,13 @@
               id="inv-name"
               v-model="form.name"
               class="field-input"
-              :class="{ 'is-invalid': formErrors.includes('Nombre') || nameWarning }"
+              :class="{ 'is-invalid': isInvalid('name', formErrors.includes('Nombre')) }"
               :maxlength="NAME_MAX_LENGTH"
               placeholder="Nombre del articulo"
               @beforeinput="blockNameChars"
               @input="cleanNameField"
             />
-            <p v-if="nameWarning" class="inv-field-error">{{ nameWarning }}</p>
+            <FieldError class="inv-field-error" :message="warnings.name" />
           </div>
           <div class="space-y-2">
             <label for="inv-category" class="inv-label">Categoria (Tipo)</label>
@@ -237,13 +237,14 @@
                 id="inv-quantity"
                 v-model="form.quantity"
                 class="field-input flex-1 text-center"
-                :class="{ 'is-invalid': formErrors.includes('Stock inicial') }"
+                :class="{ 'is-invalid': isInvalid('quantity', formErrors.includes('Stock inicial')) }"
                 placeholder="0"
+                @update:model-value="touch('quantity')"
               />
               <button type="button" class="field-input flex shrink-0 items-center justify-center text-lg font-bold" style="width: 2.75rem; padding: 0" aria-label="Sumar una unidad" @click="stepQuantity(1)" :disabled="isSaving">+</button>
             </div>
             <input v-else id="inv-quantity" :value="form.quantity" type="text" class="field-input cursor-not-allowed text-center opacity-70" readonly />
-            <p v-if="numberWarning.quantity" class="inv-field-error">{{ numberWarning.quantity }}</p>
+            <FieldError class="inv-field-error" :message="warnings.quantity" />
           </div>
           <div class="space-y-2">
             <label for="inv-min" class="flex items-center justify-between gap-2">
@@ -255,10 +256,10 @@
               v-model="form.minQuantity"
               class="field-input"
               placeholder="Ej. 5"
-              :class="{ 'is-invalid': formErrors.includes('Stock minimo') }"
-              @update:model-value="formErrors = formErrors.filter((label) => label !== 'Stock minimo')"
+              :class="{ 'is-invalid': isInvalid('minQuantity', formErrors.includes('Stock minimo')) }"
+              @update:model-value="touch('minQuantity')"
             />
-            <p v-if="numberWarning.minQuantity" class="inv-field-error">{{ numberWarning.minQuantity }}</p>
+            <FieldError class="inv-field-error" :message="warnings.minQuantity" />
           </div>
           <div class="space-y-2">
             <label for="inv-unit" class="inv-label">Unidad</label>
@@ -414,7 +415,9 @@ import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
 import SortableTh from '../components/common/SortableTh.vue';
 import TablePager from '../components/common/TablePager.vue';
 import TableSearch from '../components/common/TableSearch.vue';
+import FieldError from '../components/FieldError.vue';
 import { blockSpecialChars } from '../utils/inputGuards.js';
+import { useLiveWarnings } from '../composables/useLiveWarnings.js';
 import {
   cleanText,
   DEFAULT_PAGE_SIZE,
@@ -423,7 +426,9 @@ import {
   missingFieldsMessage,
   NAME_MAX_LENGTH,
   sortRows,
+  SPECIAL_CHARS_MESSAGE,
 } from '../../domain/utils/inputRules.js';
+import { quantityError, requiredTextError } from '../../domain/utils/formValidation.js';
 import { useGymStore } from '../../application/stores/gymStore';
 
 import { parseQuantity, MAX_QUANTITY } from '../../domain/utils/quantities.js';
@@ -507,8 +512,6 @@ const editorError = ref('');
 const feedbackMessage = ref('');
 const feedbackTone = ref('info');
 const formErrors = ref([]);
-const nameWarning = ref('');
-const numberWarning = reactive({ quantity: '', minQuantity: '' });
 
 const form = reactive({
   name: '',
@@ -528,6 +531,7 @@ const unitOptions = computed(() => inventoryOptions(INVENTORY_UNITS, inventory.v
 const stepQuantity = (delta) => {
   try {
     form.quantity = Math.min(MAX_QUANTITY, Math.max(0, parseQuantity(form.quantity) + delta));
+    touch('quantity');
     editorError.value = '';
   } catch (error) { editorError.value = error.message; }
 };
@@ -581,8 +585,15 @@ const currentInventoryCode = computed(() => {
   return 'Se generara automaticamente';
 });
 
-// Bloqueo al escribir: nombre sin caracteres especiales y stock solo con enteros.
-const blockNameChars = blockSpecialChars((message) => { nameWarning.value = message; });
+// Avisos en vivo: cada campo se revisa con lo que tiene escrito en ese momento.
+const { warnings, touch, flash, touchAll, reset: resetWarnings, isInvalid } = useLiveWarnings({
+  name: () => requiredTextError(form.name, 'El nombre', NAME_MAX_LENGTH),
+  quantity: () => (editingId.value ? '' : quantityError(form.quantity, { label: 'El stock inicial' })),
+  minQuantity: () => quantityError(form.minQuantity, { label: 'El stock mínimo' }),
+});
+
+// Bloqueo al escribir: nombre sin caracteres especiales.
+const blockNameChars = blockSpecialChars((message) => flash('name', message));
 
 const cleanNameField = (event) => {
   const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
@@ -590,16 +601,20 @@ const cleanNameField = (event) => {
     event.target.value = value;
     form.name = value;
   }
-  nameWarning.value = rejected ? 'Sin caracteres especiales: solo letras, numeros y espacios.' : '';
-  formErrors.value = formErrors.value.filter((label) => label !== 'Nombre');
+  touch('name');
+  if (rejected) flash('name', SPECIAL_CHARS_MESSAGE);
 };
 
 const clearFormWarnings = () => {
   formErrors.value = [];
-  nameWarning.value = '';
-  numberWarning.quantity = '';
-  numberWarning.minQuantity = '';
+  resetWarnings();
 };
+
+// Tras un envio fallido el resumen de faltantes se actualiza mientras se corrige.
+watch(form, () => {
+  if (formErrors.value.length) formErrors.value = missingFields(form, requiredFields());
+  editorError.value = '';
+});
 
 /**
  * Gestiona esta acción de la vista.
@@ -662,6 +677,7 @@ const editItem = (item) => {
 const requiredFields = () => [
   { key: 'name', label: 'Nombre' },
   ...(editingId.value ? [] : [{ key: 'quantity', label: 'Stock inicial', isEmpty: (value) => value === '' || value === null || !Number.isInteger(Number(value)) }]),
+  { key: 'minQuantity', label: 'Stock minimo' },
 ];
 
 /**
@@ -680,7 +696,10 @@ const handleSubmit = async () => {
     }
     const minQuantity = parseQuantity(form.minQuantity, { label: 'El stock mínimo' });
     formErrors.value = missingFields(form, requiredFields());
-    if (formErrors.value.length) return;
+    if (formErrors.value.length) {
+      touchAll();
+      return;
+    }
     isSaving.value = true;
     await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form, name: form.name.trim(), quantity, minQuantity });
     const savedLabel = editingId.value ? 'Articulo actualizado.' : 'Articulo registrado.';
@@ -691,6 +710,7 @@ const handleSubmit = async () => {
   } catch (error) {
     feedbackTone.value = 'error';
     editorError.value = error instanceof Error ? error.message : 'No se pudo guardar el articulo.';
+    touchAll();
   } finally {
     isSaving.value = false;
   }

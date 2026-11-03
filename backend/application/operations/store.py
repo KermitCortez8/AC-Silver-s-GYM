@@ -45,12 +45,40 @@ class DeleteProductoTiendaCommand:
     operation_kind: ClassVar[str] = 'command'
     id_producto: int
     resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.INVENTARIO,
         Resource.PRODUCTOS_TIENDA,
-        Resource.PEDIDOS_TIENDA,
     )
 
     def run(self, rules: DomainComponents) -> Record | None:
         return rules.store.delete_producto_tienda(self.id_producto)
+
+
+@dataclass(frozen=True)
+class RestaurarProductoTiendaCommand:
+    operation_kind: ClassVar[str] = 'command'
+    id_producto: int
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+    )
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.store.restaurar_producto_tienda(self.id_producto)
+
+
+@dataclass(frozen=True)
+class EliminarProductoDefinitivoCommand:
+    operation_kind: ClassVar[str] = 'command'
+    id_producto: int
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.INVENTARIO,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.PEDIDOS_TIENDA,
+        Resource.MOV_INV,
+    )
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.store.eliminar_producto_definitivo(self.id_producto)
 
 
 @dataclass(frozen=True)

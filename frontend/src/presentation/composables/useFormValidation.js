@@ -2,14 +2,26 @@ import { nextTick, reactive } from 'vue';
 
 export const useFormValidation = (form, validator) => {
   const fieldErrors = reactive({});
-  const resetValidation = () => Object.keys(fieldErrors).forEach(key => delete fieldErrors[key]);
-  const validateField = (field) => { fieldErrors[field] = validator(form)[field] || ''; };
-  // Clear corrected errors while typing so blur does not move the submit button during a click.
+  // Campos ya revisados (al salir de ellos o al enviar): desde ahi el aviso sigue a lo que se escribe.
+  const checked = new Set();
+  let submitted = false;
+  const resetValidation = () => {
+    Object.keys(fieldErrors).forEach(key => delete fieldErrors[key]);
+    checked.clear();
+    submitted = false;
+  };
+  const validateField = (field) => {
+    checked.add(field);
+    fieldErrors[field] = validator(form)[field] || '';
+  };
+  // Revalidate while typing so the error appears or clears with each change; the tick
+  // keeps blur from moving the submit button during a click.
   const revalidateField = (field) => {
-    if (fieldErrors[field]) return nextTick(() => validateField(field));
+    if (submitted || checked.has(field) || fieldErrors[field]) return nextTick(() => validateField(field));
   };
   const validateForm = () => {
     resetValidation();
+    submitted = true;
     Object.assign(fieldErrors, validator(form));
     return Object.keys(fieldErrors).length === 0;
   };

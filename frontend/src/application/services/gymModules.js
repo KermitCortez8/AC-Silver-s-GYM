@@ -82,6 +82,7 @@ export const createGymModules = (state, repositories, services = getApplicationS
     fetchFromBackend: (...args) => synchronization.fetchFromBackend(...args),
     get generation() { return state.generation; },
     productos_tienda: state.productos_tienda,
+    papelera_tienda: state.papelera_tienda,
     resourceErrors: state.resourceErrors,
     storeOrders: state.storeOrders,
     syncError: state.syncError
