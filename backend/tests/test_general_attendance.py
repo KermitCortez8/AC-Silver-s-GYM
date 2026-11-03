@@ -16,7 +16,11 @@ from infrastructure.services.supabase_gym_service import SupabaseGymService
 
 
 @pytest.fixture
-def attendance():
+def attendance(monkeypatch):
+    current = [datetime(2026, 10, 7, 10, 30, tzinfo=LIMA)]
+    # El dominio vence membresías con la fecha real; se fija al reloj de la prueba para que
+    # la membresía de octubre no aparezca vencida cuando el calendario real pase de mes.
+    monkeypatch.setattr("domain.services.gym_domain_service._today_iso", lambda: current[0].date().isoformat())
     gym = LocalGymService()
     gym.state.update(
         clientes=[{"id_cliente": i, "nombre": f"Cliente {i}", "dni": str(i) * 8, "estado": "ACTIVO"}
@@ -26,7 +30,6 @@ def attendance():
         asistencia=[], matriculas_horario=[], horarios_servicio=[],
         configuracion_gimnasio={"capacidad_total": 2},
     )
-    current = [datetime(2026, 10, 7, 10, 30, tzinfo=LIMA)]
     service = AttendanceService(gym, clock=lambda: current[0])
     service.advance = lambda: current.__setitem__(0, current[0] + timedelta(hours=1))
     return service

@@ -69,7 +69,8 @@ class StoreRules:
         }
 
     def productos_tienda(self) -> list[dict[str, Any]]:
-        return self.context.state.get("productos_tienda", [])
+        # Los eliminados definitivamente solo se conservan por su historial de ventas.
+        return [p for p in self.context.state.get("productos_tienda", []) if not p.get("eliminado")]
 
     def get_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
         return next((p for p in self.context.state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)), None)
@@ -152,24 +153,80 @@ class StoreRules:
 
         return self.context.change(_fn)
 
+    @staticmethod
+    def _producto_en_state(state: dict[str, Any], id_producto: int) -> dict[str, Any] | None:
+        return next(
+            (p for p in state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)),
+            None,
+        )
+
+    def _marcar_papelera(self, state: dict[str, Any], producto: dict[str, Any], en_papelera: bool) -> None:
+        # El producto y su artículo de INVENTARIO entran y salen juntos de la papelera.
+        producto["archivado"] = en_papelera
+        item = self.dependencies.find_item_in_state(state, producto.get("id_item"))
+        if item:
+            item["archivado"] = en_papelera
+        self.dependencies.actualizar_estados_tienda(state)
+
     def delete_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
-        # Con ventas registradas se archiva: DETALLE_VENTA lo referencia y las ventas se conservan.
+        # Eliminar manda el producto a la papelera (soft delete); desde ahí se restaura o se elimina.
         def _fn(state: dict[str, Any]):
-            productos = state.get("productos_tienda", [])
-            producto = next((p for p in productos if int(p.get("id_producto", 0)) == int(id_producto)), None)
+            producto = self._producto_en_state(state, id_producto)
             if not producto:
                 return None
+            self._marcar_papelera(state, producto, True)
+            return producto
+
+        return self.context.change(_fn)
+
+    def restaurar_producto_tienda(self, id_producto: int) -> dict[str, Any]:
+        def _fn(state: dict[str, Any]):
+            producto = self._producto_en_state(state, id_producto)
+            if not producto or producto.get("eliminado"):
+                raise EntityNotFound("Producto no encontrado")
+            if not producto.get("archivado"):
+                raise ValueError("El producto no está en la papelera")
+            self._marcar_papelera(state, producto, False)
+            return producto
+
+        return self.context.change(_fn)
+
+    def eliminar_producto_definitivo(self, id_producto: int) -> dict[str, Any]:
+        """Saca el producto de la papelera para siempre.
+
+        Lo que tiene historial (ventas o movimientos) no se puede borrar por las claves foráneas:
+        se marca eliminado y queda oculto, conservando ese historial. Devuelve el artículo de
+        INVENTARIO que queda por borrar en un segundo paso: la base exige quitar antes el producto.
+        """
+        def _fn(state: dict[str, Any]):
+            producto = self._producto_en_state(state, id_producto)
+            if not producto or producto.get("eliminado"):
+                raise EntityNotFound("Producto no encontrado")
+            if not producto.get("archivado"):
+                raise ValueError("Primero envía el producto a la papelera")
+            item = self.dependencies.find_item_in_state(state, producto.get("id_item"))
             tiene_ventas = any(
                 int(linea.get("id_producto") or 0) == int(id_producto)
                 for pedido in state.get("pedidos_tienda", [])
                 for linea in pedido.get("items", [])
             )
             if tiene_ventas:
-                producto["archivado"] = True
-                producto["estado"] = "Descatalogado"
-                return producto
-            state["productos_tienda"] = [p for p in productos if int(p.get("id_producto", 0)) != int(id_producto)]
-            return None
+                producto["eliminado"] = True
+                if item:
+                    item["eliminado"] = True
+                return {"producto": "oculto", "id_item_por_borrar": None}
+            state["productos_tienda"] = [
+                p for p in state["productos_tienda"] if int(p.get("id_producto", 0)) != int(id_producto)
+            ]
+            if not item:
+                return {"producto": "borrado", "id_item_por_borrar": None}
+            tiene_movimientos = any(
+                int(m.get("id_item", 0) or 0) == int(item["id_item"]) for m in state.get("mov_inv", [])
+            )
+            if tiene_movimientos:
+                item["eliminado"] = True
+                return {"producto": "borrado", "id_item_por_borrar": None}
+            return {"producto": "borrado", "id_item_por_borrar": int(item["id_item"])}
 
         return self.context.change(_fn)
 

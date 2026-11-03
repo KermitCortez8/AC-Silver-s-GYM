@@ -1,4 +1,7 @@
-export const EMAIL_DOMAIN_MESSAGE = 'Solo se permiten correos que terminen en .com.';
+import { parseQuantity } from './quantities.js';
+
+export const ACCOUNT_EMAIL_DOMAINS = ['gmail.com', 'hotmail.com'];
+export const EMAIL_DOMAIN_MESSAGE = 'Solo se permiten correos @gmail.com o @hotmail.com.';
 
 export const emailError = (value, { account = true } = {}) => {
   const email = String(value ?? '').trim();
@@ -11,7 +14,7 @@ export const emailError = (value, { account = true } = {}) => {
     || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(domain)) {
     return 'Ingresa un correo válido, por ejemplo nombre@gmail.com.';
   }
-  if (account && !/\.com$/i.test(domain)) return EMAIL_DOMAIN_MESSAGE;
+  if (account && !ACCOUNT_EMAIL_DOMAINS.includes(domain.toLowerCase())) return EMAIL_DOMAIN_MESSAGE;
   return '';
 };
 
@@ -58,6 +61,17 @@ export const amountError = (value, label = 'El precio') => {
     return `${label} debe ser un número mayor o igual a 0, con hasta 2 decimales.`;
   }
   return '';
+};
+
+/** Cantidad entera de stock: vacia solo si no es obligatoria. */
+export const quantityError = (value, { label = 'La cantidad', min = 0, required = true } = {}) => {
+  if (value === '' || value == null) return required ? `${label} es ${/^la /i.test(label) ? 'obligatoria' : 'obligatorio'}.` : '';
+  try {
+    parseQuantity(value, { label, min });
+    return '';
+  } catch (error) {
+    return error.message;
+  }
 };
 
 export const durationError = (value) => {

@@ -18,7 +18,7 @@ const context = () => ({
   apiBase: '/api', authStore: { token: 'session' }, generation: 0,
   members: ref([]), promotions: ref([]), planCatalog: ref([]),
   attendance: ref([]), attendancePasses: ref([]), routines: ref([]),
-  productos_tienda: ref([]), storeOrders: ref([]), cart: ref([]),
+  productos_tienda: ref([]), papelera_tienda: ref([]), storeOrders: ref([]), cart: ref([]),
   inventory: ref([]), inventoryMovements: ref([]), syncError: ref(''), resourceErrors: new Map(),
 });
 
@@ -38,6 +38,37 @@ test('deleting inventory with history archives the record and reports the server
   assert.deepEqual(await module.deleteInventoryItem('item-1'), result);
   assert.equal(ctx.inventory.value[0].status, 'Descontinuado');
   assert.equal(ctx.inventory.value[0].archived, true);
+});
+
+test('store trash separates archived products and calls restore and permanent delete', async () => {
+  setActivePinia(createPinia());
+  const ctx = context();
+  let refreshes = 0;
+  ctx.fetchFromBackend = async () => { refreshes += 1; };
+  const calls = [];
+  const module = createStoreModule(ctx, {
+    refreshStoreProductsFromBackend: async () => [
+      { id_producto: 1, nombre_producto: 'Agua' },
+      { id_producto: 2, nombre_producto: 'Gorra', archivado: true },
+      { id_producto: 3, nombre_producto: 'Toalla', archivado: true, eliminado: true },
+    ],
+    deleteProductoTienda: async (id) => { calls.push(['delete', id]); return { accion: 'archivado' }; },
+    restoreProductoTienda: async (id) => { calls.push(['restore', id]); return { id_producto: id }; },
+    purgeProductoTienda: async (id) => { calls.push(['purge', id]); return { producto: 'oculto' }; },
+  });
+  await module.refreshStoreProductsFromBackend();
+  assert.deepEqual(ctx.productos_tienda.value.map((p) => p.id_producto), [1]);
+  assert.deepEqual(ctx.papelera_tienda.value.map((p) => p.id_producto), [2], 'Los eliminados no vuelven a la papelera');
+
+  await module.deleteProductoTienda(1);
+  assert.deepEqual(ctx.productos_tienda.value, []);
+  assert.deepEqual(ctx.papelera_tienda.value.map((p) => p.id_producto), [1, 2]);
+
+  await module.restoreProductoTienda(2);
+  assert.deepEqual(await module.purgeProductoTienda(1), { producto: 'oculto' });
+  assert.equal(ctx.papelera_tienda.value.some((p) => p.id_producto === 1), false);
+  assert.deepEqual(calls, [['delete', 1], ['restore', 2], ['purge', 1]]);
+  assert.equal(refreshes, 3, 'Cada accion recarga Tienda e Inventario');
 });
 
 test('deleting inventory without history removes the record after a successful response', async () => {

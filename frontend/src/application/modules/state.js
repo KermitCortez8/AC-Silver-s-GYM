@@ -27,6 +27,9 @@ export const createGymState = () => {
 
   const productos_tienda = ref(initialState.productos_tienda);
 
+  // Productos eliminados (archivados) que se pueden restaurar desde la Papelera de Tienda.
+  const papelera_tienda = ref([]);
+
   const storeOrders = ref(initialState.storeOrders);
 
   const cart = ref(initialState.cart);
@@ -80,6 +83,7 @@ export const createGymState = () => {
     inventory,
     inventoryMovements,
     productos_tienda,
+    papelera_tienda,
     storeOrders,
     cart,
     routines,
@@ -106,6 +110,7 @@ export const createGymState = () => {
     for (const [key, value] of Object.entries(clean)) context[key].value = value;
     context.initialState = clean;
     membershipPayments.value = [];
+    papelera_tienda.value = [];
     syncError.value = '';
     isSyncing.value = false;
     sectionSyncs.value = {};

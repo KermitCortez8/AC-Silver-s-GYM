@@ -98,6 +98,8 @@
     </p>
     <StoreMovementsPanel v-if="isAdmin && activeTab === 'ventas'" />
 
+    <StoreTrashPanel v-else-if="isAdmin && activeTab === 'papelera'" :product-code="productCode" />
+
     <section v-else-if="isAdmin" class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -652,14 +654,12 @@
       :category-options="productCategoryOptions"
       :unit-options="productUnitOptions"
       :form-errors="productFormErrors"
-      :available-tienda-items="availableTiendaItems"
       :bucket-images="bucketImages"
       :clear-selected-image="clearSelectedImage"
       :close-bucket-picker="closeBucketPicker"
       :close-product-editor="closeProductEditor"
       :current-product-code="currentProductCode"
       :editing-id="editingId"
-      :editing-linked="editingLinked"
       :feedback-message="feedbackMessage"
       :feedback-tone="feedbackTone"
       :form="form"
@@ -673,8 +673,6 @@
       :is-product-editor-open="isProductEditorOpen"
       :is-saving="isSaving"
       :is-uploading-image="isUploadingImage"
-      :item-number="itemNumber"
-      :linked-item-label="linkedItemLabel"
       :open-bucket-picker="openBucketPicker"
       :select-bucket-image="selectBucketImage"
       :stock-editable="stockEditable"
@@ -700,6 +698,7 @@ import TableSearch from '../components/common/TableSearch.vue';
 import { cleanInteger, DEFAULT_PAGE_SIZE, matchesSearch, sortRows, uniqueOptions } from '../../domain/utils/inputRules.js';
 import { useRoute, useRouter } from 'vue-router';
 import StoreMovementsPanel from '../components/store/StoreMovementsPanel.vue';
+import StoreTrashPanel from '../components/store/StoreTrashPanel.vue';
 import { useGymStore } from '../../application/stores/gymStore';
 
 const route = useRoute();
@@ -710,10 +709,14 @@ const isAdmin = computed(() => route.path.startsWith('/admin/store'));
 const tabs = [
   { value: 'productos', label: 'Productos' },
   { value: 'ventas', label: 'Ventas' },
+  { value: 'papelera', label: 'Papelera' },
 ];
 // "movimientos" es el nombre anterior de la pestaña Ventas; los enlaces viejos siguen funcionando.
 const activeTab = computed({
-  get: () => (['ventas', 'movimientos'].includes(route.query.tab) ? 'ventas' : 'productos'),
+  get: () => {
+    if (['ventas', 'movimientos'].includes(route.query.tab)) return 'ventas';
+    return route.query.tab === 'papelera' ? 'papelera' : 'productos';
+  },
   set: (tab) => router.replace({ query: { ...route.query, tab } }),
 });
 const productos = computed(() => gymStore.productos_tienda);
@@ -933,13 +936,11 @@ const stockBarColor = (producto) => {
 };
 
 const deleteProducto = async (idProducto) => {
-  if (!window.confirm('Eliminar este producto?\n\nSi ya tiene ventas no se borrara: se archivara (deja de mostrarse y venderse) y sus ventas se conservan.')) return;
+  if (!window.confirm('Enviar este producto a la Papelera?\n\nDeja de mostrarse y venderse, y su articulo de Inventario tambien se oculta. Puedes restaurarlo desde la pestaña Papelera.')) return;
   try {
-    const result = await gymStore.deleteProductoTienda(idProducto);
+    await gymStore.deleteProductoTienda(idProducto);
     feedbackTone.value = 'success';
-    feedbackMessage.value = result?.accion === 'archivado'
-      ? 'El producto tiene ventas registradas: se archivo y sus ventas se conservan.'
-      : 'Producto eliminado.';
+    feedbackMessage.value = 'Producto enviado a la Papelera. Puedes restaurarlo desde la pestaña Papelera.';
   } catch (error) {
     feedbackTone.value = 'error';
     feedbackMessage.value =
@@ -985,7 +986,7 @@ const goToCheckout = () => {
   router.push('/user/store/payment');
 };
 
-const { isSaving, editingId, isProductEditorOpen, form, formErrors: productFormErrors, currentProductCode, itemNumber, findItem, availableTiendaItems, editingLinked, linkedItemLabel, stockEditable, stockMostrado, resetForm, openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback, imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages, loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage, handleLocalImageUpload } = useProductEditor({ gymStore, productos, inventario, feedbackMessage, feedbackTone, productCode });
+const { isSaving, editingId, isProductEditorOpen, form, formErrors: productFormErrors, currentProductCode, findItem, stockEditable, stockMostrado, resetForm, openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback, imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages, loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage, handleLocalImageUpload } = useProductEditor({ gymStore, productos, inventario, feedbackMessage, feedbackTone, productCode });
 
 onMounted(() => {
   gymStore

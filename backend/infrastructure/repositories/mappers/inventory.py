@@ -18,12 +18,14 @@ def _map_inventory(row: dict[str, Any]) -> dict[str, Any]:
         "ubicacion": str(row.get("ubicacion") or "Almacén"),
         "observaciones": str(row.get("observaciones") or ""),
         "archivado": bool(row.get("archivado") or False),
+        "eliminado": bool(row.get("eliminado") or False),
     }
 
 
 def _archived_field(row: dict[str, Any]) -> dict[str, Any]:
-    # Solo se envía al archivar: las instalaciones sin la migración 018 siguen guardando lo demás.
-    return {"archivado": True} if row.get("archivado") else {}
+    # archivado (papelera, migración 018) siempre se envía para poder restaurar.
+    # eliminado solo al eliminar: las instalaciones sin la migración 019 siguen guardando lo demás.
+    return {"archivado": bool(row.get("archivado")), **({"eliminado": True} if row.get("eliminado") else {})}
 
 
 def _inventory_to_remote(row: dict[str, Any]) -> dict[str, Any]:
@@ -84,6 +86,7 @@ def _map_product(row: dict[str, Any]) -> dict[str, Any]:
         "estado": "Disponible" if stock > 0 else "Sin stock",
         "imagen_url": str(row.get("imagen_url") or ""),
         "archivado": bool(row.get("archivado") or False),
+        "eliminado": bool(row.get("eliminado") or False),
     }
 
 

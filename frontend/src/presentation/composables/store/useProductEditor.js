@@ -1,6 +1,6 @@
 import { amountError, requiredTextError } from "../../../domain/utils/formValidation.js";
 import { parseQuantity } from "../../../domain/utils/quantities.js";
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useStoreImagePicker } from "./useStoreImagePicker.js";
 import { missingFields, missingFieldsMessage } from "../../../domain/utils/inputRules.js";
 
@@ -44,6 +44,13 @@ export const useProductEditor = ({
     imagen_url: "",
   });
 
+  // Tras un envio fallido el resumen de faltantes se actualiza mientras se corrige.
+  watch(form, () => {
+    if (!isProductEditorOpen.value || !formErrors.value.length) return;
+    formErrors.value = missingFields(form, requiredProductFields(!editingId.value));
+    feedbackMessage.value = missingFieldsMessage(formErrors.value);
+  });
+
   const {
     imageFeedback,
     imageFeedbackTone,
@@ -72,34 +79,8 @@ export const useProductEditor = ({
     inventario.value.find((item) => itemNumber(item) === Number(idItem)) ||
     null;
 
-  const availableTiendaItems = computed(() => {
-    const vinculados = new Set(
-      productos.value
-        .filter((p) => p.id_item && p.id_producto !== editingId.value)
-        .map((p) => Number(p.id_item)),
-    );
-    return inventario.value.filter(
-      (item) =>
-        String(item.category || "")
-          .trim()
-          .toLowerCase() === "tienda" && !vinculados.has(itemNumber(item)),
-    );
-  });
-
-  const editingLinked = computed(() =>
-    Boolean(
-      editingId.value &&
-      productos.value.find((p) => p.id_producto === editingId.value)?.id_item,
-    ),
-  );
-
-  const linkedItemLabel = computed(() => {
-    const item = findItem(form.id_item);
-    return item
-      ? `${item.inventoryCode} - ${item.name}`
-      : `Item #${form.id_item}`;
-  });
-
+  // Un producto nuevo siempre crea su articulo en Inventario (Tipo Tienda); al editar,
+  // el vinculo se conserva por detras y no se cambia desde el modal.
   const stockEditable = computed(() => !editingId.value);
 
   const stockMostrado = computed(() => Number(form.cantidad || 0));
@@ -206,9 +187,6 @@ export const useProductEditor = ({
     currentProductCode,
     itemNumber,
     findItem,
-    availableTiendaItems,
-    editingLinked,
-    linkedItemLabel,
     stockEditable,
     stockMostrado,
     resetForm,
