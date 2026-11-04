@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-03",
+  "scope": "Prototipo local; no integración productiva",
+  "desktop": "1440x1000",
+  "mobile": "390x844",
+  "checks": [
+    {
+      "name": "Specs y prototipo se muestran juntos",
+      "result": "aprobado"
+    },
+    {
+      "name": "Formulario separado y límites 50/8/9",
+      "result": "aprobado"
+    },
+    {
+      "name": "Mensaje máximo 150 sin contador visible",
+      "result": "aprobado"
+    },
+    {
+      "name": "Preregistro diferencia solicitud, pago y activación",
+      "result": "aprobado"
+    },
+    {
+      "name": "Cuenta pendiente no abre el panel",
+      "result": "aprobado"
+    },
+    {
+      "name": "Membresía vencida mantiene restricción de acceso",
+      "result": "aprobado"
+    },
+    {
+      "name": "Ingreso simulado muestra panel propio",
+      "result": "aprobado"
+    },
+    {
+      "name": "Sesión con servicio y fecha absoluta",
+      "result": "aprobado"
+    },
+    {
+      "name": "Un mensaje no confirma una matrícula",
+      "result": "aprobado"
+    },
+    {
+      "name": "Confirmación explícita y doble clic sin duplicado local",
+      "result": "aprobado"
+    },
+    {
+      "name": "Cupo ocupado no muestra matrícula exitosa",
+      "result": "aprobado"
+    },
+    {
+      "name": "Resultado incierto se reconcilia sin repetir envío",
+      "result": "aprobado"
+    },
+    {
+      "name": "Salir borra conversación y selección anteriores",
+      "result": "aprobado"
+    },
+    {
+      "name": "Ayuda guiada disponible cuando la IA falla",
+      "result": "aprobado"
+    },
+    {
+      "name": "Sin desbordamiento horizontal en móvil: preregistro",
+      "result": "aprobado"
+    },
+    {
+      "name": "Sin desbordamiento horizontal en móvil: acceso",
+      "result": "aprobado"
+    },
+    {
+      "name": "Sin desbordamiento horizontal en móvil: matricula",
+      "result": "aprobado"
+    },
+    {
+      "name": "Sin errores JavaScript ni peticiones de API/proveedores",
+      "result": "aprobado"
+    }
+  ],
+  "captures": [
+    "p01-planes-escritorio.png",
+    "p02-preregistro-escritorio.png",
+    "p03-solicitud-escritorio.png",
+    "p04-acceso-escritorio.png",
+    "p05-activacion-pendiente-escritorio.png",
+    "p05-membresia-vencida-escritorio.png",
+    "p06-panel-escritorio.png",
+    "p07-horarios-escritorio.png",
+    "p08-confirmacion-escritorio.png",
+    "p09-mi-horario-escritorio.png",
+    "p10-cupo-agotado-escritorio.png",
+    "p10-resultado-incierto-escritorio.png",
+    "ayuda-guiada-escritorio.png",
+    "p01-planes-movil.png",
+    "p04-acceso-movil.png",
+    "p07-horarios-movil.png"
+  ],
+  "errors": [],
+  "apiCalls": [],
+  "unexpectedNetwork": []
+}

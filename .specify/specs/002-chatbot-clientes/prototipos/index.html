@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Specs y prototipos · Asistente Silver</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <header class="review-header">
+    <a class="review-brand" href="#preregistro"><span class="review-mark">S</span><span>AC SILVER’S GYM<small>Diseño del asistente</small></span></a>
+    <span class="review-badge"><i></i> Prototipo · Datos simulados</span>
+    <a class="document-link" href="../casos-de-uso.md">Ver las ECU ↗</a>
+  </header>
+  <div class="review-layout">
+    <aside class="spec-sidebar" aria-label="Specs y controles de revisión">
+      <p class="eyebrow">SPEC 002 / REVISIÓN</p>
+      <h1>Un recorrido.<br>Tres momentos.</h1>
+      <p class="sidebar-description">Revisa la experiencia del cliente junto a sus reglas y casos de uso.</p>
+      <nav class="case-navigation" aria-label="Casos de uso">
+        <button data-case="preregistro"><span class="case-number">01</span><span>Preregistro<small>De la consulta al formulario</small></span><span class="case-arrow">↗</span></button>
+        <button data-case="acceso"><span class="case-number">02</span><span>Acceso<small>Ingresar y continuar</small></span><span class="case-arrow">↗</span></button>
+        <button data-case="matricula"><span class="case-number">03</span><span>Horarios y matrícula<small>Elegir, revisar y confirmar</small></span><span class="case-arrow">↗</span></button>
+      </nav>
+      <section class="spec-card" aria-labelledby="spec-title">
+        <div class="spec-card-heading"><span class="small-label">SPEC ASOCIADA</span><span id="use-case-id"></span></div>
+        <h2 id="spec-title"></h2>
+        <p id="spec-objective"></p>
+        <div id="criteria" class="criteria"></div>
+        <div class="rule-divider"></div>
+        <span class="small-label">REGLA CLAVE</span>
+        <p id="spec-rule" class="rule-text"></p>
+      </section>
+      <section class="review-controls" aria-label="Escenarios de revisión">
+        <label class="small-label" for="scenario">PROBAR UNA ALTERNATIVA</label>
+        <select id="scenario"></select>
+        <button id="reset" class="reset-button">↺ Reiniciar este recorrido</button>
+      </section>
+      <p class="review-footnote">Specs + ECU + prototipos<br><strong>Integración con IA pendiente</strong></p>
+    </aside>
+    <main class="review-main">
+      <div class="canvas-heading"><div><p class="eyebrow">EXPERIENCIA PROPUESTA</p><p id="screen-caption" class="screen-caption"></p></div><span class="version">VERSIÓN 01</span></div>
+      <section class="programming-context" aria-label="Programación asociada al prototipo"><span class="small-label">PROGRAMACIÓN ASOCIADA</span><div id="programming-tags"></div><a href="../programacion-prototipos.md">Ver alcance ↗</a></section>
+      <section class="gym-frame" aria-label="Prototipo de la plataforma">
+        <header class="gym-header">
+          <div class="gym-logo"><span class="gym-symbol">S<span>↗</span></span><span>SILVER’S<small>GYM & FITNESS</small></span></div>
+          <nav aria-label="Navegación de ejemplo"><button data-action="plans">Planes</button><button data-action="schedules">Horarios</button><button data-action="login">Mi cuenta</button></nav>
+          <span class="gym-location"><span>●</span> LIMA, PERÚ</span>
+        </header>
+        <div class="gym-workspace">
+          <div class="stage-wrap"><div id="prototype-stage"></div><p class="demo-note">Demostración local. Los datos, pagos, accesos e inscripciones son simulados.</p></div>
+          <section class="chat-panel" aria-label="Asistente del gimnasio">
+            <header class="chat-header"><span class="assistant-avatar">✦</span><div><h2>Asistente Silver</h2><p id="chat-status"><span></span> Demostración guiada</p></div><span class="chat-spark">✧</span></header>
+            <div id="messages" class="chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversación"></div>
+            <div class="chat-bottom"><div id="quick-actions" class="quick-actions"></div><form id="chat-form" class="chat-input"><label class="sr-only" for="message">Pregunta al asistente</label><input id="message" type="text" maxlength="150" autocomplete="off" placeholder="Escribe tu pregunta…"><button aria-label="Enviar mensaje" type="submit">↑</button></form><p class="chat-privacy">Completa tus datos personales en el formulario.</p></div>
+          </section>
+        </div>
+        <footer class="gym-footer"><span>AC Silver’s GYM</span><span>Tu siguiente paso empieza aquí.</span></footer>
+      </section>
+      <div class="review-bottom"><p><span id="screen-code"></span> <span id="screen-purpose"></span></p><a href="../revision-prototipos.md">Guion y trazabilidad ↗</a></div>
+    </main>
+  </div>
+  <script src="prototipo.js"></script>
+</body>
+</html>
