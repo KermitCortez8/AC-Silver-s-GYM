@@ -101,8 +101,8 @@
               <span v-else-if="!canCancel(order)" class="ord-hint">Solo se cancelan pedidos PENDIENTE.</span>
             </label>
             <label class="space-y-1.5">
-              <span class="ord-field-label">Observacion</span>
-              <input v-model="ensureDraft(order).observacion_admin" class="ord-input" placeholder="Entrega, recojo, incidencia o anulacion" />
+              <span class="ord-field-label">Observación</span>
+              <input v-model="ensureDraft(order).observacion_admin" class="ord-input" placeholder="Entrega, recojo, incidencia o anulación" />
             </label>
             <button type="button" class="ord-btn-primary" :disabled="savingOrders.has(order.id_pedido)" @click="updateOrder(order)">
               <Save :size="16" aria-hidden="true" /> {{ savingOrders.has(order.id_pedido) ? 'Guardando...' : 'Guardar' }}
@@ -124,7 +124,7 @@
 
       <div v-if="!filteredOrders.length" class="ord-empty">
         <ClipboardList :size="28" aria-hidden="true" />
-        <p>{{ search ? 'Ningun pedido coincide con la busqueda.' : 'No hay pedidos para mostrar.' }}</p>
+        <p>{{ search ? 'Ningún pedido coincide con la búsqueda.' : 'No hay pedidos para mostrar.' }}</p>
       </div>
     </section>
   </div>

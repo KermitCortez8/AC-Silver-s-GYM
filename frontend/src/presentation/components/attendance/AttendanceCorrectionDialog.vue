@@ -66,11 +66,10 @@
       </div>
       <label
         >Motivo {{ annulling ? 'de anulación' : 'de la corrección'
-        }}<textarea
+        }}<textarea :maxlength="FORM_LIMITS.longText"
           v-model="form.motivo"
           required
           minlength="5"
-          maxlength="500"
           rows="3"
           :autofocus="annulling"
           placeholder="Explica qué ocurrió con este registro"
@@ -133,6 +132,8 @@
   </dialog>
 </template>
 <script setup>
+import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+
 import { computed, onMounted, reactive, ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import { useAuth } from '../../../application/composables/useAuth';

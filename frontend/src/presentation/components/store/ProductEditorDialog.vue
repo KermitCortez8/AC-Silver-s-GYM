@@ -2,9 +2,9 @@
   <ResourceModal
     :open="isAdmin && isProductEditorOpen"
     :icon="ShoppingBag"
-    :eyebrow="editingId ? 'Tienda · Edicion de registro' : 'Tienda · Nuevo registro'"
+    :eyebrow="editingId ? 'Tienda · Edición de registro' : 'Tienda · Nuevo registro'"
     :title="editingId ? 'Editar producto' : 'Nuevo producto'"
-    subtitle="Define precio, stock e imagen del producto que veran los clientes."
+    subtitle="Define precio, stock e imagen del producto que verán los clientes."
     size="xl"
     :busy="isSaving || isUploadingImage"
     @close="closeProductEditor"
@@ -17,9 +17,9 @@
 
     <!-- Sección: Informacion básica -->
     <fieldset class="rm-section">
-      <legend class="sr-only">Informacion del producto</legend>
+      <legend class="sr-only">Información del producto</legend>
       <p class="rm-section-title">
-        <Info :size="14" aria-hidden="true" /> Informacion del producto
+        <Info :size="14" aria-hidden="true" /> Información del producto
       </p>
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="space-y-2 sm:col-span-2">
@@ -29,28 +29,28 @@
             class="field-input"
             :class="{ 'is-invalid': isInvalid('nombre', formErrors.includes('Nombre')) }"
             :maxlength="NAME_MAX_LENGTH"
-            placeholder="Proteina Whey, Bebida Energetica, etc."
+            placeholder="Proteína Whey, Bebida Energética, etc."
             @beforeinput="blockNameChars"
             @input="cleanName"
           />
           <FieldError class="inv-field-error" :message="warnings.nombre" />
         </label>
         <label class="space-y-2 sm:col-span-2">
-          <span class="inv-label">Descripcion</span>
+          <span class="inv-label">Descripción</span>
           <textarea
             v-model="form.descripcion"
             rows="2"
             class="field-input"
-            placeholder="Descripcion breve del producto..."
+            placeholder="Descripción breve del producto..."
           ></textarea>
         </label>
         <div class="space-y-2">
-          <label for="product-category" class="inv-label inv-required">Categoria</label>
+          <label for="product-category" class="inv-label inv-required">Categoría</label>
           <ExtensibleSelect
             id="product-category"
             v-model="form.categoria"
             :options="categoryOptions"
-            :invalid="isInvalid('categoria', formErrors.includes('Categoria'))"
+            :invalid="isInvalid('categoria', formErrors.includes('Categoría'))"
             placeholder="Selecciona una categoria"
             add-label="Agregar nueva categoria"
             add-placeholder="Ej. Suplementos"
@@ -115,7 +115,7 @@
           <FieldError class="inv-field-error" :message="warnings.cantidad" />
         </label>
         <label class="space-y-2">
-          <span class="inv-label">Stock minimo</span>
+          <span class="inv-label">Stock mínimo</span>
           <QuantityInput
             v-model="form.minimo"
             class="field-input"
@@ -144,7 +144,7 @@
               <span class="font-bold">Disponible</span> con stock,
               <span class="font-bold">Agotado</span> sin stock y
               <span class="font-bold">Descatalogado</span> (oculto a clientes)
-              si no tiene precio o el item ya no es Tipo Tienda o esta
+              si no tiene precio o el ítem ya no es Tipo Tienda o está
               Descontinuado.
             </p>
           </div>

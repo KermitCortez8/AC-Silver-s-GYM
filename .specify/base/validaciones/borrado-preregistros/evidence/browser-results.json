@@ -1,0 +1,36 @@
+{
+  "results": [
+    {
+      "scenario": "Respuesta nativa de Chromium: error anterior y transporte corregido",
+      "status": 204,
+      "bodyIsNull": false,
+      "oldFailure": "TypeError",
+      "fixedStatus": 204
+    },
+    {
+      "scenario": "Borrado confirmado de Preregistro público",
+      "status": "correcto",
+      "requests": 1
+    },
+    {
+      "scenario": "Borrado confirmado de Alta administrativa",
+      "status": "correcto",
+      "requests": 1
+    },
+    {
+      "scenario": "Un conflicto real conserva al cliente y muestra el motivo",
+      "status": "correcto"
+    },
+    {
+      "scenario": "Respuesta perdida: aviso, ningún reintento y recarga del resultado real",
+      "status": "correcto"
+    }
+  ],
+  "deletes": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "errors": []
+}

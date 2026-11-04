@@ -1,0 +1,58 @@
+{
+  "results": [
+    "Duración seleccionable con ocho opciones y precio inicialmente vacío.",
+    "Campos obligatorios con errores asociados: no se envían escrituras inválidas.",
+    "Crear envía duración seleccionada y precio decimal; bloquea envíos duplicados.",
+    "La edición conserva la duración histórica y el precio cero.",
+    "Un fallo del servidor conserva el borrador y permite reintentar.",
+    "Formulario móvil sin desbordamiento horizontal; revisión de temas claro y oscuro."
+  ],
+  "writes": [
+    {
+      "method": "POST",
+      "payload": {
+        "nombre_plan": "PLAN TRIMESTRAL",
+        "duracion": "90 días",
+        "precio": 79.9,
+        "descripcion": "Entrena durante 90 días.",
+        "beneficios": "Acceso al gimnasio y clases.",
+        "activo": true
+      }
+    },
+    {
+      "method": "PUT",
+      "payload": {
+        "id_pm": 1,
+        "nombre_plan": "FLEXIBLE",
+        "duracion": "45 dias",
+        "precio": 0,
+        "descripcion": "Plan existente",
+        "beneficios": "",
+        "activo": true
+      }
+    },
+    {
+      "method": "POST",
+      "payload": {
+        "nombre_plan": "PLAN ANUAL",
+        "duracion": "365 días",
+        "precio": 500,
+        "descripcion": "",
+        "beneficios": "",
+        "activo": true
+      }
+    },
+    {
+      "method": "POST",
+      "payload": {
+        "nombre_plan": "PLAN ANUAL",
+        "duracion": "365 días",
+        "precio": 500,
+        "descripcion": "",
+        "beneficios": "",
+        "activo": true
+      }
+    }
+  ],
+  "errors": []
+}

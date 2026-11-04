@@ -23,10 +23,9 @@
         <option value="horario">Por horario</option>
       </select></label>
       <label v-if="admin"
-        >DNI del cliente<input
+        >DNI del cliente<input v-digits :maxlength="FORM_LIMITS.dni"
           v-model="draft.dni"
           inputmode="numeric"
-          maxlength="8"
           pattern="[0-9]{8}"
           placeholder="8 dígitos"
       /></label>
@@ -55,6 +54,7 @@
           <option value="">Todos</option>
           <option value="dentro">Dentro</option>
           <option value="completada">Completada</option>
+          <option value="incompleta">Incompleta</option>
           <option v-if="admin" value="anulada">Anulada</option>
         </select></label
       >
@@ -116,6 +116,7 @@
               <span class="att-badge" :class="record.estado">{{
                 states[record.estado]
               }}</span>
+              <small v-if="record.aviso" class="att-late-notice">{{ record.aviso }}</small>
             </td>
             <td v-if="admin" data-label="Acciones">
               <div v-if="!record.anulado" class="att-row-actions">
@@ -188,6 +189,9 @@
   </section>
 </template>
 <script setup>
+import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+import { vDigits } from "../../directives/digits.js";
+
 import { computed, onMounted, reactive, ref } from 'vue';
 import {
   CalendarSearch,

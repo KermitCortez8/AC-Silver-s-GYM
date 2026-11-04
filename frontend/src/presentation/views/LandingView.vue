@@ -74,7 +74,7 @@
               Entrena fuerte,<br /><span class="text-orange-500">cerca de casa.</span>
             </h1>
             <p class="mt-6 max-w-[46ch] text-lg leading-8 text-white/75">
-              En Silver Gym Surco ofrecemos entrenamiento funcional, musculacion, cardio y clases grupales con horarios pensados para tu rutina diaria.
+              En Silver Gym Surco ofrecemos entrenamiento funcional, musculación, cardio y clases grupales con horarios pensados para tu rutina diaria.
             </p>
 
             <div class="mt-8 flex flex-wrap gap-3">
@@ -103,7 +103,7 @@
             <h2 class="mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">Todo lo que necesitas para entrenar mejor.</h2>
           </div>
           <p class="max-w-2xl text-base leading-7 text-slate-600">
-            Nuestro objetivo es que cada cliente tenga una ruta clara: elegir membresia, matricular horarios y registrar asistencia desde la plataforma digital.
+            Nuestro objetivo es que cada cliente tenga una ruta clara: elegir membresía, matricular horarios y registrar asistencia desde la plataforma digital.
           </p>
         </div>
 
@@ -257,9 +257,9 @@
             <div>
               <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-300">
                 <span class="h-[2px] w-[18px] bg-orange-300"></span>
-                Membresias
+                Membresías
               </span>
-              <h2 class="mt-3 text-3xl font-black uppercase leading-tight text-white">Elige el plan que acompane tu ritmo.</h2>
+              <h2 class="mt-3 text-3xl font-black uppercase leading-tight text-white">Elige el plan que acompañe tu ritmo.</h2>
             </div>
 
             <div class="mt-8 grid gap-4 lg:grid-cols-3">
@@ -286,7 +286,7 @@
                     v-if="plan.id === '3 MESES'"
                     class="rounded-full bg-orange-500 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.05em] text-white shadow"
                   >
-                    Mas elegido
+                    Más elegido
                   </span>
                 </div>
                 <p class="text-sm font-black uppercase tracking-[0.06em] text-orange-300">{{ plan.label }}</p>
@@ -312,7 +312,7 @@
               </router-link>
             </div>
             <p v-if="!plans.length" class="mt-8 rounded-2xl border border-white/15 bg-white/5 p-5 text-sm font-bold text-white/70">
-              Planes pendientes de configuracion.
+              Planes pendientes de configuración.
             </p>
           </div>
         </div>
@@ -323,7 +323,7 @@
           <div class="flex flex-col justify-center gap-4 p-8 lg:p-10">
             <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-300">
               <span class="h-[2px] w-[18px] bg-orange-300"></span>
-              Ubicacion
+              Ubicación
             </span>
             <h2 class="text-2xl font-black leading-tight sm:text-3xl">Ven a conocer el gym.</h2>
             <p class="text-sm leading-6 text-white/70">A pocos minutos del parque, con estacionamiento en la cuadra.</p>
@@ -343,7 +343,7 @@
           <div class="min-h-[18rem] lg:min-h-[26rem]">
             <iframe
               :src="mapEmbedUrl"
-              title="Mapa de ubicacion de Silver Gym Surco"
+              title="Mapa de ubicación de Silver Gym Surco"
               class="h-full min-h-[18rem] w-full border-0 lg:min-h-[26rem]"
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
@@ -359,7 +359,7 @@
         <div class="grid gap-8 border-b border-white/10 pb-8 sm:grid-cols-3">
           <div>
             <p class="text-lg font-black italic text-white">Silver Gym Surco</p>
-            <p class="mt-3 max-w-[30ch] text-sm leading-6 text-white/45">Ubicacion, horarios y registro en un mismo lugar.</p>
+            <p class="mt-3 max-w-[30ch] text-sm leading-6 text-white/45">Ubicación, horarios y registro en un mismo lugar.</p>
           </div>
 
           <div>
@@ -367,8 +367,8 @@
             <nav class="mt-4 flex flex-col gap-2.5">
               <a href="#servicios" class="text-sm font-semibold text-white/65 transition hover:text-white">Servicios</a>
               <router-link to="/nosotros" class="text-sm font-semibold text-white/65 transition hover:text-white">Nosotros</router-link>
-              <a href="#membresias" class="text-sm font-semibold text-white/65 transition hover:text-white">Membresias</a>
-              <a href="#ubicacion" class="text-sm font-semibold text-white/65 transition hover:text-white">Ubicacion</a>
+              <a href="#membresias" class="text-sm font-semibold text-white/65 transition hover:text-white">Membresías</a>
+              <a href="#ubicacion" class="text-sm font-semibold text-white/65 transition hover:text-white">Ubicación</a>
                <router-link to="/preguntas-frecuentes" class="text-sm font-semibold text-white/65 transition hover:text-white">Preguntas Frecuentes</router-link>
             </nav>
           </div>
@@ -398,331 +398,19 @@
 </template>
 
 <script setup>
-import { discountedPrice } from '../../domain/utils/money.js';
 import LandingNavigation from '../components/LandingNavigation.vue';
-import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useServiceImages } from '../config/serviceImages';
-import { usePublicCatalog } from '../../application/services/publicCatalog.js';
-import { useAppResources } from '../../application/services/appResources.js';
+import { useLandingPage } from '../composables/public/useLandingPage.js';
 
-const serviceImages = useServiceImages();
-
-const { loadPublicSchedules, loadMembershipPlans, loadCurrentPromotions } = usePublicCatalog();
-
-const { landingImageUrl } = useAppResources();
-
-const heroBanner = landingImageUrl('hero-banner.png');
-
-const route = useRoute();
-const router = useRouter();
-const showRegistrationNotice = computed(() => String(route.query.registro || '') === 'inicializado');
-const registrationCode = computed(() => {
-  const id = Number(route.query.solicitud || 0);
-  return id > 0 ? `SGCLI${String(id).padStart(3, '0')}` : '';
-});
-
-const dismissRegistrationNotice = () => {
-  const query = { ...route.query };
-  delete query.registro;
-  delete query.solicitud;
-  router.replace({ path: '/', query });
-};
-
-watch(
-  showRegistrationNotice,
-  (visible) => {
-    if (!visible) return;
-    setTimeout(() => {
-      if (showRegistrationNotice.value) dismissRegistrationNotice();
-    }, 6000);
-  },
-  { immediate: true },
-);
-
-const selectedService = ref(null);
-           
-const defaultSchedules = [
-  { dia: 'Lunes',     hora: '06:00–07:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
-  { dia: 'Lunes',     hora: '18:00–19:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
-  { dia: 'Lunes',     hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
-  { dia: 'Martes',    hora: '06:00–07:00', servicio: 'Musculación', entrenador: 'Diego Alejandro Castro Flores' },
-  { dia: 'Martes',    hora: '19:00–20:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
-  { dia: 'Miércoles', hora: '07:00–08:00', servicio: 'Fitness',     entrenador: 'Andrea Milagros Torres Paredes' },
-  { dia: 'Miércoles', hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
-  { dia: 'Jueves',    hora: '06:00–07:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
-  { dia: 'Jueves',    hora: '19:00–20:00', servicio: 'Musculación', entrenador: 'Andrea Milagros Torres Paredes' },
-  { dia: 'Viernes',   hora: '07:00–08:00', servicio: 'Cardio',      entrenador: 'Luis Fernando Quispe Huamán' },
-  { dia: 'Viernes',   hora: '18:00–19:00', servicio: 'Fitness',     entrenador: 'Carlos Eduardo Ramírez Salazar' },
-  { dia: 'Viernes',   hora: '20:00–21:00', servicio: 'Baile',       entrenador: 'Valeria Nicole Mendoza Rojas' },
-  { dia: 'Sábado',    hora: '09:00–10:00', servicio: 'Fitness',     entrenador: 'Diego Alejandro Castro Flores' },
-  { dia: 'Sábado',    hora: '10:00–11:00', servicio: 'Musculación', entrenador: 'Carlos Eduardo Ramírez Salazar' },
-  { dia: 'Sábado',    hora: '11:00–12:00', servicio: 'Baile',       entrenador: 'Andrea Milagros Torres Paredes' },
-  { dia: 'Domingo',   hora: '09:00–10:00', servicio: 'Cardio',      entrenador: 'Diego Alejandro Castro Flores' },
-];
-
-const backendSchedules = ref([]);
-
-const DAY_ORDER = {
-  lunes: 1,
-  martes: 2,
-  miercoles: 3,
-  jueves: 4,
-  viernes: 5,
-  sabado: 6,
-  domingo: 7,
-};
-
-// Match card title (e.g. "Musculacion") to schedule servicio (e.g. "Musculación")
-/**
- * Normaliza el valor recibido.
- */
-const normalizeService = (str) =>
-  String(str || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-
-const capitalizeDay = (day) => {
-  const str = String(day || '').trim();
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-};
-
-const normalizeScheduleItem = (item) => {
-  const hora = item.hora || (item.hora_inicio && item.hora_fin ? `${item.hora_inicio}–${item.hora_fin}` : item.hora_inicio || '');
-  const dia = capitalizeDay(item.dia);
-  const entrenador = item.entrenador || item.rutina_nombre || 'Instructor Silver Gym';
-  return {
-    ...item,
-    dia,
-    hora,
-    entrenador,
-    servicio: item.servicio || '',
-  };
-};
-
-const schedules = computed(() => {
-  const source = backendSchedules.value.length ? backendSchedules.value : defaultSchedules;
-  return source
-    .map(normalizeScheduleItem)
-    .sort((a, b) => {
-      const dayA = DAY_ORDER[normalizeService(a.dia)] || 99;
-      const dayB = DAY_ORDER[normalizeService(b.dia)] || 99;
-      if (dayA !== dayB) return dayA - dayB;
-      return String(a.hora || '').localeCompare(String(b.hora || ''));
-    });
-});
-
-const filteredSchedules = computed(() =>
-  selectedService.value
-    ? schedules.value.filter(
-        (s) => normalizeService(s.servicio) === normalizeService(selectedService.value),
-      )
-    : [],
-);
-
-/**
- * Consulta los horarios del servidor.
- */
-const loadSchedules = async () => {
-  try {
-    const list = await loadPublicSchedules();
-    backendSchedules.value = Array.isArray(list) ? list : [];
-  } catch {
-    backendSchedules.value = [];
-  }
-};
-
-/**
- * Gestiona esta acción de la vista.
- */
-const toggleService = (title) => {
-  selectedService.value = selectedService.value === title ? null : title;
-};
-
-const landingImages = serviceImages;
-
-/**
- * Gestiona esta acción de la vista.
- */
-const handleImageError = (event) => {
-  event.currentTarget.style.display = 'none';
-};
-
-const gymAddress = 'Jirón Vista Alegre 606, Lima 15056';
-const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(gymAddress)}&output=embed`;
-const backendPlans = ref([]);
-const activePromotions = ref([]);
-const defaultPlans = [
-  { id_pm: 1, nombre_plan: 'MENSUAL', duracion: '30 dias', precio: 79, descripcion: 'Acceso completo por 30 dias para entrenar con flexibilidad.', activo: true },
-  { id_pm: 2, nombre_plan: '3 MESES', duracion: '90 dias', precio: 199, descripcion: 'Plan trimestral para sostener progreso y ahorrar frente al pago mensual.', activo: true },
-  { id_pm: 3, nombre_plan: 'ANUAL', duracion: '365 dias', precio: 699, descripcion: 'Membresia anual para clientes constantes con mejor precio acumulado.', activo: true },
-];
-
-/**
- * Normaliza el valor recibido.
- */
-const normalizePlanName = (value) => String(value || '').trim().toUpperCase();
-/**
- * Formatea el valor para mostrarlo.
- */
-const formatPlanLabel = (value) =>
-  normalizePlanName(value)
-    .toLowerCase()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-const plans = computed(() =>
-  (backendPlans.value.length ? backendPlans.value : defaultPlans)
-    .filter((plan) => plan.activo ?? plan.active ?? true)
-    .map((plan) => {
-      const name = normalizePlanName(plan.nombre_plan || plan.name);
-      const originalPrice = Number(plan.precio ?? plan.price ?? 0);
-      const idPm = Number(plan.id_pm || 0);
-
-      const promo = activePromotions.value.find((p) => {
-        const applicable = p.planes_aplicables || [];
-        return !applicable.length || (idPm && applicable.includes(idPm));
-      });
-
-      let finalPrice = originalPrice;
-      let promoBadge = null;
-      let promoName = null;
-
-      if (promo) {
-        promoName = promo.nombre;
-        const valor = Number(promo.valor_descuento || 0);
-        const icon = promo.icono_etiqueta || '🏷️';
-        const tagText = promo.palabra_clave ? promo.palabra_clave : (promo.nombre || '');
-        if (promo.tipo_descuento === 'monto') {
-          finalPrice = discountedPrice(originalPrice, valor, 'fixed');
-          promoBadge = `${icon} -S/${valor} ${tagText}`.trim();
-        } else {
-          finalPrice = discountedPrice(originalPrice, valor);
-          promoBadge = `${icon} -${valor}% ${tagText}`.trim();
-        }
-      }
-
-      return {
-        id: name,
-        id_pm: idPm,
-        label: formatPlanLabel(name),
-        price: finalPrice,
-        originalPrice: promo ? originalPrice : null,
-        hasPromo: Boolean(promo),
-        promoBadge,
-        promoName,
-        description: plan.duracion || plan.description || 'Plan disponible para registro.',
-      };
-    })
-    .filter((plan) => plan.id),
-);
-
-/**
- * Consulta los datos del servidor.
- */
-const loadPlans = async () => {
-  try {
-    const list = await loadMembershipPlans();
-    backendPlans.value = Array.isArray(list) ? list : [];
-  } catch {
-    backendPlans.value = defaultPlans;
-  }
-};
-
-const loadPromotions = async () => {
-  try {
-    const list = await loadCurrentPromotions();
-    activePromotions.value = Array.isArray(list) ? list : [];
-  } catch {
-    activePromotions.value = [];
-  }
-};
-
-const stats = [
-  { label: 'Horario', value: 'Lun a sab' },
-  { label: 'Servicios', value: '4 areas' },
-  { label: 'Plataforma', value: 'Digital' },
-];
-
-const services = [
-  { tag: '01', title: 'Fitness', description: 'Entrenamiento general para mantenerte activo y construir habitos saludables.', image: landingImages.fitness, imageClass: 'object-cover object-center' },
-  { tag: '02', title: 'Musculacion', description: 'Trabajo de fuerza con horarios definidos y control de cupos.', image: landingImages.musculacion, imageClass: 'object-cover object-center' },
-  { tag: '03', title: 'Cardio', description: 'Bloques de entrenamiento para resistencia, energia y salud.', image: landingImages.cardio, imageClass: 'object-cover object-center' },
-  { tag: '04', title: 'Baile', description: 'Clases grupales dinamicas para entrenar con movimiento y motivacion.', image: landingImages.baile, imageClass: 'object-cover object-[40%_center]' },
-];
-
-onMounted(() => {
-  loadPlans();
-  loadPromotions();
-  loadSchedules();
-});
+const {
+  serviceImages, loadPublicSchedules, loadMembershipPlans, loadCurrentPromotions, landingImageUrl,
+  heroBanner, route, router, showRegistrationNotice, registrationCode,
+  dismissRegistrationNotice, selectedService, defaultSchedules, backendSchedules, DAY_ORDER,
+  normalizeService, capitalizeDay, normalizeScheduleItem, schedules, filteredSchedules,
+  loadSchedules, toggleService, landingImages, handleImageError, gymAddress,
+  mapEmbedUrl, backendPlans, activePromotions, defaultPlans, normalizePlanName,
+  formatPlanLabel, plans, loadPlans, loadPromotions, stats,
+  services,
+} = useLandingPage();
 </script>
 
-<style scoped>
-.landing-page {
-  font-family: 'Manrope', 'Segoe UI', 'Trebuchet MS', sans-serif;
-}
-.landing-page h1,
-.landing-page h2,
-.landing-page h3 {
-  font-family: 'Anton', 'Manrope', sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-}
-
-.landing-page .btn-cta {
-  font-family: 'Anton', 'Manrope', sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.toast-slide-enter-active {
-  transition: all 0.4s cubic-bezier(0.34, 1.26, 0.64, 1);
-}
-.toast-slide-leave-active {
-  transition: all 0.25s ease-in;
-}
-.toast-slide-enter-from,
-.toast-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-10px) translateX(12px) scale(0.96);
-}
-
-.toast-close:hover {
-  background-color: #d1fae5;
-}
-
-.schedule-panel-enter-active {
-  transition: all 0.38s cubic-bezier(0.34, 1.26, 0.64, 1);
-}
-.schedule-panel-leave-active {
-  transition: all 0.22s ease-in;
-}
-.schedule-panel-enter-from {
-  opacity: 0;
-  transform: translateY(-12px) scaleY(0.96);
-}
-.schedule-panel-leave-to {
-  opacity: 0;
-  transform: translateY(-8px) scaleY(0.97);
-}
-
-.service-card {
-  cursor: pointer;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.sched-row:hover {
-  background-color: #b91c1c;
-}
-.sched-row:hover .sched-hour,
-.sched-row:hover .sched-name {
-  color: #ffffff !important;
-}
-.sched-row:hover .sched-icon {
-  color: rgba(255, 255, 255, 0.85) !important;
-}
-</style>
+<style scoped src="../styles/landing.css"></style>

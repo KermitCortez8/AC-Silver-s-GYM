@@ -68,6 +68,35 @@ def test_successful_delete_runs_existing_cascade(flow):
     assert gym.state['clientes'] == gym.state['membresia'] == []
 
 
+@pytest.mark.parametrize('checkout_status', ['open', 'expired'])
+def test_abandoned_public_checkout_stays_unpaid_can_be_retried_and_deleted(flow, checkout_status):
+    from application.services.membership_checkout_service import confirm_verified_checkout
+
+    gym, clients, _ = flow
+    registered = clients.register_public_client({**VALID, 'correo': 'pendiente@example.com', 'dni': '12345678'})
+    cid = registered['cliente']['id_cliente']
+    mid = registered['membresia']['id_membresia']
+    original_members = deepcopy(gym.state['membresia'])
+    checkout = dict(id='cs_abandonada_local', livemode=False, payment_status='unpaid', status=checkout_status,
+                    client_reference_id=f'membership:{cid}',
+                    metadata=dict(purpose='membership', client_id=str(cid), membership_id=str(mid)))
+    notify = Mock()
+    result = confirm_verified_checkout(checkout['id'], clients, SimpleNamespace(stripe_mode='test'),
+                                       gateway=SimpleNamespace(get_checkout_session=lambda _: checkout), notify=notify)
+    assert result['confirmed'] is False
+    assert gym.state['membresia'] == original_members
+    notify.assert_not_called()
+    retry = clients.register_public_client({**VALID, 'correo': 'pendiente@example.com', 'dni': '12345678'})
+    assert retry['cliente']['id_cliente'] == cid
+    assert retry['membresia']['id_membresia'] == mid
+    assert retry['membresia']['estado_pago'] == 'PENDIENTE'
+    assert retry['membresia']['estado'] == 'EN_TRAMITE'
+    response = client_api(clients).delete(f'/api/clientes/{cid}')
+    assert response.status_code == 204
+    assert all(c['id_cliente'] != cid for c in gym.state['clientes'])
+    assert gym.state['membresia'] == [m for m in original_members if m['id_cliente'] != cid]
+
+
 @pytest.mark.parametrize('status,payment', [('EN_TRAMITE', 'PAGADO'), ('ACTIVO', 'PAGADO'),
                                            ('VENCIDA', 'PAGADO'), ('ACTIVO', 'PENDIENTE')])
 def test_confirmed_membership_cannot_be_replaced(flow, status, payment):

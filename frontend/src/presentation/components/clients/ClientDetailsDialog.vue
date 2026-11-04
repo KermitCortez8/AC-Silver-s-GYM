@@ -32,7 +32,7 @@
         </div>
         <div>
           <dt>Promoción</dt>
-          <dd>{{ viewingClient.promocion || "SIN PROMOCION" }}</dd>
+          <dd>{{ viewingClient.promocion && viewingClient.promocion !== 'SIN PROMOCION' ? viewingClient.promocion : "SIN PROMOCIÓN" }}</dd>
         </div>
         <div>
           <dt>Membresía</dt>

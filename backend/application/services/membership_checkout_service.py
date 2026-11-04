@@ -68,6 +68,23 @@ def confirm_verified_checkout(
         _value(checkout, "client_reference_id", "") or ""
     )
 
+    metadata = _value(checkout, 'metadata', {}) or {}
+    if _value(metadata, 'purpose') == 'membership_preregistration':
+        token = str(_value(metadata, 'preregistration_token', '') or '')
+        attempt = str(_value(metadata, 'attempt', '') or '')
+        currency = str(_value(checkout, 'currency', '') or '').lower()
+        amount = int(_value(checkout, 'amount_total', 0) or 0)
+        verified_id = str(_value(checkout, 'id', '') or '')
+        if not token or external_reference != f'preregistration:{token}' or not attempt.isdigit():
+            raise ValueError('Los metadatos de Stripe no coinciden con el preregistro')
+        if currency != 'pen' or amount <= 0 or verified_id != session_id:
+            raise ValueError('La sesión, moneda o el importe del pago no es válido')
+        saved = clients_service.confirm_preregistration_payment(token, int(attempt), verified_id, amount / 100)
+        notification = notify(settings, clients_service, saved, 'payment')
+        return {'confirmed': True, 'payment_status': 'paid', 'id_cliente': saved['cliente']['id_cliente'],
+                'preregistration_token': token, 'membership_status': saved['membresia']['estado'],
+                'message': 'Pago confirmado. Cuenta pendiente de activación administrativa.', 'notification': notification}
+
     prefix, separator, raw_client_id = external_reference.partition(":")
 
     if (

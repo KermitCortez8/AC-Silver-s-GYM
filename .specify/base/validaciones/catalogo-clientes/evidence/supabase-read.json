@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-10-30T19:00:45.527023+00:00",
+  "mode": "Solo lectura del cat\u00e1logo en Supabase usando la configuraci\u00f3n privada del backend y sus mappers; sin consultar clientes ni membres\u00edas personales.",
+  "tables": [
+    {
+      "table": "PLANES_MEMBRESIA",
+      "status": 200,
+      "rows": 4,
+      "active": 4,
+      "backendMapperValidated": true
+    },
+    {
+      "table": "PROMOCIONES",
+      "status": 200,
+      "rows": 5,
+      "active": 5,
+      "backendMapperValidated": true
+    }
+  ]
+}

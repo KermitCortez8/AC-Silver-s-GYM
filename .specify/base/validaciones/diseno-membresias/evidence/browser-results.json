@@ -1,0 +1,22 @@
+{
+  "results": [
+    "Catálogo y resumen: cuatro planes, tres activos y uno inactivo.",
+    "Búsqueda sin tildes, filtros combinados y orden de precios que conserva cero.",
+    "Estados sin coincidencias y revisión de escritorio, móvil y ambos temas.",
+    "La eliminación fallida conserva la tarjeta y la confirmada actualiza el catálogo.",
+    "El error de carga es visible y el reintento recupera el catálogo.",
+    "El catálogo vacío ofrece crear un plan con el selector de duración.",
+    "Nombres y textos en el máximo permitido no desbordan la tarjeta móvil."
+  ],
+  "mutations": [
+    {
+      "method": "DELETE",
+      "path": "/api/planes-membresia/3"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/planes-membresia/3"
+    }
+  ],
+  "errors": []
+}

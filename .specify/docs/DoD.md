@@ -36,9 +36,19 @@ del componente cuando corresponda. No hay script `npm run lint` en este proyecto
 [test_atomic_transactions_postgres.py](../../backend/tests/test_atomic_transactions_postgres.py)
 requiere `GYM_TEST_POSTGRES_CONTAINER` apuntando a un PostgreSQL desechable con
 base `gym_test`, usuario `postgres` y acceso por `docker exec`. Su fixture trunca
-tablas y aplica 014/015/016; no apuntarlo a una base compartida. La preparación
+tablas y aplica 014/015/016, `018_archivar_inventario_tienda.sql`,
+`019_papelera_tienda.sql` y 020; no apuntarlo a una base compartida. La preparación
 reproducible está en [pr-validation.yml](../../.github/workflows/pr-validation.yml).
 Sin esa variable estas pruebas se omiten, y debe informarse la omisión.
+El mismo job incluye
+[test_public_preregistrations_postgres.py](../../backend/tests/test_public_preregistrations_postgres.py),
+que comprueba privacidad, atomicidad y concurrencia de la conversión a cliente,
+[test_attendance_deadline_postgres.py](../../backend/tests/test_attendance_deadline_postgres.py)
+y [test_schedule_sessions_postgres.py](../../backend/tests/test_schedule_sessions_postgres.py).
+Los dos últimos comprueban el plazo de salida de asistencia, permisos, reservas
+por fecha, cupos y recordatorios con las migraciones especializadas 005/013/018
+y 002/005/006/013/018/019, respectivamente. Cada módulo prepara su propio esquema
+sintético y sus dependencias en la base desechable.
 
 El conjunto de migraciones presupone un esquema previo: no asumir que constituye
 una instalación completa de la base desde cero. Hay numeraciones `008`/`009`

@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../../application/stores/authStore';
-import { prepareNavigationSession } from '../../application/services/moduleNavigation.js';
+import { createSessionGuard } from './sessionGuard.js';
 
 // Cada vista se descarga una vez, cuando se necesita.
 const LoginView = () => import('../views/LoginView.vue');
@@ -242,42 +242,6 @@ const router = createRouter({
 });
 
 // Guard de rutas
-router.beforeEach(async (to, from) => {
-  const authStore = useAuthStore();
-
-  await prepareNavigationSession(authStore, to, from);
-
-  if (to.path === '/' && authStore.isAuthenticated) {
-    return authStore.dashboardPath;
-  }
-
-  // Verificar si la ruta requiere autenticación
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    if (authStore.sessionErrorCode === 'membership_expired') {
-      return { name: 'Login', query: { reason: 'membership_expired' } };
-    }
-    return '/login';
-  }
-
-  // Verificar roles
-  if (to.meta.requiresAdministrator && authStore.userRole !== 'admin') {
-    return authStore.dashboardPath;
-  }
-
-  if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    return '/';
-  }
-
-  if (to.meta.requiresTrainer && !authStore.isTrainer) {
-    return '/';
-  }
-
-  // Si está autenticado y va a login, redirigir al dashboard
-  if (authStore.isAuthenticated && to.path === '/login') {
-    return authStore.dashboardPath;
-  }
-
-  return true;
-});
+router.beforeEach(createSessionGuard(useAuthStore));
 
 export default router;

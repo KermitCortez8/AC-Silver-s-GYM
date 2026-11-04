@@ -8,6 +8,50 @@
   color: var(--app-text);
   min-width: 0;
 }
+.attendance-page .att-badge.incompleta,
+.attendance-page .att-message.is-warning {
+  color: var(--att-warm);
+  background: var(--att-warm-bg);
+  border: 1px solid var(--att-warm);
+}
+.attendance-page .att-late-notice {
+  display: block;
+  margin-top: 8px;
+  color: var(--att-warm);
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 340px;
+  white-space: normal;
+}
+.attendance-page .att-roster {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--app-border);
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  scroll-margin-top: 24px;
+}
+.attendance-page .att-day-filter {
+  display: grid;
+  gap: 6px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+}
+.attendance-page .att-day-filter select {
+  background: var(--app-surface-soft);
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+.attendance-page .att-schedule-control { min-width: 0; }
+.attendance-page .att-schedule-control > .att-heading-row { margin-bottom: 20px; flex-wrap: wrap; }
+.attendance-page .att-attendance-controls { display: grid; gap: 24px; }
+@media (max-width: 640px) {
+  .attendance-page .att-roster-table td[data-label='Acción'] { grid-column: 1 / -1; }
+}
 :root[data-theme='light'] .attendance-page {
   --att-good: #176446;
   --att-good-bg: #e6f5ed;
@@ -135,7 +179,7 @@
   outline: 3px solid var(--app-accent);
   outline-offset: 3px;
 }
-.attendance-page label,
+.attendance-page label:not(:where(.excel-shell *)),
 .att-dialog label {
   display: flex;
   flex-direction: column;
@@ -145,8 +189,8 @@
   color: var(--app-text-soft);
   min-width: 0;
 }
-.attendance-page input,
-.attendance-page select,
+.attendance-page input:not(:where(.excel-shell *)),
+.attendance-page select:not(:where(.excel-shell *)),
 .att-dialog input,
 .att-dialog textarea {
   width: 100%;
@@ -158,8 +202,8 @@
   color: var(--app-text);
   background: var(--app-input);
 }
-.attendance-page input:focus,
-.attendance-page select:focus,
+.attendance-page input:focus:not(:where(.excel-shell *)),
+.attendance-page select:focus:not(:where(.excel-shell *)),
 .att-dialog input:focus,
 .att-dialog textarea:focus {
   outline: 2px solid var(--app-accent);

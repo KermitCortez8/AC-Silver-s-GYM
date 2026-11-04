@@ -169,6 +169,39 @@ test('general attendance retains its request identity after failure and starts a
   }
 });
 
+test('attendance shows class expiration and clears entry availability after a stale lookup', async () => {
+  const message = 'La hora de esta clase ya pasó. No se puede registrar la asistencia.';
+  let expired = false;
+  const harness = await view('AttendanceView', {
+    attendance: {
+      attendanceGet: async (path) => path === '/resumen' ? summary : {
+        ...client('12345678'),
+        horarios: [{ ...enrollment, hoy: true, puede_entrar: !expired,
+          asistencia: null, motivo: expired ? message : '' }],
+      },
+      attendanceEntry: async () => {
+        expired = true;
+        throw new Error(message);
+      },
+    },
+  });
+  try {
+    const s = harness.setup;
+    s.dni = '12345678';
+    await s.lookupClient();
+    assert.equal(s.clientData.horarios[0].puede_entrar, true);
+    await s.enter(enrollment);
+    assert.equal(s.error, message);
+    assert.equal(s.feedback, '');
+    assert.equal(s.savedKey, '');
+    assert.equal(s.clientData.horarios[0].puede_entrar, false);
+    assert.equal(s.clientData.horarios[0].asistencia, null);
+    assert.equal(s.clientData.horarios[0].motivo, message);
+  } finally {
+    harness.dispose();
+  }
+});
+
 test('attendance prevents duplicate writes and preserves the last summary when refresh fails', async () => {
   let complete,
     writes = 0;
@@ -205,12 +238,20 @@ test('attendance prevents duplicate writes and preserves the last summary when r
   }
 });
 
-test('attendance renders its extracted schedule controls and overdue general visits', async () => {
+test('asistencia reutiliza el calendario de horarios y conserva matriculados y pendientes', async () => {
   const harness = await view('AttendanceView', {
     prepare: (s) => {
-      s.clientData = {
-        ...client('12345678'),
-        horarios: [{ ...enrollment, hoy: true, puede_entrar: true }],
+      s.scheduleData = { fecha: '2026-10-24', horarios: [{
+        id_horario_servicio: 1, dia: 'sabado', servicio: 'fitness',
+        hora_inicio: '10:00', hora_fin: '11:00', rutina_nombre: 'Fuerza',
+        hoy: true, matriculados: 1, cupos: 10,
+      }] };
+      s.selectedSchedule = 1;
+      s.roster = {
+        horario: enrollment, fecha: '2026-10-24', clientes: [{
+          id_matricula: 7, cliente: { nombre: 'Ana matriculada', dni: '12345678' },
+          puede_entrar: true, asistencia: null,
+        }],
       };
       s.summary = {
         ...summary,
@@ -229,16 +270,150 @@ test('attendance renders its extracted schedule controls and overdue general vis
     },
   });
   try {
-    assert.match(harness.html, /Horarios de hoy/);
+    assert.match(harness.html, /Selecciona una clase/);
+    assert.match(harness.html, /Calendario de clases/);
+    assert.match(harness.html, /Semana 4/);
+    assert.doesNotMatch(harness.html, /att-schedules-table/);
+    const calendar = harness.child('ExcelScheduleGrid');
+    assert.equal(calendar.calendarEvents[0].start, '2026-10-24T10:00:00');
+    assert.equal(calendar.calendarEvents[0].extendedProps.cupos_usados, 1);
+    assert.match(calendar.calendarOptions.eventContent({ event: { extendedProps: calendar.calendarEvents[0].extendedProps } }).html, /9 cupos libres/);
+    assert.match(harness.html, /Clientes matriculados/);
+    assert.match(harness.html, /Ana matriculada/);
     assert.match(harness.html, /Registrar entrada/);
     assert.match(harness.html, /Ana pendiente/);
     assert.match(harness.html, /is-overdue/);
-    const lookup = harness.child('AttendanceClientLookup');
-    lookup.dni = '87654321';
-    assert.equal(harness.setup.dni, '87654321');
+    assert.equal(harness.child('AttendanceClientLookup'), undefined);
   } finally {
     harness.dispose();
   }
+});
+
+test('el calendario de asistencia filtra por día y selecciona la lista por id del horario', async () => {
+  const requests = [];
+  const harness = await view('AttendanceView', {
+    attendance: { attendanceGet: async (path) => {
+      requests.push(path);
+      return { horario: enrollment, fecha: '2026-10-24', clientes: [] };
+    } },
+    prepare: (s) => {
+      s.scheduleData = { fecha: '2026-10-24', horarios: [
+        { ...enrollment, id_matricula: undefined, id_horario_servicio: 1, matriculados: 1 },
+        { ...enrollment, id_matricula: undefined, id_horario_servicio: 2, dia: 'lunes', matriculados: 2 },
+      ] };
+    },
+  });
+  try {
+    const control = harness.child('AttendanceScheduleRoster');
+    assert.equal(control.visibleSchedules.length, 2);
+    control.dayFilter = 'lunes';
+    assert.deepEqual(control.visibleSchedules.map((item) => item.id_horario_servicio), [2]);
+    await control.selectClass(control.visibleSchedules[0]);
+    assert.equal(harness.setup.selectedSchedule, 2);
+    assert.deepEqual(requests, ['/horarios/2/clientes']);
+    control.dayFilter = 'domingo';
+    assert.deepEqual(control.visibleSchedules, []);
+  } finally {
+    harness.dispose();
+  }
+});
+
+test('el calendario de asistencia bloquea cambios de clase mientras guarda', async () => {
+  const harness = await view('AttendanceView', {
+    prepare: (s) => {
+      s.busy = 'entry-7';
+      s.selectedSchedule = 1;
+      s.scheduleData = { fecha: '2026-10-24', horarios: [] };
+    },
+  });
+  try {
+    assert.equal(harness.child('ExcelScheduleGrid').props.interactive, false);
+    await harness.child('AttendanceScheduleRoster').selectClass({ id_horario_servicio: 2 });
+    assert.equal(harness.setup.selectedSchedule, 1);
+  } finally {
+    harness.dispose();
+  }
+});
+
+test('la lista descarta respuestas de otro horario y al desmontar', async () => {
+  const pending = new Map();
+  const harness = await view('AttendanceView', {
+    attendance: { attendanceGet: (path) => new Promise((resolve) => pending.set(path, resolve)) },
+  });
+  const data = (id) => ({ horario: { ...enrollment, id_horario_servicio: id }, clientes: [], fecha: '2026-10-24' });
+  try {
+    const s = harness.setup;
+    const first = s.selectSchedule(1);
+    const second = s.selectSchedule(2);
+    pending.get('/horarios/2/clientes')(data(2));
+    await second;
+    pending.get('/horarios/1/clientes')(data(1));
+    await first;
+    assert.equal(s.roster.horario.id_horario_servicio, 2);
+    const last = s.selectSchedule(3);
+    harness.dispose();
+    pending.get('/horarios/3/clientes')(data(3));
+    await last;
+    assert.equal(s.roster, null);
+  } finally { harness.dispose(); }
+});
+
+test('asistencia separa fechas del mismo horario y descarta respuestas de otra semana', async () => {
+  const pending = new Map();
+  const harness = await view('AttendanceView', {
+    attendance: { attendanceGet: (_path, { fecha }) => new Promise((resolve) => pending.set(fecha, resolve)) },
+  });
+  const data = (fecha) => ({ horario: { ...enrollment, id_horario_servicio: 1 }, fecha, clientes: [] });
+  try {
+    const first = harness.setup.selectSchedule(1, '2026-10-24');
+    const second = harness.setup.selectSchedule(1, '2026-10-31');
+    pending.get('2026-10-31')(data('2026-10-31'));
+    await second;
+    pending.get('2026-10-24')(data('2026-10-24'));
+    await first;
+    assert.equal(harness.setup.roster.fecha, '2026-10-31');
+    assert.equal(harness.setup.selectedSession, '2026-10-31');
+    const wrong = harness.setup.selectSchedule(1, '2026-11-07');
+    pending.get('2026-11-07')(data('2026-10-31'));
+    await wrong;
+    assert.equal(harness.setup.roster, null);
+    assert.match(harness.setup.rosterError, /fecha seleccionada/);
+    await harness.setup.selectSchedule(null);
+    assert.equal(harness.setup.selectedSession, '');
+    assert.equal(harness.setup.rosterError, '');
+  } finally {
+    harness.dispose();
+  }
+});
+
+test('registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso', async () => {
+  let registered = false;
+  let exited = false;
+  const message = 'Ya pasó más de una hora desde el término de la clase. La asistencia queda incompleta.';
+  const record = { id_asistencia: 9, tipo: 'horario', hora_entrada: '10:30', hora_salida: '' };
+  const harness = await view('AttendanceView', {
+    attendance: {
+      attendanceGet: async (path) => path === '/resumen' ? summary : path === '/horarios'
+        ? { horarios: [{ ...enrollment, id_horario_servicio: 1 }] }
+        : { horario: enrollment, fecha: '2026-10-24', clientes: [{ id_matricula: 7,
+          cliente: { nombre: 'Ana', dni: '12345678' }, puede_entrar: !registered,
+          asistencia: registered ? { ...record, hora_salida: exited ? '15:00:01' : '',
+            estado: exited ? 'incompleta' : 'dentro' } : null }] },
+      attendanceEntry: async (id) => { assert.equal(id, 7); registered = true; return record; },
+      attendanceExit: async () => { exited = true; return { ...record, estado: 'incompleta', aviso: message }; },
+    },
+  });
+  try {
+    const s = harness.setup;
+    await s.selectSchedule(1);
+    await s.enter(s.roster.clientes[0]);
+    assert.equal(s.selectedSchedule, 1);
+    assert.equal(s.roster.clientes[0].asistencia.id_asistencia, 9);
+    await s.exitRecord(record);
+    assert.equal(s.feedback, message);
+    assert.equal(s.feedbackWarning, true);
+    assert.equal(s.roster.clientes[0].asistencia.estado, 'incompleta');
+  } finally { harness.dispose(); }
 });
 
 test('direct assignment and assignment dialog use the same validated save flow', async () => {

@@ -2,12 +2,13 @@ from datetime import date
 from typing import Literal
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
+from domain.form_limits import LONG_TEXT_LIMIT
 
 
 class AttendanceCorrection(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: int = Field(ge=0)
-    motivo: str = Field(min_length=5, max_length=500)
+    motivo: str = Field(min_length=5, max_length=LONG_TEXT_LIMIT)
     fecha: date
     hora_entrada: str = Field(pattern=r"^\d{2}:\d{2}(:\d{2})?$")
     hora_salida: str = Field(default="", pattern=r"^(\d{2}:\d{2}(:\d{2})?)?$")
@@ -17,7 +18,7 @@ class AttendanceCorrection(BaseModel):
 class AttendanceAnnulment(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: int = Field(ge=0)
-    motivo: str = Field(min_length=5, max_length=500)
+    motivo: str = Field(min_length=5, max_length=LONG_TEXT_LIMIT)
 
 
 class AttendanceFilters(BaseModel):
@@ -26,7 +27,7 @@ class AttendanceFilters(BaseModel):
     dni: str = Field(default="", pattern=r"^(\d{8})?$")
     servicio: Literal["", "fitness", "musculacion", "cardio", "baile", "gimnasio"] = ""
     tipo: Literal["", "general", "horario"] = ""
-    estado: Literal["", "dentro", "completada", "anulada"] = ""
+    estado: Literal["", "dentro", "completada", "incompleta", "anulada"] = ""
 
 
 class GeneralAttendanceEntry(BaseModel):

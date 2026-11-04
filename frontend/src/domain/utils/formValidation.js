@@ -1,7 +1,7 @@
 import { parseQuantity } from './quantities.js';
+import { FORM_LIMITS } from "./formLimits.js";
 
-export const ACCOUNT_EMAIL_DOMAINS = ['gmail.com', 'hotmail.com'];
-export const EMAIL_DOMAIN_MESSAGE = 'Solo se permiten correos @gmail.com o @hotmail.com.';
+export const EMAIL_DOMAIN_MESSAGE = 'Solo se permiten correos que terminen en .com.';
 
 export const emailError = (value, { account = true } = {}) => {
   const email = String(value ?? '').trim();
@@ -9,16 +9,16 @@ export const emailError = (value, { account = true } = {}) => {
   const parts = email.split('@');
   const local = parts[0];
   const domain = parts[1] || '';
-  if (parts.length !== 2 || email.length > 254 || local.length > 64
+  if (parts.length !== 2 || email.length > FORM_LIMITS.shortText || local.length > 64
     || !/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/i.test(local)
     || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(domain)) {
     return 'Ingresa un correo válido, por ejemplo nombre@gmail.com.';
   }
-  if (account && !ACCOUNT_EMAIL_DOMAINS.includes(domain.toLowerCase())) return EMAIL_DOMAIN_MESSAGE;
+  if (account && !/\.com$/i.test(domain)) return EMAIL_DOMAIN_MESSAGE;
   return '';
 };
 
-export const requiredTextError = (value, label = 'El nombre', max = 120) => {
+export const requiredTextError = (value, label = 'El nombre', max = FORM_LIMITS.longText) => {
   const text = String(value ?? '').trim();
   if (!text) return `${label} es obligatorio.`;
   if (text.length > max) return `${label} no debe superar ${max} caracteres.`;
@@ -34,7 +34,7 @@ export const dniError = (value, required = true) => {
 export const phoneError = (value, required = false) => {
   const text = String(value ?? '').trim();
   if (!text) return required ? 'El teléfono es obligatorio.' : '';
-  return /^[0-9]{7,9}$/.test(text) ? '' : 'El teléfono debe tener entre 7 y 9 dígitos, sin espacios ni letras.';
+  return /^[0-9]{9}$/.test(text) ? '' : 'El teléfono debe tener exactamente 9 dígitos, sin espacios ni letras.';
 };
 
 export const passwordError = (value, required = true) => {
@@ -46,7 +46,7 @@ export const passwordError = (value, required = true) => {
 
 export const validateAccountForm = (form, { requirePassword = true, requireDni = true, requirePhone = false, google = false } = {}) => {
   const errors = {
-    nombre: requiredTextError(form.nombre),
+    nombre: requiredTextError(form.nombre, 'El nombre', FORM_LIMITS.shortText),
     correo: emailError(form.correo),
     dni: dniError(form.dni, requireDni),
     telefono: phoneError(form.telefono, requirePhone),
@@ -83,7 +83,7 @@ export const durationError = (value) => {
 
 export const promotionErrors = (form) => {
   const errors = {};
-  const name = requiredTextError(form.name, 'El nombre de la promoción');
+  const name = requiredTextError(form.name, 'El nombre de la promoción', FORM_LIMITS.shortText);
   if (name) errors.name = name;
   const amount = amountError(form.discountValue, 'El descuento');
   if (amount) errors.discountValue = amount;

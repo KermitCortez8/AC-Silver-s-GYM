@@ -7,6 +7,7 @@ from typing import Callable
 from domain.services.rule_context import RuleContext
 from domain.services.client_identifiers import parse_client_id
 from typing import Any
+from domain.form_limits import SHORT_TEXT_LIMIT
 from domain.validation import required_text, account_email, dni_number, phone_number
 from domain.services.membership_lifecycle import normalize_membership_status, project_memberships
 
@@ -152,7 +153,7 @@ class AccountsRules:
             else:
                 item_id = f"SG{prefix}{self._next_usuario_code(state):03d}"
 
-            nombre = required_text(payload.get("nombre"))
+            nombre = required_text(payload.get("nombre"), maximum=SHORT_TEXT_LIMIT)
             correo = account_email(payload.get("correo"))
             password = str(payload.get("password") or payload.get("contrasena") or "").strip()
             idx = next((i for i, row in enumerate(state["usuario"]) if self._normalize_usuario_id(row.get("id_usuario")) == item_id), -1)
@@ -321,7 +322,7 @@ class AccountsRules:
             item = {
                 "id_cliente": int(item_id),
                 "id_usuario": id_usuario,
-                "nombre": required_text(payload.get("nombre")),
+                "nombre": required_text(payload.get("nombre"), maximum=SHORT_TEXT_LIMIT),
                 "correo": account_email(payload.get("correo") or payload.get("email")),
                 "telefono": phone_number(payload.get("telefono")),
                 "dni": dni_number(payload.get("dni")),
@@ -338,6 +339,9 @@ class AccountsRules:
             if password and len(password) < 6:
                 raise ValueError("La contraseña debe tener al menos 6 caracteres")
             self._check_duplicate_accounts(state["clientes"], item, "id_cliente")
+            if any(r.get('estado') == 'PENDIENTE' and (r['correo'] == item['correo'] or r['dni'] == item['dni'])
+                   for r in state.get('preregistros', [])):
+                raise ValueError('Existe un preregistro pendiente con esos datos. Espera la confirmación o caducidad del pago.')
             item["password_hash"] = self.context.passwords.hash(password) if password else str(existing.get("password_hash") or "")
             item["google_sub"] = str(existing.get("google_sub") or "")
             item["origen_registro"] = str(existing.get("origen_registro") or "") if existing else "ADMIN"

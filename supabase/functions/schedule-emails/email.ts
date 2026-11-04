@@ -14,6 +14,7 @@ export type DeliveryContext = {
   hora_inicio: string;
   hora_fin: string;
   class_start: string | null;
+  fecha_clase?: string | null;
   event_type: "enrollment" | "reminder";
 };
 
@@ -99,10 +100,15 @@ export function scheduleMail(
     title = "El administrador te inscribió en una clase";
     description =
       "Se agregó una clase a tu horario. Revisa los datos de tu matrícula:";
-    details.push([
-      "Frecuencia",
-      `Cada ${day.toLowerCase()}, mientras tu matrícula y membresía estén vigentes`,
-    ]);
+    if (data.fecha_clase) {
+      const session = new Date(`${data.fecha_clase}T12:00:00Z`);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.fecha_clase) ||
+          !Number.isFinite(session.getTime()) || session.toISOString().slice(0, 10) !== data.fecha_clase) {
+        throw new InvalidMail("Revisa la fecha de la clase.");
+      }
+      details.splice(2, 0, ["Fecha", data.fecha_clase.split("-").reverse().join("/")]);
+    }
+    details.push(["Reserva", "Una sola sesión; otras fechas requieren una nueva matrícula"]);
     subject = `Inscripción confirmada: ${service} · Silver Gym Surco`;
   } else {
     const occurrence = new Date(data.class_start ?? "");
@@ -133,6 +139,8 @@ export function scheduleMail(
       day: "2-digit",
     }).format(new Date(data.class_start!));
     url += `?fecha=${date}`;
+  } else if (data.fecha_clase) {
+    url += `?fecha=${data.fecha_clase}`;
   }
   const rows = details.map(([label, value]) =>
     `<tr><td style="padding:10px;border-bottom:1px solid #eee;color:#555">${

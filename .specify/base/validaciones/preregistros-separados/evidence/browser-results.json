@@ -1,0 +1,16 @@
+{
+  "results": [
+    "Fallo de checkout conserva solicitud y borrador sin crear cliente ni membresía",
+    "Abandonar checkout muestra solicitud temporal, sin código ficticio ni cliente",
+    "Reintento reutiliza checkout; webhook y retorno crean un solo cliente pagado pendiente de activación",
+    "Caducidad archiva la solicitud impaga y conserva el cliente pagado"
+  ],
+  "counts": {
+    "clients": 1,
+    "memberships": 1,
+    "pending": 0,
+    "expired": 1,
+    "sessions": 2
+  },
+  "errors": []
+}

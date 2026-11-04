@@ -7,6 +7,7 @@ PAYMENT_COLUMNS = {'monto_pago', 'estado_pago', 'referencia_pago', 'fecha_pago',
 STORE_PAYMENT_COLUMNS = {'estado_pago', 'referencia_pago'}
 
 CORE_TABLES = {'planes_membresia': ('PLANES_MEMBRESIA', 'id_pm', 'id_PM'),
+ 'preregistros': ('PREREGISTROS_MEMBRESIA', 'id_preregistro', 'id_preregistro'),
  'promociones': ('PROMOCIONES', 'id_promocion', 'id_promocion'),
  'clientes': ('CLIENTES', 'id_cliente', 'id_cliente'),
  'membresia': ('MEMBRESIA', 'id_membresia', 'id_membresia'),

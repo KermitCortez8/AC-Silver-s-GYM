@@ -5,6 +5,7 @@ from enum import StrEnum
 class Resource(StrEnum):
     USUARIO = 'usuario'
     CLIENTES = 'clientes'
+    PREREGISTROS = 'preregistros'
     MEMBRESIA = 'membresia'
     PLANES_MEMBRESIA = 'planes_membresia'
     PROMOCIONES = 'promociones'

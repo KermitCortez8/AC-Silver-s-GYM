@@ -63,7 +63,7 @@ watch(
   ([authenticated]) => {
     const meta = router.currentRoute.value.meta;
     // Una revalidación en segundo plano revoca el acceso también a admin y trainer.
-    if (!authenticated && (meta.requiresAuth || authStore.sessionErrorCode === 'membership_expired')) {
+    if (!authenticated && meta.requiresAuth) {
       void router.replace({
         name: 'Login',
         query: authStore.sessionErrorCode === 'membership_expired' ? { reason: 'membership_expired' } : {},

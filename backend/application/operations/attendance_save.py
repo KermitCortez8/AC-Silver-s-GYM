@@ -75,7 +75,9 @@ def apply_record(policy, state, row, expected, audit):
             policy.general_context(policy.client_id(row), policy.now())
         else:
             enrollment = next(e for e in state["matriculas_horario"] if e["id_matricula"] == row["id_matricula"])
-            policy.entry_context(enrollment, policy.now())
+            _, _, schedule = policy.entry_context(enrollment, policy.now())
+            row["limite_salida"] = policy.exit_deadline(schedule, row["fecha"])
+        row["salida_tardia"] = False
         row["id_asistencia"] = max((r["id_asistencia"] for r in rows), default=0) + 1
     elif not old or int(old.get("version") or 0) != expected:
         if operation == "salida" and old and old.get("hora_salida") and not old.get("anulado"):
@@ -87,7 +89,10 @@ def apply_record(policy, state, row, expected, audit):
                 continue
             if (row.get("id_matricula") and other.get("id_matricula") == row["id_matricula"] and other["fecha"] == row["fecha"]) or (not row.get("hora_salida") and not other.get("hora_salida")):
                 raise AttendanceConflict("El cliente ya tiene una asistencia para ese horario y día, o una entrada sin salida.")
-    fields = ("fecha", "hora_entrada", "hora_salida", "fecha_salida", "anulado")
+    if old:
+        row["limite_salida"] = old.get("limite_salida")
+    row["salida_tardia"] = bool(row.get("hora_salida") and policy.status({**row, "salida_tardia": False}) == "incompleta")
+    fields = ("fecha", "hora_entrada", "hora_salida", "fecha_salida", "anulado", "limite_salida", "salida_tardia")
     audit["antes"] = {k: old.get(k) for k in fields} if old else None
     audit["despues"] = {k: row.get(k) for k in fields}
     row["auditoria"] = [*(old or {}).get("auditoria", []), audit]

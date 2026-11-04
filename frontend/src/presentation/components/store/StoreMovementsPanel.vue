@@ -128,7 +128,7 @@
           </svg>
         </div>
         <p class="text-sm font-semibold text-slate-300">{{ hasFilters ? 'Sin resultados' : `Sin ventas en ${periodLabel}` }}</p>
-        <p class="mt-1 text-xs text-slate-500">{{ hasFilters ? 'Prueba con otros filtros o termino de busqueda.' : 'No se han registrado ventas en la tienda todavia.' }}</p>
+        <p class="mt-1 text-xs text-slate-500">{{ hasFilters ? 'Prueba con otros filtros o término de búsqueda.' : 'No se han registrado ventas en la tienda todavía.' }}</p>
       </div>
     </section>
   </div>

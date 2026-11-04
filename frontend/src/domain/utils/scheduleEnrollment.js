@@ -1,5 +1,18 @@
+import { addDays } from './dates.js';
+
 export const SERVICE_ORDER = ['fitness', 'musculacion', 'cardio', 'baile'];
 export const DAY_ORDER = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+
+export const enrollmentSessionDate = (enrollment = {}, schedule = enrollment) => {
+  if (enrollment.fecha_clase && !/^\d{4}-\d{2}-\d{2}$/.test(String(enrollment.fecha_clase))) return '';
+  const value = String(enrollment.fecha_clase || enrollment.fecha_matricula || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  const parsed = new Date(`${value}T12:00:00Z`);
+  if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) return '';
+  if (enrollment.fecha_clase) return value;
+  const index = DAY_ORDER.indexOf(normalizeScheduleDay(schedule.dia));
+  return index < 0 ? '' : addDays(value, (index - (parsed.getUTCDay() + 6) % 7 + 7) % 7);
+};
 
 export const normalizeScheduleDay = (value) =>
   String(value || '')
@@ -13,7 +26,7 @@ export const normalizeScheduleTime = (value) => String(value || '00:00').slice(0
 export const serviceLabel = (service) =>
   ({
     fitness: 'Fitness',
-    musculacion: 'Musculacion',
+    musculacion: 'Musculación',
     cardio: 'Cardio',
     baile: 'Baile',
   })[String(service || '').trim().toLowerCase()] || service || 'Servicio';
@@ -22,12 +35,12 @@ export const dayLabel = (day) =>
   ({
     lunes: 'Lunes',
     martes: 'Martes',
-    miercoles: 'Miercoles',
+    miercoles: 'Miércoles',
     jueves: 'Jueves',
     viernes: 'Viernes',
-    sabado: 'Sabado',
+    sabado: 'Sábado',
     domingo: 'Domingo',
-  })[normalizeScheduleDay(day)] || day || 'Dia por definir';
+  })[normalizeScheduleDay(day)] || day || 'Día por definir';
 
 export const availableSlots = (schedule = {}) =>
   Math.max(0, Number(schedule.cupos || 0) - Number(schedule.cupos_usados || 0));
@@ -123,6 +136,7 @@ export const enrollmentsForClient = (enrollments = [], schedules = [], clientId 
       return {
         ...schedule,
         ...enrollment,
+        fecha_clase: enrollmentSessionDate(enrollment, schedule),
         rutina_nombre: routine,
         nombre_ejercicio: routine,
         dia: enrollment.dia || schedule.dia || '',

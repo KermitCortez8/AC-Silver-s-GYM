@@ -245,7 +245,7 @@ class SupabaseScheduleCompatibilityTests(unittest.TestCase):
         from infrastructure.repositories.schedule_enrollment_repository import ScheduleEnrollmentRepository
         database = _SupabaseWithoutScheduleRpc()
         enrollments = ScheduleEnrollmentRepository(database, GymCache(state=local_service.state), SimpleNamespace(load=lambda resources: None))
-        with self.assertRaisesRegex(RuntimeError, "002_harden_schedule_enrollment.sql"):
+        with self.assertRaisesRegex(RuntimeError, "019_schedule_sessions.sql"):
             enrollments.enroll({"id_cliente": 1, "id_horario_servicio": 10})
         self.assertIsNone(database.inserted)
 

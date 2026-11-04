@@ -43,8 +43,8 @@ def test_every_account_write_schema_rejects_unapproved_domains(email, model):
 @pytest.mark.parametrize('field,value,expected', [
     ('nombre', ' ', 'obligatorio'), ('dni', '', 'DNI es obligatorio'),
     ('dni', '1234567', 'exactamente 8'), ('dni', '12ab5678', 'exactamente 8'),
-    ('telefono', '', 'teléfono es obligatorio'), ('telefono', '123456', 'entre 7 y 9'),
-    ('telefono', '1234567890', 'entre 7 y 9'), ('telefono', '987 65432', 'sin espacios ni letras'),
+    ('telefono', '', 'teléfono es obligatorio'), ('telefono', '123456', 'exactamente 9'),
+    ('telefono', '1234567890', 'exactamente 9'), ('telefono', '987 65432', 'sin espacios ni letras'),
     ('password', '', 'al menos 6'), ('password', '12345', 'al menos 6'),
 ])
 def test_public_registration_reports_specific_field_errors(field, value, expected):

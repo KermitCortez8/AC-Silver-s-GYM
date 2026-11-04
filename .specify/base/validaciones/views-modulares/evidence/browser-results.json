@@ -1,0 +1,108 @@
+{
+  "results": [
+    {
+      "view": "clientes",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "matriculas",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "panel",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "movimientos",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "inventario",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "inicio",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "login",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "promociones",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "registro",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "horarios",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "tienda",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "tienda-cliente",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "rutinas",
+      "sameVisibleContent": true
+    },
+    {
+      "view": "usuarios",
+      "sameVisibleContent": true
+    }
+  ],
+  "pageErrors": [],
+  "vueWarnings": [],
+  "writes": [
+    {
+      "endpoint": "/trainer/rutinas",
+      "payload": {
+        "id_rutina": null,
+        "servicio": "fitness",
+        "nombre_rutina": "Rutina de revisión",
+        "zonas_musculares": "Pierna",
+        "color": "Azul",
+        "ejercicios": [
+          {
+            "id_ejercicio": null,
+            "nombre_ejercicio": "Ejercicio de revisión",
+            "grupo_muscular": "",
+            "series": 3,
+            "repeticiones": "10-12",
+            "descanso_segundos": 60,
+            "peso_sugerido_kg": null,
+            "notas": ""
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "/promociones",
+      "payload": {
+        "nombre": "Promo de revisión",
+        "descripcion": "",
+        "tipo_descuento": "porcentaje",
+        "valor_descuento": 10,
+        "fecha_inicio": "",
+        "fecha_fin": "",
+        "icono_etiqueta": "🏷️",
+        "palabra_clave": "",
+        "activo": true,
+        "planes_aplicables": [
+          1
+        ],
+        "limite_cupos": null,
+        "usos_actuales": 0
+      }
+    }
+  ],
+  "screenshots": "/tmp/gym-views-visual",
+  "horizontalOverflow": false,
+  "source": "Rutas reales con sesión y API sintéticas; InventoryMovementsView se monta en una ruta de revisión temporal."
+}

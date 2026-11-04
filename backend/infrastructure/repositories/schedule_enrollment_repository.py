@@ -37,20 +37,19 @@ class ScheduleEnrollmentRepository:
             if id_horario <= 0:
                 raise ValueError("Horario no disponible")
 
-            GymDomainService(self.cache.state).validate_enrollment(id_cliente, id_horario)
+            session = GymDomainService(self.cache.state).validate_enrollment(id_cliente, id_horario, payload.get("fecha_clase"))
 
             admin_id = str(payload.get("_admin_id") or "")
-            rpc_name = "matricular_cliente_horario_admin" if admin_id else "matricular_cliente_horario"
-            rpc_body: dict[str, Any] = {"p_id_cliente": id_cliente, "p_id_horario_servicio": id_horario}
+            rpc_name = "matricular_cliente_sesion_admin" if admin_id else "matricular_cliente_sesion"
+            rpc_body: dict[str, Any] = {"p_id_cliente": id_cliente, "p_id_horario_servicio": id_horario,
+                                        "p_fecha_clase": session}
             if admin_id:
                 rpc_body["p_admin_id"] = admin_id
             try:
                 created = self.database.rpc(rpc_name, rpc_body)
             except RuntimeError as error:
                 if database_code(error) in {"PGRST202", "42883"}:
-                    if admin_id:
-                        raise SchemaNotReady("006_schedule_email_notifications.sql") from error
-                    raise SchemaNotReady("002_harden_schedule_enrollment.sql") from error
+                    raise SchemaNotReady("019_schedule_sessions.sql") from error
                 else:
                     raise_schedule_enrollment_error(error)
 
@@ -62,6 +61,9 @@ class ScheduleEnrollmentRepository:
             enrollment = schedules._map_schedule_enrollment(created)
             if int(enrollment.get("id_matricula", 0) or 0) <= 0:
                 raise RuntimeError("Supabase devolvió una matrícula sin identificador")
+            if (enrollment.get("fecha_clase") != session or enrollment.get("id_cliente") != id_cliente
+                    or enrollment.get("id_horario_servicio") != id_horario):
+                raise RuntimeError("La matrícula recibida no corresponde al cliente y sesión solicitados.")
 
             self.cache.state.setdefault("matriculas_horario", [])
             self.cache.state["matriculas_horario"] = [

@@ -1,0 +1,14 @@
+{
+  "reads": 8,
+  "focusRefresh": true,
+  "periodicRefresh": true,
+  "freshDashboardNavigation": true,
+  "retainsLastScheduleOnError": true,
+  "horizontalOverflow": false,
+  "pageErrors": [],
+  "viewports": [
+    "1440x1000",
+    "390x844"
+  ],
+  "api": "Sintética local; sin proveedores externos."
+}

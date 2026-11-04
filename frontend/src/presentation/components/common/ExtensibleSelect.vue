@@ -46,7 +46,7 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   options: { type: Array, default: () => [] },
   id: { type: String, default: undefined },
-  placeholder: { type: String, default: 'Selecciona una opcion' },
+  placeholder: { type: String, default: 'Selecciona una opción' },
   addLabel: { type: String, default: 'Agregar nuevo' },
   addPlaceholder: { type: String, default: 'Escribe el nuevo valor' },
   invalid: Boolean,

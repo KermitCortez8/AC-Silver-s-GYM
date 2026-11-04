@@ -12,10 +12,14 @@ class AttendanceRepository:
 
     def __init__(self, database, cache: GymCache):
         self.database, self.cache = database, cache
+        self.schema_checked = False
 
     def save_attendance(self, row, expected_version, audit):
 
         with self.cache.lock:
+            if not self.schema_checked:
+                self.database.validate_columns("ASISTENCIA", {"limite_salida", "salida_tardia"})
+                self.schema_checked = True
             try:
                 saved = self.database.rpc("guardar_asistencia", {
                     "p_registro": attendance._attendance_to_remote(row),

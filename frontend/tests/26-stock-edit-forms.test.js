@@ -23,15 +23,16 @@ before(async () => {
 
 after(async () => { await server?.close(); });
 
-const setupView = async (filename, path, prepare) => {
+const setupView = async (filename, path, prepare, query = {}) => {
   const { default: View } = await server.ssrLoadModule(`/src/presentation/views/${filename}.vue`);
   const pinia = createPinia();
-  installServices(pinia);
+  installServices(pinia, { http: { apiGet: async (path) => path === '/planes-membresia'
+    ? [{ id_pm: 1, nombre_plan: 'MENSUAL', duracion: '30 días', precio: 79, activo: true }] : [] } });
   const router = createRouter({ history: createMemoryHistory(), routes: [
     { path, component: View },
     { path: '/inventory', name: 'Inventory', component: { render: () => null } },
   ] });
-  await router.push(path);
+  await router.push({ path, query });
   let setup;
   const app = createSSRApp({ render: () => h(View) });
   app.use(pinia);
@@ -79,11 +80,37 @@ test('editing inventory preserves a zero threshold and uses one only when the va
   assert.equal(setup.feedbackTone, 'success');
 });
 
+test('inventario conserva los avisos en vivo al combinar las ramas', async () => {
+  const { setup } = await setupView('InventoryView', '/admin/inventory');
+  setup.openNewItem();
+  setup.touch('name');
+  assert.match(setup.warnings.name, /obligatorio/);
+  setup.form.name = 'Pesas';
+  assert.equal(setup.warnings.name, '');
+  setup.touch('minQuantity');
+  assert.match(setup.warnings.minQuantity, /obligatorio/);
+  setup.form.minQuantity = 0;
+  assert.equal(setup.warnings.minQuantity, '');
+  setup.form.minQuantity = '1.5';
+  assert.match(setup.warnings.minQuantity, /entero/);
+});
+
+test('la papelera conserva su pestaña y las acciones de restaurar y eliminar', async () => {
+  const { setup, html } = await setupView('StoreView', '/admin/store', (_setup, gym) => {
+    gym.papelera_tienda = [{ id_producto: 8, nombre: 'Agua archivada', precio: 3, cantidad: 4 }];
+  }, { tab: 'papelera' });
+  assert.equal(setup.activeTab, 'papelera');
+  assert.ok(setup.tabs.some(tab => tab.value === 'papelera'));
+  assert.match(html, /Agua archivada/);
+  assert.match(html, /Restaurar/);
+  assert.match(html, /Eliminar/);
+});
+
 test('client editor and membership actions preserve the actual view flow after extraction', async () => {
   const { setup, gym } = await setupView('ClientsView', '/admin/clients');
   const client = { id: 'SGCLI001', id_cliente: 1, name: 'Ana', email: 'ana@gmail.com', dni: '12345678', status: 'EN_TRAMITE', paymentStatus: 'PAGADO' };
   gym.members = [client];
-  setup.editClient(client);
+  await setup.editClient(client);
   setup.form.nombre = 'Ana editada';
   let submitted;
   gym.upsertClient = async payload => { submitted = payload; return { ...client, name: payload.nombre }; };
@@ -184,7 +211,7 @@ test('inventory keeps server errors inside the editor and prevents duplicate sav
   // Sin stock minimo no se guarda: no hay valor por defecto.
   await setup.handleSubmit();
   assert.equal(saves, 0);
-  assert.deepEqual(setup.formErrors, ['Stock minimo']);
+  assert.deepEqual(setup.formErrors, ['Stock mínimo']);
   setup.form.minQuantity = '5';
   const pending = setup.handleSubmit();
   await setup.handleSubmit();
@@ -361,7 +388,7 @@ test('failed gallery refresh preserves previously loaded images', async (t) => {
 
 test('public registration rejects invalid email inline before sending a request', async () => {
   const { setup, gym, html } = await setupView('RegisterView', '/registro', setup => {
-    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@gmail.com.otro.com', dni: '12345678', telefono: '987654321', password: 'secreto123' });
+    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@gmail.com.otro.org', dni: '12345678', telefono: '987654321', password: 'secreto123' });
     setup.validateField('correo');
   });
   let calls = 0;
@@ -370,7 +397,7 @@ test('public registration rejects invalid email inline before sending a request'
   assert.equal(calls, 0);
   assert.equal(setup.feedbackTone, 'error');
   assert.match(setup.feedback, /Solo se permiten correos/);
-  assert.equal(setup.form.correo, 'ana@gmail.com.otro.com');
+  assert.equal(setup.form.correo, 'ana@gmail.com.otro.org');
   assert.equal(setup.isSubmitting, false);
   assert.match(html, /aria-invalid="true"/);
   assert.match(html, /id="register-correo-error" role="alert"/);
@@ -383,7 +410,7 @@ test('client and user editors keep invalid drafts open and do not call the serve
   ]) {
     const { setup, gym } = await setupView(view, path);
     setup[open]();
-    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@company.com', dni: 'bad', telefono: 'bad', password: '123' });
+    Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@company.org', dni: 'bad', telefono: 'bad', password: '123' });
     let calls = 0;
     gym[save] = async () => { calls++; };
     await setup.handleSubmit();
@@ -398,7 +425,7 @@ test('client and user editors keep invalid drafts open and do not call the serve
 test('checkout validates customer data and prevents duplicate payments while preserving failed drafts', async () => {
   const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
   gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
-  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@gmail.com.otro.com', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@gmail.com.otro.org', dni: '12345678', method: 'yape', reference: 'PAY-1' });
   let calls = 0;
   let rejectSave;
   gym.createStoreOrder = () => { calls++; return new Promise((_resolve, reject) => { rejectSave = reject; }); };

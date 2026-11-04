@@ -29,7 +29,21 @@ test('attendance belongs to the exact client, enrollment and session date', () =
     { id_cliente: 1, id_matricula: 20, fecha: '2026-09-07', hora_entrada: '08:04', hora_salida: '09:00' },
   ] };
   assert.equal(scheduleOccurrences([enrollment], '2026-09-07')[0].entryTime, '08:04');
-  assert.equal(scheduleOccurrences([enrollment], '2026-09-14')[0].checkLabel, 'Sin registro');
+  assert.equal(scheduleOccurrences([enrollment], '2026-09-14').length, 0);
+  assert.equal(scheduleOccurrences([{ ...enrollment, fecha_clase: '2026-09-14' }], '2026-09-14')[0].checkLabel, 'Sin registro');
   assert.equal(scheduleOccurrences([enrollment], '2026-08-31').length, 0);
   assert.equal(scheduleOccurrences([{ ...enrollment, estado: 'CANCELADA' }], '2026-09-14').length, 0);
+});
+
+test('cada fecha tiene sus propios cupos y matrículas aunque se repita el horario', () => {
+  const schedule = { ...monday, cupos: 5, ocupacion_por_fecha: { '2026-09-07': 5, '2026-09-14': 2 },
+    fechas_matriculadas: ['2026-09-07'] };
+  const first = scheduleOccurrences([schedule], '2026-09-07')[0];
+  const second = scheduleOccurrences([schedule], '2026-09-14')[0];
+  const third = scheduleOccurrences([schedule], '2026-09-21')[0];
+  assert.equal(first.cupos_usados, 5);
+  assert.equal(first.is_enrolled, true);
+  assert.equal(second.cupos_usados, 2);
+  assert.equal(second.is_enrolled, false);
+  assert.equal(third.cupos_usados, 0);
 });

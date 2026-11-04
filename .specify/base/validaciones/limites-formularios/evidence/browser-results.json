@@ -1,0 +1,123 @@
+{
+  "results": [
+    {
+      "field": "cliente.nombre",
+      "maximum": 50,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "cliente.correo",
+      "maximum": 50,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "cliente.telefono",
+      "maximum": 9,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "cliente.dni",
+      "maximum": 8,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "usuario.nombre",
+      "maximum": 50,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "usuario.telefono",
+      "maximum": 9,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "usuario.dni",
+      "maximum": 8,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "plan.nombre",
+      "maximum": 50,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "plan.descripcion",
+      "maximum": 150,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "plan.beneficios",
+      "maximum": 150,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "promocion.nombre",
+      "maximum": 50,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "promocion.descripcion",
+      "maximum": 150,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "promocion.palabra_clave",
+      "maximum": 50,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "horario.codigo_dia",
+      "maximum": 50,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "asistencia.motivo",
+      "maximum": 150,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "busqueda.general",
+      "maximum": 50,
+      "typing": "passed",
+      "paste": "passed"
+    },
+    {
+      "field": "registro.telefono_y_dni_movil",
+      "phone": 9,
+      "dni": 8,
+      "typing": "passed"
+    }
+  ],
+  "errors": [],
+  "writes": [
+    {
+      "endpoint": "/clientes",
+      "payload": {
+        "id_usuario": "SGCLI001",
+        "nombre": "ÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁ",
+        "correo": "ana@example.com",
+        "telefono": "012345678",
+        "dni": "00000000",
+        "password": "",
+        "plan": "MENSUAL",
+        "promocion": "SIN PROMOCION",
+        "estado": "EN_TRAMITE"
+      }
+    }
+  ]
+}
