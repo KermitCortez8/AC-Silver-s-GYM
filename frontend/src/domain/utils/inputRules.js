@@ -3,7 +3,7 @@
 export const SEARCH_MAX_LENGTH = 40;
 export const NAME_MAX_LENGTH = 80;
 export const PAGE_SIZES = [8, 16, 24, 50];
-export const DEFAULT_PAGE_SIZE = 8;
+export const DEFAULT_PAGE_SIZE = 10;
 
 export const SPECIAL_CHARS_MESSAGE = 'Sin caracteres especiales: solo letras, numeros y espacios.';
 
