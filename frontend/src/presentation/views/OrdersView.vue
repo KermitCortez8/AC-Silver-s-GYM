@@ -111,12 +111,11 @@
         </article>
       </div>
 
-      <!-- Paginacion: 10 pedidos por pagina por defecto. -->
+      <!-- Paginacion: el tamaño lo escribe el usuario (1 a 100). -->
       <div class="inv-store-theme">
         <TablePager
           v-model:page="paginaActual"
           v-model:pageSize="porPagina"
-          :sizes="ORDER_PAGE_SIZES"
           :total="filteredOrders.length"
           item-label="pedidos"
         />
@@ -136,6 +135,7 @@ import TablePager from "../components/common/TablePager.vue";
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ClipboardList, Clock, RefreshCw, Save, Search, Wallet } from 'lucide-vue-next';
 import { useGymStore } from '../../application/stores/gymStore';
+import { DEFAULT_PAGE_SIZE } from '../../domain/utils/inputRules.js';
 
 const gymStore = useGymStore();
 const search = ref('');
@@ -199,9 +199,7 @@ const filteredOrders = computed(() => {
 
 // Paginacion sobre la lista filtrada; vuelve a la primera pagina al buscar.
 const paginaActual = ref(1);
-// Pedidos muestra 10 por pagina (Inventario y Tienda usan 8).
-const ORDER_PAGE_SIZES = [10, 20, 30, 50];
-const porPagina = ref(ORDER_PAGE_SIZES[0]);
+const porPagina = ref(DEFAULT_PAGE_SIZE);
 const paginatedOrders = computed(() => filteredOrders.value
   .slice((paginaActual.value - 1) * porPagina.value, paginaActual.value * porPagina.value));
 watch(search, () => { paginaActual.value = 1; });
