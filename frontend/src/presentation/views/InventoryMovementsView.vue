@@ -193,6 +193,7 @@
               v-model="form.descripcion"
               rows="3"
               class="ws-input"
+              maxlength="100"
               placeholder="Motivo, proveedor, incidencia o venta manual"
             ></textarea>
           </label>

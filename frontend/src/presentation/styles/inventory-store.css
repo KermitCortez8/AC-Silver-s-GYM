@@ -934,3 +934,62 @@ p.inv-field-error {
   background: #1d4ed8;
   border-color: #1d4ed8;
 }
+
+
+/* ==========================================
+   TECLADO Y LÍMITES (Inventario)
+   Foco visible en toda la pestaña, contador de caracteres y pista de atajos del modal.
+   ========================================== */
+
+.inv-store-theme {
+  --inv-counter: var(--rm-subtitle);
+  --inv-counter-near: #fbbf24;
+  --inv-counter-limit: #fb7185;
+}
+
+[data-theme="light"] .inv-store-theme {
+  --inv-counter-near: #b45309;
+  --inv-counter-limit: #be123c;
+}
+
+.inv-store-theme :is(button, a, select, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--rm-accent);
+  outline-offset: 2px;
+}
+
+.inv-store-theme .field-input:focus-visible,
+.inv-store-theme .inv-input:focus-visible {
+  box-shadow: 0 0 0 3px var(--rm-focus-ring);
+}
+
+.inv-counter {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--inv-counter);
+}
+
+.inv-counter.is-near { color: var(--inv-counter-near); }
+.inv-counter.is-limit { color: var(--inv-counter-limit); }
+
+.rm-hint {
+  margin-right: auto;
+  align-self: center;
+  font-size: 0.72rem;
+  color: var(--rm-subtitle);
+}
+
+.rm-hint kbd {
+  border: 1px solid var(--rm-secondary-border);
+  border-radius: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--rm-secondary-text);
+}
+
+@media (max-width: 640px) {
+  .rm-hint { display: none; }
+}
