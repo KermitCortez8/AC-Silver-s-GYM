@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, ConfigDict, StringConstraints, field_vali
 from domain.validation import account_email, dni_number, integer_quantity, phone_number
 from domain.validation import required_text, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
 
-from domain.form_limits import SHORT_TEXT_LIMIT, LONG_TEXT_LIMIT
+from domain.form_limits import SHORT_TEXT_LIMIT, LONG_TEXT_LIMIT, INVENTORY_TEXT_LIMIT, INVENTORY_NOTE_LIMIT
 
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=SHORT_TEXT_LIMIT)]
 LongText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=LONG_TEXT_LIMIT)]
@@ -213,16 +213,16 @@ class PagoPublicoClienteInput(ValidatedInput):
 
 class InventarioInput(ValidatedInput):
     id_item: int | None = None
-    nombre_item: str
-    tipo: str
+    nombre_item: str = Field(max_length=INVENTORY_TEXT_LIMIT)
+    tipo: str = Field(max_length=INVENTORY_TEXT_LIMIT)
     cantidad_stock: int = Field(ge=0)
     estado: str = "Operativo"
     n_activo: int | None = None
-    unidad_venta: str = "unidad"
+    unidad_venta: str = Field(default="unidad", max_length=INVENTORY_TEXT_LIMIT)
     precio_venta: float | None = None
     stock_minimo: int = 1
-    ubicacion: str = "Almacén"
-    observaciones: str = ""
+    ubicacion: str = Field(default="Almacén", max_length=INVENTORY_TEXT_LIMIT)
+    observaciones: str = Field(default="", max_length=INVENTORY_NOTE_LIMIT)
 
 
 class ProductoTiendaInput(ValidatedInput):
@@ -267,7 +267,7 @@ class MovimientoInventarioInput(ValidatedInput):
     id_usuario: str | int
     tipo_movimiento: Literal["entrada", "salida", "ajuste"]
     fecha_movimiento: str = ""
-    descripcion: str = ""
+    descripcion: str = Field(default="", max_length=INVENTORY_NOTE_LIMIT)
     cantidad: int = Field(default=1, ge=1)
     # Solo para salidas: "TIENDA" repone el stock del producto enlazado.
     destino: str | None = None
@@ -277,7 +277,7 @@ class MovimientoInventarioUpdateInput(ValidatedInput):
     id_item: int | None = None
     tipo_movimiento: Literal["entrada", "salida", "ajuste"] | None = None
     fecha_movimiento: str | None = None
-    descripcion: str | None = None
+    descripcion: str | None = Field(default=None, max_length=INVENTORY_NOTE_LIMIT)
     cantidad: int | None = Field(default=None, ge=1)
     # "TIENDA" para una reposición; "" quita el destino.
     destino: str | None = None
