@@ -18,7 +18,7 @@
         ref="newInput"
         v-model="draft"
         class="inv-input"
-        :maxlength="NAME_MAX_LENGTH"
+        :maxlength="maxLength"
         :placeholder="addPlaceholder"
         @beforeinput="handleBeforeInput"
         @input="error = draft.trim() ? '' : 'Escribe un valor para agregarlo.'"
@@ -50,6 +50,7 @@ const props = defineProps({
   addLabel: { type: String, default: 'Agregar nuevo' },
   addPlaceholder: { type: String, default: 'Escribe el nuevo valor' },
   invalid: Boolean,
+  maxLength: { type: Number, default: NAME_MAX_LENGTH },
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -85,7 +86,7 @@ const handleBeforeInput = (event) => {
  * Crea el valor nuevo y lo deja seleccionado (si ya existia, usa el existente).
  */
 const confirmNew = () => {
-  const { value, rejected } = cleanText(draft.value, NAME_MAX_LENGTH);
+  const { value, rejected } = cleanText(draft.value, props.maxLength);
   const text = value.trim().replace(/\s+/g, ' ');
   if (rejected) {
     error.value = SPECIAL_CHARS_MESSAGE;

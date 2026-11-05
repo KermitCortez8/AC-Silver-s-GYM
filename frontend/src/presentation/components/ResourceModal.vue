@@ -43,6 +43,9 @@
           </div>
 
           <footer v-if="$slots.footer" class="rm-footer">
+            <p v-if="keyboardNav" class="rm-hint">
+              <kbd>Tab</kbd> / <kbd>Enter</kbd> siguiente campo · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> guardar · <kbd>Esc</kbd> cerrar
+            </p>
             <slot name="footer" />
           </footer>
         </form>
@@ -59,6 +62,7 @@ let openModals = 0;
 <script setup>
 import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import { X } from 'lucide-vue-next';
+import { handleFormKeydown } from '../utils/formKeyboard.js';
 
 const props = defineProps({
   open: Boolean,
@@ -68,6 +72,8 @@ const props = defineProps({
   icon: { type: [Object, Function], default: null },
   busy: Boolean,
   size: { type: String, default: 'lg' },
+  // Teclado estilo Windows (Enter / flechas entre campos, Ctrl+Enter guarda). Se activa por modal.
+  keyboardNav: Boolean,
 });
 const emit = defineEmits(['close', 'submit']);
 
@@ -95,7 +101,7 @@ const handleBackdropClick = () => {
 };
 
 /**
- * Esc cierra y Tab mantiene el foco dentro del modal.
+ * Esc cierra, Tab mantiene el foco dentro del modal y, si esta activo, Enter/flechas recorren los campos.
  */
 const handleKeydown = (event) => {
   if (event.key === 'Escape') {
@@ -103,6 +109,9 @@ const handleKeydown = (event) => {
     requestClose();
     return;
   }
+  if (props.keyboardNav && panel.value && handleFormKeydown(event, panel.value, {
+    submit: () => { if (!props.busy) panel.value.requestSubmit(); },
+  })) return;
   if (event.key !== 'Tab' || !panel.value) return;
   const focusable = [...panel.value.querySelectorAll(FOCUSABLE)].filter((el) => el.offsetParent !== null);
   if (!focusable.length) return;
