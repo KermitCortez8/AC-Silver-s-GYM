@@ -125,6 +125,7 @@
       :title="editingMovement ? `Editar movimiento #${editingMovement.id_mov}` : 'Nuevo movimiento'"
       subtitle="Entradas, salidas y ajustes recalculan el stock al guardar."
       size="md"
+      keyboard-nav
       :busy="isSaving"
       @close="closeModal"
       @submit="save"
@@ -194,8 +195,11 @@
             <input v-else :value="destinationLabel(form.destino)" class="field-input" disabled />
           </label>
           <label class="space-y-2 sm:col-span-2">
-            <span class="inv-label">Descripción</span>
-            <textarea v-model="form.descripcion" rows="3" class="field-input" placeholder="Motivo, proveedor, incidencia o reposición"></textarea>
+            <span class="flex items-end justify-between gap-2">
+              <span class="inv-label">Descripción</span>
+              <CharCounter :value="form.descripcion" :max="NOTES_MAX_LENGTH" />
+            </span>
+            <textarea v-model="form.descripcion" rows="3" class="field-input" :maxlength="NOTES_MAX_LENGTH" placeholder="Motivo, proveedor, incidencia o reposición"></textarea>
           </label>
         </div>
       </fieldset>
@@ -247,9 +251,10 @@ import ResourceModal from '../ResourceModal.vue';
 import SortableTh from '../common/SortableTh.vue';
 import TablePager from '../common/TablePager.vue';
 import TableSearch from '../common/TableSearch.vue';
+import CharCounter from '../common/CharCounter.vue';
 import FieldError from '../FieldError.vue';
 import { useLiveWarnings } from '../../composables/useLiveWarnings.js';
-import { DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, sortRows } from '../../../domain/utils/inputRules.js';
+import { clampText, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, NOTES_MAX_LENGTH, sortRows } from '../../../domain/utils/inputRules.js';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { useGymStore } from '../../../application/stores/gymStore';
 
@@ -468,17 +473,19 @@ const save = async () => {
     if (!lockedByOrder.value && projectedStock.value < 0) throw new Error('No hay stock suficiente en Inventario para este movimiento.');
     if (!lockedByOrder.value && projectedStoreStock.value < 0) throw new Error('La Tienda ya vendió esas unidades; no puedes reducir la reposición.');
     const destino = form.tipo_movimiento === 'salida' ? form.destino : '';
+    const descripcion = clampText(form.descripcion, NOTES_MAX_LENGTH).value;
     isSaving.value = true;
     if (editingMovement.value) {
       const payload = lockedByOrder.value
-        ? { fecha_movimiento: form.fecha_movimiento, descripcion: form.descripcion }
-        : { ...form, cantidad, destino };
+        ? { fecha_movimiento: form.fecha_movimiento, descripcion }
+        : { ...form, cantidad, destino, descripcion };
       await gymStore.updateInventoryMovement(editingMovement.value.id_mov, payload);
       feedback.value = 'Movimiento actualizado y stock recalculado.';
     } else {
       await gymStore.registrarMovimientoToServer({
         ...form,
         cantidad,
+        descripcion,
         destino: destino || null,
         id_usuario: authStore.user?.id_usuario || authStore.user?.id || 1,
       });

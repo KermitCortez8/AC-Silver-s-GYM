@@ -1,5 +1,5 @@
 <template>
-  <div class="inv-store-theme space-y-6">
+  <div class="inv-store-theme space-y-6" @keydown="openSelectOnSpace">
     <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
@@ -13,7 +13,7 @@
         </button>
       </div>
 
-      <nav class="mt-5 flex border-b border-white/10" aria-label="Secciones de inventario">
+      <nav class="mt-5 flex border-b border-white/10" aria-label="Secciones de inventario" @keydown="handleTabsKeydown">
         <button
           v-for="tab in tabs"
           :key="tab.value"
@@ -173,6 +173,7 @@
       :title="editingId ? 'Editar artículo' : 'Nuevo artículo'"
       :subtitle="editingId ? `N° de artículo ${currentInventoryCode}` : 'Los campos con * son obligatorios.'"
       size="xl"
+      keyboard-nav
       :busy="isSaving"
       @close="closeEditor"
       @submit="handleSubmit"
@@ -187,13 +188,16 @@
         <p class="rm-section-title"><Info :size="14" aria-hidden="true" /> Información general</p>
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="space-y-2 sm:col-span-2">
-            <label for="inv-name" class="inv-label inv-required">Nombre</label>
+            <div class="flex items-end justify-between gap-2">
+              <label for="inv-name" class="inv-label inv-required">Nombre</label>
+              <CharCounter :value="form.name" :max="INVENTORY_NAME_MAX_LENGTH" />
+            </div>
             <input
               id="inv-name"
               v-model="form.name"
               class="field-input"
               :class="{ 'is-invalid': isInvalid('name', formErrors.includes('Nombre')) }"
-              :maxlength="NAME_MAX_LENGTH"
+              :maxlength="INVENTORY_NAME_MAX_LENGTH"
               placeholder="Nombre del artículo"
               @beforeinput="blockNameChars"
               @input="cleanNameField"
@@ -207,6 +211,7 @@
               v-model="form.category"
               :options="categoryOptions"
               placeholder="Selecciona una categoría"
+              :max-length="INVENTORY_NAME_MAX_LENGTH"
               add-label="Agregar nueva categoría"
               add-placeholder="Nombre de la categoría"
             />
@@ -218,6 +223,7 @@
               v-model="form.location"
               :options="editorLocationOptions"
               placeholder="Selecciona una ubicación"
+              :max-length="INVENTORY_NAME_MAX_LENGTH"
               add-label="Agregar nueva ubicación"
               add-placeholder="Ej. Sala 3"
             />
@@ -268,6 +274,7 @@
               v-model="form.unidad_venta"
               :options="unitOptions"
               placeholder="Selecciona una unidad"
+              :max-length="INVENTORY_NAME_MAX_LENGTH"
               add-label="Agregar nueva unidad"
               add-placeholder="Ej. Bolsa"
             />
@@ -322,8 +329,19 @@
             </select>
           </div>
           <div class="space-y-2">
-            <label for="inv-observations" class="inv-label">Observaciones</label>
-            <textarea id="inv-observations" v-model="form.observations" rows="3" class="field-input" placeholder="Estado del equipo, mantenimiento pendiente, incidencias..."></textarea>
+            <div class="flex items-end justify-between gap-2">
+              <label for="inv-observations" class="inv-label">Observaciones</label>
+              <CharCounter :value="form.observations" :max="NOTES_MAX_LENGTH" />
+            </div>
+            <textarea
+              id="inv-observations"
+              v-model="form.observations"
+              rows="3"
+              class="field-input"
+              :maxlength="NOTES_MAX_LENGTH"
+              placeholder="Estado del equipo, mantenimiento pendiente, incidencias..."
+              @input="limitObservations"
+            ></textarea>
           </div>
         </div>
       </fieldset>
@@ -412,8 +430,10 @@ import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
 import SortableTh from '../components/common/SortableTh.vue';
 import TablePager from '../components/common/TablePager.vue';
 import TableSearch from '../components/common/TableSearch.vue';
+import CharCounter from '../components/common/CharCounter.vue';
+import { openSelectOnSpace } from '../utils/formKeyboard.js';
 import FieldError from '../components/FieldError.vue';
-import { missingFieldsMessage, NAME_MAX_LENGTH } from '../../domain/utils/inputRules.js';
+import { INVENTORY_NAME_MAX_LENGTH, missingFieldsMessage, NOTES_MAX_LENGTH } from '../../domain/utils/inputRules.js';
 import { useInventoryWorkspace } from '../composables/inventory/useInventoryWorkspace.js';
 
 const {
@@ -430,7 +450,9 @@ const {
   resetForm, openNewItem, closeEditor, editItem, requiredFields,
   handleSubmit, deleteItem, detailItem, itemNumber, detailMovements,
   movementClass, signedQuantity, openDetails, editFromDetails,
+  limitObservations, handleTabsKeydown,
 } = useInventoryWorkspace();
+
 </script>
 
 <style scoped>

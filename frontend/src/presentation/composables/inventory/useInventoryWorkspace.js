@@ -1,10 +1,10 @@
 import { feedbackClass as noticeClassFor } from '../../utils/feedback.js';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useLiveWarnings } from '../useLiveWarnings.js';
 import { quantityError, requiredTextError } from '../../../domain/utils/formValidation.js';
 import { blockSpecialChars } from '../../utils/inputGuards.js';
-import { cleanText, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, NAME_MAX_LENGTH, sortRows, SPECIAL_CHARS_MESSAGE } from '../../../domain/utils/inputRules.js';
+import { cleanText, clampText, DEFAULT_PAGE_SIZE, INVENTORY_NAME_MAX_LENGTH, matchesSearch, missingFields, NOTES_MAX_LENGTH, sortRows, SPECIAL_CHARS_MESSAGE } from '../../../domain/utils/inputRules.js';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { parseQuantity, MAX_QUANTITY } from '../../../domain/utils/quantities.js';
 import { INVENTORY_CATEGORIES, INVENTORY_LOCATIONS, INVENTORY_UNITS, inventoryOptions } from '../../utils/inventoryOptions.js';
@@ -164,14 +164,14 @@ export const useInventoryWorkspace = () => {
 
   // Bloqueo al escribir: nombre sin caracteres especiales y stock solo con enteros.
   const { warnings, touch, flash, touchAll, reset: resetWarnings, isInvalid } = useLiveWarnings({
-    name: () => requiredTextError(form.name, 'El nombre', NAME_MAX_LENGTH),
+    name: () => requiredTextError(form.name, 'El nombre', INVENTORY_NAME_MAX_LENGTH),
     quantity: () => (editingId.value ? '' : quantityError(form.quantity, { label: 'El stock inicial' })),
     minQuantity: () => quantityError(form.minQuantity, { label: 'El stock mínimo' }),
   });
   const blockNameChars = blockSpecialChars((message) => flash('name', message));
 
   const cleanNameField = (event) => {
-    const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
+    const { value, rejected } = cleanText(event.target.value, INVENTORY_NAME_MAX_LENGTH);
     if (value !== event.target.value) {
       event.target.value = value;
       form.name = value;
@@ -275,7 +275,7 @@ export const useInventoryWorkspace = () => {
         return;
       }
       isSaving.value = true;
-      await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form, name: form.name.trim(), quantity, minQuantity });
+      await gymStore.upsertInventoryItem({ id: editingId.value || undefined, ...form, name: form.name.trim(), observations: clampText(form.observations, NOTES_MAX_LENGTH).value, quantity, minQuantity });
       const savedLabel = editingId.value ? 'Artículo actualizado.' : 'Artículo registrado.';
       isSaving.value = false;
       closeEditor();
@@ -337,6 +337,37 @@ export const useInventoryWorkspace = () => {
     if (item) editItem(item);
   };
 
+  // Recorta lo pegado en Observaciones (el atributo maxlength solo frena lo que se escribe).
+  const limitObservations = (event) => {
+    const { value } = clampText(event.target.value, NOTES_MAX_LENGTH);
+    if (value !== event.target.value) event.target.value = value;
+    form.observations = value;
+  };
+
+  // Pestañas: Flecha izquierda/derecha cambian de sección; Inicio y Fin van a la primera o la última.
+  const handleTabsKeydown = (event) => {
+    const lastIndex = tabs.length - 1;
+    const current = tabs.findIndex((tab) => tab.value === activeTab.value);
+    const target = {
+      ArrowRight: current >= lastIndex ? 0 : current + 1,
+      ArrowLeft: current <= 0 ? lastIndex : current - 1,
+      Home: 0,
+      End: lastIndex,
+    }[event.key];
+    if (target === undefined) return;
+    event.preventDefault();
+    const nav = event.currentTarget;
+    activeTab.value = tabs[target].value;
+    nextTick(() => nav.querySelector('[aria-current="page"]')?.focus());
+  };
+
+  // Si el guardado falla por campos incompletos, el foco va al primero con error.
+  watch(formErrors, async (errors) => {
+    if (!errors.length) return;
+    await nextTick();
+    document.querySelector('.rm-panel .is-invalid')?.focus();
+  });
+
   onMounted(() => {
     gymStore.fetchFromBackend?.({ section: 'inventory' }).catch((error) => console.warn('No se pudo refrescar inventario:', error));
   });
@@ -355,5 +386,6 @@ export const useInventoryWorkspace = () => {
     resetForm, openNewItem, closeEditor, editItem, requiredFields,
     handleSubmit, deleteItem, detailItem, itemNumber, detailMovements,
     movementClass, signedQuantity, openDetails, editFromDetails,
+    limitObservations, handleTabsKeydown,
   };
 };

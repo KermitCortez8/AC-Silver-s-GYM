@@ -8,6 +8,7 @@ from domain.models.attendance import AttendanceAnnulment, AttendanceCorrection
 from domain.models.gym import (
     ClienteInput, UsuarioInput, RegistroPublicoClienteInput,
     PlanMembresiaInput, PromocionInput, HorarioServicioInput,
+    InventarioInput, MovimientoInventarioInput, MovimientoInventarioUpdateInput,
 )
 from infrastructure.services.local_gym_service import LocalGymService
 
@@ -17,6 +18,8 @@ ACCOUNT = dict(nombre="Ana", correo="ana@example.com", dni="01234567",
 PLAN = dict(nombre_plan="Plan", duracion="30 días", precio=80)
 PROMOTION = dict(nombre="Oferta", valor_descuento=10)
 SCHEDULE = dict(servicio="fitness", id_rutina=1)
+INVENTORY = dict(nombre_item="Pesa", tipo="Equipo", cantidad_stock=1)
+MOVEMENT = dict(id_item=1, id_usuario=1, tipo_movimiento="entrada")
 
 
 @pytest.mark.parametrize("model,payload,field,maximum", [
@@ -29,6 +32,13 @@ SCHEDULE = dict(servicio="fitness", id_rutina=1)
     (PromocionInput, PROMOTION, "descripcion", 150),
     (PromocionInput, PROMOTION, "palabra_clave", 50),
     (HorarioServicioInput, SCHEDULE, "codigo_dia", 50),
+    (InventarioInput, INVENTORY, "nombre_item", 40),
+    (InventarioInput, INVENTORY, "tipo", 40),
+    (InventarioInput, INVENTORY, "ubicacion", 40),
+    (InventarioInput, INVENTORY, "unidad_venta", 40),
+    (InventarioInput, INVENTORY, "observaciones", 100),
+    (MovimientoInventarioInput, MOVEMENT, "descripcion", 100),
+    (MovimientoInventarioUpdateInput, {}, "descripcion", 100),
     (AttendanceAnnulment, {"version": 0}, "motivo", 150),
     (AttendanceCorrection, {"version": 0, "fecha": "2026-11-02", "hora_entrada": "10:00"}, "motivo", 150),
 ])

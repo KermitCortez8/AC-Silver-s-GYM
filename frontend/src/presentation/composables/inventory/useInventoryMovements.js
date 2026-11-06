@@ -1,6 +1,7 @@
 import { feedbackClass as noticeClassFor } from '../../utils/feedback.js';
 import { MAX_QUANTITY, parseQuantity } from '../../../domain/utils/quantities.js';
 import { limaDate } from '../../../domain/utils/dates.js';
+import { clampText, NOTES_MAX_LENGTH } from '../../../domain/utils/inputRules.js';
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal } from 'lucide-vue-next';
 import { useAuthStore } from '../../../application/stores/authStore';
@@ -317,6 +318,7 @@ export const useInventoryMovements = () => {
       await gymStore.registrarMovimientoToServer({
         ...form,
         cantidad: parseQuantity(form.cantidad, { min: 1 }),
+        descripcion: clampText(form.descripcion, NOTES_MAX_LENGTH).value,
         id_usuario: authStore.user?.id_usuario || authStore.user?.id || 1,
       });
       feedbackTone.value = 'success';
