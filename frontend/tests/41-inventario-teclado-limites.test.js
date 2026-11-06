@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { resolveFormKey } from '../src/domain/utils/keyboardNav.js';
-import { clampText, cleanText, INVENTORY_NAME_MAX_LENGTH, NOTES_MAX_LENGTH, SEARCH_MAX_LENGTH } from '../src/domain/utils/inputRules.js';
+import { clampText, cleanInteger, cleanText, INVENTORY_NAME_MAX_LENGTH, isAllowedInteger, NOTES_MAX_LENGTH, SEARCH_MAX_LENGTH } from '../src/domain/utils/inputRules.js';
 
 const text = (extra = {}) => ({ tag: 'INPUT', type: 'text', isFirst: false, isLast: false, ...extra });
 
@@ -57,11 +57,48 @@ test('las flechas arriba y abajo recorren campos de texto', () => {
   assert.equal(resolveFormKey({ key: 'ArrowUp', ...text({ isFirst: true }) }), null);
 });
 
-test('las flechas no se roban a selects, textareas, fechas ni radios', () => {
-  for (const [tag, type] of [['SELECT', 'select-one'], ['TEXTAREA', 'textarea'], ['INPUT', 'date'], ['INPUT', 'radio'], ['INPUT', 'checkbox']]) {
-    assert.equal(resolveFormKey({ key: 'ArrowDown', tag, type }), null, `${tag}/${type}`);
-    assert.equal(resolveFormKey({ key: 'ArrowUp', tag, type }), null, `${tag}/${type}`);
+test('las flechas recorren desplegables, opciones y casillas', () => {
+  for (const [tag, type] of [['SELECT', 'select-one'], ['INPUT', 'radio'], ['INPUT', 'checkbox']]) {
+    assert.equal(resolveFormKey({ key: 'ArrowDown', tag, type }), 'next', `${tag}/${type}`);
+    assert.equal(resolveFormKey({ key: 'ArrowUp', tag, type }), 'prev', `${tag}/${type}`);
   }
+});
+
+test('con la lista de un desplegable abierta, las flechas eligen la opción', () => {
+  assert.equal(resolveFormKey({ key: 'ArrowDown', tag: 'SELECT', type: 'select-one', pickerOpen: true }), null);
+  assert.equal(resolveFormKey({ key: 'ArrowUp', tag: 'SELECT', type: 'select-one', pickerOpen: true }), null);
+});
+
+test('Espacio abre un desplegable cerrado y no hace nada especial si ya está abierto', () => {
+  assert.equal(resolveFormKey({ key: ' ', tag: 'SELECT', type: 'select-one' }), 'open');
+  assert.equal(resolveFormKey({ key: ' ', tag: 'SELECT', type: 'select-one', pickerOpen: true }), null);
+  assert.equal(resolveFormKey({ key: ' ', ...text() }), null);
+});
+
+test('en un textarea las flechas solo salen del campo con el cursor al final o al inicio', () => {
+  const area = { tag: 'TEXTAREA', type: 'textarea' };
+  assert.equal(resolveFormKey({ key: 'ArrowDown', ...area, caretAtEnd: false }), null);
+  assert.equal(resolveFormKey({ key: 'ArrowDown', ...area, caretAtEnd: true }), 'next');
+  assert.equal(resolveFormKey({ key: 'ArrowUp', ...area, caretAtStart: false }), null);
+  assert.equal(resolveFormKey({ key: 'ArrowUp', ...area, caretAtStart: true }), 'prev');
+});
+
+test('las fechas conservan sus flechas para cambiar día, mes y año', () => {
+  assert.equal(resolveFormKey({ key: 'ArrowDown', tag: 'INPUT', type: 'date' }), null);
+  assert.equal(resolveFormKey({ key: 'ArrowUp', tag: 'INPUT', type: 'date' }), null);
+});
+
+test('izquierda y derecha no se interceptan: mueven el cursor o cambian la opción', () => {
+  for (const [tag, type] of [['INPUT', 'text'], ['INPUT', 'radio'], ['TEXTAREA', 'textarea']]) {
+    assert.equal(resolveFormKey({ key: 'ArrowLeft', tag, type }), null);
+    assert.equal(resolveFormKey({ key: 'ArrowRight', tag, type }), null);
+  }
+});
+
+test('los campos numéricos solo aceptan dígitos', () => {
+  assert.equal(isAllowedInteger('7'), true);
+  for (const texto of ['a', 'e', '-', '+', '.', ',', ' ']) assert.equal(isAllowedInteger(texto), false, texto);
+  assert.equal(cleanInteger('12abc-3.4e5'), '12345');
 });
 
 test('no interfiere con la composición de texto (IME) ni con Alt/Meta', () => {
