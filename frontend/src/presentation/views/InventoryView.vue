@@ -1,5 +1,5 @@
 <template>
-  <div class="inv-store-theme space-y-6">
+  <div class="inv-store-theme space-y-6" @keydown="openSelectOnSpace">
     <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
@@ -431,6 +431,7 @@ import SortableTh from '../components/common/SortableTh.vue';
 import TablePager from '../components/common/TablePager.vue';
 import TableSearch from '../components/common/TableSearch.vue';
 import CharCounter from '../components/common/CharCounter.vue';
+import { openSelectOnSpace } from '../utils/formKeyboard.js';
 import FieldError from '../components/FieldError.vue';
 import { INVENTORY_NAME_MAX_LENGTH, missingFieldsMessage, NOTES_MAX_LENGTH } from '../../domain/utils/inputRules.js';
 import { useInventoryWorkspace } from '../composables/inventory/useInventoryWorkspace.js';

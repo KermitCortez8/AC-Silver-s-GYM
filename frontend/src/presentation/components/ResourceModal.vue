@@ -43,9 +43,6 @@
           </div>
 
           <footer v-if="$slots.footer" class="rm-footer">
-            <p v-if="keyboardNav" class="rm-hint">
-              <kbd>Tab</kbd> / <kbd>Enter</kbd> siguiente campo · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> guardar · <kbd>Esc</kbd> cerrar
-            </p>
             <slot name="footer" />
           </footer>
         </form>
@@ -105,6 +102,11 @@ const handleBackdropClick = () => {
  */
 const handleKeydown = (event) => {
   if (event.key === 'Escape') {
+    // Con un desplegable abierto, Esc solo cierra la lista, no el modal.
+    if (event.target?.dataset?.pickerOpen === '1') {
+      delete event.target.dataset.pickerOpen;
+      return;
+    }
     event.preventDefault();
     requestClose();
     return;

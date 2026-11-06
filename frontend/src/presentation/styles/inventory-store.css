@@ -972,24 +972,3 @@ p.inv-field-error {
 
 .inv-counter.is-near { color: var(--inv-counter-near); }
 .inv-counter.is-limit { color: var(--inv-counter-limit); }
-
-.rm-hint {
-  margin-right: auto;
-  align-self: center;
-  font-size: 0.72rem;
-  color: var(--rm-subtitle);
-}
-
-.rm-hint kbd {
-  border: 1px solid var(--rm-secondary-border);
-  border-radius: 0.4rem;
-  padding: 0.05rem 0.35rem;
-  font-family: inherit;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--rm-secondary-text);
-}
-
-@media (max-width: 640px) {
-  .rm-hint { display: none; }
-}

@@ -21,6 +21,37 @@ export const listFields = (root) => {
 };
 
 /**
+ * Abre un desplegable con Espacio. Con la lista abierta, las flechas eligen la opción
+ * (hasta que se cierre por cambio, pérdida de foco o clic).
+ */
+const openPicker = (select, event) => {
+  if (typeof select.showPicker !== 'function') return false;
+  try {
+    select.showPicker();
+  } catch {
+    return false;
+  }
+  event.preventDefault();
+  select.dataset.pickerOpen = '1';
+  const events = ['change', 'blur', 'mousedown'];
+  const clear = () => {
+    delete select.dataset.pickerOpen;
+    events.forEach((name) => select.removeEventListener(name, clear));
+  };
+  events.forEach((name) => select.addEventListener(name, clear));
+  return true;
+};
+
+/** Espacio abre cualquier desplegable de la pantalla (filtros, listas). Devuelve true si lo atendió. */
+export const openSelectOnSpace = (event) => {
+  const target = event.target;
+  if (!target || target.tagName !== 'SELECT' || event.defaultPrevented) return false;
+  if (event.key !== ' ' || event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return false;
+  if (target.dataset.pickerOpen === '1') return false;
+  return openPicker(target, event);
+};
+
+/**
  * Aplica el teclado estilo Windows dentro de `root`. Devuelve true si atendió la tecla.
  * `submit` se llama cuando la tecla pide guardar.
  */
@@ -45,9 +76,14 @@ export const handleFormKeydown = (event, root, { submit } = {}) => {
     type: target.type,
     isFirst: index === 0,
     isLast: index === fields.length - 1,
+    // En un textarea solo se sale con flechas si el cursor está al inicio o al final del texto.
+    caretAtStart: target.tagName !== 'TEXTAREA' || (target.selectionStart === 0 && target.selectionEnd === 0),
+    caretAtEnd: target.tagName !== 'TEXTAREA' || (target.selectionStart === target.value.length && target.selectionEnd === target.value.length),
+    pickerOpen: target.dataset?.pickerOpen === '1',
   });
   if (!action) return false;
 
+  if (action === 'open') return openPicker(target, event);
   event.preventDefault();
   if (action === 'submit') {
     submit?.();
