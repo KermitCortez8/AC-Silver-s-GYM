@@ -1,0 +1,67 @@
+.store-admin-table {
+  min-width: 980px;
+}
+
+.field-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(2, 6, 23, 0.72);
+  padding: 0.75rem 1rem;
+  color: white;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field-input:focus {
+  border-color: rgba(251, 191, 36, 0.4);
+}
+.store-product-card {
+  display: flex;
+  flex-direction: column;
+}
+.store-product-image {
+  background: var(--ws-inset);
+  border-color: var(--ws-border);
+}
+.store-product-card > div:last-child {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+@media (max-width: 767px) {
+  .store-admin-table {
+    min-width: 0;
+  }
+  .store-admin-table thead {
+    display: none;
+  }
+  .store-admin-table tbody,
+  .store-admin-table tr {
+    display: block;
+  }
+  .store-admin-table tr {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--ws-border);
+  }
+  .store-admin-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+    border: 0;
+    padding: 0.5rem;
+    max-width: none;
+    overflow-wrap: anywhere;
+  }
+  .store-admin-table td::before {
+    content: attr(data-label);
+    color: var(--ws-muted);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    padding-top: 0.15rem;
+  }
+}
+
+.bg-amber-400\/8 {
+  background-color: rgba(251, 191, 36, 0.08);
+}

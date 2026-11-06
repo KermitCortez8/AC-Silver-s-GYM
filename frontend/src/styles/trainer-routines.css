@@ -1,0 +1,43 @@
+.field-error { border-color: rgb(251, 113, 133) !important; }
+.field-input {
+  width: 100%;
+  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.1));
+  border-radius: 1rem;
+  background: var(--app-input, rgba(2, 6, 23, 0.72));
+  padding: 0.75rem 1rem;
+  color: var(--app-text, white);
+  outline: none;
+}
+
+[data-theme="light"] .field-input,
+[data-theme="light"] select.field-input {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] select.field-input option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.field-input::placeholder {
+  color: var(--app-text-faint, #64748b);
+}
+
+.field-error {
+  border-color: rgba(251, 113, 133, 0.7) !important;
+}
+
+.search-input {
+  padding-left: 2.75rem !important;
+}
+
+@keyframes bounceShort {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.animate-bounce-short {
+  animation: bounceShort 0.3s ease-in-out;
+}
