@@ -36,18 +36,27 @@
         {{ gymStore.isSyncing ? 'Actualizando…' : 'Reintentar' }}
       </button>
     </div>
+
+    <!-- Chatbot Widget de Silver Gym Surco -->
+    <ChatLauncher :is-open="isChatOpen" @open="chatbot.openChat" />
+    <ChatWindow :chatbot="chatbot" />
   </div>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, watch } from 'vue';
+import { computed, unref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../application/stores/authStore';
 import { useGymStore } from '../application/stores/gymStore';
+import ChatLauncher from './components/chatbot/ChatLauncher.vue';
+import ChatWindow from './components/chatbot/ChatWindow.vue';
+import { useChatbot } from './composables/useChatbot';
 
 const authStore = useAuthStore();
 const gymStore = useGymStore();
 const router = useRouter();
+const chatbot = useChatbot();
+const isChatOpen = computed(() => Boolean(unref(chatbot.isOpen)));
 let sessionInterval;
 const revalidateClientSession = () => {
   if (

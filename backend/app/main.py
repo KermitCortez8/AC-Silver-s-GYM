@@ -27,6 +27,7 @@ from presentation.routes.promotions_routes import router as promotions_router
 from presentation.routes.store_routes import router as store_router
 from presentation.routes.trainer_routes import router as trainer_router
 from presentation.routes.users_routes import router as users_router
+from presentation.routes.chatbot_routes import router as chatbot_router
 
 settings = get_settings()
 store_images_dir = Path(settings.store_images_dir)
@@ -102,6 +103,7 @@ app.include_router(attendance_router, prefix="/api")
 app.include_router(inventory_router, prefix="/api")
 app.include_router(store_router, prefix="/api")
 app.include_router(trainer_router, prefix="/api")
+app.include_router(chatbot_router)
 
 
 # Procesa esta operación.

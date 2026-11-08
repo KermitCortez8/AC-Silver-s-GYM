@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Silver Gym Surco - Entrena Fuerte, Cerca de Casa</title>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#D83A00',
+              hover: '#b53000',
+              dark: '#111827',
+              charcoal: '#1F2937'
+            }
+          },
+          boxShadow: {
+            'chat-panel': '0 20px 45px rgba(0, 0, 0, 0.25)',
+            'cta-glow': '0 10px 25px -3px rgba(216, 58, 0, 0.45)'
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Stylesheet -->
+<style data-purpose="custom-scroll-and-visuals">
+    /* Custom subtle scrollbar for the chat dialog */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #E5E7EB;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #D1D5DB;
+    }
+  </style>
+</head>
+<body class="bg-black text-white font-sans antialiased min-h-screen relative overflow-x-hidden">
+<!-- BEGIN: SiteHeader -->
+<header class="w-full bg-white border-b border-gray-100 z-20 relative">
+<div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+<!-- Brand Logo -->
+<a class="flex items-center space-x-2 group" href="#">
+<span class="text-2xl font-black italic tracking-tight text-[#D83A00]">Silver Gym Surco</span>
+</a>
+<!-- Desktop Navigation Links -->
+<nav class="hidden md:flex items-center space-x-8 text-sm font-bold tracking-wide text-gray-800">
+<a class="hover:text-[#D83A00] transition-colors" href="#servicios">SERVICIOS</a>
+<a class="hover:text-[#D83A00] transition-colors" href="#nosotros">NOSOTROS</a>
+<a class="hover:text-[#D83A00] transition-colors" href="#membresias">MEMBRESÍAS</a>
+<a class="hover:text-[#D83A00] transition-colors" href="#ubicacion">UBICACIÓN</a>
+</nav>
+<!-- Action Buttons -->
+<div class="flex items-center space-x-4">
+<a class="bg-[#D83A00] hover:bg-[#b53000] text-white px-6 py-2.5 rounded-full font-bold text-xs tracking-wider uppercase transition shadow-md" href="#registro">
+          REGISTRARSE
+        </a>
+<a class="border border-[#D83A00] text-[#D83A00] hover:bg-orange-50 px-5 py-2 rounded-full font-bold text-xs tracking-wider uppercase transition" href="#plataforma">
+          ACCESO A PLATAFORMA DIGITAL
+        </a>
+</div>
+</div>
+</header>
+<!-- END: SiteHeader -->
+<!-- BEGIN: MainHero -->
+<main class="relative w-full min-h-[calc(100vh-80px)] flex items-center overflow-hidden">
+<!-- Hero Background Image (Referencing IMAGE_1) -->
+<div class="absolute inset-0 z-0">
+<img alt="Hombre entrenando con barra en Silver Gym Surco" class="w-full h-full object-cover object-center filter brightness-95" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJG7pxN2huNAA3I_KbiUT0PtabkLizekznl1LD0TZOdICXCaNk4d59v10foBfb_SUa42WGIyvYPyuBm0sfVsclaL3XGHNqtvtbLeaXx7juOnon0s2HCPgDoqFlm9UGWKQu6-Hb6Bljb5lcy6X5OjY1Ks_FMVhhvkFVbISiu4cBjVyJOHb6usBhK1rDkGEaslfdp8OG0pxJdzCdmJKQ4FAlcySNLvYVJB4YU2rwjIu-eWWGB7n2Y7bNtg"/>
+<!-- Subtle Dark Overlay for contrast and readability -->
+<div class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent"></div>
+</div>
+<!-- Hero Content Container -->
+<div class="relative z-10 max-w-7xl mx-auto px-6 py-16 w-full flex flex-col justify-between h-full">
+<div class="max-w-2xl mt-8">
+<!-- Category Badge / Subtitle -->
+<div class="flex items-center space-x-3 mb-4">
+<span class="w-6 h-0.5 bg-[#D83A00]"></span>
+<span class="text-xs font-black tracking-widest uppercase text-[#D83A00]">Gimnasio • Salud y Disciplina</span>
+</div>
+<!-- Hero Headline -->
+<h1 class="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[1.05] mb-6">
+          Entrena fuerte,<br/>
+<span class="text-[#D83A00]">cerca de casa.</span>
+</h1>
+<!-- Hero Description Paragraph -->
+<p class="text-gray-300 text-base md:text-lg leading-relaxed max-w-xl mb-10">
+          En Silver Gym Surco ofrecemos entrenamiento funcional, musculación, cardio y clases grupales con horarios pensados para tu rutina diaria.
+        </p>
+<!-- CTA Action Buttons -->
+<div class="flex flex-wrap items-center gap-4">
+<a class="bg-[#D83A00] hover:bg-[#b53000] text-white px-8 py-3.5 rounded-full font-bold text-sm uppercase tracking-wide transition shadow-cta-glow" href="#registro">
+            REGISTRARME AHORA
+          </a>
+<a class="bg-white hover:bg-gray-100 text-gray-900 px-7 py-3.5 rounded-full font-bold text-sm uppercase tracking-wide transition shadow-lg" href="#plataforma">
+            ACCESO A PLATAFORMA DIGITAL
+          </a>
+</div>
+</div>
+<!-- Quick Metrics Footer Bar inside Hero -->
+<div class="pt-20 grid grid-cols-3 max-w-md gap-6 text-left">
+<div class="border-l-2 border-white/20 pl-4">
+<span class="block text-xs uppercase tracking-wider text-orange-400 font-bold mb-1">Horario</span>
+<span class="text-base md:text-lg font-bold text-white">Lun a sab</span>
+</div>
+<div class="border-l-2 border-white/20 pl-4">
+<span class="block text-xs uppercase tracking-wider text-orange-400 font-bold mb-1">Servicios</span>
+<span class="text-base md:text-lg font-bold text-white">4 areas</span>
+</div>
+<div class="border-l-2 border-white/20 pl-4">
+<span class="block text-xs uppercase tracking-wider text-orange-400 font-bold mb-1">Plataforma</span>
+<span class="text-base md:text-lg font-bold text-white">Digital</span>
+</div>
+</div>
+</div>
+</main>
+<!-- END: MainHero -->
+<!-- BEGIN: ChatbotFloatingWidget -->
+<!-- Floating chat container: 380px wide, ~580px high, fixed at bottom-6 right-8 -->
+<aside aria-label="Asistente Virtual Silver Gym" class="fixed bottom-6 right-8 z-50 w-[380px] h-[580px] bg-white rounded-[20px] shadow-chat-panel border border-gray-200 flex flex-col overflow-hidden text-gray-800" id="silver-chatbot">
+<!-- Chat Header -->
+<header class="px-5 py-4 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
+<div>
+<h2 class="text-lg font-bold text-gray-900 leading-tight">Silver</h2>
+<p class="text-xs text-gray-500 font-normal">Asistente virtual con IA</p>
+</div>
+<!-- Close Button with WCAG 44x44px touch target -->
+<button aria-label="Cerrar ventana de chat" class="w-11 h-11 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition focus:outline-none focus:ring-2 focus:ring-[#D83A00]" type="button">
+<svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</header>
+<!-- Scrollable Messages Area -->
+<div class="flex-1 overflow-y-auto px-5 py-4 space-y-4 custom-scrollbar bg-white text-sm">
+<!-- Bot Message 1: Clean text without bubble -->
+<div class="text-[#1F2937] leading-relaxed text-[14.5px]">
+        Hola, soy Silver, el asistente con IA de Silver Gym Surco. Puedo ayudarte con horarios, actividades, productos y tu membresía. ¿En qué te ayudo hoy?
+      </div>
+<!-- User Message: Orange rounded bubble aligned right -->
+<div class="flex justify-end">
+<div class="bg-[#D83A00] text-white px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] text-[14px] leading-snug shadow-sm">
+          ¿Qué horarios tienen disponibles?
+        </div>
+</div>
+<!-- Bot Message 2: Clean text and structured data card -->
+<div class="space-y-2">
+<p class="text-[#1F2937] leading-relaxed text-[14.5px]">
+          Estamos abiertos en los siguientes horarios:
+        </p>
+<!-- Information Card -->
+<div class="bg-stone-50 border border-gray-200 rounded-xl p-3.5 text-xs text-gray-700 space-y-2">
+<div class="flex items-center justify-between">
+<span class="font-semibold text-gray-900">• Lunes a Viernes:</span>
+<span>6:00 am - 10:00 pm</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-semibold text-gray-900">• Sábados:</span>
+<span>7:00 am - 7:00 pm</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-semibold text-gray-900">• Domingos:</span>
+<span>8:00 am - 2:00 pm</span>
+</div>
+</div>
+</div>
+<!-- Quick Action Pills (Apiladas verticalmente, alineadas a la izquierda, w-fit) -->
+<div aria-label="Sugerencias rápidas" class="pt-2 flex flex-col items-start gap-1.5" role="group">
+<button class="w-fit bg-[#D83A00] hover:bg-[#b53000] text-white text-xs font-medium px-3.5 py-1.5 rounded-full transition shadow-xs focus:ring-2 focus:ring-offset-1 focus:ring-[#D83A00]" type="button">
+          Horario del gimnasio
+        </button>
+<button class="w-fit bg-[#D83A00] hover:bg-[#b53000] text-white text-xs font-medium px-3.5 py-1.5 rounded-full transition shadow-xs focus:ring-2 focus:ring-offset-1 focus:ring-[#D83A00]" type="button">
+          Horario de atención
+        </button>
+<button class="w-fit bg-[#D83A00] hover:bg-[#b53000] text-white text-xs font-medium px-3.5 py-1.5 rounded-full transition shadow-xs focus:ring-2 focus:ring-offset-1 focus:ring-[#D83A00]" type="button">
+          Actividades y cupos
+        </button>
+<button class="w-fit bg-[#D83A00] hover:bg-[#b53000] text-white text-xs font-medium px-3.5 py-1.5 rounded-full transition shadow-xs focus:ring-2 focus:ring-offset-1 focus:ring-[#D83A00]" type="button">
+          Productos de la tienda
+        </button>
+<button class="w-fit bg-[#D83A00] hover:bg-[#b53000] text-white text-xs font-medium px-3.5 py-1.5 rounded-full transition shadow-xs focus:ring-2 focus:ring-offset-1 focus:ring-[#D83A00]" type="button">
+          Hablar con una persona
+        </button>
+</div>
+</div>
+<!-- Bottom Interactive Dock -->
+<div class="p-3 bg-white border-t border-gray-100 space-y-2 shrink-0">
+<!-- Session Alert / Banner -->
+<div class="bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5 text-center text-[11px] text-gray-600 leading-tight">
+<span>Inicia sesión para consultar tu membresía e inscribirte • </span>
+<a class="text-[#D83A00] font-semibold underline hover:text-[#b53000]" href="#login">Iniciar sesión</a>
+</div>
+<!-- Text Input Form -->
+<form action="#" class="relative flex items-center" method="POST" onsubmit="event.preventDefault();">
+<input aria-label="Escribe tu pregunta para Silver" class="w-full bg-white border border-[#D1D5DB] rounded-xl pl-3.5 pr-11 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D83A00] focus:border-transparent transition" placeholder="Escribe tu pregunta…" type="text"/>
+<!-- Submit Button (44px target touch area) -->
+<button aria-label="Enviar mensaje" class="absolute right-1 w-9 h-9 flex items-center justify-center rounded-full text-white bg-[#D83A00] hover:bg-[#b53000] transition focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#D83A00]" type="submit">
+<svg aria-hidden="true" class="w-4 h-4 translate-x-[1px]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</form>
+<!-- Legal & AI Disclaimer -->
+<p class="text-[10px] text-center text-gray-400 pt-0.5 leading-none">
+        Las respuestas son generadas por IA. <a class="underline hover:text-gray-600" href="#privacidad">Ver Política de privacidad</a>
+</p>
+</div>
+</aside>
+<!-- END: ChatbotFloatingWidget -->
+</body></html>

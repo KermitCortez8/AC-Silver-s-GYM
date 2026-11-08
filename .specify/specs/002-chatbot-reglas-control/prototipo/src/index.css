@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-oswald: 'Oswald', sans-serif;
+    --font-inter: 'Inter', sans-serif;
+  }
+  
+  body {
+    font-family: var(--font-inter);
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.font-oswald {
+  font-family: 'Oswald', sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Safe areas for iOS / modern mobile viewports */
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 12px);
+}
+
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+}
+
+/* Subtle clean athletic scrollbar */
+.chat-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 9999px;
+}
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #D1D5DB;
+}
+
+/* Pulsing typing animation */
+@keyframes pulseDot {
+  0%, 80%, 100% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.typing-dot-1 {
+  animation: pulseDot 1.4s infinite ease-in-out both;
+}
+
+.typing-dot-2 {
+  animation: pulseDot 1.4s infinite ease-in-out both;
+  animation-delay: 0.2s;
+}
+
+.typing-dot-3 {
+  animation: pulseDot 1.4s infinite ease-in-out both;
+  animation-delay: 0.4s;
+}

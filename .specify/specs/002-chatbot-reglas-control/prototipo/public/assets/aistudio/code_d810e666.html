@@ -1,0 +1,150 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Silver Gym Surco - Entrena fuerte, cerca de casa</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Oswald for bold headlines, Inter for modern body text -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Oswald:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#D83A00',
+              hover: '#B83200',
+              dark: '#0c0d10'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Oswald', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Stylesheet for fine typography & glow effects -->
+<style data-purpose="custom-enhancements">
+    .font-impact {
+      font-family: 'Oswald', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+    }
+    .orange-glow {
+      box-shadow: 0 10px 25px -5px rgba(216, 58, 0, 0.45);
+    }
+    .subtle-glass {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body class="bg-black text-white font-sans antialiased overflow-x-hidden selection:bg-[#D83A00] selection:text-white">
+<!-- BEGIN: MainHeader -->
+<header class="w-full bg-white text-slate-800 sticky top-0 z-40 shadow-sm" data-purpose="navigation-bar">
+<div class="max-w-[1400px] mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
+<!-- Brand Logo -->
+<a class="text-2xl lg:text-[28px] font-black italic tracking-tight text-[#D83A00] hover:opacity-90 transition-opacity" data-purpose="brand-logo" href="#">
+        Silver Gym Surco
+      </a>
+<!-- Desktop Navigation Links -->
+<nav class="hidden md:flex items-center space-x-7 lg:space-x-10 text-[13px] font-bold tracking-wider text-slate-700" data-purpose="desktop-nav-links">
+<a class="hover:text-[#D83A00] transition-colors" href="#servicios">SERVICIOS</a>
+<a class="hover:text-[#D83A00] transition-colors" href="#nosotros">NOSOTROS</a>
+<a class="hover:text-[#D83A00] transition-colors" href="#membresias">MEMBRESÍAS</a>
+<a class="hover:text-[#D83A00] transition-colors" href="#ubicacion">UBICACIÓN</a>
+</nav>
+<!-- Action Buttons -->
+<div class="flex items-center space-x-3.5" data-purpose="header-cta-group">
+<a class="bg-[#D83A00] hover:bg-[#B83200] text-white text-[12px] font-bold tracking-wider px-6 py-2.5 rounded-full transition-all duration-200 shadow-sm uppercase" href="#registro">
+          REGISTRARSE
+        </a>
+<a class="hidden sm:inline-flex border border-[#e27357] hover:border-[#D83A00] text-[#D83A00] hover:bg-orange-50/50 text-[12px] font-bold tracking-wider px-5 py-2.5 rounded-full transition-all duration-200 uppercase" href="#plataforma">
+          ACCESO A PLATAFORMA DIGITAL
+        </a>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: HeroSection -->
+<section class="relative min-h-[calc(100vh-80px)] flex flex-col justify-between overflow-hidden bg-black" data-purpose="hero-section">
+<!-- Background Hero Image -->
+<div class="absolute inset-0 z-0">
+<img alt="Silver Gym Surco - Entrenamiento y Disciplina" class="w-full h-full object-cover object-right md:object-center select-none pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJG7pxN2huNAA3I_KbiUT0PtabkLizekznl1LD0TZOdICXCaNk4d59v10foBfb_SUa42WGIyvYPyuBm0sfVsclaL3XGHNqtvtbLeaXx7juOnon0s2HCPgDoqFlm9UGWKQu6-Hb6Bljb5lcy6X5OjY1Ks_FMVhhvkFVbISiu4cBjVyJOHb6usBhK1rDkGEaslfdp8OG0pxJdzCdmJKQ4FAlcySNLvYVJB4YU2rwjIu-eWWGB7n2Y7bNtg">
+<!-- Shadow & Contrast Overlay -->
+<div class="absolute inset-0 bg-gradient-to-r from-black via-black/85 md:via-black/70 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30"></div>
+</div>
+<!-- Hero Content Container -->
+<div class="relative z-10 max-w-[1400px] w-full mx-auto px-6 lg:px-12 pt-16 md:pt-24 lg:pt-28 pb-12 flex-1 flex flex-col justify-center">
+<div class="max-w-2xl">
+<!-- Pretitle with dash line -->
+<div class="flex items-center space-x-2.5 mb-4" data-purpose="hero-tagline">
+<span class="w-5 h-[2px] bg-[#D83A00] inline-block"></span>
+<span class="text-[#D83A00] font-bold text-xs sm:text-sm tracking-widest uppercase">
+            GIMNASIO · SALUD Y DISCIPLINA
+          </span>
+</div>
+<!-- Main Headline -->
+<h1 class="font-impact text-5xl sm:text-6xl lg:text-7xl xl:text-[80px] leading-[0.95] tracking-tight uppercase mb-6" data-purpose="hero-title">
+<span class="block text-white">Entrena fuerte,</span>
+<span class="block text-[#D83A00]">cerca de casa.</span>
+</h1>
+<!-- Subtitle description paragraph -->
+<p class="text-gray-300 text-sm sm:text-base lg:text-[17px] font-normal leading-relaxed max-w-xl mb-9" data-purpose="hero-description">
+          En Silver Gym Surco ofrecemos entrenamiento funcional, musculación, cardio y clases grupales con horarios pensados para tu rutina diaria.
+        </p>
+<!-- CTA Buttons -->
+<div class="flex flex-wrap items-center gap-4 mb-16" data-purpose="hero-buttons">
+<a class="bg-[#D83A00] hover:bg-[#B83200] text-white text-xs sm:text-sm font-bold tracking-wider px-8 py-3.5 rounded-full transition-all duration-200 orange-glow uppercase inline-flex items-center justify-center" href="#registro">
+            REGISTRARME AHORA
+          </a>
+<a class="bg-white hover:bg-gray-100 text-slate-900 text-xs sm:text-sm font-bold tracking-wider px-7 py-3.5 rounded-full transition-all duration-200 uppercase inline-flex items-center justify-center shadow-lg" href="#plataforma">
+            ACCESO A PLATAFORMA DIGITAL
+          </a>
+</div>
+<!-- Metrics / Highlights Grid -->
+<div class="grid grid-cols-3 max-w-md pt-4 border-t border-white/10" data-purpose="hero-metrics">
+<!-- Metric 1: Horario -->
+<div class="pr-3">
+<span class="block text-[11px] font-bold text-[#D83A00] uppercase tracking-wider mb-1">HORARIO</span>
+<span class="block text-sm sm:text-base font-bold text-white tracking-wide">Lun a sab</span>
+</div>
+<!-- Metric 2: Servicios -->
+<div class="px-3 border-l border-white/10">
+<span class="block text-[11px] font-bold text-[#D83A00] uppercase tracking-wider mb-1">SERVICIOS</span>
+<span class="block text-sm sm:text-base font-bold text-white tracking-wide">4 areas</span>
+</div>
+<!-- Metric 3: Plataforma -->
+<div class="pl-3 border-l border-white/10">
+<span class="block text-[11px] font-bold text-[#D83A00] uppercase tracking-wider mb-1">PLATAFORMA</span>
+<span class="block text-sm sm:text-base font-bold text-white tracking-wide">Digital</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: HeroSection -->
+<!-- BEGIN: FloatingChatWidget -->
+<!-- Pantalla 1: Escritorio, Chat Cerrado -->
+<div class="fixed bottom-8 right-8 z-50 flex items-center" data-purpose="floating-chat-trigger">
+<button aria-label="Abrir asistente de IA Pregúntale a Silver" class="group relative flex items-center bg-[#D83A00] hover:bg-[#B83200] text-white rounded-full px-5 py-3.5 shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95 focus:outline-none focus:ring-4 focus:ring-[#D83A00]/40" type="button">
+<!-- Chat Bubble Icon -->
+<svg aria-hidden="true" class="w-5 h-5 mr-3 text-white flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+<path clip-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.177 7.152.521 1.944.287 3.348 1.954 3.348 3.924v6.554c0 1.97-1.404 3.637-3.348 3.924a50.944 50.944 0 01-3.655.437v3.09a.75.75 0 01-1.28.53l-3.353-3.352a48.74 48.74 0 01-3.864-.71C4.348 16.35 2.944 14.683 2.944 12.713V6.695c0-1.97 1.404-3.637 3.348-3.924z" fill-rule="evenodd"></path>
+</svg>
+<!-- Label -->
+<span class="text-sm font-bold tracking-wide whitespace-nowrap">Pregúntale a Silver</span>
+<!-- Live AI Badge indicator with pulse -->
+
+</button>
+</div>
+<!-- END: FloatingChatWidget -->
+
+
+</body></html>

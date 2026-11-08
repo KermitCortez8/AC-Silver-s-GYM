@@ -1,0 +1,236 @@
+<!DOCTYPE html><html class="h-full bg-stone-100" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<title>Silver Gym Surco - Inscripción a Clase</title>
+<!-- Tailwind CSS CDN with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Custom Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#D83A00',
+              'orange-dark': '#B83200',
+              'orange-light': '#FFF3EB'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 1px 4px -1px rgba(0, 0, 0, 0.03)',
+            'card-focus': '0 4px 16px -2px rgba(216, 58, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom CSS for iOS Mobile Tweaks -->
+<style data-purpose="ios-optimizations">
+    /* iOS Safe Areas & Native Feel */
+    body {
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+    
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Custom Slim Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #E5E7EB;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="h-full flex items-center justify-center p-0 sm:p-4 text-stone-800 antialiased selection:bg-orange-100 selection:text-orange-900">
+<!-- Mobile Device Container (~390px typical width on modern smartphones) -->
+<div class="w-full max-w-[414px] h-full sm:h-[844px] bg-[#FAFAF9] flex flex-col sm:rounded-[36px] shadow-2xl overflow-hidden border border-stone-200/80 relative">
+<!-- BEGIN: Header -->
+<header class="bg-white border-b border-stone-200 px-5 pt-3 pb-3 flex items-center justify-between shrink-0 safe-top z-10">
+<!-- Title & Greeting Area -->
+<div class="flex flex-col" data-purpose="header-title">
+<div class="flex items-center space-x-1.5">
+<span class="text-xl font-black italic tracking-tight text-stone-900">Silver</span>
+
+</div>
+<p class="text-xs text-stone-500 font-medium">Hola, Juan</p>
+</div>
+<!-- Close Chat Button (Minimum 44x44px touch target) -->
+<button aria-label="Cerrar chat" class="w-11 h-11 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-orange" type="button">
+<svg class="w-5 h-5 stroke-current stroke-[2.2]" fill="none" viewBox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</header>
+<!-- END: Header -->
+<!-- BEGIN: Chat Conversation Area -->
+<main class="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar text-[15px]" data-purpose="conversation-stream">
+<!-- Paso 1: Mensaje del Usuario -->
+<section aria-label="Mensaje enviado por el usuario" class="flex justify-end">
+<div class="bg-brand-orange text-white px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] shadow-sm leading-snug">
+          Quiero inscribirme en una clase para este lunes
+        </div>
+</section>
+<!-- Paso 2: Respuesta del Bot (Sin Burbuja) -->
+<section aria-label="Respuesta del asistente" class="flex flex-col space-y-1.5">
+
+<p class="text-stone-800 leading-snug pr-4">
+          Estas son las clases disponibles para el lunes en Silver Gym Surco:
+        </p>
+</section>
+<!-- Paso 3: Tarjetas de Horarios Disponibles -->
+<section aria-label="Listado de actividades disponibles" class="space-y-3 pt-1">
+<!-- Tarjeta 1: Spinning (Disponible) -->
+<article class="bg-white border border-stone-200 rounded-2xl p-4 shadow-card hover:border-orange-300 transition" data-purpose="class-card-available">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h3 class="text-lg font-black tracking-tight text-stone-900 leading-tight uppercase font-sans">Spinning</h3>
+<p class="text-xs text-stone-500 font-medium mt-0.5 flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+                Lunes · 7:00 a 8:00 am
+              </p>
+</div>
+<!-- Badge Verde Suave -->
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+              3 cupos disponibles
+            </span>
+</div>
+<div class="mt-3.5 flex justify-end">
+<!-- Botón Píldora Naranja (44px min touch height) -->
+<button class="h-11 px-6 rounded-full bg-brand-orange hover:bg-brand-orange-dark active:scale-[0.98] text-white font-medium text-sm flex items-center justify-center transition shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-orange" type="button">
+              Seleccionar
+            </button>
+</div>
+</article>
+<!-- Tarjeta 2: Funcional (Agotada) -->
+<article class="bg-white/80 border border-stone-200 rounded-2xl p-4 opacity-75 shadow-card" data-purpose="class-card-sold-out">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h3 class="text-lg font-black tracking-tight text-stone-400 leading-tight uppercase font-sans">Funcional</h3>
+<p class="text-xs text-stone-400 font-medium mt-0.5 flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+                Lunes · 18:00 a 19:00
+              </p>
+</div>
+<!-- Etiqueta Gris Neutra -->
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-stone-100 text-stone-500 border border-stone-200 shrink-0">
+              Completo
+            </span>
+</div>
+<div class="mt-3.5 flex justify-end">
+<!-- Botón Deshabilitado -->
+<button aria-disabled="true" class="h-11 px-6 rounded-full bg-stone-100 text-stone-400 font-medium text-sm flex items-center justify-center cursor-not-allowed border border-stone-200" disabled="" type="button">
+              Sin cupos
+            </button>
+</div>
+</article>
+</section>
+<!-- Paso 4: Selección Realizada por el Usuario -->
+<section aria-label="Confirmación de selección enviada" class="flex justify-end pt-1">
+<div class="bg-brand-orange text-white px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] shadow-sm leading-snug">
+          Seleccionar Spinning 7:00 am
+        </div>
+</section>
+<!-- Paso 5: Tarjeta de Confirmación -->
+<section aria-label="Confirmación de reserva requerida" class="space-y-2 pt-1">
+<p class="text-stone-800 leading-snug">
+          Por favor confirma los detalles de tu reserva:
+        </p>
+<!-- Tarjeta con Borde y Sombra Elegante -->
+<article class="bg-white border border-stone-200 rounded-2xl p-4 shadow-card-focus space-y-4" data-purpose="reservation-summary-card">
+<!-- Detalle de la clase -->
+<div class="space-y-2.5 divide-y divide-stone-100 text-sm">
+<div class="flex items-center justify-between pt-1">
+<span class="text-stone-500 font-normal">Actividad</span>
+<span class="font-bold text-stone-900 uppercase">Spinning</span>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="text-stone-500 font-normal">Día</span>
+<span class="font-semibold text-stone-800">Lunes 18 de Noviembre</span>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="text-stone-500 font-normal">Hora</span>
+<span class="font-semibold text-stone-800">7:00 am - 8:00 am</span>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="text-stone-500 font-normal">Sala</span>
+<span class="font-semibold text-stone-800">Sala de Ciclismo Indoor</span>
+</div>
+</div>
+<!-- Botones de Acción (WCAG: Mínimo 44px de altura) -->
+<div class="flex flex-col gap-2 pt-1">
+<button class="w-full h-11 rounded-full bg-brand-orange hover:bg-brand-orange-dark active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center transition shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+              Confirmar inscripción
+            </button>
+<button class="w-full h-11 rounded-full bg-transparent hover:bg-stone-50 border border-stone-300 text-stone-700 font-medium text-sm flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-stone-400" type="button">
+              Cancelar
+            </button>
+</div>
+</article>
+</section>
+<!-- Paso 6: Mensaje de Éxito Final -->
+<section aria-label="Confirmación exitosa de inscripción" class="pt-1 pb-2">
+<article class="bg-[#F0FDF4] border border-[#86EFAC] rounded-2xl p-4 flex items-start space-x-3.5 shadow-sm" data-purpose="success-notification">
+<!-- Icono de Check Verde Circular -->
+<div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+<svg class="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<!-- Contenido del Mensaje -->
+<div class="space-y-1">
+<h4 class="font-bold text-emerald-950 text-sm leading-tight">
+              ¡Listo! Quedaste inscrito en Spinning, lunes 7:00 a 8:00.
+            </h4>
+<p class="text-xs text-emerald-800 font-normal leading-relaxed">
+              Te enviamos un recordatorio a tu correo registrado.
+            </p>
+</div>
+</article>
+</section>
+</main>
+<!-- END: Chat Conversation Area -->
+<!-- BEGIN: Chat Input Box & Footer -->
+<footer class="bg-white border-t border-stone-200 px-4 pt-3 pb-3 safe-bottom shrink-0 space-y-2">
+<form class="flex items-center gap-2" data-purpose="chat-input-form" onsubmit="event.preventDefault();">
+<!-- Input de Texto con Accesibilidad -->
+<div class="relative flex-1">
+<input aria-label="Escribe tu mensaje para el bot" class="w-full h-11 pl-4 pr-4 bg-stone-100 text-stone-900 placeholder-stone-400 text-sm rounded-full border-none focus:ring-2 focus:ring-brand-orange focus:bg-white transition" placeholder="Escribe tu pregunta…" type="text">
+</div>
+<!-- Botón de Envío Circular (44px) -->
+<button aria-label="Enviar mensaje" class="w-11 h-11 rounded-full bg-brand-orange hover:bg-brand-orange-dark text-white flex items-center justify-center shrink-0 active:scale-95 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="submit">
+<svg class="w-5 h-5 ml-0.5 fill-current" viewBox="0 0 24 24">
+<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+</svg>
+</button>
+</form>
+<!-- Pie de Página Institucional y Privacidad -->
+<div class="text-center pt-0.5">
+<p class="text-[11px] text-stone-400 leading-tight">
+          Asistente virtual impulsado por IA · <a class="underline hover:text-stone-600 transition" href="#privacidad">Políticas de Privacidad</a>
+</p>
+</div>
+</footer>
+<!-- END: Chat Input Box & Footer -->
+</div>
+
+
+</body></html>

@@ -10,7 +10,11 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 
-_LIMA = ZoneInfo("America/Lima")
+try:
+    _LIMA = ZoneInfo("America/Lima")
+except Exception:
+    from datetime import timedelta
+    _LIMA = timezone(timedelta(hours=-5))
 
 
 # Ítems de INVENTARIO con este Tipo son la reserva de la tienda. Cada tabla tiene su propio stock:

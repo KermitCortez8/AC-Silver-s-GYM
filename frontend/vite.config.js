@@ -16,6 +16,17 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [vue()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              return 'vendor'
+            }
+          },
+        },
+      },
+    },
     server: {
       headers: {
         'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',

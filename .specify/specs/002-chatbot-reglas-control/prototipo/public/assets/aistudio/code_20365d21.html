@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Silver Gym Surco - Chat Asistente</title>
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#D83A00',
+              orangeDark: '#B83200',
+              bgLight: '#FAF9F6',
+              dark: '#111827',
+              graySub: '#4B5563',
+              borderLight: '#E5E7EB'
+            }
+          },
+          fontFamily: {
+            sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            condensed: ['"Arial Narrow"', '"Impact"', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+<!-- iOS & System Specific Custom Styles -->
+<style data-purpose="custom-layout">
+    /* Support for dynamic viewport height and safe areas on iOS devices */
+    .chat-container {
+      height: 100dvh;
+      max-width: 430px;
+    }
+    /* Hide scrollbars for clean athletic mobile UI */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-stone-100 flex justify-center items-center min-h-full font-sans antialiased text-gray-900">
+<!-- BEGIN: MobileChatShell -->
+<div class="chat-container w-full bg-white flex flex-col shadow-2xl relative overflow-hidden" data-purpose="chat-viewport">
+<!-- BEGIN: FixedHeader -->
+<header class="flex-none bg-white border-b border-[#E5E7EB] px-5 py-3 pt-safe flex items-center justify-between z-20" data-purpose="chat-header">
+<!-- Branding & User Greeting -->
+<div>
+<h1 class="text-xl font-black italic tracking-wide uppercase font-condensed text-brand-orange leading-none">
+          Silver
+        </h1>
+<p class="text-sm font-medium text-brand-graySub mt-0.5">
+          Hola, Juan
+        </p>
+</div>
+<!-- Close Button with WCAG 44px Touch Target -->
+<button aria-label="Cerrar chat" class="w-11 h-11 flex items-center justify-center -mr-2 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange" type="button">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</header>
+<!-- END: FixedHeader -->
+<!-- BEGIN: MessagesArea -->
+<main class="flex-1 overflow-y-auto no-scrollbar bg-[#FAF9F6] px-4 py-5 space-y-4" data-purpose="chat-history">
+<!-- Bot Message 1: Simple greeting without bubble/background -->
+<article class="space-y-1.5" data-purpose="bot-greeting">
+<p class="text-[15px] leading-relaxed text-gray-800 pr-4">
+          Hola Juan, un gusto verte de nuevo. Aquí tienes el estado actual de tu membresía:
+        </p>
+</article>
+<!-- Membership Status Card -->
+<section class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-gray-800 space-y-3.5" data-purpose="membership-card">
+<!-- Card Header with status badge -->
+<div class="flex items-center justify-between pb-2 border-b border-gray-100">
+<h2 class="font-black text-sm tracking-wider uppercase text-gray-900 font-condensed">
+            Plan Mensual
+          </h2>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-[#15803D]">
+            Activa
+          </span>
+</div>
+<!-- Membership Details Key-Value pairs -->
+<div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
+<div>
+<span class="block text-xs uppercase text-gray-400 font-medium">Vence</span>
+<span class="font-semibold text-gray-900 text-[14px]">20/11/2026</span>
+</div>
+<div>
+<span class="block text-xs uppercase text-gray-400 font-medium">DNI</span>
+<span class="font-semibold text-gray-900 text-[14px]">***4521</span>
+</div>
+</div>
+<!-- Warning / Expiration Notification Box -->
+<div class="bg-[#FEF3C7] border border-[#F59E0B] rounded-xl p-3 flex items-center justify-between gap-3">
+<div class="flex items-center gap-2 min-w-0">
+<!-- Alert Clock Icon -->
+<svg class="w-5 h-5 text-amber-700 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-xs sm:text-sm font-semibold text-amber-900 truncate">
+              Vence en 15 días
+            </span>
+</div>
+<!-- Action Button -->
+<button class="min-h-[38px] px-4 py-1.5 bg-[#D83A00] hover:bg-[#B83200] active:scale-95 text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-brand-orange flex-shrink-0" type="button">
+            Renovar
+          </button>
+</div>
+</section>
+<!-- User Bubble Message (Right aligned, Orange background) -->
+<article class="flex justify-end pt-1" data-purpose="user-message">
+<div class="max-w-[85%] bg-[#D83A00] text-white px-4 py-3 rounded-2xl rounded-tr-sm shadow-sm">
+<p class="text-[14px] leading-snug">
+            Quiero revisar mis actividades disponibles
+          </p>
+</div>
+</article>
+<!-- Bot Message 2: Prompt for quick actions (Clean text, no bubble) -->
+<article class="pt-1" data-purpose="bot-response">
+<p class="text-[15px] leading-relaxed text-gray-800">
+          ¡Excelente! Selecciona una opción rápida o escribe lo que necesitas:
+        </p>
+</article>
+<!-- Quick Actions / Quick Pills (Vertical stack, left aligned, pill shape, orange filled) -->
+<nav aria-label="Opciones rápidas" class="flex flex-col items-start gap-2 pt-1 pb-2" data-purpose="quick-replies">
+<button class="w-fit text-left px-4 py-2.5 min-h-[44px] bg-[#D83A00] hover:bg-[#B83200] active:scale-[0.98] text-white text-sm font-semibold rounded-full shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+          Mi membresía
+        </button>
+<button class="w-fit text-left px-4 py-2.5 min-h-[44px] bg-[#D83A00] hover:bg-[#B83200] active:scale-[0.98] text-white text-sm font-semibold rounded-full shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+          Inscribirme en una actividad
+        </button>
+<button class="w-fit text-left px-4 py-2.5 min-h-[44px] bg-[#D83A00] hover:bg-[#B83200] active:scale-[0.98] text-white text-sm font-semibold rounded-full shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+          Mis inscripciones
+        </button>
+<button class="w-fit text-left px-4 py-2.5 min-h-[44px] bg-[#D83A00] hover:bg-[#B83200] active:scale-[0.98] text-white text-sm font-semibold rounded-full shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+          Ver tienda y carrito
+        </button>
+<button class="w-fit text-left px-4 py-2.5 min-h-[44px] bg-[#D83A00] hover:bg-[#B83200] active:scale-[0.98] text-white text-sm font-semibold rounded-full shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+          Estado de mi pedido
+        </button>
+<button class="w-fit text-left px-4 py-2.5 min-h-[44px] bg-[#D83A00] hover:bg-[#B83200] active:scale-[0.98] text-white text-sm font-semibold rounded-full shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+          Hablar con una persona
+        </button>
+</nav>
+</main>
+<!-- END: MessagesArea -->
+<!-- BEGIN: FixedFooterArea -->
+<footer class="flex-none bg-white border-t border-[#E5E7EB] p-3 pb-safe z-20 space-y-2" data-purpose="chat-input-bar">
+<!-- Input Field and Send Button -->
+<form class="flex items-center gap-2" onsubmit="event.preventDefault();">
+<label class="sr-only" for="chat-message-input">Escribe tu pregunta</label>
+<div class="relative flex-1">
+<input class="w-full bg-white border border-[#E5E7EB] rounded-2xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-brand-orange transition-shadow" id="chat-message-input" placeholder="Escribe tu pregunta…" type="text"/>
+</div>
+<!-- 44px Circular Send Button in Orange -->
+<button aria-label="Enviar mensaje" class="w-11 h-11 flex-shrink-0 bg-[#D83A00] hover:bg-[#B83200] active:scale-95 text-white rounded-full flex items-center justify-center shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="submit">
+<svg class="w-5 h-5 translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24">
+<path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</form>
+<!-- Legal / AI Disclaimer -->
+<p class="text-[11px] text-center text-gray-500 leading-tight">
+        Las respuestas son generadas por IA. <a class="underline hover:text-gray-700 focus:outline-none" href="#">Ver Política de privacidad</a>.
+      </p>
+</footer>
+<!-- END: FixedFooterArea -->
+</div>
+<!-- END: MobileChatShell -->
+</body></html>

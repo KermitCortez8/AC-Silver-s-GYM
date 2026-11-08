@@ -1,0 +1,163 @@
+<!DOCTYPE html><html class="h-full bg-neutral-100" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<title>Silver Gym Surco - Chat Asistente Virtual</title>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Custom Configuration -->
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#D83A00',
+              'orange-hover': '#BF3300',
+              dark: '#111111',
+              cream: '#FAF9F6'
+            }
+          },
+          fontFamily: {
+            athletic: ['Impact', 'Arial Black', 'system-ui', 'sans-serif'],
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom CSS for iOS Mobile Safe Areas & Micro-interactions -->
+<style data-purpose="mobile-safe-area">
+    /* iOS Safari Notch and Home Indicator handling */
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  </style>
+<style data-purpose="scrollbar-styling">
+    /* Subtle touch-friendly scrollbar */
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #E5E7EB;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="h-full flex justify-center items-center font-sans antialiased text-neutral-900 bg-neutral-200 selection:bg-brand-orange selection:text-white">
+<!-- Mobile Viewport Wrapper (iPhone standard ~390px, 100vh) -->
+<div class="w-full max-w-[393px] h-[100dvh] bg-brand-cream flex flex-col shadow-2xl relative overflow-hidden" data-purpose="mobile-chat-container">
+<!-- BEGIN: Header -->
+<header class="sticky top-0 z-30 bg-white border-b border-gray-200 safe-top flex-shrink-0" data-purpose="chat-header">
+<div class="px-4 py-3 flex items-center justify-between">
+<!-- Gym & Assistant Identity -->
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-athletic text-2xl tracking-wide uppercase italic text-brand-dark leading-none">Silver</span>
+
+</div>
+<span class="text-xs text-gray-500 font-medium tracking-tight mt-0.5">Asistente virtual con IA</span>
+</div>
+<!-- Close / Exit Button (WCAG target 44x44px min) -->
+<button aria-label="Cerrar ventana de chat" class="w-11 h-11 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange" onclick="console.log('Cerrar chat')" type="button">
+<svg aria-hidden="true" class="w-6 h-6 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<line x1="18" x2="6" y1="6" y2="18"></line>
+<line x1="6" x2="18" y1="6" y2="18"></line>
+</svg>
+</button>
+</div>
+</header>
+<!-- END: Header -->
+<!-- BEGIN: ChatConversationBody -->
+<main class="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scroll" data-purpose="messages-stream">
+<!-- Bot Message: Welcome (Plain text, left-aligned, no bubble background) -->
+<article class="flex flex-col items-start max-w-[90%]" data-purpose="bot-message-intro">
+<span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Silver AI</span>
+<div class="text-[15px] leading-relaxed text-gray-900 font-normal">
+          Hola, soy Silver, el asistente con IA de Silver Gym Surco. Puedo ayudarte con horarios, actividades, productos y tu membresía. ¿En qué te ayudo hoy?
+        </div>
+</article>
+<!-- User Message: Question (Pill rounded bubble, orange #D83A00, right-aligned) -->
+<article class="flex flex-col items-end w-full pt-1" data-purpose="user-message">
+<div class="bg-brand-orange text-white text-[15px] px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] shadow-sm leading-snug">
+          ¿Tienen clases grupales hoy?
+        </div>
+<span class="text-[10px] text-gray-400 mt-1 mr-1">Entregado</span>
+</article>
+<!-- Bot Message: Response (Plain text, left-aligned, no bubble) -->
+<article class="flex flex-col items-start max-w-[90%] pt-1" data-purpose="bot-message-response">
+<span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Silver AI</span>
+<div class="text-[15px] leading-relaxed text-gray-900 font-normal">
+          ¡Sí! Tenemos clases de Spinning, Funcional y Boxeo. ¿Te gustaría consultar los cupos disponibles?
+        </div>
+</article>
+<!-- BEGIN: QuickActionPills -->
+<!-- Interactive quick action suggestions stacked vertically, left-aligned, filled brand orange -->
+<section aria-label="Opciones rápidas recomendadas" class="pt-2 pb-2" data-purpose="quick-options-container">
+<p class="text-xs font-semibold text-gray-500 mb-2.5">Opciones rápidas:</p>
+<div class="flex flex-col items-start gap-2">
+<button class="w-fit text-left px-4 py-2.5 rounded-full bg-brand-orange hover:bg-brand-orange-hover active:scale-[0.98] text-white text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+            Horario del gimnasio
+          </button>
+<button class="w-fit text-left px-4 py-2.5 rounded-full bg-brand-orange hover:bg-brand-orange-hover active:scale-[0.98] text-white text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+            Horario de atención
+          </button>
+<button class="w-fit text-left px-4 py-2.5 rounded-full bg-brand-orange hover:bg-brand-orange-hover active:scale-[0.98] text-white text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+            Actividades y cupos
+          </button>
+<button class="w-fit text-left px-4 py-2.5 rounded-full bg-brand-orange hover:bg-brand-orange-hover active:scale-[0.98] text-white text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="button">
+            Productos de la tienda
+          </button>
+<button class="w-fit text-left px-4 py-2.5 rounded-full bg-brand-orange hover:bg-brand-orange-hover active:scale-[0.98] text-white text-sm font-medium transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange flex items-center gap-1.5" type="button">
+<span class="">Hablar con una persona</span>
+<svg aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+</svg>
+</button>
+</div>
+</section>
+<!-- END: QuickActionPills -->
+</main>
+<!-- END: ChatConversationBody -->
+<!-- BEGIN: ChatFooterArea -->
+<footer class="bg-white border-t border-gray-200 safe-bottom flex-shrink-0 z-30" data-purpose="chat-input-and-footer">
+<!-- Discrete Banner for Anonymous Visitor -->
+<aside class="bg-[#F3F4F6] px-4 py-2 text-center text-xs text-gray-600 border-b border-gray-200/70" data-purpose="membership-login-notice">
+<span class="">Inicia sesión para consultar tu membresía e inscribirte</span>
+<span class="mx-1 text-gray-400">•</span>
+<a class="text-brand-orange font-semibold hover:underline focus:outline-none focus:ring-1 focus:ring-brand-orange rounded" href="#login">
+          Iniciar sesión
+        </a>
+</aside>
+<!-- Input Box Container -->
+<div class="p-3">
+<form action="#" class="flex items-center gap-2" data-purpose="chat-form" method="POST" onsubmit="event.preventDefault();">
+<!-- Text Input Field -->
+<div class="relative flex-1">
+<input aria-label="Escribe tu pregunta" class="w-full bg-white border border-[#E5E7EB] rounded-2xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange transition-all" placeholder="Escribe tu pregunta…" type="text">
+</div>
+<!-- Circular Send Button (Min 44x44px touch target) -->
+<button aria-label="Enviar mensaje" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-brand-orange hover:bg-brand-orange-hover active:scale-95 text-white flex items-center justify-center transition-transform shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange" type="submit">
+<!-- White Send Arrow Icon -->
+<svg aria-hidden="true" class="w-5 h-5 -rotate-45 ml-0.5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+</svg>
+</button>
+</form>
+<!-- Privacy & AI Disclaimer -->
+<p class="text-[11px] text-gray-400 text-center mt-2 leading-tight" data-purpose="ai-disclaimer">
+          Las respuestas son generadas por IA. 
+          <a class="underline hover:text-gray-600 focus:outline-none" href="#privacidad">Ver Política de privacidad</a>
+</p>
+</div>
+</footer>
+<!-- END: ChatFooterArea -->
+</div>
+
+
+</body></html>
