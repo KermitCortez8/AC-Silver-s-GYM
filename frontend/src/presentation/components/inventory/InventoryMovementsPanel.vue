@@ -4,7 +4,7 @@
       <div>
         <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
         <h2 class="mt-2 text-2xl font-black text-white">Movimientos de inventario</h2>
-        <p class="mt-1 text-sm text-slate-400">Entradas, salidas y ajustes del stock de cada articulo.</p>
+        <p class="mt-1 text-sm text-slate-400">Entradas, salidas y ajustes del stock de cada artículo.</p>
       </div>
       <button type="button" class="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.02] hover:bg-orange-300" @click="openNew">
         + Registrar movimiento
@@ -40,8 +40,8 @@
     <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
       <TableSearch
         v-model="search"
-        label="Buscar movimientos por articulo o descripcion"
-        placeholder="Buscar por articulo o descripcion"
+        label="Buscar movimientos por artículo o descripción"
+        placeholder="Buscar por artículo o descripción"
         @update:model-value="page = 1"
       />
       <select v-model="typeFilter" class="field-input" aria-label="Filtrar por tipo" @change="page = 1">
@@ -68,11 +68,11 @@
           <thead class="border-b border-white/10 bg-slate-950/70 text-xs uppercase tracking-[0.16em] text-slate-400">
             <tr>
               <SortableTh class="px-4 py-3" label="Fecha" column="fecha" :sort-key="sortKey" :sort-dir="sortDir" @sort="toggleSort" />
-              <SortableTh class="px-4 py-3" label="Articulo" column="articulo" :sort-key="sortKey" :sort-dir="sortDir" @sort="toggleSort" />
+              <SortableTh class="px-4 py-3" label="Artículo" column="articulo" :sort-key="sortKey" :sort-dir="sortDir" @sort="toggleSort" />
               <th class="px-4 py-3">Tipo</th>
               <SortableTh class="px-4 py-3" label="Cantidad" column="cantidad" numeric :sort-key="sortKey" :sort-dir="sortDir" @sort="toggleSort" />
               <th class="px-4 py-3">Destino</th>
-              <th class="px-4 py-3">Descripcion</th>
+              <th class="px-4 py-3">Descripción</th>
               <th class="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
@@ -82,7 +82,7 @@
               <td class="px-4 py-3 font-bold text-white">
                 {{ itemName(movement.id_item) }}
                 <span v-if="orderNumber(movement)" class="ml-2 rounded-full bg-sky-400/15 px-2 py-0.5 text-[11px] font-black text-sky-200">Pedido #{{ orderNumber(movement) }}</span>
-                <span v-else-if="!movement.id_usuario" class="ml-2 rounded-full bg-slate-400/15 px-2 py-0.5 text-[11px] font-black text-slate-300">Automatico</span>
+                <span v-else-if="!movement.id_usuario" class="ml-2 rounded-full bg-slate-400/15 px-2 py-0.5 text-[11px] font-black text-slate-300">Automático</span>
               </td>
               <td class="px-4 py-3">
                 <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black capitalize" :class="movementClass(movement.tipo_movimiento)">
@@ -97,7 +97,7 @@
                 </span>
                 <span v-else class="text-xs text-slate-400">-</span>
               </td>
-              <td class="max-w-md px-4 py-3 text-slate-400">{{ movement.descripcion || 'Sin descripcion' }}</td>
+              <td class="max-w-md px-4 py-3 text-slate-400">{{ movement.descripcion || 'Sin descripción' }}</td>
               <td class="px-4 py-3 text-right">
                 <button type="button" class="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10" @click="openEdit(movement)">
                   Editar
@@ -115,16 +115,17 @@
       item-label="movimientos"
     />
     <p v-if="!filteredMovements.length" class="mt-5 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">
-      {{ movements.length ? 'Ningun movimiento coincide con los filtros.' : 'Sin movimientos registrados.' }}
+      {{ movements.length ? 'Ningún movimiento coincide con los filtros.' : 'Sin movimientos registrados.' }}
     </p>
 
     <ResourceModal
       :open="isModalOpen"
       :icon="ArrowLeftRight"
-      :eyebrow="editingMovement ? 'Inventario · Edicion' : 'Inventario · Registro'"
+      :eyebrow="editingMovement ? 'Inventario · Edición' : 'Inventario · Registro'"
       :title="editingMovement ? `Editar movimiento #${editingMovement.id_mov}` : 'Nuevo movimiento'"
       subtitle="Entradas, salidas y ajustes recalculan el stock al guardar."
       size="md"
+      keyboard-nav
       :busy="isSaving"
       @close="closeModal"
       @submit="save"
@@ -135,17 +136,18 @@
       </div>
 
       <fieldset class="rm-section">
-        <legend class="sr-only">Articulo y tipo</legend>
-        <p class="rm-section-title"><Package :size="14" aria-hidden="true" /> Articulo y tipo</p>
+        <legend class="sr-only">Artículo y tipo</legend>
+        <p class="rm-section-title"><Package :size="14" aria-hidden="true" /> Artículo y tipo</p>
         <div class="grid gap-4">
           <label class="space-y-2">
             <span class="inv-label inv-required">Articulo</span>
-            <select v-model.number="form.id_item" class="field-input" :class="{ 'is-invalid': formErrors.includes('Articulo') }" :disabled="lockedByOrder" @change="formErrors = formErrors.filter((label) => label !== 'Articulo')">
+            <select v-model.number="form.id_item" class="field-input" :class="{ 'is-invalid': isInvalid('id_item', formErrors.includes('Artículo')) }" :disabled="lockedByOrder" @change="touch('id_item')">
               <option :value="0">Selecciona un articulo</option>
               <option v-for="item in activeInventory" :key="item.id" :value="itemNumber(item)">
                 {{ item.inventoryCode }} - {{ item.name }} ({{ item.quantity }})
               </option>
             </select>
+            <FieldError class="inv-field-error" :message="warnings.id_item" />
           </label>
           <div role="radiogroup" aria-label="Tipo de movimiento" class="space-y-2">
             <span class="inv-label">Tipo</span>
@@ -174,10 +176,11 @@
             <QuantityInput
               v-model="form.cantidad"
               class="field-input"
-              :class="{ 'is-invalid': formErrors.includes('Cantidad') }"
+              :class="{ 'is-invalid': isInvalid('cantidad', formErrors.includes('Cantidad')) }"
               :disabled="lockedByOrder"
+              @update:model-value="touch('cantidad')"
             />
-            <p v-if="quantityWarning" class="inv-field-error">{{ quantityWarning }}</p>
+            <FieldError class="inv-field-error" :message="warnings.cantidad" />
           </label>
           <label class="space-y-2">
             <span class="inv-label">Fecha</span>
@@ -192,15 +195,18 @@
             <input v-else :value="destinationLabel(form.destino)" class="field-input" disabled />
           </label>
           <label class="space-y-2 sm:col-span-2">
-            <span class="inv-label">Descripcion</span>
-            <textarea v-model="form.descripcion" rows="3" class="field-input" placeholder="Motivo, proveedor, incidencia o reposicion"></textarea>
+            <span class="flex items-end justify-between gap-2">
+              <span class="inv-label">Descripción</span>
+              <CharCounter :value="form.descripcion" :max="NOTES_MAX_LENGTH" />
+            </span>
+            <textarea v-model="form.descripcion" rows="3" class="field-input" :maxlength="NOTES_MAX_LENGTH" placeholder="Motivo, proveedor, incidencia o reposición"></textarea>
           </label>
         </div>
       </fieldset>
 
       <p v-if="lockedByOrder" class="inv-info">
         <Info :size="16" aria-hidden="true" />
-        Movimiento de un pedido de Tienda: solo puedes cambiar la fecha y la descripcion. La referencia al pedido se conserva.
+        Movimiento de un pedido de Tienda: solo puedes cambiar la fecha y la descripción. La referencia al pedido se conserva.
       </p>
       <div v-else-if="selectedItem" class="space-y-2 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50">
         <p class="rm-section-title" style="margin-bottom: 0.25rem"><TrendingUp :size="14" aria-hidden="true" /> Vista previa del stock</p>
@@ -218,7 +224,7 @@
         </p>
         <p v-if="editingMovement">Al guardar se revierte el efecto anterior del movimiento y se aplica el nuevo.</p>
         <p v-if="projectedStock < 0" class="font-bold text-rose-200">No hay stock suficiente en Inventario.</p>
-        <p v-if="projectedStoreStock < 0" class="font-bold text-rose-200">La Tienda ya vendio esas unidades; no puedes reducir la reposicion.</p>
+        <p v-if="projectedStoreStock < 0" class="font-bold text-rose-200">La Tienda ya vendió esas unidades; no puedes reducir la reposición.</p>
       </div>
 
       <p v-if="modalError" role="alert" class="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-50">{{ modalError }}</p>
@@ -238,13 +244,17 @@ import QuantityInput from "../QuantityInput.vue";
 import { feedbackClass as noticeClassFor } from "../../utils/feedback.js";
 import { parseQuantity } from '../../../domain/utils/quantities.js';
 import { limaDate } from '../../../domain/utils/dates.js';
-import { computed, reactive, ref } from 'vue';
+import { quantityError } from '../../../domain/utils/formValidation.js';
+import { computed, reactive, ref, watch } from 'vue';
 import { AlertCircle, ArrowDownToLine, ArrowLeftRight, ArrowRight, ArrowUpFromLine, CalendarDays, Equal, Info, Package, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
 import ResourceModal from '../ResourceModal.vue';
 import SortableTh from '../common/SortableTh.vue';
 import TablePager from '../common/TablePager.vue';
 import TableSearch from '../common/TableSearch.vue';
-import { DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, sortRows } from '../../../domain/utils/inputRules.js';
+import CharCounter from '../common/CharCounter.vue';
+import FieldError from '../FieldError.vue';
+import { useLiveWarnings } from '../../composables/useLiveWarnings.js';
+import { clampText, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, NOTES_MAX_LENGTH, sortRows } from '../../../domain/utils/inputRules.js';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { useGymStore } from '../../../application/stores/gymStore';
 
@@ -383,7 +393,30 @@ const pagedMovements = computed(() => {
 
 // Validacion del formulario: campos obligatorios y cantidad entera.
 const formErrors = ref([]);
-const quantityWarning = ref('');
+const requiredMovementFields = [
+  { key: 'id_item', label: 'Artículo', isEmpty: (value) => !Number(value) },
+  { key: 'cantidad', label: 'Cantidad', isEmpty: (value) => !(Number(value) >= 1) },
+];
+
+// Avisos en vivo: la cantidad se revisa tambien contra el stock al cambiar articulo o tipo.
+const { warnings, touch, touchAll, reset: resetWarnings, isInvalid } = useLiveWarnings({
+  id_item: () => (Number(form.id_item) ? '' : 'Selecciona un articulo.'),
+  cantidad: () => {
+    if (lockedByOrder.value) return '';
+    const label = form.tipo_movimiento === 'ajuste' ? 'El stock exacto' : 'La cantidad';
+    const invalid = quantityError(form.cantidad, { label, min: 1 });
+    if (invalid || !selectedItem.value) return invalid;
+    if (projectedStock.value < 0) return `No hay stock suficiente: el articulo tiene ${selectedItem.value.quantity}.`;
+    if (projectedStoreStock.value < 0) return 'La Tienda ya vendio esas unidades; no puedes reducir la reposicion.';
+    return '';
+  },
+});
+
+// Tras un envio fallido el resumen se actualiza mientras se corrige.
+watch(form, () => {
+  if (formErrors.value.length) formErrors.value = missingFields(form, requiredMovementFields);
+  modalError.value = formErrors.value.length ? missingFieldsMessage(formErrors.value) : '';
+});
 
 /**
  * Abre el modal para registrar un movimiento nuevo.
@@ -393,7 +426,7 @@ const openNew = () => {
   Object.assign(form, emptyForm());
   modalError.value = '';
   formErrors.value = [];
-  quantityWarning.value = '';
+  resetWarnings();
   isModalOpen.value = true;
 };
 
@@ -412,7 +445,7 @@ const openEdit = (movement) => {
   });
   modalError.value = '';
   formErrors.value = [];
-  quantityWarning.value = '';
+  resetWarnings();
   isModalOpen.value = true;
 };
 
@@ -428,35 +461,35 @@ const closeModal = () => {
 const save = async () => {
   if (isSaving.value) return;
   modalError.value = '';
-  formErrors.value = missingFields(form, [
-    { key: 'id_item', label: 'Articulo', isEmpty: (value) => !Number(value) },
-    { key: 'cantidad', label: 'Cantidad', isEmpty: (value) => !(Number(value) >= 1) },
-  ]);
+  touchAll();
+  formErrors.value = missingFields(form, requiredMovementFields);
   if (formErrors.value.length) {
     modalError.value = missingFieldsMessage(formErrors.value);
     return;
   }
   try {
     const cantidad = lockedByOrder.value ? undefined : parseQuantity(form.cantidad, { min: 1 });
-    if (!form.id_item) throw new Error('Selecciona un articulo de inventario.');
+    if (!form.id_item) throw new Error('Selecciona un artículo de inventario.');
     if (!lockedByOrder.value && projectedStock.value < 0) throw new Error('No hay stock suficiente en Inventario para este movimiento.');
-    if (!lockedByOrder.value && projectedStoreStock.value < 0) throw new Error('La Tienda ya vendio esas unidades; no puedes reducir la reposicion.');
+    if (!lockedByOrder.value && projectedStoreStock.value < 0) throw new Error('La Tienda ya vendió esas unidades; no puedes reducir la reposición.');
     const destino = form.tipo_movimiento === 'salida' ? form.destino : '';
+    const descripcion = clampText(form.descripcion, NOTES_MAX_LENGTH).value;
     isSaving.value = true;
     if (editingMovement.value) {
       const payload = lockedByOrder.value
-        ? { fecha_movimiento: form.fecha_movimiento, descripcion: form.descripcion }
-        : { ...form, cantidad, destino };
+        ? { fecha_movimiento: form.fecha_movimiento, descripcion }
+        : { ...form, cantidad, destino, descripcion };
       await gymStore.updateInventoryMovement(editingMovement.value.id_mov, payload);
       feedback.value = 'Movimiento actualizado y stock recalculado.';
     } else {
       await gymStore.registrarMovimientoToServer({
         ...form,
         cantidad,
+        descripcion,
         destino: destino || null,
         id_usuario: authStore.user?.id_usuario || authStore.user?.id || 1,
       });
-      feedback.value = destino === 'TIENDA' ? 'Reposicion registrada: el stock paso de Inventario a Tienda.' : 'Movimiento registrado y stock actualizado.';
+      feedback.value = destino === 'TIENDA' ? 'Reposición registrada: el stock pasó de Inventario a Tienda.' : 'Movimiento registrado y stock actualizado.';
     }
     feedbackTone.value = 'success';
     isSaving.value = false;

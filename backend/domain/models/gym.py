@@ -4,11 +4,16 @@
 # Sirve como contrato entre las rutas y los servicios.
 from __future__ import annotations
 
-from typing import Any, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, Field, ConfigDict, StringConstraints, field_validator, model_validator
 from domain.validation import account_email, dni_number, integer_quantity, phone_number
 from domain.validation import required_text, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
+
+from domain.form_limits import SHORT_TEXT_LIMIT, LONG_TEXT_LIMIT, INVENTORY_TEXT_LIMIT, INVENTORY_NOTE_LIMIT
+
+ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=SHORT_TEXT_LIMIT)]
+LongText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=LONG_TEXT_LIMIT)]
 
 
 class ValidatedInput(BaseModel):
@@ -104,8 +109,8 @@ class HorarioPublico(BaseModel):
 
 class UsuarioInput(ValidatedInput):
     id_usuario: str | int | None = None
-    nombre: str
-    correo: str
+    nombre: ShortText
+    correo: ShortText
     telefono: str = ""
     dni: str = ""
     password: str = ""
@@ -115,37 +120,37 @@ class UsuarioInput(ValidatedInput):
 
 class ClienteInput(ValidatedInput):
     id_usuario: str | int | None = None
-    nombre: str
-    correo: str
+    nombre: ShortText
+    correo: ShortText
     telefono: str = ""
     dni: str = ""
     password: str = ""
     contrasena: str = ""
     plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
-    promocion: str = "SIN PROMOCION"
-    estado: str = "ACTIVO"
+    promocion: ShortText = "SIN PROMOCION"
+    estado: ShortText = "ACTIVO"
 
 
 class PlanMembresiaInput(ValidatedInput):
     id_pm: int | None = None
-    nombre_plan: str
-    duracion: str
+    nombre_plan: ShortText
+    duracion: ShortText
     precio: float = Field(ge=0)
-    descripcion: str = ""
-    beneficios: str = ""
+    descripcion: LongText = ""
+    beneficios: LongText = ""
     activo: bool = True
 
 
 class PromocionInput(ValidatedInput):
     id_promocion: int | None = None
-    nombre: str
-    descripcion: str = ""
+    nombre: ShortText
+    descripcion: LongText = ""
     tipo_descuento: Literal["porcentaje", "monto"] = "porcentaje"
     valor_descuento: float = Field(default=0, ge=0)
     fecha_inicio: str = ""
     fecha_fin: str = ""
     icono_etiqueta: str = "🏷️"
-    palabra_clave: str = ""
+    palabra_clave: ShortText = ""
     activo: bool = True
     planes_aplicables: list[int] = Field(default_factory=list)
     limite_cupos: int | None = Field(default=None, ge=1)
@@ -182,14 +187,14 @@ class RegistroAdminClienteInput(ClienteInput):
 
 
 class RegistroPublicoClienteInput(ValidatedInput):
-    nombre: str
-    correo: str
+    nombre: ShortText
+    correo: ShortText
     telefono: str = ""
     dni: str = ""
     password: str = ""
     contrasena: str = ""
     plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
-    promocion: str = "SIN PROMOCION"
+    promocion: ShortText = "SIN PROMOCION"
     google_credential: str = ""
 
     @model_validator(mode="after")
@@ -208,16 +213,16 @@ class PagoPublicoClienteInput(ValidatedInput):
 
 class InventarioInput(ValidatedInput):
     id_item: int | None = None
-    nombre_item: str
-    tipo: str
+    nombre_item: str = Field(max_length=INVENTORY_TEXT_LIMIT)
+    tipo: str = Field(max_length=INVENTORY_TEXT_LIMIT)
     cantidad_stock: int = Field(ge=0)
     estado: str = "Operativo"
     n_activo: int | None = None
-    unidad_venta: str = "unidad"
+    unidad_venta: str = Field(default="unidad", max_length=INVENTORY_TEXT_LIMIT)
     precio_venta: float | None = None
     stock_minimo: int = 1
-    ubicacion: str = "Almacén"
-    observaciones: str = ""
+    ubicacion: str = Field(default="Almacén", max_length=INVENTORY_TEXT_LIMIT)
+    observaciones: str = Field(default="", max_length=INVENTORY_NOTE_LIMIT)
 
 
 class ProductoTiendaInput(ValidatedInput):
@@ -262,7 +267,7 @@ class MovimientoInventarioInput(ValidatedInput):
     id_usuario: str | int
     tipo_movimiento: Literal["entrada", "salida", "ajuste"]
     fecha_movimiento: str = ""
-    descripcion: str = ""
+    descripcion: str = Field(default="", max_length=INVENTORY_NOTE_LIMIT)
     cantidad: int = Field(default=1, ge=1)
     # Solo para salidas: "TIENDA" repone el stock del producto enlazado.
     destino: str | None = None
@@ -272,7 +277,7 @@ class MovimientoInventarioUpdateInput(ValidatedInput):
     id_item: int | None = None
     tipo_movimiento: Literal["entrada", "salida", "ajuste"] | None = None
     fecha_movimiento: str | None = None
-    descripcion: str | None = None
+    descripcion: str | None = Field(default=None, max_length=INVENTORY_NOTE_LIMIT)
     cantidad: int | None = Field(default=None, ge=1)
     # "TIENDA" para una reposición; "" quita el destino.
     destino: str | None = None
@@ -325,8 +330,8 @@ class HorarioServicioInput(ValidatedInput):
     id_rutina: int
     hora_inicio: str = "06:00"
     hora_fin: str = "07:00"
-    codigo_dia: str = "LUN"
-    dia: str = "lunes"
+    codigo_dia: ShortText = "LUN"
+    dia: ShortText = "lunes"
     dias: list[str] = Field(default_factory=list)
     cupos: int = Field(default=10, ge=1)
     activo: bool = True
@@ -336,6 +341,12 @@ class MatriculaHorarioInput(ValidatedInput):
     id_cliente: str | int | None = None
     dni: str = ""
     id_horario_servicio: int
+    fecha_clase: str | None = None
+
+    @field_validator("fecha_clase")
+    @classmethod
+    def valid_class_date(cls, value):
+        return civil_date(value) if value is not None else None
 
 
 class MatriculaRutinaInput(ValidatedInput):

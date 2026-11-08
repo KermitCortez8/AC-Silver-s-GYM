@@ -1,0 +1,208 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Specs, ECU y prototipos · Chatbot Silver</title><style>
+*{box-sizing:border-box}body{margin:0;background:#e9edef;color:#1d2a33;font:14px/1.6 Arial,sans-serif}.toolbar{background:#172027;color:white;padding:18px 30px;display:flex;gap:25px;align-items:center}.toolbar a{color:white;text-decoration:none}.toolbar button{margin-left:auto;border:0;background:#d9252c;color:white;padding:11px 18px;border-radius:6px;cursor:pointer}.sheet{background:white;margin:24px auto;padding:35px 42px;width:min(1100px,96%);box-shadow:0 5px 20px #2336450c}.folio{font-size:10px;letter-spacing:1.5px;color:#b62b33;font-weight:bold;margin-bottom:14px}h1{font-size:44px;line-height:1.1;letter-spacing:-1.7px;margin:15px 0 25px}h2{font-size:23px;letter-spacing:-.5px;margin:0 0 16px}.cover{min-height:550px;padding:70px}.cover p{max-width:680px;color:#627480}.cover .badge{display:inline-block;border:1px solid #e1c8ca;background:#fff4f4;color:#b82d37;padding:8px 12px;border-radius:6px;font-size:12px;margin-top:20px}.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:35px}.summary div{padding:18px;border:1px solid #dde5e9;border-radius:8px;font-size:12px}.summary strong{display:block;color:#213743;margin-bottom:8px}table{border-collapse:collapse;width:100%;margin:12px 0 18px;font-size:12px}td{border:1px solid #e0e6e9;padding:6px 9px;vertical-align:top}td:first-child{width:24%;font-weight:bold;background:#f6f8f9}tr:first-child td{background:#eaf0f3}.ecu p{font-size:12px;margin:10px 0}.ecu li{font-size:12px;line-height:1.5;margin:3px 0}.ecu ol,.ecu ul{padding-left:20px}.caption{font-size:12px;color:#74848e}.caption strong{color:#b22e36}img{display:block;max-width:100%;height:auto;margin:20px auto}.mobile{max-width:360px}.plate{page-break-inside:avoid}.cover small{display:block;color:#8e9ca4;margin-top:30px}@page{size:A4 landscape;margin:10mm}@media print{body{background:white}.toolbar{display:none}.sheet{margin:0;padding:4mm 6mm;width:100%;height:186mm;box-shadow:none;break-after:page;overflow:hidden}.sheet:last-child{break-after:auto}.folio{font-size:8px;margin-bottom:6px}h2{font-size:18px;margin-bottom:6px}.cover{padding:20mm}.cover h1{font-size:40px}.cover p{font-size:13px}.summary{margin-top:20px}.ecu td{font-size:11px;padding:5px 8px}.ecu p,.ecu li{font-size:11px;line-height:1.5;margin:4px 0}.ecu ol,.ecu ul{margin:5px 0}.ecu table{margin:7px 0 9px}.plate h2{font-size:17px}.plate .caption{font-size:10px;margin:6px 0}.plate img{margin:5px auto 0;max-height:156mm;width:auto;max-width:100%;object-fit:contain}.plate img.mobile{max-height:153mm}}@media(max-width:700px){.sheet{padding:25px}.summary{display:block}.summary div{margin-bottom:10px}h1{font-size:32px}.toolbar{font-size:12px;padding:15px;gap:12px}.toolbar button{padding:8px}.cover{padding:35px}}
+</style></head><body><nav class="toolbar"><strong>Specs + prototipos</strong><a href="index.html">Abrir demostración ↗</a><button onclick="print()">Imprimir / guardar PDF</button></nav>
+<section class="sheet cover"><div class="folio">AC SILVER’S GYM · REVISIÓN DE DISEÑO</div><h1>Un asistente.<br>Todo el recorrido<br>del cliente.</h1><p>Specs, casos de uso y prototipos del chatbot: desde conocer un plan hasta revisar y confirmar una matrícula. Material para validar la propuesta antes de integrar la IA y los servicios.</p><span class="badge">Prototipos con datos simulados · Integración productiva pendiente</span><div class="summary"><div><strong>01 · Preregistro</strong>Planes, formulario y continuidad al pago.</div><div><strong>02 · Acceso</strong>Ingreso, activación pendiente y membresía vencida.</div><div><strong>03 · Horarios y matrícula</strong>Búsqueda, confirmación y resultados alternativos.</div></div><small>3 de noviembre de 2026 · 3 ECU · 16 capturas · 18 comprobaciones del prototipo.<br>Estas comprobaciones no equivalen a pruebas de la integración real con IA.</small></section>
+<style>.full-spec{height:auto;overflow:visible}.full-spec h3{font-size:15px;margin:20px 0 9px}.full-spec h4{font-size:12px;margin:12px 0 6px}@media print{.full-spec{height:auto;overflow:visible;min-height:186mm}.full-spec h3{font-size:12px;margin:12px 0 6px;break-after:avoid}.full-spec h4{font-size:10px;margin:8px 0 4px;break-after:avoid}.full-spec tr{break-inside:avoid}}</style><section class="sheet ecu full-spec"><div class="folio">SPEC 002 · ESPECIFICACIÓN COMPLETA</div><h2>Chatbot para acompañar el recorrido del cliente</h2>
+<p><strong>ID:</strong> <code>002-chatbot-clientes</code> · <strong>Fecha:</strong> 2026-11-03 · <strong>Estado:</strong> Specs y prototipos; integración productiva pendiente. <strong>Petición:</strong> conversación con IA y acciones guiadas con reglas, desde preregistro y acceso hasta horarios y matrícula. <strong>Contexto:</strong> análisis de la base. Contratos afectados: MOD-01 a MOD-05, enlazados allí.</p>
+<h3>1. Sprint Goal</h3>
+<p>Un asistente en español entiende mensajes libres sobre el gimnasio y acompaña los formularios y acciones existentes. La IA orienta y propone; las reglas del servidor deciden el acceso y la validez de los datos. Una matrícula requiere confirmación explícita en pantalla.</p>
+<p>Este documento define el comportamiento del producto futuro. La entrega actual incluye el plan, las ECU de los tres casos de uso y los prototipos para revisión conjunta. La demostración usa datos y respuestas fijos, sin conexión a IA, autenticación, pagos o matrículas reales.</p>
+<h3>2. User Story</h3>
+<h4>US1 · Orientarme y preregistrarme (Priority: P1)</h4>
+<p>Como visitante, quiero preguntar por planes y cómo registrarme para completar el preregistro y continuar al pago en los formularios existentes.</p>
+<p><strong>Prueba independiente:</strong> sin sesión, consultar el catálogo, abrir registro con un plan válido y recibir orientación sobre pago/activación sin consultar datos privados.</p>
+<p><strong>Escenarios:</strong> se muestran planes vigentes reales; una solicitud de datos de otra persona se rechaza ofreciendo ayuda permitida.</p>
+<h4>US2 · Ingresar y continuar con seguridad (Priority: P1)</h4>
+<p>Como cliente, quiero ayuda para ingresar y continuar mi recorrido, entendiendo qué hacer si mi cuenta espera activación o mi sesión expiró.</p>
+<p><strong>Prueba independiente:</strong> abrir acceso desde el chat y autenticar en el formulario; cerrar/cambiar sesión borra conversación, propuestas y respuestas pendientes.</p>
+<p><strong>Escenarios:</strong> el cliente habilitado accede a sus propias acciones; uno pendiente/vencido recibe orientación pública sin saltar controles ni revelar su estado privado a visitantes.</p>
+<h4>US3 · Consultar horarios y matricularme (Priority: P2)</h4>
+<p>Como cliente habilitado, quiero buscar una clase y confirmar mi inscripción para matricularme en una fecha concreta con cupo disponible.</p>
+<p><strong>Prueba independiente:</strong> buscar una sesión, revisar el resumen, pulsar Confirmar matrícula y verificar la inscripción en Mi horario.</p>
+<p><strong>Escenarios:</strong> buscar no inscribe; un cupo agotado antes de confirmar produce rechazo del servidor; doble clic no crea dos matrículas.</p>
+<h3>3. Acceptance Criteria</h3>
+<ol>
+<li><strong>CA-01.</strong> El panel acepta mensajes libres en español, muestra carga/error y propone solo acciones de una lista cerrada; una salida inválida del modelo no produce acciones.</li>
+<li><strong>CA-02.</strong> En modo público se usan ayuda aprobada y catálogos públicos actuales; registro abre el formulario existente conservando límites y flujo de pago/activación.</li>
+<li><strong>CA-03.</strong> El acceso usa los mecanismos existentes; las consultas privadas exigen sesión habilitada y cliente propio. Logout, cambio de usuario o expiración elimina memoria y descarta respuestas tardías.</li>
+<li><strong>CA-04.</strong> Para proponer matrícula se exige fecha concreta; las fechas relativas se interpretan en America/Lima y los datos de horarios provienen del backend. Buscar no reserva cupo.</li>
+<li><strong>CA-05.</strong> Solo el botón de confirmación sobre un resumen de servicio, fecha y hora envía matrícula. El servidor determina el cliente y revalida vigencia, horario, duplicidad y cupo mediante la operación existente.</li>
+<li><strong>CA-06.</strong> Se bloquean envíos repetidos en curso; un resultado incierto obliga a consultar inscripciones antes de ofrecer reintento. No se anuncia éxito sin matrícula verificada.</li>
+<li><strong>CA-07.</strong> Prompts, respuestas y acciones sugeridas no amplían permisos ni ejecutan SQL/URLs arbitrarias, cobros, activaciones o consultas ajenas. No se adjuntan al proveedor campos estructurados de identidad/pago ni secretos; se filtra texto libre y una entrada sensible detectada se resuelve localmente. No se registran mensajes, argumentos privados o secretos en logs.</li>
+<li><strong>CA-08.</strong> Mensaje máximo de 150 caracteres limitado al escribir/pegar y validado en servidor; existen límites compartidos de frecuencia/presupuesto, timeout y apagado del proveedor con alternativa guiada.</li>
+<li><strong>CA-09.</strong> El panel funciona en móvil/escritorio con teclado, conserva los formularios utilizables si la IA falla y tiene pruebas reproducibles sin llamadas externas.</li>
+</ol>
+<table>
+<tr><td>Criterio</td><td>Evidencia prevista; todavía no ejecutada</td></tr>
+<tr><td>CA-01</td><td>Escenario E1</td></tr>
+<tr><td>CA-02</td><td>Escenario E2</td></tr>
+<tr><td>CA-03</td><td>Escenario E3</td></tr>
+<tr><td>CA-04</td><td>Escenario E4</td></tr>
+<tr><td>CA-05</td><td>Escenario E5</td></tr>
+<tr><td>CA-06</td><td>Escenario E6</td></tr>
+<tr><td>CA-07</td><td>Escenario E7</td></tr>
+<tr><td>CA-08</td><td>Escenario E8</td></tr>
+<tr><td>CA-09</td><td>Escenario E9</td></tr>
+</table>
+<h4>Functional Requirements</h4>
+<ul>
+<li><strong>FR-001:</strong> conversación con salida estructurada y acciones permitidas (CA-01, CA-07).</li>
+<li><strong>FR-002:</strong> orientación pública con datos reales y navegación al preregistro/acceso (CA-02).</li>
+<li><strong>FR-003:</strong> identidad del servidor y memoria aislada por sesión (CA-03).</li>
+<li><strong>FR-004:</strong> consulta por fecha y matrícula confirmada (CA-04, CA-05, CA-06).</li>
+<li><strong>FR-005:</strong> límites, privacidad y funcionamiento degradado (CA-07, CA-08, CA-09).</li>
+</ul>
+<h4>Key Entities</h4>
+<p>Turno efímero, acción validada, selección de sesión y cuota técnica compartida. No se crean otras entidades de cliente, pago o matrícula. Detalles en modelo.</p>
+<h4>Measurable Outcomes</h4>
+<p>Los nueve escenarios pasan con proveedor falso, sin pagos/correos reales. Cero escrituras de negocio desde herramientas del modelo y cero consultas privadas con identidad tomada del texto. Todas las matrículas propuestas necesitan confirmación y resultado verificable del backend.</p>
+<h4>Revisión del diseño con prototipos</h4>
+<p>US1 corresponde a CU-CHAT-01 / P01–P03; US2 a CU-CHAT-02 / P04–P06; US3 a CU-CHAT-03 / P07–P10. El prototipo navegable muestra la Spec resumida junto a cada recorrido. La matriz de revisión relaciona cada pantalla con sus CA. Validar el prototipo no acredita los criterios que requieren servidor, proveedor o concurrencia reales. La relación con las cinco tareas de programación identifica reglas, IA, interfaz y conexiones con los servicios actuales. La barra de programación del prototipo muestra las tareas que corresponden a cada recorrido.</p>
+<h3>4. Technical Constraints</h3>
+<p>Conservar Vue/Pinia y FastAPI/Supabase, capas e inyección de adaptadores. Separar endpoints público/privado, herramientas de lectura y confirmación humana. La IA es una integración backend; sus claves nunca son <code>VITE_*</code>. Reutilizar la RPC de matrícula y los flujos de identidad, preregistro y pagos.</p>
+<p>Memoria conversacional efímera. Cuotas en almacenamiento compartido con actualización atómica y acceso exclusivo del backend. Integración habilitada por configuración tras elegir proveedor/modelo y presupuesto. Sin entrenamiento, embeddings o base vectorial en este alcance.</p>
+<h3>5. Guardrails</h3>
+<p>Solo preregistro, acceso, planes/promociones, horarios e inscripción propia. Preguntas ajenas reciben redirección breve a esos temas. Fuera: administración, consejos médicos, tienda, cambios de membresía, cancelaciones y envío de notificaciones desde el chat.</p>
+<p>No adjuntar al modelo campos de DNI, teléfono, correo, nombres personales, contraseñas, tokens, checkout IDs o tarjetas. Filtrar patrones sensibles en texto libre y resolver localmente entradas detectadas o sospechosas, dirigiendo al formulario. No prometer anonimización infalible del texto; limitación explícita en decisiones. La aplicación muestra datos privados y confirmaciones fuera de la prosa generada.</p>
+<p>No consultar preregistros por DNI/correo mediante API pública ni prometer activación al pagar. No contratar servicios, activar claves, desplegar o ejecutar transacciones reales durante la planificación.</p>
+<h3>6. Edge Cases</h3>
+<table>
+<tr><td>Caso</td><td>Respuesta prevista</td><td>Criterio</td></tr>
+<tr><td>Mensaje vacío/excesivo o instrucciones para saltar reglas</td><td>Validar esquema y alcance; sin ejecución</td><td>CA-01, CA-07, CA-08</td></tr>
+<tr><td>Catálogo caído o promoción agotada</td><td>Informar indisponibilidad; no inventar oferta</td><td>CA-02</td></tr>
+<tr><td>Sesión vencida durante respuesta</td><td>Descartar respuesta/propuesta y abrir acceso</td><td>CA-03</td></tr>
+<tr><td>«Mañana» cerca de medianoche o servicio ambiguo</td><td>Reloj Lima; pedir precisión cuando falte</td><td>CA-04</td></tr>
+<tr><td>Propuesta antigua o cupo ocupado</td><td>Recargar datos y revalidar al confirmar</td><td>CA-05</td></tr>
+<tr><td>Doble clic, dos pestañas o pérdida de red</td><td>Bloquear/reconciliar y deduplicar en backend</td><td>CA-06</td></tr>
+<tr><td>Enlace externo o ID inventado por IA</td><td>Rechazar salida y no habilitar acción</td><td>CA-07</td></tr>
+<tr><td>Cuota agotada o proveedor caído</td><td>Ayuda guiada y enlaces originales</td><td>CA-08, CA-09</td></tr>
+</table>
+<h4>Assumptions</h4>
+<p>Primera versión web en español para visitantes/clientes; sin WhatsApp, voz o historial persistente. Los límites operativos del plan son valores iniciales configurables. Proveedor/modelo y presupuesto se concretan en T001 antes de habilitar la integración. Se conservan las reglas actuales de activación y membresía.</p>
+<h3>7. Definition of Done</h3>
+<ul>
+<li>[ ] CA-01 a CA-09 pasan y enlazan evidencia ejecutada.</li>
+<li>[ ] Implementación, pruebas y contratos vivos están completos.</li>
+<li>[ ] Se verifica UI, permisos, concurrencia y límites compartidos.</li>
+<li>[ ] Logs sin mensajes/secretos; proveedor sin campos privados estructurados y filtros de texto verificados con datos centinela.</li>
+<li>[ ] La falta de IA conserva la guía y los formularios originales.</li>
+</ul></section><section class="sheet ecu"><div class="folio">SPEC 002 · CASO DE USO Y ECU</div><h2>CU-CHAT-01 · Preregistro asistido</h2><table>
+<tr><td>Elemento de la ECU</td><td>Especificación</td></tr>
+<tr><td>Actor principal</td><td>Visitante interesado en inscribirse.</td></tr>
+<tr><td>Actor de apoyo</td><td>Asistente del gimnasio; formulario y pasarela existentes en la implementación futura.</td></tr>
+<tr><td>Objetivo</td><td>Comprender la oferta y completar el preregistro mediante el formulario.</td></tr>
+<tr><td>Disparador</td><td>El visitante pregunta por planes o pulsa «Quiero registrarme».</td></tr>
+<tr><td>Precondiciones</td><td>Acceso público; catálogo disponible para mostrar una oferta. No requiere sesión.</td></tr>
+<tr><td>Postcondición de éxito</td><td>Solicitud de preregistro preparada para continuar al pago. Confirmar el pago y activar la cuenta son pasos posteriores distintos.</td></tr>
+<tr><td>Postcondición de fallo</td><td>No se crea una inscripción o cuenta activa por una respuesta del chat. El visitante conserva acceso al formulario.</td></tr>
+</table>
+<p><strong>Flujo principal</strong></p>
+<ol>
+<li>El visitante abre el asistente y consulta los planes.</li>
+<li>El asistente muestra tarjetas con nombre, duración y precio del catálogo.</li>
+<li>El visitante selecciona un plan y pulsa «Abrir preregistro».</li>
+<li>El sistema abre el formulario; los datos personales se completan allí.</li>
+<li>El visitante revisa los datos y continúa al pago mediante el flujo existente.</li>
+<li>El sistema diferencia solicitud pendiente, pago confirmado y activación administrativa.</li>
+</ol>
+<p><strong>Flujos alternativos</strong></p>
+<ul>
+<li>A1. Catálogo indisponible: mostrar mensaje de indisponibilidad y enlace al registro; no inventar planes.</li>
+<li>A2. Formulario incompleto o inválido: conservar valores y señalar el campo; no continuar.</li>
+<li>A3. Pago cancelado/pendiente: conservar la solicitud según las reglas existentes, sin anunciar activación.</li>
+<li>A4. IA no disponible: botones de ayuda permiten continuar por el formulario.</li>
+</ul>
+<p><strong>Reglas:</strong> nombre/correo máximo 50, DNI 8 dígitos, teléfono 9; mensaje del chat máximo 150 sin contador/regla visible. No introducir identidad o credenciales en la conversación.</p>
+<p><strong>Trazabilidad:</strong> US1; CA-01, CA-02, CA-07, CA-08, CA-09. Prototipos P01–P03 en demostración.</p></section><section class="sheet ecu"><div class="folio">SPEC 002 · CASO DE USO Y ECU</div><h2>CU-CHAT-02 · Acceso asistido</h2><table>
+<tr><td>Elemento de la ECU</td><td>Especificación</td></tr>
+<tr><td>Actor principal</td><td>Cliente que desea ingresar.</td></tr>
+<tr><td>Actor de apoyo</td><td>Asistente y autenticación existente.</td></tr>
+<tr><td>Objetivo</td><td>Acceder al área autorizada y entender los impedimentos del acceso.</td></tr>
+<tr><td>Disparador</td><td>Pulsar «Ya tengo una cuenta» o preguntar cómo ingresar.</td></tr>
+<tr><td>Precondiciones</td><td>Formulario de acceso disponible. La elegibilidad se valida en servidor en la implementación futura.</td></tr>
+<tr><td>Postcondición de éxito</td><td>Sesión de cliente habilitado y acceso a sus propias funciones.</td></tr>
+<tr><td>Postcondición de fallo</td><td>No se abre el área privada; se ofrece orientación sin revelar datos ajenos.</td></tr>
+</table>
+<p><strong>Flujo principal</strong></p>
+<ol>
+<li>El cliente solicita ayuda para ingresar.</li>
+<li>El asistente dirige al formulario de acceso.</li>
+<li>El cliente usa contraseña o Google fuera del chat.</li>
+<li>El sistema valida credenciales, activación y membresía pagada/vigente.</li>
+<li>Si está habilitado, muestra el panel y la acción «Ver horarios».</li>
+<li>Al cerrar/cambiar sesión, borra conversación, selección y respuestas pendientes.</li>
+</ol>
+<p><strong>Flujos alternativos</strong></p>
+<ul>
+<li>A1. Credenciales inválidas: permitir corregirlas sin abrir sesión.</li>
+<li>A2. Cuenta pendiente de activación: orientar al proceso vigente sin activar desde el chat.</li>
+<li>A3. Membresía vencida: indicar el impedimento dentro del flujo de acceso y mantener ayuda pública genérica.</li>
+<li>A4. Sesión expirada durante una consulta: descartar respuesta y solicitar ingreso.</li>
+</ul>
+<p><strong>Reglas:</strong> el servidor identifica al cliente; el texto del chat no establece identidad o permisos. No consultar solicitudes por DNI/correo en una API pública. No enviar contraseñas al modelo.</p>
+<p><strong>Trazabilidad:</strong> US2; CA-03, CA-07, CA-09. Prototipos P04–P06 en demostración.</p></section><section class="sheet ecu"><div class="folio">SPEC 002 · CASO DE USO Y ECU</div><h2>CU-CHAT-03 · Consulta y matrícula asistida en horarios</h2><table>
+<tr><td>Elemento de la ECU</td><td>Especificación</td></tr>
+<tr><td>Actor principal</td><td>Cliente autenticado y habilitado.</td></tr>
+<tr><td>Actor de apoyo</td><td>Asistente, consulta de sesiones y servicio de matrícula existente.</td></tr>
+<tr><td>Objetivo</td><td>Encontrar una sesión e inscribirse con confirmación explícita.</td></tr>
+<tr><td>Disparador</td><td>Preguntar por una clase o pulsar «Buscar horarios».</td></tr>
+<tr><td>Precondiciones</td><td>Cuenta habilitada, membresía vigente y fecha/servicio seleccionados.</td></tr>
+<tr><td>Postcondición de éxito</td><td>Una matrícula verificada para cliente, horario y fecha concretos; actualiza Mi horario.</td></tr>
+<tr><td>Postcondición de fallo</td><td>No se anuncia inscripción ni se reintenta una escritura cuyo resultado se desconoce.</td></tr>
+</table>
+<p><strong>Flujo principal</strong></p>
+<ol>
+<li>El asistente solicita servicio y fecha cuando falten.</li>
+<li>El sistema consulta sesiones y muestra datos del backend en tarjetas.</li>
+<li>El cliente selecciona una sesión; buscar o seleccionar no reserva cupo.</li>
+<li>El sistema presenta servicio, fecha absoluta y hora para revisar.</li>
+<li>El cliente pulsa «Confirmar matrícula».</li>
+<li>El servidor vuelve a validar identidad, vigencia, duplicidad y cupo con la operación existente.</li>
+<li>Solo con resultado verificado se muestra éxito y se actualiza Mi horario.</li>
+</ol>
+<p><strong>Flujos alternativos</strong></p>
+<ul>
+<li>A1. Sin fecha/servicio o búsqueda ambigua: pedir precisión.</li>
+<li>A2. Cupo ocupado entre consulta y confirmación: mostrar rechazo y volver a horarios.</li>
+<li>A3. Doble clic: bloquear el envío en curso; conservar deduplicación de servidor.</li>
+<li>A4. Respuesta perdida: marcar resultado sin verificar y consultar inscripciones propias antes de ofrecer reintento.</li>
+<li>A5. Sesión vencida o fecha fuera de vigencia: rechazar la acción y dirigir al flujo correspondiente.</li>
+</ul>
+<p><strong>Reglas:</strong> fechas de negocio America/Lima; confirmación separada del texto de IA; el modelo solo consulta y propone. No hay matrícula autónoma, cobro o activación.</p>
+<p><strong>Trazabilidad:</strong> US3; CA-04, CA-05, CA-06, CA-07, CA-09. Prototipos P07–P10 en demostración.</p></section><section class="sheet ecu full-spec"><div class="folio">SPEC 002 · PROGRAMACIÓN DE LOS PROTOTIPOS</div><h2>Programación contemplada en los prototipos</h2>
+<p>Las cinco tareas de programación acordadas determinan las interacciones del prototipo y su integración posterior. Este documento complementa las tres ECU, la Spec y el plan técnico.</p>
+<h3>PG01 · Programar las reglas de control</h3>
+<p><strong>Pantallas:</strong> P01–P10; transversal a los tres casos de uso.</p>
+<p><strong>Demostrado localmente:</strong> nombres/correos de hasta 50 caracteres; DNI de 8 dígitos y teléfono de 9; mensaje máximo 150 sin contador; acciones delimitadas; confirmación separada del chat; bloqueo local de doble clic; limpieza al salir.</p>
+<p><strong>Código del prototipo:</strong> formularios y control de acciones y campo de conversación.</p>
+<p><strong>Programación del producto:</strong> repetir la validación en el servidor, derivar cliente/rol desde sesión, limitar frecuencia y presupuesto entre instancias y preservar las RPC existentes. Un bloqueo visual no sustituye estos controles.</p>
+<p><strong>Criterios:</strong> CA-03, CA-05, CA-06, CA-07, CA-08.</p>
+<h3>PG02 · Integrar la IA en el backend</h3>
+<p><strong>Pantallas:</strong> conversación de P01–P10 y alternativa «IA no disponible».</p>
+<p><strong>Demostrado localmente:</strong> mensajes, sugerencias permitidas y continuidad con botones ante indisponibilidad. Las respuestas se seleccionan por reglas fijas; no hay un proveedor de IA conectado.</p>
+<p><strong>Programación del producto:</strong> implementar el puerto/adaptador de proveedor, salida estructurada, consultas permitidas, contexto mínimo, timeout y reserva de presupuesto. Los datos de negocio y las confirmaciones provienen del sistema. Las claves se configuran en backend; el modelo no recibe herramientas de escritura.</p>
+<p><strong>Criterios:</strong> CA-01, CA-07, CA-08.</p>
+<h3>PG03 · Programar la interfaz del chatbot</h3>
+<p><strong>Pantallas:</strong> las diez pantallas y sus versiones de escritorio/móvil.</p>
+<p><strong>Demostrado localmente:</strong> navegación, formularios, conversación, botones, tarjetas de planes/sesiones, confirmación, errores y estados de carga.</p>
+<p><strong>Código del prototipo:</strong> HTML, estilos e interacciones.</p>
+<p><strong>Programación del producto:</strong> trasladar el diseño a componentes Vue y composables, con estado por sesión en Pinia e inyección mediante el bootstrap. Separar presentación, aplicación, dominio e infraestructura y mantener el comportamiento del recorrido existente. Los controles de revisión académica quedan fuera de la UI del cliente.</p>
+<p><strong>Criterios:</strong> CA-01, CA-03, CA-09.</p>
+<h3>PG04 · Conectar preregistro y acceso</h3>
+<p><strong>Pantallas:</strong> P01–P06; CU-CHAT-01 y CU-CHAT-02.</p>
+<p><strong>Demostrado localmente:</strong> selección de plan, formulario con datos de ejemplo, continuidad al pago, ingreso simulado, cuenta pendiente, membresía vencida y salida.</p>
+<p><strong>Programación del producto:</strong> reutilizar catálogo, formulario de registro, Stripe, acceso con contraseña/Google y validación de sesión existentes. La solicitud, el pago y la activación mantienen estados distintos. El chat orienta y abre formularios; no crea cuentas activas por una respuesta conversacional.</p>
+<p><strong>Criterios:</strong> CA-02, CA-03, CA-07.</p>
+<h3>PG05 · Conectar horarios y matrícula</h3>
+<p><strong>Pantallas:</strong> P07–P10; CU-CHAT-03.</p>
+<p><strong>Demostrado localmente:</strong> servicio y fecha, consulta de ejemplo, resumen, confirmación explícita, inscripción local única, cupo agotado y reconciliación simulada de respuesta perdida. Buscar o escribir «confirma» no matricula.</p>
+<p><strong>Programación del producto:</strong> consultar sesiones reales en America/Lima; usar la capacidad actual de matrícula tras el clic de confirmación; revalidar identidad, vigencia, cupo y duplicidad en backend; refrescar Mi horario y reconciliar respuestas inciertas antes de permitir reintentos. Conservar la RPC especializada y sus bloqueos frente a concurrencia real.</p>
+<p><strong>Criterios:</strong> CA-04, CA-05, CA-06, CA-07.</p>
+<h3>Correspondencia para la exposición</h3>
+<table>
+<tr><td>Caso de uso</td><td>Programación asociada</td><td>Qué mostrar</td></tr>
+<tr><td>CU-CHAT-01 · Preregistro</td><td>PG01, PG02, PG03, PG04</td><td>Plan, conversación, formulario y continuidad al pago</td></tr>
+<tr><td>CU-CHAT-02 · Acceso</td><td>PG01, PG02, PG03, PG04</td><td>Formulario, restricciones de cuenta y limpieza al salir</td></tr>
+<tr><td>CU-CHAT-03 · Horarios/matrícula</td><td>PG01, PG02, PG03, PG05</td><td>Consulta, confirmación y alternativas ante fallos</td></tr>
+</table>
+<p>La barra «Programación asociada» del prototipo muestra esta correspondencia. El PDF incluye este documento. Las 24 tareas de tasks.md son el desglose técnico para ejecutar las cinco tareas; permanecen pendientes de integración. Las comprobaciones del prototipo validan su navegación local.</p></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-01 · Preregistro</h2><p class="caption"><strong>CA-01 · CA-02</strong> · Consultar planes y comenzar el recorrido.</p><a href="capturas/p01-planes-escritorio.png"><img class="desktop" src="capturas/p01-planes-escritorio.png" alt="p01 planes escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-01 · Preregistro</h2><p class="caption"><strong>CA-02 · CA-07 · CA-08</strong> · Completar datos en el formulario y respetar sus límites.</p><a href="capturas/p02-preregistro-escritorio.png"><img class="desktop" src="capturas/p02-preregistro-escritorio.png" alt="p02 preregistro escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-01 · Preregistro</h2><p class="caption"><strong>CA-02</strong> · Diferenciar solicitud pendiente, pago y activación.</p><a href="capturas/p03-solicitud-escritorio.png"><img class="desktop" src="capturas/p03-solicitud-escritorio.png" alt="p03 solicitud escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-02 · Acceso</h2><p class="caption"><strong>CA-03 · CA-07</strong> · Usar el formulario de acceso fuera de la conversación.</p><a href="capturas/p04-acceso-escritorio.png"><img class="desktop" src="capturas/p04-acceso-escritorio.png" alt="p04 acceso escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-02 · Acceso</h2><p class="caption"><strong>CA-03</strong> · Mantener el bloqueo de una cuenta no habilitada.</p><a href="capturas/p05-activacion-pendiente-escritorio.png"><img class="desktop" src="capturas/p05-activacion-pendiente-escritorio.png" alt="p05 activacion pendiente escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-02 · Acceso</h2><p class="caption"><strong>CA-03</strong> · Mantener el bloqueo de una cuenta no habilitada.</p><a href="capturas/p05-membresia-vencida-escritorio.png"><img class="desktop" src="capturas/p05-membresia-vencida-escritorio.png" alt="p05 membresia vencida escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-02 · Acceso</h2><p class="caption"><strong>CA-03</strong> · Mostrar acciones propias tras el ingreso simulado.</p><a href="capturas/p06-panel-escritorio.png"><img class="desktop" src="capturas/p06-panel-escritorio.png" alt="p06 panel escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-03 · Horarios y matrícula</h2><p class="caption"><strong>CA-04</strong> · Buscar una sesión por servicio y fecha concreta.</p><a href="capturas/p07-horarios-escritorio.png"><img class="desktop" src="capturas/p07-horarios-escritorio.png" alt="p07 horarios escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-03 · Horarios y matrícula</h2><p class="caption"><strong>CA-05</strong> · Revisar y confirmar con una acción explícita del cliente.</p><a href="capturas/p08-confirmacion-escritorio.png"><img class="desktop" src="capturas/p08-confirmacion-escritorio.png" alt="p08 confirmacion escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-03 · Horarios y matrícula</h2><p class="caption"><strong>CA-05 · CA-06</strong> · Mostrar una única inscripción local de ejemplo.</p><a href="capturas/p09-mi-horario-escritorio.png"><img class="desktop" src="capturas/p09-mi-horario-escritorio.png" alt="p09 mi horario escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-03 · Horarios y matrícula</h2><p class="caption"><strong>CA-06</strong> · Resolver falta de cupo y respuesta incierta sin anunciar éxito falso.</p><a href="capturas/p10-cupo-agotado-escritorio.png"><img class="desktop" src="capturas/p10-cupo-agotado-escritorio.png" alt="p10 cupo agotado escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>CU-CHAT-03 · Horarios y matrícula</h2><p class="caption"><strong>CA-06</strong> · Resolver falta de cupo y respuesta incierta sin anunciar éxito falso.</p><a href="capturas/p10-resultado-incierto-escritorio.png"><img class="desktop" src="capturas/p10-resultado-incierto-escritorio.png" alt="p10 resultado incierto escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO ESCRITORIO</div><h2>Estado transversal · Ayuda guiada</h2><p class="caption"><strong>CA-08 · CA-09</strong> · Mantener disponibles las acciones cuando falla la IA.</p><a href="capturas/ayuda-guiada-escritorio.png"><img class="desktop" src="capturas/ayuda-guiada-escritorio.png" alt="ayuda guiada escritorio"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO MÓVIL</div><h2>CU-CHAT-01 · Preregistro</h2><p class="caption"><strong>CA-01 · CA-02</strong> · Consultar planes y comenzar el recorrido.</p><a href="capturas/p01-planes-movil.png"><img class="mobile" src="capturas/p01-planes-movil.png" alt="p01 planes movil"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO MÓVIL</div><h2>CU-CHAT-02 · Acceso</h2><p class="caption"><strong>CA-03 · CA-07</strong> · Usar el formulario de acceso fuera de la conversación.</p><a href="capturas/p04-acceso-movil.png"><img class="mobile" src="capturas/p04-acceso-movil.png" alt="p04 acceso movil"></a></section><section class="sheet plate"><div class="folio">SPEC 002 · PROTOTIPO MÓVIL</div><h2>CU-CHAT-03 · Horarios y matrícula</h2><p class="caption"><strong>CA-04</strong> · Buscar una sesión por servicio y fecha concreta.</p><a href="capturas/p07-horarios-movil.png"><img class="mobile" src="capturas/p07-horarios-movil.png" alt="p07 horarios movil"></a></section></body></html>

@@ -63,9 +63,52 @@ No reescribir importes de membresías ya contratadas al editar un plan.
 - Campo opcional histórico ausente: normalizarlo y preservar cero cuando sea válido.
 - Oferta editada después de una compra: conservar descuento e importe guardados
   en esa membresía y su historial.
+- Formularios de clientes: cargar el catálogo remoto antes de habilitar el alta;
+  no ofrecer planes locales ante error o catálogo vacío. Filtrar las promociones
+  por plan, inicio, fin, estado y cupos. La edición de datos personales conserva
+  los valores contratados, incluso si ya no forman parte de la oferta activa.
 
 ## 7. Definition of Done
 
 Verificar los criterios afectados, consultas públicas, permisos y límites de
 fechas/cupos; si cambia persistencia, comprobar recarga. Actualizar el contrato
 y cumplir el [DoD](../../docs/DoD.md).
+
+### Límites de formularios
+
+Los nombres de planes y promociones y la palabra clave admiten hasta 50 caracteres.
+El contrato HTTP de duración conserva el máximo de 50 caracteres. Descripción y beneficios admiten hasta 150. Los
+formularios bloquean el exceso sin avisos ni contadores de longitud; el servidor
+rechaza escrituras que excedan los límites.
+
+Evidencia: [validación de límites](../validaciones/limites-formularios/validation.md).
+
+### Formulario de planes
+
+La duración se elige en un selector con 1, 7, 15, 30, 60, 90, 180 y 365 días;
+las altas parten de 30 días. Al editar se agrega la duración guardada como opción
+si no pertenece a las habituales, conservando su valor exacto al guardar sin
+cambiarla (por ejemplo, `45 dias` o `1 mes`). Esa opción permanece disponible
+mientras se edita, incluso si se selecciona otra y luego se desea volver.
+
+Duración y precio comparten una fila en escritorio y se apilan en móvil. El precio
+inicial está vacío y exige completar un importe; cero sigue siendo válido si se
+introduce expresamente. Nombre, duración y precio muestran errores asociados al
+campo. Descripción y beneficios se identifican como opcionales. Se conservan los
+límites silenciosos de 50/150 caracteres y el bloqueo durante el guardado.
+
+Evidencia: [validación del formulario](../validaciones/formulario-planes/validation.md).
+
+### Gestión visual del catálogo
+
+La pantalla administrativa utiliza tarjetas adaptables con estado, precio, duración,
+descripción, beneficios y acciones de editar/eliminar. El resumen cuenta planes
+registrados, activos e inactivos. La búsqueda local ignora tildes y consulta nombre,
+duración, descripción y beneficios; se combina con los filtros de estado. El orden
+puede ser por nombre o precio ascendente/descendente, conservando cero.
+
+La carga muestra espera, conserva los datos disponibles ante error y permite
+reintentar. Se distinguen catálogo vacío y búsqueda sin coincidencias. El borrado
+mantiene confirmación y bloquea solicitudes duplicadas; solo retira la tarjeta
+cuando el servidor lo confirma. No cambia permisos, precios guardados ni la
+vigencia de las membresías contratadas. Ver [validación del diseño](../validaciones/diseno-membresias/validation.md).

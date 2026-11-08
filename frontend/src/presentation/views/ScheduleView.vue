@@ -3,7 +3,7 @@
     <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
       <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Mi horario</p>
       <h1 class="mt-2 text-3xl font-black text-white">Horario matriculado</h1>
-      <p class="mt-2 text-slate-300">Esta tabla se llena cuando eliges horarios desde Matricula.</p>
+      <p class="mt-2 text-slate-300">Esta tabla se llena cuando eliges horarios desde Matrícula.</p>
     </section>
 
     <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
@@ -27,7 +27,7 @@
       </div>
 
       <p v-if="!myEnrollments.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-slate-400">
-        Tu horario esta vacio. Entra a Matricula para seleccionar un servicio.
+        Tu horario está vacío. Entra a Matrícula para seleccionar un servicio.
       </p>
     </section>
   </div>

@@ -65,6 +65,7 @@
             }}<LogOut :size="14" />
           </button>
         </div>
+        <p v-if="record.aviso" class="att-late-notice" role="status">{{ record.aviso }}</p>
       </article>
     </div>
     <div class="att-aside-note">

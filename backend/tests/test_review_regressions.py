@@ -1,5 +1,6 @@
 """Regresiones de los seis problemas de la revisión posterior al refactor."""
 from copy import deepcopy
+from datetime import date
 from types import SimpleNamespace
 
 import pytest
@@ -10,6 +11,7 @@ from application.services.auth_service import AuthService
 from application.services.gym_service import GymService
 from domain.models.auth import AuthGoogleRequest, AuthPasswordRequest, UserProfile
 from domain.services.gym_domain_service import GymDomainService
+from domain.services.schedule_sessions import next_session
 from infrastructure.authentication import SignedSessionProvider
 from infrastructure.config import Settings
 from infrastructure.repositories.mappers import accounts, store
@@ -155,11 +157,12 @@ def test_historical_order_without_details_keeps_its_known_total():
 
 def test_client_deletion_removes_enrollments_progress_and_releases_capacity(gym):
     state = gym.repository.state
+    session = next_session({"dia": "lunes"}, date.today())
     state.update(
         clientes=[dict(id_cliente=1), dict(id_cliente=2)],
-        matriculas_horario=[dict(id_matricula=i, id_cliente=i, id_horario_servicio=1, estado='ACTIVA') for i in (1, 2)],
+        matriculas_horario=[dict(id_matricula=i, id_cliente=i, id_horario_servicio=1, estado='ACTIVA', fecha_clase=session) for i in (1, 2)],
         rutina_progreso=[dict(id_progreso=i, id_matricula=i) for i in (1, 2)],
-        horarios_servicio=[dict(id_horario_servicio=1, cupos=2, cupos_usados=2)],
+        horarios_servicio=[dict(id_horario_servicio=1, dia='lunes', cupos=2, cupos_usados=2)],
     )
     other_progress = deepcopy(state['rutina_progreso'][1])
     gym.delete_cliente(1)

@@ -1,0 +1,28 @@
+{
+  "creates": [
+    {
+      "id_cliente": 1,
+      "id_horario_servicio": 1,
+      "fecha_clase": "2026-11-09"
+    }
+  ],
+  "cancellations": [
+    2
+  ],
+  "rosterDates": [
+    "2026-11-02",
+    "2026-11-09",
+    "2026-11-09"
+  ],
+  "pageErrors": [],
+  "horizontalOverflow": false,
+  "checked": [
+    "matrícula solo en su fecha",
+    "alta explícita de otra sesión",
+    "cancelación aislada",
+    "lista distinta entre semanas",
+    "entrada futura bloqueada",
+    "fallo de consulta sin mostrar clientes anteriores"
+  ],
+  "api": "Sintética local; reglas y RPC comprobadas por separado."
+}

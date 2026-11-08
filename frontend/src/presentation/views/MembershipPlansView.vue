@@ -1,39 +1,61 @@
 <template>
-  <div class="space-y-6">
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+  <div class="workspace-view membership-plans space-y-6">
+    <header class="ws-panel plan-hero">
+      <div class="plan-hero-top">
         <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Membresias</p>
-          <h1 class="mt-2 text-3xl font-black text-white">Planes de membresia</h1>
-          <p class="mt-2 text-slate-300">Configura precios, vigencia, beneficios y disponibilidad comercial.</p>
+          <p class="ws-eyebrow">Administración · Membresías</p>
+          <h1 class="ws-title">Planes de membresía</h1>
+          <p class="ws-description">Organiza la oferta de tu gimnasio y los planes disponibles para tus clientes.</p>
         </div>
-        <button class="rounded-2xl bg-cyan-400 px-5 py-3 font-black text-slate-950" @click="newPlan">Nuevo plan</button>
+        <button type="button" class="ws-btn ws-primary plan-new" :disabled="loading" @click="newPlan"><Plus :size="18" />Nuevo plan</button>
       </div>
-    </section>
+      <div class="plan-summary" role="list" aria-label="Resumen de planes">
+        <div role="listitem"><span class="plan-summary-icon"><Layers3 :size="19" /></span><div><span class="ws-muted">En catálogo</span><strong>{{ (loading || loadError) && !plans.length ? '—' : plans.length }}</strong></div></div>
+        <div role="listitem"><span class="plan-summary-icon ws-tint-success ws-success"><CircleCheck :size="19" /></span><div><span class="ws-muted">Activos</span><strong>{{ (loading || loadError) && !plans.length ? '—' : activeCount }}</strong></div></div>
+        <div role="listitem"><span class="plan-summary-icon"><PauseCircle :size="19" /></span><div><span class="ws-muted">Inactivos</span><strong>{{ (loading || loadError) && !plans.length ? '—' : plans.length - activeCount }}</strong></div></div>
+      </div>
+    </header>
 
-    <p v-if="feedback" class="rounded-2xl border px-4 py-3 text-sm" :class="feedbackClass">{{ feedback }}</p>
+    <p v-if="feedback" :role="feedbackTone === 'error' ? 'alert' : 'status'" class="ws-notice" :class="feedbackClass">{{ feedback }}</p>
+    <div v-if="loadError" role="alert" class="ws-notice app-notice app-notice--error plan-load-error">
+      <div><strong>No se pudieron actualizar los planes.</strong><p>{{ loadError }}</p></div>
+      <button type="button" class="ws-btn" :disabled="loading" @click="loadPlans"><RefreshCw :size="16" />Reintentar</button>
+    </div>
 
-    <section>
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <article v-for="plan in plans" :key="plan.id" class="rounded-2xl border border-white/10 bg-slate-950/70 p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs uppercase tracking-[0.25em] text-cyan-300">Plan #{{ plan.id_pm }}</p>
-              <h2 class="mt-2 text-2xl font-black text-white">{{ plan.name }}</h2>
-            </div>
-            <span class="rounded-full px-3 py-1 text-xs font-black" :class="plan.active ? 'bg-emerald-400/15 text-emerald-200' : 'bg-slate-700 text-slate-300'">
-              {{ plan.active ? 'Activo' : 'Inactivo' }}
-            </span>
+    <section class="plan-catalog" aria-labelledby="plan-catalog-title" :aria-busy="loading">
+      <div class="ws-panel plan-catalog-tools">
+        <div class="plan-catalog-top">
+          <div><h2 id="plan-catalog-title" class="ws-heading">Catálogo de planes</h2><p class="ws-muted plan-result-count" role="status">{{ filteredPlans.length }} de {{ plans.length }} planes</p></div>
+          <div class="plan-tools">
+            <label class="ws-search plan-search"><span class="sr-only">Buscar planes</span><Search :size="18" /><SearchInput v-model="search" aria-label="Buscar planes" class="ws-input" placeholder="Nombre, duración o descripción" /></label>
+            <label class="plan-sort"><span class="sr-only">Ordenar planes</span><select v-model="sort" class="ws-input"><option value="name">Nombre: A–Z</option><option value="price-asc">Menor precio</option><option value="price-desc">Mayor precio</option></select></label>
           </div>
-          <p class="mt-4 text-3xl font-black text-emerald-300">S/. {{ Number(plan.price || 0).toFixed(2) }}</p>
-          <p class="mt-2 text-sm text-slate-300">{{ plan.duration }}</p>
-          <p class="mt-4 min-h-12 text-sm leading-6 text-slate-400">{{ plan.description || 'Sin descripcion comercial.' }}</p>
-          <p class="mt-3 text-xs text-cyan-100">{{ plan.benefits || 'Beneficios por definir.' }}</p>
-          <div class="mt-5 flex gap-2">
-            <button class="flex-1 rounded-xl border border-white/10 px-3 py-2 font-bold text-white hover:bg-white/10" @click="editPlan(plan)">Editar</button>
-            <button class="rounded-xl border border-rose-400/30 px-3 py-2 font-bold text-rose-100 hover:bg-rose-400/10" @click="removePlan(plan)">Eliminar</button>
-          </div>
+        </div>
+        <div class="plan-filters" role="group" aria-label="Filtrar planes por estado">
+          <button type="button" class="ws-chip" :aria-pressed="status === 'all'" @click="status = 'all'">Todos <span>{{ plans.length }}</span></button>
+          <button type="button" class="ws-chip" :aria-pressed="status === 'active'" @click="status = 'active'">Activos <span>{{ activeCount }}</span></button>
+          <button type="button" class="ws-chip" :aria-pressed="status === 'inactive'" @click="status = 'inactive'">Inactivos <span>{{ plans.length - activeCount }}</span></button>
+          <button v-if="hasFilters" type="button" class="plan-clear" @click="clearFilters"><X :size="14" />Limpiar filtros</button>
+        </div>
+      </div>
+
+      <div v-if="loading && !plans.length" class="plan-loading" role="status"><LoaderCircle :size="22" class="ws-spin" />Cargando planes de membresía…</div>
+      <div v-else-if="filteredPlans.length" class="plan-grid">
+        <article v-for="plan in filteredPlans" :key="plan.id" class="plan-card" :class="{ 'plan-card--inactive': !plan.active }" :aria-labelledby="`plan-title-${plan.id_pm}`">
+          <div class="plan-card-top"><span class="plan-card-icon"><CreditCard :size="22" /></span><span class="ws-badge" :class="plan.active ? 'ws-tint-success ws-success' : 'ws-inset ws-muted'"><span class="plan-status-dot" />{{ plan.active ? 'Activo' : 'Inactivo' }}</span></div>
+          <div class="plan-card-heading"><h3 :id="`plan-title-${plan.id_pm}`">{{ plan.name }}</h3><span class="plan-duration"><Clock3 :size="15" />{{ plan.duration }}</span></div>
+          <div class="plan-price"><span class="ws-muted">Precio del plan</span><p>{{ money(plan.price) }}</p></div>
+          <p class="plan-description" :class="plan.description ? 'ws-soft' : 'ws-muted'">{{ plan.description || 'Sin descripción comercial.' }}</p>
+          <div class="plan-benefits"><p class="plan-benefits-label">Incluye</p><p v-if="plan.benefits" class="ws-soft"><Check :size="16" /><span>{{ plan.benefits }}</span></p><p v-else class="ws-muted">Beneficios por definir.</p></div>
+          <footer class="plan-card-actions"><button type="button" class="ws-btn plan-edit" :disabled="deletingId === plan.id" @click="editPlan(plan)"><Pencil :size="16" />Editar</button><button type="button" class="ws-btn plan-delete" :aria-label="`Eliminar ${plan.name}`" :title="`Eliminar ${plan.name}`" :disabled="Boolean(deletingId)" @click="removePlan(plan)"><LoaderCircle v-if="deletingId === plan.id" :size="17" class="ws-spin" /><Trash2 v-else :size="17" /></button></footer>
         </article>
+      </div>
+      <div v-else-if="!loadError" class="ws-panel plan-empty">
+        <span class="plan-empty-icon"><SearchX v-if="hasFilters" :size="30" /><CreditCard v-else :size="30" /></span>
+        <h3>{{ hasFilters ? 'No encontramos planes' : 'Tu catálogo empieza aquí' }}</h3>
+        <p class="ws-muted">{{ hasFilters ? 'Prueba otro nombre o cambia el estado seleccionado.' : 'Crea tu primer plan con su precio, duración y beneficios.' }}</p>
+        <button v-if="hasFilters" type="button" class="ws-btn" @click="clearFilters">Limpiar filtros</button>
+        <button v-else type="button" class="ws-btn ws-primary" @click="newPlan"><Plus :size="17" />Crear primer plan</button>
       </div>
     </section>
 
@@ -42,7 +64,7 @@
         ref="editor"
         aria-labelledby="plan-detail-title"
         :aria-busy="saving"
-        class="plan-dialog w-[calc(100%-2rem)] max-w-xl rounded-2xl border border-white/10 bg-slate-950 p-6 text-white shadow-2xl"
+        class="workspace-view plan-dialog w-[calc(100%-2rem)] max-w-xl rounded-2xl border border-white/10 bg-slate-950 p-6 text-white shadow-2xl"
         @cancel.prevent="closeEditor"
         @click="handleBackdrop"
       >
@@ -58,23 +80,48 @@
           <fieldset :disabled="saving" class="mt-5 space-y-4">
             <label class="block space-y-2">
               <span class="text-sm text-slate-300">Nombre del plan</span>
-              <input v-model="form.name" autofocus class="field-input" placeholder="Nombre del plan" />
+              <input
+                :maxlength="FORM_LIMITS.shortText" v-model="form.name" autofocus required
+                :aria-invalid="Boolean(fieldErrors.name)"
+                :aria-describedby="fieldErrors.name ? 'plan-name-error' : undefined"
+                @blur="validateField('name')" @input="revalidateField('name')"
+                class="field-input" placeholder="Nombre del plan"
+              />
+              <FieldError id="plan-name-error" :message="fieldErrors.name" />
+            </label>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="block space-y-2">
+                <span class="text-sm text-slate-300">Duración</span>
+                <select
+                  v-model="form.duration" required class="field-input"
+                  :aria-invalid="Boolean(fieldErrors.duration)"
+                  :aria-describedby="fieldErrors.duration ? 'plan-duration-error' : undefined"
+                  @change="revalidateField('duration')" @blur="validateField('duration')"
+                >
+                  <option disabled value="">Selecciona una duración</option>
+                  <option v-for="option in durationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                </select>
+                <FieldError id="plan-duration-error" :message="fieldErrors.duration" />
+              </label>
+              <label class="block space-y-2">
+                <span class="text-sm text-slate-300">Precio (S/.)</span>
+                <input
+                  v-model.number="form.price" type="number" min="0" step="0.01" inputmode="decimal" required
+                  :aria-invalid="Boolean(fieldErrors.price)"
+                  :aria-describedby="fieldErrors.price ? 'plan-price-error' : undefined"
+                  @blur="validateField('price')" @input="revalidateField('price')"
+                  class="field-input" placeholder="0.00"
+                />
+                <FieldError id="plan-price-error" :message="fieldErrors.price" />
+              </label>
+            </div>
+            <label class="block space-y-2">
+              <span class="text-sm text-slate-300">Descripción <span class="text-xs text-slate-400">(opcional)</span></span>
+              <textarea :maxlength="FORM_LIMITS.longText" v-model="form.description" rows="3" class="field-input" placeholder="Descripción visible para administración y clientes"></textarea>
             </label>
             <label class="block space-y-2">
-              <span class="text-sm text-slate-300">Duración</span>
-              <input v-model="form.duration" class="field-input" placeholder="30 días, 90 días..." />
-            </label>
-            <label class="block space-y-2">
-              <span class="text-sm text-slate-300">Precio (S/.)</span>
-              <input v-model.number="form.price" type="number" min="0" step="0.01" class="field-input" placeholder="Precio" />
-            </label>
-            <label class="block space-y-2">
-              <span class="text-sm text-slate-300">Descripción</span>
-              <textarea v-model="form.description" rows="3" class="field-input" placeholder="Descripción visible para administración y clientes"></textarea>
-            </label>
-            <label class="block space-y-2">
-              <span class="text-sm text-slate-300">Beneficios</span>
-              <textarea v-model="form.benefits" rows="3" class="field-input" placeholder="Acceso, clases, evaluación, etc."></textarea>
+              <span class="text-sm text-slate-300">Beneficios <span class="text-xs text-slate-400">(opcional)</span></span>
+              <textarea :maxlength="FORM_LIMITS.longText" v-model="form.benefits" rows="3" class="field-input" placeholder="Acceso, clases, evaluación, etc."></textarea>
             </label>
             <label class="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm text-slate-200">
               <input v-model="form.active" type="checkbox" class="h-4 w-4" />
@@ -83,7 +130,7 @@
           </fieldset>
           <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button type="button" :disabled="saving" class="rounded-2xl border border-white/10 px-4 py-3 font-bold hover:bg-white/10 disabled:opacity-50" @click="closeEditor">Cancelar</button>
-            <button type="submit" :disabled="saving" class="rounded-2xl bg-cyan-400 px-4 py-3 font-black text-slate-950 disabled:opacity-50">{{ saving ? 'Guardando...' : form.id_pm ? 'Guardar cambios' : 'Crear plan' }}</button>
+            <button type="submit" :disabled="saving" class="ws-btn ws-primary">{{ saving ? 'Guardando...' : form.id_pm ? 'Guardar cambios' : 'Crear plan' }}</button>
           </div>
         </form>
       </dialog>
@@ -92,7 +139,14 @@
 </template>
 
 <script setup>
-import { amountError, durationError, requiredTextError } from "../../domain/utils/formValidation.js";
+import { FORM_LIMITS } from "../../domain/utils/formLimits.js";
+
+import { membershipPlanErrors, planDurationOptions } from "../../domain/utils/membershipPlanForm.js";
+import { useFormValidation } from "../composables/useFormValidation.js";
+import FieldError from "../components/FieldError.vue";
+import SearchInput from "../components/SearchInput.vue";
+import { usePlanDirectory } from "../composables/memberships/usePlanDirectory.js";
+import { Check, CircleCheck, Clock3, CreditCard, Layers3, LoaderCircle, PauseCircle, Pencil, Plus, RefreshCw, Search, SearchX, Trash2, X } from 'lucide-vue-next';
 import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useGymStore } from '../../application/stores/gymStore';
@@ -103,20 +157,29 @@ const feedbackTone = ref('success');
 const editor = ref(null);
 const editorError = ref('');
 const saving = ref(false);
-const plans = computed(() => gymStore.planCatalog);
+const { plans, search, status, sort, loading, loadError, activeCount, hasFilters, filteredPlans, clearFilters, loadPlans } = usePlanDirectory(gymStore);
+const deletingId = ref('');
+const money = value => new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(Number(value ?? 0));
 const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
-const form = reactive({ id_pm: null, name: '', duration: '30 dias', price: 0, description: '', benefits: '', active: true });
+const form = reactive({ id_pm: null, name: '', duration: '30 días', price: '', description: '', benefits: '', active: true });
+const registeredDuration = ref('');
+const durationOptions = computed(() => planDurationOptions(registeredDuration.value));
+const { fieldErrors, validateField, revalidateField, validateForm, resetValidation } = useFormValidation(form, membershipPlanErrors);
 
 /**
  * Gestiona esta acción de la vista.
  */
-const reset = () => Object.assign(form, { id_pm: null, name: '', duration: '30 dias', price: 0, description: '', benefits: '', active: true });
+const reset = () => {
+  registeredDuration.value = '';
+  Object.assign(form, { id_pm: null, name: '', duration: '30 días', price: '', description: '', benefits: '', active: true });
+};
 /**
  * Gestiona esta acción de la vista.
  */
 const openEditor = () => {
   editorError.value = '';
   feedback.value = '';
+  resetValidation();
   editor.value.showModal();
 };
 const closeEditor = () => {
@@ -135,6 +198,7 @@ const newPlan = () => {
  * Gestiona esta acción de la vista.
  */
 const editPlan = (plan) => {
+  registeredDuration.value = plan.duration;
   Object.assign(form, { id_pm: plan.id_pm, name: plan.name, duration: plan.duration, price: plan.price, description: plan.description, benefits: plan.benefits, active: plan.active });
   openEditor();
 };
@@ -144,11 +208,10 @@ const editPlan = (plan) => {
  */
 const savePlan = async () => {
   if (saving.value) return;
+  if (!validateForm()) return;
   saving.value = true;
   editorError.value = '';
   try {
-    const invalid = requiredTextError(form.name, 'El nombre del plan') || durationError(form.duration) || amountError(form.price);
-    if (invalid) throw new Error(invalid);
     await gymStore.upsertPlan({ ...form });
     feedbackTone.value = 'success';
     feedback.value = 'Plan guardado correctamente.';
@@ -165,7 +228,9 @@ const savePlan = async () => {
  * Elimina el registro indicado.
  */
 const removePlan = async (plan) => {
+  if (deletingId.value) return;
   if (!window.confirm(`Eliminar el plan ${plan.name}?`)) return;
+  deletingId.value = plan.id;
   try {
     await gymStore.deletePlan(plan.id);
     feedbackTone.value = 'success';
@@ -173,17 +238,13 @@ const removePlan = async (plan) => {
   } catch (error) {
     feedbackTone.value = 'error';
     feedback.value = error instanceof Error ? error.message : 'No se pudo eliminar el plan.';
+  } finally {
+    deletingId.value = '';
   }
 };
 
-onMounted(() => gymStore.fetchFromBackend?.({ section: 'plans' }).catch(() => {}));
+onMounted(loadPlans);
 onBeforeUnmount(() => editor.value?.close());
 </script>
 
-<style scoped>
-.plan-dialog { margin: auto; max-height: 90dvh; overflow-y: auto; }
-.plan-dialog::backdrop { background: rgb(2 6 23 / 75%); backdrop-filter: blur(4px); }
-.field-input { width: 100%; border: 1px solid rgba(255,255,255,.1); border-radius: 1rem; background: rgba(2,6,23,.72); padding: .75rem 1rem; color: white; outline: none; }
-.field-input:focus-visible { border-color: #22d3ee; outline: 2px solid #22d3ee; outline-offset: 2px; }
-.field-input::placeholder { color: #64748b; }
-</style>
+<style scoped src="../styles/membership-plans.css"></style>

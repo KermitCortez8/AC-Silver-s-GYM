@@ -27,6 +27,7 @@ class GymSnapshotReader:
         queries = [
             ("planes_membresia", self.tables.select_required, "PLANES_MEMBRESIA", "id_PM.asc"),
             ("clientes", self.database.select_all, "CLIENTES", "id_cliente.asc"),
+            ("preregistros", self.tables.select_optional, "PREREGISTROS_MEMBRESIA", "id_preregistro.asc"),
             ("membresia", self.database.select_all, "MEMBRESIA", "id_membresia.asc"),
             ("usuario", self.tables.select_required, "USUARIO", "id_usuario.asc"),
             ("inventario", self.tables.select_required, "INVENTARIO", "id_item.asc"),
@@ -63,6 +64,8 @@ class GymSnapshotReader:
         for key, mapper in mappers.items():
             if key in selected:
                 remote_state[key] = [mapper(row) for row in rows[key]]
+        if "preregistros" in selected:
+            remote_state["preregistros"] = deepcopy(rows["preregistros"])
         if "pedidos_tienda" in selected:
             product_names = {int(row.get("id_producto", 0) or 0): str(row.get("nombre_Producto") or "")
                              for row in rows["productos_tienda"]}

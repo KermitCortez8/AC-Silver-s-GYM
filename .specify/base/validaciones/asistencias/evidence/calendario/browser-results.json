@@ -1,0 +1,16 @@
+{
+  "entries": 1,
+  "exits": 1,
+  "pageErrors": [],
+  "horizontalOverflow": false,
+  "viewports": [
+    "1440x1100",
+    "390x844"
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "calendar": "Vista semanal, agenda, filtro por día, cambio de mes, selección por teclado y móvil",
+  "source": "Ruta real /admin/attendance; API y sesión simuladas localmente, sin proveedores externos."
+}

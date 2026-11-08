@@ -2,13 +2,21 @@
 from datetime import date, time
 from decimal import Decimal, InvalidOperation
 import re
+from domain.form_limits import SHORT_TEXT_LIMIT, DNI_LENGTH, PHONE_LENGTH
 
 
-def required_text(value, label="Nombre"):
+def bounded_text(value, maximum, label="El texto"):
+    text = str(value or "").strip()
+    if len(text) > maximum:
+        raise ValueError(f"{label} no debe superar {maximum} caracteres.")
+    return text
+
+
+def required_text(value, label="Nombre", maximum=None):
     value = str(value or "").strip()
     if not value:
         raise ValueError(f"{label} es obligatorio")
-    return value
+    return bounded_text(value, maximum, label) if maximum is not None else value
 
 
 def email_address(value):
@@ -26,6 +34,7 @@ def email_address(value):
 
 def account_email(value):
     email = email_address(value)
+    bounded_text(email, SHORT_TEXT_LIMIT, "El correo")
     if not email.endswith(".com"):
         raise ValueError("Solo se permiten correos que terminen en .com.")
     return email
@@ -37,7 +46,7 @@ def dni_number(value, required=False):
         if required:
             raise ValueError("El DNI es obligatorio.")
         return ""
-    if not re.fullmatch(r"[0-9]{8}", text):
+    if not re.fullmatch(rf"[0-9]{{{DNI_LENGTH}}}", text):
         raise ValueError("El DNI debe tener exactamente 8 dígitos.")
     return text
 
@@ -48,8 +57,8 @@ def phone_number(value, required=False):
         if required:
             raise ValueError("El teléfono es obligatorio.")
         return ""
-    if not re.fullmatch(r"[0-9]{7,9}", text):
-        raise ValueError("El teléfono debe tener entre 7 y 9 dígitos, sin espacios ni letras.")
+    if not re.fullmatch(rf"[0-9]{{{PHONE_LENGTH}}}", text):
+        raise ValueError("El teléfono debe tener exactamente 9 dígitos, sin espacios ni letras.")
     return text
 
 

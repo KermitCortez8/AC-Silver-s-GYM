@@ -175,7 +175,7 @@ const minutesToSlotTime = (value) => {
 const serviceLabel = (service) =>
   ({
     fitness: 'Fitness',
-    musculacion: 'Musculacion',
+    musculacion: 'Musculación',
     cardio: 'Cardio',
     baile: 'Baile',
   })[String(service || '').trim().toLowerCase()] || service || 'Servicio';
@@ -287,6 +287,19 @@ const calendarEvents = computed(() =>
     .filter(Boolean),
 );
 
+// FullCalendar vuelve a calcular las clases al cambiar la selección o el bloqueo.
+const eventClassNames = computed(() => {
+  const selected = String(props.selectedItemId || '');
+  const interactive = props.interactive;
+  return ({ event }) => {
+    const classes = [];
+    if (interactive) classes.push('excel-event-selectable');
+    if (itemId(event.extendedProps) === selected) classes.push('excel-event-selected');
+    if (event.extendedProps?.is_enrolled) classes.push('excel-event-is-enrolled');
+    return classes;
+  };
+});
+
 const calendarOptions = computed(() => ({
   initialView: 'timeGridWeek',
   initialDate: visibleWeek.value.start,
@@ -309,17 +322,7 @@ const calendarOptions = computed(() => ({
   eventMinHeight: 78,
   eventOrder: 'start,servicio,title',
   events: calendarEvents.value,
-  eventClassNames: ({ event }) => {
-    const classes = [];
-    if (props.interactive) classes.push('excel-event-selectable');
-    if (itemId(event.extendedProps) === String(props.selectedItemId || '')) {
-      classes.push('excel-event-selected');
-    }
-    if (event.extendedProps?.is_enrolled) {
-      classes.push('excel-event-is-enrolled');
-    }
-    return classes;
-  },
+  eventClassNames: eventClassNames.value,
   eventClick: ({ event }) => selectCalendarItem(event.extendedProps || {}),
   dayHeaderContent: (arg) => {
     const dayKey = dayByIndex[arg.date.getDay()];

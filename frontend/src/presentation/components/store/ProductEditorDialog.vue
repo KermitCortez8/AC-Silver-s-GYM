@@ -2,13 +2,13 @@
   <ResourceModal
     :open="isAdmin && isProductEditorOpen"
     :icon="ShoppingBag"
-    :eyebrow="editingId ? 'Tienda · Edicion de registro' : 'Tienda · Nuevo registro'"
+    :eyebrow="editingId ? 'Tienda · Edición de registro' : 'Tienda · Nuevo registro'"
     :title="editingId ? 'Editar producto' : 'Nuevo producto'"
-    subtitle="Define precio, stock e imagen del producto que veran los clientes."
+    subtitle="Define precio, stock e imagen del producto que verán los clientes."
     size="xl"
     :busy="isSaving || isUploadingImage"
     @close="closeProductEditor"
-    @submit="handleSubmit"
+    @submit="submit"
   >
     <div v-if="formErrors.length" role="alert" class="inv-error">
       <AlertCircle :size="16" aria-hidden="true" />
@@ -17,71 +17,53 @@
 
     <!-- Sección: Informacion básica -->
     <fieldset class="rm-section">
-      <legend class="sr-only">Informacion del producto</legend>
+      <legend class="sr-only">Información del producto</legend>
       <p class="rm-section-title">
-        <Info :size="14" aria-hidden="true" /> Informacion del producto
+        <Info :size="14" aria-hidden="true" /> Información del producto
       </p>
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="space-y-2 sm:col-span-2">
           <span class="inv-label inv-required">Nombre del producto</span>
           <input
+            ref="nameInputRef"
             v-model="form.nombre"
             class="field-input"
-            :class="{ 'is-invalid': formErrors.includes('Nombre') || warnings.nombre }"
-            :maxlength="NAME_MAX_LENGTH"
-            placeholder="Proteina Whey, Bebida Energetica, etc."
+            :class="{ 'is-invalid': isInvalid('nombre', formErrors.includes('Nombre')) }"
+            :maxlength="PRODUCT_NAME_MAX_LENGTH"
+            placeholder="Proteína Whey, Bebida Energética, etc."
             @beforeinput="blockNameChars"
             @input="cleanName"
+            @keydown="handleFieldKeydown"
           />
-          <p v-if="warnings.nombre" class="inv-field-error">{{ warnings.nombre }}</p>
+          <FieldError class="inv-field-error" :message="warnings.nombre" />
         </label>
         <label class="space-y-2 sm:col-span-2">
-          <span class="inv-label">Descripcion</span>
+          <span class="inv-label">Descripción</span>
           <textarea
+            ref="descInputRef"
             v-model="form.descripcion"
             rows="2"
             class="field-input"
-            placeholder="Descripcion breve del producto..."
+            :maxlength="PRODUCT_DESC_MAX_LENGTH"
+            placeholder="Descripción breve del producto..."
+            @input="cleanDescription"
+            @keydown="handleDescKeydown"
           ></textarea>
         </label>
-        <div class="space-y-2">
-          <label for="product-category" class="inv-label inv-required">Categoria</label>
+        <div class="space-y-2" @keydown="handleFieldKeydown">
+          <label for="product-category" class="inv-label inv-required">Categoría</label>
           <ExtensibleSelect
             id="product-category"
             v-model="form.categoria"
             :options="categoryOptions"
-            :invalid="formErrors.includes('Categoria')"
+            :invalid="isInvalid('categoria', formErrors.includes('Categoría'))"
             placeholder="Selecciona una categoria"
             add-label="Agregar nueva categoria"
             add-placeholder="Ej. Suplementos"
+            @update:model-value="touch('categoria')"
           />
+          <FieldError class="inv-field-error" :message="warnings.categoria" />
         </div>
-        <label class="space-y-2">
-          <span class="inv-label">Item de inventario</span>
-          <input
-            v-if="editingLinked"
-            :value="linkedItemLabel"
-            class="field-input cursor-not-allowed opacity-70"
-            readonly
-          />
-          <select v-else v-model="form.id_item" class="field-input">
-            <option :value="null">
-              {{
-                editingId
-                  ? "Sin vincular"
-                  : "Crear nuevo item en Inventario (Tipo Tienda)"
-              }}
-            </option>
-            <option
-              v-for="item in availableTiendaItems"
-              :key="item.id"
-              :value="itemNumber(item)"
-            >
-              {{ item.inventoryCode }} - {{ item.name }} (reserva
-              {{ item.quantity }})
-            </option>
-          </select>
-        </label>
       </div>
     </fieldset>
 
@@ -95,18 +77,20 @@
         <label class="space-y-2">
           <span class="inv-label inv-required">Precio (S/.)</span>
           <input
+            ref="priceInputRef"
             :value="form.precio"
             type="text"
             inputmode="decimal"
             class="field-input"
-            :class="{ 'is-invalid': formErrors.includes('Precio') }"
+            :class="{ 'is-invalid': isInvalid('precio', formErrors.includes('Precio')) }"
             placeholder="0.00"
             @beforeinput="blockPriceChars"
             @input="cleanPrice"
+            @keydown="handleFieldKeydown"
           />
-          <p v-if="warnings.precio" class="inv-field-error">{{ warnings.precio }}</p>
+          <FieldError class="inv-field-error" :message="warnings.precio" />
         </label>
-        <div class="space-y-2">
+        <div class="space-y-2" @keydown="handleFieldKeydown">
           <label for="product-unit" class="inv-label">Unidad de venta</label>
           <ExtensibleSelect
             id="product-unit"
@@ -117,17 +101,38 @@
             add-placeholder="Ej. Botella"
           />
         </div>
-        <label class="space-y-2">
-          <span class="inv-label" :class="{ 'inv-required': stockEditable }">{{
+        <div class="space-y-2">
+          <label for="store-product-stock" class="inv-label" :class="{ 'inv-required': stockEditable }">{{
             stockEditable ? "Stock inicial en Tienda" : "Stock en Tienda"
-          }}</span>
-          <QuantityInput
-            v-if="stockEditable"
-            v-model="form.cantidad"
-            class="field-input"
-            :class="{ 'is-invalid': formErrors.includes('Stock inicial') }"
-            placeholder="0"
-          />
+          }}</label>
+          <div v-if="stockEditable" class="flex items-center gap-2">
+            <button
+              type="button"
+              class="field-input flex shrink-0 items-center justify-center text-lg font-bold"
+              style="width: 2.75rem; padding: 0"
+              aria-label="Restar una unidad"
+              :disabled="isSaving || isUploadingImage"
+              @click="stepStock(-1)"
+            >−</button>
+            <QuantityInput
+              id="store-product-stock"
+              :model-value="form.cantidad"
+              class="field-input flex-1 text-center"
+              :class="{ 'is-invalid': isInvalid('cantidad', formErrors.includes('Stock inicial')) }"
+              placeholder="0"
+              @beforeinput="blockStockChars"
+              @update:model-value="cleanStock"
+              @keydown="handleFieldKeydown"
+            />
+            <button
+              type="button"
+              class="field-input flex shrink-0 items-center justify-center text-lg font-bold"
+              style="width: 2.75rem; padding: 0"
+              aria-label="Sumar una unidad"
+              :disabled="isSaving || isUploadingImage"
+              @click="stepStock(1)"
+            >+</button>
+          </div>
           <input
             v-else
             :value="stockMostrado"
@@ -135,22 +140,30 @@
             class="field-input cursor-not-allowed opacity-70"
             readonly
           />
-        </label>
+          <FieldError class="inv-field-error" :message="warnings.cantidad" />
+        </div>
         <label class="space-y-2">
-          <span class="inv-label">Stock minimo</span>
+          <span class="inv-label">Stock mínimo</span>
           <QuantityInput
-            v-model="form.minimo"
+            id="store-product-min-stock"
+            :model-value="form.minimo"
             class="field-input"
+            :class="{ 'is-invalid': isInvalid('minimo') }"
+            placeholder="5"
+            @beforeinput="blockMinChars"
+            @update:model-value="cleanMin"
+            @keydown="handleFieldKeydown"
           />
-          <p v-if="warnings.stock" class="inv-field-error">{{ warnings.stock }}</p>
+          <FieldError class="inv-field-error" :message="warnings.minimo" />
         </label>
 
         <div class="app-notice app-notice--info inv-info sm:col-span-2">
           <Info :size="16" aria-hidden="true" />
           <div>
             <p v-if="stockEditable">
-              El stock inicial queda en la Tienda; la reserva de Inventario no
-              cambia.
+              Al registrarlo se crea tambien su articulo en Inventario (Tipo
+              Tienda). El stock inicial queda en la Tienda; la reserva de
+              Inventario empieza en 0.
             </p>
             <p v-else class="font-bold">
               La Tienda tiene su propio stock: baja con las ventas y sube cuando
@@ -163,7 +176,7 @@
               <span class="font-bold">Disponible</span> con stock,
               <span class="font-bold">Agotado</span> sin stock y
               <span class="font-bold">Descatalogado</span> (oculto a clientes)
-              si no tiene precio o el item ya no es Tipo Tienda o esta
+              si no tiene precio o el ítem ya no es Tipo Tienda o está
               Descontinuado.
             </p>
           </div>
@@ -329,9 +342,12 @@
         Cancelar
       </button>
       <button
+        ref="submitButtonRef"
         :disabled="isSaving || isUploadingImage"
         type="submit"
         class="rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        @click="allowSubmitByClick"
+        @keydown="handleSubmitKeydown"
       >
         {{
           isSaving
@@ -348,7 +364,7 @@
 <script setup>
 import QuantityInput from "../QuantityInput.vue";
 import { feedbackClass } from "../../utils/feedback.js";
-import { reactive } from "vue";
+import { ref, watch } from "vue";
 import {
   AlertCircle,
   Image as ImageIcon,
@@ -361,26 +377,29 @@ import {
 } from "lucide-vue-next";
 import ResourceModal from "../ResourceModal.vue";
 import ExtensibleSelect from "../common/ExtensibleSelect.vue";
-import { blockNonDecimal, blockSpecialChars } from "../../utils/inputGuards.js";
+import FieldError from "../FieldError.vue";
+import { blockNonDecimal, blockNonInteger, blockSpecialChars } from "../../utils/inputGuards.js";
+import { useLiveWarnings } from "../../composables/useLiveWarnings.js";
 import {
   cleanDecimal,
+  cleanInteger,
   cleanText,
   missingFieldsMessage,
   NAME_MAX_LENGTH,
+  SPECIAL_CHARS_MESSAGE,
 } from "../../../domain/utils/inputRules.js";
+import { amountError, quantityError, requiredTextError } from "../../../domain/utils/formValidation.js";
 
 const props = defineProps([
   "categoryOptions",
   "unitOptions",
   "formErrors",
-  "availableTiendaItems",
   "bucketImages",
   "clearSelectedImage",
   "closeBucketPicker",
   "closeProductEditor",
   "currentProductCode",
   "editingId",
-  "editingLinked",
   "feedbackMessage",
   "feedbackTone",
   "form",
@@ -394,31 +413,210 @@ const props = defineProps([
   "isProductEditorOpen",
   "isSaving",
   "isUploadingImage",
-  "itemNumber",
-  "linkedItemLabel",
   "openBucketPicker",
   "selectBucketImage",
   "stockEditable",
   "stockMostrado",
 ]);
 
-// Avisos al escribir: el campo bloquea lo no permitido y explica por que.
-const warnings = reactive({ nombre: "", precio: "", stock: "" });
-const blockNameChars = blockSpecialChars((message) => { warnings.nombre = message; });
-const blockPriceChars = blockNonDecimal((message) => { warnings.precio = message; });
+const PRODUCT_NAME_MAX_LENGTH = 40;
+const PRODUCT_DESC_MAX_LENGTH = 100;
+
+// Referencias a los campos navegables
+const nameInputRef = ref(null);
+const descInputRef = ref(null);
+const priceInputRef = ref(null);
+const submitButtonRef = ref(null);
+
+const getFieldElements = () => [
+  nameInputRef.value,
+  descInputRef.value,
+  document.getElementById("product-category"),
+  priceInputRef.value,
+  document.getElementById("product-unit"),
+  props.stockEditable ? document.getElementById("store-product-stock") : null,
+  document.getElementById("store-product-min-stock"),
+  submitButtonRef.value,
+].filter(Boolean);
+
+const focusNext = (currentElement) => {
+  const fields = getFieldElements();
+  const current = currentElement || document.activeElement;
+  const index = fields.findIndex((el) => el === current || el?.contains?.(current));
+  if (index === -1) {
+    fields[0]?.focus?.();
+    return;
+  }
+  if (index < fields.length - 1) {
+    fields[index + 1]?.focus?.();
+  }
+};
+
+const focusPrev = (currentElement) => {
+  const fields = getFieldElements();
+  const current = currentElement || document.activeElement;
+  const index = fields.findIndex((el) => el === current || el?.contains?.(current));
+  if (index > 0) {
+    fields[index - 1]?.focus?.();
+  }
+};
+
+const handleFieldKeydown = (event) => {
+  if (event.key === "Enter") {
+    // Prevenir el envío automático y mover el foco al siguiente campo
+    event.preventDefault();
+    focusNext(event.target);
+    return;
+  }
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    focusNext(event.target);
+    return;
+  }
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    focusPrev(event.target);
+    return;
+  }
+};
+
+let lastDescEnterTime = 0;
+
+const handleDescKeydown = (event) => {
+  if (event.key === "Enter") {
+    const now = Date.now();
+    const isDoubleEnter = now - lastDescEnterTime < 400;
+
+    if (isDoubleEnter) {
+      event.preventDefault();
+      lastDescEnterTime = 0;
+
+      // Limpiar el salto de línea anterior insertado por el primer enter si estaba antes del cursor
+      const textarea = event.target;
+      const start = textarea.selectionStart;
+      if (start > 0 && textarea.value[start - 1] === "\n") {
+        const val = textarea.value;
+        const newVal = val.slice(0, start - 1) + val.slice(start);
+        props.form.descripcion = newVal;
+        textarea.value = newVal;
+        textarea.setSelectionRange(start - 1, start - 1);
+      }
+
+      focusNext(textarea);
+      return;
+    }
+
+    lastDescEnterTime = now;
+    return;
+  }
+
+  if (event.key === "ArrowDown") {
+    const textarea = event.target;
+    const textAfter = textarea.value.slice(textarea.selectionEnd);
+    if (!textAfter.includes("\n")) {
+      event.preventDefault();
+      focusNext(textarea);
+    }
+    return;
+  }
+
+  if (event.key === "ArrowUp") {
+    const textarea = event.target;
+    const textBefore = textarea.value.slice(0, textarea.selectionStart);
+    if (!textBefore.includes("\n")) {
+      event.preventDefault();
+      focusPrev(textarea);
+    }
+    return;
+  }
+};
+
+let submitClicked = false;
+
+const allowSubmitByClick = () => {
+  submitClicked = true;
+};
+
+const handleSubmitKeydown = (event) => {
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    focusPrev(event.target);
+  }
+};
+
+// UI - Botones de Stock Inicial (+ / -)
+const stepStock = (delta) => {
+  const current = parseInt(props.form.cantidad, 10);
+  const currentVal = isNaN(current) ? 0 : current;
+  const nextVal = Math.max(0, currentVal + delta);
+  props.form.cantidad = nextVal;
+  touch("cantidad");
+};
+
+// Avisos en vivo: cada campo se revisa con lo que tiene escrito en ese momento.
+const { warnings, touch, flash, touchAll, reset, isInvalid } = useLiveWarnings({
+  nombre: () => requiredTextError(props.form.nombre, "El nombre", PRODUCT_NAME_MAX_LENGTH),
+  categoria: () => (String(props.form.categoria ?? "").trim() ? "" : "La categoria es obligatoria."),
+  precio: () => amountError(props.form.precio) || (Number(props.form.precio) > 0 ? "" : "El precio debe ser mayor a 0."),
+  cantidad: () => (props.stockEditable ? quantityError(props.form.cantidad, { label: "El stock inicial" }) : ""),
+  minimo: () => quantityError(props.form.minimo, { label: "El stock mínimo", required: false }),
+});
+
+// Cada vez que se abre el editor empieza sin avisos.
+watch(() => [props.isProductEditorOpen, props.editingId], reset);
+
+// Al enviar se revisan todos los campos, aunque no se hayan tocado.
+// El formulario solo debe enviarse si el foco está posicionado directamente sobre el botón de Submit/Guardar.
+const submit = (event) => {
+  const isSubmitFocused = document.activeElement === submitButtonRef.value;
+  if (!isSubmitFocused && !submitClicked) {
+    if (event?.preventDefault) event.preventDefault();
+    return;
+  }
+  submitClicked = false;
+  touchAll();
+  return props.handleSubmit();
+};
+
+const blockNameChars = blockSpecialChars((message) => flash("nombre", message));
+const blockPriceChars = blockNonDecimal((message) => flash("precio", message));
+const blockStockChars = blockNonInteger((message) => flash("cantidad", message));
+const blockMinChars = blockNonInteger((message) => flash("minimo", message));
+
+const cleanStock = (value) => {
+  const cleaned = cleanInteger(value);
+  props.form.cantidad = cleaned;
+  touch("cantidad");
+};
+
+const cleanMin = (value) => {
+  const cleaned = cleanInteger(value);
+  props.form.minimo = cleaned;
+  touch("minimo");
+};
 
 const cleanName = (event) => {
-  const { value, rejected } = cleanText(event.target.value, NAME_MAX_LENGTH);
+  const { value, rejected } = cleanText(event.target.value, PRODUCT_NAME_MAX_LENGTH);
   if (value !== event.target.value) event.target.value = value;
   props.form.nombre = value;
-  warnings.nombre = rejected ? "Sin caracteres especiales: solo letras, numeros y espacios." : "";
+  touch("nombre");
+  if (rejected) flash("nombre", SPECIAL_CHARS_MESSAGE);
+};
+
+const cleanDescription = (event) => {
+  const raw = event.target.value ?? "";
+  if (raw.length > PRODUCT_DESC_MAX_LENGTH) {
+    const sliced = raw.slice(0, PRODUCT_DESC_MAX_LENGTH);
+    event.target.value = sliced;
+    props.form.descripcion = sliced;
+  }
 };
 
 const cleanPrice = (event) => {
   const value = cleanDecimal(event.target.value);
   if (value !== event.target.value) event.target.value = value;
   props.form.precio = value;
-  warnings.precio = "";
+  touch("precio");
 };
 
 </script>

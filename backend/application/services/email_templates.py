@@ -120,7 +120,10 @@ def schedule_email(settings, data: dict) -> dict:
     if event == "enrollment":
         title = "El administrador te inscribió en una clase"
         description = "Se agregó una clase a tu horario. Revisa los datos de tu matrícula:"
-        details.append(("Frecuencia", f"Cada {day.lower()}, mientras tu matrícula y membresía estén vigentes"))
+        if data.get("fecha_clase"):
+            session = datetime.fromisoformat(data["fecha_clase"]).date()
+            details.insert(2, ("Fecha", session.strftime("%d/%m/%Y")))
+        details.append(("Reserva", "Una sola sesión; otras fechas requieren una nueva matrícula"))
         subject = f"Inscripción confirmada: {service} · Silver Gym Surco"
     else:
         occurrence = datetime.fromisoformat(data["class_start"]).astimezone(LIMA)
@@ -132,6 +135,8 @@ def schedule_email(settings, data: dict) -> dict:
     url = f"{base}/user/schedule"
     if event == "reminder":
         url += f"?fecha={occurrence.date().isoformat()}"
+    elif data.get("fecha_clase"):
+        url += f"?fecha={session.isoformat()}"
     rows = "".join(
         f'<tr><td style="padding:10px;border-bottom:1px solid #eee;color:#555">{escape(label)}</td>'
         f'<td style="padding:10px;border-bottom:1px solid #eee">{escape(value)}</td></tr>'

@@ -1,0 +1,19 @@
+AC SILVER'S GYM · SPECS Y PROTOTIPOS DEL CHATBOT
+
+1. Descomprime el paquete completo.
+2. Abre prototipos/index.html en un navegador para recorrer la demostración.
+3. Abre prototipos/Specs-y-prototipos-chatbot.pdf para revisar la Spec completa,
+   las tres ECU y las capturas sin depender de otros archivos.
+4. prototipos/capturas contiene las imágenes PNG originales para el informe.
+5. revision-prototipos.md contiene el guion, la matriz de criterios y las ocho
+   tareas resumidas. casos-de-uso.md contiene las ECU editables.
+6. programacion-prototipos.md relaciona las cinco tareas de programación
+   con pantallas, código del prototipo e integración posterior. También está en el PDF.
+
+La demostración funciona sin servidor, instalación, claves o servicios externos.
+Usa solo datos ficticios. La conversación y las acciones son simulaciones locales;
+la integración productiva con IA y los servicios sigue pendiente.
+
+Los enlaces de los documentos técnicos a código y contratos de la base completa
+requieren el repositorio del gimnasio. No son necesarios para abrir el prototipo
+o el PDF. No se ha publicado este material ni modificado el PR.

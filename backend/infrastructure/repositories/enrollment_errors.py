@@ -14,6 +14,8 @@ def raise_schedule_enrollment_error(error):
         raise EnrollmentConflict("Horario sin cupos disponibles") from error
     if "sin membresia activa" in message:
         raise MembershipRequired("Cliente sin membresia activa") from error
+    if "fecha de clase" in message or "día de un horario" in message:
+        raise ValueError("La fecha de clase ya no está disponible. Actualiza el horario.") from error
     if code == "23503" or "23503" in message or "horario no disponible" in message:
         raise EntityNotFound("Horario no disponible") from error
     raise error

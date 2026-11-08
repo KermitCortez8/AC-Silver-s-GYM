@@ -52,8 +52,10 @@ assert.equal(fullBadge.available, 0);
 assert.equal(fullBadge.tone, 'danger');
 
 // 4. labels
-assert.equal(serviceLabel('musculacion'), 'Musculacion');
+assert.equal(serviceLabel('musculacion'), 'Musculación');
 assert.equal(dayLabel('lunes'), 'Lunes');
+assert.equal(dayLabel('miercoles'), 'Miércoles');
+assert.equal(dayLabel('sabado'), 'Sábado');
 
 // 5. enrollmentsForClient (Empty vs Populated)
 const sampleSchedules = [

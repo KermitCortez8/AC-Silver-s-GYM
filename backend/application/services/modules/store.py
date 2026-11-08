@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Any
 from application.operations.store import (
-    ProductosTiendaQuery, GetProductoTiendaQuery, UpsertProductoTiendaCommand, DeleteProductoTiendaCommand, PedidosTiendaQuery, CrearPedidoTiendaCommand, CrearPedidoTiendaPagoPendienteCommand, GetPedidoTiendaQuery, PedidosPagoPendienteQuery, MinutosDesdeCreacionQuery, RegistrarSesionPagoPedidoCommand, ConfirmarPagoPedidoTiendaCommand, CancelarPedidoPagoPendienteCommand, ActualizarPedidoTiendaCommand
+    ProductosTiendaQuery, GetProductoTiendaQuery, UpsertProductoTiendaCommand, DeleteProductoTiendaCommand, RestaurarProductoTiendaCommand, EliminarProductoDefinitivoCommand, PedidosTiendaQuery, CrearPedidoTiendaCommand, CrearPedidoTiendaPagoPendienteCommand, GetPedidoTiendaQuery, PedidosPagoPendienteQuery, MinutosDesdeCreacionQuery, RegistrarSesionPagoPedidoCommand, ConfirmarPagoPedidoTiendaCommand, CancelarPedidoPagoPendienteCommand, ActualizarPedidoTiendaCommand
 )
+from application.operations.inventory import DeleteInventarioCommand
 
 
 class StoreOperations:
@@ -22,6 +23,16 @@ class StoreOperations:
 
     def delete_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
         return self.executor.execute(DeleteProductoTiendaCommand(id_producto))
+
+    def restaurar_producto_tienda(self, id_producto: int) -> dict[str, Any]:
+        return self.executor.execute(RestaurarProductoTiendaCommand(id_producto))
+
+    def eliminar_producto_definitivo(self, id_producto: int) -> dict[str, Any]:
+        resultado = self.executor.execute(EliminarProductoDefinitivoCommand(id_producto))
+        # Segundo paso: la clave TIENDA_PRODUCTOS -> INVENTARIO obliga a borrar antes el producto.
+        if resultado.get("id_item_por_borrar"):
+            self.executor.execute(DeleteInventarioCommand(resultado["id_item_por_borrar"]))
+        return {"producto": resultado["producto"]}
 
     def pedidos_tienda(self) -> list[dict[str, Any]]:
         return self.executor.query(PedidosTiendaQuery())

@@ -18,9 +18,10 @@
         ref="newInput"
         v-model="draft"
         class="inv-input"
-        :maxlength="NAME_MAX_LENGTH"
+        :maxlength="maxLength"
         :placeholder="addPlaceholder"
         @beforeinput="handleBeforeInput"
+        @input="error = draft.trim() ? '' : 'Escribe un valor para agregarlo.'"
         @keydown.enter.prevent="confirmNew"
         @keydown.esc.stop.prevent="cancelNew"
       />
@@ -29,14 +30,15 @@
         <X :size="16" aria-hidden="true" />
       </button>
     </div>
-    <p v-if="error" role="alert" class="inv-field-error">{{ error }}</p>
+    <FieldError class="inv-field-error" :message="error" />
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, ref } from 'vue';
 import { X } from 'lucide-vue-next';
-import { cleanText, isAllowedText, NAME_MAX_LENGTH, normalizeSearch, uniqueOptions } from '../../../domain/utils/inputRules.js';
+import FieldError from '../FieldError.vue';
+import { cleanText, isAllowedText, NAME_MAX_LENGTH, normalizeSearch, SPECIAL_CHARS_MESSAGE, uniqueOptions } from '../../../domain/utils/inputRules.js';
 
 const ADD_VALUE = '__agregar_nuevo__';
 
@@ -44,10 +46,11 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   options: { type: Array, default: () => [] },
   id: { type: String, default: undefined },
-  placeholder: { type: String, default: 'Selecciona una opcion' },
+  placeholder: { type: String, default: 'Selecciona una opción' },
   addLabel: { type: String, default: 'Agregar nuevo' },
   addPlaceholder: { type: String, default: 'Escribe el nuevo valor' },
   invalid: Boolean,
+  maxLength: { type: Number, default: NAME_MAX_LENGTH },
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -75,7 +78,7 @@ const handleChange = async (value) => {
 const handleBeforeInput = (event) => {
   if (event.data && !isAllowedText(event.data)) {
     event.preventDefault();
-    error.value = 'Solo se permiten letras, numeros y espacios.';
+    error.value = SPECIAL_CHARS_MESSAGE;
   }
 };
 
@@ -83,10 +86,10 @@ const handleBeforeInput = (event) => {
  * Crea el valor nuevo y lo deja seleccionado (si ya existia, usa el existente).
  */
 const confirmNew = () => {
-  const { value, rejected } = cleanText(draft.value, NAME_MAX_LENGTH);
+  const { value, rejected } = cleanText(draft.value, props.maxLength);
   const text = value.trim().replace(/\s+/g, ' ');
   if (rejected) {
-    error.value = 'Solo se permiten letras, numeros y espacios.';
+    error.value = SPECIAL_CHARS_MESSAGE;
     draft.value = value;
     return;
   }

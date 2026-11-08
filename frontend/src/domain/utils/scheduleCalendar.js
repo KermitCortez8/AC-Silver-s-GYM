@@ -1,5 +1,5 @@
 import { addDays, limaDate } from './dates.js';
-import { DAY_ORDER, normalizeScheduleDay } from './scheduleEnrollment.js';
+import { DAY_ORDER, enrollmentSessionDate, normalizeScheduleDay } from './scheduleEnrollment.js';
 
 export const weekStart = (date) => {
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
@@ -34,7 +34,7 @@ export const scheduleOccurrences = (items, start, month = '') => {
     if (index < 0) return [];
     const fecha = addDays(monday, index);
     if (month && !fecha.startsWith(month)) return [];
-    if (item.id_matricula && (String(item.fecha_matricula || '').slice(0, 10) > fecha || item.estado === 'CANCELADA')) return [];
+    if (item.id_matricula && (enrollmentSessionDate(item) !== fecha || item.estado === 'CANCELADA')) return [];
     const attendance = (item.asistencias || []).find((entry) =>
       !entry.anulado && (entry.fecha || entry.date) === fecha &&
       Number(entry.id_matricula) === Number(item.id_matricula) &&
@@ -43,6 +43,8 @@ export const scheduleOccurrences = (items, start, month = '') => {
     const entryTime = attendance?.hora_entrada || attendance?.hora || '';
     const exitTime = attendance?.hora_salida || '';
     return [{ ...item, fecha, entryTime, exitTime,
+      ...(item.ocupacion_por_fecha ? { cupos_usados: Number(item.ocupacion_por_fecha[fecha] || 0) } : {}),
+      ...(item.fechas_matriculadas ? { is_enrolled: item.fechas_matriculadas.includes(fecha) } : {}),
       checkLabel: item.id_matricula
         ? attendance ? `Entrada ${entryTime.slice(0, 5)} · Salida ${exitTime.slice(0, 5) || 'pendiente'}` : 'Sin registro'
         : '',

@@ -1,6 +1,9 @@
 import { validateAccountForm } from "../../../domain/utils/formValidation.js";
 import { useFormValidation } from "../useFormValidation.js";
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
+import { useClientMembershipCatalog } from "./useClientMembershipCatalog.js";
+import { normalizePlanName, promotionAvailableForPlan } from "../../../domain/utils/membershipCatalog.js";
+import { discountedPrice } from "../../../domain/utils/money.js";
 import {
   clientMembershipGroup,
   clientMembershipLabel,
@@ -17,6 +20,7 @@ export const useClientEditor = ({
   paymentError,
   normalizeStatus,
 }) => {
+  const { plans, promotions, catalogLoading, catalogReady, catalogError, loadCatalog } = useClientMembershipCatalog({ includeHistorical: true });
   const editingId = ref("");
 
   const isEditorOpen = ref(false);
@@ -54,7 +58,7 @@ export const useClientEditor = ({
     telefono: "",
     dni: "",
     password: "",
-    plan: "MENSUAL",
+    plan: "",
     id_promocion: 0,
     estado: "EN_TRAMITE",
     pagar_con_stripe: false,
@@ -63,38 +67,42 @@ export const useClientEditor = ({
   const { fieldErrors, validateField, revalidateField, validateForm, resetValidation } = useFormValidation(form,
     value => validateAccountForm(value, { requirePassword: !editingId.value }));
 
+  const selectedPlan = computed(() => plans.value.find(p => normalizePlanName(p.name) === normalizePlanName(form.plan)));
+  const editorPlans = computed(() => {
+    const available = plans.value.filter(p => p.active);
+    if (editingId.value && form.plan && !available.some(p => normalizePlanName(p.name) === normalizePlanName(form.plan))) {
+      return [...available, selectedPlan.value || { id: 'current-plan', name: form.plan, active: false }];
+    }
+    return available;
+  });
   const availablePromotions = computed(() => {
-    const active = gymStore.activePromotions;
-    if (form.id_promocion) {
-      const current = gymStore.promotions.find(
-        (p) => Number(p.id_promocion) === Number(form.id_promocion),
-      );
-      if (
-        current &&
-        !active.some(
-          (p) => Number(p.id_promocion) === Number(current.id_promocion),
-        )
-      ) {
-        return [...active, current];
-      }
+    const available = promotions.value.filter(p => promotionAvailableForPlan(p, selectedPlan.value?.id));
+    if (!editingId.value || !form.id_promocion) return available;
+    const current = promotions.value.find(p => Number(p.id_promocion) === Number(form.id_promocion));
+    if (!available.some(p => Number(p.id_promocion) === Number(form.id_promocion))) {
+      return [...available, current || { id: `promo-${form.id_promocion}`, id_promocion: form.id_promocion,
+        name: editingClient.value?.promocion || `Promoción registrada #${form.id_promocion}` }];
     }
-    return active;
+    return available;
   });
-
   const estimatedCharge = computed(() => {
-    try {
-      const plan =
-        gymStore.planCatalog.find((p) => p.name === form.plan) ||
-        gymStore.planCatalog[0];
-      if (!plan) return { finalPrice: 0, discountAmount: 0 };
-      return gymStore.calculatePlanCharge(
-        plan.id,
-        form.id_promocion ? `promo-${form.id_promocion}` : "",
-      );
-    } catch (e) {
-      return { finalPrice: 0, discountAmount: 0 };
-    }
+    const basePrice = Number(selectedPlan.value?.price || 0);
+    const promotion = availablePromotions.value.find(p => Number(p.id_promocion) === Number(form.id_promocion));
+    const finalPrice = promotion && promotionAvailableForPlan(promotion, selectedPlan.value?.id)
+      ? discountedPrice(basePrice, promotion.discountValue || 0, promotion.discountType) : basePrice;
+    return { finalPrice, discountAmount: Math.round((basePrice - finalPrice) * 100) / 100 };
   });
+  const canSaveClient = computed(() => catalogReady.value && !catalogLoading.value
+    && (Boolean(editingId.value) || editorPlans.value.some(p => p.name === form.plan && p.active)));
+  const refreshCatalog = async () => {
+    const loaded = await loadCatalog();
+    if (!loaded || !isEditorOpen.value) return;
+    if (!editingId.value && !editorPlans.value.some(p => p.name === form.plan)) form.plan = editorPlans.value[0]?.name || '';
+    else if (selectedPlan.value) form.plan = selectedPlan.value.name;
+  };
+  watch([() => form.plan, availablePromotions], () => {
+    if (!editingId.value && !availablePromotions.value.some(p => Number(p.id_promocion) === Number(form.id_promocion))) form.id_promocion = 0;
+  }, { flush: 'sync' });
 
   const resetForm = () => {
     resetValidation();
@@ -105,7 +113,7 @@ export const useClientEditor = ({
     form.telefono = "";
     form.dni = "";
     form.password = "";
-    form.plan = "MENSUAL";
+    form.plan = "";
     form.id_promocion = 0;
     form.estado = "EN_TRAMITE";
     form.pagar_con_stripe = false;
@@ -116,6 +124,7 @@ export const useClientEditor = ({
     resetForm();
     feedbackMessage.value = "";
     isEditorOpen.value = true;
+    return refreshCatalog();
   };
 
   const closeEditor = () => {
@@ -140,6 +149,7 @@ export const useClientEditor = ({
 
     feedbackMessage.value = "";
     isEditorOpen.value = true;
+    return refreshCatalog();
   };
 
   const handleSubmit = async () => {
@@ -149,6 +159,10 @@ export const useClientEditor = ({
     submitError.value = "";
     try {
       if (!validateForm()) throw new Error(Object.values(fieldErrors)[0]);
+      if (!canSaveClient.value) throw new Error(catalogError.value || 'Espera a que carguen los planes y promociones disponibles.');
+      if (!editingId.value && form.id_promocion && !availablePromotions.value.some(p => Number(p.id_promocion) === Number(form.id_promocion))) {
+        throw new Error('La promoción seleccionada no está disponible para este plan.');
+      }
       const saved = await gymStore.upsertClient({
         id_usuario: editingId.value || undefined,
 
@@ -162,9 +176,9 @@ export const useClientEditor = ({
 
         password: form.password,
 
-        plan: form.plan,
+        plan: editingId.value ? editingClient.value?.plan || form.plan : form.plan,
 
-        id_promocion: form.id_promocion || undefined,
+        id_promocion: editingId.value ? editingClient.value?.id_promocion || undefined : form.id_promocion || undefined,
 
         estado: form.estado,
         pagar_con_stripe: !editingId.value && form.pagar_con_stripe,
@@ -202,7 +216,19 @@ export const useClientEditor = ({
     }
   };
 
+  const clientEditorProps = computed(() => ({
+    fieldErrors, validateField, revalidateField, availablePromotions: availablePromotions.value,
+    editorPlans: editorPlans.value, catalogLoading: catalogLoading.value, catalogError: catalogError.value,
+    catalogReady: catalogReady.value, refreshCatalog, canSaveClient: canSaveClient.value,
+    closeEditor, editingExpired: editingExpired.value, editingId: editingId.value,
+    editingMembershipLabel: editingMembershipLabel.value, editingNeedsActivation: editingNeedsActivation.value,
+    registeredAmount: editingClient.value?.membershipPrice,
+    estimatedCharge: estimatedCharge.value, form, handleSubmit, isEditorOpen: isEditorOpen.value,
+    savingClient: savingClient.value, submitError: submitError.value,
+  }));
+
   return {
+    clientEditorProps, editorPlans, catalogLoading, catalogReady, catalogError, refreshCatalog, canSaveClient,
     fieldErrors,
     validateField,
     revalidateField,

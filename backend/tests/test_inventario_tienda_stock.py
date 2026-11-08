@@ -600,13 +600,88 @@ def test_borrar_producto_con_ventas_lo_archiva_y_conserva_la_venta() -> None:
         _vender(service, producto["id_producto"], 1)
 
 
-def test_borrar_producto_sin_ventas_lo_elimina() -> None:
+def test_borrar_producto_lo_manda_a_la_papelera_con_su_item() -> None:
     service = _service()
     item = _nuevo_item_tienda(service)
     producto = _publicar(service, item["id_item"])
 
-    assert service.delete_producto_tienda(producto["id_producto"]) is None
+    resultado = service.delete_producto_tienda(producto["id_producto"])
+
+    assert resultado["archivado"] is True and resultado["estado"] == "Descatalogado"
+    assert service.get_item_inventario(item["id_item"])["archivado"] is True
+
+
+def test_restaurar_producto_lo_devuelve_con_su_item() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service)
+    producto = _publicar(service, item["id_item"])
+    _reponer(service, item["id_item"], 3)
+    service.delete_producto_tienda(producto["id_producto"])
+
+    restaurado = service.restaurar_producto_tienda(producto["id_producto"])
+
+    assert restaurado["archivado"] is False and restaurado["estado"] == "Disponible"
+    assert service.get_item_inventario(item["id_item"])["archivado"] is False
+    with pytest.raises(ValueError, match="no está en la papelera"):
+        service.restaurar_producto_tienda(producto["id_producto"])
+
+
+def test_eliminar_definitivo_exige_pasar_antes_por_la_papelera() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service)
+    producto = _publicar(service, item["id_item"])
+
+    with pytest.raises(ValueError, match="papelera"):
+        service.eliminar_producto_definitivo(producto["id_producto"])
+
+
+def test_eliminar_definitivo_sin_historial_borra_el_producto_y_su_item() -> None:
+    service = _service()
+    creado = service.upsert_producto_tienda(
+        {"nombre_producto": "Gorra", "precio_venta": 20, "categoria": "Accesorios", "cantidad_stock": 2}
+    )
+    service.delete_producto_tienda(creado["id_producto"])
+
+    assert service.eliminar_producto_definitivo(creado["id_producto"]) == {"producto": "borrado"}
+    assert all(p["id_producto"] != creado["id_producto"] for p in service.state["productos_tienda"])
+    assert all(i["id_item"] != creado["id_item"] for i in service.state["inventario"])
+
+
+def test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=10)
+    producto = _publicar(service, item["id_item"])
+    _reponer(service, item["id_item"], 5)
+    _vender(service, producto["id_producto"], 2)
+    service.delete_producto_tienda(producto["id_producto"])
+
+    resultado = service.eliminar_producto_definitivo(producto["id_producto"])
+
+    assert resultado == {"producto": "oculto"}
     assert all(p["id_producto"] != producto["id_producto"] for p in service.productos_tienda())
+    assert all(i["id_item"] != item["id_item"] for i in service.inventario())
+    assert len(service.pedidos_tienda()) == 1
+    assert any(m["id_item"] == item["id_item"] for m in service.movimientos_inventario())
+    with pytest.raises(ValueError, match="no encontrado"):
+        service.restaurar_producto_tienda(producto["id_producto"])
+
+
+def test_eliminar_definitivo_borra_el_item_en_un_segundo_paso() -> None:
+    from application.operations.inventory import DeleteInventarioCommand
+    from application.services.modules.store import StoreOperations
+
+    class Executor:
+        def __init__(self):
+            self.commands = []
+
+        def execute(self, command):
+            self.commands.append(command)
+            return {"producto": "borrado", "id_item_por_borrar": 7} if len(self.commands) == 1 else None
+
+    executor = Executor()
+
+    assert StoreOperations(executor).eliminar_producto_definitivo(3) == {"producto": "borrado"}
+    assert executor.commands[1] == DeleteInventarioCommand(7)
 
 
 def test_borrar_item_con_historial_archiva_el_item_y_su_producto() -> None:
@@ -624,12 +699,14 @@ def test_borrar_item_con_historial_archiva_el_item_y_su_producto() -> None:
         )
 
 
-def test_mapeo_remoto_solo_envia_archivado_al_archivar() -> None:
+def test_mapeo_remoto_de_papelera_y_eliminado() -> None:
     service = object.__new__(SupabaseGymService)
 
-    assert "archivado" not in service._product_to_remote({"id_producto": 1})
-    assert "archivado" not in service._inventory_to_remote({"id_item": 1})
+    # archivado se envía siempre para poder restaurar; eliminado solo al eliminar (migración 019).
+    assert service._product_to_remote({"id_producto": 1})["archivado"] is False
+    assert "eliminado" not in service._inventory_to_remote({"id_item": 1})
     assert service._product_to_remote({"id_producto": 1, "archivado": True})["archivado"] is True
-    assert service._inventory_to_remote({"id_item": 1, "archivado": True})["archivado"] is True
+    assert service._inventory_to_remote({"id_item": 1, "eliminado": True})["eliminado"] is True
     assert service._map_product({"id_producto": 1})["archivado"] is False
     assert service._map_inventory({"id_item": 1, "archivado": True})["archivado"] is True
+    assert service._map_product({"id_producto": 1, "eliminado": True})["eliminado"] is True

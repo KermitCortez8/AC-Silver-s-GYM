@@ -78,10 +78,32 @@ export const createStoreModule = (ctx, repository) => {
   };
 
   const deleteProductoTienda = async (id_producto) => {
-    // Con ventas registradas el backend lo archiva: deja de mostrarse y sus ventas se conservan.
+    // Eliminar manda el producto (y su articulo de Inventario) a la Papelera.
     const result = ctx.apiBase ? await remote.deleteProductoTienda(id_producto) : null;
-
+    const removed = ctx.productos_tienda.value.find((p) => p.id_producto === id_producto);
     ctx.productos_tienda.value = ctx.productos_tienda.value.filter((p) => p.id_producto !== id_producto);
+    if (removed) ctx.papelera_tienda.value = [{ ...removed, estado: 'Descatalogado' }, ...ctx.papelera_tienda.value];
+    // Su articulo de Inventario tambien queda archivado.
+    if (ctx.apiBase) await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    return result;
+  };
+
+  // Desde la Papelera: restaurar devuelve el producto y su articulo; eliminar lo saca para siempre.
+  const restoreProductoTienda = async (id_producto) => {
+    if (ctx.apiBase) {
+      await remote.restoreProductoTienda(id_producto);
+      await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+      return;
+    }
+    const restored = ctx.papelera_tienda.value.find((p) => p.id_producto === id_producto);
+    ctx.papelera_tienda.value = ctx.papelera_tienda.value.filter((p) => p.id_producto !== id_producto);
+    if (restored) ctx.productos_tienda.value.unshift({ ...restored, estado: 'Disponible' });
+  };
+
+  const purgeProductoTienda = async (id_producto) => {
+    const result = ctx.apiBase ? await remote.purgeProductoTienda(id_producto) : { producto: 'borrado' };
+    ctx.papelera_tienda.value = ctx.papelera_tienda.value.filter((p) => p.id_producto !== id_producto);
+    if (ctx.apiBase) await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
     return result;
   };
 
@@ -145,9 +167,12 @@ export const createStoreModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
     const list = requireList(await remote.refreshStoreProductsFromBackend(), 'id_producto');
-    // Los archivados no se muestran ni se venden; los pedidos guardan su propio nombre.
+    // Los archivados van a la Papelera: no se muestran ni se venden; los pedidos guardan su propio nombre.
     ctx.productos_tienda.value = list
       .filter((product) => !product.archivado)
+      .map((product) => normalizeStoreProductFromBackend(product));
+    ctx.papelera_tienda.value = list
+      .filter((product) => product.archivado && !product.eliminado)
       .map((product) => normalizeStoreProductFromBackend(product));
     return ctx.productos_tienda.value;
   };
@@ -181,7 +206,7 @@ export const createStoreModule = (ctx, repository) => {
   const createStoreOrder = async (payload = {}) => {
     const items = requireList(payload.items === undefined ? ctx.cart.value : payload.items);
     if (!items.length) {
-      throw new Error('El carrito esta vacio');
+      throw new Error('El carrito está vacío');
     }
 
     const body = {
@@ -245,7 +270,7 @@ export const createStoreModule = (ctx, repository) => {
   const createStoreCheckout = async (payload = {}) => {
     const items = requireList(payload.items === undefined ? ctx.cart.value : payload.items);
     if (!items.length) {
-      throw new Error('El carrito esta vacio');
+      throw new Error('El carrito está vacío');
     }
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
@@ -310,5 +335,5 @@ export const createStoreModule = (ctx, repository) => {
     return { ...result, restored, skipped };
   };
 
-  return { upsertProductoTienda, deleteProductoTienda, addToCart, removeFromCart, updateCartQuantity, clearCart, cartTotal, mergeStoreOrder, refreshStoreProductsFromBackend, refreshStoreOrdersFromBackend, updateStoreOrderStatus, createStoreOrder, createStoreCheckout, confirmStoreCheckoutReturn, cancelStoreCheckout };
+  return { upsertProductoTienda, deleteProductoTienda, restoreProductoTienda, purgeProductoTienda, addToCart, removeFromCart, updateCartQuantity, clearCart, cartTotal, mergeStoreOrder, refreshStoreProductsFromBackend, refreshStoreOrdersFromBackend, updateStoreOrderStatus, createStoreOrder, createStoreCheckout, confirmStoreCheckoutReturn, cancelStoreCheckout };
 };

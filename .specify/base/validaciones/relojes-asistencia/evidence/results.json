@@ -1,0 +1,30 @@
+{
+  "clock_regression": "passed",
+  "without_postgres": {
+    "passed": 680,
+    "skipped": 33,
+    "failed": 0
+  },
+  "postgres_only": {
+    "passed": 33,
+    "skipped": 0,
+    "failed": 0
+  },
+  "full_suite": {
+    "passed": 713,
+    "skipped": 0,
+    "failed": 0
+  },
+  "specify_tests": 13,
+  "flake8_errors": 0,
+  "postgres_container": {
+    "name": "gym-clock-review-postgres",
+    "image": "postgres:16-alpine",
+    "network": "none",
+    "published_ports": [],
+    "removed": true
+  },
+  "workflow_postgres_modules": 4,
+  "document_validation": "passed",
+  "diff_check": "passed"
+}

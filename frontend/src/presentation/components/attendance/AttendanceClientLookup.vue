@@ -23,13 +23,12 @@
             <label for="attendance-dni"
               >DNI del cliente
               <div class="att-search-input">
-                <Search :size="18" /><input
+                <Search :size="18" /><input v-digits :maxlength="FORM_LIMITS.dni"
                   id="attendance-dni"
                   ref="dniInput"
                   v-model="dni"
                   inputmode="numeric"
                   autocomplete="off"
-                  maxlength="8"
                   pattern="[0-9]{8}"
                   required
                   placeholder="Ingresa los 8 dígitos"
@@ -146,6 +145,9 @@
   </section>
 </template>
 <script setup>
+import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+import { vDigits } from "../../directives/digits.js";
+
 import { computed, nextTick, ref, watch } from 'vue';
 import {
   ArrowLeft,

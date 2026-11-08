@@ -1,0 +1,136 @@
+{
+  "source": "Capturas Chromium de vistas previas y refactorizadas con reloj, API y sesiones sint\u00e9ticas iguales.",
+  "results": [
+    {
+      "view": "clientes",
+      "samePng": false,
+      "differentPixels": 10,
+      "maxChannelDifference": 1,
+      "differenceBounds": [
+        325,
+        635,
+        331,
+        637
+      ],
+      "beforeSha256": "1f584dd3a26030f63f99a41f9d98cf5fbb5c8b5b2da62fba8b565af50fa89267",
+      "afterSha256": "57ea4de0fc6f46bcb9ee99b891312220b7326518020be4895ba4263be74bbc6c"
+    },
+    {
+      "view": "horarios",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "562386d2ecff503dff0993b53a7c839b94ccb044e2de6f6a1cbecc5295dbd7b9",
+      "afterSha256": "562386d2ecff503dff0993b53a7c839b94ccb044e2de6f6a1cbecc5295dbd7b9"
+    },
+    {
+      "view": "inicio",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "9b4b32ef3ad9bf7c9b6f1fb6ebb962d273b9f655533c01c231da448d08121df2",
+      "afterSha256": "9b4b32ef3ad9bf7c9b6f1fb6ebb962d273b9f655533c01c231da448d08121df2"
+    },
+    {
+      "view": "inventario",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "35148e226aefd53a3bb163f95896662562d5e2129c7e50dddf9701c2f3037e24",
+      "afterSha256": "35148e226aefd53a3bb163f95896662562d5e2129c7e50dddf9701c2f3037e24"
+    },
+    {
+      "view": "login",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "c9ee401f6c8026af53b71bfe73cb3adee7a47d3bae249b47dddf853aeb1b8c50",
+      "afterSha256": "c9ee401f6c8026af53b71bfe73cb3adee7a47d3bae249b47dddf853aeb1b8c50"
+    },
+    {
+      "view": "matriculas",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "25df229d150f40ec0618b7d4b4fb68d472a55a0a84420e8ca73672aebf263f89",
+      "afterSha256": "25df229d150f40ec0618b7d4b4fb68d472a55a0a84420e8ca73672aebf263f89"
+    },
+    {
+      "view": "movimientos",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "d3d3c1225ac21c6bf2985b0aeea85941a16b9ddcc71fc319cc71f55191bd7cd7",
+      "afterSha256": "d3d3c1225ac21c6bf2985b0aeea85941a16b9ddcc71fc319cc71f55191bd7cd7"
+    },
+    {
+      "view": "panel",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "2d22b062e936a706fc30ebd25dc6187bb2b4b04b801aa935ca437f0b008c6545",
+      "afterSha256": "2d22b062e936a706fc30ebd25dc6187bb2b4b04b801aa935ca437f0b008c6545"
+    },
+    {
+      "view": "promociones",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "3a0e83f508fdd75a147b7ee274e4ecf3a800468fb84c95f4b7bbc1a557f67510",
+      "afterSha256": "3a0e83f508fdd75a147b7ee274e4ecf3a800468fb84c95f4b7bbc1a557f67510"
+    },
+    {
+      "view": "registro",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "07478f7e4e9899778f1f2f478aef1d837a42c0ac695b10f6e7f4535d90d39711",
+      "afterSha256": "07478f7e4e9899778f1f2f478aef1d837a42c0ac695b10f6e7f4535d90d39711"
+    },
+    {
+      "view": "rutinas",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "6a8fbf87f6d2cac1b27e280eaf970403f74df9db24a9084ca7941ab9007a75cf",
+      "afterSha256": "6a8fbf87f6d2cac1b27e280eaf970403f74df9db24a9084ca7941ab9007a75cf"
+    },
+    {
+      "view": "tienda",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "d32f9653205ab01334099279ec06c42851a5a361c0f4867f0cc1651dbff9d966",
+      "afterSha256": "d32f9653205ab01334099279ec06c42851a5a361c0f4867f0cc1651dbff9d966"
+    },
+    {
+      "view": "tienda-cliente",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "35c0ce13cad4b9bb15739904527abb670bb484ace7e209e1a45d68921acd7d54",
+      "afterSha256": "35c0ce13cad4b9bb15739904527abb670bb484ace7e209e1a45d68921acd7d54"
+    },
+    {
+      "view": "usuarios",
+      "samePng": true,
+      "differentPixels": 0,
+      "maxChannelDifference": 0,
+      "differenceBounds": null,
+      "beforeSha256": "1fb5c366a28c25557014fa6bafa3c0a8aaffacb1ba6dde1fbe3bdd4db363907b",
+      "afterSha256": "1fb5c366a28c25557014fa6bafa3c0a8aaffacb1ba6dde1fbe3bdd4db363907b"
+    }
+  ]
+}

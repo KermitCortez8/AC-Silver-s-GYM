@@ -2,8 +2,13 @@
 
 export const SEARCH_MAX_LENGTH = 40;
 export const NAME_MAX_LENGTH = 80;
+// Pestaña Inventario: nombres, categorías, ubicaciones y búsquedas llegan a 40; textos largos a 100.
+export const INVENTORY_NAME_MAX_LENGTH = 40;
+export const NOTES_MAX_LENGTH = 100;
 export const PAGE_SIZES = [8, 16, 24, 50];
-export const DEFAULT_PAGE_SIZE = 8;
+export const DEFAULT_PAGE_SIZE = 10;
+
+export const SPECIAL_CHARS_MESSAGE = 'Sin caracteres especiales: solo letras, numeros y espacios.';
 
 // Letras (con tildes y ñ), números y espacio.
 const TEXT_CHAR = /[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]/;
@@ -18,6 +23,18 @@ export const cleanText = (value, maxLength = SEARCH_MAX_LENGTH) => {
   const filtered = raw.replace(DISALLOWED_TEXT, '');
   const result = filtered.slice(0, maxLength);
   return { value: result, rejected: filtered !== raw, truncated: filtered.length > maxLength };
+};
+
+/**
+ * Texto libre (observaciones, descripciones): permite signos de puntuación y saltos de línea,
+ * quita caracteres de control y corta al máximo.
+ */
+export const clampText = (value, maxLength = NOTES_MAX_LENGTH) => {
+  const raw = String(value ?? '');
+  // eslint-disable-next-line no-control-regex
+  const cleaned = raw.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+  const value_ = cleaned.slice(0, maxLength);
+  return { value: value_, truncated: cleaned.length > maxLength };
 };
 
 /** Indica si el texto que se va a insertar solo tiene caracteres permitidos. */
@@ -85,7 +102,7 @@ export const missingFieldsMessage = (labels) => {
 
 // La galeria de Tienda solo admite PNG y JPG (el backend aplica la misma regla).
 const IMAGE_TYPES = { '.png': ['image/png'], '.jpg': ['image/jpeg'], '.jpeg': ['image/jpeg'] };
-export const ALLOWED_IMAGE_MESSAGE = 'Formato no permitido. Solo se aceptan imagenes .png y .jpg.';
+export const ALLOWED_IMAGE_MESSAGE = 'Formato no permitido. Solo se aceptan imágenes .png y .jpg.';
 
 /** Acepta el archivo solo si su extension y su tipo son PNG o JPG. */
 export const isAllowedImageFile = (file) => {

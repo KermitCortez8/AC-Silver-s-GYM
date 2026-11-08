@@ -96,6 +96,7 @@ def _map_schedule_enrollment(row: dict[str, Any]) -> dict[str, Any]:
         "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
         "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
         "fecha_matricula": str(row.get("fecha_matricula") or ""),
+        "fecha_clase": str(row.get("fecha_clase") or "") or None,
         "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
     }
 
@@ -107,6 +108,7 @@ def _schedule_enrollment_to_remote(row: dict[str, Any]) -> dict[str, Any]:
         "id_horario_servicio": int(row.get("id_horario_servicio", 0) or 0),
         "id_rutina": int(row.get("id_rutina", 0) or 0) or None,
         "fecha_matricula": _date_or_today(row.get("fecha_matricula")),
+        "fecha_clase": _date_or_none(row.get("fecha_clase")),
         "estado": str(row.get("estado") or "ACTIVA").strip().upper(),
     }
 

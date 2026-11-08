@@ -2,6 +2,8 @@
 from application.read_models import AttendanceCriteria, AttendancePage, AttendanceSummaryData, PageRequest
 from infrastructure.repositories.mappers.attendance import _map_attendance
 from infrastructure.repositories.mappers.accounts import _map_client
+from datetime import datetime
+from domain.services.attendance_status import LIMA
 
 
 class AttendanceHistoryRepository:
@@ -45,14 +47,20 @@ class AttendanceHistoryRepository:
             filters["servicio"] = f"eq.{criteria.service}"
         if criteria.kind:
             conditions.append("servicio.eq.gimnasio" if criteria.kind == "general" else "or(servicio.is.null,servicio.neq.gimnasio)")
-        if not criteria.include_annulled or criteria.status in {"dentro", "completada"}:
+        if not criteria.include_annulled or criteria.status in {"dentro", "completada", "incompleta"}:
             conditions.append("or(anulado.is.null,anulado.eq.false)")
         if criteria.status == "anulada":
             conditions.append("anulado.eq.true")
         elif criteria.status == "dentro":
             conditions.append("hora_salida.is.null")
+            at = criteria.at or datetime.now(LIMA).isoformat()
+            conditions.append(f"or(limite_salida.is.null,limite_salida.gte.{at})")
         elif criteria.status == "completada":
             conditions.append("hora_salida.not.is.null")
+            conditions.append("or(salida_tardia.is.null,salida_tardia.eq.false)")
+        elif criteria.status == "incompleta":
+            at = criteria.at or datetime.now(LIMA).isoformat()
+            conditions.append(f"or(salida_tardia.eq.true,and(hora_salida.is.null,limite_salida.lt.{at}))")
         if conditions:
             filters["and"] = "(" + ",".join(conditions) + ")"
         page = self.database.select_page("ASISTENCIA", filters,

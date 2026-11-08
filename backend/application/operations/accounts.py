@@ -88,6 +88,7 @@ class UpsertClienteCommand:
     operation_kind: ClassVar[str] = 'command'
     payload: Record
     resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.PREREGISTROS,
         Resource.USUARIO,
         Resource.CLIENTES,
         Resource.MEMBRESIA,
@@ -208,6 +209,7 @@ class RegistrarClientePublicoCommand:
     payload: Record
     origen_registro: str = 'PUBLICO'
     resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.PREREGISTROS,
         Resource.USUARIO,
         Resource.CLIENTES,
         Resource.MEMBRESIA,
