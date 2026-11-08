@@ -93,6 +93,7 @@
       :options="quickReplies"
       :disabled="isTyping"
       @select="(opt) => $emit('select-quick-reply', opt)"
+      @toggle="scrollToBottom"
     />
 
     <!-- Elemento ancla para auto-scroll -->
