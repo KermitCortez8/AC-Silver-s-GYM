@@ -1,0 +1,34 @@
+[
+  {
+    "kind": "otra-semana",
+    "width": 1440,
+    "aviso_cruzado": false,
+    "escrituras": 0,
+    "errores": [],
+    "captura": "sin-aviso-otra-semana.png"
+  },
+  {
+    "kind": "clase-terminada",
+    "width": 390,
+    "aviso_cruzado": false,
+    "escrituras": 0,
+    "errores": [],
+    "captura": "sin-aviso-clase-terminada.png"
+  },
+  {
+    "kind": "margen-30min",
+    "width": 1440,
+    "aviso_cruzado": true,
+    "escrituras": 0,
+    "errores": [],
+    "captura": "aviso-margen-30min.png"
+  },
+  {
+    "kind": "general-fuera30",
+    "width": 390,
+    "aviso_cruzado": false,
+    "escrituras": 0,
+    "errores": [],
+    "captura": "sin-aviso-general-fuera30.png"
+  }
+]

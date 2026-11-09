@@ -1,0 +1,46 @@
+[
+  {
+    "origen": "horario",
+    "destino": "general",
+    "ancho": 1440,
+    "tema": "claro",
+    "bloqueado_antes_de_salida": true,
+    "salidas": 1,
+    "entradas_nuevas": 1,
+    "errores": [],
+    "captura": "horario-bloquea-general-escritorio.png"
+  },
+  {
+    "origen": "general",
+    "destino": "horario",
+    "ancho": 1440,
+    "tema": "claro",
+    "bloqueado_antes_de_salida": true,
+    "salidas": 1,
+    "entradas_nuevas": 1,
+    "errores": [],
+    "captura": "general-bloquea-horario-escritorio.png"
+  },
+  {
+    "origen": "horario",
+    "destino": "general",
+    "ancho": 390,
+    "tema": "oscuro",
+    "bloqueado_antes_de_salida": true,
+    "salidas": 1,
+    "entradas_nuevas": 1,
+    "errores": [],
+    "captura": "horario-bloquea-general-movil.png"
+  },
+  {
+    "origen": "general",
+    "destino": "horario",
+    "ancho": 390,
+    "tema": "oscuro",
+    "bloqueado_antes_de_salida": true,
+    "salidas": 1,
+    "entradas_nuevas": 1,
+    "errores": [],
+    "captura": "general-bloquea-horario-movil.png"
+  }
+]

@@ -189,8 +189,20 @@ def test_open_entry_blocks_other_kind(attendance, admin, first_kind):
         with pytest.raises(ValueError, match="entrada sin salida"):
             enter(attendance, admin)
     assert attendance.lookup("11111111")["general"]["asistencia_abierta"]["id_asistencia"] == row["id_asistencia"]
+    lookup = attendance.lookup("11111111")
+    assert not lookup['general']['puede_entrar']
+    assert f"asistencia {'general' if first_kind == 'general' else 'por horarios'}" in lookup['general']['motivo']
+    if first_kind == 'general':
+        roster = attendance.roster(1)['clientes'][0]
+        assert not roster['puede_entrar']
+        assert roster['asistencia_abierta']['id_asistencia'] == row['id_asistencia']
+        assert 'asistencia general' in roster['motivo']
     attendance.exit(row["id_asistencia"], admin)
     assert attendance.lookup("11111111")["general"]["puede_entrar"]
+    next_visit = attendance.enter({'id_matricula': 1}, admin) if first_kind == 'general' else enter(attendance, admin)
+    assert next_visit['tipo'] == ('horario' if first_kind == 'general' else 'general')
+    assert next_visit['id_asistencia'] != row['id_asistencia']
+    assert len(attendance.gym.state['asistencia']) == 2
 
 
 def test_capacity_is_shared_by_general_and_schedule_entries(attendance, admin):
@@ -307,6 +319,39 @@ def test_only_admin_can_register_general_visit(api, role):
     app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role=role, id_cliente=1)
     response = client.post("/asistencia/general/entrada", json={"dni": "11111111", "request_id": str(uuid4())})
     assert response.status_code == 403
+
+
+@pytest.mark.parametrize('first_kind', ['general', 'horario'])
+def test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida(api, attendance, first_kind):
+    enroll(attendance)
+    client, _ = api
+    requests = {
+        'general': lambda: client.post('/asistencia/general/entrada', json={'dni': '11111111', 'request_id': str(uuid4())}),
+        'horario': lambda: client.post('/asistencia/entrada', json={'id_matricula': 1}),
+    }
+    other_kind = 'horario' if first_kind == 'general' else 'general'
+    first = requests[first_kind]().json()
+    before = deepcopy(attendance.gym.state['asistencia'])
+    blocked = requests[other_kind]()
+    assert blocked.status_code == 409
+    assert f"asistencia {'general' if first_kind == 'general' else 'por horarios'}" in blocked.json()['detail']
+    assert 'Registra la salida de esa asistencia' in blocked.json()['detail']
+    assert attendance.gym.state['asistencia'] == before
+    assert client.post('/asistencia/salida', json={'id_asistencia': first['id_asistencia']}).status_code == 200
+    allowed = requests[other_kind]()
+    assert allowed.status_code == 200 and allowed.json()['tipo'] == other_kind
+
+
+def test_clase_incompleta_sin_salida_sigue_bloqueando_general(api, attendance):
+    enroll(attendance)
+    client, _ = api
+    first = client.post('/asistencia/entrada', json={'id_matricula': 1}).json()
+    attendance.clock = lambda: datetime(2026, 10, 7, 15, 0, 1, tzinfo=LIMA)
+    response = client.post('/asistencia/general/entrada', json={'dni': '11111111', 'request_id': str(uuid4())})
+    assert response.status_code == 409 and 'asistencia por horarios' in response.json()['detail']
+    rows = attendance.records(SimpleNamespace(role='admin'), estado='incompleta')
+    assert len(rows) == 1 and rows[0]['id_asistencia'] == first['id_asistencia']
+    assert not rows[0]['hora_salida']
 
 
 def test_client_week_contains_only_own_general_visits(api, attendance, admin):

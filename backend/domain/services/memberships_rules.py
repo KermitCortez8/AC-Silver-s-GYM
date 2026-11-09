@@ -8,7 +8,7 @@ import re
 from domain.money import cents, discounted_price
 from datetime import datetime, timedelta
 from typing import Any
-from domain.services.membership_lifecycle import membership_expired, normalize_membership_status
+from domain.services.membership_lifecycle import membership_expired, membership_current, normalize_membership_status, membership_renewable, RENEWAL_WINDOW_MESSAGE
 
 
 from dataclasses import dataclass
@@ -504,6 +504,45 @@ class MembershipsRules:
     def membresias_por_cliente(self, id_cliente: int) -> list[dict[str, Any]]:
         return [m for m in self.membresias() if int(m.get("id_cliente", 0)) == int(id_cliente)]
 
+    def save_renewal_session(self, client_id, membership_id, session_id):
+        def save(state):
+            membership = next((m for m in state['membresia']
+                               if int(m['id_cliente']) == client_id and int(m['id_membresia']) == membership_id), None)
+            if not membership:
+                raise ValueError('Membresía no encontrada')
+            if membership.get('estado_pago') == 'PAGADO':
+                if membership.get('referencia_pago') != session_id:
+                    raise ValueError('La membresía ya tiene otro pago confirmado')
+            else:
+                membership['referencia_pago'] = session_id
+            return membership
+        return self.context.change(save)
+
+    def renew_membership(self, client_id, source_id, expected_amount):
+        from decimal import Decimal
+        rows = self.membresias_por_cliente(client_id)
+        source = next((m for m in rows if int(m['id_membresia']) == source_id), None)
+        if not source or source.get('estado_pago') != 'PAGADO':
+            raise ValueError('Membresía de origen inválida')
+        if not membership_renewable(source, self.context.today()):
+            raise ValueError(RENEWAL_WINDOW_MESSAGE)
+        newer = [m for m in rows if int(m['id_membresia']) > source_id]
+        if any(m.get('estado_pago') == 'PAGADO' for m in newer):
+            raise ValueError('Ya tienes una renovación pagada. No necesitas realizar otro pago.')
+        pending = max((m for m in newer if m.get('estado_pago') != 'PAGADO'),
+                      key=lambda m: int(m['id_membresia']), default=None)
+        plan = self.get_plan_membresia(int((pending or source)['id_pm']))
+        if not plan:
+            raise ValueError('El plan ya no está disponible')
+        amount = pending['monto_pago'] if pending else plan['precio']
+        if Decimal(str(amount)) != Decimal(str(expected_amount)):
+            raise ValueError('El precio cambió. Actualiza los detalles antes de continuar.')
+        if Decimal(str(amount)) <= 0:
+            raise ValueError('Este plan requiere atención de administración')
+        if pending:
+            return pending
+        return self.crear_membresia({'id_cliente': client_id, 'id_pm': source['id_pm']})
+
     def crear_membresia(self, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(payload.get("id_cliente", 0))
         id_pm = int(payload.get("id_pm", 0))
@@ -528,6 +567,16 @@ class MembershipsRules:
                 if (str(existing.get("estado_pago") or "").strip().upper() == "PAGADO"
                         or normalize_membership_status(existing.get("estado")) != "EN_TRAMITE"):
                     raise ValueError("No puedes editar una membresía confirmada; registra una nueva para renovar")
+
+            if not existing:
+                previous = max((m for m in state['membresia']
+                                if int(m.get('id_cliente') or 0) == id_cliente
+                                and m.get('estado_pago') == 'PAGADO'
+                                and normalize_membership_status(m.get('estado')) in {'ACTIVO', 'VENCIDA'}
+                                and m.get('fecha_inicio') and m.get('fecha_fin')),
+                               key=lambda m: int(m['id_membresia']), default=None)
+                if previous and not membership_renewable(previous, self.context.today()):
+                    raise ValueError(RENEWAL_WINDOW_MESSAGE)
 
             item["id_membresia"] = int(item_id)
             item["id_cliente"] = id_cliente
@@ -739,6 +788,33 @@ class MembershipsRules:
         self._increment_promocion_usos(state, promo_id)
         return dict(plan), promo_id, amount
 
+    def _activate_paid_renewal(self, state, client, membership):
+        """Solo una cuenta con una membresía activada anteriormente renueva al pagar."""
+        if (membership.get('estado_pago') != 'PAGADO'
+                or normalize_membership_status(membership.get('estado')) != 'EN_TRAMITE'):
+            return False
+        previous = [row for row in state.get('membresia', [])
+                    if int(row.get('id_cliente') or 0) == int(client['id_cliente'])
+                    and int(row.get('id_membresia') or 0) < int(membership['id_membresia'])
+                    and row.get('estado_pago') == 'PAGADO'
+                    and normalize_membership_status(row.get('estado')) in {'ACTIVO', 'VENCIDA'}
+                    and row.get('fecha_inicio') and row.get('fecha_fin')]
+        if not previous:
+            return False
+        today = self.context.today()
+        plan = self.get_plan_membresia(int(membership['id_pm']))
+        if not plan:
+            raise ValueError('No se encontró el plan de la renovación')
+        # El último día anterior es inclusivo; la renovación anticipada empieza al siguiente.
+        ends = [str(row['fecha_fin']) for row in previous
+                if normalize_membership_status(row.get('estado')) == 'ACTIVO'
+                and str(row['fecha_fin']) >= today]
+        start = (datetime.fromisoformat(max(ends)) + timedelta(days=1)).date().isoformat() if ends else today
+        end = (datetime.fromisoformat(start) + timedelta(days=self._duration_days(plan))).date().isoformat()
+        membership.update(estado='ACTIVO', fecha_inicio=start, fecha_fin=end)
+        client.update(estado='ACTIVO', plan=plan['nombre_plan'])
+        return True
+
     def confirmar_pago_cliente_publico(self, id_cliente: int, payload: dict[str, Any]) -> dict[str, Any]:
         id_cliente = int(id_cliente)
         id_membresia = int(payload.get("id_membresia", 0) or 0)
@@ -788,6 +864,7 @@ class MembershipsRules:
             latest_membership = self._latest_membership_for_cliente(state, id_cliente)
             if current_payment_status == "PAGADO":
                 if current_reference == payment_reference:
+                    self._activate_paid_renewal(state, cliente, membresia)
                     if (
                         latest_membership is membresia
                         and str(membresia.get("estado") or "").strip().upper() == "EN_TRAMITE"
@@ -797,7 +874,10 @@ class MembershipsRules:
                     return {"cliente": cliente, "membresia": membresia}
                 raise ValueError("La membresía ya tiene otro pago confirmado")
 
-            if latest_membership is membresia:
+            if latest_membership is membresia and not any(
+                int(row.get('id_cliente') or 0) == id_cliente
+                and membership_current(row, self.context.today()) for row in state.get('membresia', [])
+            ):
                 cliente["estado"] = "EN_TRAMITE"
             membresia["estado"] = "EN_TRAMITE"
             membresia["estado_pago"] = "PAGADO"
@@ -805,12 +885,13 @@ class MembershipsRules:
             membresia["referencia_pago"] = payment_reference
             membresia["monto_pago"] = expected_amount
             membresia["fecha_pago"] = self.context.today()
+            self._activate_paid_renewal(state, cliente, membresia)
             return {"cliente": cliente, "membresia": membresia}
 
         return self.context.change(_fn)
 
     def confirmar_pago_manual_cliente(self, id_cliente: int) -> dict[str, Any]:
-        """Registra el cobro en caja; la activación sigue siendo independiente."""
+        """Registra el cobro en caja y activa renovaciones de cuentas ya habilitadas."""
         id_cliente = int(id_cliente)
 
         def _fn(state: dict[str, Any]):
@@ -823,6 +904,7 @@ class MembershipsRules:
             if membership_expired(membresia, self.context.today()):
                 raise ValueError("La membresía está vencida. Registra una nueva membresía para renovar el acceso.")
             if str(membresia.get("estado_pago") or "").strip().upper() == "PAGADO":
+                self._activate_paid_renewal(state, cliente, membresia)
                 return {"cliente": cliente, "membresia": membresia}
             amount = float(membresia.get("monto_pago", 0) or 0)
             if amount <= 0:
@@ -832,8 +914,8 @@ class MembershipsRules:
                 referencia_pago=f"manual:{membresia['id_membresia']}",
                 fecha_pago=self.context.today(),
             )
-            # El cobro de una renovación no desbloquea una cuenta vencida.
-            if str(cliente.get("estado") or "").strip().upper() != "VENCIDA":
+            activated = self._activate_paid_renewal(state, cliente, membresia)
+            if not activated and str(cliente.get("estado") or "").strip().upper() != "VENCIDA":
                 cliente["estado"] = "EN_TRAMITE"
             return {"cliente": cliente, "membresia": membresia}
 

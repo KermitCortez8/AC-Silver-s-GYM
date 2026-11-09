@@ -33,6 +33,12 @@ const AuthCallbackView = () => import('../views/AuthCallbackView.vue');
 
 const routes = [
   {
+    path: '/renovar-membresia',
+    name: 'MembershipRenewal',
+    component: () => import('../views/MembershipRenewalView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
     path: '/auth/callback',
     name: 'AuthCallback',
     component: AuthCallbackView,

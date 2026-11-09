@@ -79,3 +79,41 @@ en producción solo porque las pruebas con dobles pasan.
 Verificar colas, contexto, claves e interpretación de errores afectados con
 pytest y Deno según el componente. Registrar por separado cualquier prueba de
 entrega real y la configuración externa comprobada. Cumplir el [DoD](../../docs/DoD.md).
+
+### Avisos de próximo vencimiento y membresía vencida
+
+El backend revisa cada minuto las membresías pagadas. Prepara un aviso `expiring`
+al entrar en los últimos tres días (incluye el día final) y otro `expired` después
+del último día, con fecha `America/Lima`. Si el proceso estuvo detenido, recupera
+el aviso que corresponde al volver, hasta treinta días después del vencimiento.
+No prepara avisos de una membresía anterior si existe otra posterior pagada.
+Cada evento se deduplica por membresía en la cola existente y conserva sus
+reintentos/confirmación de entrega con Resend.
+
+Los mensajes enlazan a `/renovar-membresia#token=…` para revisar la compra antes
+de pagar. El enlace está firmado con `AUTH_SECRET_KEY`, requiere la fecha de fin
+original y caduca treinta días después del vencimiento. No usa la sesión del
+cliente, que puede haber perdido acceso por vencimiento. También necesita
+`FRONTEND_PUBLIC_URL` y las credenciales de Resend/Supabase ya utilizadas.
+
+Aplicar [024_membership_renewal_notifications.sql](../../../backend/migrations/024_membership_renewal_notifications.sql)
+sobre la cola creada por 004 antes de iniciar la nueva versión del backend.
+La migración amplía el CHECK de tipos de evento y mantiene RLS y RPC privadas.
+La recuperación está descrita en el propio SQL. No requiere modificar ni desplegar
+la Edge Function de recordatorios de clases.
+
+Evidencia: [regresiones](../../../backend/tests/test_membership_renewal.py),
+[pruebas PostgreSQL](../../../backend/tests/test_membership_renewal_postgres.py) y
+[validación](../validaciones/renovacion-membresia/validation.md).
+
+
+El correo de pago de una renovación activada automáticamente confirma la
+renovación y presenta sus fechas y enlace de acceso. Solo el correo del primer
+registro solicita activación administrativa. El evento sigue siendo `payment`
+para conservar la deduplicación por membresía y la cola existente.
+
+
+La ventana de recompra empieza siete días antes del vencimiento; los avisos
+continúan enviándose desde los últimos tres días y después del vencimiento.
+Solo se preparan para períodos pagados y activados que ya comenzaron: un pago
+inicial pendiente de activación o una renovación futura no origina estos avisos.

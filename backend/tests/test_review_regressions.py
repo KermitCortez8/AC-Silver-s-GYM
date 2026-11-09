@@ -172,6 +172,24 @@ def test_client_deletion_removes_enrollments_progress_and_releases_capacity(gym)
     assert state['horarios_servicio'][0]['cupos_usados'] == 1
 
 
+@pytest.mark.parametrize('status', ['PAGADO', 'PENDIENTE'])
+def test_client_deletion_preserves_orders_and_original_buyer(gym, status):
+    state = gym.repository.state
+    state['clientes'] = [dict(id_cliente=1, nombre='Ana Prueba', correo='ana@example.com', dni='12345678')]
+    state['pedidos_tienda'] = [dict(id_pedido=1, id_cliente=1, cliente_nombre='Cliente', estado_pago=status,
+        total=7.67, referencia_pago='cs_prueba', items=[dict(id_producto=5, cantidad=1, subtotal=6.5)]),
+        dict(id_pedido=2, id_cliente=1, cliente_nombre='Nombre de compra', cliente_correo='compra@example.com',
+             cliente_dni='87654321'), dict(id_pedido=3, id_cliente=2, total=20)]
+    original = deepcopy(state['pedidos_tienda'])
+    gym.delete_cliente(1)
+    expected = deepcopy(original)
+    expected[0].update(id_cliente=None, cliente_nombre='Ana Prueba', cliente_correo='ana@example.com', cliente_dni='12345678')
+    expected[1]['id_cliente'] = None
+    assert state['pedidos_tienda'] == expected
+    gym.delete_cliente(1)
+    assert state['pedidos_tienda'] == expected
+
+
 def test_summary_counts_only_paid_current_memberships_with_canonical_and_legacy_states(gym, monkeypatch):
     monkeypatch.setattr('domain.services.gym_domain_service._today_iso', lambda: '2026-10-23')
     baseline = dict(estado='ACTIVO', estado_pago='PAGADO', fecha_inicio='2026-10-01', fecha_fin='2026-10-23')

@@ -46,7 +46,7 @@
         </div>
 
         <p class="mt-6 text-xs leading-5 text-slate-500">
-          Para usar tu cuenta, el administrador debe activarla después de confirmar el pago.
+          {{ confirmedMembershipStatus === 'ACTIVO' ? 'La renovación se activa automáticamente al confirmar el pago. Revisa las fechas de tu período.' : 'La primera membresía requiere activación administrativa. Las renovaciones se activan automáticamente al confirmar el pago.' }}
         </p>
       </section>
     </main>
@@ -71,6 +71,7 @@ const requestLabel = computed(() => confirmedClientId.value
   ? `SGCLI${String(confirmedClientId.value).padStart(3, '0')}`
   : preregistrationToken.value ? `Solicitud ${preregistrationToken.value.slice(0, 8)}`
     : `SGCLI${String(idCliente.value).padStart(3, '0')}`);
+const confirmedMembershipStatus = ref('');
 const result = computed(() => String(route.query.result || 'pending').toLowerCase());
 const confirmationState = ref('idle');
 const confirmationError = ref('');
@@ -87,8 +88,14 @@ const resultStyle = computed(() => {
     if (confirmationState.value === 'confirmed') {
       return {
         icon: '✓', title: 'Pago confirmado',
-        description: 'Tu pago fue confirmado. Tu cuenta está pendiente de activación por el administrador. Podrás ingresar cuando sea activada.',
-        status: 'Pago confirmado; activación pendiente', border: 'border-emerald-200',
+        description: confirmedMembershipStatus.value === 'ACTIVO'
+          ? 'Tu pago está confirmado y tu renovación se activó automáticamente. Si tu membresía anterior sigue vigente, el nuevo período comienza después de su último día.'
+          : confirmedMembershipStatus.value === 'VENCIDA'
+            ? 'Este pago ya estaba confirmado y su membresía venció. Puedes adquirir una renovación para recuperar el acceso.'
+            : 'Tu pago fue confirmado. Tu primera membresía está pendiente de activación por el administrador. Podrás ingresar cuando sea activada.',
+        status: confirmedMembershipStatus.value === 'ACTIVO' ? 'Pago confirmado; renovación activa'
+          : confirmedMembershipStatus.value === 'VENCIDA' ? 'Pago confirmado; membresía vencida'
+            : 'Pago confirmado; activación pendiente', border: 'border-emerald-200',
         iconBackground: 'bg-emerald-100 text-emerald-700', labelColor: 'text-emerald-700',
       };
     }
@@ -153,6 +160,7 @@ const confirmPaidCheckout = async () => {
       if (!Number.isInteger(Number(response.id_cliente)) || Number(response.id_cliente) <= 0)
         throw new Error('El servidor no devolvió el cliente del pago confirmado.');
       confirmedClientId.value = Number(response.id_cliente);
+      confirmedMembershipStatus.value = String(response.membership_status || 'EN_TRAMITE').toUpperCase();
       confirmationState.value = 'confirmed';
       return;
     }
@@ -169,6 +177,7 @@ watch(checkoutKey, () => {
   confirmationNumber++;
   confirmationState.value = 'idle';
   confirmedClientId.value = null;
+  confirmedMembershipStatus.value = '';
   confirmationError.value = '';
   confirmPaidCheckout();
 });

@@ -1,4 +1,6 @@
 import { feedbackClass as noticeClassFor } from '../../utils/feedback.js';
+import { useClientRenewal } from './useClientRenewal.js';
+import { useVisibleRefresh } from '../useVisibleRefresh.js';
 import { useClientMembershipActions } from './useClientMembershipActions.js';
 import { useClientEditor } from './useClientEditor.js';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -210,9 +212,15 @@ export const useClientDirectory = () => {
 
   const { activatingClientId, pendingActivation, activationError, notifyingClientId, payingClientId, confirmingPaymentClientId, paymentError, requestActivation, cancelActivation, notificationMessage, retryActivationEmail, markAsPaidManual, activateMembership, payWithStripe, initializeDirectory } = useClientMembershipActions({ gymStore, authStore, feedbackMessage, feedbackTone, viewingClient, route, router, refreshClients });
   const { clientEditorProps, fieldErrors, validateField, revalidateField, editingId, isEditorOpen, savingClient, submitError, editingClient, editingMembershipLabel, editingNeedsActivation, editingExpired, form, availablePromotions, estimatedCharge, resetForm, openNewClient, closeEditor, editClient, handleSubmit } = useClientEditor({ gymStore, clients, feedbackMessage, feedbackTone, resetFilters, sortOrder, openDetails, paymentError, normalizeStatus });
+  const renewal = useClientRenewal({ authStore, gymStore, refreshClients, viewingClient, feedbackMessage, feedbackTone });
   onMounted(initializeDirectory);
+  useVisibleRefresh(() => refreshClients(true), {
+    canRefresh: () => authStore.isAuthenticated && !isLoading.value && !isEditorOpen.value
+      && !isDetailsOpen.value && !pendingActivation.value && !renewal.pendingRenewal.value,
+  });
 
   return {
+    ...renewal,
     gymStore, authStore, route, router, clients,
     search, statusFilter, planFilter, paymentFilter, sortOrder,
     currentPage, isLoading, isDetailsOpen, viewingClient, feedbackMessage,

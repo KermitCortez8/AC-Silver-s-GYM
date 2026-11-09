@@ -19,12 +19,16 @@
       </div>
       <span class="att-soft-icon"><Users :size="22" /></span>
     </div>
+    <p v-if="openVisit && (openVisit.tipo === 'general' || clientData.general?.coincidencia_horario !== false)" class="att-blocked-reason" role="alert">
+      <Info :size="16" />{{ clientData.general?.motivo || 'Registra la salida de la asistencia pendiente antes de registrar otra entrada.' }}
+    </p>
     <article
       v-if="openVisit"
       class="att-row is-inside"
       :class="{ 'is-saved': savedKey === `exit-${openVisit.id_asistencia}` }"
     >
       <div class="att-row-main">
+        <p class="att-eyebrow">{{ openVisit.tipo === 'general' ? 'Entrada en asistencia general' : 'Entrada en asistencia por horarios' }}</p>
         <h4>{{ services[openVisit.servicio] || openVisit.servicio }}</h4>
         <p class="att-muted">
           Entrada {{ shortTime(openVisit.hora_entrada || openVisit.hora) }} ·

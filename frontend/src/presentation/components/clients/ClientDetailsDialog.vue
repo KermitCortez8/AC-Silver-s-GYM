@@ -102,10 +102,14 @@
         role="status"
       >
         Acceso bloqueado por membresía vencida. Para recuperar el acceso, el
-        cliente necesita una nueva membresía pagada y activada.
+        cliente necesita renovar su membresía. La renovación se activa al confirmar el pago.
       </p>
 
       <div class="mt-6 flex flex-col gap-3">
+        <button
+          v-if="canRenewClientMembership?.(viewingClient)" type="button" class="ws-btn ws-primary"
+          :disabled="Boolean(renewingClientId || renewalLoading)" @click="requestRenewal(viewingClient)"
+        ><RefreshCw :size="17" aria-hidden="true" />Renovar membresía</button>
         <button
           v-if="
             isActiveStatus(viewingClient.status) &&
@@ -166,8 +170,9 @@
 
 <script setup>
 import WorkspaceDialog from "../WorkspaceDialog.vue";
-import { Mail } from "lucide-vue-next";
+import { Mail, RefreshCw } from "lucide-vue-next";
 defineProps([
+  "canRenewClientMembership", "requestRenewal", "renewingClientId", "renewalLoading",
   "canPayClientWithStripe",
   "clientMembershipGroup",
   "clientMembershipLabel",

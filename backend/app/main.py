@@ -16,7 +16,7 @@ from infrastructure.config import get_settings
 from presentation.dependencies import get_gym_service
 from presentation.error_handlers import install_error_handlers
 from application.services.gym_service import GymService
-from app.bootstrap import process_pending_emails, process_pending_preregistrations
+from app.bootstrap import process_pending_emails, process_pending_preregistrations, process_membership_expiration_reminders
 from presentation.routes.attendance_routes import router as attendance_router
 from presentation.routes.auth_routes import router as auth_router
 from presentation.routes.clients_routes import router as clients_router
@@ -38,11 +38,15 @@ async def lifespan(_app: FastAPI):
     # Los recordatorios de clases se ejecutan en Supabase Cron + Edge Function.
     notifications = asyncio.create_task(process_pending_emails(settings))
     preregistrations = asyncio.create_task(process_pending_preregistrations(settings))
+    reminders = asyncio.create_task(process_membership_expiration_reminders(settings))
     try:
         yield
     finally:
+        reminders.cancel()
         notifications.cancel()
         preregistrations.cancel()
+        with suppress(asyncio.CancelledError):
+            await reminders
         with suppress(asyncio.CancelledError):
             await notifications
         with suppress(asyncio.CancelledError):

@@ -169,6 +169,108 @@ test('general attendance retains its request identity after failure and starts a
   }
 });
 
+test('general attendance shows the pending schedule visit and offers only its exit', async () => {
+  const message = 'El cliente tiene una entrada sin salida en la asistencia por horarios. Registra la salida de esa asistencia antes de registrar otra entrada.';
+  const pending = { id_asistencia: 18, tipo: 'horario', servicio: 'fitness', estado: 'dentro',
+    fecha: '2026-10-24', hora_entrada: '10:30:00', hora_salida: '' };
+  const harness = await view('AttendanceView', { prepare: (s) => {
+    s.tab = 'general';
+    s.clientData = { ...client('12345678'), general: {
+      puede_entrar: false, motivo: message, asistencia_abierta: pending } };
+  }});
+  try {
+    assert.match(harness.html, /Entrada en asistencia por horarios/);
+    assert.ok(harness.html.includes(message));
+    assert.match(harness.html, /Registrar salida/);
+    assert.doesNotMatch(harness.html, /Registrar entrada al gimnasio/);
+  } finally { harness.dispose(); }
+});
+
+test('schedule roster blocks general overlap and refreshes eligibility after closing the pending visit', async () => {
+  const message = 'El cliente tiene una entrada sin salida en la asistencia general. Registra la salida de esa asistencia antes de registrar otra entrada.';
+  const pending = { id_asistencia: 18, tipo: 'general', servicio: 'gimnasio', estado: 'dentro', hora_salida: '' };
+  let closed = false, exits = 0, entries = 0;
+  const roster = () => ({ fecha: '2026-10-24', horario: enrollment, clientes: [{
+    id_matricula: 7, cliente: client('12345678').cliente, asistencia: null,
+    asistencia_abierta: closed ? null : pending, puede_entrar: closed, motivo: closed ? '' : message,
+  }] });
+  const harness = await view('AttendanceView', {
+    prepare: (s) => { s.roster = roster(); s.selectedSchedule = 1; s.selectedSession = '2026-10-24'; },
+    attendance: {
+      attendanceGet: async (path) => path === '/resumen' ? summary : path === '/horarios'
+        ? { fecha: '2026-10-24', horarios: [{ ...enrollment, id_horario_servicio: 1 }] } : roster(),
+      attendanceExit: async (id) => { assert.equal(id, 18); exits++; closed = true; return { ...pending, hora_salida: '10:40:00' }; },
+      attendanceEntry: async (id) => { assert.equal(id, 7); entries++; return { id_asistencia: 19 }; },
+    },
+  });
+  try {
+    assert.ok(harness.html.includes(message));
+    assert.match(harness.html, /<button(?=[^>]*disabled)(?=[^>]*aria-label="Registrar entrada de Ana")[^>]*>/);
+    assert.match(harness.html, /Registrar salida pendiente de Ana/);
+    await harness.setup.exitRecord(pending);
+    assert.equal(exits, 1);
+    assert.equal(harness.setup.roster.clientes[0].asistencia_abierta, null);
+    assert.equal(harness.setup.roster.clientes[0].puede_entrar, true);
+    await harness.setup.enter(enrollment);
+    assert.equal(entries, 1);
+  } finally { harness.dispose(); }
+});
+
+test('a concurrent schedule entry refreshes the general block without reporting success', async () => {
+  const message = 'El cliente tiene una entrada sin salida en la asistencia por horarios. Registra la salida de esa asistencia antes de registrar otra entrada.';
+  let concurrent = false;
+  const harness = await view('AttendanceView', { attendance: {
+    attendanceGet: async (path) => path === '/resumen' ? summary : path === '/horarios'
+      ? { fecha: '2026-10-24', horarios: [] } : { ...client('12345678'), general: {
+        puede_entrar: !concurrent, motivo: concurrent ? message : '',
+        asistencia_abierta: concurrent ? { id_asistencia: 18, tipo: 'horario' } : null } },
+    generalAttendanceEntry: async () => { concurrent = true; throw new Error(message); },
+  }});
+  try {
+    harness.setup.dni = '12345678';
+    await harness.setup.lookupClient();
+    await harness.setup.enterGeneral();
+    assert.equal(harness.setup.error, message);
+    assert.equal(harness.setup.feedback, '');
+    assert.equal(harness.setup.clientData.general.puede_entrar, false);
+    assert.equal(harness.setup.clientData.general.asistencia_abierta.tipo, 'horario');
+  } finally { harness.dispose(); }
+});
+
+test('un horario de otra fecha muestra su motivo sin ofrecer salida de otra visita', async () => {
+  const reason = 'La entrada se habilita el día de esta sesión (hora de Perú).';
+  const harness = await view('AttendanceView', { prepare: (s) => {
+    s.selectedSchedule = 1;
+    s.selectedSession = '2026-11-16';
+    s.roster = { fecha: '2026-11-16', horario: enrollment, clientes: [{
+      id_matricula: 7, cliente: client('12345678').cliente, asistencia: null,
+      asistencia_abierta: null, puede_entrar: false, motivo: reason,
+    }] };
+  }});
+  try {
+    assert.ok(harness.html.includes(reason));
+    assert.doesNotMatch(harness.html, /Registrar salida pendiente/);
+    assert.match(harness.html, /<button(?=[^>]*disabled)(?=[^>]*aria-label="Registrar entrada de Ana")[^>]*>/);
+  } finally { harness.dispose(); }
+});
+
+test('una clase pendiente fuera del margen conserva su salida sin mostrar aviso de coincidencia', async () => {
+  const message = 'El cliente tiene una entrada sin salida en la asistencia por horarios. Registra la salida de esa asistencia antes de registrar otra entrada.';
+  const harness = await view('AttendanceView', { prepare: (s) => {
+    s.tab = 'general';
+    s.clientData = { ...client('12345678'), general: { puede_entrar: false,
+      motivo: message, coincidencia_horario: false, asistencia_abierta: {
+        id_asistencia: 18, tipo: 'horario', servicio: 'fitness', estado: 'dentro',
+        fecha: '2026-10-24', hora_entrada: '08:00:00', hora_salida: '',
+      } } };
+  }});
+  try {
+    assert.ok(!harness.html.includes(message));
+    assert.match(harness.html, /Registrar salida/);
+    assert.doesNotMatch(harness.html, /Registrar entrada al gimnasio/);
+  } finally { harness.dispose(); }
+});
+
 test('attendance shows class expiration and clears entry availability after a stale lookup', async () => {
   const message = 'La hora de esta clase ya pasó. No se puede registrar la asistencia.';
   let expired = false;

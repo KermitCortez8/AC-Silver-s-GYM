@@ -15,6 +15,7 @@ from domain.errors import AttendanceConflict
 from domain.services.membership_lifecycle import membership_current
 from domain.services.attendance_status import attendance_status, LATE_EXIT_MESSAGE, GENERAL_LATE_EXIT_MESSAGE
 from domain.services.schedule_sessions import enrollment_session, next_session
+from domain.services.attendance_windows import class_visit_near_now, schedule_near_now
 from application.read_models import AttendanceCriteria, PageRequest
 
 
@@ -118,10 +119,16 @@ class AttendanceService:
 
     def check_occupancy(self, client_id):
         inside = [r for r in self.gym.asistencia() if not r.get("anulado") and not r.get("hora_salida")]
-        if any(self.client_id(r) == client_id for r in inside):
-            raise ValueError("El cliente tiene una entrada sin salida. Registra su salida primero.")
+        pending = next((r for r in inside if self.client_id(r) == client_id), None)
+        if pending:
+            raise AttendanceConflict(self.pending_message(pending))
         if len({self.client_id(r) for r in inside}) >= self.capacity():
             raise ValueError("El gimnasio alcanzó su aforo. Registra una salida antes de otra entrada.")
+
+    def pending_message(self, pending):
+        origin = "general" if self.kind(pending) == "general" else "por horarios"
+        return (f"El cliente tiene una entrada sin salida en la asistencia {origin}. "
+                "Registra la salida de esa asistencia antes de registrar otra entrada.")
 
     def general_context(self, client_id, now):
         client, member = self.client_context(client_id, now)
@@ -191,6 +198,8 @@ class AttendanceService:
         return {"cliente": {k: client.get(k) for k in ("id_cliente", "nombre", "dni", "plan", "estado")},
                 "membresia": {k: member.get(k) for k in ("fecha_inicio", "fecha_fin", "estado", "estado_pago")} if member else None,
                 "general": {"puede_entrar": not reason, "motivo": reason,
+                            "coincidencia_horario": bool(open_record and self.kind(open_record) == 'horario'
+                                and class_visit_near_now(open_record, now)),
                             "asistencia_abierta": self.present(open_record) if open_record else None,
                             "ultima_visita": self.present(latest_general) if latest_general else None},
                 "horarios": schedules, "fecha": now.date().isoformat(), "server_now": now.isoformat()}
@@ -224,6 +233,7 @@ class AttendanceService:
             client = self.gym.get_cliente(int(enrollment["id_cliente"])) or {}
             record = self.existing(enrollment, day)
             reason = ""
+            pending = None
             if not record:
                 if day != now.date().isoformat():
                     reason = "La entrada se habilita el día de esta sesión (hora de Perú)."
@@ -232,9 +242,15 @@ class AttendanceService:
                         self.entry_context(enrollment, now)
                     except ValueError as error:
                         reason = str(error)
+                if schedule_near_now(schedule, day, now):
+                    pending = next((row for row in self.gym.asistencia()
+                        if self.client_id(row) == int(enrollment["id_cliente"])
+                        and not row.get("anulado") and not row.get("hora_salida")), None)
             students.append({"id_matricula": enrollment["id_matricula"],
                 "cliente": {k: client.get(k) for k in ("id_cliente", "nombre", "dni", "estado")},
                 "asistencia": self.present(record, client=client) if record else None,
+                "asistencia_abierta": self.present(pending, client=client) if pending else None,
+                "motivo_coincidencia": self.pending_message(pending) if pending else '',
                 "puede_entrar": not record and not reason, "motivo": reason})
         students.sort(key=lambda s: (str(s["cliente"].get("nombre") or "").casefold(), s["id_matricula"]))
         return {"horario": schedule, "clientes": students, "fecha": day, "server_now": now.isoformat()}

@@ -21,7 +21,19 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
 1. **CA-01.** Dado un cliente activado con membresía pagada y vigente, al
    registrar entrada general con DNI y `request_id` válido se usa el reloj del servidor.
 2. **CA-02.** Dada una entrada abierta, no se admite otra para el mismo cliente;
-   las entradas generales y de clase comparten aforo.
+   las entradas generales y de clase comparten aforo. El bloqueo aplica en ambos
+   sentidos entre horarios y general hasta guardar la salida de la visita anterior.
+   La API devuelve 409 con el origen de la entrada pendiente; el administrador
+   puede registrar esa salida desde la ficha general o la lista del horario.
+   En la lista del horario, el aviso cruzado y la salida de otra visita solo se
+   ofrecen cuando la franja de la sesión está en curso o a no más de 30 minutos
+   del instante actual. El margen es inclusivo en ambos extremos y puede cruzar
+   medianoche. Otra fecha o un intervalo lejano muestran su motivo temporal;
+   una visita anterior con salida no bloquea otra por ser del mismo día.
+   En general, el aviso cruzado de una clase utiliza su fin original guardado
+   más 30 minutos; después se conserva la visita pendiente y su salida, sin
+   presentar un aviso de coincidencia temporal. La admisión al horario sigue
+   permitida únicamente dentro de su intervalo real.
 3. **CA-03.** Dado un reintento con el mismo `request_id`, se devuelve la visita
    previa sin duplicarla, incluso si ya se cerró.
 4. **CA-04.** Dado un actor `staff`, `trainer` o `user`, al intentar registrar
@@ -114,6 +126,10 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
 No usar el reloj del navegador como autoridad de entrada. No equiparar permisos
 de `staff` con `admin`. No confundir resumen especializado con carga de todo el
 historial. No publicar auditoría al cliente ni mezclar fechas de clases semanales.
+La comprobación de entrada abierta no se limita al servicio ni al día actual.
+Una clase incompleta sin salida también bloquea el acceso general. La RPC de
+asistencia conserva la exclusión mutua para impedir dos ingresos simultáneos.
+Las consultas solo orientan la interfaz; guardar vuelve a validar en el servidor.
 
 ## 6. Edge Cases
 
@@ -163,6 +179,13 @@ la presencia de esos archivos no acredita su instalación en una base remota.
 
 Evidencia de persistencia sin navegador, concurrencia, límites y permisos:
 [test_automatic_attendance_postgres.py](../../../backend/tests/test_automatic_attendance_postgres.py).
+El recorrido completo desde matrícula hasta entrada administrativa, falta de
+salida, bloqueo de reingreso y salida tardía se comprueba en
+[test_attendance_enrollment_flow_postgres.py](../../../backend/tests/test_attendance_enrollment_flow_postgres.py),
+con RPC y, cuando está disponible, cron real. Ver la
+[prueba del flujo](../validaciones/prueba-asistencia-horario/validation.md).
+El [bloqueo entre tipos de asistencia](../validaciones/bloqueo-asistencia/validation.md)
+registra las pruebas HTTP, SQL concurrentes y visuales del control en ambos sentidos.
 
 ## 7. Definition of Done
 

@@ -81,6 +81,7 @@ jobs:
           backend/tests/test_attendance_deadline_postgres.py
           backend/tests/test_automatic_attendance_postgres.py
           backend/tests/test_schedule_sessions_postgres.py
+          backend/tests/test_attendance_enrollment_flow_postgres.py
           -q
       - name: Limpiar PostgreSQL
         if: always()

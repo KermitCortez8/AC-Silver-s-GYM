@@ -75,6 +75,9 @@ class StripeService:
         return_url = f"{self.settings.frontend_public_url}/registro/pago/{client_id}"
         success_url = f"{return_url}?result=success&session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{return_url}?result=failure"
+        if result.get('renewal_token'):
+            success_url += '&renewal=1'
+            cancel_url = f"{self.settings.frontend_public_url}/renovar-membresia#token={result['renewal_token']}"
         if admin:
             return_url = f"{self.settings.frontend_public_url}/admin/clients"
             success_url = f"{return_url}?stripe_result=success&session_id={{CHECKOUT_SESSION_ID}}"
@@ -84,6 +87,8 @@ class StripeService:
             "client_id": str(client_id),
             "membership_id": str(membership_id),
         }
+        if result.get('checkout_attempt'):
+            metadata['checkout_attempt'] = result['checkout_attempt']
         product_data: dict[str, str] = {
             "name": f"Membresía {plan.get('nombre_plan', 'Silver Gym')}",
         }

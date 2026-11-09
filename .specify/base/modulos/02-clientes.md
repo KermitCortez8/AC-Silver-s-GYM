@@ -28,7 +28,8 @@ identificador/DNI, editarla y comprobar que conserva origen y fecha de alta.
    reutilizan la solicitud y el importe guardados, sin duplicar altas.
 5. **CA-05.** Dado un cliente con matrículas y progreso, al borrarlo se eliminan
    sus dependencias contempladas por el comando y se libera el cupo dentro de
-   una operación atómica.
+   una operación atómica. Las ventas se conservan con sus líneas, importes y
+   datos del comprador, desvinculando la cuenta eliminada.
 6. **CA-06.** Al abrir el alta o edición administrativa se consultan los planes
    y promociones del backend; el registro público consulta planes y promociones
    vigentes. Las altas solo ofrecen planes activos y promociones aplicables.
@@ -74,6 +75,12 @@ No activar ni marcar pagado por campos enviados desde el registro público.
 No tomar una edición como renovación. No perder `origen_registro` o
 `fecha_registro` al mapear y recargar. No ejecutar borrados parciales fuera del
 comando de eliminación. Listado y escritura administrativa exigen `admin/staff`.
+El historial de tienda no se elimina junto con el cliente. Aplicar
+[025_delete_clients_preserve_sales.sql](../../../backend/migrations/025_delete_clients_preserve_sales.sql)
+antes del backend que desvincula pedidos; su trigger conserva la venta antes
+del borrado de la cuenta dentro de la misma transacción. Ver
+[regresión SQL](../../../backend/tests/test_client_deletion_postgres.py) y
+[validación](../validaciones/borrado-clientes-con-ventas/validation.md).
 
 ## 6. Edge Cases
 
@@ -131,3 +138,13 @@ si se completan deben tener su longitud exacta. La búsqueda general admite 50
 caracteres. El navegador bloquea el exceso sin avisos ni contadores de longitud.
 
 Evidencia: [validación de límites](../validaciones/limites-formularios/validation.md).
+
+### Acción de renovación
+
+El directorio y los detalles incluyen **Renovar membresía** para cuentas activas
+en sus últimos siete días o ya vencidas. La API publica `renewal_allowed` desde
+el historial real y el botón respeta esa condición. Se revisan importe y plan
+antes de confirmar efectivo recibido o
+continuar a Stripe. El servidor valida el historial activado y los permisos;
+la renovación conserva la cuenta y el historial anteriores. El contrato económico
+y los límites de reintentos están en [MOD-03](03-membresias-pagos.md).

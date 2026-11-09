@@ -62,7 +62,16 @@ def membership_email(settings, event: str, saved: dict, plan: dict) -> dict:
         ("Fecha del pago", str(membership.get("fecha_pago") or "")),
         ("Referencia de pago", str(membership.get("referencia_pago") or "")),
     ]
-    if event == "payment":
+    renewal_paid = event == "payment" and str(membership.get("estado") or "").upper() in {"ACTIVO", "ACTIVA"}
+    if renewal_paid:
+        title = "Renovación de membresía confirmada"
+        description = "Tu pago está confirmado y tu renovación se activó automáticamente. Revisa las fechas de tu nuevo período."
+        details.extend([
+            ("Inicio de vigencia", str(membership.get("fecha_inicio") or "")),
+            ("Fin de vigencia", str(membership.get("fecha_fin") or "")),
+            ("Estado", "Renovación activa"),
+        ])
+    elif event == "payment":
         title = "Pago de membresía confirmado"
         description = (
             "Recibimos el pago de tu preinscripción. Tu cuenta requiere la activación del administrador "
@@ -86,7 +95,7 @@ def membership_email(settings, event: str, saved: dict, plan: dict) -> dict:
     action = (
         f'<p style="margin:28px 0"><a href="{escape(login_url, quote=True)}" '
         'style="background:#dc2626;color:#fff;padding:14px 24px;border-radius:8px;text-decoration:none">Ingresar a mi cuenta</a></p>'
-        if event == "activation" else ""
+        if event == "activation" or renewal_paid else ""
     )
     html = (
         '<!doctype html><html lang="es"><body style="margin:0;background:#f5f5f5;font-family:Arial,sans-serif;color:#171717">'
@@ -98,7 +107,7 @@ def membership_email(settings, event: str, saved: dict, plan: dict) -> dict:
     )
     text = f"Silver Gym Surco\n{title}\n\nHola, {name}.\n{description}\n\n"
     text += "\n".join(f"{label}: {value}" for label, value in details)
-    if event == "activation":
+    if event == "activation" or renewal_paid:
         text += f"\n\nIngresar a mi cuenta: {login_url}"
     return {"from": sender, "to": [recipient], "subject": f"{title} · Silver Gym Surco", "html": html, "text": text}
 
@@ -157,3 +166,29 @@ def schedule_email(settings, data: dict) -> dict:
     text += f"\n\nVer mi horario: {url}"
     return {"from": sender, "to": [recipient], "subject": subject, "html": html, "text": text}
 
+
+
+def membership_expiration_email(settings, event, saved, plan):
+    from application.services.membership_renewal_service import renewal_token
+    client, membership = saved['cliente'], saved['membresia']
+    recipient = _email(str(client.get('correo') or ''))
+    _, sender = email_sender(settings)
+    base = settings.frontend_public_url.rstrip('/')
+    if urlsplit(base).scheme not in {'https', 'http'} or not urlsplit(base).netloc:
+        raise ValueError('Configura FRONTEND_PUBLIC_URL para el enlace de renovación')
+    url = f'{base}/renovar-membresia#token={renewal_token(settings, membership)}'
+    title = 'Tu membresía está por vencer' if event == 'expiring' else 'Tu membresía ha vencido'
+    name = str(client.get('nombre') or 'Cliente')
+    description = (f"Tu membresía {plan.get('nombre_plan', '')} tiene como último día de vigencia "
+                   f"el {membership['fecha_fin']}. Revisa los detalles y el precio actual antes de renovar. "
+                   'La renovación se activa automáticamente al confirmar el pago.')
+    text = f'{title}\n\nHola, {name}.\n{description}\n\nRenovar mi membresía: {url}'
+    html = ('<!doctype html><html lang="es"><body style="font-family:Arial;background:#f5f5f5;padding:24px">'
+            '<main style="max-width:620px;margin:auto;background:white;padding:32px;border-radius:16px">'
+            '<p style="color:#ea580c">Silver Gym Surco</p>'
+            f'<h1>{escape(title)}</h1><p>Hola, {escape(name)}.</p><p>{escape(description)}</p>'
+            f'<p><a href="{escape(url, quote=True)}" style="display:inline-block;background:#ea580c;color:white;'
+            'padding:14px 24px;border-radius:8px;text-decoration:none">Revisar y renovar membresía</a></p>'
+            '<p>El enlace personal está disponible hasta 30 días después del vencimiento. '
+            'Si ya renovaste, consulta con administración.</p></main></body></html>')
+    return {'from': sender, 'to': [recipient], 'subject': f'{title} · Silver Gym Surco', 'html': html, 'text': text}

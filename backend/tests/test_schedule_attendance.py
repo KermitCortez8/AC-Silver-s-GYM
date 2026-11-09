@@ -55,6 +55,67 @@ def test_lista_informa_si_la_entrada_esta_dentro_del_horario(attendance, hour, a
     assert bool(student["motivo"]) is not allowed
 
 
+@pytest.mark.parametrize('hour,overlap', [('09:29:59', False), ('09:30:00', True),
+    ('09:59:59', True), ('10:00:00', True), ('13:59:59', True), ('14:00:00', True),
+    ('14:30:00', True), ('14:30:01', False)])
+def test_aviso_cruzado_incluye_margen_de_treinta_minutos(attendance, admin, hour, overlap):
+    enroll(attendance)
+    set_time(attendance, hour)
+    opened = attendance.enter_general('11111111', '00000000-0000-0000-0000-000000000001', admin)
+    student = attendance.roster(1)['clientes'][0]
+    assert not student['puede_entrar']
+    assert bool(student['asistencia_abierta']) is overlap
+    if overlap:
+        assert student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']
+        assert 'asistencia general' in student['motivo_coincidencia']
+    else:
+        assert not student['motivo_coincidencia']
+
+
+def test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual(attendance, admin):
+    enroll(attendance)
+    attendance.enter_general('11111111', '00000000-0000-0000-0000-000000000001', admin)
+    attendance.gym.state['matriculas_horario'].append({'id_matricula': 2, 'id_cliente': 1,
+        'id_horario_servicio': 1, 'estado': 'ACTIVA', 'fecha_clase': '2026-10-14'})
+    student = attendance.roster(1, '2026-10-14')['clientes'][0]
+    assert student['asistencia_abierta'] is None
+    assert 'el día de esta sesión' in student['motivo']
+
+
+@pytest.mark.parametrize('hour,near', [('14:00:00', True), ('14:30:00', True), ('14:30:01', False), ('15:00:01', False)])
+def test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin(attendance, admin, hour, near):
+    enroll(attendance)
+    row = attendance.enter({'id_matricula': 1}, admin)
+    # Editar el catálogo no desplaza la franja de la visita ya guardada.
+    attendance.gym.state['horarios_servicio'][0]['hora_fin'] = '18:00'
+    set_time(attendance, hour)
+    general = attendance.lookup('11111111')['general']
+    assert general['coincidencia_horario'] is near
+    assert general['asistencia_abierta']['id_asistencia'] == row['id_asistencia']
+    assert not general['puede_entrar']  # Sigue siendo necesario registrar la salida pendiente.
+
+
+def test_visita_cerrada_no_provoca_aviso_aunque_haya_menos_de_treinta_minutos(attendance, admin):
+    enroll(attendance)
+    row = attendance.enter({'id_matricula': 1}, admin)
+    attendance.exit(row['id_asistencia'], admin)
+    set_time(attendance, '10:31:00')
+    general = attendance.lookup('11111111')['general']
+    assert general['puede_entrar'] and not general['coincidencia_horario']
+    assert general['asistencia_abierta'] is None
+
+
+def test_coincidencia_cruza_medianoche_con_margen_inclusivo(attendance, admin):
+    enroll(attendance)
+    attendance.gym.state['horarios_servicio'][0].update(hora_inicio='22:30', hora_fin='23:30')
+    set_time(attendance, '23:00:00')
+    attendance.enter({'id_matricula': 1}, admin)
+    set_time(attendance, '00:00:00', '2026-10-08')
+    assert attendance.lookup('11111111')['general']['coincidencia_horario']
+    set_time(attendance, '00:00:01', '2026-10-08')
+    assert not attendance.lookup('11111111')['general']['coincidencia_horario']
+
+
 @pytest.mark.parametrize("hour,status", [("10:30:00", "completada"), ("14:30:00", "completada"),
     ("15:00:00", "completada"), ("15:00:01", "incompleta"), ("23:59:59", "incompleta")])
 def test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta(attendance, admin, hour, status):

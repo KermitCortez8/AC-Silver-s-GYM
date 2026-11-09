@@ -80,6 +80,9 @@ No aceptar SVG nuevos aunque se listen SVG históricos.
   devolver el conflicto/error correspondiente.
 - Pago recibido para pedido cancelado: señalar que requiere reembolso.
 - Pedido histórico sin detalles: conservar el total conocido sin inventar líneas.
+- Cuenta eliminada: conservar la venta y sus detalles, referencia de pago,
+  importes y copia del comprador; `id_cliente` queda nulo. Aplicar
+  [025_delete_clients_preserve_sales.sql](../../../backend/migrations/025_delete_clients_preserve_sales.sql).
 - Producto sin ítem vinculado: mantener su stock propio compatible con reglas actuales.
 - Archivo vacío, excedido o MIME incompatible: rechazar antes de almacenar.
 

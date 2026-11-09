@@ -119,3 +119,23 @@ test('activar sincroniza los detalles y cierra la confirmación', async () => {
   state.requestActivation(client); await state.activateMembership(client);
   assert.equal(state.viewingClient.value.membershipStatus, 'ACTIVO'); assert.equal(state.pendingActivation.value, null);
 });
+test('el retorno muestra activación automática únicamente con estado confirmado por servidor', async () => {
+  const view = await paymentView(async () => ({ confirmed: true, id_cliente: 1, membership_status: 'ACTIVO' }));
+  await view.setup.confirmPaidCheckout();
+  assert.match(view.setup.resultStyle.description, /automáticamente/);
+  assert.equal(view.setup.resultStyle.status, 'Pago confirmado; renovación activa');
+  view.dispose();
+  const first = await paymentView(async () => ({ confirmed: true, id_cliente: 1, membership_status: 'EN_TRAMITE' }),
+    '?result=success&session_id=cs_test&renewal=1');
+  await first.setup.confirmPaidCheckout();
+  assert.match(first.setup.resultStyle.description, /primera membresía/);
+  assert.equal(first.setup.resultStyle.status, 'Pago confirmado; activación pendiente');
+  first.dispose();
+});
+test('abrir clientes fuerza actualización aunque la lista esté en caché', async () => {
+  services(); const forces = [];
+  const state = useClientMembershipActions({ gymStore: {}, authStore: {}, feedbackMessage: ref(''), feedbackTone: ref(''),
+    viewingClient: ref(null), route: { query: {} }, router: {}, refreshClients: async force => { forces.push(force); } });
+  await state.initializeDirectory();
+  assert.deepEqual(forces, [true]);
+});

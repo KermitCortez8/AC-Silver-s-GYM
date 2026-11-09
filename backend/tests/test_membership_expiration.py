@@ -163,15 +163,14 @@ def test_duplicate_stripe_payment_cannot_unblock_expired_account(gym):
     assert gym.state['clientes'][0]['estado'] == 'VENCIDA'
 
 
-def test_new_paid_membership_can_restore_access_after_admin_activation(gym):
+def test_paid_renewal_restores_access_without_another_admin_activation(gym):
     expire(gym)
     gym.expire_memberships()
     old = gym.state['membresia'][0]
     gym.crear_membresia({'id_cliente': old['id_cliente'], 'id_pm': old['id_pm'], 'estado': 'PENDIENTE_PAGO'})
-    gym.confirmar_pago_manual_cliente(old['id_cliente'])
     with pytest.raises(ClientMembershipExpired):
         AuthService(gym).session_for_client(gym.state['clientes'][0])
-    gym.activar_membresia_cliente(old['id_cliente'])
+    gym.confirmar_pago_manual_cliente(old['id_cliente'])
     AuthService(gym).session_for_client(gym.state['clientes'][0])
     assert gym.state['clientes'][0]['estado'] == 'ACTIVO'
     assert old['estado'] == 'VENCIDA'

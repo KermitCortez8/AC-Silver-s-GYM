@@ -83,7 +83,8 @@ def test_client_deletion_keeps_the_whole_cascade_inside_one_command():
     for resource in (Resource.CLIENTES, Resource.MEMBRESIA, Resource.ASISTENCIA,
                      Resource.HORARIO, Resource.TICKETS_ATENCION):
         assert [row['id_cliente'] for row in repo.state[resource]] == [2]
-    assert set(DeleteClienteCommand.resources) >= {Resource.ASISTENCIA, Resource.HORARIO, Resource.TICKETS_ATENCION}
+    assert set(DeleteClienteCommand.resources) >= {
+        Resource.ASISTENCIA, Resource.HORARIO, Resource.TICKETS_ATENCION, Resource.PEDIDOS_TIENDA}
 
 
 def test_failed_typed_command_does_not_publish_partial_business_state():
