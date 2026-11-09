@@ -113,7 +113,7 @@ def test_history_passes_client_scope_to_persistence_and_hides_audit():
         return AttendancePage([{'id_asistencia': 90, 'id_cliente_num': 7, 'fecha': '2026-10-23',
                                 'auditoria': [{'actor': 'privado'}], 'id_usuario_registra': 1}],
                               [{'id_cliente': 7, 'nombre': 'Ana', 'dni': '12345678'}], 44)
-    service = AttendanceService(SimpleNamespace(attendance_page=page))
+    service = AttendanceService(SimpleNamespace(attendance_page=page, reconcile_attendance=lambda now: 0))
     # La conversión de identificador forma parte de la capacidad pública del gimnasio.
     service.gym.parse_client_id = GymDomainService().parse_client_id
     result = service.history(SimpleNamespace(role='user', id_cliente=7), page=2, page_size=15,

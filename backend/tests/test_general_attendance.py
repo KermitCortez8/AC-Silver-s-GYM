@@ -318,3 +318,71 @@ def test_client_week_contains_only_own_general_visits(api, attendance, admin):
     assert result["visitas"] == 1 and len(result["generales"]) == 1
     assert result["generales"][0]["cliente_dni"] == "11111111"
     assert "auditoria" not in result["generales"][0]
+
+
+def test_general_tres_horas_exactas_admiten_salida_real(attendance, admin):
+    row = enter(attendance, admin)
+    assert row['limite_salida'] == '2026-10-07T13:30:00-05:00'
+    attendance.clock = lambda: datetime(2026, 10, 7, 13, 30, tzinfo=LIMA)
+    assert attendance.summary(admin)['dentro'] == 1
+    saved = attendance.exit(row['id_asistencia'], admin)
+    assert saved['estado'] == 'completada' and not saved['cierre_automatico']
+
+
+def test_general_se_cierra_incompleta_y_libera_aforo_al_superar_tres_horas(attendance, admin):
+    request = str(uuid4())
+    row = attendance.enter_general('11111111', request, admin)
+    attendance.clock = lambda: datetime(2026, 10, 7, 13, 30, 1, tzinfo=LIMA)
+    summary = attendance.summary(admin)
+    assert summary['dentro'] == 0 and summary['salidas'] == 1
+    assert summary['pendientes'] == []
+    closed = attendance.records(admin, estado='incompleta')[0]
+    assert closed['hora_salida'] == '13:30:00' and closed['fecha_salida'] == '2026-10-07'
+    assert closed['cierre_automatico'] and closed['estado_asistencia'] == 'incompleta'
+    assert closed['version'] == 2 and closed['auditoria'][-1]['accion'] == 'cierre_automatico'
+    assert attendance.records(admin, estado='completada') == []
+    assert attendance.exit(row['id_asistencia'], admin)['hora_salida'] == '13:30:00'
+    assert attendance.enter_general('11111111', request, admin)['id_asistencia'] == row['id_asistencia']
+    lookup = attendance.lookup('11111111')['general']
+    assert lookup['asistencia_abierta'] is None and lookup['ultima_visita']['cierre_automatico']
+    assert lookup['puede_entrar']
+    assert enter(attendance, admin)['id_asistencia'] != row['id_asistencia']
+
+
+def test_cierre_general_cruza_medianoche_y_conserva_privacidad(attendance, admin):
+    attendance.clock = lambda: datetime(2026, 10, 7, 22, 15, tzinfo=LIMA)
+    enter(attendance, admin)
+    attendance.clock = lambda: datetime(2026, 10, 8, 1, 15, 1, tzinfo=LIMA)
+    user = SimpleNamespace(role='user', id_cliente=1)
+    rows = attendance.records(user)
+    assert rows[0]['fecha_salida'] == '2026-10-08' and rows[0]['hora_salida'] == '01:15:00'
+    assert rows[0]['cierre_automatico'] and rows[0]['estado'] == 'incompleta'
+    assert 'auditoria' not in rows[0]
+    assert attendance.records(SimpleNamespace(role='user', id_cliente=2)) == []
+
+
+def test_cierre_general_admite_correccion_documentada_de_salida_real(attendance, admin):
+    row = enter(attendance, admin)
+    attendance.clock = lambda: datetime(2026, 10, 7, 14, 0, tzinfo=LIMA)
+    closed = attendance.exit(row['id_asistencia'], admin)
+    corrected = attendance.correct(row['id_asistencia'], {
+        'version': closed['version'], 'motivo': 'La salida real fue verificada.',
+        'fecha': row['fecha'], 'hora_entrada': row['hora_entrada'],
+        'hora_salida': '12:00:00', 'fecha_salida': row['fecha'],
+    }, admin)
+    assert corrected['estado'] == 'completada' and not corrected['cierre_automatico']
+    assert any(e['accion'] == 'cierre_automatico' for e in corrected['auditoria'])
+
+
+def test_reconciliacion_observa_cierre_del_cron_aunque_ya_no_haya_vencidas():
+    from infrastructure.repositories.gym_repository import SupabaseGymRepository
+    repository = object.__new__(SupabaseGymRepository)
+    class Database:
+        def rpc(self, name, body):
+            assert name == 'marcar_asistencias_incompletas' and body == {}
+            return 0
+    repository.supabase = Database()
+    repository.cache.resource_refreshed_at.update(asistencia=10.0, clientes=10.0)
+    assert repository.reconcile_attendance(datetime(2026, 10, 7, 13, 30, 1, tzinfo=LIMA)) == 0
+    assert 'asistencia' not in repository.cache.resource_refreshed_at
+    assert repository.cache.resource_refreshed_at['clientes'] == 10.0

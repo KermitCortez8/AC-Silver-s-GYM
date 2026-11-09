@@ -26,6 +26,10 @@ def migrated_rows(table, rows):
 
 class AtomicFakeMixin:
     def rpc(self, name, body):
+        if name == "marcar_asistencias_incompletas":
+            # Espía de lecturas/escrituras; el mantenimiento temporal real se
+            # comprueba en test_automatic_attendance_postgres.py.
+            return 0
         if name == 'gym_identity_floors':
             from infrastructure.repositories.gym_repository import SupabaseGymRepository
             keys = {table: pk for table, _local, pk in SupabaseGymRepository.CORE_TABLES.values()}

@@ -1,5 +1,6 @@
 """Contrato de persistencia utilizado por los casos de uso del gimnasio."""
 from typing import Protocol, TypeVar
+from datetime import datetime
 from application.operations.contracts import GymQuery, GymCommand, Record
 from domain.ports import PasswordHasher
 from domain.models.resources import Resource
@@ -9,6 +10,7 @@ T = TypeVar("T")
 
 
 class GymRepository(Protocol):
+    def reconcile_attendance(self, now: datetime) -> int: ...
     def attendance_summary(self, day: str, client_id: int | None = None) -> AttendanceSummaryData: ...
     def attendance_page(self, criteria: AttendanceCriteria, request: PageRequest) -> AttendancePage: ...
     def query(self, query: GymQuery[T], passwords: PasswordHasher | None = None) -> T: ...

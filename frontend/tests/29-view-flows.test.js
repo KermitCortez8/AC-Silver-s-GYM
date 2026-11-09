@@ -603,3 +603,45 @@ test('one rest timer supports pause, resume, completion and disposal without lea
     scope.stop();
   }
 });
+
+test('las visitas generales incompletas muestran el estado y conservan la salida real pendiente', async () => {
+  const { default: GeneralVisit } = await server.ssrLoadModule(
+    '/src/presentation/components/attendance/AttendanceGeneralVisit.vue',
+  );
+  const { default: PendingVisits } = await server.ssrLoadModule(
+    '/src/presentation/components/attendance/AttendancePendingVisits.vue',
+  );
+  const record = { id_asistencia: 15, tipo: 'general', servicio: 'gimnasio',
+    cliente_nombre: 'Ana Torres', cliente_dni: '01234567', fecha: '2026-11-08',
+    hora_entrada: '10:00:00', hora_salida: '', estado: 'incompleta',
+    aviso: 'La asistencia se guardó automáticamente como incompleta.' };
+  const general = await renderToString(createSSRApp({ render: () => h(GeneralVisit, {
+    clientData: { general: { asistencia_abierta: record } },
+  }) }));
+  assert.match(general, /Visita incompleta sin salida/);
+  assert.match(general, /<span class="[^"]*incompleta[^"]*">Incompleta/);
+  assert.match(general, /Registrar salida/);
+  assert.match(general, /se guardó automáticamente como incompleta/);
+  assert.doesNotMatch(general, /<span class="[^"]*dentro[^"]*">/);
+  const pending = await renderToString(createSSRApp({ render: () => h(PendingVisits, {
+    summary: { ...summary, pendientes: [record] }, isGeneral: true,
+  }) }));
+  assert.match(pending, /<span class="[^"]*incompleta[^"]*">Incompleta/);
+  assert.match(pending, /Registrar salida de Ana Torres/);
+});
+
+test('el cierre automático general se muestra como incompleto y permite un nuevo ingreso', async () => {
+  const { default: GeneralVisit } = await server.ssrLoadModule(
+    '/src/presentation/components/attendance/AttendanceGeneralVisit.vue',
+  );
+  const html = await renderToString(createSSRApp({ render: () => h(GeneralVisit, {
+    clientData: { general: { puede_entrar: true, asistencia_abierta: null,
+      ultima_visita: { id_asistencia: 19, hora_entrada: '10:00:00', hora_salida: '13:00:00',
+        fecha_salida: '2026-11-08', estado: 'incompleta', cierre_automatico: true } } },
+  }) }));
+  assert.match(html, /Visita anterior cerrada automáticamente/);
+  assert.match(html, /Cierre 13:00/);
+  assert.match(html, /Incompleta/);
+  assert.match(html, /Registrar entrada al gimnasio/);
+  assert.doesNotMatch(html, /Registrar salida/);
+});

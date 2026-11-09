@@ -32,7 +32,8 @@
         La visita dejará de contar en la asistencia. El registro y su historial
         de cambios se conservarán.
       </p>
-      <div v-else class="att-form-grid">
+      <p v-if="record.cierre_automatico" class="att-notice">La hora de salida corresponde a un cierre automático después de tres horas. Corrige únicamente con la hora real verificada.</p>
+      <div v-if="!annulling" class="att-form-grid">
         <label
           >Fecha de entrada<input
             v-model="form.fecha"
@@ -163,6 +164,8 @@ const actionLabels = {
   salida: 'Salida',
   correccion: 'Corrección',
   anulacion: 'Anulación',
+  incompleta_automatica: 'Asistencia incompleta automática',
+  cierre_automatico: 'Cierre automático por tres horas sin salida',
 };
 const form = reactive({
   fecha: props.record.fecha,

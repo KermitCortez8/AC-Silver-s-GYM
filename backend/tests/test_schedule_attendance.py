@@ -167,9 +167,20 @@ def test_estado_incompleto_se_filtra_en_persistencia_con_paginacion(status, cond
 def test_esquema_sin_migracion_018_rechaza_antes_de_escribir():
     class Database:
         def validate_columns(self, table, columns):
-            assert table == "ASISTENCIA" and columns == {"limite_salida", "salida_tardia"}
+            assert table == "ASISTENCIA" and columns == {"limite_salida", "salida_tardia", "estado_asistencia", "cierre_automatico"}
             raise RuntimeError("Faltan columnas de migración 018")
         def rpc(self, *_args):
             pytest.fail("No debe escribir una asistencia que perdería su límite")
     with pytest.raises(RuntimeError, match="018"):
         AttendanceRepository(Database(), GymCache()).save_attendance({}, None, {})
+
+
+def test_estado_automatico_recargado_y_aviso_general_no_se_confunden_con_clase(attendance):
+    from domain.services.attendance_status import GENERAL_LATE_EXIT_MESSAGE
+    row = _map_attendance({'id_asistencia': 9, 'id_cliente': 1,
+        'Fecha': '2026-10-07', 'Hora': '09:00:00', 'servicio': 'gimnasio',
+        'estado_asistencia': 'incompleta', 'hora_salida': None})
+    presented = attendance.present(row)
+    assert presented['estado'] == 'incompleta'
+    assert presented['aviso'] == GENERAL_LATE_EXIT_MESSAGE
+    assert not presented['hora_salida']

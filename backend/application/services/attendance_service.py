@@ -13,7 +13,7 @@ from domain.validation import bounded_text
 from domain.form_limits import LONG_TEXT_LIMIT
 from domain.errors import AttendanceConflict
 from domain.services.membership_lifecycle import membership_current
-from domain.services.attendance_status import attendance_status, LATE_EXIT_MESSAGE
+from domain.services.attendance_status import attendance_status, LATE_EXIT_MESSAGE, GENERAL_LATE_EXIT_MESSAGE
 from domain.services.schedule_sessions import enrollment_session, next_session
 from application.read_models import AttendanceCriteria, PageRequest
 
@@ -22,6 +22,9 @@ class AttendanceService:
     def __init__(self, gym, clock=None):
         self.gym = gym
         self.clock = clock or (lambda: datetime.now(LIMA))
+
+    def synchronize(self):
+        return self.gym.reconcile_attendance(self.now())
 
     def now(self):
         return self.clock().astimezone(LIMA).replace(microsecond=0)
@@ -43,7 +46,8 @@ class AttendanceService:
         result = {**deepcopy(row), "cliente_nombre": client.get("nombre", "Cliente"),
                   "cliente_dni": client.get("dni", ""), "estado": self.status(row),
                   "version": int(row.get("version") or 0), "tipo": self.kind(row)}
-        result["aviso"] = LATE_EXIT_MESSAGE if result["estado"] == "incompleta" else ""
+        result["aviso"] = ((GENERAL_LATE_EXIT_MESSAGE if self.kind(row) == "general" else LATE_EXIT_MESSAGE)
+                           if result["estado"] == "incompleta" else "")
         if not admin:
             for key in ("auditoria", "id_usuario_registra"):
                 result.pop(key, None)
@@ -67,6 +71,7 @@ class AttendanceService:
         admin = user.role == "admin"
         if not admin and not user.id_cliente:
             raise ValueError("No encontramos tu cliente vinculado.")
+        self.synchronize()
         criteria = AttendanceCriteria(client_id=None if admin else user.id_cliente, dni=dni,
             since=str(desde) if desde else "", until=str(hasta) if hasta else "",
             service=servicio, status=estado, kind=tipo, include_annulled=admin, at=self.now().isoformat())
@@ -80,6 +85,7 @@ class AttendanceService:
         admin = user.role == "admin"
         if not admin and not user.id_cliente:
             raise ValueError("No encontramos tu cliente vinculado.")
+        self.synchronize()
         data = self.gym.attendance_summary(today, None if admin else user.id_cliente)
         clients = {int(row["id_cliente"]): row for row in data.clients}
         present = lambda row: self.present(row, admin, clients.get(self.client_id(row), {}))
@@ -146,6 +152,7 @@ class AttendanceService:
         return client, member, schedule
 
     def lookup(self, dni):
+        self.synchronize()
         client = self.gym.get_cliente_by_dni(dni)
         if not client:
             raise ValueError("No se encontró un cliente con ese DNI.")
@@ -178,10 +185,14 @@ class AttendanceService:
             self.general_context(client_id, now)
         except ValueError as error:
             reason = str(error)
+        latest_general = next((r for r in sorted(self.gym.asistencia(), key=lambda r: r["id_asistencia"], reverse=True)
+                               if self.client_id(r) == client_id and self.kind(r) == "general"
+                               and not r.get("anulado")), None)
         return {"cliente": {k: client.get(k) for k in ("id_cliente", "nombre", "dni", "plan", "estado")},
                 "membresia": {k: member.get(k) for k in ("fecha_inicio", "fecha_fin", "estado", "estado_pago")} if member else None,
                 "general": {"puede_entrar": not reason, "motivo": reason,
-                            "asistencia_abierta": self.present(open_record) if open_record else None},
+                            "asistencia_abierta": self.present(open_record) if open_record else None,
+                            "ultima_visita": self.present(latest_general) if latest_general else None},
                 "horarios": schedules, "fecha": now.date().isoformat(), "server_now": now.isoformat()}
 
     def general_retry(self, rows, client_id, request_id):
@@ -198,6 +209,7 @@ class AttendanceService:
         return {"horarios": schedules, "fecha": now.date().isoformat(), "server_now": now.isoformat()}
 
     def roster(self, schedule_id, fecha=None):
+        self.synchronize()
         now = self.now()
         day = date.fromisoformat(str(fecha)).isoformat() if fecha else now.date().isoformat()
         schedule = self.gym.get_horario_servicio(schedule_id)
@@ -233,6 +245,7 @@ class AttendanceService:
                 + timedelta(hours=1)).isoformat()
 
     def enter_general(self, dni, request_id, actor):
+        self.synchronize()
         client = self.gym.get_cliente_by_dni(dni)
         if not client:
             raise ValueError("No se encontró un cliente con ese DNI.")
@@ -244,6 +257,7 @@ class AttendanceService:
         client, member = self.general_context(client_id, now)
         row = {"id_cliente": client_id, "id_cliente_num": client_id, "id_membresia": member["id_membresia"],
                "id_matricula": None, "id_horario_servicio": None, "servicio": "gimnasio",
+               "limite_salida": (now + timedelta(hours=3)).isoformat(), "cierre_automatico": False,
                "fecha": now.date().isoformat(), "hora": now.strftime("%H:%M:%S"),
                "hora_entrada": now.strftime("%H:%M:%S"), "hora_salida": "", "fecha_salida": None,
                "id_usuario_registra": actor.id_usuario or actor.id, "anulado": False}
@@ -255,6 +269,7 @@ class AttendanceService:
                      and r.get("id_matricula") == enrollment["id_matricula"] and r.get("fecha") == day), None)
 
     def enter(self, payload, actor):
+        self.synchronize()
         now = self.now()
         enrollment_id = payload.get("id_matricula")
         if not enrollment_id:
@@ -291,6 +306,7 @@ class AttendanceService:
         return deepcopy(row)
 
     def exit(self, record_id, actor):
+        self.synchronize()
         row = self.get(record_id)
         if row.get("anulado"):
             raise ValueError("La asistencia está anulada.")
@@ -315,6 +331,7 @@ class AttendanceService:
             raise ValueError("Indica también la hora de salida.")
 
     def correct(self, record_id, payload, actor, annul=False):
+        self.synchronize()
         row = self.get(record_id)
         if row.get("anulado"):
             raise ValueError("La asistencia ya está anulada.")

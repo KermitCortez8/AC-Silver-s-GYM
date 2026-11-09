@@ -30,7 +30,7 @@ def run(action):
     except (RuntimeError, OSError) as error:
         # Deja en el log la causa real (RPC inexistente, tipo de dato, conexión…).
         logger.exception("Fallo al guardar o leer asistencia")
-        raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y las migraciones de asistencia 005, 013, 018 y 019 en Supabase.") from error
+        raise HTTPException(503, "No se pudo guardar la asistencia. Comprueba la conexión y las migraciones de asistencia 005, 013, 018, 019, 021, 022 y 023 en Supabase.") from error
 
 
 @router.get("")

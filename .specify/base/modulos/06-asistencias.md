@@ -50,6 +50,12 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
    en el límite de una hora aún puede completarse. Historial y exportación admiten
    el filtro de incompletas sin ampliar el acceso de una sesión de cliente.
 
+11. **CA-11.** Una visita general sin salida se cierra automáticamente al superar
+    tres horas desde la entrada: guarda la hora límite como cierre automático,
+    queda incompleta, libera aforo y permite un nuevo ingreso. Exactamente a las
+    tres horas todavía admite una salida manual completada. El historial y Excel
+    distinguen la salida automática de una real; la auditoría conserva el evento.
+
 | Criterio | Evidencia existente |
 | --- | --- |
 | CA-01 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_entry_without_enrollment_and_exit_use_server_clock`, `test_entry_requires_current_paid_membership`. |
@@ -62,6 +68,7 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
 | CA-08 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario`, permisos y recorrido HTTP; [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js): calendario compartido, cupos, filtro, selección, bloqueo al guardar y descarte de respuestas obsoletas. |
 | CA-09 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_lista_informa_si_la_entrada_esta_dentro_del_horario`; [test_attendance_deadline_postgres.py](../../../backend/tests/test_attendance_deadline_postgres.py): `test_rpc_rechaza_clase_terminada_sin_guardar`. |
 | CA-10 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): límites, cambio de día, historial privado, persistencia y cambio de horario; [test_attendance_deadline_postgres.py](../../../backend/tests/test_attendance_deadline_postgres.py): RPC, auditoría, límite inclusivo y migración repetible. |
+| CA-11 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py) y [test_automatic_attendance_postgres.py](../../../backend/tests/test_automatic_attendance_postgres.py): límite inclusivo, cierre, aforo, reingreso, auditoría y cron real. |
 
 ## 4. Technical Constraints
 
@@ -81,6 +88,18 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
   matrícula/horario nulos. No hay tabla separada de visitas generales.
   `limite_salida` conserva fecha/hora de fin más una hora en cada nueva visita de clase;
   `salida_tardia` se calcula en la RPC y se conserva al recargar.
+  [021_persist_attendance_status.sql](../../../backend/migrations/021_persist_attendance_status.sql)
+  incorpora `estado_asistencia`, un trigger de coherencia y el proceso privado
+  `marcar_asistencias_incompletas`.
+  [022_attendance_status_cron.sql](../../../backend/migrations/022_attendance_status_cron.sql)
+  programa el guardado cada diez segundos mediante pg_cron. Una transición automática
+  conserva las horas reales y la versión de edición, y añade un evento de Sistema;
+  no provoca conflictos artificiales al registrar la salida.
+  [023_general_attendance_three_hour_close.sql](../../../backend/migrations/023_general_attendance_three_hour_close.sql)
+  fija `limite_salida` general en entrada más tres horas y añade `cierre_automatico`.
+  El cierre sí incrementa la versión, porque modifica la salida y libera aforo;
+  una salida reintentada devuelve el cierre existente. Las consultas también
+  reconcilian vencimientos mediante la misma función privada y el reloj de la base.
 - UI: `/admin/attendance` y `/user/attendance`,
   [AttendanceView.vue](../../../frontend/src/presentation/views/AttendanceView.vue),
   [UserAttendanceView.vue](../../../frontend/src/presentation/views/UserAttendanceView.vue).
@@ -104,11 +123,15 @@ historial. No publicar auditoría al cliente ni mezclar fechas de clases semanal
   Una clase terminada sin entrada queda sin registro; no se crea una visita
   ni se persiste una inasistencia automática. Las horas enviadas por el navegador
   no permiten registrar una nueva entrada fuera del intervalo.
-- Reingreso general el mismo día tras cerrar: permitir con nueva identidad de solicitud.
-- Salida pendiente de un día anterior: continúa contando como visita abierta.
-- Una incompleta sin salida continúa consumiendo aforo hasta registrar la salida
-  real; el vencimiento no inventa una salida. Su estado se calcula al consultar,
-  sin depender de un cron ni de que una pantalla permanezca abierta.
+- Reingreso general el mismo día tras una salida manual o cierre automático:
+  permitir con nueva identidad de solicitud. Repetir la solicitud anterior devuelve
+  la visita ya cerrada sin duplicarla.
+- Una visita general abierta de días anteriores se cierra al reconciliar o migrar,
+  usando la entrada original más tres horas; el plazo puede cruzar medianoche.
+- Una incompleta de clase sin salida continúa consumiendo aforo hasta registrar la salida
+  real; el vencimiento no inventa una salida. Su estado se guarda automáticamente en `estado_asistencia` por un trabajo de
+  base de datos cada diez segundos, sin depender del navegador ni del backend.
+  La lectura aplica también el límite mientras llega la siguiente ejecución.
 - El plazo usa el horario guardado al entrar y puede cruzar medianoche. Editar
   o desactivar la clase no cambia el límite de visitas ya registradas.
 - La migración 018 asigna un límite a visitas de clase abiertas usando el horario
@@ -119,6 +142,27 @@ historial. No publicar auditoría al cliente ni mezclar fechas de clases semanal
 - Mismo horario en otra semana: filtrar por `fecha_clase`, tanto en el listado
   administrativo como en `mi-semana`. Una respuesta de otra fecha se descarta en
   el frontend; un fallo de carga no muestra los clientes de la selección anterior.
+
+### Guardado automático del estado
+
+Clases: al superar estrictamente el fin original más una hora sin salida, se guarda
+**incompleta** aunque nadie consulte. No crea salida ni libera aforo. Una salida
+real tardía posterior conserva el estado incompleto.
+
+Gimnasio general: al superar tres horas desde la entrada sin salida, se guarda
+**incompleta** y se CIERRA la visita. El sistema guarda fecha/hora del límite,
+`cierre_automatico=true` y un evento del Sistema; libera aforo. Esa hora representa
+un cierre administrativo automático, no una salida real observada. Una corrección
+con motivo puede reconstruir la salida real y conserva la evidencia del cierre.
+Las generales históricas ya cerradas no se reclasifican al migrar.
+
+El trabajo programado tiene una frecuencia de diez segundos: la materialización
+ocurre en la primera ejecución posterior al límite. Exactamente en el límite aún
+puede completarse. La programación requiere aplicar 021, 022 y 023 con pg_cron habilitado;
+la presencia de esos archivos no acredita su instalación en una base remota.
+
+Evidencia de persistencia sin navegador, concurrencia, límites y permisos:
+[test_automatic_attendance_postgres.py](../../../backend/tests/test_automatic_attendance_postgres.py).
 
 ## 7. Definition of Done
 

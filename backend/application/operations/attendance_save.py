@@ -9,6 +9,7 @@ from domain.models.resources import Resource
 from domain.services.domain_components import DomainComponents
 from domain.services.client_identifiers import parse_client_id
 from domain.errors import AttendanceConflict
+from domain.services.attendance_maintenance import reconcile_attendance, general_deadline
 
 
 @dataclass(frozen=True)
@@ -60,6 +61,7 @@ def apply_record(policy, state, row, expected, audit):
     operation = audit["accion"]
     request_id = audit.get("request_id")
     rows = state.setdefault("asistencia", [])
+    reconcile_attendance(rows, policy.now())
     old = next((r for r in rows if r.get("id_asistencia") == row.get("id_asistencia")), None)
     if expected is None:
         if policy.kind(row) == "general":
@@ -73,6 +75,8 @@ def apply_record(policy, state, row, expected, audit):
             return duplicate
         if policy.kind(row) == "general":
             policy.general_context(policy.client_id(row), policy.now())
+            row["limite_salida"] = general_deadline(row).isoformat()
+            row["cierre_automatico"] = False
         else:
             enrollment = next(e for e in state["matriculas_horario"] if e["id_matricula"] == row["id_matricula"])
             _, _, schedule = policy.entry_context(enrollment, policy.now())
@@ -91,8 +95,14 @@ def apply_record(policy, state, row, expected, audit):
                 raise AttendanceConflict("El cliente ya tiene una asistencia para ese horario y día, o una entrada sin salida.")
     if old:
         row["limite_salida"] = old.get("limite_salida")
-    row["salida_tardia"] = bool(row.get("hora_salida") and policy.status({**row, "salida_tardia": False}) == "incompleta")
-    fields = ("fecha", "hora_entrada", "hora_salida", "fecha_salida", "anulado", "limite_salida", "salida_tardia")
+    if policy.kind(row) == "general":
+        row["limite_salida"] = general_deadline(row).isoformat()
+        row["cierre_automatico"] = bool(operation != "correccion" and old and old.get("cierre_automatico")
+            and (row.get("hora_salida"), row.get("fecha_salida"))
+            == (old.get("hora_salida"), old.get("fecha_salida")))
+    row["salida_tardia"] = bool(row.get("hora_salida") and policy.status({**row, "salida_tardia": False, "cierre_automatico": False}) == "incompleta")
+    row["estado_asistencia"] = policy.status({**row, "estado_asistencia": None})
+    fields = ("fecha", "hora_entrada", "hora_salida", "fecha_salida", "anulado", "limite_salida", "salida_tardia", "estado_asistencia", "cierre_automatico")
     audit["antes"] = {k: old.get(k) for k in fields} if old else None
     audit["despues"] = {k: row.get(k) for k in fields}
     row["auditoria"] = [*(old or {}).get("auditoria", []), audit]
