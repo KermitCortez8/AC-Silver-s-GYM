@@ -70,17 +70,17 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_entry_without_enrollment_and_exit_use_server_clock`, `test_entry_requires_current_paid_membership`. |
-| CA-02 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_open_entry_blocks_other_kind`, `test_capacity_is_shared_by_general_and_schedule_entries`, `test_stale_parallel_writes_cannot_exceed_capacity`. |
-| CA-03 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_retries_do_not_duplicate_even_after_exit`. |
-| CA-04 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_only_admin_can_register_general_visit`. |
-| CA-05 | [test_scoped_operations.py](../../../backend/tests/test_scoped_operations.py): `test_dni_filter_cannot_override_the_session_client`, `test_history_passes_client_scope_to_persistence_and_hides_audit`. |
-| CA-06 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_general_corrections_and_annulment_remain_audited`; [test_remaining_smells.py](../../../backend/tests/test_remaining_smells.py): `test_remote_summary_uses_counts_open_visits_and_eight_recent_records`. |
-| CA-07 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_expired_class_rejects_entry_and_explains_why`, `test_expired_class_api_returns_error_without_saving`, `test_transaction_revalidates_class_expiration`, `test_schedule_retry_and_exit_still_work_after_class_end`; [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js): error y actualización de ficha tras vencer la clase. |
-| CA-08 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario`, permisos y recorrido HTTP; [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js): calendario compartido, cupos, filtro, selección, bloqueo al guardar y descarte de respuestas obsoletas. |
-| CA-09 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_lista_informa_si_la_entrada_esta_dentro_del_horario`; [test_attendance_deadline_postgres.py](../../../backend/tests/test_attendance_deadline_postgres.py): `test_rpc_rechaza_clase_terminada_sin_guardar`. |
-| CA-10 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): límites, cambio de día, historial privado, persistencia y cambio de horario; [test_attendance_deadline_postgres.py](../../../backend/tests/test_attendance_deadline_postgres.py): RPC, auditoría, límite inclusivo y migración repetible. |
-| CA-11 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py) y [test_automatic_attendance_postgres.py](../../../backend/tests/test_automatic_attendance_postgres.py): límite inclusivo, cierre, aforo, reingreso, auditoría y cron real. |
+| CA-01 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_entry_without_enrollment_and_exit_use_server_clock`, `test_entry_requires_current_paid_membership`. |
+| CA-02 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_open_entry_blocks_other_kind`, `test_capacity_is_shared_by_general_and_schedule_entries`, `test_stale_parallel_writes_cannot_exceed_capacity`. |
+| CA-03 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_retries_do_not_duplicate_even_after_exit`. |
+| CA-04 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_only_admin_can_register_general_visit`. |
+| CA-05 | [test_scoped_operations.py](../../../backend/tests/transversales/integracion/test_scoped_operations.py): `test_dni_filter_cannot_override_the_session_client`, `test_history_passes_client_scope_to_persistence_and_hides_audit`. |
+| CA-06 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_general_corrections_and_annulment_remain_audited`; [test_remaining_smells.py](../../../backend/tests/transversales/integracion/test_remaining_smells.py): `test_remote_summary_uses_counts_open_visits_and_eight_recent_records`. |
+| CA-07 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_expired_class_rejects_entry_and_explains_why`, `test_expired_class_api_returns_error_without_saving`, `test_transaction_revalidates_class_expiration`, `test_schedule_retry_and_exit_still_work_after_class_end`; [asistencias · flujos.test.js](../../../frontend/tests/asistencias/interfaz/flujos.test.js): error y actualización de ficha tras vencer la clase. |
+| CA-08 | [test_schedule_attendance.py](../../../backend/tests/asistencias/integracion/test_schedule_attendance.py): `test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario`, permisos y recorrido HTTP; [asistencias · flujos.test.js](../../../frontend/tests/asistencias/interfaz/flujos.test.js): calendario compartido, cupos, filtro, selección, bloqueo al guardar y descarte de respuestas obsoletas. |
+| CA-09 | [test_schedule_attendance.py](../../../backend/tests/asistencias/integracion/test_schedule_attendance.py): `test_lista_informa_si_la_entrada_esta_dentro_del_horario`; [test_attendance_deadline_postgres.py](../../../backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py): `test_rpc_rechaza_clase_terminada_sin_guardar`. |
+| CA-10 | [test_schedule_attendance.py](../../../backend/tests/asistencias/integracion/test_schedule_attendance.py): límites, cambio de día, historial privado, persistencia y cambio de horario; [test_attendance_deadline_postgres.py](../../../backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py): RPC, auditoría, límite inclusivo y migración repetible. |
+| CA-11 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py) y [test_automatic_attendance_postgres.py](../../../backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py): límite inclusivo, cierre, aforo, reingreso, auditoría y cron real. |
 
 ## 4. Technical Constraints
 
@@ -178,10 +178,10 @@ puede completarse. La programación requiere aplicar 021, 022 y 023 con pg_cron 
 la presencia de esos archivos no acredita su instalación en una base remota.
 
 Evidencia de persistencia sin navegador, concurrencia, límites y permisos:
-[test_automatic_attendance_postgres.py](../../../backend/tests/test_automatic_attendance_postgres.py).
+[test_automatic_attendance_postgres.py](../../../backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py).
 El recorrido completo desde matrícula hasta entrada administrativa, falta de
 salida, bloqueo de reingreso y salida tardía se comprueba en
-[test_attendance_enrollment_flow_postgres.py](../../../backend/tests/test_attendance_enrollment_flow_postgres.py),
+[test_attendance_enrollment_flow_postgres.py](../../../backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py),
 con RPC y, cuando está disponible, cron real. Ver la
 [prueba del flujo](../validaciones/prueba-asistencia-horario/validation.md).
 El [bloqueo entre tipos de asistencia](../validaciones/bloqueo-asistencia/validation.md)
@@ -190,7 +190,7 @@ registra las pruebas HTTP, SQL concurrentes y visuales del control en ambos sent
 ## 7. Definition of Done
 
 Verificar privacidad, aforo, reintentos, auditoría, reloj y paginación afectados.
-Para cambios de UI, reutilizar [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js)
+Para cambios de UI, reutilizar [asistencias · flujos.test.js](../../../frontend/tests/asistencias/interfaz/flujos.test.js)
 y registrar revisión visual. Cumplir el [DoD](../../docs/DoD.md).
 
 ### Vigencia compartida (feature 001)
@@ -199,7 +199,7 @@ La selección de membresía en asistencia reutiliza membership_current, igual qu
 autenticación: exige pago confirmado y fechas civiles válidas con día final inclusivo.
 Fechas ausentes o imposibles no autorizan entradas ni consumen aforo.
 Regresiones y recorrido integrado en
-[test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+[test_client_flow_control.py](../../../backend/tests/transversales/integracion/test_client_flow_control.py).
 
 Verificación del aviso de clase terminada y sus límites en
 [validation.md](../validaciones/asistencias/validation.md).

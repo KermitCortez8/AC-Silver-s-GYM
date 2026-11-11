@@ -32,12 +32,12 @@ al producto y comprobar ambos stocks y el movimiento generado.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio`. |
-| CA-02 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto`, `test_reponer_sin_reserva_suficiente_no_cambia_nada`, `test_fallo_de_supabase_revierte_la_reposicion`. |
-| CA-03 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_editar_item_no_modifica_el_stock`, `test_editar_producto_no_cambia_su_stock`. |
-| CA-04 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_editar_movimiento_no_deja_stock_negativo`, `test_editar_reposicion_corrige_ambos_stocks`, `test_movimientos_de_pedido_solo_editan_fecha_y_descripcion`. |
-| CA-05 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_borrar_item_con_historial_lo_descontinua`, `test_borrar_item_sin_historial_lo_elimina`. |
-| CA-06 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_estado_automatico_sigue_la_reserva_del_inventario`, `test_equipo_del_gimnasio_conserva_su_estado_manual`. |
+| CA-01 | [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio`. |
+| CA-02 | [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto`, `test_reponer_sin_reserva_suficiente_no_cambia_nada`, `test_fallo_de_supabase_revierte_la_reposicion`. |
+| CA-03 | [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_editar_item_no_modifica_el_stock`, `test_editar_producto_no_cambia_su_stock`. |
+| CA-04 | [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_editar_movimiento_no_deja_stock_negativo`, `test_editar_reposicion_corrige_ambos_stocks`, `test_movimientos_de_pedido_solo_editan_fecha_y_descripcion`. |
+| CA-05 | [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_borrar_item_con_historial_lo_descontinua`, `test_borrar_item_sin_historial_lo_elimina`. |
+| CA-06 | [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_estado_automatico_sigue_la_reserva_del_inventario`, `test_equipo_del_gimnasio_conserva_su_estado_manual`. |
 
 ## 4. Technical Constraints
 
@@ -72,5 +72,5 @@ el actor del movimiento. No borrar historial como efecto secundario de descontin
 ## 7. Definition of Done
 
 Verificar movimientos, vínculos, estados y atomicidad afectados. Para formularios,
-usar [26-stock-edit-forms.test.js](../../../frontend/tests/26-stock-edit-forms.test.js).
+usar [inventario · formularios.test.js](../../../frontend/tests/inventario/interfaz/formularios.test.js).
 Para concurrencia de stock, usar PostgreSQL aislado. Cumplir el [DoD](../../docs/DoD.md).

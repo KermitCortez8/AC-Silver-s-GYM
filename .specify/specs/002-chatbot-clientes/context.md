@@ -30,11 +30,11 @@ No se añade al inventario un módulo como implementado durante la planificació
 
 ## Código y pruebas existentes
 
-- [Registro público](../../../backend/presentation/routes/clients_routes.py), [composable de registro](../../../frontend/src/presentation/composables/auth/useRegistrationForm.js) y [pruebas de preregistros](../../../backend/tests/test_public_preregistrations.py).
+- [Registro público](../../../backend/presentation/routes/clients_routes.py), [composable de registro](../../../frontend/src/presentation/composables/auth/useRegistrationForm.js) y [pruebas de preregistros](../../../backend/tests/clientes/integracion/test_public_preregistrations.py).
 - [Acceso](../../../backend/presentation/routes/auth_routes.py), [permisos](../../../backend/presentation/dependencies.py) y [servicio frontend](../../../frontend/src/application/services/authentication.js).
 - [Catálogo público](../../../frontend/src/application/services/publicCatalog.js) y [pagos del cliente](../../../frontend/src/application/services/clientPayments.js).
 - [Rutas de horarios y matrícula](../../../backend/presentation/routes/gym_routes.py), [módulo de horarios](../../../frontend/src/application/modules/schedules.js) y [composable de matrícula](../../../frontend/src/presentation/composables/enrollment/useEnrollmentWorkspace.js).
-- [Pruebas de matrículas](../../../backend/tests/test_schedule_enrollment.py), [sesiones](../../../backend/tests/test_schedule_sessions.py) y [sesiones con PostgreSQL](../../../backend/tests/test_schedule_sessions_postgres.py).
+- [Pruebas de matrículas](../../../backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py), [sesiones](../../../backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py) y [sesiones con PostgreSQL](../../../backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py).
 - [Límite de sesión frontend](../../../frontend/src/application/services/sessionBoundary.js), [bootstrap frontend](../../../frontend/src/bootstrap.js) y [bootstrap backend](../../../backend/app/bootstrap.py).
 - [Migración 019](../../../backend/migrations/019_schedule_sessions.sql) y [migración 020](../../../backend/migrations/020_public_preregistrations.sql).
 

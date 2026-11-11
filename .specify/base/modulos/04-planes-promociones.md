@@ -30,11 +30,11 @@ y registrar inscripciones hasta agotar el límite promocional.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_promocion_navidad.py](../../../backend/tests/test_promocion_navidad.py): `test_promociones_vigentes_publicas_and_autoapply`. |
-| CA-02 | [test_promocion_cupos.py](../../../backend/tests/test_promocion_cupos.py). |
-| CA-03 | [test_promocion_navidad.py](../../../backend/tests/test_promocion_navidad.py): `test_prevent_promocion_overlap`. |
-| CA-04 | [test_admin_client_payment.py](../../../backend/tests/test_admin_client_payment.py): `test_admin_does_not_apply_unselected_promotion`, `test_invalid_promotion_does_not_create_client`. |
-| CA-05 | [test_atomic_transactions_postgres.py](../../../backend/tests/test_atomic_transactions_postgres.py): `test_promotions_and_membership_association_survive_database_reload`; [test_membership_payments.py](../../../backend/tests/test_membership_payments.py). |
+| CA-01 | [test_promocion_navidad.py](../../../backend/tests/planes_promociones/unitarias/test_promocion_navidad.py): `test_promociones_vigentes_publicas_and_autoapply`. |
+| CA-02 | [test_promocion_cupos.py](../../../backend/tests/planes_promociones/unitarias/test_promocion_cupos.py). |
+| CA-03 | [test_promocion_navidad.py](../../../backend/tests/planes_promociones/unitarias/test_promocion_navidad.py): `test_prevent_promocion_overlap`. |
+| CA-04 | [test_admin_client_payment.py](../../../backend/tests/clientes/integracion/test_admin_client_payment.py): `test_admin_does_not_apply_unselected_promotion`, `test_invalid_promotion_does_not_create_client`. |
+| CA-05 | [test_atomic_transactions_postgres.py](../../../backend/tests/transversales/postgres/test_atomic_transactions_postgres.py): `test_promotions_and_membership_association_survive_database_reload`; [test_membership_payments.py](../../../backend/tests/membresias_pagos/integracion/test_membership_payments.py). |
 
 ## 4. Technical Constraints
 

@@ -28,9 +28,9 @@ cuenta contempladas por el comando; no es anonimización del historial comercial
 
 ## Comprobaciones
 
-- [Regresión de dominio](../../../../backend/tests/test_review_regressions.py):
+- [Regresión de dominio](../../../../backend/tests/transversales/integracion/test_review_regressions.py):
   ventas pagadas y pendientes, comprador histórico, cliente ajeno y reintento.
-- [Integración PostgreSQL](../../../../backend/tests/test_client_deletion_postgres.py):
+- [Integración PostgreSQL](../../../../backend/tests/clientes/postgres/test_client_deletion_postgres.py):
   esquema sin copias y con FK restrictiva, migración repetible, conservación
   exacta de venta/detalles/stock, rollback íntegro y venta concurrente.
 - Sin cambios de interfaz: se reutiliza el botón y la confirmación de borrado.

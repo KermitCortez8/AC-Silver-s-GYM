@@ -1,0 +1,912 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "horarios_matriculas",
+  "counts": {
+    "backend": {
+      "collected": 30,
+      "passed": 23,
+      "skipped": 7
+    },
+    "frontend": {
+      "collected": 8,
+      "passed": 8,
+      "skipped": 0
+    },
+    "total": 38,
+    "passed": 31,
+    "skipped": 7
+  },
+  "cases": [
+    {
+      "component": "frontend",
+      "module": "horarios_matriculas",
+      "type": "unitarias",
+      "path": "frontend/tests/horarios_matriculas/unitarias/landing-schedules.test.js",
+      "line": 47,
+      "name": "normalizes public backend schedules with formatting and fallback values",
+      "source_function": "'normalizes public backend schedules with formatting and fallback values'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(normalized.dia, 'Martes')",
+        "assert.equal(normalized.hora, '08:00–09:00')",
+        "assert.equal(normalized.entrenador, 'Funcional Avanzado')"
+      ],
+      "checks_in_source": 3,
+      "selector": "normalizes public backend schedules with formatting and fallback values",
+      "command": "node --test '--test-name-pattern=^normalizes\\ public\\ backend\\ schedules\\ with\\ formatting\\ and\\ fallback\\ values$' tests/horarios_matriculas/unitarias/landing-schedules.test.js",
+      "id": "CT-M05-U-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "horarios_matriculas",
+      "type": "unitarias",
+      "path": "frontend/tests/horarios_matriculas/unitarias/landing-schedules.test.js",
+      "line": 65,
+      "name": "sorts schedules by day of week and start time chronologically",
+      "source_function": "'sorts schedules by day of week and start time chronologically'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual( sorted.map((s) => `${s.dia} ${s.hora}`), [ 'Lunes 07:00–08:00', 'Lunes 19:00–20:00', 'Miércoles 08:00–09:00', 'Viernes 18:00–19:00', ], )"
+      ],
+      "checks_in_source": 1,
+      "selector": "sorts schedules by day of week and start time chronologically",
+      "command": "node --test '--test-name-pattern=^sorts\\ schedules\\ by\\ day\\ of\\ week\\ and\\ start\\ time\\ chronologically$' tests/horarios_matriculas/unitarias/landing-schedules.test.js",
+      "id": "CT-M05-U-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "horarios_matriculas",
+      "type": "unitarias",
+      "path": "frontend/tests/horarios_matriculas/unitarias/landing-schedules.test.js",
+      "line": 85,
+      "name": "filters schedules matching card service ignoring accents and casing",
+      "source_function": "'filters schedules matching card service ignoring accents and casing'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(filterFor('Musculación').length, 1)",
+        "assert.equal(filterFor('musculacion')[0].hora, '10:00')",
+        "assert.equal(filterFor('Baile').length, 0)"
+      ],
+      "checks_in_source": 3,
+      "selector": "filters schedules matching card service ignoring accents and casing",
+      "command": "node --test '--test-name-pattern=^filters\\ schedules\\ matching\\ card\\ service\\ ignoring\\ accents\\ and\\ casing$' tests/horarios_matriculas/unitarias/landing-schedules.test.js",
+      "id": "CT-M05-U-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "horarios_matriculas",
+      "type": "unitarias",
+      "path": "frontend/tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
+      "line": 5,
+      "name": "month weeks include partial weeks, leap day and year boundaries",
+      "source_function": "'month weeks include partial weeks, leap day and year boundaries'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(weeks.length, 6)",
+        "assert.deepEqual(weeks[0], { start: '2026-02-23', end: '2026-03-01', from: '2026-03-01', to: '2026-03-01' })",
+        "assert.equal(weeks.at(-1).to, '2026-03-31')"
+      ],
+      "checks_in_source": 8,
+      "selector": "month weeks include partial weeks, leap day and year boundaries",
+      "command": "node --test '--test-name-pattern=^month\\ weeks\\ include\\ partial\\ weeks,\\ leap\\ day\\ and\\ year\\ boundaries$' tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
+      "id": "CT-M05-U-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "horarios_matriculas",
+      "type": "unitarias",
+      "path": "frontend/tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
+      "line": 18,
+      "name": "recurring schedules have a different concrete date in each week",
+      "source_function": "'recurring schedules have a different concrete date in each week'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(scheduleOccurrences([monday], '2026-09-01', '2026-09').length, 0)",
+        "assert.equal(scheduleOccurrences([monday], '2026-09-07', '2026-09')[0].fecha, '2026-09-07')",
+        "assert.equal(scheduleOccurrences([monday], '2026-09-14', '2026-09')[0].fecha, '2026-09-14')"
+      ],
+      "checks_in_source": 3,
+      "selector": "recurring schedules have a different concrete date in each week",
+      "command": "node --test '--test-name-pattern=^recurring\\ schedules\\ have\\ a\\ different\\ concrete\\ date\\ in\\ each\\ week$' tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
+      "id": "CT-M05-U-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "horarios_matriculas",
+      "type": "unitarias",
+      "path": "frontend/tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
+      "line": 24,
+      "name": "attendance belongs to the exact client, enrollment and session date",
+      "source_function": "'attendance belongs to the exact client, enrollment and session date'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(scheduleOccurrences([enrollment], '2026-09-07')[0].entryTime, '08:04')",
+        "assert.equal(scheduleOccurrences([enrollment], '2026-09-14').length, 0)",
+        "assert.equal(scheduleOccurrences([{ ...enrollment, fecha_clase: '2026-09-14' }], '2026-09-14')[0].checkLabel, 'Sin registro')"
+      ],
+      "checks_in_source": 5,
+      "selector": "attendance belongs to the exact client, enrollment and session date",
+      "command": "node --test '--test-name-pattern=^attendance\\ belongs\\ to\\ the\\ exact\\ client,\\ enrollment\\ and\\ session\\ date$' tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
+      "id": "CT-M05-U-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "horarios_matriculas",
+      "type": "unitarias",
+      "path": "frontend/tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
+      "line": 38,
+      "name": "cada fecha tiene sus propios cupos y matrículas aunque se repita el horario",
+      "source_function": "'cada fecha tiene sus propios cupos y matrículas aunque se repita el horario'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(first.cupos_usados, 5)",
+        "assert.equal(first.is_enrolled, true)",
+        "assert.equal(second.cupos_usados, 2)"
+      ],
+      "checks_in_source": 5,
+      "selector": "cada fecha tiene sus propios cupos y matrículas aunque se repita el horario",
+      "command": "node --test '--test-name-pattern=^cada\\ fecha\\ tiene\\ sus\\ propios\\ cupos\\ y\\ matrículas\\ aunque\\ se\\ repita\\ el\\ horario$' tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
+      "id": "CT-M05-U-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "horarios_matriculas",
+      "type": "unitarias",
+      "path": "frontend/tests/horarios_matriculas/unitarias/schedule-enrollment.test.js",
+      "line": 1,
+      "name": "tests/horarios_matriculas/unitarias/schedule-enrollment.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal( exerciseName({ rutina_nombre: 'Sentadillas y Piernas' }), 'Sentadillas y Piernas', )",
+        "assert.equal( exerciseName({ nombre_ejercicio: 'Press de Pecho' }), 'Press de Pecho', )",
+        "assert.equal( exerciseName({ servicio: 'fitness' }), 'Clase de Fitness', )"
+      ],
+      "checks_in_source": 25,
+      "selector": "tests/horarios_matriculas/unitarias/schedule-enrollment.test.js",
+      "command": "node --test tests/horarios_matriculas/unitarias/schedule-enrollment.test.js",
+      "id": "CT-M05-U-FE-008"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_enrollment_errors.py",
+      "line": 13,
+      "name": "test_enrollment_errors_keep_their_business_meaning[23503: foreign key violation-Horario no disponible]",
+      "source_function": "test_enrollment_errors_keep_their_business_meaning",
+      "variant": "23503: foreign key violation-Horario no disponible",
+      "parameter_names": [
+        "database_error",
+        "message"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "str(raised.value) == message",
+        "raised.value.__cause__ is error",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_enrollment_errors_keep_their_business_meaning[23503: foreign key violation-Horario no disponible]",
+      "command": "python -m pytest 'tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_enrollment_errors_keep_their_business_meaning[23503: foreign key violation-Horario no disponible]' -q",
+      "id": "CT-M05-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_enrollment_errors.py",
+      "line": 13,
+      "name": "test_enrollment_errors_keep_their_business_meaning[23505: duplicate key-El cliente ya esta matriculado en este horario]",
+      "source_function": "test_enrollment_errors_keep_their_business_meaning",
+      "variant": "23505: duplicate key-El cliente ya esta matriculado en este horario",
+      "parameter_names": [
+        "database_error",
+        "message"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "str(raised.value) == message",
+        "raised.value.__cause__ is error",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_enrollment_errors_keep_their_business_meaning[23505: duplicate key-El cliente ya esta matriculado en este horario]",
+      "command": "python -m pytest 'tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_enrollment_errors_keep_their_business_meaning[23505: duplicate key-El cliente ya esta matriculado en este horario]' -q",
+      "id": "CT-M05-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_enrollment_errors.py",
+      "line": 13,
+      "name": "test_enrollment_errors_keep_their_business_meaning[SIN CUPOS-Horario sin cupos disponibles]",
+      "source_function": "test_enrollment_errors_keep_their_business_meaning",
+      "variant": "SIN CUPOS-Horario sin cupos disponibles",
+      "parameter_names": [
+        "database_error",
+        "message"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "str(raised.value) == message",
+        "raised.value.__cause__ is error",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_enrollment_errors_keep_their_business_meaning[SIN CUPOS-Horario sin cupos disponibles]",
+      "command": "python -m pytest 'tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_enrollment_errors_keep_their_business_meaning[SIN CUPOS-Horario sin cupos disponibles]' -q",
+      "id": "CT-M05-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_enrollment_errors.py",
+      "line": 13,
+      "name": "test_enrollment_errors_keep_their_business_meaning[sin membresia activa-Cliente sin membresia activa]",
+      "source_function": "test_enrollment_errors_keep_their_business_meaning",
+      "variant": "sin membresia activa-Cliente sin membresia activa",
+      "parameter_names": [
+        "database_error",
+        "message"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "str(raised.value) == message",
+        "raised.value.__cause__ is error",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_enrollment_errors_keep_their_business_meaning[sin membresia activa-Cliente sin membresia activa]",
+      "command": "python -m pytest 'tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_enrollment_errors_keep_their_business_meaning[sin membresia activa-Cliente sin membresia activa]' -q",
+      "id": "CT-M05-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_enrollment_errors.py",
+      "line": 23,
+      "name": "test_unknown_storage_error_is_not_hidden_as_a_validation_error",
+      "source_function": "test_unknown_storage_error_is_not_hidden_as_a_validation_error",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "raised.value is error",
+        "pytest.raises(RuntimeError)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_unknown_storage_error_is_not_hidden_as_a_validation_error",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_enrollment_errors.py::test_unknown_storage_error_is_not_hidden_as_a_validation_error -q",
+      "id": "CT-M05-I-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 71,
+      "name": "test_schedule_catalog_includes_exercise_and_available_slots",
+      "source_function": "test_schedule_catalog_includes_exercise_and_available_slots",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertEqual(len(schedules), 1)",
+        "self.assertEqual(schedules[0][\"rutina_nombre\"], \"Circuito funcional\")",
+        "self.assertEqual(schedules[0][\"cupos_disponibles\"], 1)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::ScheduleEnrollmentDomainTests::test_schedule_catalog_includes_exercise_and_available_slots",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::ScheduleEnrollmentDomainTests::test_schedule_catalog_includes_exercise_and_available_slots -q",
+      "id": "CT-M05-I-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 80,
+      "name": "test_enrollment_moves_class_to_client_schedule_and_respects_capacity",
+      "source_function": "test_enrollment_moves_class_to_client_schedule_and_respects_capacity",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertEqual(created[\"id_cliente\"], 1)",
+        "self.assertEqual(created[\"rutina_nombre\"], \"Circuito funcional\")",
+        "self.assertEqual(service.horarios_servicio()[0][\"cupos_disponibles\"], 0)"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::ScheduleEnrollmentDomainTests::test_enrollment_moves_class_to_client_schedule_and_respects_capacity",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::ScheduleEnrollmentDomainTests::test_enrollment_moves_class_to_client_schedule_and_respects_capacity -q",
+      "id": "CT-M05-I-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 104,
+      "name": "test_client_can_only_cancel_own_enrollment",
+      "source_function": "test_client_can_only_cancel_own_enrollment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertEqual( service.matriculas_horario(id_cliente=1, solo_activas=True), [] )",
+        "self.assertEqual(service.horarios_servicio()[0][\"cupos_disponibles\"], 1)",
+        "self.assertRaisesRegex(PermissionError, \"otro cliente\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::ScheduleEnrollmentDomainTests::test_client_can_only_cancel_own_enrollment",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::ScheduleEnrollmentDomainTests::test_client_can_only_cancel_own_enrollment -q",
+      "id": "CT-M05-I-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 135,
+      "name": "test_assigns_matching_routine_to_active_enrollment_and_schedule",
+      "source_function": "test_assigns_matching_routine_to_active_enrollment_and_schedule",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertEqual(updated[\"id_matricula\"], 50)",
+        "self.assertEqual(updated[\"id_rutina\"], 7)",
+        "self.assertEqual(updated[\"dia\"], \"lunes\")"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::TrainerRoutineAssignmentTests::test_assigns_matching_routine_to_active_enrollment_and_schedule",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::TrainerRoutineAssignmentTests::test_assigns_matching_routine_to_active_enrollment_and_schedule -q",
+      "id": "CT-M05-I-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 145,
+      "name": "test_rejects_assignment_to_non_active_enrollment",
+      "source_function": "test_rejects_assignment_to_non_active_enrollment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertRaisesRegex(ValueError, \"matricula ACTIVA\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::TrainerRoutineAssignmentTests::test_rejects_assignment_to_non_active_enrollment",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::TrainerRoutineAssignmentTests::test_rejects_assignment_to_non_active_enrollment -q",
+      "id": "CT-M05-I-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 151,
+      "name": "test_rejects_assignment_when_enrollment_schedule_is_inactive",
+      "source_function": "test_rejects_assignment_when_enrollment_schedule_is_inactive",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertRaisesRegex(ValueError, \"horario.*no esta activo\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::TrainerRoutineAssignmentTests::test_rejects_assignment_when_enrollment_schedule_is_inactive",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::TrainerRoutineAssignmentTests::test_rejects_assignment_when_enrollment_schedule_is_inactive -q",
+      "id": "CT-M05-I-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 157,
+      "name": "test_rejects_routine_for_a_different_service_than_enrollment_schedule",
+      "source_function": "test_rejects_routine_for_a_different_service_than_enrollment_schedule",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertRaisesRegex(ValueError, \"no corresponde al servicio\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::TrainerRoutineAssignmentTests::test_rejects_routine_for_a_different_service_than_enrollment_schedule",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::TrainerRoutineAssignmentTests::test_rejects_routine_for_a_different_service_than_enrollment_schedule -q",
+      "id": "CT-M05-I-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 190,
+      "name": "test_user_routes_always_use_client_from_authenticated_session",
+      "source_function": "test_user_routes_always_use_client_from_authenticated_session",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertEqual( service.last_list, {\"id_cliente\": 1, \"solo_activas\": True} )",
+        "self.assertEqual(created[\"id_cliente\"], 1)",
+        "self.assertEqual(created[\"dni\"], \"\")"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::ScheduleEnrollmentRouteTests::test_user_routes_always_use_client_from_authenticated_session",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::ScheduleEnrollmentRouteTests::test_user_routes_always_use_client_from_authenticated_session -q",
+      "id": "CT-M05-I-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "line": 241,
+      "name": "test_enrollment_requires_atomic_rpc_before_writing",
+      "source_function": "test_enrollment_requires_atomic_rpc_before_writing",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertIsNone(database.inserted)",
+        "self.assertRaisesRegex(RuntimeError, \"019_schedule_sessions.sql\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_enrollment.py::SupabaseScheduleCompatibilityTests::test_enrollment_requires_atomic_rpc_before_writing",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_enrollment.py::SupabaseScheduleCompatibilityTests::test_enrollment_requires_atomic_rpc_before_writing -q",
+      "id": "CT-M05-I-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 15,
+      "name": "test_mismo_cliente_puede_reservar_dos_semanas_sin_compartir_cupos_ni_cancelacion",
+      "source_function": "test_mismo_cliente_puede_reservar_dos_semanas_sin_compartir_cupos_ni_cancelacion",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "a[\"id_matricula\"] != b[\"id_matricula\"]",
+        "gym.horarios_servicio()[0][\"ocupacion_por_fecha\"] == {first: 1, second: 1}",
+        "gym.horarios_servicio()[0][\"ocupacion_por_fecha\"] == {second: 1}"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_mismo_cliente_puede_reservar_dos_semanas_sin_compartir_cupos_ni_cancelacion",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_mismo_cliente_puede_reservar_dos_semanas_sin_compartir_cupos_ni_cancelacion -q",
+      "id": "CT-M05-I-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 32,
+      "name": "test_otra_semana_no_hereda_reserva_y_permite_otro_cliente",
+      "source_function": "test_otra_semana_no_hereda_reserva_y_permite_otro_cliente",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "len(gym.matriculas_horario(solo_activas=True)) == 2"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_otra_semana_no_hereda_reserva_y_permite_otro_cliente",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_otra_semana_no_hereda_reserva_y_permite_otro_cliente -q",
+      "id": "CT-M05-I-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 42,
+      "name": "test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[2020-01-06]",
+      "source_function": "test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula",
+      "variant": "2020-01-06",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "gym.state[\"matriculas_horario\"] == []",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[2020-01-06]",
+      "command": "python -m pytest 'tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[2020-01-06]' -q",
+      "id": "CT-M05-I-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 42,
+      "name": "test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[2026-02-30]",
+      "source_function": "test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula",
+      "variant": "2026-02-30",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "gym.state[\"matriculas_horario\"] == []",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[2026-02-30]",
+      "command": "python -m pytest 'tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[2026-02-30]' -q",
+      "id": "CT-M05-I-BE-018"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 42,
+      "name": "test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[fecha]",
+      "source_function": "test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula",
+      "variant": "fecha",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "gym.state[\"matriculas_horario\"] == []",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[fecha]",
+      "command": "python -m pytest 'tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_rechaza_fechas_invalidas_o_pasadas_sin_crear_matricula[fecha]' -q",
+      "id": "CT-M05-I-BE-019"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 49,
+      "name": "test_rechaza_dia_incorrecto_y_membresia_que_no_cubre_la_sesion",
+      "source_function": "test_rechaza_dia_incorrecto_y_membresia_que_no_cubre_la_sesion",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValueError, match=message)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_rechaza_dia_incorrecto_y_membresia_que_no_cubre_la_sesion",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_rechaza_dia_incorrecto_y_membresia_que_no_cubre_la_sesion -q",
+      "id": "CT-M05-I-BE-020"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 60,
+      "name": "test_fecha_no_se_pierde_al_normalizar_mapear_o_recargar",
+      "source_function": "test_fecha_no_se_pierde_al_normalizar_mapear_o_recargar",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_map_schedule_enrollment(_schedule_enrollment_to_remote(row))[\"fecha_clase\"] == \"2026-09-14\"",
+        "enrollment_session({\"fecha_matricula\": \"2026-09-01\"}, schedule) == \"2026-09-07\"",
+        "enrollment_session({}, schedule) == \"\""
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_fecha_no_se_pierde_al_normalizar_mapear_o_recargar",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_fecha_no_se_pierde_al_normalizar_mapear_o_recargar -q",
+      "id": "CT-M05-I-BE-021"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 70,
+      "name": "test_asistencia_no_arrastra_clientes_ni_registros_a_la_siguiente_semana",
+      "source_function": "test_asistencia_no_arrastra_clientes_ni_registros_a_la_siguiente_semana",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.roster(1, \"2026-10-07\")[\"clientes\"][0][\"asistencia\"][\"id_asistencia\"] == row[\"id_asistencia\"]",
+        "attendance.roster(1, \"2026-10-14\")[\"clientes\"] == []",
+        "attendance.gym.state[\"asistencia\"] == before"
+      ],
+      "checks_in_source": 7,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_asistencia_no_arrastra_clientes_ni_registros_a_la_siguiente_semana",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_asistencia_no_arrastra_clientes_ni_registros_a_la_siguiente_semana -q",
+      "id": "CT-M05-I-BE-022"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "integracion",
+      "path": "backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py",
+      "line": 89,
+      "name": "test_http_asistencia_consulta_fecha_y_valida_parametro",
+      "source_function": "test_http_asistencia_consulta_fecha_y_valida_parametro",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(client.get('/asistencia/horarios/1/clientes?fecha=2026-10-07').json()[\"clientes\"]) == 1",
+        "client.get('/asistencia/horarios/1/clientes?fecha=2026-10-14').json()[\"clientes\"] == []",
+        "client.get('/asistencia/horarios/1/clientes?fecha=2026-02-30').status_code == 422"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_http_asistencia_consulta_fecha_y_valida_parametro",
+      "command": "python -m pytest tests/horarios_matriculas/integracion/test_schedule_sessions.py::test_http_asistencia_consulta_fecha_y_valida_parametro -q",
+      "id": "CT-M05-I-BE-023"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "postgres",
+      "path": "backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py",
+      "line": 47,
+      "name": "test_rpc_aisla_duplicados_cupos_y_cancelaciones_por_fecha",
+      "source_function": "test_rpc_aisla_duplicados_cupos_y_cancelaciones_por_fecha",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "first[\"fecha_clase\"] != second[\"fecha_clase\"]",
+        "enroll(database, client=2)[\"fecha_clase\"] == first[\"fecha_clase\"]",
+        "next(r for r in rows if r[\"id_matricula\"] == second[\"id_matricula\"])[\"estado\"] == \"ACTIVA\""
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_aisla_duplicados_cupos_y_cancelaciones_por_fecha",
+      "command": "python -m pytest tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_aisla_duplicados_cupos_y_cancelaciones_por_fecha -q",
+      "id": "CT-M05-P-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "postgres",
+      "path": "backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py",
+      "line": 60,
+      "name": "test_rpc_concurrencia_no_sobrepasa_cupo_de_la_sesion",
+      "source_function": "test_rpc_concurrencia_no_sobrepasa_cupo_de_la_sesion",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "sum(result is not None for result in results) == 1",
+        "len(database.rows(\"MATRICULAS_HORARIO\")) == 1",
+        "\"sin cupos\" in str(error)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_concurrencia_no_sobrepasa_cupo_de_la_sesion",
+      "command": "python -m pytest tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_concurrencia_no_sobrepasa_cupo_de_la_sesion -q",
+      "id": "CT-M05-P-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "postgres",
+      "path": "backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py",
+      "line": 73,
+      "name": "test_rpc_asistencia_rechaza_matricula_de_otra_semana_sin_guardar",
+      "source_function": "test_rpc_asistencia_rechaza_matricula_de_otra_semana_sin_guardar",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.rows(\"ASISTENCIA\") == []",
+        "saved[\"Fecha\"] == today[\"fecha_clase\"]",
+        "pytest.raises(RuntimeError, match=\"fecha de esta clase\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_asistencia_rechaza_matricula_de_otra_semana_sin_guardar",
+      "command": "python -m pytest tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_asistencia_rechaza_matricula_de_otra_semana_sin_guardar -q",
+      "id": "CT-M05-P-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "postgres",
+      "path": "backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py",
+      "line": 86,
+      "name": "test_rpc_rechaza_fecha_incompatible_o_pasada[-7-fecha de clase vigente]",
+      "source_function": "test_rpc_rechaza_fecha_incompatible_o_pasada",
+      "variant": "-7-fecha de clase vigente",
+      "parameter_names": [
+        "offset",
+        "message"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.rows(\"MATRICULAS_HORARIO\") == []",
+        "pytest.raises(RuntimeError, match=message)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_rechaza_fecha_incompatible_o_pasada[-7-fecha de clase vigente]",
+      "command": "python -m pytest 'tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_rechaza_fecha_incompatible_o_pasada[-7-fecha de clase vigente]' -q",
+      "id": "CT-M05-P-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "postgres",
+      "path": "backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py",
+      "line": 86,
+      "name": "test_rpc_rechaza_fecha_incompatible_o_pasada[1-d\\xeda del horario]",
+      "source_function": "test_rpc_rechaza_fecha_incompatible_o_pasada",
+      "variant": "1-d\\xeda del horario",
+      "parameter_names": [
+        "offset",
+        "message"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.rows(\"MATRICULAS_HORARIO\") == []",
+        "pytest.raises(RuntimeError, match=message)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_rechaza_fecha_incompatible_o_pasada[1-d\\xeda del horario]",
+      "command": "python -m pytest 'tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_rpc_rechaza_fecha_incompatible_o_pasada[1-d\\xeda del horario]' -q",
+      "id": "CT-M05-P-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "postgres",
+      "path": "backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py",
+      "line": 92,
+      "name": "test_migracion_repetible_backfill_no_renueva_clientes_y_conserva_permisos",
+      "source_function": "test_migracion_repetible_backfill_no_renueva_clientes_y_conserva_permisos",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "first.startswith(\"2026-01-\")",
+        "database.rows(\"MATRICULAS_HORARIO\")[0][\"fecha_clase\"] == first",
+        "database.sql(\"select public.enqueue_due_schedule_reminders(clock_timestamp());\") == \"0\""
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_migracion_repetible_backfill_no_renueva_clientes_y_conserva_permisos",
+      "command": "python -m pytest tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_migracion_repetible_backfill_no_renueva_clientes_y_conserva_permisos -q",
+      "id": "CT-M05-P-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "horarios_matriculas",
+      "type": "postgres",
+      "path": "backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py",
+      "line": 109,
+      "name": "test_recordatorios_solo_se_generan_en_la_fecha_reservada",
+      "source_function": "test_recordatorios_solo_se_generan_en_la_fecha_reservada",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.sql(f\"select public.enqueue_due_schedule_reminders({moment});\") == \"1\"",
+        "database.sql(f\"select public.enqueue_due_schedule_reminders(({moment})+interval '7 days');\") == \"0\"",
+        "len(jobs) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_recordatorios_solo_se_generan_en_la_fecha_reservada",
+      "command": "python -m pytest tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py::test_recordatorios_solo_se_generan_en_la_fecha_reservada -q",
+      "id": "CT-M05-P-BE-007"
+    }
+  ]
+}

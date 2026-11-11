@@ -23,18 +23,18 @@ Spec Kit ni generar especificaciones, planes o tareas.
   pytest tests/ -q`, desde backend: **702 aprobadas, 44 omitidas**. Incluye las
   primeras cuatro regresiones de renovación. La primera ejecución sin configurar
   la clave falló en ocho pruebas de sesión; se repitió con una clave de prueba.
-- Regresión backend final: `python -m pytest backend/tests/test_membership_renewal.py
+- Regresión backend final: `python -m pytest backend/tests/membresias_pagos/integracion/test_membership_renewal.py
   -q`: **7 aprobadas**, incluidas tres verificaciones adicionales de API pública,
   sesión Stripe previa y acceso durante renovación anticipada.
 - PostgreSQL 16 Alpine desechable, contenedor `gym-renewal-sql-test`, base
   `gym_test`: `GYM_TEST_POSTGRES_CONTAINER=gym-renewal-sql-test python -m pytest
-  backend/tests/test_membership_renewal_postgres.py -q`: **2 aprobadas**.
+  backend/tests/notificaciones/postgres/test_membership_renewal_postgres.py -q`: **2 aprobadas**.
   Comprueba 004 + 024, repetición de 024, deduplicación y reclamación de avisos,
   tipos de evento y denegación a roles anon/authenticated. El contenedor se elimina
   al terminar; no se conecta a Supabase ni a una base compartida.
 - `npm test`, desde frontend: **353 aprobadas** de la suite previa.
-- Regresión frontend final: `node --test frontend/tests/36-client-flow-control.test.js
-  frontend/tests/40-membership-renewal.test.js`: **15 aprobadas**, incluidas las
+- Regresión frontend final: `node --test frontend/tests/clientes/interfaz/client-flow-control.test.js
+  frontend/tests/membresias_pagos/interfaz/membership-renewal.test.js`: **15 aprobadas**, incluidas las
   cuatro nuevas de renovación. Comprueba detalle sin cobro, enlace ausente,
   precio desactualizado, renovación ya pagada y descarte de respuestas anteriores.
 - `npm run build`, desde frontend: **correcto** después de los cambios finales.

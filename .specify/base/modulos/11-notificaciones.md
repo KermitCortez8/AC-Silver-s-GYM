@@ -33,11 +33,11 @@ simular timeout y luego respuesta con ID; comprobar el estado persistido.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [membership_notifications.py](../../../backend/application/services/membership_notifications.py); [test_resend_email.py](../../../backend/tests/test_resend_email.py): `test_success_records_provider_id_for_membership`, `test_no_delivery_id_is_not_reported_as_sent`. |
-| CA-02 | [test_resend_email.py](../../../backend/tests/test_resend_email.py): `test_timeout_keeps_membership_pending`; [membership_notifications.py](../../../backend/application/services/membership_notifications.py). |
-| CA-03 | [test_resend_email.py](../../../backend/tests/test_resend_email.py): `test_schedule_cancelled_before_sending_when_enrollment_changes`. |
-| CA-04 | [test_schedule_calendar.py](../../../backend/tests/test_schedule_calendar.py). |
-| CA-05 | [test_resend_email.py](../../../backend/tests/test_resend_email.py): `test_provider_errors_are_safe_for_queue_and_logs`; [resend_email_test.ts](../../../supabase/tests/resend_email_test.ts). |
+| CA-01 | [membership_notifications.py](../../../backend/application/services/membership_notifications.py); [test_resend_email.py](../../../backend/tests/notificaciones/integracion/test_resend_email.py): `test_success_records_provider_id_for_membership`, `test_no_delivery_id_is_not_reported_as_sent`. |
+| CA-02 | [test_resend_email.py](../../../backend/tests/notificaciones/integracion/test_resend_email.py): `test_timeout_keeps_membership_pending`; [membership_notifications.py](../../../backend/application/services/membership_notifications.py). |
+| CA-03 | [test_resend_email.py](../../../backend/tests/notificaciones/integracion/test_resend_email.py): `test_schedule_cancelled_before_sending_when_enrollment_changes`. |
+| CA-04 | [test_schedule_calendar.py](../../../backend/tests/notificaciones/integracion/test_schedule_calendar.py). |
+| CA-05 | [test_resend_email.py](../../../backend/tests/notificaciones/integracion/test_resend_email.py): `test_provider_errors_are_safe_for_queue_and_logs`; [resend_email_test.ts](../../../supabase/tests/resend_email_test.ts). |
 
 ## 4. Technical Constraints
 
@@ -102,8 +102,8 @@ La migración amplía el CHECK de tipos de evento y mantiene RLS y RPC privadas.
 La recuperación está descrita en el propio SQL. No requiere modificar ni desplegar
 la Edge Function de recordatorios de clases.
 
-Evidencia: [regresiones](../../../backend/tests/test_membership_renewal.py),
-[pruebas PostgreSQL](../../../backend/tests/test_membership_renewal_postgres.py) y
+Evidencia: [regresiones](../../../backend/tests/membresias_pagos/integracion/test_membership_renewal.py),
+[pruebas PostgreSQL](../../../backend/tests/notificaciones/postgres/test_membership_renewal_postgres.py) y
 [validación](../validaciones/renovacion-membresia/validation.md).
 
 

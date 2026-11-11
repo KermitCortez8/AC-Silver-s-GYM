@@ -36,12 +36,12 @@ prueba, activarla y avanzar un reloj controlado hasta después del vencimiento.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_membership_states.py](../../../backend/tests/test_membership_states.py). |
-| CA-02 | [test_stripe_confirmation.py](../../../backend/tests/test_stripe_confirmation.py) y [test_stripe_checkout.py](../../../backend/tests/test_stripe_checkout.py). |
-| CA-03 | [test_stripe_confirmation.py](../../../backend/tests/test_stripe_confirmation.py): `test_membership_cannot_be_activated_before_payment`, `test_activating_an_active_membership_does_not_extend_its_dates`. |
-| CA-04 | [test_admin_client_payment.py](../../../backend/tests/test_admin_client_payment.py): `test_manual_payment_endpoint_records_cash_without_activating_membership`, `test_repeated_manual_confirmation_preserves_verified_stripe_payment`. |
-| CA-05 | [test_membership_expiration.py](../../../backend/tests/test_membership_expiration.py). |
-| CA-06 | [test_membership_payments.py](../../../backend/tests/test_membership_payments.py). |
+| CA-01 | [test_membership_states.py](../../../backend/tests/membresias_pagos/integracion/test_membership_states.py). |
+| CA-02 | [test_stripe_confirmation.py](../../../backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py) y [test_stripe_checkout.py](../../../backend/tests/membresias_pagos/integracion/test_stripe_checkout.py). |
+| CA-03 | [test_stripe_confirmation.py](../../../backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py): `test_membership_cannot_be_activated_before_payment`, `test_activating_an_active_membership_does_not_extend_its_dates`. |
+| CA-04 | [test_admin_client_payment.py](../../../backend/tests/clientes/integracion/test_admin_client_payment.py): `test_manual_payment_endpoint_records_cash_without_activating_membership`, `test_repeated_manual_confirmation_preserves_verified_stripe_payment`. |
+| CA-05 | [test_membership_expiration.py](../../../backend/tests/membresias_pagos/integracion/test_membership_expiration.py). |
+| CA-06 | [test_membership_payments.py](../../../backend/tests/membresias_pagos/integracion/test_membership_payments.py). |
 
 ## 4. Technical Constraints
 
@@ -102,12 +102,12 @@ y fechas vacías: el pago y la activación siguen sus comandos específicos.
 La confirmación conserva el importe contratado cero y rechaza un cobro positivo que
 intente reemplazarlo; el fallback al plan solo se conserva para importe ausente/null
 histórico. No se incorpora una pasarela de compras gratuitas.
-Regresiones en [test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+Regresiones en [test_client_flow_control.py](../../../backend/tests/transversales/integracion/test_client_flow_control.py).
 
 El retorno de pago distingue comprobación en curso, pendiente, error y confirmado.
 Permite volver a verificar la misma sesión sin iniciar otro cobro, rechaza una
 confirmación de otro cliente y descarta respuestas de rutas anteriores. Regresiones
-en [36-client-flow-control.test.js](../../../frontend/tests/36-client-flow-control.test.js).
+en [client-flow-control.test.js](../../../frontend/tests/clientes/interfaz/client-flow-control.test.js).
 
 ### Límites de formularios
 
@@ -156,8 +156,8 @@ y al recuperar foco, sin interrumpir formularios ni detalles abiertos.
 
 Fuentes: [servicio de renovación](../../../backend/application/services/membership_renewal_service.py),
 [vista](../../../frontend/src/presentation/views/MembershipRenewalView.vue),
-[regresiones backend](../../../backend/tests/test_membership_renewal.py),
-[regresiones frontend](../../../frontend/tests/40-membership-renewal.test.js) y
+[regresiones backend](../../../backend/tests/membresias_pagos/integracion/test_membership_renewal.py),
+[regresiones frontend](../../../frontend/tests/membresias_pagos/interfaz/membership-renewal.test.js) y
 [validación](../validaciones/renovacion-membresia/validation.md).
 
 ### Renovación desde Clientes
@@ -187,8 +187,8 @@ mezclar caja con un checkout aún pagable o en preparación. El diálogo muestra
 carga, error recuperable y bloqueo durante la confirmación; descarta respuestas
 al cerrar o cambiar de sesión.
 
-Evidencia: [regresión backend](../../../backend/tests/test_admin_membership_renewal.py),
-[regresión frontend](../../../frontend/tests/41-admin-membership-renewal.test.js),
+Evidencia: [regresión backend](../../../backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py),
+[regresión frontend](../../../frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js),
 [diálogo](../../../frontend/src/presentation/components/clients/ClientRenewalDialog.vue)
 y [validación](../validaciones/renovacion-membresia/validation.md).
 

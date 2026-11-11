@@ -1,0 +1,372 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "rutinas_progreso",
+  "counts": {
+    "backend": {
+      "collected": 7,
+      "passed": 7,
+      "skipped": 0
+    },
+    "frontend": {
+      "collected": 8,
+      "passed": 8,
+      "skipped": 0
+    },
+    "total": 15,
+    "passed": 15,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "component": "backend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "backend/tests/rutinas_progreso/integracion/test_trainer_exercises.py",
+      "line": 20,
+      "name": "test_upsert_rutina_with_ejercicios",
+      "source_function": "test_upsert_rutina_with_ejercicios",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertIsNotNone(created.get(\"id_rutina\"))",
+        "self.assertEqual(len(created.get(\"ejercicios\", [])), 2)",
+        "self.assertEqual(created[\"ejercicios\"][0][\"nombre_ejercicio\"], \"Press de Banca Plano\")"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/rutinas_progreso/integracion/test_trainer_exercises.py::TestTrainerExercises::test_upsert_rutina_with_ejercicios",
+      "command": "python -m pytest tests/rutinas_progreso/integracion/test_trainer_exercises.py::TestTrainerExercises::test_upsert_rutina_with_ejercicios -q",
+      "id": "CT-M07-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "backend/tests/rutinas_progreso/integracion/test_trainer_exercises.py",
+      "line": 51,
+      "name": "test_registrar_progreso_rutina_with_ejercicios_detalle",
+      "source_function": "test_registrar_progreso_rutina_with_ejercicios_detalle",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "self.assertEqual(res[\"id_matricula\"], 10)",
+        "self.assertEqual(len(res.get(\"ejercicios_detalle\", [])), 1)",
+        "self.assertEqual(res[\"ejercicios_detalle\"][0][\"nombre_ejercicio\"], \"Sentadillas\")"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/rutinas_progreso/integracion/test_trainer_exercises.py::TestTrainerExercises::test_registrar_progreso_rutina_with_ejercicios_detalle",
+      "command": "python -m pytest tests/rutinas_progreso/integracion/test_trainer_exercises.py::TestTrainerExercises::test_registrar_progreso_rutina_with_ejercicios_detalle -q",
+      "id": "CT-M07-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "backend/tests/rutinas_progreso/integracion/test_trainer_exercises.py",
+      "line": 94,
+      "name": "test_trainer_api_preserves_exercises_in_catalog_and_session_history",
+      "source_function": "test_trainer_api_preserves_exercises_in_catalog_and_session_history",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200",
+        "routine[\"ejercicios\"][0][\"id_ejercicio\"] == \"press\"",
+        "routine[\"ejercicios\"][0][\"series\"] == 4"
+      ],
+      "checks_in_source": 8,
+      "selector": "tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_trainer_api_preserves_exercises_in_catalog_and_session_history",
+      "command": "python -m pytest tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_trainer_api_preserves_exercises_in_catalog_and_session_history -q",
+      "id": "CT-M07-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "backend/tests/rutinas_progreso/integracion/test_trainer_exercises.py",
+      "line": 135,
+      "name": "test_supabase_exercise_data_survives_json_serialization_and_legacy_rows",
+      "source_function": "test_supabase_exercise_data_survives_json_serialization_and_legacy_rows",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service._map_routine(remote)[\"ejercicios\"] == routine[\"ejercicios\"]",
+        "service._map_routine_progress(remote)[\"ejercicios_detalle\"] == progress[\"ejercicios_detalle\"]",
+        "service._map_routine({\"id_rutina\": 1})[\"ejercicios\"] == []"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_supabase_exercise_data_survives_json_serialization_and_legacy_rows",
+      "command": "python -m pytest tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_supabase_exercise_data_survives_json_serialization_and_legacy_rows -q",
+      "id": "CT-M07-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "backend/tests/rutinas_progreso/integracion/test_trainer_exercises.py",
+      "line": 159,
+      "name": "test_missing_exercise_migration_does_not_silently_discard_data[CATALOGO_RUTINA-ejercicios]",
+      "source_function": "test_missing_exercise_migration_does_not_silently_discard_data",
+      "variant": "CATALOGO_RUTINA-ejercicios",
+      "parameter_names": [
+        "table",
+        "column"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match=\"012_trainer_exercises.sql\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_missing_exercise_migration_does_not_silently_discard_data[CATALOGO_RUTINA-ejercicios]",
+      "command": "python -m pytest 'tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_missing_exercise_migration_does_not_silently_discard_data[CATALOGO_RUTINA-ejercicios]' -q",
+      "id": "CT-M07-I-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "backend/tests/rutinas_progreso/integracion/test_trainer_exercises.py",
+      "line": 159,
+      "name": "test_missing_exercise_migration_does_not_silently_discard_data[RUTINA_PROGRESO-ejercicios_detalle]",
+      "source_function": "test_missing_exercise_migration_does_not_silently_discard_data",
+      "variant": "RUTINA_PROGRESO-ejercicios_detalle",
+      "parameter_names": [
+        "table",
+        "column"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match=\"012_trainer_exercises.sql\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_missing_exercise_migration_does_not_silently_discard_data[RUTINA_PROGRESO-ejercicios_detalle]",
+      "command": "python -m pytest 'tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_missing_exercise_migration_does_not_silently_discard_data[RUTINA_PROGRESO-ejercicios_detalle]' -q",
+      "id": "CT-M07-I-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "backend/tests/rutinas_progreso/integracion/test_trainer_exercises.py",
+      "line": 166,
+      "name": "test_assignment_does_not_swallow_unknown_database_errors",
+      "source_function": "test_assignment_does_not_swallow_unknown_database_errors",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match=\"database unavailable\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_assignment_does_not_swallow_unknown_database_errors",
+      "command": "python -m pytest tests/rutinas_progreso/integracion/test_trainer_exercises.py::test_assignment_does_not_swallow_unknown_database_errors -q",
+      "id": "CT-M07-I-BE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "frontend/tests/rutinas_progreso/integracion/trainer-refresh-errors.test.js",
+      "line": 11,
+      "name": "a confirmed assignment closes its dialog and reports a subsequent refresh failure separately",
+      "source_function": "'a confirmed assignment closes its dialog and reports a subsequent refresh failure separately'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(saves, 1)",
+        "assert.equal(assignments.showAssignModal.value, false)",
+        "assert.equal(assignments.assigningId.value, 0)"
+      ],
+      "checks_in_source": 5,
+      "selector": "a confirmed assignment closes its dialog and reports a subsequent refresh failure separately",
+      "command": "node --test '--test-name-pattern=^a\\ confirmed\\ assignment\\ closes\\ its\\ dialog\\ and\\ reports\\ a\\ subsequent\\ refresh\\ failure\\ separately$' tests/rutinas_progreso/integracion/trainer-refresh-errors.test.js",
+      "id": "CT-M07-I-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "frontend/tests/rutinas_progreso/integracion/trainer-refresh-errors.test.js",
+      "line": 26,
+      "name": "a confirmed unassignment closes its confirmation even when reloading fails",
+      "source_function": "'a confirmed unassignment closes its confirmation even when reloading fails'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(saves, 1)",
+        "assert.equal(assignments.showConfirmModal.value, false)",
+        "assert.equal(notices[0][1], 'info')"
+      ],
+      "checks_in_source": 3,
+      "selector": "a confirmed unassignment closes its confirmation even when reloading fails",
+      "command": "node --test '--test-name-pattern=^a\\ confirmed\\ unassignment\\ closes\\ its\\ confirmation\\ even\\ when\\ reloading\\ fails$' tests/rutinas_progreso/integracion/trainer-refresh-errors.test.js",
+      "id": "CT-M07-I-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "rutinas_progreso",
+      "type": "integracion",
+      "path": "frontend/tests/rutinas_progreso/integracion/trainer-refresh-errors.test.js",
+      "line": 38,
+      "name": "confirmed progress clears its saved draft and reports refresh failure without offering a duplicate save",
+      "source_function": "'confirmed progress clears its saved draft and reports refresh failure without offering a duplicate save'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(saves, 1)",
+        "assert.equal(progress.showExercisesModal.value, false)",
+        "assert.equal(progress.observationsMap[1], undefined)"
+      ],
+      "checks_in_source": 7,
+      "selector": "confirmed progress clears its saved draft and reports refresh failure without offering a duplicate save",
+      "command": "node --test '--test-name-pattern=^confirmed\\ progress\\ clears\\ its\\ saved\\ draft\\ and\\ reports\\ refresh\\ failure\\ without\\ offering\\ a\\ duplicate\\ save$' tests/rutinas_progreso/integracion/trainer-refresh-errors.test.js",
+      "id": "CT-M07-I-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "rutinas_progreso",
+      "type": "interfaz",
+      "path": "frontend/tests/rutinas_progreso/interfaz/flujos.test.js",
+      "line": 6,
+      "name": "direct assignment and assignment dialog use the same validated save flow",
+      "source_function": "'direct assignment and assignment dialog use the same validated save flow'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls.length, 0)",
+        "assert.match(s.feedback, /no corresponde/)",
+        "assert.deepEqual(calls, [[7, 2]])"
+      ],
+      "checks_in_source": 10,
+      "selector": "direct assignment and assignment dialog use the same validated save flow",
+      "command": "node --test '--test-name-pattern=^direct\\ assignment\\ and\\ assignment\\ dialog\\ use\\ the\\ same\\ validated\\ save\\ flow$' tests/rutinas_progreso/interfaz/flujos.test.js",
+      "id": "CT-M07-F-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "rutinas_progreso",
+      "type": "interfaz",
+      "path": "frontend/tests/rutinas_progreso/interfaz/flujos.test.js",
+      "line": 49,
+      "name": "progress keeps its draft on failure and clears it only after a confirmed save",
+      "source_function": "'progress keeps its draft on failure and clears it only after a confirmed save'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(s.showExercisesModal, true)",
+        "assert.equal(s.getTracker(7, 1)[0].series_completadas, 3)",
+        "assert.equal(s.observationsMap[7], 'Buena técnica')"
+      ],
+      "checks_in_source": 8,
+      "selector": "progress keeps its draft on failure and clears it only after a confirmed save",
+      "command": "node --test '--test-name-pattern=^progress\\ keeps\\ its\\ draft\\ on\\ failure\\ and\\ clears\\ it\\ only\\ after\\ a\\ confirmed\\ save$' tests/rutinas_progreso/interfaz/flujos.test.js",
+      "id": "CT-M07-F-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "rutinas_progreso",
+      "type": "interfaz",
+      "path": "frontend/tests/rutinas_progreso/interfaz/flujos.test.js",
+      "line": 85,
+      "name": "trainer renders extracted dialogs, exercises and progress history with working form models",
+      "source_function": "'trainer renders extracted dialogs, exercises and progress history with working form models'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(harness.html, /Avance guardado/)",
+        "assert.match(harness.dialogs, /Sentadilla/)",
+        "assert.match(harness.dialogs, /Guardar Progreso de Sesión/)"
+      ],
+      "checks_in_source": 13,
+      "selector": "trainer renders extracted dialogs, exercises and progress history with working form models",
+      "command": "node --test '--test-name-pattern=^trainer\\ renders\\ extracted\\ dialogs,\\ exercises\\ and\\ progress\\ history\\ with\\ working\\ form\\ models$' tests/rutinas_progreso/interfaz/flujos.test.js",
+      "id": "CT-M07-F-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "rutinas_progreso",
+      "type": "interfaz",
+      "path": "frontend/tests/rutinas_progreso/interfaz/flujos.test.js",
+      "line": 135,
+      "name": "unassigning another enrollment keeps the exercise draft and preserves confirmation on failure",
+      "source_function": "'unassigning another enrollment keeps the exercise draft and preserves confirmation on failure'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(s.selectedMatriculaItem.id_matricula, 7)",
+        "assert.deepEqual(calls, [[8, 0]])",
+        "assert.equal(s.showConfirmModal, true)"
+      ],
+      "checks_in_source": 6,
+      "selector": "unassigning another enrollment keeps the exercise draft and preserves confirmation on failure",
+      "command": "node --test '--test-name-pattern=^unassigning\\ another\\ enrollment\\ keeps\\ the\\ exercise\\ draft\\ and\\ preserves\\ confirmation\\ on\\ failure$' tests/rutinas_progreso/interfaz/flujos.test.js",
+      "id": "CT-M07-F-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "rutinas_progreso",
+      "type": "interfaz",
+      "path": "frontend/tests/rutinas_progreso/interfaz/flujos.test.js",
+      "line": 167,
+      "name": "one rest timer supports pause, resume, completion and disposal without leaked intervals",
+      "source_function": "'one rest timer supports pause, resume, completion and disposal without leaked intervals'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(timer.seconds, 2)",
+        "assert.equal(timer.seconds, 2)",
+        "assert.equal(timer.seconds, 0)"
+      ],
+      "checks_in_source": 8,
+      "selector": "one rest timer supports pause, resume, completion and disposal without leaked intervals",
+      "command": "node --test '--test-name-pattern=^one\\ rest\\ timer\\ supports\\ pause,\\ resume,\\ completion\\ and\\ disposal\\ without\\ leaked\\ intervals$' tests/rutinas_progreso/interfaz/flujos.test.js",
+      "id": "CT-M07-F-FE-005"
+    }
+  ]
+}

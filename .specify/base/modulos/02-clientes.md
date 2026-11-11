@@ -43,13 +43,13 @@ identificador/DNI, editarla y comprobar que conserva origen y fecha de alta.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_admin_client_payment.py](../../../backend/tests/test_admin_client_payment.py): `test_register_without_payment_creates_pending_admin_membership`. |
-| CA-02 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_client_edit_preserves_registration_date_across_normalization_and_mapping`. |
-| CA-03 | [test_clients_lookup.py](../../../backend/tests/test_clients_lookup.py). |
-| CA-04 | [test_admin_client_payment.py](../../../backend/tests/test_admin_client_payment.py): `test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration`. |
-| CA-05 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_client_deletion_removes_enrollments_progress_and_releases_capacity`; [test_scoped_operations.py](../../../backend/tests/test_scoped_operations.py): `test_client_deletion_keeps_the_whole_cascade_inside_one_command`. |
-| CA-06 | [38-client-catalog.test.js](../../../frontend/tests/38-client-catalog.test.js) y [validación del catálogo](../validaciones/catalogo-clientes/validation.md). |
-| CA-07 | [test_public_preregistrations.py](../../../backend/tests/test_public_preregistrations.py), [integración SQL](../../../backend/tests/test_public_preregistrations_postgres.py) y [validación](../validaciones/preregistros-separados/validation.md). |
+| CA-01 | [test_admin_client_payment.py](../../../backend/tests/clientes/integracion/test_admin_client_payment.py): `test_register_without_payment_creates_pending_admin_membership`. |
+| CA-02 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_client_edit_preserves_registration_date_across_normalization_and_mapping`. |
+| CA-03 | [test_clients_lookup.py](../../../backend/tests/clientes/unitarias/test_clients_lookup.py). |
+| CA-04 | [test_admin_client_payment.py](../../../backend/tests/clientes/integracion/test_admin_client_payment.py): `test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration`. |
+| CA-05 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_client_deletion_removes_enrollments_progress_and_releases_capacity`; [test_scoped_operations.py](../../../backend/tests/transversales/integracion/test_scoped_operations.py): `test_client_deletion_keeps_the_whole_cascade_inside_one_command`. |
+| CA-06 | [client-catalog.test.js](../../../frontend/tests/clientes/interfaz/client-catalog.test.js) y [validación del catálogo](../validaciones/catalogo-clientes/validation.md). |
+| CA-07 | [test_public_preregistrations.py](../../../backend/tests/clientes/integracion/test_public_preregistrations.py), [integración SQL](../../../backend/tests/clientes/postgres/test_public_preregistrations_postgres.py) y [validación](../validaciones/preregistros-separados/validation.md). |
 
 ## 4. Technical Constraints
 
@@ -79,7 +79,7 @@ El historial de tienda no se elimina junto con el cliente. Aplicar
 [025_delete_clients_preserve_sales.sql](../../../backend/migrations/025_delete_clients_preserve_sales.sql)
 antes del backend que desvincula pedidos; su trigger conserva la venta antes
 del borrado de la cuenta dentro de la misma transacción. Ver
-[regresión SQL](../../../backend/tests/test_client_deletion_postgres.py) y
+[regresión SQL](../../../backend/tests/clientes/postgres/test_client_deletion_postgres.py) y
 [validación](../validaciones/borrado-clientes-con-ventas/validation.md).
 
 ## 6. Edge Cases
@@ -108,7 +108,7 @@ El borrado administrativo propaga fallos del comando: un problema de persistenci
 produce 503 sanitizado mediante el manejador HTTP, sin comunicar 204 falso. El servicio
 rechaza identificadores inválidos antes de ejecutar la cascada existente.
 Regresiones y recorrido desde registro público/administrativo en
-[test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+[test_client_flow_control.py](../../../backend/tests/transversales/integracion/test_client_flow_control.py).
 
 Una respuesta 204 de borrado se acepta sin reconstruir su cuerpo, incluso cuando
 Chromium expone un stream vacío; la fila se retira tras la confirmación sin un
@@ -121,7 +121,7 @@ la cascada administrativa. Las solicitudes públicas nuevas se separan según CA
 En la ficha, la confirmación manual muestra «Confirmando pago…» y bloquea nuevos
 envíos mientras está en curso. Tras activar, la ficha se actualiza con la respuesta
 del servidor y sustituye la acción de activar por la de notificar. Regresiones en
-[36-client-flow-control.test.js](../../../frontend/tests/36-client-flow-control.test.js).
+[client-flow-control.test.js](../../../frontend/tests/clientes/interfaz/client-flow-control.test.js).
 
 El correo de cuenta acepta cualquier dominio terminado en `.com`, con una sola
 `@` y formato válido. La misma regla reutilizable se aplica en el preregistro

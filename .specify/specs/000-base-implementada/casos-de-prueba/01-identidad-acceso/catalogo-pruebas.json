@@ -1,0 +1,665 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "identidad_acceso",
+  "counts": {
+    "backend": {
+      "collected": 10,
+      "passed": 10,
+      "skipped": 0
+    },
+    "frontend": {
+      "collected": 19,
+      "passed": 19,
+      "skipped": 0
+    },
+    "total": 29,
+    "passed": 29,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 24,
+      "name": "test_get_user_role_returns_user_without_email",
+      "source_function": "test_get_user_role_returns_user_without_email",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "get_user_role(None) == \"user\""
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_get_user_role_returns_user_without_email",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_get_user_role_returns_user_without_email -q",
+      "id": "CT-M01-U-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 28,
+      "name": "test_get_user_role_marks_urp_email_as_admin",
+      "source_function": "test_get_user_role_marks_urp_email_as_admin",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "get_user_role(\"persona@urp.edu.pe\") == \"admin\""
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_get_user_role_marks_urp_email_as_admin",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_get_user_role_marks_urp_email_as_admin -q",
+      "id": "CT-M01-U-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 32,
+      "name": "test_decode_token_payload_reads_jwt_payload",
+      "source_function": "test_decode_token_payload_reads_jwt_payload",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "decode_token_payload(_jwt_with_payload({\"email\": \"a@b.com\"})) == {\"email\": \"a@b.com\"}"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_decode_token_payload_reads_jwt_payload",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_decode_token_payload_reads_jwt_payload -q",
+      "id": "CT-M01-U-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 36,
+      "name": "test_decode_token_payload_returns_none_for_invalid_token",
+      "source_function": "test_decode_token_payload_returns_none_for_invalid_token",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "decode_token_payload(\"token-invalido\") is None"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_decode_token_payload_returns_none_for_invalid_token",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_decode_token_payload_returns_none_for_invalid_token -q",
+      "id": "CT-M01-U-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 40,
+      "name": "test_normalize_profile_uses_email_prefix_as_name_fallback",
+      "source_function": "test_normalize_profile_uses_email_prefix_as_name_fallback",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "profile[\"name\"] == \"cliente\""
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_normalize_profile_uses_email_prefix_as_name_fallback",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_normalize_profile_uses_email_prefix_as_name_fallback -q",
+      "id": "CT-M01-U-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 45,
+      "name": "test_get_expiry_seconds_uses_default_for_token_without_exp",
+      "source_function": "test_get_expiry_seconds_uses_default_for_token_without_exp",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "get_expiry_seconds(_jwt_with_payload({\"sub\": \"abc\"}), default_seconds=120) == 120"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_get_expiry_seconds_uses_default_for_token_without_exp",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_get_expiry_seconds_uses_default_for_token_without_exp -q",
+      "id": "CT-M01-U-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 49,
+      "name": "test_hash_password_can_be_verified",
+      "source_function": "test_hash_password_can_be_verified",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "verify_password(\"secreto\", stored) is True"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_hash_password_can_be_verified",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_hash_password_can_be_verified -q",
+      "id": "CT-M01-U-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 54,
+      "name": "test_verify_password_rejects_wrong_password",
+      "source_function": "test_verify_password_rejects_wrong_password",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "verify_password(\"otro\", stored) is False"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_verify_password_rejects_wrong_password",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_verify_password_rejects_wrong_password -q",
+      "id": "CT-M01-U-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 59,
+      "name": "test_create_local_token_contains_expected_profile_data",
+      "source_function": "test_create_local_token_contains_expected_profile_data",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "payload[\"email\"] == \"u1@example.com\"",
+        "payload[\"exp\"] >= int(time.time()) + 80"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_create_local_token_contains_expected_profile_data",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_create_local_token_contains_expected_profile_data -q",
+      "id": "CT-M01-U-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "backend/tests/identidad_acceso/unitarias/test_security_utils.py",
+      "line": 66,
+      "name": "test_normalize_profile_can_use_token_payload_when_profile_is_missing",
+      "source_function": "test_normalize_profile_can_use_token_payload_when_profile_is_missing",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "profile[\"id\"] == \"abc\"",
+        "profile[\"email\"] == \"token@example.com\""
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/identidad_acceso/unitarias/test_security_utils.py::test_normalize_profile_can_use_token_payload_when_profile_is_missing",
+      "command": "python -m pytest tests/identidad_acceso/unitarias/test_security_utils.py::test_normalize_profile_can_use_token_payload_when_profile_is_missing -q",
+      "id": "CT-M01-U-BE-010"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "frontend/tests/identidad_acceso/unitarias/decode-jwt.test.js",
+      "line": 1,
+      "name": "tests/identidad_acceso/unitarias/decode-jwt.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(decodeJWT(`header.${encodedPayload}.signature`), { email: 'cliente@example.com' })"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/decode-jwt.test.js",
+      "command": "node --test tests/identidad_acceso/unitarias/decode-jwt.test.js",
+      "id": "CT-M01-U-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "frontend/tests/identidad_acceso/unitarias/default-membership.test.js",
+      "line": 1,
+      "name": "tests/identidad_acceso/unitarias/default-membership.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(createDefaultMembership({ role: 'admin' }).plan, 'Acceso total')"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/default-membership.test.js",
+      "command": "node --test tests/identidad_acceso/unitarias/default-membership.test.js",
+      "id": "CT-M01-U-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "frontend/tests/identidad_acceso/unitarias/format-user-data.test.js",
+      "line": 1,
+      "name": "tests/identidad_acceso/unitarias/format-user-data.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(user.id, 'SGCLI001')",
+        "assert.equal(user.email, 'cliente@example.com')"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/identidad_acceso/unitarias/format-user-data.test.js",
+      "command": "node --test tests/identidad_acceso/unitarias/format-user-data.test.js",
+      "id": "CT-M01-U-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "frontend/tests/identidad_acceso/unitarias/invalid-email.test.js",
+      "line": 1,
+      "name": "tests/identidad_acceso/unitarias/invalid-email.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(isValidEmail('cliente.example.com'), false)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/invalid-email.test.js",
+      "command": "node --test tests/identidad_acceso/unitarias/invalid-email.test.js",
+      "id": "CT-M01-U-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "frontend/tests/identidad_acceso/unitarias/user-role.test.js",
+      "line": 1,
+      "name": "tests/identidad_acceso/unitarias/user-role.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(getUserRole('admin@urp.edu.pe'), 'admin')"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/user-role.test.js",
+      "command": "node --test tests/identidad_acceso/unitarias/user-role.test.js",
+      "id": "CT-M01-U-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "frontend/tests/identidad_acceso/unitarias/valid-email.test.js",
+      "line": 1,
+      "name": "tests/identidad_acceso/unitarias/valid-email.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(isValidEmail('cliente@example.com'), true)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/valid-email.test.js",
+      "command": "node --test tests/identidad_acceso/unitarias/valid-email.test.js",
+      "id": "CT-M01-U-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "unitarias",
+      "path": "frontend/tests/identidad_acceso/unitarias/valid-user.test.js",
+      "line": 1,
+      "name": "tests/identidad_acceso/unitarias/valid-user.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(isValidUser({ id_usuario: 'SGCLI002', correo: 'cliente2@example.com' }), true)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/identidad_acceso/unitarias/valid-user.test.js",
+      "command": "node --test tests/identidad_acceso/unitarias/valid-user.test.js",
+      "id": "CT-M01-U-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/public-navigation.test.js",
+      "line": 36,
+      "name": "admin puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "source_function": "`${role} puede regresar del panel a la landing y sus secciones sin cerrar sesión`",
+      "variant": "admin puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(router.currentRoute.value.fullPath, '/')",
+        "assert.equal(router.currentRoute.value.fullPath, '/#membresias')",
+        "assert.equal(router.currentRoute.value.fullPath, '/#servicios')"
+      ],
+      "checks_in_source": 5,
+      "selector": "admin puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "command": "node --test '--test-name-pattern=^admin\\ puede\\ regresar\\ del\\ panel\\ a\\ la\\ landing\\ y\\ sus\\ secciones\\ sin\\ cerrar\\ sesión$' tests/identidad_acceso/integracion/public-navigation.test.js",
+      "id": "CT-M01-I-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/public-navigation.test.js",
+      "line": 36,
+      "name": "staff puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "source_function": "`${role} puede regresar del panel a la landing y sus secciones sin cerrar sesión`",
+      "variant": "staff puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(router.currentRoute.value.fullPath, '/')",
+        "assert.equal(router.currentRoute.value.fullPath, '/#membresias')",
+        "assert.equal(router.currentRoute.value.fullPath, '/#servicios')"
+      ],
+      "checks_in_source": 5,
+      "selector": "staff puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "command": "node --test '--test-name-pattern=^staff\\ puede\\ regresar\\ del\\ panel\\ a\\ la\\ landing\\ y\\ sus\\ secciones\\ sin\\ cerrar\\ sesión$' tests/identidad_acceso/integracion/public-navigation.test.js",
+      "id": "CT-M01-I-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/public-navigation.test.js",
+      "line": 36,
+      "name": "trainer puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "source_function": "`${role} puede regresar del panel a la landing y sus secciones sin cerrar sesión`",
+      "variant": "trainer puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(router.currentRoute.value.fullPath, '/')",
+        "assert.equal(router.currentRoute.value.fullPath, '/#membresias')",
+        "assert.equal(router.currentRoute.value.fullPath, '/#servicios')"
+      ],
+      "checks_in_source": 5,
+      "selector": "trainer puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "command": "node --test '--test-name-pattern=^trainer\\ puede\\ regresar\\ del\\ panel\\ a\\ la\\ landing\\ y\\ sus\\ secciones\\ sin\\ cerrar\\ sesión$' tests/identidad_acceso/integracion/public-navigation.test.js",
+      "id": "CT-M01-I-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/public-navigation.test.js",
+      "line": 36,
+      "name": "user puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "source_function": "`${role} puede regresar del panel a la landing y sus secciones sin cerrar sesión`",
+      "variant": "user puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(router.currentRoute.value.fullPath, '/')",
+        "assert.equal(router.currentRoute.value.fullPath, '/#membresias')",
+        "assert.equal(router.currentRoute.value.fullPath, '/#servicios')"
+      ],
+      "checks_in_source": 5,
+      "selector": "user puede regresar del panel a la landing y sus secciones sin cerrar sesión",
+      "command": "node --test '--test-name-pattern=^user\\ puede\\ regresar\\ del\\ panel\\ a\\ la\\ landing\\ y\\ sus\\ secciones\\ sin\\ cerrar\\ sesión$' tests/identidad_acceso/integracion/public-navigation.test.js",
+      "id": "CT-M01-I-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/public-navigation.test.js",
+      "line": 53,
+      "name": "la landing también permite entrada directa con una sesión restaurada",
+      "source_function": "'la landing también permite entrada directa con una sesión restaurada'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(checks, 1)",
+        "assert.equal(router.currentRoute.value.path, '/')",
+        "assert.equal(auth.isAuthenticated, true)"
+      ],
+      "checks_in_source": 3,
+      "selector": "la landing también permite entrada directa con una sesión restaurada",
+      "command": "node --test '--test-name-pattern=^la\\ landing\\ también\\ permite\\ entrada\\ directa\\ con\\ una\\ sesión\\ restaurada$' tests/identidad_acceso/integracion/public-navigation.test.js",
+      "id": "CT-M01-I-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/public-navigation.test.js",
+      "line": 63,
+      "name": "sin sesión se conserva el acceso público y se bloquean los paneles",
+      "source_function": "'sin sesión se conserva el acceso público y se bloquean los paneles'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(router.currentRoute.value.path, '/')",
+        "assert.equal(router.currentRoute.value.path, '/login')"
+      ],
+      "checks_in_source": 2,
+      "selector": "sin sesión se conserva el acceso público y se bloquean los paneles",
+      "command": "node --test '--test-name-pattern=^sin\\ sesión\\ se\\ conserva\\ el\\ acceso\\ público\\ y\\ se\\ bloquean\\ los\\ paneles$' tests/identidad_acceso/integracion/public-navigation.test.js",
+      "id": "CT-M01-I-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/public-navigation.test.js",
+      "line": 71,
+      "name": "una membresía vencida mantiene el motivo en login al intentar abrir el panel",
+      "source_function": "'una membresía vencida mantiene el motivo en login al intentar abrir el panel'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(router.currentRoute.value.fullPath, '/login?reason=membership_expired')",
+        "assert.equal(router.currentRoute.value.path, '/')"
+      ],
+      "checks_in_source": 2,
+      "selector": "una membresía vencida mantiene el motivo en login al intentar abrir el panel",
+      "command": "node --test '--test-name-pattern=^una\\ membresía\\ vencida\\ mantiene\\ el\\ motivo\\ en\\ login\\ al\\ intentar\\ abrir\\ el\\ panel$' tests/identidad_acceso/integracion/public-navigation.test.js",
+      "id": "CT-M01-I-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/public-navigation.test.js",
+      "line": 82,
+      "name": "visitar la landing no concede acceso a otros roles",
+      "source_function": "'visitar la landing no concede acceso a otros roles'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(router.currentRoute.value.path, '/')",
+        "assert.equal(router.currentRoute.value.path, '/')",
+        "assert.equal(staffRouter.currentRoute.value.path, '/admin/dashboard')"
+      ],
+      "checks_in_source": 3,
+      "selector": "visitar la landing no concede acceso a otros roles",
+      "command": "node --test '--test-name-pattern=^visitar\\ la\\ landing\\ no\\ concede\\ acceso\\ a\\ otros\\ roles$' tests/identidad_acceso/integracion/public-navigation.test.js",
+      "id": "CT-M01-I-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/session-validation.test.js",
+      "line": 5,
+      "name": "navigation shares pending validation and reuses a recent server response",
+      "source_function": "'navigation shares pending validation and reuses a recent server response'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(first, second)",
+        "assert.equal(calls, 1)",
+        "assert.deepEqual(await validator.validate('session-a'), { role: 'admin' })"
+      ],
+      "checks_in_source": 6,
+      "selector": "navigation shares pending validation and reuses a recent server response",
+      "command": "node --test '--test-name-pattern=^navigation\\ shares\\ pending\\ validation\\ and\\ reuses\\ a\\ recent\\ server\\ response$' tests/identidad_acceso/integracion/session-validation.test.js",
+      "id": "CT-M01-I-FE-009"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/session-validation.test.js",
+      "line": 33,
+      "name": "changed tokens and forced checks bypass successful cached validation",
+      "source_function": "'changed tokens and forced checks bypass successful cached validation'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(await validator.validate('b'), { token: 'b' })",
+        "assert.deepEqual(calls, ['a', 'b', 'b'])"
+      ],
+      "checks_in_source": 2,
+      "selector": "changed tokens and forced checks bypass successful cached validation",
+      "command": "node --test '--test-name-pattern=^changed\\ tokens\\ and\\ forced\\ checks\\ bypass\\ successful\\ cached\\ validation$' tests/identidad_acceso/integracion/session-validation.test.js",
+      "id": "CT-M01-I-FE-010"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/session-validation.test.js",
+      "line": 45,
+      "name": "failed validation is retried instead of granting a cached session",
+      "source_function": "'failed validation is retried instead of granting a cached session'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.rejects(validator.validate('a'), /desactivada/)",
+        "assert.rejects(validator.validate('a'), /desactivada/)",
+        "assert.equal(calls, 2)"
+      ],
+      "checks_in_source": 3,
+      "selector": "failed validation is retried instead of granting a cached session",
+      "command": "node --test '--test-name-pattern=^failed\\ validation\\ is\\ retried\\ instead\\ of\\ granting\\ a\\ cached\\ session$' tests/identidad_acceso/integracion/session-validation.test.js",
+      "id": "CT-M01-I-FE-011"
+    },
+    {
+      "component": "frontend",
+      "module": "identidad_acceso",
+      "type": "integracion",
+      "path": "frontend/tests/identidad_acceso/integracion/session-validation.test.js",
+      "line": 56,
+      "name": "logout invalidates a pending check even when the same token is reused later",
+      "source_function": "'logout invalidates a pending check even when the same token is reused later'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 2)",
+        "assert.deepEqual(await next, { name: 'Sesión actual' })"
+      ],
+      "checks_in_source": 2,
+      "selector": "logout invalidates a pending check even when the same token is reused later",
+      "command": "node --test '--test-name-pattern=^logout\\ invalidates\\ a\\ pending\\ check\\ even\\ when\\ the\\ same\\ token\\ is\\ reused\\ later$' tests/identidad_acceso/integracion/session-validation.test.js",
+      "id": "CT-M01-I-FE-012"
+    }
+  ]
+}

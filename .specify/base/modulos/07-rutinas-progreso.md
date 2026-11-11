@@ -31,11 +31,11 @@ activa compatible y consultar el progreso registrado por la sesión del entrenad
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_trainer_exercises.py](../../../backend/tests/test_trainer_exercises.py): `test_trainer_api_preserves_exercises_in_catalog_and_session_history`, `test_supabase_exercise_data_survives_json_serialization_and_legacy_rows`. |
-| CA-02 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): pruebas `test_assigns_matching_routine_to_active_enrollment_and_schedule` y rechazos de asignación. |
-| CA-03 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_progress_uses_the_authenticated_trainer_even_if_the_actor_is_spoofed_or_missing`. |
-| CA-04 | [test_partial_smell_fixes.py](../../../backend/tests/test_partial_smell_fixes.py): `test_exercise_weights_reject_negatives_and_preserve_zero`, `test_nested_exercise_contracts_reject_missing_identity_and_invalid_weights`. |
-| CA-05 | [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js). |
+| CA-01 | [test_trainer_exercises.py](../../../backend/tests/rutinas_progreso/integracion/test_trainer_exercises.py): `test_trainer_api_preserves_exercises_in_catalog_and_session_history`, `test_supabase_exercise_data_survives_json_serialization_and_legacy_rows`. |
+| CA-02 | [test_schedule_enrollment.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py): pruebas `test_assigns_matching_routine_to_active_enrollment_and_schedule` y rechazos de asignación. |
+| CA-03 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_progress_uses_the_authenticated_trainer_even_if_the_actor_is_spoofed_or_missing`. |
+| CA-04 | [test_partial_smell_fixes.py](../../../backend/tests/transversales/integracion/test_partial_smell_fixes.py): `test_exercise_weights_reject_negatives_and_preserve_zero`, `test_nested_exercise_contracts_reject_missing_identity_and_invalid_weights`. |
+| CA-05 | [rutinas_progreso · flujos.test.js](../../../frontend/tests/rutinas_progreso/interfaz/flujos.test.js). |
 
 ## 4. Technical Constraints
 

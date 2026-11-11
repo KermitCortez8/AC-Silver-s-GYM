@@ -49,7 +49,7 @@ Los resultados siguientes se conservan como evidencia de la entrega inicial.
 | --- | --- |
 | `npm test --prefix frontend` | 294 pruebas aprobadas. |
 | `npm run build --prefix frontend` | Aprobado. |
-| `/tmp/gym-limits-venv/bin/python -m pytest backend/tests/test_basic_form_validation.py backend/tests/test_form_limits.py -q` | 82 pruebas aprobadas, incluidas 21 nuevas de fronteras y comandos directos. |
+| `/tmp/gym-limits-venv/bin/python -m pytest backend/tests/transversales/integracion/test_basic_form_validation.py backend/tests/transversales/integracion/test_form_limits.py -q` | 82 pruebas aprobadas, incluidas 21 nuevas de fronteras y comandos directos. |
 | `/tmp/gym-limits-venv/bin/python -m pytest backend/tests/ -q` | 640 aprobadas, 39 fallidas y 33 omitidas. |
 | `/tmp/gym-limits-venv/bin/python -m flake8 backend --count --select=E9,F63,F7,F82 --show-source --statistics` | Aprobado, 0 errores. |
 | `node .specify/base/validaciones/limites-formularios/evidence/browser-review.cjs` | 17 comprobaciones aprobadas en Chromium, sin errores de JavaScript. |

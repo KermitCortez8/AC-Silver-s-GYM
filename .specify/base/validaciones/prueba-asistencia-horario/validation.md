@@ -27,7 +27,7 @@ con un cupo, sin editar horarios existentes.
 
 ## Comprobación acelerada y reproducible
 
-[test_attendance_enrollment_flow_postgres.py](../../../../backend/tests/test_attendance_enrollment_flow_postgres.py)
+[test_attendance_enrollment_flow_postgres.py](../../../../backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py)
 usa únicamente un PostgreSQL desechable con datos sintéticos. Instala las
 migraciones de matrícula, sesiones y asistencia de clase, crea cuenta habilitada
 y membresía vigente, matricula mediante RPC y registra la entrada administrativa

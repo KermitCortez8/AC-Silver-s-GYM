@@ -1,0 +1,42 @@
+# MOD-09 · Tienda y pedidos · Casos individuales
+
+[Plan de ejecución del módulo](plan-de-pruebas.md): alcance, prioridad, entorno y criterios de aprobación.
+
+15 casos individuales: 15 aprobados y 0 omitidos
+registrados en la revisión del 2026-11-10. [Índice de módulos](../indice.md).
+[Preparación, ejecución y lectura de resultados](../indice.md#cómo-leer-y-repetir-cada-caso).
+[Escenarios de uso del módulo](casos-de-uso.md) y
+[selectores/comandos estructurados](catalogo-pruebas.json).
+
+## Pruebas de integración
+
+### Backend
+
+#### test_store_images.py
+
+| Caso individual | Escenario / variante original | Dado: fixtures / parámetros | Entonces: extractos del resultado esperado | Resultado registrado |
+| --- | --- | --- | --- | --- |
+| **CT-M09-I-BE-001** | <code>test_image_upload_and_listing_preserve_public_urls</code> · [test_store_images.py:24](../../../../../backend/tests/tienda_pedidos/integracion/test_store_images.py#L24) | Fixtures: <code>tmp_path_factory</code>, <code>images_api</code>, <code>tmp_path</code> | <code>response.status_code == 201</code>; <code>re.fullmatch(r"producto-demo-&#91;a-f0-9&#93;{12}\.png", record&#91;"name"&#93;)</code>; <code>record&#91;"url"&#93; == f"/api/uploads/store-images/{record&#91;'name'&#93;}"</code> (5 en fuente). | Aprobado |
+| **CT-M09-I-BE-002** | <code>test_invalid_uploads_are_rejected_before_storage&#91;empty&#93;</code> · [test_store_images.py:41](../../../../../backend/tests/tienda_pedidos/integracion/test_store_images.py#L41) | Fixtures: <code>tmp_path_factory</code>, <code>images_api</code>, <code>tmp_path</code>; parámetros: <code>filename</code>, <code>data</code>, <code>mime</code> | <code>response.status_code == 400</code>; <code>list(directory.iterdir()) == &#91;&#93;</code> (2 en fuente). | Aprobado |
+| **CT-M09-I-BE-003** | <code>test_invalid_uploads_are_rejected_before_storage&#91;svg&#93;</code> · [test_store_images.py:41](../../../../../backend/tests/tienda_pedidos/integracion/test_store_images.py#L41) | Fixtures: <code>tmp_path_factory</code>, <code>images_api</code>, <code>tmp_path</code>; parámetros: <code>filename</code>, <code>data</code>, <code>mime</code> | <code>response.status_code == 400</code>; <code>list(directory.iterdir()) == &#91;&#93;</code> (2 en fuente). | Aprobado |
+| **CT-M09-I-BE-004** | <code>test_invalid_uploads_are_rejected_before_storage&#91;too-large&#93;</code> · [test_store_images.py:41](../../../../../backend/tests/tienda_pedidos/integracion/test_store_images.py#L41) | Fixtures: <code>tmp_path_factory</code>, <code>images_api</code>, <code>tmp_path</code>; parámetros: <code>filename</code>, <code>data</code>, <code>mime</code> | <code>response.status_code == 400</code>; <code>list(directory.iterdir()) == &#91;&#93;</code> (2 en fuente). | Aprobado |
+| **CT-M09-I-BE-005** | <code>test_invalid_uploads_are_rejected_before_storage&#91;wrong-mime&#93;</code> · [test_store_images.py:41](../../../../../backend/tests/tienda_pedidos/integracion/test_store_images.py#L41) | Fixtures: <code>tmp_path_factory</code>, <code>images_api</code>, <code>tmp_path</code>; parámetros: <code>filename</code>, <code>data</code>, <code>mime</code> | <code>response.status_code == 400</code>; <code>list(directory.iterdir()) == &#91;&#93;</code> (2 en fuente). | Aprobado |
+
+## Pruebas de interfaz
+
+### Frontend
+
+#### formularios.test.js
+
+| Caso individual | Escenario / variante original | Dado: fixtures / parámetros | Entonces: extractos del resultado esperado | Resultado registrado |
+| --- | --- | --- | --- | --- |
+| **CT-M09-F-FE-001** | <code>editing a store product preserves a zero threshold through the actual view and save payload</code> · [formularios.test.js:5](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L5) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.equal(setup.form.minimo, 0)</code>; <code>assert.equal(setup.stockBarColor(product), 'bg-emerald-400')</code>; <code>assert.equal(setup.form.minimo, 5)</code> (5 en fuente). | Aprobado |
+| **CT-M09-F-FE-002** | <code>la papelera conserva su pestaña y las acciones de restaurar y eliminar</code> · [formularios.test.js:21](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L21) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.equal(setup.activeTab, 'papelera')</code>; <code>assert.ok(setup.tabs.some(tab =&gt; tab.value === 'papelera'))</code>; <code>assert.match(html, /Agua archivada/)</code> (5 en fuente). | Aprobado |
+| **CT-M09-F-FE-003** | <code>a failed product save preserves the editor and its entered values</code> · [formularios.test.js:32](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L32) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.equal(setup.isProductEditorOpen, true)</code>; <code>assert.equal(setup.form.nombre, 'Agua')</code>; <code>assert.equal(setup.isSaving, false)</code> (4 en fuente). | Aprobado |
+| **CT-M09-F-FE-004** | <code>extracted product dialog hides the inventory link and renders the image picker</code> · [formularios.test.js:45](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L45) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.match(dialogs, /Agua editada/)</code>; <code>assert.doesNotMatch(dialogs, /Item de inventario&#124;Almacén Agua/)</code>; <code>assert.match(dialogs, /agua.png/)</code> (4 en fuente). | Aprobado |
+| **CT-M09-F-FE-005** | <code>product editor validates quantities before sending them</code> · [formularios.test.js:61](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L61) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.equal(saves, 0)</code>; <code>assert.equal(setup.feedbackTone, 'error')</code>; <code>assert.equal(setup.isProductEditorOpen, true)</code> (3 en fuente). | Aprobado |
+| **CT-M09-F-FE-006** | <code>order status saves cannot overlap and retain their draft after failure</code> · [formularios.test.js:74](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L74) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.equal(calls, 1)</code>; <code>assert.equal(setup.ensureDraft(order).estado_pedido, 'CONFIRMADO')</code>; <code>assert.equal(setup.ensureDraft(order).observacion_admin, 'Recoger mañana')</code> (5 en fuente). | Aprobado |
+| **CT-M09-F-FE-007** | <code>store quantity errors are visible and do not change the cart</code> · [formularios.test.js:93](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L93) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.equal(gym.cart.length, 0)</code>; <code>assert.equal(setup.feedbackTone, 'error')</code>; <code>assert.equal(gym.cart&#91;0&#93;.cantidad, 2)</code> (7 en fuente). | Aprobado |
+| **CT-M09-F-FE-008** | <code>failed gallery refresh preserves previously loaded images</code> · [formularios.test.js:113](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L113) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.equal(setup.bucketImages.length, 1)</code>; <code>assert.equal(setup.bucketImages&#91;0&#93;.name, 'agua.png')</code>; <code>assert.equal(setup.imageFeedbackTone, 'error')</code> (4 en fuente). | Aprobado |
+| **CT-M09-F-FE-009** | <code>checkout validates customer data and prevents duplicate payments while preserving failed drafts</code> · [formularios.test.js:124](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L124) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.equal(calls, 0)</code>; <code>assert.match(setup.feedback, /Solo se permiten correos/)</code>; <code>assert.equal(calls, 0)</code> (11 en fuente). | Aprobado |
+| **CT-M09-F-FE-010** | <code>client quantities never exceed the available stock and out-of-stock products are hidden</code> · [formularios.test.js:156](../../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js#L156) | Fixtures: <code>Preparación y dobles del archivo fuente</code> | <code>assert.deepEqual(setup.catalogProducts.map((p) =&gt; p.id_producto), &#91;1&#93;)</code>; <code>assert.equal(event.target.value, '3')</code>; <code>assert.equal(setup.cantidadInput&#91;1&#93;, 3)</code> (7 en fuente). | Aprobado |

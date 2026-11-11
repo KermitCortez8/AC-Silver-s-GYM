@@ -3,7 +3,7 @@
 Desde backend, con dependencias de requirements-dev.txt instaladas:
 
 ```bash
-python -m pytest tests/test_client_flow_control.py tests/test_admin_client_payment.py -q
+python -m pytest tests/transversales/integracion/test_client_flow_control.py tests/clientes/integracion/test_admin_client_payment.py -q
 python -m pytest tests/ -q
 python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 ```

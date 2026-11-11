@@ -60,12 +60,12 @@ su despliegue/configuración no se demuestra por tener su código en el reposito
 
 ## Evidencia
 
-Reutilizar [test_priority_fixes.py](../../../backend/tests/test_priority_fixes.py),
-[test_review_regressions.py](../../../backend/tests/test_review_regressions.py),
-[test_scoped_operations.py](../../../backend/tests/test_scoped_operations.py),
-[test_stripe_confirmation.py](../../../backend/tests/test_stripe_confirmation.py),
-[test_store_images.py](../../../backend/tests/test_store_images.py) y
-[test_resend_email.py](../../../backend/tests/test_resend_email.py) según el alcance.
+Reutilizar [test_priority_fixes.py](../../../backend/tests/transversales/integracion/test_priority_fixes.py),
+[test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py),
+[test_scoped_operations.py](../../../backend/tests/transversales/integracion/test_scoped_operations.py),
+[test_stripe_confirmation.py](../../../backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py),
+[test_store_images.py](../../../backend/tests/tienda_pedidos/integracion/test_store_images.py) y
+[test_resend_email.py](../../../backend/tests/notificaciones/integracion/test_resend_email.py) según el alcance.
 Los documentos de auditoría registran problemas y correcciones históricas;
 no son una declaración de ausencia de vulnerabilidades.
 

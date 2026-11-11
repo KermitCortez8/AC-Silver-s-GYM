@@ -23,14 +23,14 @@ hora de salida sigue bloqueando. No se aplican migraciones a Supabase.
 
 ## Regresiones
 
-- [test_general_attendance.py](../../../../backend/tests/test_general_attendance.py):
+- [test_general_attendance.py](../../../../backend/tests/asistencias/integracion/test_general_attendance.py):
   ambos sentidos, HTTP 409 sin escritura parcial, motivo con origen, proyección
   del bloqueo y nuevo ingreso después de salir; clase incompleta sin salida.
-- [test_attendance_enrollment_flow_postgres.py](../../../../backend/tests/test_attendance_enrollment_flow_postgres.py):
+- [test_attendance_enrollment_flow_postgres.py](../../../../backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py):
   RPC real bloquea ambos sentidos y permite cambiar de tipo tras la salida;
   dos solicitudes concurrentes de tipos distintos solo guardan una visita.
   Se utiliza exclusivamente PostgreSQL desechable explícito.
-- [29-view-flows.test.js](../../../../frontend/tests/29-view-flows.test.js):
+- [asistencias · flujos.test.js](../../../../frontend/tests/asistencias/interfaz/flujos.test.js); [rutinas_progreso · flujos.test.js](../../../../frontend/tests/rutinas_progreso/interfaz/flujos.test.js):
   general muestra la entrada de horario y solo su salida; horario muestra el
   bloqueo general, cierra la visita pendiente y actualiza la disponibilidad;
   un conflicto tras una consulta obsoleta conserva el aviso sin éxito falso.
@@ -80,7 +80,7 @@ Fuera del margen se oculta el aviso cruzado, conservando la visita pendiente y
 su acción de salida. Los controles de persistencia y aforo se mantienen.
 
 Regresión adicional en
-[test_schedule_attendance.py](../../../../backend/tests/test_schedule_attendance.py):
+[test_schedule_attendance.py](../../../../backend/tests/asistencias/integracion/test_schedule_attendance.py):
 30 minutos antes/después inclusive, un segundo fuera de cada extremo, inicio,
 fin, clase de otra semana, cruce de medianoche y horario editado. La
 regresión SSR comprueba que otra fecha no ofrece salida pendiente ni una nueva

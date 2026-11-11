@@ -76,12 +76,12 @@ jobs:
       - name: Verificar transacciones, preregistros, asistencia y sesiones
         run: >-
           python -m pytest
-          backend/tests/test_atomic_transactions_postgres.py
-          backend/tests/test_public_preregistrations_postgres.py
-          backend/tests/test_attendance_deadline_postgres.py
-          backend/tests/test_automatic_attendance_postgres.py
-          backend/tests/test_schedule_sessions_postgres.py
-          backend/tests/test_attendance_enrollment_flow_postgres.py
+          backend/tests/transversales/postgres/test_atomic_transactions_postgres.py
+          backend/tests/clientes/postgres/test_public_preregistrations_postgres.py
+          backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py
+          backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py
+          backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py
+          backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py
           -q
       - name: Limpiar PostgreSQL
         if: always()

@@ -1,0 +1,971 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "paneles_configuracion",
+  "counts": {
+    "backend": {
+      "collected": 18,
+      "passed": 18,
+      "skipped": 0
+    },
+    "frontend": {
+      "collected": 23,
+      "passed": 23,
+      "skipped": 0
+    },
+    "total": 41,
+    "passed": 41,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "unitarias",
+      "path": "frontend/tests/paneles_configuracion/unitarias/client-dashboard.test.js",
+      "line": 9,
+      "name": "dashboard keeps expired memberships distinct and activation requires a confirmed payment",
+      "source_function": "'dashboard keeps expired memberships distinct and activation requires a confirmed payment'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(summary.memberships, { active: 1, pending: 3, expired: 1, })",
+        "assert.equal(summary.readyToActivate, 1)",
+        "assert.equal(summary.pendingPayment, 1)"
+      ],
+      "checks_in_source": 6,
+      "selector": "dashboard keeps expired memberships distinct and activation requires a confirmed payment",
+      "command": "node --test '--test-name-pattern=^dashboard\\ keeps\\ expired\\ memberships\\ distinct\\ and\\ activation\\ requires\\ a\\ confirmed\\ payment$' tests/paneles_configuracion/unitarias/client-dashboard.test.js",
+      "id": "CT-M10-U-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "unitarias",
+      "path": "frontend/tests/paneles_configuracion/unitarias/client-dashboard.test.js",
+      "line": 55,
+      "name": "client updates immediately move counts from payment to activation to active to expired",
+      "source_function": "'client updates immediately move counts from payment to activation to active to expired'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(summarizeDashboardClients([client]).pendingPayment, 1)",
+        "assert.equal(summarizeDashboardClients([client]).readyToActivate, 1)",
+        "assert.equal(summarizeDashboardClients([client]).memberships.active, 1)"
+      ],
+      "checks_in_source": 6,
+      "selector": "client updates immediately move counts from payment to activation to active to expired",
+      "command": "node --test '--test-name-pattern=^client\\ updates\\ immediately\\ move\\ counts\\ from\\ payment\\ to\\ activation\\ to\\ active\\ to\\ expired$' tests/paneles_configuracion/unitarias/client-dashboard.test.js",
+      "id": "CT-M10-U-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "unitarias",
+      "path": "frontend/tests/paneles_configuracion/unitarias/client-dashboard.test.js",
+      "line": 74,
+      "name": "dashboard handles missing origin and missing payment without inventing confirmation",
+      "source_function": "'dashboard handles missing origin and missing payment without inventing confirmation'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(empty.total, 0)",
+        "assert.equal(empty.readyToActivate, 0)",
+        "assert.equal(result.readyToActivate, 0)"
+      ],
+      "checks_in_source": 5,
+      "selector": "dashboard handles missing origin and missing payment without inventing confirmation",
+      "command": "node --test '--test-name-pattern=^dashboard\\ handles\\ missing\\ origin\\ and\\ missing\\ payment\\ without\\ inventing\\ confirmation$' tests/paneles_configuracion/unitarias/client-dashboard.test.js",
+      "id": "CT-M10-U-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "unitarias",
+      "path": "frontend/tests/paneles_configuracion/unitarias/client-dashboard.test.js",
+      "line": 86,
+      "name": "daily dashboard and seven day chart use Peru time across UTC and month boundaries",
+      "source_function": "'daily dashboard and seven day chart use Peru time across UTC and month boundaries'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(peruDateKey(new Date('2026-10-02T04:59:59Z')), '2026-10-01')",
+        "assert.equal(peruDateKey(new Date('2026-10-02T05:00:00Z')), '2026-10-02')",
+        "assert.deepEqual(lastSevenPeruDays(new Date('2026-03-02T04:00:00Z')), [ '2026-02-23', '2026-02-24', '2026-02-25', '2026-02-26', '2026-02-27', '2026-02-28', '2026-03-01', ])"
+      ],
+      "checks_in_source": 3,
+      "selector": "daily dashboard and seven day chart use Peru time across UTC and month boundaries",
+      "command": "node --test '--test-name-pattern=^daily\\ dashboard\\ and\\ seven\\ day\\ chart\\ use\\ Peru\\ time\\ across\\ UTC\\ and\\ month\\ boundaries$' tests/paneles_configuracion/unitarias/client-dashboard.test.js",
+      "id": "CT-M10-U-FE-004"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 30,
+      "name": "test_remote_reads_overlap_without_exceeding_six_connections",
+      "source_function": "test_remote_reads_overlap_without_exceeding_six_connections",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "counts['started'] == 19",
+        "counts['peak'] == 6",
+        "service._last_refresh_at > 0"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_remote_reads_overlap_without_exceeding_six_connections",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_remote_reads_overlap_without_exceeding_six_connections -q",
+      "id": "CT-M10-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 58,
+      "name": "test_required_remote_failure_preserves_previous_state_and_refresh_time",
+      "source_function": "test_required_remote_failure_preserves_previous_state_and_refresh_time",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state is original",
+        "service.state['clientes'][0]['id_cliente'] == 99",
+        "service._last_refresh_at == 0"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_required_remote_failure_preserves_previous_state_and_refresh_time",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_required_remote_failure_preserves_previous_state_and_refresh_time -q",
+      "id": "CT-M10-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 75,
+      "name": "test_optional_missing_table_still_loads_other_sections",
+      "source_function": "test_optional_missing_table_still_loads_other_sections",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "'PROMOCIONES' in service.missing_remote_tables",
+        "len(service.state['usuario']) == 1",
+        "service.state['promociones'] == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_optional_missing_table_still_loads_other_sections",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_optional_missing_table_still_loads_other_sections -q",
+      "id": "CT-M10-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 130,
+      "name": "test_constructing_service_validates_schema_without_loading_every_table",
+      "source_function": "test_constructing_service_validates_schema_without_loading_every_table",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "checks == ['MEMBRESIA', 'VENTAS']",
+        "service._resource_refreshed_at == {}"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_constructing_service_validates_schema_without_loading_every_table",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_constructing_service_validates_schema_without_loading_every_table -q",
+      "id": "CT-M10-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 143,
+      "name": "test_sections_load_only_needed_tables_and_preserve_other_sections",
+      "source_function": "test_sections_load_only_needed_tables_and_preserve_other_sections",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "remote.calls == ['USUARIO']",
+        "set(remote.calls) == {'USUARIO', 'CLIENTES', 'MEMBRESIA'}",
+        "service.state['usuario'] is users"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_sections_load_only_needed_tables_and_preserve_other_sections",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_sections_load_only_needed_tables_and_preserve_other_sections -q",
+      "id": "CT-M10-I-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 158,
+      "name": "test_table_cache_expiration_is_independent_between_sections",
+      "source_function": "test_table_cache_expiration_is_independent_between_sections",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "remote.calls.count('USUARIO') == 2",
+        "remote.calls.count('PLANES_MEMBRESIA') == 1"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_table_cache_expiration_is_independent_between_sections",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_table_cache_expiration_is_independent_between_sections -q",
+      "id": "CT-M10-I-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 172,
+      "name": "test_failed_partial_refresh_keeps_data_and_can_be_retried",
+      "source_function": "test_failed_partial_refresh_keeps_data_and_can_be_retried",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "service.state is original",
+        "service._resource_refreshed_at == {}",
+        "service.state['clientes'] == []"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_failed_partial_refresh_keeps_data_and_can_be_retried",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_failed_partial_refresh_keeps_data_and_can_be_retried -q",
+      "id": "CT-M10-I-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 189,
+      "name": "test_first_mutation_after_partial_read_loads_remaining_tables",
+      "source_function": "test_first_mutation_after_partial_read_loads_remaining_tables",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "result == 1",
+        "'ASISTENCIA' in remote.calls",
+        "set(service._resource_refreshed_at) == set(service.READ_STATE_KEYS)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_first_mutation_after_partial_read_loads_remaining_tables",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_first_mutation_after_partial_read_loads_remaining_tables -q",
+      "id": "CT-M10-I-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 199,
+      "name": "test_order_reads_include_product_names_without_loading_inventory",
+      "source_function": "test_order_reads_include_product_names_without_loading_inventory",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "set(remote.calls) == {'VENTAS', 'DETALLE_VENTA', 'TIENDA_PRODUCTOS'}",
+        "service.state['pedidos_tienda'][0]['items'][0]['nombre_producto'] == 'Agua'",
+        "service.state['productos_tienda'] == []"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_order_reads_include_product_names_without_loading_inventory",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_order_reads_include_product_names_without_loading_inventory -q",
+      "id": "CT-M10-I-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 232,
+      "name": "test_admin_navigation_reuses_account_cache_without_loading_unrelated_modules",
+      "source_function": "test_admin_navigation_reuses_account_cache_without_loading_unrelated_modules",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "scoped_api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200",
+        "response.json()['role'] == 'admin'",
+        "remote.calls == ['USUARIO']"
+      ],
+      "checks_in_source": 12,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_admin_navigation_reuses_account_cache_without_loading_unrelated_modules",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_admin_navigation_reuses_account_cache_without_loading_unrelated_modules -q",
+      "id": "CT-M10-I-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 250,
+      "name": "test_cached_account_role_changes_still_revoke_admin_access",
+      "source_function": "test_cached_account_role_changes_still_revoke_admin_access",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "scoped_api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get('/api/clientes').status_code == 200",
+        "client.get('/api/clientes').status_code in {401, 403}",
+        "remote.calls.count('USUARIO') == 2"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_cached_account_role_changes_still_revoke_admin_access",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_cached_account_role_changes_still_revoke_admin_access -q",
+      "id": "CT-M10-I-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 260,
+      "name": "test_unknown_application_queries_cannot_silently_load_every_table",
+      "source_function": "test_unknown_application_queries_cannot_silently_load_every_table",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.supabase.calls == []",
+        "pytest.raises(ValueError, match=\"contrato\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_unknown_application_queries_cannot_silently_load_every_table",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_unknown_application_queries_cannot_silently_load_every_table -q",
+      "id": "CT-M10-I-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 267,
+      "name": "test_health_check_does_not_refresh_admin_histories",
+      "source_function": "test_health_check_does_not_refresh_admin_histories",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "remote.calls == ['PLANES_MEMBRESIA']"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_health_check_does_not_refresh_admin_histories",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_health_check_does_not_refresh_admin_histories -q",
+      "id": "CT-M10-I-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 274,
+      "name": "test_attendance_history_loads_clients_without_loading_store_or_schedules",
+      "source_function": "test_attendance_history_loads_clients_without_loading_store_or_schedules",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "scoped_api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200",
+        "response.json()['items'] == []",
+        "set(remote.calls) == {'USUARIO', 'ASISTENCIA'}"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_attendance_history_loads_clients_without_loading_store_or_schedules",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_attendance_history_loads_clients_without_loading_store_or_schedules -q",
+      "id": "CT-M10-I-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 282,
+      "name": "test_normalized_client_list_keeps_latest_membership_from_unsorted_history",
+      "source_function": "test_normalized_client_list_keeps_latest_membership_from_unsorted_history",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "result[0]['id_membresia'] == 8",
+        "result[0]['monto_pago'] == 90"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_normalized_client_list_keeps_latest_membership_from_unsorted_history",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_normalized_client_list_keeps_latest_membership_from_unsorted_history -q",
+      "id": "CT-M10-I-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 298,
+      "name": "test_saving_and_deleting_users_does_not_load_other_sections",
+      "source_function": "test_saving_and_deleting_users_does_not_load_other_sections",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "scoped_api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200",
+        "response.json()['nombre'] == 'Admin actualizado'",
+        "remote.calls == ['USUARIO']"
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_saving_and_deleting_users_does_not_load_other_sections",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_saving_and_deleting_users_does_not_load_other_sections -q",
+      "id": "CT-M10-I-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 315,
+      "name": "test_user_mutations_do_not_copy_unrelated_cached_histories",
+      "source_function": "test_user_mutations_do_not_copy_unrelated_cached_histories",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "remote.calls == ['USUARIO']",
+        "service.state['asistencia'] is history"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_user_mutations_do_not_copy_unrelated_cached_histories",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_user_mutations_do_not_copy_unrelated_cached_histories -q",
+      "id": "CT-M10-I-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py",
+      "line": 329,
+      "name": "test_failed_user_update_restores_account_without_discarding_other_sections",
+      "source_function": "test_failed_user_update_restores_account_without_discarding_other_sections",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state['usuario'][0]['nombre'] == 'Admin'",
+        "service.state['asistencia'] is history",
+        "service._resource_refreshed_at == {}"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_failed_user_update_restores_account_without_discarding_other_sections",
+      "command": "python -m pytest tests/paneles_configuracion/integracion/test_supabase_refresh.py::test_failed_user_update_restores_account_without_discarding_other_sections -q",
+      "id": "CT-M10-I-BE-018"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/application-context.test.js",
+      "line": 58,
+      "name": "configuring another application cannot redirect existing consumers or mutate their configuration",
+      "source_function": "\"configuring another application cannot redirect existing consumers or mutate their configuration\"",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(first.resources.APP_CONFIG.appName, \"first\")",
+        "assert.equal(second.resources.APP_CONFIG.appName, \"second\")",
+        "assert.equal(await first.gateway.apiGet(\"/demo\"), \"first\")"
+      ],
+      "checks_in_source": 6,
+      "selector": "configuring another application cannot redirect existing consumers or mutate their configuration",
+      "command": "node --test '--test-name-pattern=^configuring\\ another\\ application\\ cannot\\ redirect\\ existing\\ consumers\\ or\\ mutate\\ their\\ configuration$' tests/paneles_configuracion/integracion/application-context.test.js",
+      "id": "CT-M10-I-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/application-context.test.js",
+      "line": 73,
+      "name": "pending requests follow their own application session even after another session changes",
+      "source_function": "\"pending requests follow their own application session even after another session changes\"",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(await pending, \"first response\")",
+        "assert.rejects(obsolete, /sesión ha cambiado/)"
+      ],
+      "checks_in_source": 2,
+      "selector": "pending requests follow their own application session even after another session changes",
+      "command": "node --test '--test-name-pattern=^pending\\ requests\\ follow\\ their\\ own\\ application\\ session\\ even\\ after\\ another\\ session\\ changes$' tests/paneles_configuracion/integracion/application-context.test.js",
+      "id": "CT-M10-I-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/application-context.test.js",
+      "line": 96,
+      "name": "two gym stores synchronize through their own transports after both applications are installed",
+      "source_function": "\"two gym stores synchronize through their own transports after both applications are installed\"",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(firstGym.planCatalog[0].name, \"first\")",
+        "assert.equal(secondGym.planCatalog[0].name, \"second\")",
+        "assert.deepEqual(calls.sort(), [ [\"first\", \"/planes-membresia\"], [\"second\", \"/planes-membresia\"], ])"
+      ],
+      "checks_in_source": 3,
+      "selector": "two gym stores synchronize through their own transports after both applications are installed",
+      "command": "node --test '--test-name-pattern=^two\\ gym\\ stores\\ synchronize\\ through\\ their\\ own\\ transports\\ after\\ both\\ applications\\ are\\ installed$' tests/paneles_configuracion/integracion/application-context.test.js",
+      "id": "CT-M10-I-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 11,
+      "name": "a slow route download stops blocking navigation after three seconds",
+      "source_function": "'a slow route download stops blocking navigation after three seconds'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(visible, true)",
+        "assert.equal(visible, false)",
+        "assert.equal(visible, false)"
+      ],
+      "checks_in_source": 4,
+      "selector": "a slow route download stops blocking navigation after three seconds",
+      "command": "node --test '--test-name-pattern=^a\\ slow\\ route\\ download\\ stops\\ blocking\\ navigation\\ after\\ three\\ seconds$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 27,
+      "name": "a mounted view is immediately available while its data is still loading",
+      "source_function": "'a mounted view is immediately available while its data is still loading'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(visible, true)",
+        "assert.equal(visible, false)"
+      ],
+      "checks_in_source": 2,
+      "selector": "a mounted view is immediately available while its data is still loading",
+      "command": "node --test '--test-name-pattern=^a\\ mounted\\ view\\ is\\ immediately\\ available\\ while\\ its\\ data\\ is\\ still\\ loading$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 36,
+      "name": "fast views have no artificial minimum wait",
+      "source_function": "'fast views have no artificial minimum wait'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(visible, true)",
+        "assert.equal(visible, false)"
+      ],
+      "checks_in_source": 2,
+      "selector": "fast views have no artificial minimum wait",
+      "command": "node --test '--test-name-pattern=^fast\\ views\\ have\\ no\\ artificial\\ minimum\\ wait$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 45,
+      "name": "old navigation completion cannot close a newer transition",
+      "source_function": "'old navigation completion cannot close a newer transition'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(visible, true)",
+        "assert.equal(visible, false)"
+      ],
+      "checks_in_source": 2,
+      "selector": "old navigation completion cannot close a newer transition",
+      "command": "node --test '--test-name-pattern=^old\\ navigation\\ completion\\ cannot\\ close\\ a\\ newer\\ transition$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 59,
+      "name": "unmounting cancels loader timers and ignores pending completion",
+      "source_function": "'unmounting cancels loader timers and ignores pending completion'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(changes, [true, false])"
+      ],
+      "checks_in_source": 1,
+      "selector": "unmounting cancels loader timers and ignores pending completion",
+      "command": "node --test '--test-name-pattern=^unmounting\\ cancels\\ loader\\ timers\\ and\\ ignores\\ pending\\ completion$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 71,
+      "name": "admin section changes proceed while server session revalidation is pending",
+      "source_function": "`${role} section changes proceed while server session revalidation is pending`",
+      "variant": "admin section changes proceed while server session revalidation is pending",
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 1)"
+      ],
+      "checks_in_source": 1,
+      "selector": "admin section changes proceed while server session revalidation is pending",
+      "command": "node --test '--test-name-pattern=^admin\\ section\\ changes\\ proceed\\ while\\ server\\ session\\ revalidation\\ is\\ pending$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-009"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 71,
+      "name": "trainer section changes proceed while server session revalidation is pending",
+      "source_function": "`${role} section changes proceed while server session revalidation is pending`",
+      "variant": "trainer section changes proceed while server session revalidation is pending",
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 1)"
+      ],
+      "checks_in_source": 1,
+      "selector": "trainer section changes proceed while server session revalidation is pending",
+      "command": "node --test '--test-name-pattern=^trainer\\ section\\ changes\\ proceed\\ while\\ server\\ session\\ revalidation\\ is\\ pending$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-010"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 86,
+      "name": "entering a protected panel still waits for server validation",
+      "source_function": "'entering a protected panel still waits for server validation'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(ready, false)",
+        "assert.equal(ready, true)"
+      ],
+      "checks_in_source": 2,
+      "selector": "entering a protected panel still waits for server validation",
+      "command": "node --test '--test-name-pattern=^entering\\ a\\ protected\\ panel\\ still\\ waits\\ for\\ server\\ validation$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-011"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 103,
+      "name": "client sessions keep blocking validation before protected navigation",
+      "source_function": "'client sessions keep blocking validation before protected navigation'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(ready, false)",
+        "assert.equal(ready, true)"
+      ],
+      "checks_in_source": 2,
+      "selector": "client sessions keep blocking validation before protected navigation",
+      "command": "node --test '--test-name-pattern=^client\\ sessions\\ keep\\ blocking\\ validation\\ before\\ protected\\ navigation$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-012"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "line": 119,
+      "name": "volver a la landing con sesión iniciada no espera una revalidación privada",
+      "source_function": "'volver a la landing con sesión iniciada no espera una revalidación privada'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(checks, 0)"
+      ],
+      "checks_in_source": 1,
+      "selector": "volver a la landing con sesión iniciada no espera una revalidación privada",
+      "command": "node --test '--test-name-pattern=^volver\\ a\\ la\\ landing\\ con\\ sesión\\ iniciada\\ no\\ espera\\ una\\ revalidación\\ privada$' tests/paneles_configuracion/integracion/module-navigation.test.js",
+      "id": "CT-M10-I-FE-013"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
+      "line": 39,
+      "name": "independent module assemblies keep state isolated and do not mount operations on shared state",
+      "source_function": "'independent module assemblies keep state isolated and do not mount operations on shared state'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(first.state.cart.value.length, 1)",
+        "assert.equal(second.state.cart.value.length, 0)",
+        "assert.equal(first.state.upsertMember, undefined)"
+      ],
+      "checks_in_source": 5,
+      "selector": "independent module assemblies keep state isolated and do not mount operations on shared state",
+      "command": "node --test '--test-name-pattern=^independent\\ module\\ assemblies\\ keep\\ state\\ isolated\\ and\\ do\\ not\\ mount\\ operations\\ on\\ shared\\ state$' tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
+      "id": "CT-M10-I-FE-014"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
+      "line": 50,
+      "name": "membership renewal uses client lookup and history through declared capabilities",
+      "source_function": "'membership renewal uses client lookup and history through declared capabilities'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(body.id_cliente, 1)",
+        "assert.equal(body.id_pm, 1)",
+        "assert.equal(token, 'test-session')"
+      ],
+      "checks_in_source": 7,
+      "selector": "membership renewal uses client lookup and history through declared capabilities",
+      "command": "node --test '--test-name-pattern=^membership\\ renewal\\ uses\\ client\\ lookup\\ and\\ history\\ through\\ declared\\ capabilities$' tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
+      "id": "CT-M10-I-FE-015"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
+      "line": 68,
+      "name": "trainer and section synchronization share only their activity counter",
+      "source_function": "'trainer and section synchronization share only their activity counter'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(path, '/planes-membresia')",
+        "assert.equal(state.activeSyncs, 1)",
+        "assert.equal(state.planCatalog.value[0].name, 'Especial')"
+      ],
+      "checks_in_source": 7,
+      "selector": "trainer and section synchronization share only their activity counter",
+      "command": "node --test '--test-name-pattern=^trainer\\ and\\ section\\ synchronization\\ share\\ only\\ their\\ activity\\ counter$' tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
+      "id": "CT-M10-I-FE-016"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
+      "line": 87,
+      "name": "a trainer response from before reset cannot change the next generation or its activity counter",
+      "source_function": "'a trainer response from before reset cannot change the next generation or its activity counter'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.rejects(pending, /sesión ha cambiado/)",
+        "assert.equal(state.activeSyncs, 0)",
+        "assert.equal(state.isSyncing.value, false)"
+      ],
+      "checks_in_source": 4,
+      "selector": "a trainer response from before reset cannot change the next generation or its activity counter",
+      "command": "node --test '--test-name-pattern=^a\\ trainer\\ response\\ from\\ before\\ reset\\ cannot\\ change\\ the\\ next\\ generation\\ or\\ its\\ activity\\ counter$' tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
+      "id": "CT-M10-I-FE-017"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/sync-resources.test.js",
+      "line": 5,
+      "name": "loads at most three resources concurrently and starts another when one completes",
+      "source_function": "'loads at most three resources concurrently and starts another when one completes'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(started, [0, 1, 2])",
+        "assert.deepEqual(started, [0, 1, 2, 3])",
+        "assert.deepEqual(started, [0, 1, 2, 3, 4])"
+      ],
+      "checks_in_source": 3,
+      "selector": "loads at most three resources concurrently and starts another when one completes",
+      "command": "node --test '--test-name-pattern=^loads\\ at\\ most\\ three\\ resources\\ concurrently\\ and\\ starts\\ another\\ when\\ one\\ completes$' tests/paneles_configuracion/integracion/sync-resources.test.js",
+      "id": "CT-M10-I-FE-018"
+    },
+    {
+      "component": "frontend",
+      "module": "paneles_configuracion",
+      "type": "integracion",
+      "path": "frontend/tests/paneles_configuracion/integracion/sync-resources.test.js",
+      "line": 26,
+      "name": "continues loading after errors and reports failed sections in catalogue order",
+      "source_function": "'continues loading after errors and reports failed sections in catalogue order'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.rejects(sync, /Clientes: Sin conexión Planes: No disponible/)",
+        "assert.deepEqual(loaded, ['Productos', 'Horarios'])",
+        "assert.equal(errors.at(-1), 'Clientes: Sin conexión Planes: No disponible')"
+      ],
+      "checks_in_source": 3,
+      "selector": "continues loading after errors and reports failed sections in catalogue order",
+      "command": "node --test '--test-name-pattern=^continues\\ loading\\ after\\ errors\\ and\\ reports\\ failed\\ sections\\ in\\ catalogue\\ order$' tests/paneles_configuracion/integracion/sync-resources.test.js",
+      "id": "CT-M10-I-FE-019"
+    }
+  ]
+}

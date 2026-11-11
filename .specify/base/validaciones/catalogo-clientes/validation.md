@@ -43,7 +43,7 @@ sintéticas. Esta lectura no certifica guardados ni pagos sobre datos reales.
 
 ## Regresión y navegador
 
-Las pruebas de [38-client-catalog.test.js](../../../../frontend/tests/38-client-catalog.test.js)
+Las pruebas de [client-catalog.test.js](../../../../frontend/tests/clientes/interfaz/client-catalog.test.js)
 cubren planes personalizados, filtros y descuentos, cambio de plan, errores y
 reintentos, preservación de valores históricos/cero, guardado del descriptor de
 promoción, catálogo vacío/inválido y respuestas tardías.
