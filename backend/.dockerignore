@@ -25,12 +25,5 @@ htmlcov/
 .gitignore
 README.md
 
-# Incluir las pruebas automatizadas y sus dobles/fixtures, sin scripts manuales.
-tests/*
-!tests/test*.py
-!tests/conftest.py
-!tests/__init__.py
-!tests/atomic_fake.py
-!tests/fixtures/
-tests/fixtures/*
-!tests/fixtures/priority_schema.sql
+# Conservar pruebas por módulo y soporte compartido; excluir scripts manuales.
+tests/**/manuales/
