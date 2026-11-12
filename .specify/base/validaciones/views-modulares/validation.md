@@ -31,7 +31,7 @@ de Vue y se comparten con sus componentes cuando corresponde.
 | UsersView | 659 | 428 |
 
 El recuento incluye líneas vacías. La prueba de arquitectura
-`frontend/tests/23-layer-boundaries.test.js` comprueba el límite en todas las vistas.
+`frontend/tests/transversales/arquitectura/layer-boundaries.test.js` comprueba el límite en todas las vistas.
 Los componentes y composables nuevos también quedan por debajo de 500 líneas.
 
 ## Comprobaciones

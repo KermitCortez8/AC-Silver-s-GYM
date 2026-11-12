@@ -342,6 +342,13 @@
                     }}
                   </button>
                   <button
+                    v-if="canRenewClientMembership(client)"
+                    type="button"
+                    class="client-action-primary ws-info ws-tint-info"
+                    :disabled="Boolean(renewingClientId || renewalLoading)"
+                    @click="requestRenewal(client)"
+                  ><RefreshCw :size="15" aria-hidden="true" />Renovar</button>
+                  <button
                     v-if="canPayClientWithStripe(client)"
                     type="button"
                     class="client-action-primary ws-info ws-tint-info"
@@ -392,8 +399,18 @@
     </section>
 
     <ClientEditorDialog v-bind="clientEditorProps" />
+    <ClientRenewalDialog
+      :client="pendingRenewal" :details="renewalDetails" :loading="renewalLoading"
+      :busy="Boolean(renewingClientId)" :error="renewalError"
+      v-model:method="renewalMethod" v-model:cash-received="renewalCashReceived"
+      @close="closeRenewal" @reload="requestRenewal(pendingRenewal)" @confirm="confirmRenewal"
+    />
 
     <ClientDetailsDialog
+      :can-renew-client-membership="canRenewClientMembership"
+      :request-renewal="requestRenewal"
+      :renewing-client-id="renewingClientId"
+      :renewal-loading="renewalLoading"
       :can-pay-client-with-stripe="canPayClientWithStripe"
       :client-membership-group="clientMembershipGroup"
       :client-membership-label="clientMembershipLabel"
@@ -428,9 +445,10 @@
 <script setup>
 import SearchInput from '../components/SearchInput.vue';
 import ClientDetailsDialog from '../components/clients/ClientDetailsDialog.vue';
+import ClientRenewalDialog from '../components/clients/ClientRenewalDialog.vue';
 import ClientEditorDialog from '../components/clients/ClientEditorDialog.vue';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
-import { canPayClientWithStripe } from '../../domain/utils/adminClientPayment.js';
+import { canPayClientWithStripe, canRenewClientMembership } from '../../domain/utils/adminClientPayment.js';
 import { clientMembershipGroup, clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
 import {
   BadgeCheck,
@@ -453,6 +471,8 @@ import {
 import { useClientDirectory } from '../composables/clients/useClientDirectory.js';
 
 const {
+  pendingRenewal, renewalDetails, renewalLoading, renewingClientId, renewalError,
+  renewalMethod, renewalCashReceived, requestRenewal, closeRenewal, confirmRenewal,
   gymStore, authStore, route, router, clients,
   search, statusFilter, planFilter, paymentFilter, sortOrder,
   currentPage, isLoading, isDetailsOpen, viewingClient, feedbackMessage,

@@ -1,4 +1,5 @@
 """Fachada del puerto GymRepository; delega cada capacidad a su componente."""
+from domain.models.resources import Resource
 from infrastructure.repositories.operation_adapter import query_operation, command_operation
 from domain.services.gym_domain_service import GymDomainService
 from infrastructure.supabase_client import SupabaseRestClient
@@ -52,6 +53,15 @@ class SupabaseGymRepository:
         if "_assembled" not in self.__dict__:
             self._assembled = compose_repository(self.supabase, self.cache, self.metadata, self.REFRESH_TTL_SECONDS)
         return self._assembled
+
+    def reconcile_attendance(self, now):
+        # El reloj de la base manda; no se envía una fecha desde el cliente.
+        count = self.supabase.rpc("marcar_asistencias_incompletas", {})
+        # El cron pudo cerrar una visita antes de esta llamada aunque devuelva 0.
+        # La siguiente lectura de asistencia debe observar ese cierre.
+        with self.cache.lock:
+            self.cache.invalidate((Resource.ASISTENCIA,))
+        return count
 
     def attendance_page(self, criteria, request):
         from infrastructure.repositories.attendance_history_repository import AttendanceHistoryRepository

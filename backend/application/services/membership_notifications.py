@@ -5,7 +5,7 @@ import asyncio
 import logging
 
 
-from application.services.email_templates import membership_email
+from application.services.email_templates import membership_email, membership_expiration_email
 from application.ports.integrations import EmailSender, MembershipNotificationQueue
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,8 @@ class MembershipNotificationService:
         try:
             membership_id = int(saved["membresia"]["id_membresia"])
             event_key = f"membership/{membership_id}/{event}"
-            payload = membership_email(self.settings, event, saved, plan)
+            payload = (membership_expiration_email(self.settings, event, saved, plan)
+                       if event in {'expiring', 'expired'} else membership_email(self.settings, event, saved, plan))
             job = self.repository.enqueue(event_key, membership_id, event, payload)
             if job["status"] == "sent":
                 return {"status": "sent", "message": "El correo ya fue enviado."}
@@ -79,3 +80,41 @@ async def process_pending_emails(service: MembershipNotificationService) -> None
             logger.warning("No se pudo procesar la cola de correos. Revisa Supabase y 004_membership_email_notifications.sql.")
             result = None
         await asyncio.sleep(1 if result else 30)
+
+
+async def process_expiration_reminders(service, gym_factory):
+    if not service.configured or not service.settings.auth_secret_key:
+        return
+    while True:
+        try:
+            await asyncio.to_thread(lambda: enqueue_expiration_reminders(service, gym_factory()))
+        except (RuntimeError, OSError, ValueError, KeyError):
+            logger.warning("No se pudieron preparar los avisos de vencimiento. Revisa la configuración y la migración 024.")
+        await asyncio.sleep(60)
+
+
+def enqueue_expiration_reminders(service, gym, today=None):
+    from datetime import date
+    from application.services.membership_renewal_service import lima_today
+    from domain.services.membership_lifecycle import membership_renewable
+    today = today or lima_today()
+    memberships = gym.membresias()
+    for membership in memberships:
+        try:
+            if not membership_renewable(membership, today.isoformat()):
+                continue
+            end = date.fromisoformat(membership['fecha_fin'][:10])
+            days = (end - today).days
+            if not -30 <= days <= 3:
+                continue
+            if any(int(m['id_cliente']) == int(membership['id_cliente'])
+                   and int(m['id_membresia']) > int(membership['id_membresia'])
+                   and m.get('estado_pago') == 'PAGADO' for m in memberships):
+                continue
+            event = 'expiring' if days >= 0 else 'expired'
+            client = gym.get_cliente(int(membership['id_cliente']))
+            plan = gym.get_plan_membresia(int(membership['id_pm'])) or {}
+            if client:
+                service.notify(event, {'cliente': client, 'membresia': membership}, plan)
+        except (ValueError, KeyError, TypeError):
+            logger.warning("No se pudo preparar un aviso de vencimiento por datos inválidos.")

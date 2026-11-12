@@ -192,6 +192,7 @@ class DeleteClienteCommand:
         Resource.MATRICULAS_HORARIO,
         Resource.RUTINA_PROGRESO,
         Resource.MEMBRESIA,
+        Resource.PEDIDOS_TIENDA,
         Resource.PLANES_MEMBRESIA,
         Resource.PROMOCIONES,
         Resource.TICKETS_ATENCION,

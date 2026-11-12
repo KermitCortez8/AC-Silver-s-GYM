@@ -9,19 +9,19 @@
 
 ## Fundamentos
 
-- [x] T003 Añadir regresiones que reproduzcan CA-02…CA-06 en `backend/tests/test_client_flow_control.py` antes de corregir.
+- [x] T003 Añadir regresiones que reproduzcan CA-02…CA-06 en `backend/tests/transversales/integracion/test_client_flow_control.py` antes de corregir.
 
 ## US1 · Registro y administración
 
 - [x] T004 [US1] Propagar errores de borrado e importe cero en `backend/application/services/clients_service.py` (CA-02, CA-04).
 - [x] T005 [US1] Proteger propietario y compras confirmadas en `backend/domain/services/memberships_rules.py`; conservar pendiente y fallback solo ausente/null (CA-03, CA-04).
-- [x] T006 [US1] Verificar registro público repetido, identidad y activación en `backend/tests/test_client_flow_control.py` y `backend/tests/test_admin_client_payment.py` (CA-01, CA-07).
+- [x] T006 [US1] Verificar registro público repetido, identidad y activación en `backend/tests/transversales/integracion/test_client_flow_control.py` y `backend/tests/clientes/integracion/test_admin_client_payment.py` (CA-01, CA-07).
 
 ## US2 · Horarios y asistencia
 
 - [x] T007 [US2] Validar días y horas completas, guardar HH:MM en `backend/domain/services/schedules_rules.py` (CA-05).
 - [x] T008 [US2] Reutilizar vigencia compartida en `backend/application/services/attendance_service.py` (CA-06).
-- [x] T009 [US2] Añadir recorrido integrado con cupo, matrícula, entrada/salida, cancelación y vencimiento en `backend/tests/test_client_flow_control.py` (CA-07).
+- [x] T009 [US2] Añadir recorrido integrado con cupo, matrícula, entrada/salida, cancelación y vencimiento en `backend/tests/transversales/integracion/test_client_flow_control.py` (CA-07).
 
 ## Cierre
 
@@ -44,5 +44,5 @@ solo tras verificar su resultado. El análisis previo se comunica en esta sesió
 
 - [x] T013 [US1] Corregir estados y reintento en `frontend/src/presentation/views/PaymentView.vue`; validar respuesta y descartar rutas anteriores (CA-08).
 - [x] T014 [US1] Bloquear pago manual repetido y sincronizar detalles al activar en `frontend/src/presentation/composables/clients/useClientMembershipActions.js`, `frontend/src/presentation/components/clients/ClientDetailsDialog.vue` y `frontend/src/presentation/views/ClientsView.vue` (CA-09).
-- [x] T015 Añadir regresiones en `frontend/tests/36-client-flow-control.test.js`, ejecutar suites/build y verificar en navegador (CA-08, CA-09).
+- [x] T015 Añadir regresiones en `frontend/tests/clientes/interfaz/client-flow-control.test.js`, ejecutar suites/build y verificar en navegador (CA-08, CA-09).
 - [x] T016 Actualizar contratos y evidencia en `.specify/specs/001-control-flujo-clientes/validation.md`; repetir convergencia y hooks finales.

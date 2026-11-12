@@ -21,14 +21,14 @@ El borrador local del chatbot queda fuera del PR.
 | --- | --- |
 | Suite backend completa con clave sintética y `GYM_TEST_POSTGRES_CONTAINER=gym-pr103-postgres` | 718 aprobadas, sin fallos ni omisiones; PostgreSQL 16 desechable, sin datos externos. |
 | Suite frontend `npm test` | 305 aprobadas, sin fallos ni omisiones. |
-| `node --test tests/26-stock-edit-forms.test.js tests/34-form-validation.test.js` | 55 aprobadas; incluye las regresiones añadidas para avisos en vivo y pestaña de Papelera. |
+| `node --test tests/tienda_pedidos/interfaz/formularios.test.js tests/inventario/interfaz/formularios.test.js tests/clientes/interfaz/formularios.test.js tests/planes_promociones/interfaz/formularios.test.js tests/transversales/interfaz/formularios.test.js tests/transversales/integracion/form-validation.test.js` | 55 aprobadas; incluye las regresiones añadidas para avisos en vivo y pestaña de Papelera. |
 | `npm run build` | Correcto. |
 | Flake8 `--select=E9,F63,F7,F82` sobre backend | 0 errores. |
 | Validador documental | Correcto. |
 | Índice de Git y revisión de espacios | Sin archivos en conflicto ni errores de espacios. |
 
-Pruebas de regresión en [26-stock-edit-forms.test.js](../../../../frontend/tests/26-stock-edit-forms.test.js).
-La corrección del correo conserva los escenarios de [34-form-validation.test.js](../../../../frontend/tests/34-form-validation.test.js).
+Pruebas de regresión en [tienda_pedidos · formularios.test.js](../../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js); [inventario · formularios.test.js](../../../../frontend/tests/inventario/interfaz/formularios.test.js); [clientes · formularios.test.js](../../../../frontend/tests/clientes/interfaz/formularios.test.js); [planes_promociones · formularios.test.js](../../../../frontend/tests/planes_promociones/interfaz/formularios.test.js); [transversales · formularios.test.js](../../../../frontend/tests/transversales/interfaz/formularios.test.js).
+La corrección del correo conserva los escenarios de [form-validation.test.js](../../../../frontend/tests/transversales/integracion/form-validation.test.js).
 
 ## Límites
 

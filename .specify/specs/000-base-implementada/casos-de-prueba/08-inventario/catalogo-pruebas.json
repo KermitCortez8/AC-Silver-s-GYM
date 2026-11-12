@@ -1,0 +1,2062 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "inventario",
+  "counts": {
+    "backend": {
+      "collected": 63,
+      "passed": 63,
+      "skipped": 0
+    },
+    "frontend": {
+      "collected": 27,
+      "passed": 27,
+      "skipped": 0
+    },
+    "total": 90,
+    "passed": 90,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[ ]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": " ",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[ ]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[ ]' -q",
+      "id": "CT-M08-U-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[+1]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "+1",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[+1]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[+1]' -q",
+      "id": "CT-M08-U-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[-1]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "-1",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[-1]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[-1]' -q",
+      "id": "CT-M08-U-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[1.5_0]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "1.5_0",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[1.5_0]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[1.5_0]' -q",
+      "id": "CT-M08-U-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[1.5_1]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "1.5_1",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[1.5_1]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[1.5_1]' -q",
+      "id": "CT-M08-U-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[12abc]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "12abc",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[12abc]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[12abc]' -q",
+      "id": "CT-M08-U-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[1e2]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "1e2",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[1e2]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[1e2]' -q",
+      "id": "CT-M08-U-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[2147483648]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "2147483648",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[2147483648]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[2147483648]' -q",
+      "id": "CT-M08-U-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[2E3]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "2E3",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[2E3]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[2E3]' -q",
+      "id": "CT-M08-U-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[2\\n]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "2\\n",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[2\\n]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[2\\n]' -q",
+      "id": "CT-M08-U-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[True]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "True",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[True]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[True]' -q",
+      "id": "CT-M08-U-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 11,
+      "name": "test_inventory_and_store_contracts_reject_malformed_quantities[]",
+      "source_function": "test_inventory_and_store_contracts_reject_malformed_quantities",
+      "variant": "",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_inventory_and_store_contracts_reject_malformed_quantities[]' -q",
+      "id": "CT-M08-U-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 25,
+      "name": "test_zero_stock_is_valid_and_zero_movement_is_rejected",
+      "source_function": "test_zero_stock_is_valid_and_zero_movement_is_rejected",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "item.cantidad_stock == item.stock_minimo == 0",
+        "MovimientoInventarioUpdateInput(cantidad=\"12\").cantidad == 12",
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_zero_stock_is_valid_and_zero_movement_is_rejected",
+      "command": "python -m pytest tests/inventario/unitarias/test_inventory_quantities.py::test_zero_stock_is_valid_and_zero_movement_is_rejected -q",
+      "id": "CT-M08-U-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 34,
+      "name": "test_invalid_movements_do_not_change_stock_or_history[-1]",
+      "source_function": "test_invalid_movements_do_not_change_stock_or_history",
+      "variant": "-1",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state == before",
+        "service.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[-1]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[-1]' -q",
+      "id": "CT-M08-U-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 34,
+      "name": "test_invalid_movements_do_not_change_stock_or_history[0]",
+      "source_function": "test_invalid_movements_do_not_change_stock_or_history",
+      "variant": "0",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state == before",
+        "service.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[0]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[0]' -q",
+      "id": "CT-M08-U-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 34,
+      "name": "test_invalid_movements_do_not_change_stock_or_history[1.5]",
+      "source_function": "test_invalid_movements_do_not_change_stock_or_history",
+      "variant": "1.5",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state == before",
+        "service.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[1.5]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[1.5]' -q",
+      "id": "CT-M08-U-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 34,
+      "name": "test_invalid_movements_do_not_change_stock_or_history[1e2]",
+      "source_function": "test_invalid_movements_do_not_change_stock_or_history",
+      "variant": "1e2",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state == before",
+        "service.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[1e2]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[1e2]' -q",
+      "id": "CT-M08-U-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 34,
+      "name": "test_invalid_movements_do_not_change_stock_or_history[2147483648]",
+      "source_function": "test_invalid_movements_do_not_change_stock_or_history",
+      "variant": "2147483648",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state == before",
+        "service.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[2147483648]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[2147483648]' -q",
+      "id": "CT-M08-U-BE-018"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 34,
+      "name": "test_invalid_movements_do_not_change_stock_or_history[True]",
+      "source_function": "test_invalid_movements_do_not_change_stock_or_history",
+      "variant": "True",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state == before",
+        "service.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[True]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[True]' -q",
+      "id": "CT-M08-U-BE-019"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "backend/tests/inventario/unitarias/test_inventory_quantities.py",
+      "line": 34,
+      "name": "test_invalid_movements_do_not_change_stock_or_history[]",
+      "source_function": "test_invalid_movements_do_not_change_stock_or_history",
+      "variant": "",
+      "parameter_names": [
+        "value"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state == before",
+        "service.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[]",
+      "command": "python -m pytest 'tests/inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history[]' -q",
+      "id": "CT-M08-U-BE-020"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 8,
+      "name": "límites de Inventario: 40 en búsqueda y nombres, 100 en observaciones",
+      "source_function": "'límites de Inventario: 40 en búsqueda y nombres, 100 en observaciones'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(SEARCH_MAX_LENGTH, 40)",
+        "assert.equal(INVENTORY_NAME_MAX_LENGTH, 40)",
+        "assert.equal(NOTES_MAX_LENGTH, 100)"
+      ],
+      "checks_in_source": 3,
+      "selector": "límites de Inventario: 40 en búsqueda y nombres, 100 en observaciones",
+      "command": "node --test '--test-name-pattern=^límites\\ de\\ Inventario:\\ 40\\ en\\ búsqueda\\ y\\ nombres,\\ 100\\ en\\ observaciones$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 14,
+      "name": "un nombre de artículo se corta a 40 caracteres",
+      "source_function": "'un nombre de artículo se corta a 40 caracteres'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(value.length, 40)",
+        "assert.equal(truncated, true)"
+      ],
+      "checks_in_source": 2,
+      "selector": "un nombre de artículo se corta a 40 caracteres",
+      "command": "node --test '--test-name-pattern=^un\\ nombre\\ de\\ artículo\\ se\\ corta\\ a\\ 40\\ caracteres$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 20,
+      "name": "las observaciones se cortan a 100, conservan puntuación y quitan caracteres de control",
+      "source_function": "'las observaciones se cortan a 100, conservan puntuación y quitan caracteres de control'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(largo.value.length, 100)",
+        "assert.equal(largo.truncated, true)",
+        "assert.equal(clampText('Cinta rota, cambiar.').value, 'Cinta rota, cambiar.')"
+      ],
+      "checks_in_source": 6,
+      "selector": "las observaciones se cortan a 100, conservan puntuación y quitan caracteres de control",
+      "command": "node --test '--test-name-pattern=^las\\ observaciones\\ se\\ cortan\\ a\\ 100,\\ conservan\\ puntuación\\ y\\ quitan\\ caracteres\\ de\\ control$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 30,
+      "name": "Enter pasa al siguiente campo y en el último guarda",
+      "source_function": "'Enter pasa al siguiente campo y en el último guarda'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'Enter', ...text() }), 'next')",
+        "assert.equal(resolveFormKey({ key: 'Enter', ...text({ isLast: true }) }), 'submit')",
+        "assert.equal(resolveFormKey({ key: 'Enter', tag: 'SELECT', type: 'select-one' }), 'next')"
+      ],
+      "checks_in_source": 3,
+      "selector": "Enter pasa al siguiente campo y en el último guarda",
+      "command": "node --test '--test-name-pattern=^Enter\\ pasa\\ al\\ siguiente\\ campo\\ y\\ en\\ el\\ último\\ guarda$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 36,
+      "name": "Shift+Enter vuelve al campo anterior, salvo en el primero",
+      "source_function": "'Shift+Enter vuelve al campo anterior, salvo en el primero'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'Enter', shiftKey: true, ...text() }), 'prev')",
+        "assert.equal(resolveFormKey({ key: 'Enter', shiftKey: true, ...text({ isFirst: true }) }), null)"
+      ],
+      "checks_in_source": 2,
+      "selector": "Shift+Enter vuelve al campo anterior, salvo en el primero",
+      "command": "node --test '--test-name-pattern=^Shift\\+Enter\\ vuelve\\ al\\ campo\\ anterior,\\ salvo\\ en\\ el\\ primero$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 41,
+      "name": "en un textarea Enter inserta salto de línea y Ctrl+Enter guarda",
+      "source_function": "'en un textarea Enter inserta salto de línea y Ctrl+Enter guarda'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'Enter', tag: 'TEXTAREA', type: 'textarea' }), null)",
+        "assert.equal(resolveFormKey({ key: 'Enter', ctrlKey: true, tag: 'TEXTAREA', type: 'textarea' }), 'submit')",
+        "assert.equal(resolveFormKey({ key: 'Enter', ctrlKey: true, ...text() }), 'submit')"
+      ],
+      "checks_in_source": 3,
+      "selector": "en un textarea Enter inserta salto de línea y Ctrl+Enter guarda",
+      "command": "node --test '--test-name-pattern=^en\\ un\\ textarea\\ Enter\\ inserta\\ salto\\ de\\ línea\\ y\\ Ctrl\\+Enter\\ guarda$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 47,
+      "name": "los botones y enlaces conservan su Enter nativo",
+      "source_function": "'los botones y enlaces conservan su Enter nativo'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'Enter', tag: 'BUTTON', type: 'button' }), null)",
+        "assert.equal(resolveFormKey({ key: 'Enter', tag: 'INPUT', type: 'submit' }), null)",
+        "assert.equal(resolveFormKey({ key: 'Enter', tag: 'A', type: '' }), null)"
+      ],
+      "checks_in_source": 3,
+      "selector": "los botones y enlaces conservan su Enter nativo",
+      "command": "node --test '--test-name-pattern=^los\\ botones\\ y\\ enlaces\\ conservan\\ su\\ Enter\\ nativo$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 53,
+      "name": "las flechas arriba y abajo recorren campos de texto",
+      "source_function": "'las flechas arriba y abajo recorren campos de texto'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'ArrowDown', ...text() }), 'next')",
+        "assert.equal(resolveFormKey({ key: 'ArrowUp', ...text() }), 'prev')",
+        "assert.equal(resolveFormKey({ key: 'ArrowDown', ...text({ isLast: true }) }), null)"
+      ],
+      "checks_in_source": 4,
+      "selector": "las flechas arriba y abajo recorren campos de texto",
+      "command": "node --test '--test-name-pattern=^las\\ flechas\\ arriba\\ y\\ abajo\\ recorren\\ campos\\ de\\ texto$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 60,
+      "name": "las flechas recorren desplegables, opciones y casillas",
+      "source_function": "'las flechas recorren desplegables, opciones y casillas'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'ArrowDown', tag, type }), 'next', `${tag}/${type}`)",
+        "assert.equal(resolveFormKey({ key: 'ArrowUp', tag, type }), 'prev', `${tag}/${type}`)"
+      ],
+      "checks_in_source": 2,
+      "selector": "las flechas recorren desplegables, opciones y casillas",
+      "command": "node --test '--test-name-pattern=^las\\ flechas\\ recorren\\ desplegables,\\ opciones\\ y\\ casillas$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-009"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 67,
+      "name": "con la lista de un desplegable abierta, las flechas eligen la opción",
+      "source_function": "'con la lista de un desplegable abierta, las flechas eligen la opción'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'ArrowDown', tag: 'SELECT', type: 'select-one', pickerOpen: true }), null)",
+        "assert.equal(resolveFormKey({ key: 'ArrowUp', tag: 'SELECT', type: 'select-one', pickerOpen: true }), null)"
+      ],
+      "checks_in_source": 2,
+      "selector": "con la lista de un desplegable abierta, las flechas eligen la opción",
+      "command": "node --test '--test-name-pattern=^con\\ la\\ lista\\ de\\ un\\ desplegable\\ abierta,\\ las\\ flechas\\ eligen\\ la\\ opción$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-010"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 72,
+      "name": "Espacio abre un desplegable cerrado y no hace nada especial si ya está abierto",
+      "source_function": "'Espacio abre un desplegable cerrado y no hace nada especial si ya está abierto'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: ' ', tag: 'SELECT', type: 'select-one' }), 'open')",
+        "assert.equal(resolveFormKey({ key: ' ', tag: 'SELECT', type: 'select-one', pickerOpen: true }), null)",
+        "assert.equal(resolveFormKey({ key: ' ', ...text() }), null)"
+      ],
+      "checks_in_source": 3,
+      "selector": "Espacio abre un desplegable cerrado y no hace nada especial si ya está abierto",
+      "command": "node --test '--test-name-pattern=^Espacio\\ abre\\ un\\ desplegable\\ cerrado\\ y\\ no\\ hace\\ nada\\ especial\\ si\\ ya\\ está\\ abierto$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-011"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 78,
+      "name": "en un textarea las flechas solo salen del campo con el cursor al final o al inicio",
+      "source_function": "'en un textarea las flechas solo salen del campo con el cursor al final o al inicio'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'ArrowDown', ...area, caretAtEnd: false }), null)",
+        "assert.equal(resolveFormKey({ key: 'ArrowDown', ...area, caretAtEnd: true }), 'next')",
+        "assert.equal(resolveFormKey({ key: 'ArrowUp', ...area, caretAtStart: false }), null)"
+      ],
+      "checks_in_source": 4,
+      "selector": "en un textarea las flechas solo salen del campo con el cursor al final o al inicio",
+      "command": "node --test '--test-name-pattern=^en\\ un\\ textarea\\ las\\ flechas\\ solo\\ salen\\ del\\ campo\\ con\\ el\\ cursor\\ al\\ final\\ o\\ al\\ inicio$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-012"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 86,
+      "name": "las fechas conservan sus flechas para cambiar día, mes y año",
+      "source_function": "'las fechas conservan sus flechas para cambiar día, mes y año'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'ArrowDown', tag: 'INPUT', type: 'date' }), null)",
+        "assert.equal(resolveFormKey({ key: 'ArrowUp', tag: 'INPUT', type: 'date' }), null)"
+      ],
+      "checks_in_source": 2,
+      "selector": "las fechas conservan sus flechas para cambiar día, mes y año",
+      "command": "node --test '--test-name-pattern=^las\\ fechas\\ conservan\\ sus\\ flechas\\ para\\ cambiar\\ día,\\ mes\\ y\\ año$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-013"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 91,
+      "name": "izquierda y derecha no se interceptan: mueven el cursor o cambian la opción",
+      "source_function": "'izquierda y derecha no se interceptan: mueven el cursor o cambian la opción'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'ArrowLeft', tag, type }), null)",
+        "assert.equal(resolveFormKey({ key: 'ArrowRight', tag, type }), null)"
+      ],
+      "checks_in_source": 2,
+      "selector": "izquierda y derecha no se interceptan: mueven el cursor o cambian la opción",
+      "command": "node --test '--test-name-pattern=^izquierda\\ y\\ derecha\\ no\\ se\\ interceptan:\\ mueven\\ el\\ cursor\\ o\\ cambian\\ la\\ opción$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-014"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 98,
+      "name": "los campos numéricos solo aceptan dígitos",
+      "source_function": "'los campos numéricos solo aceptan dígitos'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(isAllowedInteger('7'), true)",
+        "assert.equal(isAllowedInteger(texto), false, texto)",
+        "assert.equal(cleanInteger('12abc-3.4e5'), '12345')"
+      ],
+      "checks_in_source": 3,
+      "selector": "los campos numéricos solo aceptan dígitos",
+      "command": "node --test '--test-name-pattern=^los\\ campos\\ numéricos\\ solo\\ aceptan\\ dígitos$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-015"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "line": 104,
+      "name": "no interfiere con la composición de texto (IME) ni con Alt/Meta",
+      "source_function": "'no interfiere con la composición de texto (IME) ni con Alt/Meta'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveFormKey({ key: 'Enter', isComposing: true, ...text() }), null)",
+        "assert.equal(resolveFormKey({ key: 'Enter', altKey: true, ...text() }), null)",
+        "assert.equal(resolveFormKey({ key: 'ArrowDown', metaKey: true, ...text() }), null)"
+      ],
+      "checks_in_source": 3,
+      "selector": "no interfiere con la composición de texto (IME) ni con Alt/Meta",
+      "command": "node --test '--test-name-pattern=^no\\ interfiere\\ con\\ la\\ composición\\ de\\ texto\\ \\(IME\\)\\ ni\\ con\\ Alt/Meta$' tests/inventario/unitarias/inventario-teclado-limites.test.js",
+      "id": "CT-M08-U-FE-016"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/quantities.test.js",
+      "line": 6,
+      "name": "quantities accept digits and respect stock and movement bounds",
+      "source_function": "'quantities accept digits and respect stock and movement bounds'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(parseQuantity(value), Number(value))",
+        "assert.throws(() => parseQuantity(value), Error, String(value))",
+        "assert.throws(() => parseQuantity(0, { min: 1 }))"
+      ],
+      "checks_in_source": 4,
+      "selector": "quantities accept digits and respect stock and movement bounds",
+      "command": "node --test '--test-name-pattern=^quantities\\ accept\\ digits\\ and\\ respect\\ stock\\ and\\ movement\\ bounds$' tests/inventario/unitarias/quantities.test.js",
+      "id": "CT-M08-U-FE-017"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "unitarias",
+      "path": "frontend/tests/inventario/unitarias/quantities.test.js",
+      "line": 15,
+      "name": "notices and confirmations are blue and errors are red",
+      "source_function": "'notices and confirmations are blue and errors are red'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(feedbackClass(tone), 'app-notice app-notice--info')",
+        "assert.equal(feedbackClass('error'), 'app-notice app-notice--error')"
+      ],
+      "checks_in_source": 2,
+      "selector": "notices and confirmations are blue and errors are red",
+      "command": "node --test '--test-name-pattern=^notices\\ and\\ confirmations\\ are\\ blue\\ and\\ errors\\ are\\ red$' tests/inventario/unitarias/quantities.test.js",
+      "id": "CT-M08-U-FE-018"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 63,
+      "name": "test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio",
+      "source_function": "test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock(service, item[\"id_item\"]) == 10",
+        "(mov[\"tipo_movimiento\"], mov[\"cantidad\"], mov[\"id_usuario\"], mov[\"destino\"]) == (\"entrada\", 10, ADMIN, None)",
+        "producto[\"cantidad_stock\"] == 0"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio -q",
+      "id": "CT-M08-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 76,
+      "name": "test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto",
+      "source_function": "test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock(service, item[\"id_item\"]) == 6",
+        "_stock_tienda(service, item[\"id_item\"]) == 4",
+        "resultado[\"stock_tienda\"] == 4"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto -q",
+      "id": "CT-M08-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 91,
+      "name": "test_reponer_sin_reserva_suficiente_no_cambia_nada",
+      "source_function": "test_reponer_sin_reserva_suficiente_no_cambia_nada",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state[\"inventario\"] == antes[\"inventario\"]",
+        "service.state[\"productos_tienda\"] == antes[\"productos_tienda\"]",
+        "service.state[\"mov_inv\"] == antes[\"mov_inv\"]"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_reponer_sin_reserva_suficiente_no_cambia_nada",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_reponer_sin_reserva_suficiente_no_cambia_nada -q",
+      "id": "CT-M08-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 104,
+      "name": "test_reponer_exige_producto_enlazado",
+      "source_function": "test_reponer_exige_producto_enlazado",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock(service, equipo[\"id_item\"]) == 4",
+        "pytest.raises(ValueError, match=\"producto de Tienda enlazado\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_reponer_exige_producto_enlazado",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_reponer_exige_producto_enlazado -q",
+      "id": "CT-M08-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 113,
+      "name": "test_destino_solo_aplica_a_salidas",
+      "source_function": "test_destino_solo_aplica_a_salidas",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "entrada[\"movimiento\"][\"destino\"] is None",
+        "_stock_tienda(service, item[\"id_item\"]) == 0",
+        "pytest.raises(ValueError, match=\"Destino inválido\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_destino_solo_aplica_a_salidas",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_destino_solo_aplica_a_salidas -q",
+      "id": "CT-M08-I-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 129,
+      "name": "test_venta_solo_descuenta_el_stock_de_la_tienda",
+      "source_function": "test_venta_solo_descuenta_el_stock_de_la_tienda",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock_tienda(service, item[\"id_item\"]) == 2",
+        "_stock(service, item[\"id_item\"]) == 5",
+        "len(service.movimientos_inventario()) == movimientos"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_venta_solo_descuenta_el_stock_de_la_tienda",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_venta_solo_descuenta_el_stock_de_la_tienda -q",
+      "id": "CT-M08-I-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 143,
+      "name": "test_venta_sin_stock_suficiente_no_cambia_nada",
+      "source_function": "test_venta_sin_stock_suficiente_no_cambia_nada",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.state[\"productos_tienda\"] == antes[\"productos_tienda\"]",
+        "service.state[\"pedidos_tienda\"] == []",
+        "pytest.raises(ValueError, match=\"Stock insuficiente\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_venta_sin_stock_suficiente_no_cambia_nada",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_venta_sin_stock_suficiente_no_cambia_nada -q",
+      "id": "CT-M08-I-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 160,
+      "name": "test_cancelar_pedido_pendiente_devuelve_stock_a_la_tienda",
+      "source_function": "test_cancelar_pedido_pendiente_devuelve_stock_a_la_tienda",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock_tienda(service, item[\"id_item\"]) == 6",
+        "_stock(service, item[\"id_item\"]) == 4",
+        "len(service.movimientos_inventario()) == movimientos"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_cancelar_pedido_pendiente_devuelve_stock_a_la_tienda",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_cancelar_pedido_pendiente_devuelve_stock_a_la_tienda -q",
+      "id": "CT-M08-I-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 179,
+      "name": "test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+      "source_function": "test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock_tienda(service, item[\"id_item\"]) == 9",
+        "pytest.raises(ValueError, match=\"PENDIENTE\")",
+        "pytest.raises(ValueError, match=\"cancelado\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final -q",
+      "id": "CT-M08-I-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 197,
+      "name": "test_editar_item_no_modifica_el_stock",
+      "source_function": "test_editar_item_no_modifica_el_stock",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock(service, item[\"id_item\"]) == 10",
+        "len(service.movimientos_inventario()) == 1"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_item_no_modifica_el_stock",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_item_no_modifica_el_stock -q",
+      "id": "CT-M08-I-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 207,
+      "name": "test_producto_nuevo_desde_tienda_crea_su_reserva_vacia",
+      "source_function": "test_producto_nuevo_desde_tienda_crea_su_reserva_vacia",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "item is not None",
+        "(item[\"tipo\"], item[\"cantidad_stock\"]) == (\"Tienda\", 0)",
+        "producto[\"cantidad_stock\"] == 48"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_producto_nuevo_desde_tienda_crea_su_reserva_vacia",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_producto_nuevo_desde_tienda_crea_su_reserva_vacia -q",
+      "id": "CT-M08-I-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 222,
+      "name": "test_editar_producto_no_cambia_su_stock",
+      "source_function": "test_editar_producto_no_cambia_su_stock",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "editado[\"cantidad_stock\"] == 8",
+        "editado[\"precio_venta\"] == 18"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_producto_no_cambia_su_stock",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_producto_no_cambia_su_stock -q",
+      "id": "CT-M08-I-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 232,
+      "name": "test_solo_items_tienda_y_un_producto_por_item",
+      "source_function": "test_solo_items_tienda_y_un_producto_por_item",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValueError, match=\"Tipo 'Tienda'\")",
+        "pytest.raises(ValueError, match=\"ya está vinculado\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_solo_items_tienda_y_un_producto_por_item",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_solo_items_tienda_y_un_producto_por_item -q",
+      "id": "CT-M08-I-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 243,
+      "name": "test_item_que_deja_de_ser_tienda_se_oculta",
+      "source_function": "test_item_que_deja_de_ser_tienda_se_oculta",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_producto_de(service, item[\"id_item\"])[\"estado\"] == \"Descatalogado\""
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_item_que_deja_de_ser_tienda_se_oculta",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_item_que_deja_de_ser_tienda_se_oculta -q",
+      "id": "CT-M08-I-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 253,
+      "name": "test_borrar_item_con_historial_lo_descontinua",
+      "source_function": "test_borrar_item_con_historial_lo_descontinua",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "resultado is not None and resultado[\"estado\"] == \"Descontinuado\"",
+        "service.get_item_inventario(item[\"id_item\"]) is not None",
+        "len(service.movimientos_inventario()) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_item_con_historial_lo_descontinua",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_item_con_historial_lo_descontinua -q",
+      "id": "CT-M08-I-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 266,
+      "name": "test_borrar_item_sin_historial_lo_elimina",
+      "source_function": "test_borrar_item_sin_historial_lo_elimina",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.delete_inventario(item[\"id_item\"]) is None",
+        "service.get_item_inventario(item[\"id_item\"]) is None"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_item_sin_historial_lo_elimina",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_item_sin_historial_lo_elimina -q",
+      "id": "CT-M08-I-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 274,
+      "name": "test_editar_entrada_recalcula_stock_por_la_diferencia",
+      "source_function": "test_editar_entrada_recalcula_stock_por_la_diferencia",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock(service, item[\"id_item\"]) == 12",
+        "_stock_tienda(service, item[\"id_item\"]) == 0",
+        "_stock(service, item[\"id_item\"]) == 10"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_entrada_recalcula_stock_por_la_diferencia",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_entrada_recalcula_stock_por_la_diferencia -q",
+      "id": "CT-M08-I-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 289,
+      "name": "test_editar_movimiento_no_deja_stock_negativo",
+      "source_function": "test_editar_movimiento_no_deja_stock_negativo",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock(service, item[\"id_item\"]) == 3",
+        "pytest.raises(ValueError, match=\"stock negativo\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_movimiento_no_deja_stock_negativo",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_movimiento_no_deja_stock_negativo -q",
+      "id": "CT-M08-I-BE-018"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 299,
+      "name": "test_editar_movimiento_puede_cambiar_de_item",
+      "source_function": "test_editar_movimiento_puede_cambiar_de_item",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock(service, toalla[\"id_item\"]) == 5",
+        "_stock(service, shaker[\"id_item\"]) == 4"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_movimiento_puede_cambiar_de_item",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_movimiento_puede_cambiar_de_item -q",
+      "id": "CT-M08-I-BE-019"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 312,
+      "name": "test_editar_reposicion_corrige_ambos_stocks",
+      "source_function": "test_editar_reposicion_corrige_ambos_stocks",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "(_stock(service, item[\"id_item\"]), _stock_tienda(service, item[\"id_item\"])) == (4, 6)",
+        "(_stock(service, item[\"id_item\"]), _stock_tienda(service, item[\"id_item\"])) == (4, 1)",
+        "(_stock(service, item[\"id_item\"]), _stock_tienda(service, item[\"id_item\"])) == (2, 1)"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_reposicion_corrige_ambos_stocks",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_editar_reposicion_corrige_ambos_stocks -q",
+      "id": "CT-M08-I-BE-020"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 335,
+      "name": "test_salida_normal_puede_convertirse_en_reposicion",
+      "source_function": "test_salida_normal_puede_convertirse_en_reposicion",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "resultado[\"movimiento\"][\"destino\"] == \"TIENDA\"",
+        "(_stock(service, item[\"id_item\"]), _stock_tienda(service, item[\"id_item\"])) == (7, 3)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_salida_normal_puede_convertirse_en_reposicion",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_salida_normal_puede_convertirse_en_reposicion -q",
+      "id": "CT-M08-I-BE-021"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 348,
+      "name": "test_movimientos_de_pedido_solo_editan_fecha_y_descripcion",
+      "source_function": "test_movimientos_de_pedido_solo_editan_fecha_y_descripcion",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "resultado[\"movimiento\"][\"descripcion\"] == \"Venta pedido #7 - Entregado en recepcion\"",
+        "resultado[\"movimiento\"][\"fecha_movimiento\"] == \"2026-09-20\"",
+        "resultado[\"movimiento\"][\"destino\"] == \"VENTA\""
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_movimientos_de_pedido_solo_editan_fecha_y_descripcion",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_movimientos_de_pedido_solo_editan_fecha_y_descripcion -q",
+      "id": "CT-M08-I-BE-022"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 378,
+      "name": "test_ajuste_solo_se_corrige_si_es_el_ultimo_movimiento",
+      "source_function": "test_ajuste_solo_se_corrige_si_es_el_ultimo_movimiento",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_stock(service, item[\"id_item\"]) == 6",
+        "_stock(service, item[\"id_item\"]) == 7",
+        "pytest.raises(ValueError, match=\"otro ajuste\")"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_ajuste_solo_se_corrige_si_es_el_ultimo_movimiento",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_ajuste_solo_se_corrige_si_es_el_ultimo_movimiento -q",
+      "id": "CT-M08-I-BE-023"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 396,
+      "name": "test_producto_sin_vincular_vende_con_su_propio_stock",
+      "source_function": "test_producto_sin_vincular_vende_con_su_propio_stock",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.productos_tienda()[0][\"cantidad_stock\"] == 2",
+        "service.movimientos_inventario() == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_producto_sin_vincular_vende_con_su_propio_stock",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_producto_sin_vincular_vende_con_su_propio_stock -q",
+      "id": "CT-M08-I-BE-024"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 453,
+      "name": "test_mapeo_remoto_guarda_vinculo_y_destino",
+      "source_function": "test_mapeo_remoto_guarda_vinculo_y_destino",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service._product_to_remote({\"id_producto\": 1, \"id_item\": 8})[\"id_item\"] == 8",
+        "service._map_product({\"id_producto\": 1, \"id_item\": 8})[\"id_item\"] == 8",
+        "service._map_product({\"id_producto\": 1, \"id_item\": None})[\"id_item\"] is None"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_mapeo_remoto_guarda_vinculo_y_destino",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_mapeo_remoto_guarda_vinculo_y_destino -q",
+      "id": "CT-M08-I-BE-025"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 463,
+      "name": "test_reposicion_guarda_inventario_tienda_y_movimiento",
+      "source_function": "test_reposicion_guarda_inventario_tienda_y_movimiento",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "(insertadas[\"MOV_INV\"][\"tipo_movimiento\"], insertadas[\"MOV_INV\"][\"destino\"]) == (\"salida\", \"TIENDA\")",
+        "_actualizaciones(fake, \"INVENTARIO\")[-1][\"Cantidad_Stock_E\"] == 7",
+        "_actualizaciones(fake, \"TIENDA_PRODUCTOS\")[-1][\"cantidad_stock\"] == 3"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_reposicion_guarda_inventario_tienda_y_movimiento",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_reposicion_guarda_inventario_tienda_y_movimiento -q",
+      "id": "CT-M08-I-BE-026"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 476,
+      "name": "test_venta_solo_actualiza_la_tienda_en_supabase",
+      "source_function": "test_venta_solo_actualiza_la_tienda_en_supabase",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_actualizaciones(fake, \"TIENDA_PRODUCTOS\")[-1][\"cantidad_stock\"] == 3",
+        "not any(table == \"INVENTARIO\" and \"Cantidad_Stock_E\" in body for body, table in ((c[2][1], c[1]) for c in fake.calls if c[0] == \"update\"))",
+        "not any(kind == \"insert\" and table == \"MOV_INV\" for kind, table, _ in fake.calls)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_venta_solo_actualiza_la_tienda_en_supabase",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_venta_solo_actualiza_la_tienda_en_supabase -q",
+      "id": "CT-M08-I-BE-027"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 488,
+      "name": "test_fallo_de_supabase_revierte_la_reposicion",
+      "source_function": "test_fallo_de_supabase_revierte_la_reposicion",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "{k: service.state[k] for k in antes} == antes",
+        "inventario[-1][\"Cantidad_Stock_E\"] == 10",
+        "tienda[-1][\"cantidad_stock\"] == 0"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_fallo_de_supabase_revierte_la_reposicion",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_fallo_de_supabase_revierte_la_reposicion -q",
+      "id": "CT-M08-I-BE-028"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 512,
+      "name": "test_estado_automatico_sigue_la_reserva_del_inventario",
+      "source_function": "test_estado_automatico_sigue_la_reserva_del_inventario",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_estado(service, item[\"id_item\"]) == \"Disponible\"",
+        "_estado(service, item[\"id_item\"]) == \"Stock bajo\"",
+        "_estado(service, item[\"id_item\"]) == \"Stock bajo\""
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_estado_automatico_sigue_la_reserva_del_inventario",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_estado_automatico_sigue_la_reserva_del_inventario -q",
+      "id": "CT-M08-I-BE-029"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 532,
+      "name": "test_cambiar_minimo_recalcula_estado",
+      "source_function": "test_cambiar_minimo_recalcula_estado",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_estado(service, item[\"id_item\"]) == \"Stock bajo\""
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_cambiar_minimo_recalcula_estado",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_cambiar_minimo_recalcula_estado -q",
+      "id": "CT-M08-I-BE-030"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 542,
+      "name": "test_minimo_de_tienda_no_cambia_estado_de_inventario",
+      "source_function": "test_minimo_de_tienda_no_cambia_estado_de_inventario",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_estado(service, item[\"id_item\"]) == \"Disponible\"",
+        "_producto_de(service, item[\"id_item\"])[\"stock_minimo\"] == 12"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_minimo_de_tienda_no_cambia_estado_de_inventario",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_minimo_de_tienda_no_cambia_estado_de_inventario -q",
+      "id": "CT-M08-I-BE-031"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 553,
+      "name": "test_descontinuado_es_manual_y_se_respeta",
+      "source_function": "test_descontinuado_es_manual_y_se_respeta",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_estado(service, item[\"id_item\"]) == \"Descontinuado\"",
+        "_estado(service, item[\"id_item\"]) == \"Agotado\""
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_descontinuado_es_manual_y_se_respeta",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_descontinuado_es_manual_y_se_respeta -q",
+      "id": "CT-M08-I-BE-032"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 567,
+      "name": "test_equipo_del_gimnasio_conserva_su_estado_manual",
+      "source_function": "test_equipo_del_gimnasio_conserva_su_estado_manual",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "_estado(service, equipo[\"id_item\"]) == \"En mantenimiento\""
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_equipo_del_gimnasio_conserva_su_estado_manual",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_equipo_del_gimnasio_conserva_su_estado_manual -q",
+      "id": "CT-M08-I-BE-033"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 574,
+      "name": "test_estados_calculados_se_guardan_en_supabase_al_leer",
+      "source_function": "test_estados_calculados_se_guardan_en_supabase_al_leer",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "(\"update\", \"INVENTARIO\", (item[\"id_item\"], {\"Estado\": \"Stock bajo\"})) in fake.calls"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_estados_calculados_se_guardan_en_supabase_al_leer",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_estados_calculados_se_guardan_en_supabase_al_leer -q",
+      "id": "CT-M08-I-BE-034"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 586,
+      "name": "test_borrar_producto_con_ventas_lo_archiva_y_conserva_la_venta",
+      "source_function": "test_borrar_producto_con_ventas_lo_archiva_y_conserva_la_venta",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "resultado is not None and resultado[\"archivado\"] is True",
+        "archivado[\"archivado\"] is True and archivado[\"estado\"] == \"Descatalogado\"",
+        "len(service.pedidos_tienda()) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_producto_con_ventas_lo_archiva_y_conserva_la_venta",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_producto_con_ventas_lo_archiva_y_conserva_la_venta -q",
+      "id": "CT-M08-I-BE-035"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 603,
+      "name": "test_borrar_producto_lo_manda_a_la_papelera_con_su_item",
+      "source_function": "test_borrar_producto_lo_manda_a_la_papelera_con_su_item",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "resultado[\"archivado\"] is True and resultado[\"estado\"] == \"Descatalogado\"",
+        "service.get_item_inventario(item[\"id_item\"])[\"archivado\"] is True"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_producto_lo_manda_a_la_papelera_con_su_item",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_producto_lo_manda_a_la_papelera_con_su_item -q",
+      "id": "CT-M08-I-BE-036"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 614,
+      "name": "test_restaurar_producto_lo_devuelve_con_su_item",
+      "source_function": "test_restaurar_producto_lo_devuelve_con_su_item",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "restaurado[\"archivado\"] is False and restaurado[\"estado\"] == \"Disponible\"",
+        "service.get_item_inventario(item[\"id_item\"])[\"archivado\"] is False",
+        "pytest.raises(ValueError, match=\"no está en la papelera\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_restaurar_producto_lo_devuelve_con_su_item",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_restaurar_producto_lo_devuelve_con_su_item -q",
+      "id": "CT-M08-I-BE-037"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 629,
+      "name": "test_eliminar_definitivo_exige_pasar_antes_por_la_papelera",
+      "source_function": "test_eliminar_definitivo_exige_pasar_antes_por_la_papelera",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValueError, match=\"papelera\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_exige_pasar_antes_por_la_papelera",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_exige_pasar_antes_por_la_papelera -q",
+      "id": "CT-M08-I-BE-038"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 638,
+      "name": "test_eliminar_definitivo_sin_historial_borra_el_producto_y_su_item",
+      "source_function": "test_eliminar_definitivo_sin_historial_borra_el_producto_y_su_item",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.eliminar_producto_definitivo(creado[\"id_producto\"]) == {\"producto\": \"borrado\"}",
+        "all(p[\"id_producto\"] != creado[\"id_producto\"] for p in service.state[\"productos_tienda\"])",
+        "all(i[\"id_item\"] != creado[\"id_item\"] for i in service.state[\"inventario\"])"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_sin_historial_borra_el_producto_y_su_item",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_sin_historial_borra_el_producto_y_su_item -q",
+      "id": "CT-M08-I-BE-039"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 650,
+      "name": "test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos",
+      "source_function": "test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "resultado == {\"producto\": \"oculto\"}",
+        "all(p[\"id_producto\"] != producto[\"id_producto\"] for p in service.productos_tienda())",
+        "all(i[\"id_item\"] != item[\"id_item\"] for i in service.inventario())"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos -q",
+      "id": "CT-M08-I-BE-040"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 669,
+      "name": "test_eliminar_definitivo_borra_el_item_en_un_segundo_paso",
+      "source_function": "test_eliminar_definitivo_borra_el_item_en_un_segundo_paso",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "StoreOperations(executor).eliminar_producto_definitivo(3) == {\"producto\": \"borrado\"}",
+        "executor.commands[1] == DeleteInventarioCommand(7)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_borra_el_item_en_un_segundo_paso",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_borra_el_item_en_un_segundo_paso -q",
+      "id": "CT-M08-I-BE-041"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 687,
+      "name": "test_borrar_item_con_historial_archiva_el_item_y_su_producto",
+      "source_function": "test_borrar_item_con_historial_archiva_el_item_y_su_producto",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "resultado is not None and resultado[\"archivado\"] is True",
+        "_producto_de(service, item[\"id_item\"])[\"archivado\"] is True",
+        "pytest.raises(ValueError, match=\"archivado\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_item_con_historial_archiva_el_item_y_su_producto",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_borrar_item_con_historial_archiva_el_item_y_su_producto -q",
+      "id": "CT-M08-I-BE-042"
+    },
+    {
+      "component": "backend",
+      "module": "inventario",
+      "type": "integracion",
+      "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
+      "line": 702,
+      "name": "test_mapeo_remoto_de_papelera_y_eliminado",
+      "source_function": "test_mapeo_remoto_de_papelera_y_eliminado",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service._product_to_remote({\"id_producto\": 1})[\"archivado\"] is False",
+        "\"eliminado\" not in service._inventory_to_remote({\"id_item\": 1})",
+        "service._product_to_remote({\"id_producto\": 1, \"archivado\": True})[\"archivado\"] is True"
+      ],
+      "checks_in_source": 7,
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_mapeo_remoto_de_papelera_y_eliminado",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_mapeo_remoto_de_papelera_y_eliminado -q",
+      "id": "CT-M08-I-BE-043"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 5,
+      "name": "editing inventory preserves a zero threshold and uses one only when the value is absent",
+      "source_function": "'editing inventory preserves a zero threshold and uses one only when the value is absent'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(setup.form.minQuantity, 0)",
+        "assert.equal(setup.form.minQuantity, 1)",
+        "assert.equal(payload.minQuantity, 0)"
+      ],
+      "checks_in_source": 4,
+      "selector": "editing inventory preserves a zero threshold and uses one only when the value is absent",
+      "command": "node --test '--test-name-pattern=^editing\\ inventory\\ preserves\\ a\\ zero\\ threshold\\ and\\ uses\\ one\\ only\\ when\\ the\\ value\\ is\\ absent$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 20,
+      "name": "inventario conserva los avisos en vivo al combinar las ramas",
+      "source_function": "'inventario conserva los avisos en vivo al combinar las ramas'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(setup.warnings.name, /obligatorio/)",
+        "assert.equal(setup.warnings.name, '')",
+        "assert.match(setup.warnings.minQuantity, /obligatorio/)"
+      ],
+      "checks_in_source": 5,
+      "selector": "inventario conserva los avisos en vivo al combinar las ramas",
+      "command": "node --test '--test-name-pattern=^inventario\\ conserva\\ los\\ avisos\\ en\\ vivo\\ al\\ combinar\\ las\\ ramas$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 35,
+      "name": "inventory rejects malformed quantities without saving or losing the draft",
+      "source_function": "'inventory rejects malformed quantities without saving or losing the draft'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(saves, 0, `No se debe guardar ${JSON.stringify(value)}`)",
+        "assert.ok(setup.editorError)",
+        "assert.equal(setup.isEditorOpen, true)"
+      ],
+      "checks_in_source": 8,
+      "selector": "inventory rejects malformed quantities without saving or losing the draft",
+      "command": "node --test '--test-name-pattern=^inventory\\ rejects\\ malformed\\ quantities\\ without\\ saving\\ or\\ losing\\ the\\ draft$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 60,
+      "name": "inventory keeps server errors inside the editor and prevents duplicate saves",
+      "source_function": "'inventory keeps server errors inside the editor and prevents duplicate saves'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(saves, 0)",
+        "assert.deepEqual(setup.formErrors, ['Stock mínimo'])",
+        "assert.equal(saves, 1)"
+      ],
+      "checks_in_source": 9,
+      "selector": "inventory keeps server errors inside the editor and prevents duplicate saves",
+      "command": "node --test '--test-name-pattern=^inventory\\ keeps\\ server\\ errors\\ inside\\ the\\ editor\\ and\\ prevents\\ duplicate\\ saves$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 89,
+      "name": "inventory dropdowns contain defaults and preserve existing custom values",
+      "source_function": "'inventory dropdowns contain defaults and preserve existing custom values'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.ok(setup.categoryOptions.includes(value))",
+        "assert.ok(setup.editorLocationOptions.includes('Depósito B'))",
+        "assert.ok(setup.unitOptions.includes('lote'))"
+      ],
+      "checks_in_source": 5,
+      "selector": "inventory dropdowns contain defaults and preserve existing custom values",
+      "command": "node --test '--test-name-pattern=^inventory\\ dropdowns\\ contain\\ defaults\\ and\\ preserve\\ existing\\ custom\\ values$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 102,
+      "name": "inventory searches the advertised code, name and category fields",
+      "source_function": "'inventory searches the advertised code, name and category fields'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(setup.filteredInventory.map(item => item.id), ['item-1'])"
+      ],
+      "checks_in_source": 1,
+      "selector": "inventory searches the advertised code, name and category fields",
+      "command": "node --test '--test-name-pattern=^inventory\\ searches\\ the\\ advertised\\ code,\\ name\\ and\\ category\\ fields$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 114,
+      "name": "stock alert compares typed quantities numerically",
+      "source_function": "'stock alert compares typed quantities numerically'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.doesNotMatch(dialogs, /Alerta activa/)"
+      ],
+      "checks_in_source": 1,
+      "selector": "stock alert compares typed quantities numerically",
+      "command": "node --test '--test-name-pattern=^stock\\ alert\\ compares\\ typed\\ quantities\\ numerically$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 123,
+      "name": "movement quantity buttons preserve invalid drafts instead of converting exponents",
+      "source_function": "'movement quantity buttons preserve invalid drafts instead of converting exponents'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(setup.form.cantidad, '1e2')",
+        "assert.ok(setup.errors.cantidad)",
+        "assert.equal(setup.form.cantidad, 13)"
+      ],
+      "checks_in_source": 3,
+      "selector": "movement quantity buttons preserve invalid drafts instead of converting exponents",
+      "command": "node --test '--test-name-pattern=^movement\\ quantity\\ buttons\\ preserve\\ invalid\\ drafts\\ instead\\ of\\ converting\\ exponents$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "inventario",
+      "type": "interfaz",
+      "path": "frontend/tests/inventario/interfaz/formularios.test.js",
+      "line": 134,
+      "name": "movement editor refuses invalid quantities and sends valid quantities as integers",
+      "source_function": "'movement editor refuses invalid quantities and sends valid quantities as integers'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(payload, undefined)",
+        "assert.ok(setup.modalError)",
+        "assert.equal(setup.isModalOpen, true)"
+      ],
+      "checks_in_source": 5,
+      "selector": "movement editor refuses invalid quantities and sends valid quantities as integers",
+      "command": "node --test '--test-name-pattern=^movement\\ editor\\ refuses\\ invalid\\ quantities\\ and\\ sends\\ valid\\ quantities\\ as\\ integers$' tests/inventario/interfaz/formularios.test.js",
+      "id": "CT-M08-F-FE-009"
+    }
+  ]
+}

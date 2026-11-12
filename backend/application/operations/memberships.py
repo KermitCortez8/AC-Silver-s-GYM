@@ -161,3 +161,43 @@ class ActivarMembresiaClienteCommand:
     def run(self, rules: DomainComponents) -> Record:
         return rules.memberships.activar_membresia_cliente(self.id_cliente)
 
+
+@dataclass(frozen=True)
+class RenewMembershipCommand:
+    operation_kind: ClassVar[str] = 'command'
+    client_id: int
+    source_id: int
+    expected_amount: float
+    resources: ClassVar[tuple[Resource, ...]] = CrearMembresiaCommand.resources
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.memberships.renew_membership(self.client_id, self.source_id, self.expected_amount)
+
+
+@dataclass(frozen=True)
+class SaveRenewalSessionCommand:
+    operation_kind: ClassVar[str] = 'command'
+    client_id: int
+    membership_id: int
+    session_id: str
+    resources: ClassVar[tuple[Resource, ...]] = CrearMembresiaCommand.resources
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.memberships.save_renewal_session(self.client_id, self.membership_id, self.session_id)
+
+
+@dataclass(frozen=True)
+class RenewMembershipCashCommand:
+    operation_kind: ClassVar[str] = 'command'
+    client_id: int
+    source_id: int
+    expected_amount: float
+    resources: ClassVar[tuple[Resource, ...]] = CrearMembresiaCommand.resources
+
+    def run(self, rules: DomainComponents) -> Record:
+        # No mezclar un cobro en caja con un checkout creado por otro proceso.
+        rows = rules.memberships.membresias_por_cliente(self.client_id)
+        if any(int(m['id_membresia']) > self.source_id and m.get('estado_pago') != 'PAGADO' for m in rows):
+            raise ValueError('Ya hay una renovación pendiente. Retoma su pago con Stripe o revisa el pago pendiente antes de cobrar en efectivo.')
+        rules.memberships.renew_membership(self.client_id, self.source_id, self.expected_amount)
+        return rules.memberships.confirmar_pago_manual_cliente(self.client_id)

@@ -1,0 +1,2513 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "clientes",
+  "counts": {
+    "backend": {
+      "collected": 66,
+      "passed": 58,
+      "skipped": 8
+    },
+    "frontend": {
+      "collected": 36,
+      "passed": 36,
+      "skipped": 0
+    },
+    "total": 102,
+    "passed": 94,
+    "skipped": 8
+  },
+  "cases": [
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "backend/tests/clientes/unitarias/test_clients_lookup.py",
+      "line": 16,
+      "name": "test_client_lookup_preserves_identity_priority[identity0-1]",
+      "source_function": "test_client_lookup_preserves_identity_priority",
+      "variant": "identity0-1",
+      "parameter_names": [
+        "identity",
+        "expected_id"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"id_cliente\"] == expected_id",
+        "gym.clientes_normalized.assert_called_once_with()"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_preserves_identity_priority[identity0-1]",
+      "command": "python -m pytest 'tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_preserves_identity_priority[identity0-1]' -q",
+      "id": "CT-M02-U-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "backend/tests/clientes/unitarias/test_clients_lookup.py",
+      "line": 16,
+      "name": "test_client_lookup_preserves_identity_priority[identity1-2]",
+      "source_function": "test_client_lookup_preserves_identity_priority",
+      "variant": "identity1-2",
+      "parameter_names": [
+        "identity",
+        "expected_id"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"id_cliente\"] == expected_id",
+        "gym.clientes_normalized.assert_called_once_with()"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_preserves_identity_priority[identity1-2]",
+      "command": "python -m pytest 'tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_preserves_identity_priority[identity1-2]' -q",
+      "id": "CT-M02-U-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "backend/tests/clientes/unitarias/test_clients_lookup.py",
+      "line": 16,
+      "name": "test_client_lookup_preserves_identity_priority[identity2-3]",
+      "source_function": "test_client_lookup_preserves_identity_priority",
+      "variant": "identity2-3",
+      "parameter_names": [
+        "identity",
+        "expected_id"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"id_cliente\"] == expected_id",
+        "gym.clientes_normalized.assert_called_once_with()"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_preserves_identity_priority[identity2-3]",
+      "command": "python -m pytest 'tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_preserves_identity_priority[identity2-3]' -q",
+      "id": "CT-M02-U-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "backend/tests/clientes/unitarias/test_clients_lookup.py",
+      "line": 16,
+      "name": "test_client_lookup_preserves_identity_priority[identity3-2]",
+      "source_function": "test_client_lookup_preserves_identity_priority",
+      "variant": "identity3-2",
+      "parameter_names": [
+        "identity",
+        "expected_id"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"id_cliente\"] == expected_id",
+        "gym.clientes_normalized.assert_called_once_with()"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_preserves_identity_priority[identity3-2]",
+      "command": "python -m pytest 'tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_preserves_identity_priority[identity3-2]' -q",
+      "id": "CT-M02-U-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "backend/tests/clientes/unitarias/test_clients_lookup.py",
+      "line": 31,
+      "name": "test_client_lookup_does_not_return_an_unrelated_client[identity0]",
+      "source_function": "test_client_lookup_does_not_return_an_unrelated_client",
+      "variant": "identity0",
+      "parameter_names": [
+        "identity"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValueError, match=\"Cliente no encontrado\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_does_not_return_an_unrelated_client[identity0]",
+      "command": "python -m pytest 'tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_does_not_return_an_unrelated_client[identity0]' -q",
+      "id": "CT-M02-U-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "backend/tests/clientes/unitarias/test_clients_lookup.py",
+      "line": 31,
+      "name": "test_client_lookup_does_not_return_an_unrelated_client[identity1]",
+      "source_function": "test_client_lookup_does_not_return_an_unrelated_client",
+      "variant": "identity1",
+      "parameter_names": [
+        "identity"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValueError, match=\"Cliente no encontrado\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_does_not_return_an_unrelated_client[identity1]",
+      "command": "python -m pytest 'tests/clientes/unitarias/test_clients_lookup.py::test_client_lookup_does_not_return_an_unrelated_client[identity1]' -q",
+      "id": "CT-M02-U-BE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-directory.test.js",
+      "line": 22,
+      "name": "the first page shows only the seven newest clients without changing the source",
+      "source_function": "'the first page shows only the seven newest clients without changing the source'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual( page.items.map((client) => client.id_cliente), [23, 22, 21, 20, 19, 18, 17], )",
+        "assert.equal(page.totalPages, 4)",
+        "assert.equal(page.start, 1)"
+      ],
+      "checks_in_source": 5,
+      "selector": "the first page shows only the seven newest clients without changing the source",
+      "command": "node --test '--test-name-pattern=^the\\ first\\ page\\ shows\\ only\\ the\\ seven\\ newest\\ clients\\ without\\ changing\\ the\\ source$' tests/clientes/unitarias/client-directory.test.js",
+      "id": "CT-M02-U-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-directory.test.js",
+      "line": 34,
+      "name": "navigation includes every client exactly once and clamps after deletion",
+      "source_function": "'navigation includes every client exactly once and clamps after deletion'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual( pages.flatMap((page) => page.items), sorted, )",
+        "assert.equal(pages[3].items.length, 2)",
+        "assert.equal(paginateClients(sorted.slice(0, 7), 4).page, 1)"
+      ],
+      "checks_in_source": 6,
+      "selector": "navigation includes every client exactly once and clamps after deletion",
+      "command": "node --test '--test-name-pattern=^navigation\\ includes\\ every\\ client\\ exactly\\ once\\ and\\ clamps\\ after\\ deletion$' tests/clientes/unitarias/client-directory.test.js",
+      "id": "CT-M02-U-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-directory.test.js",
+      "line": 48,
+      "name": "search covers the full directory before pagination and ignores accents",
+      "source_function": "'search covers the full directory before pagination and ignores accents'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal( filterClientDirectory(clients, { search: 'JOSE PEREZ' })[0].id_cliente, 1, )",
+        "assert.equal( paginateClients(filterClientDirectory(clients, { search: 'SGCLI001' })) .items[0].id_cliente, 1, )",
+        "assert.equal( filterClientDirectory(clients, { search: 'cliente23@' })[0].id_cliente, 23, )"
+      ],
+      "checks_in_source": 4,
+      "selector": "search covers the full directory before pagination and ignores accents",
+      "command": "node --test '--test-name-pattern=^search\\ covers\\ the\\ full\\ directory\\ before\\ pagination\\ and\\ ignores\\ accents$' tests/clientes/unitarias/client-directory.test.js",
+      "id": "CT-M02-U-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-directory.test.js",
+      "line": 68,
+      "name": "membership, plan and payment filters work together",
+      "source_function": "'membership, plan and payment filters work together'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(filtered.length, 11)",
+        "assert.ok( filtered.every( (client) => client.paymentStatus === 'PAGADO' && client.plan === 'ANUAL', ), )",
+        "assert.equal( filterClientDirectory(clients, { status: 'active', payment: 'PENDIENTE' }) .length, 0, )"
+      ],
+      "checks_in_source": 6,
+      "selector": "membership, plan and payment filters work together",
+      "command": "node --test '--test-name-pattern=^membership,\\ plan\\ and\\ payment\\ filters\\ work\\ together$' tests/clientes/unitarias/client-directory.test.js",
+      "id": "CT-M02-U-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-directory.test.js",
+      "line": 101,
+      "name": "legacy inactive accounts are in progress and do not add a fourth state",
+      "source_function": "'legacy inactive accounts are in progress and do not add a fourth state'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual( filterClientDirectory(directory, { status: 'expired' }).map( (c) => c.id_cliente, ), [1], )",
+        "assert.deepEqual( filterClientDirectory(directory, { status: 'pending' }).map( (c) => c.id_cliente, ), [2], )"
+      ],
+      "checks_in_source": 2,
+      "selector": "legacy inactive accounts are in progress and do not add a fourth state",
+      "command": "node --test '--test-name-pattern=^legacy\\ inactive\\ accounts\\ are\\ in\\ progress\\ and\\ do\\ not\\ add\\ a\\ fourth\\ state$' tests/clientes/unitarias/client-directory.test.js",
+      "id": "CT-M02-U-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-directory.test.js",
+      "line": 121,
+      "name": "sorting supports oldest first, names and IDs before registration dates are refreshed",
+      "source_function": "'sorting supports oldest first, names and IDs before registration dates are refreshed'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal( filterClientDirectory(clients, { sort: 'oldest' })[0].id_cliente, 1, )",
+        "assert.deepEqual( filterClientDirectory( [ { id: 'SGCLI001', name: 'Zoe' }, { id: 'SGCLI002', name: 'Ana' }, ], { sort: 'name' }, ).map((client) => client.name), ['Ana', 'Zoe'], )",
+        "assert.equal( filterClientDirectory([ { id_cliente: 2, joinedAt: '' }, { id_cliente: 1, joinedAt: '2026-01-01' }, ])[0].id_cliente, 2, )"
+      ],
+      "checks_in_source": 3,
+      "selector": "sorting supports oldest first, names and IDs before registration dates are refreshed",
+      "command": "node --test '--test-name-pattern=^sorting\\ supports\\ oldest\\ first,\\ names\\ and\\ IDs\\ before\\ registration\\ dates\\ are\\ refreshed$' tests/clientes/unitarias/client-directory.test.js",
+      "id": "CT-M02-U-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-directory.test.js",
+      "line": 145,
+      "name": "page navigation stays short even with thousands of clients",
+      "source_function": "'page navigation stays short even with thousands of clients'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(page.pages, [1, 'gap-499', 499, 500, 501, 'gap-1000', 1000])",
+        "assert.equal(page.pages.length, 7)"
+      ],
+      "checks_in_source": 2,
+      "selector": "page navigation stays short even with thousands of clients",
+      "command": "node --test '--test-name-pattern=^page\\ navigation\\ stays\\ short\\ even\\ with\\ thousands\\ of\\ clients$' tests/clientes/unitarias/client-directory.test.js",
+      "id": "CT-M02-U-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-directory.test.js",
+      "line": 151,
+      "name": "only three membership labels are exposed, including legacy and missing values",
+      "source_function": "'only three membership labels are exposed, including legacy and missing values'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(normalizeMembershipStatus(raw), state)",
+        "assert.equal(clientMembershipLabel({ membershipStatus: raw }), label)",
+        "assert.equal( filterClientDirectory([{ membershipStatus: 'EN_TRAMITE' }], { search: 'en tramite', }).length, 1, )"
+      ],
+      "checks_in_source": 3,
+      "selector": "only three membership labels are exposed, including legacy and missing values",
+      "command": "node --test '--test-name-pattern=^only\\ three\\ membership\\ labels\\ are\\ exposed,\\ including\\ legacy\\ and\\ missing\\ values$' tests/clientes/unitarias/client-directory.test.js",
+      "id": "CT-M02-U-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/client-identity.test.js",
+      "line": 1,
+      "name": "tests/clientes/unitarias/client-identity.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(resolveClientIdForUser(user, members), 12)",
+        "assert.equal(identity.id_cliente, 12)",
+        "assert.equal(attendanceBelongsToClient({ memberCode: 'SGCLI012' }, identity), true)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/unitarias/client-identity.test.js",
+      "command": "node --test tests/clientes/unitarias/client-identity.test.js",
+      "id": "CT-M02-U-FE-009"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/find-client.test.js",
+      "line": 1,
+      "name": "tests/clientes/unitarias/find-client.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(findClientForUser({ id_cliente: 7 }, members), members[0])"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/clientes/unitarias/find-client.test.js",
+      "command": "node --test tests/clientes/unitarias/find-client.test.js",
+      "id": "CT-M02-U-FE-010"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "unitarias",
+      "path": "frontend/tests/clientes/unitarias/normalizers.test.js",
+      "line": 1,
+      "name": "tests/clientes/unitarias/normalizers.test.js",
+      "source_function": null,
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Aserciones de módulo"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(normalizeEmail(' Cliente@Example.COM '), 'cliente@example.com')",
+        "assert.equal(normalizeDni('12.345-678'), '12345678')"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/unitarias/normalizers.test.js",
+      "command": "node --test tests/clientes/unitarias/normalizers.test.js",
+      "id": "CT-M02-U-FE-011"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 49,
+      "name": "test_register_without_payment_creates_pending_admin_membership",
+      "source_function": "test_register_without_payment_creates_pending_admin_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 201",
+        "result[\"cliente\"][\"origen_registro\"] == \"ADMIN\"",
+        "\"password_hash\" not in result[\"cliente\"]"
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_register_without_payment_creates_pending_admin_membership",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_register_without_payment_creates_pending_admin_membership -q",
+      "id": "CT-M02-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 64,
+      "name": "test_register_and_pay_returns_to_admin_and_preserves_discount",
+      "source_function": "test_register_and_pay_returns_to_admin_and_preserves_discount",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 201",
+        "result[\"payment\"][\"amount\"] == 69",
+        "result[\"membresia\"][\"estado_pago\"] == \"PENDIENTE\""
+      ],
+      "checks_in_source": 8,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_register_and_pay_returns_to_admin_and_preserves_discount",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_register_and_pay_returns_to_admin_and_preserves_discount -q",
+      "id": "CT-M02-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 86,
+      "name": "test_admin_does_not_apply_unselected_promotion",
+      "source_function": "test_admin_does_not_apply_unselected_promotion",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"membresia\"][\"monto_pago\"] == 79",
+        "result[\"membresia\"][\"id_promocion\"] is None"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_admin_does_not_apply_unselected_promotion",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_admin_does_not_apply_unselected_promotion -q",
+      "id": "CT-M02-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 94,
+      "name": "test_invalid_promotion_does_not_create_client",
+      "source_function": "test_invalid_promotion_does_not_create_client",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "gym.state[\"clientes\"] == gym.state[\"membresia\"] == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_invalid_promotion_does_not_create_client",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_invalid_promotion_does_not_create_client -q",
+      "id": "CT-M02-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 101,
+      "name": "test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration",
+      "source_function": "test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(gym.state[\"clientes\"]) == len(gym.state[\"membresia\"]) == 1",
+        "calls[0][\"idempotency_key\"] == calls[1][\"idempotency_key\"]",
+        "response.status_code == 200"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration -q",
+      "id": "CT-M02-I-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 114,
+      "name": "test_panel_rejects_public_and_unknown_origin[None]",
+      "source_function": "test_panel_rejects_public_and_unknown_origin",
+      "variant": "None",
+      "parameter_names": [
+        "origin"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "calls == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_public_and_unknown_origin[None]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_public_and_unknown_origin[None]' -q",
+      "id": "CT-M02-I-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 114,
+      "name": "test_panel_rejects_public_and_unknown_origin[PUBLICO]",
+      "source_function": "test_panel_rejects_public_and_unknown_origin",
+      "variant": "PUBLICO",
+      "parameter_names": [
+        "origin"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "calls == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_public_and_unknown_origin[PUBLICO]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_public_and_unknown_origin[PUBLICO]' -q",
+      "id": "CT-M02-I-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 114,
+      "name": "test_panel_rejects_public_and_unknown_origin[]",
+      "source_function": "test_panel_rejects_public_and_unknown_origin",
+      "variant": "",
+      "parameter_names": [
+        "origin"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "calls == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_public_and_unknown_origin[]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_public_and_unknown_origin[]' -q",
+      "id": "CT-M02-I-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 123,
+      "name": "test_panel_rejects_paid_membership",
+      "source_function": "test_panel_rejects_paid_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "calls == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_paid_membership",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_paid_membership -q",
+      "id": "CT-M02-I-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 132,
+      "name": "test_manual_payment_endpoint_records_cash_without_activating_membership",
+      "source_function": "test_manual_payment_endpoint_records_cash_without_activating_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200",
+        "\"password_hash\" not in saved[\"cliente\"]",
+        "membership[\"estado_pago\"] == \"PAGADO\""
+      ],
+      "checks_in_source": 11,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_manual_payment_endpoint_records_cash_without_activating_membership",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_manual_payment_endpoint_records_cash_without_activating_membership -q",
+      "id": "CT-M02-I-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 152,
+      "name": "test_repeated_manual_confirmation_preserves_verified_stripe_payment",
+      "source_function": "test_repeated_manual_confirmation_preserves_verified_stripe_payment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "membership == original",
+        "gym.state[\"clientes\"][0][\"estado\"] == \"ACTIVO\""
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_repeated_manual_confirmation_preserves_verified_stripe_payment",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_repeated_manual_confirmation_preserves_verified_stripe_payment -q",
+      "id": "CT-M02-I-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 169,
+      "name": "test_manual_payment_endpoint_rejects_non_staff[trainer]",
+      "source_function": "test_manual_payment_endpoint_rejects_non_staff",
+      "variant": "trainer",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 403",
+        "gym.state[\"membresia\"][0][\"estado_pago\"] == \"PENDIENTE\""
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_manual_payment_endpoint_rejects_non_staff[trainer]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_manual_payment_endpoint_rejects_non_staff[trainer]' -q",
+      "id": "CT-M02-I-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 169,
+      "name": "test_manual_payment_endpoint_rejects_non_staff[user]",
+      "source_function": "test_manual_payment_endpoint_rejects_non_staff",
+      "variant": "user",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 403",
+        "gym.state[\"membresia\"][0][\"estado_pago\"] == \"PENDIENTE\""
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_manual_payment_endpoint_rejects_non_staff[user]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_manual_payment_endpoint_rejects_non_staff[user]' -q",
+      "id": "CT-M02-I-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 180,
+      "name": "test_verified_admin_payment_allows_activation_and_blocks_another_checkout",
+      "source_function": "test_verified_admin_payment_allows_activation_and_blocks_another_checkout",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200",
+        "response.json()[\"confirmed\"] is True",
+        "client.post(f\"/clientes/{client_id}/activar-membresia\").status_code == 200"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_verified_admin_payment_allows_activation_and_blocks_another_checkout",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_verified_admin_payment_allows_activation_and_blocks_another_checkout -q",
+      "id": "CT-M02-I-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 199,
+      "name": "test_stripe_failure_keeps_registration_available_for_retry",
+      "source_function": "test_stripe_failure_keeps_registration_available_for_retry",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 201",
+        "response.json()[\"payment\"][\"message\"]",
+        "len(gym.state[\"clientes\"]) == len(gym.state[\"membresia\"]) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_stripe_failure_keeps_registration_available_for_retry",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_stripe_failure_keeps_registration_available_for_retry -q",
+      "id": "CT-M02-I-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 213,
+      "name": "test_missing_stripe_configuration_fails_before_registration",
+      "source_function": "test_missing_stripe_configuration_fails_before_registration",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 503",
+        "gym.state[\"clientes\"] == []",
+        "client.post(\"/clientes/registro-admin\", json=PAYLOAD).status_code == 201"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_missing_stripe_configuration_fails_before_registration",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_missing_stripe_configuration_fails_before_registration -q",
+      "id": "CT-M02-I-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 223,
+      "name": "test_panel_requires_authentication[/clientes/1/pago-stripe]",
+      "source_function": "test_panel_requires_authentication",
+      "variant": "/clientes/1/pago-stripe",
+      "parameter_names": [
+        "path"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.post(path, json=PAYLOAD).status_code == 401",
+        "calls == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_panel_requires_authentication[/clientes/1/pago-stripe]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_panel_requires_authentication[/clientes/1/pago-stripe]' -q",
+      "id": "CT-M02-I-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 223,
+      "name": "test_panel_requires_authentication[/clientes/registro-admin]",
+      "source_function": "test_panel_requires_authentication",
+      "variant": "/clientes/registro-admin",
+      "parameter_names": [
+        "path"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.post(path, json=PAYLOAD).status_code == 401",
+        "calls == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_panel_requires_authentication[/clientes/registro-admin]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_panel_requires_authentication[/clientes/registro-admin]' -q",
+      "id": "CT-M02-I-BE-018"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 231,
+      "name": "test_panel_rejects_non_admin_roles[trainer]",
+      "source_function": "test_panel_rejects_non_admin_roles",
+      "variant": "trainer",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.post(\"/clientes/registro-admin\", json=PAYLOAD).status_code == 403",
+        "client.post(\"/clientes/1/pago-stripe\").status_code == 403",
+        "gym.state[\"clientes\"] == calls == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_non_admin_roles[trainer]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_non_admin_roles[trainer]' -q",
+      "id": "CT-M02-I-BE-019"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 231,
+      "name": "test_panel_rejects_non_admin_roles[user]",
+      "source_function": "test_panel_rejects_non_admin_roles",
+      "variant": "user",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.post(\"/clientes/registro-admin\", json=PAYLOAD).status_code == 403",
+        "client.post(\"/clientes/1/pago-stripe\").status_code == 403",
+        "gym.state[\"clientes\"] == calls == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_non_admin_roles[user]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_admin_client_payment.py::test_panel_rejects_non_admin_roles[user]' -q",
+      "id": "CT-M02-I-BE-020"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 241,
+      "name": "test_editing_client_preserves_origin_and_identity",
+      "source_function": "test_editing_client_preserves_origin_and_identity",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "saved[\"id_cliente\"] == result[\"cliente\"][\"id_cliente\"]",
+        "saved[\"origen_registro\"] == \"ADMIN\"",
+        "len(gym.state[\"clientes\"]) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_editing_client_preserves_origin_and_identity",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_editing_client_preserves_origin_and_identity -q",
+      "id": "CT-M02-I-BE-021"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 252,
+      "name": "test_admin_schema_is_required_instead_of_silently_dropping_origin",
+      "source_function": "test_admin_schema_is_required_instead_of_silently_dropping_origin",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match=\"009_admin_client_stripe.sql\")",
+        "pytest.raises(RuntimeError, match=\"009_admin_client_stripe.sql\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_admin_schema_is_required_instead_of_silently_dropping_origin",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_admin_schema_is_required_instead_of_silently_dropping_origin -q",
+      "id": "CT-M02-I-BE-022"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "line": 266,
+      "name": "test_zero_price_is_not_replaced_with_plan_price",
+      "source_function": "test_zero_price_is_not_replaced_with_plan_price",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "calls == []",
+        "pytest.raises(ValueError, match=\"mayor que cero\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_admin_client_payment.py::test_zero_price_is_not_replaced_with_plan_price",
+      "command": "python -m pytest tests/clientes/integracion/test_admin_client_payment.py::test_zero_price_is_not_replaced_with_plan_price -q",
+      "id": "CT-M02-I-BE-023"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_preregistration_gateway.py",
+      "line": 20,
+      "name": "test_checkout_retries_have_same_key_and_do_not_put_personal_data_in_metadata",
+      "source_function": "test_checkout_retries_have_same_key_and_do_not_put_personal_data_in_metadata",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "calls[0] == calls[1]",
+        "calls[0]['metadata'] == {'purpose': 'membership_preregistration', 'preregistration_token': row['token'], 'attempt': '1'}",
+        "f\"/registro/pago/p-{row['token']}?result=success\" in calls[0]['success_url']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/clientes/integracion/test_preregistration_gateway.py::test_checkout_retries_have_same_key_and_do_not_put_personal_data_in_metadata",
+      "command": "python -m pytest tests/clientes/integracion/test_preregistration_gateway.py::test_checkout_retries_have_same_key_and_do_not_put_personal_data_in_metadata -q",
+      "id": "CT-M02-I-BE-024"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_preregistration_gateway.py",
+      "line": 39,
+      "name": "test_recovery_searches_all_pages_and_uses_token_and_attempt",
+      "source_function": "test_recovery_searches_all_pages_and_uses_token_and_attempt",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gateway().find_preregistration_checkout(row) == wanted",
+        "calls[0]['created']['gte'] > 0"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_preregistration_gateway.py::test_recovery_searches_all_pages_and_uses_token_and_attempt",
+      "command": "python -m pytest tests/clientes/integracion/test_preregistration_gateway.py::test_recovery_searches_all_pages_and_uses_token_and_attempt -q",
+      "id": "CT-M02-I-BE-025"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_preregistration_gateway.py",
+      "line": 52,
+      "name": "test_recovery_failure_is_not_treated_as_no_payment",
+      "source_function": "test_recovery_failure_is_not_treated_as_no_payment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "'privados' not in str(caught.value)",
+        "pytest.raises(RuntimeError, match='reconciliar')"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_preregistration_gateway.py::test_recovery_failure_is_not_treated_as_no_payment",
+      "command": "python -m pytest tests/clientes/integracion/test_preregistration_gateway.py::test_recovery_failure_is_not_treated_as_no_payment -q",
+      "id": "CT-M02-I-BE-026"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 92,
+      "name": "test_public_http_stores_only_a_private_temporary_request",
+      "source_function": "test_public_http_stores_only_a_private_temporary_request",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200",
+        "set(body) == {'preregistro', 'payment'}",
+        "set(body['preregistro']) == {'token', 'estado', 'expira_en', 'monto_pago'}"
+      ],
+      "checks_in_source": 7,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_public_http_stores_only_a_private_temporary_request",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_public_http_stores_only_a_private_temporary_request -q",
+      "id": "CT-M02-I-BE-027"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 110,
+      "name": "test_retry_preserves_request_quote_and_checkout_despite_catalog_changes",
+      "source_function": "test_retry_preserves_request_quote_and_checkout_despite_catalog_changes",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "retry == first",
+        "len(gateway.created) == len(gym.repository.state['preregistros']) == 1",
+        "gym.clientes_normalized() == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_retry_preserves_request_quote_and_checkout_despite_catalog_changes",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_retry_preserves_request_quote_and_checkout_despite_catalog_changes -q",
+      "id": "CT-M02-I-BE-028"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 121,
+      "name": "test_retry_cannot_take_over_another_request[change0]",
+      "source_function": "test_retry_cannot_take_over_another_request",
+      "variant": "change0",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.repository.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_retry_cannot_take_over_another_request[change0]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_retry_cannot_take_over_another_request[change0]' -q",
+      "id": "CT-M02-I-BE-029"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 121,
+      "name": "test_retry_cannot_take_over_another_request[change1]",
+      "source_function": "test_retry_cannot_take_over_another_request",
+      "variant": "change1",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.repository.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_retry_cannot_take_over_another_request[change1]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_retry_cannot_take_over_another_request[change1]' -q",
+      "id": "CT-M02-I-BE-030"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 121,
+      "name": "test_retry_cannot_take_over_another_request[change2]",
+      "source_function": "test_retry_cannot_take_over_another_request",
+      "variant": "change2",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.repository.state == before",
+        "pytest.raises(ValueError)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_retry_cannot_take_over_another_request[change2]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_retry_cannot_take_over_another_request[change2]' -q",
+      "id": "CT-M02-I-BE-031"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 130,
+      "name": "test_checkout_failure_retains_draft_without_exposing_provider_or_duplicating_it",
+      "source_function": "test_checkout_failure_retains_draft_without_exposing_provider_or_duplicating_it",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "'privado' not in str(first)",
+        "'checkout_url' not in first['payment']",
+        "gym.clientes_normalized() == []"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_checkout_failure_retains_draft_without_exposing_provider_or_duplicating_it",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_checkout_failure_retains_draft_without_exposing_provider_or_duplicating_it -q",
+      "id": "CT-M02-I-BE-032"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 143,
+      "name": "test_verified_webhook_creates_paid_client_once_without_browser_return",
+      "source_function": "test_verified_webhook_creates_paid_client_once_without_browser_return",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "confirmed['confirmed'] and confirmed['preregistration_token'] == result['preregistro']['token']",
+        "len(gym.clientes_normalized()) == len(gym.membresias()) == 1",
+        "membership['estado'] == 'EN_TRAMITE' and membership['estado_pago'] == 'PAGADO'"
+      ],
+      "checks_in_source": 7,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_verified_webhook_creates_paid_client_once_without_browser_return",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_verified_webhook_creates_paid_client_once_without_browser_return -q",
+      "id": "CT-M02-I-BE-033"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 166,
+      "name": "test_confirmation_rejects_unrelated_or_altered_payment[change0]",
+      "source_function": "test_confirmation_rejects_unrelated_or_altered_payment",
+      "variant": "change0",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == gym.membresias() == []",
+        "notify.assert_not_called()",
+        "pytest.raises((ValueError, EntityNotFound))"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change0]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change0]' -q",
+      "id": "CT-M02-I-BE-034"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 166,
+      "name": "test_confirmation_rejects_unrelated_or_altered_payment[change1]",
+      "source_function": "test_confirmation_rejects_unrelated_or_altered_payment",
+      "variant": "change1",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == gym.membresias() == []",
+        "notify.assert_not_called()",
+        "pytest.raises((ValueError, EntityNotFound))"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change1]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change1]' -q",
+      "id": "CT-M02-I-BE-035"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 166,
+      "name": "test_confirmation_rejects_unrelated_or_altered_payment[change2]",
+      "source_function": "test_confirmation_rejects_unrelated_or_altered_payment",
+      "variant": "change2",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == gym.membresias() == []",
+        "notify.assert_not_called()",
+        "pytest.raises((ValueError, EntityNotFound))"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change2]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change2]' -q",
+      "id": "CT-M02-I-BE-036"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 166,
+      "name": "test_confirmation_rejects_unrelated_or_altered_payment[change3]",
+      "source_function": "test_confirmation_rejects_unrelated_or_altered_payment",
+      "variant": "change3",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == gym.membresias() == []",
+        "notify.assert_not_called()",
+        "pytest.raises((ValueError, EntityNotFound))"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change3]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change3]' -q",
+      "id": "CT-M02-I-BE-037"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 166,
+      "name": "test_confirmation_rejects_unrelated_or_altered_payment[change4]",
+      "source_function": "test_confirmation_rejects_unrelated_or_altered_payment",
+      "variant": "change4",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == gym.membresias() == []",
+        "notify.assert_not_called()",
+        "pytest.raises((ValueError, EntityNotFound))"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change4]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change4]' -q",
+      "id": "CT-M02-I-BE-038"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 166,
+      "name": "test_confirmation_rejects_unrelated_or_altered_payment[change5]",
+      "source_function": "test_confirmation_rejects_unrelated_or_altered_payment",
+      "variant": "change5",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == gym.membresias() == []",
+        "notify.assert_not_called()",
+        "pytest.raises((ValueError, EntityNotFound))"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change5]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change5]' -q",
+      "id": "CT-M02-I-BE-039"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 166,
+      "name": "test_confirmation_rejects_unrelated_or_altered_payment[change6]",
+      "source_function": "test_confirmation_rejects_unrelated_or_altered_payment",
+      "variant": "change6",
+      "parameter_names": [
+        "change"
+      ],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == gym.membresias() == []",
+        "notify.assert_not_called()",
+        "pytest.raises((ValueError, EntityNotFound))"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change6]",
+      "command": "python -m pytest 'tests/clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment[change6]' -q",
+      "id": "CT-M02-I-BE-040"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 177,
+      "name": "test_unpaid_complete_session_neither_creates_client_nor_expires_processing_payment",
+      "source_function": "test_unpaid_complete_session_neither_creates_client_nor_expires_processing_payment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "payments.confirm_return(sid)['confirmed'] is False",
+        "gym.repository.state['preregistros'][0]['estado'] == 'PENDIENTE'",
+        "gym.clientes_normalized() == []"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_unpaid_complete_session_neither_creates_client_nor_expires_processing_payment",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_unpaid_complete_session_neither_creates_client_nor_expires_processing_payment -q",
+      "id": "CT-M02-I-BE-041"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 189,
+      "name": "test_expiration_archives_request_and_releases_promo_once_then_allows_new_attempt",
+      "source_function": "test_expiration_archives_request_and_releases_promo_once_then_allows_new_attempt",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.promociones()[0]['usos_actuales'] == 1",
+        "gym.repository.state['preregistros'][0]['estado'] == 'EXPIRADO'",
+        "gym.promociones()[0]['usos_actuales'] == 0"
+      ],
+      "checks_in_source": 7,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_expiration_archives_request_and_releases_promo_once_then_allows_new_attempt",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_expiration_archives_request_and_releases_promo_once_then_allows_new_attempt -q",
+      "id": "CT-M02-I-BE-042"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 209,
+      "name": "test_periodic_reconciliation_preserves_uncertain_payment_and_confirms_late_paid_session",
+      "source_function": "test_periodic_reconciliation_preserves_uncertain_payment_and_confirms_late_paid_session",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.repository.state['preregistros'][0]['estado'] == 'PENDIENTE'",
+        "len(gym.clientes_normalized()) == 1",
+        "gym.repository.state['preregistros'][0]['estado'] == 'CONVERTIDO'"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_periodic_reconciliation_preserves_uncertain_payment_and_confirms_late_paid_session",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_periodic_reconciliation_preserves_uncertain_payment_and_confirms_late_paid_session -q",
+      "id": "CT-M02-I-BE-043"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 222,
+      "name": "test_periodic_reconciliation_expires_open_session_before_archiving",
+      "source_function": "test_periodic_reconciliation_expires_open_session_before_archiving",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "payments.archive_due_preregistrations('2000-01-01T00:00:00+00:00') == 0",
+        "gateway.sessions[result['payment']['session_id']]['status'] == 'expired'",
+        "gym.repository.state['preregistros'][0]['estado'] == 'EXPIRADO'"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_periodic_reconciliation_expires_open_session_before_archiving",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_periodic_reconciliation_expires_open_session_before_archiving -q",
+      "id": "CT-M02-I-BE-044"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 232,
+      "name": "test_webhook_before_checkout_attachment_and_parallel_confirmations_do_not_duplicate",
+      "source_function": "test_webhook_before_checkout_attachment_and_parallel_confirmations_do_not_duplicate",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(gym.clientes_normalized()) == len(gym.membresias()) == 1",
+        "gym.repository.state['preregistros'][0]['estado'] == 'CONVERTIDO'"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_webhook_before_checkout_attachment_and_parallel_confirmations_do_not_duplicate",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_webhook_before_checkout_attachment_and_parallel_confirmations_do_not_duplicate -q",
+      "id": "CT-M02-I-BE-045"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 248,
+      "name": "test_deleted_customer_is_not_resurrected_by_replayed_payment",
+      "source_function": "test_deleted_customer_is_not_resurrected_by_replayed_payment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == gym.membresias() == []",
+        "payments.register_public(PAYLOAD)['payment']['session_id'] != sid",
+        "pytest.raises(EntityNotFound)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_deleted_customer_is_not_resurrected_by_replayed_payment",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_deleted_customer_is_not_resurrected_by_replayed_payment -q",
+      "id": "CT-M02-I-BE-046"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 260,
+      "name": "test_admin_registration_still_supports_unpaid_clients_but_cannot_duplicate_a_pending_public_identity",
+      "source_function": "test_admin_registration_still_supports_unpaid_clients_but_cannot_duplicate_a_pending_public_identity",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "saved['membresia']['estado_pago'] == 'PENDIENTE'",
+        "saved['cliente']['origen_registro'] == 'ADMIN'",
+        "len(gym.clientes_normalized()) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_admin_registration_still_supports_unpaid_clients_but_cannot_duplicate_a_pending_public_identity",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_admin_registration_still_supports_unpaid_clients_but_cannot_duplicate_a_pending_public_identity -q",
+      "id": "CT-M02-I-BE-047"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 271,
+      "name": "test_lost_attachment_reuses_the_same_checkout_on_retry",
+      "source_function": "test_lost_attachment_reuses_the_same_checkout_on_retry",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "'checkout_url' not in first['payment']",
+        "len(set(gateway.created)) == 1 and len(gateway.sessions) == 1",
+        "retry['payment']['checkout_url']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_lost_attachment_reuses_the_same_checkout_on_retry",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_lost_attachment_reuses_the_same_checkout_on_retry -q",
+      "id": "CT-M02-I-BE-048"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 289,
+      "name": "test_old_uncertain_creation_is_recovered_without_creating_a_second_checkout",
+      "source_function": "test_old_uncertain_creation_is_recovered_without_creating_a_second_checkout",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "retry['payment']['session_id'] == result['payment']['session_id']",
+        "len(gateway.created) == before"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_old_uncertain_creation_is_recovered_without_creating_a_second_checkout",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_old_uncertain_creation_is_recovered_without_creating_a_second_checkout -q",
+      "id": "CT-M02-I-BE-049"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 300,
+      "name": "test_unstarted_expired_request_is_archived_only_after_successful_provider_search",
+      "source_function": "test_unstarted_expired_request_is_archived_only_after_successful_provider_search",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.repository.state['preregistros'][0]['estado'] == 'PENDIENTE'",
+        "gym.repository.state['preregistros'][0]['estado'] == 'EXPIRADO'",
+        "gateway.created == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_unstarted_expired_request_is_archived_only_after_successful_provider_search",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_unstarted_expired_request_is_archived_only_after_successful_provider_search -q",
+      "id": "CT-M02-I-BE-050"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 314,
+      "name": "test_google_identity_is_verified_and_copied_only_after_payment",
+      "source_function": "test_google_identity_is_verified_and_copied_only_after_payment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.clientes_normalized() == []",
+        "gym.repository.state['preregistros'][0]['google_sub'] == 'google-local'",
+        "gym.repository.state['clientes'][0]['google_sub'] == 'google-local'"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_google_identity_is_verified_and_copied_only_after_payment",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_google_identity_is_verified_and_copied_only_after_payment -q",
+      "id": "CT-M02-I-BE-051"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "integracion",
+      "path": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "line": 326,
+      "name": "test_reserved_plan_cannot_be_deleted_or_repriced_during_payment",
+      "source_function": "test_reserved_plan_cannot_be_deleted_or_repriced_during_payment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "setup"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.latest_membership(confirmed['id_cliente'])['monto_pago'] == 79",
+        "pytest.raises(ValueError, match='solicitudes')"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/clientes/integracion/test_public_preregistrations.py::test_reserved_plan_cannot_be_deleted_or_repriced_during_payment",
+      "command": "python -m pytest tests/clientes/integracion/test_public_preregistrations.py::test_reserved_plan_cannot_be_deleted_or_repriced_during_payment -q",
+      "id": "CT-M02-I-BE-052"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "postgres",
+      "path": "backend/tests/clientes/postgres/test_client_deletion_postgres.py",
+      "line": 47,
+      "name": "test_borrar_cliente_conserva_venta_pagada_detalles_y_otro_cliente",
+      "source_function": "test_borrar_cliente_conserva_venta_pagada_detalles_y_otro_cliente",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "base_database",
+        "clear",
+        "monkeypatch"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "[r['id_cliente'] for r in database.rows('CLIENTES')] == [2]",
+        "[r['id_cliente'] for r in database.rows('ASISTENCIA')] == [2]",
+        "sorted(database.rows('VENTAS'), key=lambda r: r['id_venta']) == expected"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/clientes/postgres/test_client_deletion_postgres.py::test_borrar_cliente_conserva_venta_pagada_detalles_y_otro_cliente",
+      "command": "python -m pytest tests/clientes/postgres/test_client_deletion_postgres.py::test_borrar_cliente_conserva_venta_pagada_detalles_y_otro_cliente -q",
+      "id": "CT-M02-P-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "postgres",
+      "path": "backend/tests/clientes/postgres/test_client_deletion_postgres.py",
+      "line": 68,
+      "name": "test_fallo_del_borrado_revierte_desvinculacion_y_copias_del_comprador",
+      "source_function": "test_fallo_del_borrado_revierte_desvinculacion_y_copias_del_comprador",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "base_database",
+        "clear",
+        "monkeypatch"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "{t: database.rows(t) for t in before} == before",
+        "len(gym.repository.state['clientes']) == 2",
+        "all(r['id_cliente'] for r in gym.repository.state['pedidos_tienda'])"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/clientes/postgres/test_client_deletion_postgres.py::test_fallo_del_borrado_revierte_desvinculacion_y_copias_del_comprador",
+      "command": "python -m pytest tests/clientes/postgres/test_client_deletion_postgres.py::test_fallo_del_borrado_revierte_desvinculacion_y_copias_del_comprador -q",
+      "id": "CT-M02-P-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "postgres",
+      "path": "backend/tests/clientes/postgres/test_client_deletion_postgres.py",
+      "line": 87,
+      "name": "test_venta_concurrente_obliga_recalcular_y_tambien_se_conserva",
+      "source_function": "test_venta_concurrente_obliga_recalcular_y_tambien_se_conserva",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "base_database",
+        "clear",
+        "monkeypatch"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "remote.commits == 2",
+        "sales[2]['id_cliente'] == 2",
+        "sales[identity]['id_cliente'] is None"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/clientes/postgres/test_client_deletion_postgres.py::test_venta_concurrente_obliga_recalcular_y_tambien_se_conserva",
+      "command": "python -m pytest tests/clientes/postgres/test_client_deletion_postgres.py::test_venta_concurrente_obliga_recalcular_y_tambien_se_conserva -q",
+      "id": "CT-M02-P-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "postgres",
+      "path": "backend/tests/clientes/postgres/test_public_preregistrations_postgres.py",
+      "line": 30,
+      "name": "test_real_public_registration_is_private_and_does_not_insert_customers",
+      "source_function": "test_real_public_registration_is_private_and_does_not_insert_customers",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clear",
+        "monkeypatch"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "first == retry",
+        "database.rows('CLIENTES') == database.rows('MEMBRESIA') == []",
+        "len(rows) == 1 and rows[0]['estado'] == 'PENDIENTE'"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/clientes/postgres/test_public_preregistrations_postgres.py::test_real_public_registration_is_private_and_does_not_insert_customers",
+      "command": "python -m pytest tests/clientes/postgres/test_public_preregistrations_postgres.py::test_real_public_registration_is_private_and_does_not_insert_customers -q",
+      "id": "CT-M02-P-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "postgres",
+      "path": "backend/tests/clientes/postgres/test_public_preregistrations_postgres.py",
+      "line": 45,
+      "name": "test_conversion_is_atomic_and_retryable_after_a_database_failure",
+      "source_function": "test_conversion_is_atomic_and_retryable_after_a_database_failure",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clear",
+        "monkeypatch"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "confirmed['confirmed']",
+        "len(database.rows('CLIENTES')) == len(database.rows('MEMBRESIA')) == 1",
+        "database.rows('MEMBRESIA')[0]['estado_pago'] == 'PAGADO'"
+      ],
+      "checks_in_source": 8,
+      "selector": "tests/clientes/postgres/test_public_preregistrations_postgres.py::test_conversion_is_atomic_and_retryable_after_a_database_failure",
+      "command": "python -m pytest tests/clientes/postgres/test_public_preregistrations_postgres.py::test_conversion_is_atomic_and_retryable_after_a_database_failure -q",
+      "id": "CT-M02-P-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "postgres",
+      "path": "backend/tests/clientes/postgres/test_public_preregistrations_postgres.py",
+      "line": 71,
+      "name": "test_two_servers_confirm_the_same_checkout_without_duplicate_customers",
+      "source_function": "test_two_servers_confirm_the_same_checkout_without_duplicate_customers",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clear",
+        "monkeypatch"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "all(c['confirmed'] for c in confirmations)",
+        "confirmations[0]['id_cliente'] == confirmations[1]['id_cliente']",
+        "len(database.rows('CLIENTES')) == len(database.rows('MEMBRESIA')) == 1"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/postgres/test_public_preregistrations_postgres.py::test_two_servers_confirm_the_same_checkout_without_duplicate_customers",
+      "command": "python -m pytest tests/clientes/postgres/test_public_preregistrations_postgres.py::test_two_servers_confirm_the_same_checkout_without_duplicate_customers -q",
+      "id": "CT-M02-P-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "postgres",
+      "path": "backend/tests/clientes/postgres/test_public_preregistrations_postgres.py",
+      "line": 86,
+      "name": "test_two_servers_prepare_same_identity_without_duplicate_requests",
+      "source_function": "test_two_servers_prepare_same_identity_without_duplicate_requests",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clear",
+        "monkeypatch"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "requests[0]['preregistro']['token'] == requests[1]['preregistro']['token']",
+        "len(database.rows('PREREGISTROS_MEMBRESIA')) == 1",
+        "database.rows('CLIENTES') == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/postgres/test_public_preregistrations_postgres.py::test_two_servers_prepare_same_identity_without_duplicate_requests",
+      "command": "python -m pytest tests/clientes/postgres/test_public_preregistrations_postgres.py::test_two_servers_prepare_same_identity_without_duplicate_requests -q",
+      "id": "CT-M02-P-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "clientes",
+      "type": "postgres",
+      "path": "backend/tests/clientes/postgres/test_public_preregistrations_postgres.py",
+      "line": 99,
+      "name": "test_expiry_and_payment_reconciliation_never_delete_a_paid_customer",
+      "source_function": "test_expiry_and_payment_reconciliation_never_delete_a_paid_customer",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clear",
+        "monkeypatch"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "len(database.rows('CLIENTES')) == len(database.rows('MEMBRESIA')) == 1",
+        "database.rows('PREREGISTROS_MEMBRESIA')[0]['estado'] == 'CONVERTIDO'",
+        "payments.confirm_return(sid)['confirmed']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/clientes/postgres/test_public_preregistrations_postgres.py::test_expiry_and_payment_reconciliation_never_delete_a_paid_customer",
+      "command": "python -m pytest tests/clientes/postgres/test_public_preregistrations_postgres.py::test_expiry_and_payment_reconciliation_never_delete_a_paid_customer -q",
+      "id": "CT-M02-P-BE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 61,
+      "name": "el registro público guarda una solicitud temporal sin añadir un cliente ni un código ficticio",
+      "source_function": "'el registro público guarda una solicitud temporal sin añadir un cliente ni un código ficticio'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(v.setup.registeredPreregistration.token, token)",
+        "assert.equal(v.setup.registeredClient, undefined)",
+        "assert.equal(v.gym.members.length, 0)"
+      ],
+      "checks_in_source": 5,
+      "selector": "el registro público guarda una solicitud temporal sin añadir un cliente ni un código ficticio",
+      "command": "node --test '--test-name-pattern=^el\\ registro\\ público\\ guarda\\ una\\ solicitud\\ temporal\\ sin\\ añadir\\ un\\ cliente\\ ni\\ un\\ código\\ ficticio$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 79,
+      "name": "el servicio consulta los catálogos correctos y normaliza sus IDs",
+      "source_function": "'el servicio consulta los catálogos correctos y normaliza sus IDs'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(requests, ['/planes-membresia', '/promociones/vigentes-publico'])",
+        "assert.equal(result.plans[0].id, 'pm-41')",
+        "assert.deepEqual(result.promotions[0].appliesTo, ['pm-41'])"
+      ],
+      "checks_in_source": 4,
+      "selector": "el servicio consulta los catálogos correctos y normaliza sus IDs",
+      "command": "node --test '--test-name-pattern=^el\\ servicio\\ consulta\\ los\\ catálogos\\ correctos\\ y\\ normaliza\\ sus\\ IDs$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 91,
+      "name": "el alta administrativa usa planes remotos y promociones aplicables, sin opciones fijas",
+      "source_function": "'el alta administrativa usa planes remotos y promociones aplicables, sin opciones fijas'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(props.editorPlans.map(p => p.name), ['PLAN MAÑANA', 'FIN DE SEMANA'])",
+        "assert.equal(v.setup.form.plan, 'PLAN MAÑANA')",
+        "assert.deepEqual(v.setup.availablePromotions.map(p => p.id_promocion), [8])"
+      ],
+      "checks_in_source": 9,
+      "selector": "el alta administrativa usa planes remotos y promociones aplicables, sin opciones fijas",
+      "command": "node --test '--test-name-pattern=^el\\ alta\\ administrativa\\ usa\\ planes\\ remotos\\ y\\ promociones\\ aplicables,\\ sin\\ opciones\\ fijas$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 115,
+      "name": "carga fallida permite reintentar sin perder el borrador ni registrar con precios locales",
+      "source_function": "'carga fallida permite reintentar sin perder el borrador ni registrar con precios locales'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(saves, 0)",
+        "assert.match(v.setup.submitError, /Catálogo indisponible/)",
+        "assert.equal(v.setup.clientEditorProps.canSaveClient, false)"
+      ],
+      "checks_in_source": 7,
+      "selector": "carga fallida permite reintentar sin perder el borrador ni registrar con precios locales",
+      "command": "node --test '--test-name-pattern=^carga\\ fallida\\ permite\\ reintentar\\ sin\\ perder\\ el\\ borrador\\ ni\\ registrar\\ con\\ precios\\ locales$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 142,
+      "name": "editar conserva plan retirado, promoción histórica e importe cero",
+      "source_function": "'editar conserva plan retirado, promoción histórica e importe cero'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(v.setup.form.plan, 'PLAN HISTÓRICO')",
+        "assert(v.setup.clientEditorProps.editorPlans.some(p => p.name === 'PLAN HISTÓRICO'))",
+        "assert(v.setup.availablePromotions.some(p => p.id_promocion === 11))"
+      ],
+      "checks_in_source": 7,
+      "selector": "editar conserva plan retirado, promoción histórica e importe cero",
+      "command": "node --test '--test-name-pattern=^editar\\ conserva\\ plan\\ retirado,\\ promoción\\ histórica\\ e\\ importe\\ cero$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 166,
+      "name": "la edición enviada al servidor conserva el descriptor de promoción existente",
+      "source_function": "'la edición enviada al servidor conserva el descriptor de promoción existente'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(sent.promocion, 'Oferta contratada')",
+        "assert.equal(v.gym.members[0].membershipPrice, 0)"
+      ],
+      "checks_in_source": 2,
+      "selector": "la edición enviada al servidor conserva el descriptor de promoción existente",
+      "command": "node --test '--test-name-pattern=^la\\ edición\\ enviada\\ al\\ servidor\\ conserva\\ el\\ descriptor\\ de\\ promoción\\ existente$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 182,
+      "name": "registro público calcula descuentos remotos y descarta promociones futuras, agotadas o ajenas",
+      "source_function": "'registro público calcula descuentos remotos y descarta promociones futuras, agotadas o ajenas'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(requests, ['/planes-membresia', '/promociones/vigentes-publico'])",
+        "assert.deepEqual(v.setup.planOptions.map(p => [p.id, p.price]), [['PLAN MAÑANA', 80], ['FIN DE SEMANA', 170]])",
+        "assert.equal(v.setup.form.plan, 'PLAN MAÑANA')"
+      ],
+      "checks_in_source": 5,
+      "selector": "registro público calcula descuentos remotos y descarta promociones futuras, agotadas o ajenas",
+      "command": "node --test '--test-name-pattern=^registro\\ público\\ calcula\\ descuentos\\ remotos\\ y\\ descarta\\ promociones\\ futuras,\\ agotadas\\ o\\ ajenas$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 196,
+      "name": "registro público no inventa planes cuando el catálogo está vacío o falla",
+      "source_function": "'registro público no inventa planes cuando el catálogo está vacío o falla'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(v.setup.planOptions, [])",
+        "assert.equal(v.setup.canRegister, false)",
+        "assert.equal(calls, 0)"
+      ],
+      "checks_in_source": 4,
+      "selector": "registro público no inventa planes cuando el catálogo está vacío o falla",
+      "command": "node --test '--test-name-pattern=^registro\\ público\\ no\\ inventa\\ planes\\ cuando\\ el\\ catálogo\\ está\\ vacío\\ o\\ falla$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "line": 213,
+      "name": "catálogos mal formados impiden el alta y una respuesta tardía no se publica tras salir",
+      "source_function": "'catálogos mal formados impiden el alta y una respuesta tardía no se publica tras salir'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.rejects(service.loadClientMembershipCatalog(), /datos incompletos o inválidos/)",
+        "assert.equal(v.setup.catalogLoading, true)",
+        "assert.equal(v.setup.canRegister, false)"
+      ],
+      "checks_in_source": 4,
+      "selector": "catálogos mal formados impiden el alta y una respuesta tardía no se publica tras salir",
+      "command": "node --test '--test-name-pattern=^catálogos\\ mal\\ formados\\ impiden\\ el\\ alta\\ y\\ una\\ respuesta\\ tardía\\ no\\ se\\ publica\\ tras\\ salir$' tests/clientes/interfaz/client-catalog.test.js",
+      "id": "CT-M02-F-FE-009"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 33,
+      "name": "error de verificación termina la carga y permite reintentar la misma sesión",
+      "source_function": "'error de verificación termina la carga y permite reintentar la misma sesión'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(view.setup.confirmationState, 'error')",
+        "assert.equal(view.setup.resultStyle.title, 'No se pudo verificar el pago')",
+        "assert.equal(view.setup.canRetryConfirmation, true)"
+      ],
+      "checks_in_source": 8,
+      "selector": "error de verificación termina la carga y permite reintentar la misma sesión",
+      "command": "node --test '--test-name-pattern=^error\\ de\\ verificación\\ termina\\ la\\ carga\\ y\\ permite\\ reintentar\\ la\\ misma\\ sesión$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-010"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 45,
+      "name": "el pago pendiente se distingue de la carga y permite volver a consultar",
+      "source_function": "'el pago pendiente se distingue de la carga y permite volver a consultar'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(view.setup.confirmationState, 'pending')",
+        "assert.equal(view.setup.resultStyle.title, 'Pago pendiente de confirmación')",
+        "assert.equal(view.setup.canRetryConfirmation, true)"
+      ],
+      "checks_in_source": 3,
+      "selector": "el pago pendiente se distingue de la carga y permite volver a consultar",
+      "command": "node --test '--test-name-pattern=^el\\ pago\\ pendiente\\ se\\ distingue\\ de\\ la\\ carga\\ y\\ permite\\ volver\\ a\\ consultar$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-011"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 51,
+      "name": "no muestra confirmado el pago de otro cliente",
+      "source_function": "'no muestra confirmado el pago de otro cliente'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(view.setup.confirmationState, 'error')",
+        "assert.match(view.setup.confirmationError, /no corresponde/)"
+      ],
+      "checks_in_source": 2,
+      "selector": "no muestra confirmado el pago de otro cliente",
+      "command": "node --test '--test-name-pattern=^no\\ muestra\\ confirmado\\ el\\ pago\\ de\\ otro\\ cliente$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-012"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 56,
+      "name": "retorno de preregistro usa su token y muestra el cliente solo después de confirmar",
+      "source_function": "'retorno de preregistro usa su token y muestra el cliente solo después de confirmar'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(view.setup.requestLabel, 'Solicitud 12345678')",
+        "assert.equal(view.setup.confirmationState, 'confirmed')",
+        "assert.equal(view.setup.requestLabel, 'SGCLI042')"
+      ],
+      "checks_in_source": 3,
+      "selector": "retorno de preregistro usa su token y muestra el cliente solo después de confirmar",
+      "command": "node --test '--test-name-pattern=^retorno\\ de\\ preregistro\\ usa\\ su\\ token\\ y\\ muestra\\ el\\ cliente\\ solo\\ después\\ de\\ confirmar$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-013"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 66,
+      "name": "retorno de preregistro rechaza el token de otra solicitud",
+      "source_function": "'retorno de preregistro rechaza el token de otra solicitud'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(view.setup.confirmationState, 'error')",
+        "assert.match(view.setup.confirmationError, /no corresponde/)"
+      ],
+      "checks_in_source": 2,
+      "selector": "retorno de preregistro rechaza el token de otra solicitud",
+      "command": "node --test '--test-name-pattern=^retorno\\ de\\ preregistro\\ rechaza\\ el\\ token\\ de\\ otra\\ solicitud$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-014"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 74,
+      "name": "solo permite una verificación en curso",
+      "source_function": "'solo permite una verificación en curso'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 1)",
+        "assert.equal(view.setup.confirmationState, 'confirmed')"
+      ],
+      "checks_in_source": 2,
+      "selector": "solo permite una verificación en curso",
+      "command": "node --test '--test-name-pattern=^solo\\ permite\\ una\\ verificación\\ en\\ curso$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-015"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 81,
+      "name": "descarta respuesta de una ruta anterior",
+      "source_function": "'descarta respuesta de una ruta anterior'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.notEqual(view.setup.confirmationState, 'confirmed')"
+      ],
+      "checks_in_source": 1,
+      "selector": "descarta respuesta de una ruta anterior",
+      "command": "node --test '--test-name-pattern=^descarta\\ respuesta\\ de\\ una\\ ruta\\ anterior$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-016"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 87,
+      "name": "enlace sin sesión falla sin consultar el backend",
+      "source_function": "'enlace sin sesión falla sin consultar el backend'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 0)",
+        "assert.equal(view.setup.confirmationState, 'error')",
+        "assert.equal(view.setup.canRetryConfirmation, false)"
+      ],
+      "checks_in_source": 3,
+      "selector": "enlace sin sesión falla sin consultar el backend",
+      "command": "node --test '--test-name-pattern=^enlace\\ sin\\ sesión\\ falla\\ sin\\ consultar\\ el\\ backend$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-017"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 98,
+      "name": "pago manual bloquea clics repetidos y publica la ficha guardada",
+      "source_function": "'pago manual bloquea clics repetidos y publica la ficha guardada'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(state.confirmingPaymentClientId.value, client.id)",
+        "assert.equal(calls, 1)",
+        "assert.equal(state.confirmingPaymentClientId.value, '')"
+      ],
+      "checks_in_source": 4,
+      "selector": "pago manual bloquea clics repetidos y publica la ficha guardada",
+      "command": "node --test '--test-name-pattern=^pago\\ manual\\ bloquea\\ clics\\ repetidos\\ y\\ publica\\ la\\ ficha\\ guardada$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-018"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 108,
+      "name": "pago manual fallido libera el botón y conserva la ficha pendiente",
+      "source_function": "'pago manual fallido libera el botón y conserva la ficha pendiente'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(state.confirmingPaymentClientId.value, '')",
+        "assert.equal(state.viewingClient.value.paymentStatus, 'PENDIENTE')",
+        "assert.equal(state.feedbackTone.value, 'error')"
+      ],
+      "checks_in_source": 3,
+      "selector": "pago manual fallido libera el botón y conserva la ficha pendiente",
+      "command": "node --test '--test-name-pattern=^pago\\ manual\\ fallido\\ libera\\ el\\ botón\\ y\\ conserva\\ la\\ ficha\\ pendiente$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-019"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 116,
+      "name": "activar sincroniza los detalles y cierra la confirmación",
+      "source_function": "'activar sincroniza los detalles y cierra la confirmación'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(state.viewingClient.value.membershipStatus, 'ACTIVO')",
+        "assert.equal(state.pendingActivation.value, null)"
+      ],
+      "checks_in_source": 2,
+      "selector": "activar sincroniza los detalles y cierra la confirmación",
+      "command": "node --test '--test-name-pattern=^activar\\ sincroniza\\ los\\ detalles\\ y\\ cierra\\ la\\ confirmación$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-020"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 122,
+      "name": "el retorno muestra activación automática únicamente con estado confirmado por servidor",
+      "source_function": "'el retorno muestra activación automática únicamente con estado confirmado por servidor'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(view.setup.resultStyle.description, /automáticamente/)",
+        "assert.equal(view.setup.resultStyle.status, 'Pago confirmado; renovación activa')",
+        "assert.match(first.setup.resultStyle.description, /primera membresía/)"
+      ],
+      "checks_in_source": 4,
+      "selector": "el retorno muestra activación automática únicamente con estado confirmado por servidor",
+      "command": "node --test '--test-name-pattern=^el\\ retorno\\ muestra\\ activación\\ automática\\ únicamente\\ con\\ estado\\ confirmado\\ por\\ servidor$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-021"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "line": 135,
+      "name": "abrir clientes fuerza actualización aunque la lista esté en caché",
+      "source_function": "'abrir clientes fuerza actualización aunque la lista esté en caché'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(forces, [true])"
+      ],
+      "checks_in_source": 1,
+      "selector": "abrir clientes fuerza actualización aunque la lista esté en caché",
+      "command": "node --test '--test-name-pattern=^abrir\\ clientes\\ fuerza\\ actualización\\ aunque\\ la\\ lista\\ esté\\ en\\ caché$' tests/clientes/interfaz/client-flow-control.test.js",
+      "id": "CT-M02-F-FE-022"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/formularios.test.js",
+      "line": 5,
+      "name": "client editor and membership actions preserve the actual view flow after extraction",
+      "source_function": "'client editor and membership actions preserve the actual view flow after extraction'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(submitted.nombre, 'Ana editada')",
+        "assert.equal(submitted.id_usuario, 'SGCLI001')",
+        "assert.equal(setup.isEditorOpen, false)"
+      ],
+      "checks_in_source": 9,
+      "selector": "client editor and membership actions preserve the actual view flow after extraction",
+      "command": "node --test '--test-name-pattern=^client\\ editor\\ and\\ membership\\ actions\\ preserve\\ the\\ actual\\ view\\ flow\\ after\\ extraction$' tests/clientes/interfaz/formularios.test.js",
+      "id": "CT-M02-F-FE-023"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/formularios.test.js",
+      "line": 30,
+      "name": "extracted client dialogs render their real form and membership details",
+      "source_function": "'extracted client dialogs render their real form and membership details'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(dialogs, /Ana editada/)",
+        "assert.match(dialogs, /ana@example.com/)",
+        "assert.match(dialogs, /Guardar cambios/)"
+      ],
+      "checks_in_source": 4,
+      "selector": "extracted client dialogs render their real form and membership details",
+      "command": "node --test '--test-name-pattern=^extracted\\ client\\ dialogs\\ render\\ their\\ real\\ form\\ and\\ membership\\ details$' tests/clientes/interfaz/formularios.test.js",
+      "id": "CT-M02-F-FE-024"
+    },
+    {
+      "component": "frontend",
+      "module": "clientes",
+      "type": "interfaz",
+      "path": "frontend/tests/clientes/interfaz/formularios.test.js",
+      "line": 43,
+      "name": "public registration rejects invalid email inline before sending a request",
+      "source_function": "'public registration rejects invalid email inline before sending a request'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 0)",
+        "assert.equal(setup.feedbackTone, 'error')",
+        "assert.match(setup.feedback, /Solo se permiten correos/)"
+      ],
+      "checks_in_source": 7,
+      "selector": "public registration rejects invalid email inline before sending a request",
+      "command": "node --test '--test-name-pattern=^public\\ registration\\ rejects\\ invalid\\ email\\ inline\\ before\\ sending\\ a\\ request$' tests/clientes/interfaz/formularios.test.js",
+      "id": "CT-M02-F-FE-025"
+    }
+  ]
+}

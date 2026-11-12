@@ -57,6 +57,11 @@
                       :title="student.motivo" :aria-label="`Registrar entrada de ${student.cliente.nombre}`"
                       @click="$emit('entry', student)"><LogIn :size="16" />{{ busy === `entry-${student.id_matricula}` ? 'Guardando…' : 'Registrar entrada' }}</button>
                     <small v-if="student.motivo" class="att-late-notice">{{ student.motivo }}</small>
+                    <small v-if="student.motivo_coincidencia && student.motivo_coincidencia !== student.motivo" class="att-late-notice">{{ student.motivo_coincidencia }}</small>
+                    <button v-if="student.asistencia_abierta" class="att-button"
+                      :disabled="Boolean(busy) || rosterLoading"
+                      :aria-label="`Registrar salida pendiente de ${student.cliente.nombre}`"
+                      @click="$emit('exit', student.asistencia_abierta)"><LogOut :size="16" />{{ busy === `exit-${student.asistencia_abierta.id_asistencia}` ? 'Guardando…' : 'Registrar salida pendiente' }}</button>
                   </template>
                   <span v-else class="att-muted att-small">Salida registrada</span>
                 </td>

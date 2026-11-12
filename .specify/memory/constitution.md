@@ -1,6 +1,6 @@
 # Constitución de AC Silver's GYM
 
-Versión: **1.1.0** · Adoptada: **2026-10-29** · Última modificación: **2026-10-29**.
+Versión: **1.2.0** · Adoptada: **2026-10-29** · Última modificación: **2026-11-09**.
 
 Esta constitución codifica decisiones observables en el repositorio y las reglas
 de documentación solicitadas en esta adopción. No certifica el estado de producción.
@@ -45,7 +45,9 @@ servidor. No registrar secretos, tokens o respuestas sensibles de proveedores.
 
 Usar los mecanismos actuales de dinero y redondeo; conservar el importe de la
 compra, incluso si vale cero. La verificación Stripe comprueba la sesión,
-importe, metadatos y modo. Pagar y activar son pasos distintos para membresías.
+importe, metadatos y modo. La primera membresía requiere activación administrativa;
+las renovaciones de una cuenta previamente activada se habilitan al confirmar el
+pago. Una renovación anticipada conserva los días de vigencia anteriores.
 Las fechas de negocio usan `America/Lima`; la vigencia incluye el día final.
 Mantener idempotencia y consistencia de stock ante reintentos.
 
@@ -73,3 +75,8 @@ la actualización; una plantilla no crea nuevos requisitos de producto.
 
 La versión 1.1.0 incorpora contexto obligatorio y trazabilidad por etapa como
 parte del [flujo de trabajo disponible](../guias/spec-driven.md).
+
+
+La versión 1.2.0 incorpora la regla indicada expresamente por el usuario el
+2026-11-09: activación administrativa solo en la primera membresía y renovación
+automática al confirmar el pago, conservando historial, vigencia e idempotencia.

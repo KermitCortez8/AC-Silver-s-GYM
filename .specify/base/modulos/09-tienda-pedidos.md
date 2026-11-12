@@ -36,13 +36,13 @@ descuento de existencias y cancelar un pedido pendiente para recuperarlas.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_venta_solo_descuenta_el_stock_de_la_tienda`, `test_venta_sin_stock_suficiente_no_cambia_nada`; [test_atomic_transactions_postgres.py](../../../backend/tests/test_atomic_transactions_postgres.py): `test_two_instances_cannot_sell_the_same_stock`. |
-| CA-02 | [store_routes.py](../../../backend/presentation/routes/store_routes.py) y [store_checkout_service.py](../../../backend/application/services/store_checkout_service.py); [test_stripe_checkout.py](../../../backend/tests/test_stripe_checkout.py) cubre el proveedor compartido. |
-| CA-03 | [test_partial_smell_fixes.py](../../../backend/tests/test_partial_smell_fixes.py): `test_administrative_cancel_closes_checkout_before_changing_order`; [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_cancelar_pedido_pendiente_devuelve_stock_a_la_tienda`. |
-| CA-04 | [test_partial_smell_fixes.py](../../../backend/tests/test_partial_smell_fixes.py): `test_failed_close_or_a_payment_race_does_not_cancel_the_order`; [store_rules.py](../../../backend/domain/services/store_rules.py). |
-| CA-05 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_order_breakdown_survives_persistence_using_its_saved_lines`; [test_priority_fixes.py](../../../backend/tests/test_priority_fixes.py): `test_orders_and_memberships_are_private_and_filtered`. |
-| CA-06 | [test_store_images.py](../../../backend/tests/test_store_images.py), [test_priority_fixes.py](../../../backend/tests/test_priority_fixes.py): `test_image_upload_requires_staff_but_listing_remains_public`. |
-| CA-07 | [test_inventario_tienda_stock.py](../../../backend/tests/test_inventario_tienda_stock.py): `test_borrar_producto_lo_manda_a_la_papelera_con_su_item`, `test_restaurar_producto_lo_devuelve_con_su_item`, `test_eliminar_definitivo_exige_pasar_antes_por_la_papelera`, `test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos`; [26-stock-edit-forms.test.js](../../../frontend/tests/26-stock-edit-forms.test.js) verifica la pestaña de Papelera tras la extracción de la vista. |
+| CA-01 | [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_venta_solo_descuenta_el_stock_de_la_tienda`, `test_venta_sin_stock_suficiente_no_cambia_nada`; [test_atomic_transactions_postgres.py](../../../backend/tests/transversales/postgres/test_atomic_transactions_postgres.py): `test_two_instances_cannot_sell_the_same_stock`. |
+| CA-02 | [store_routes.py](../../../backend/presentation/routes/store_routes.py) y [store_checkout_service.py](../../../backend/application/services/store_checkout_service.py); [test_stripe_checkout.py](../../../backend/tests/membresias_pagos/integracion/test_stripe_checkout.py) cubre el proveedor compartido. |
+| CA-03 | [test_partial_smell_fixes.py](../../../backend/tests/transversales/integracion/test_partial_smell_fixes.py): `test_administrative_cancel_closes_checkout_before_changing_order`; [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_cancelar_pedido_pendiente_devuelve_stock_a_la_tienda`. |
+| CA-04 | [test_partial_smell_fixes.py](../../../backend/tests/transversales/integracion/test_partial_smell_fixes.py): `test_failed_close_or_a_payment_race_does_not_cancel_the_order`; [store_rules.py](../../../backend/domain/services/store_rules.py). |
+| CA-05 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_order_breakdown_survives_persistence_using_its_saved_lines`; [test_priority_fixes.py](../../../backend/tests/transversales/integracion/test_priority_fixes.py): `test_orders_and_memberships_are_private_and_filtered`. |
+| CA-06 | [test_store_images.py](../../../backend/tests/tienda_pedidos/integracion/test_store_images.py), [test_priority_fixes.py](../../../backend/tests/transversales/integracion/test_priority_fixes.py): `test_image_upload_requires_staff_but_listing_remains_public`. |
+| CA-07 | [test_inventario_tienda_stock.py](../../../backend/tests/inventario/integracion/test_inventario_tienda_stock.py): `test_borrar_producto_lo_manda_a_la_papelera_con_su_item`, `test_restaurar_producto_lo_devuelve_con_su_item`, `test_eliminar_definitivo_exige_pasar_antes_por_la_papelera`, `test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos`; [tienda_pedidos · formularios.test.js](../../../frontend/tests/tienda_pedidos/interfaz/formularios.test.js) verifica la pestaña de Papelera tras la extracción de la vista. |
 
 ## 4. Technical Constraints
 
@@ -80,6 +80,9 @@ No aceptar SVG nuevos aunque se listen SVG históricos.
   devolver el conflicto/error correspondiente.
 - Pago recibido para pedido cancelado: señalar que requiere reembolso.
 - Pedido histórico sin detalles: conservar el total conocido sin inventar líneas.
+- Cuenta eliminada: conservar la venta y sus detalles, referencia de pago,
+  importes y copia del comprador; `id_cliente` queda nulo. Aplicar
+  [025_delete_clients_preserve_sales.sql](../../../backend/migrations/025_delete_clients_preserve_sales.sql).
 - Producto sin ítem vinculado: mantener su stock propio compatible con reglas actuales.
 - Archivo vacío, excedido o MIME incompatible: rechazar antes de almacenar.
 

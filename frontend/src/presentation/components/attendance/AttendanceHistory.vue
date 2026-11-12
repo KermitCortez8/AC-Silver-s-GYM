@@ -105,7 +105,7 @@
             </td>
             <td class="att-time" data-label="Salida">
               {{ shortTime(record.hora_salida)
-              }}<small
+              }}<small v-if="record.cierre_automatico">Cierre automático (3 h)</small><small
                 v-if="
                   record.fecha_salida && record.fecha_salida !== record.fecha
                 "
@@ -303,11 +303,12 @@ const exportRecords = async () => {
         Entrada: r.hora_entrada || r.hora,
         Salida: r.hora_salida || '',
         'Fecha de salida': r.hora_salida ? r.fecha_salida || r.fecha : '',
+        'Tipo de salida': r.cierre_automatico ? 'Cierre automático (3 h)' : r.hora_salida ? 'Registrada' : 'Pendiente',
         Estado: states[r.estado],
         'Zona horaria': 'America/Lima',
       })),
     );
-    sheet['!cols'] = Array(props.admin ? 10 : 8).fill({ wch: 24 });
+    sheet['!cols'] = Array(props.admin ? 11 : 9).fill({ wch: 24 });
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, 'Asistencias');
     XLSX.writeFile(workbook, 'asistencias.xlsx');

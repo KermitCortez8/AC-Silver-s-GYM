@@ -36,12 +36,12 @@ desactivar una cuenta y comprobar que su sesión deja de dar acceso.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_disabling_an_internal_account_revokes_an_existing_session`. |
-| CA-02 | [test_membership_expiration.py](../../../backend/tests/test_membership_expiration.py): `test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership`. |
-| CA-03 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_google_cannot_authenticate_or_link_an_inactive_internal_account`. |
-| CA-04 | [test_priority_fixes.py](../../../backend/tests/test_priority_fixes.py): `test_user_identity_is_unique_across_roles_and_stable_after_role_change`; concurrencia en [PostgreSQL](../../../backend/tests/test_atomic_transactions_postgres.py). |
-| CA-05 | [14-session-validation.test.js](../../../frontend/tests/14-session-validation.test.js) y [28-application-context.test.js](../../../frontend/tests/28-application-context.test.js). |
-| CA-06 | [37-public-navigation.test.js](../../../frontend/tests/37-public-navigation.test.js), [21-module-navigation.test.js](../../../frontend/tests/21-module-navigation.test.js) y [validación en navegador](../validaciones/navegacion-publica/validation.md). |
+| CA-01 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_disabling_an_internal_account_revokes_an_existing_session`. |
+| CA-02 | [test_membership_expiration.py](../../../backend/tests/membresias_pagos/integracion/test_membership_expiration.py): `test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership`. |
+| CA-03 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_google_cannot_authenticate_or_link_an_inactive_internal_account`. |
+| CA-04 | [test_priority_fixes.py](../../../backend/tests/transversales/integracion/test_priority_fixes.py): `test_user_identity_is_unique_across_roles_and_stable_after_role_change`; concurrencia en [PostgreSQL](../../../backend/tests/transversales/postgres/test_atomic_transactions_postgres.py). |
+| CA-05 | [session-validation.test.js](../../../frontend/tests/identidad_acceso/integracion/session-validation.test.js) y [application-context.test.js](../../../frontend/tests/paneles_configuracion/integracion/application-context.test.js). |
+| CA-06 | [public-navigation.test.js](../../../frontend/tests/identidad_acceso/integracion/public-navigation.test.js), [module-navigation.test.js](../../../frontend/tests/paneles_configuracion/integracion/module-navigation.test.js) y [validación en navegador](../validaciones/navegacion-publica/validation.md). |
 
 ## 4. Technical Constraints
 

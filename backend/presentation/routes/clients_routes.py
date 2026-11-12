@@ -4,6 +4,7 @@
 # Protege las operaciones internas con permisos de usuario.
 
 from __future__ import annotations
+from typing import Literal
 
 from presentation.error_handlers import http_error
 
@@ -28,6 +29,21 @@ from domain.services.gym_domain_service import PedidoCanceladoConPagoError
 from application.services.clients_service import ClientsService
 from domain.errors import EntityNotFound
 from presentation.dependencies import get_client_payments_service
+
+
+from pydantic import BaseModel, Field
+
+
+class RenewalCheckoutInput(BaseModel):
+    token: str = Field(min_length=1, max_length=160)
+    monto_pago: float = Field(gt=0, allow_inf_nan=False)
+
+
+class AdminRenewalInput(BaseModel):
+    id_membresia_origen: int = Field(gt=0)
+    monto_pago: float = Field(gt=0, allow_inf_nan=False)
+    metodo_pago: Literal['efectivo', 'stripe']
+    pago_recibido: bool = False
 
 
 router = APIRouter(tags=["clientes"])
@@ -178,3 +194,25 @@ def delete_cliente(
     clients_service.delete_client(
         f"SGCLI{id_cliente:03d}"
     )
+
+
+@router.get("/renovacion")
+def renewal_details(token: str = Query(min_length=1, max_length=160), payments=Depends(get_client_payments_service)):
+    return _payment_response(lambda: payments.renewal().details(token))
+
+
+@router.post("/renovacion/checkout")
+def renewal_checkout(payload: "RenewalCheckoutInput", payments=Depends(get_client_payments_service)):
+    return _payment_response(lambda: payments.renewal().checkout(payload.token, payload.monto_pago))
+
+
+@router.get("/clientes/{id_cliente}/renovacion")
+def admin_renewal_details(id_cliente: int, payments=Depends(get_client_payments_service),
+                          _current_user=Depends(require_admin_or_staff)):
+    return _payment_response(lambda: payments.renewal().admin_details(id_cliente))
+
+
+@router.post("/clientes/{id_cliente}/renovar-membresia")
+def admin_renewal(id_cliente: int, payload: AdminRenewalInput, payments=Depends(get_client_payments_service),
+                  _current_user=Depends(require_admin_or_staff)):
+    return _payment_response(lambda: payments.renew_admin(id_cliente, payload.model_dump()))

@@ -1,0 +1,276 @@
+{
+  "schema_version": 2,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "counts": {
+    "backend": {
+      "collected": 805,
+      "passed": 751,
+      "skipped": 54
+    },
+    "frontend": {
+      "collected": 372,
+      "passed": 372,
+      "skipped": 0
+    },
+    "total": 1177,
+    "passed": 1123,
+    "skipped": 54
+  },
+  "kind": "indice-catalogos-por-modulo",
+  "modules": [
+    {
+      "module": "identidad_acceso",
+      "directory": "01-identidad-acceso",
+      "catalog": "01-identidad-acceso/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 10,
+          "passed": 10,
+          "skipped": 0
+        },
+        "frontend": {
+          "collected": 19,
+          "passed": 19,
+          "skipped": 0
+        },
+        "total": 29,
+        "passed": 29,
+        "skipped": 0
+      },
+      "grouped_scenarios": 6
+    },
+    {
+      "module": "clientes",
+      "directory": "02-clientes",
+      "catalog": "02-clientes/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 66,
+          "passed": 58,
+          "skipped": 8
+        },
+        "frontend": {
+          "collected": 36,
+          "passed": 36,
+          "skipped": 0
+        },
+        "total": 102,
+        "passed": 94,
+        "skipped": 8
+      },
+      "grouped_scenarios": 9
+    },
+    {
+      "module": "membresias_pagos",
+      "directory": "03-membresias-pagos",
+      "catalog": "03-membresias-pagos/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 91,
+          "passed": 91,
+          "skipped": 0
+        },
+        "frontend": {
+          "collected": 17,
+          "passed": 17,
+          "skipped": 0
+        },
+        "total": 108,
+        "passed": 108,
+        "skipped": 0
+      },
+      "grouped_scenarios": 9
+    },
+    {
+      "module": "planes_promociones",
+      "directory": "04-planes-promociones",
+      "catalog": "04-planes-promociones/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 3,
+          "passed": 3,
+          "skipped": 0
+        },
+        "frontend": {
+          "collected": 10,
+          "passed": 10,
+          "skipped": 0
+        },
+        "total": 13,
+        "passed": 13,
+        "skipped": 0
+      },
+      "grouped_scenarios": 6
+    },
+    {
+      "module": "horarios_matriculas",
+      "directory": "05-horarios-matriculas",
+      "catalog": "05-horarios-matriculas/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 30,
+          "passed": 23,
+          "skipped": 7
+        },
+        "frontend": {
+          "collected": 8,
+          "passed": 8,
+          "skipped": 0
+        },
+        "total": 38,
+        "passed": 31,
+        "skipped": 7
+      },
+      "grouped_scenarios": 8
+    },
+    {
+      "module": "asistencias",
+      "directory": "06-asistencias",
+      "catalog": "06-asistencias/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 101,
+          "passed": 79,
+          "skipped": 22
+        },
+        "frontend": {
+          "collected": 17,
+          "passed": 17,
+          "skipped": 0
+        },
+        "total": 118,
+        "passed": 96,
+        "skipped": 22
+      },
+      "grouped_scenarios": 15
+    },
+    {
+      "module": "rutinas_progreso",
+      "directory": "07-rutinas-progreso",
+      "catalog": "07-rutinas-progreso/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 7,
+          "passed": 7,
+          "skipped": 0
+        },
+        "frontend": {
+          "collected": 8,
+          "passed": 8,
+          "skipped": 0
+        },
+        "total": 15,
+        "passed": 15,
+        "skipped": 0
+      },
+      "grouped_scenarios": 5
+    },
+    {
+      "module": "inventario",
+      "directory": "08-inventario",
+      "catalog": "08-inventario/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 63,
+          "passed": 63,
+          "skipped": 0
+        },
+        "frontend": {
+          "collected": 27,
+          "passed": 27,
+          "skipped": 0
+        },
+        "total": 90,
+        "passed": 90,
+        "skipped": 0
+      },
+      "grouped_scenarios": 7
+    },
+    {
+      "module": "tienda_pedidos",
+      "directory": "09-tienda-pedidos",
+      "catalog": "09-tienda-pedidos/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 5,
+          "passed": 5,
+          "skipped": 0
+        },
+        "frontend": {
+          "collected": 10,
+          "passed": 10,
+          "skipped": 0
+        },
+        "total": 15,
+        "passed": 15,
+        "skipped": 0
+      },
+      "grouped_scenarios": 8
+    },
+    {
+      "module": "paneles_configuracion",
+      "directory": "10-paneles-configuracion",
+      "catalog": "10-paneles-configuracion/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 18,
+          "passed": 18,
+          "skipped": 0
+        },
+        "frontend": {
+          "collected": 23,
+          "passed": 23,
+          "skipped": 0
+        },
+        "total": 41,
+        "passed": 41,
+        "skipped": 0
+      },
+      "grouped_scenarios": 6
+    },
+    {
+      "module": "notificaciones",
+      "directory": "11-notificaciones",
+      "catalog": "11-notificaciones/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 21,
+          "passed": 19,
+          "skipped": 2
+        },
+        "frontend": {
+          "collected": 0,
+          "passed": 0,
+          "skipped": 0
+        },
+        "total": 21,
+        "passed": 19,
+        "skipped": 2
+      },
+      "grouped_scenarios": 6
+    },
+    {
+      "module": "transversales",
+      "directory": "transversales",
+      "catalog": "transversales/catalogo-pruebas.json",
+      "counts": {
+        "backend": {
+          "collected": 390,
+          "passed": 375,
+          "skipped": 15
+        },
+        "frontend": {
+          "collected": 197,
+          "passed": 197,
+          "skipped": 0
+        },
+        "total": 587,
+        "passed": 572,
+        "skipped": 15
+      },
+      "grouped_scenarios": 4
+    }
+  ]
+}

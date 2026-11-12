@@ -18,7 +18,7 @@ class AttendanceRepository:
 
         with self.cache.lock:
             if not self.schema_checked:
-                self.database.validate_columns("ASISTENCIA", {"limite_salida", "salida_tardia"})
+                self.database.validate_columns("ASISTENCIA", {"limite_salida", "salida_tardia", "estado_asistencia", "cierre_automatico"})
                 self.schema_checked = True
             try:
                 saved = self.database.rpc("guardar_asistencia", {

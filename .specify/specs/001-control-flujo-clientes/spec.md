@@ -45,15 +45,15 @@ dada una membresía inválida, al registrar asistencia no se consume aforo.
 
 | Criterio | Evidencia prevista o ejecutada |
 | --- | --- |
-| CA-01 | [Pruebas](../../../backend/tests/test_admin_client_payment.py) y [verificación](quickstart.md). |
-| CA-02 | [Pruebas](../../../backend/tests/test_client_flow_control.py) y [verificación](quickstart.md). |
-| CA-03 | [Pruebas](../../../backend/tests/test_client_flow_control.py) y [verificación](quickstart.md). |
-| CA-04 | [Pruebas](../../../backend/tests/test_client_flow_control.py) y [verificación](quickstart.md). |
-| CA-05 | [Pruebas](../../../backend/tests/test_client_flow_control.py) y [verificación](quickstart.md). |
-| CA-06 | [Pruebas](../../../backend/tests/test_client_flow_control.py) y [verificación](quickstart.md). |
-| CA-07 | [Pruebas](../../../backend/tests/test_client_flow_control.py) y [verificación](quickstart.md). |
-| CA-08 | [Frontend](../../../frontend/tests/36-client-flow-control.test.js). |
-| CA-09 | [Frontend](../../../frontend/tests/36-client-flow-control.test.js). |
+| CA-01 | [Pruebas](../../../backend/tests/clientes/integracion/test_admin_client_payment.py) y [verificación](quickstart.md). |
+| CA-02 | [Pruebas](../../../backend/tests/transversales/integracion/test_client_flow_control.py) y [verificación](quickstart.md). |
+| CA-03 | [Pruebas](../../../backend/tests/transversales/integracion/test_client_flow_control.py) y [verificación](quickstart.md). |
+| CA-04 | [Pruebas](../../../backend/tests/transversales/integracion/test_client_flow_control.py) y [verificación](quickstart.md). |
+| CA-05 | [Pruebas](../../../backend/tests/transversales/integracion/test_client_flow_control.py) y [verificación](quickstart.md). |
+| CA-06 | [Pruebas](../../../backend/tests/transversales/integracion/test_client_flow_control.py) y [verificación](quickstart.md). |
+| CA-07 | [Pruebas](../../../backend/tests/transversales/integracion/test_client_flow_control.py) y [verificación](quickstart.md). |
+| CA-08 | [Frontend](../../../frontend/tests/clientes/interfaz/client-flow-control.test.js). |
+| CA-09 | [Frontend](../../../frontend/tests/clientes/interfaz/client-flow-control.test.js). |
 
 ### Functional Requirements
 

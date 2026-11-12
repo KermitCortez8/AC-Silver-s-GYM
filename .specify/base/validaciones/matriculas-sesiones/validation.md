@@ -67,7 +67,7 @@ ese contenedor; no se utilizaron las bases ni contenedores de la aplicación.
 | Comando / procedimiento | Resultado |
 | --- | --- |
 | `python -m pytest tests/ -q` desde backend con el contenedor de pruebas | 655 aprobados, 0 fallos, 0 omitidos |
-| `python -m pytest tests/test_schedule_sessions.py tests/test_schedule_attendance.py -q` | 31 aprobados tras el ajuste final del aviso de entrada futura |
+| `python -m pytest tests/horarios_matriculas/integracion/test_schedule_sessions.py tests/asistencias/integracion/test_schedule_attendance.py -q` | 31 aprobados tras el ajuste final del aviso de entrada futura |
 | `python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics` desde backend | 0 errores |
 | `npm test` desde frontend | 270 aprobados, 0 fallos, 0 omitidos |
 | `npm run build` desde frontend | Compilación correcta |

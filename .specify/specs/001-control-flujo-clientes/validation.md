@@ -36,7 +36,7 @@ con recorridos integrados, compatibilidad histórica y respuestas HTTP.
 | CA-06 | Fechas vacías e imposibles, último día y vencimiento | Sin entrada inválida; fecha final inclusiva |
 | CA-07 | Recorridos PUBLICO/ADMIN: pago, activación repetida, acceso, matrícula, cupo, entrada/salida y cancelación | Flujos integrados aprobados |
 
-Pruebas en [test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+Pruebas en [test_client_flow_control.py](../../../backend/tests/transversales/integracion/test_client_flow_control.py).
 Las suites existentes amplían la comprobación a errores HTTP, identidad, privacidad,
 permisos, Stripe simulado, concurrencia y transacciones.
 
@@ -50,7 +50,7 @@ clave sintética de CI únicamente como variable AUTH_SECRET_KEY del proceso.
 | --- | --- |
 | Primera suite backend sin AUTH_SECRET_KEY | 545 aprobados, 15 omitidos, 6 fallos de configuración; se corrigió el entorno de pruebas |
 | Regresiones antes de implementar | 24 fallos reproducidos, 1 aprobado |
-| `python -m pytest tests/test_client_flow_control.py -q` con clave sintética | 31 aprobados |
+| `python -m pytest tests/transversales/integracion/test_client_flow_control.py -q` con clave sintética | 31 aprobados |
 | `python -m pytest tests/ -q` con clave sintética y GYM_TEST_POSTGRES_CONTAINER | 597 aprobados, 0 omitidos, 0 fallos (incluidas 15 pruebas PostgreSQL) |
 | `python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics` desde backend | 0 errores |
 | `npm test` desde frontend | 257 aprobados, 0 fallos (incluidas 9 regresiones nuevas de UI) |
@@ -114,7 +114,7 @@ usuario añadió CA-08 y CA-09 a la misma feature y completó las tareas T013–
   se sustituye por la respuesta confirmada para actualizar estado y acciones del diálogo.
 - ClientDetailsDialog y ClientsView conectan estos estados con los botones reales.
 
-Regresiones en [36-client-flow-control.test.js](../../../frontend/tests/36-client-flow-control.test.js):
+Regresiones en [client-flow-control.test.js](../../../frontend/tests/clientes/interfaz/client-flow-control.test.js):
 9 aprobadas. Suite completa frontend: **257 aprobadas**. Build final: correcto.
 El backend no cambió en esta ampliación: conserva su ejecución de **597 aprobadas**.
 

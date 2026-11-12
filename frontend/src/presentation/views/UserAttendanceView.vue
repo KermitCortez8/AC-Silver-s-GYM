@@ -91,7 +91,7 @@
           </div>
           <div v-for="visit in day.generalVisits" :key="visit.id_asistencia" class="att-week-event att-week-general">
             <strong>Gimnasio general</strong>
-            <p>Entrada {{ shortTime(visit.hora_entrada || visit.hora) }}<br />Salida {{ shortTime(visit.hora_salida) }}</p>
+            <p>Entrada {{ shortTime(visit.hora_entrada || visit.hora) }}<br />{{ visit.cierre_automatico ? 'Cierre automático' : 'Salida' }} {{ shortTime(visit.hora_salida) }}</p>
             <span class="att-badge" :class="visit.estado">{{ states[visit.estado] }}</span>
           </div>
         </article>

@@ -77,6 +77,44 @@ notificación. Los documentos enlazan sus reglas y persistencia; no añaden tabl
 - **SC-004:** El validador documental termina sin errores; no se deriva de ello
   una métrica de rendimiento, cobertura funcional o disponibilidad en producción.
 
+### Batería de pruebas de casos de uso
+
+Los documentos de casos están separados en la carpeta
+[casos-de-prueba/](casos-de-prueba/indice.md), con una subcarpeta por módulo.
+Cada subcarpeta contiene los casos individuales, los escenarios de uso y su
+catálogo JSON; los documentos mantienen el orden por tipo de prueba.
+
+El [plan de pruebas](casos-de-prueba/plan-de-pruebas.md) establece el alcance
+funcional, las prioridades, los datos/entornos, la secuencia de ejecución y los
+criterios de entrada/salida, con un plan específico en cada carpeta de módulo.
+
+Se conservan los **1.177 casos individuales** (805 backend y 372 frontend) y
+los **89 escenarios agrupados**, con sus IDs, datos, pasos, referencias y estados.
+La ejecución registrada tiene 1.123 aprobaciones y 54 omisiones PostgreSQL;
+la división documental no constituye una ejecución nueva. Los escenarios de
+uso siguen siendo una síntesis de aceptación separada del resultado de las suites.
+
+| Módulo | Casos individuales | Escenarios agrupados | Documentos |
+| --- | ---: | ---: | --- |
+| MOD-01 · Identidad y acceso | 29 | 6 | [Casos individuales](casos-de-prueba/01-identidad-acceso/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/01-identidad-acceso/casos-de-uso.md) |
+| MOD-02 · Clientes | 102 | 9 | [Casos individuales](casos-de-prueba/02-clientes/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/02-clientes/casos-de-uso.md) |
+| MOD-03 · Membresías y pagos | 108 | 9 | [Casos individuales](casos-de-prueba/03-membresias-pagos/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/03-membresias-pagos/casos-de-uso.md) |
+| MOD-04 · Planes y promociones | 13 | 6 | [Casos individuales](casos-de-prueba/04-planes-promociones/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/04-planes-promociones/casos-de-uso.md) |
+| MOD-05 · Horarios y matrículas | 38 | 8 | [Casos individuales](casos-de-prueba/05-horarios-matriculas/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/05-horarios-matriculas/casos-de-uso.md) |
+| MOD-06 · Asistencias | 118 | 15 | [Casos individuales](casos-de-prueba/06-asistencias/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/06-asistencias/casos-de-uso.md) |
+| MOD-07 · Rutinas y progreso | 15 | 5 | [Casos individuales](casos-de-prueba/07-rutinas-progreso/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/07-rutinas-progreso/casos-de-uso.md) |
+| MOD-08 · Inventario y movimientos | 90 | 7 | [Casos individuales](casos-de-prueba/08-inventario/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/08-inventario/casos-de-uso.md) |
+| MOD-09 · Tienda y pedidos | 15 | 8 | [Casos individuales](casos-de-prueba/09-tienda-pedidos/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/09-tienda-pedidos/casos-de-uso.md) |
+| MOD-10 · Paneles y configuración | 41 | 6 | [Casos individuales](casos-de-prueba/10-paneles-configuracion/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/10-paneles-configuracion/casos-de-uso.md) |
+| MOD-11 · Notificaciones | 21 | 6 | [Casos individuales](casos-de-prueba/11-notificaciones/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/11-notificaciones/casos-de-uso.md) |
+| Controles transversales | 587 | 4 | [Casos individuales](casos-de-prueba/transversales/casos-de-prueba.md) · [Casos de uso](casos-de-prueba/transversales/casos-de-uso.md) |
+
+La [guía común](casos-de-prueba/indice.md#cómo-leer-y-repetir-cada-caso) explica
+la preparación y reproducción individual. El [índice JSON](casos-de-prueba/catalogo.json)
+identifica los catálogos de cada módulo. Los resultados históricos y sus límites
+siguen en [validation.md](validation.md); las suites y pruebas externas están en
+[pruebas-por-modulo.md](pruebas-por-modulo.md).
+
 ## 4. Technical Constraints
 
 Reutilizar Vue 3, Vite, Pinia, Vue Router, FastAPI/Pydantic, Supabase/PostgreSQL,

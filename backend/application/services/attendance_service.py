@@ -13,8 +13,9 @@ from domain.validation import bounded_text
 from domain.form_limits import LONG_TEXT_LIMIT
 from domain.errors import AttendanceConflict
 from domain.services.membership_lifecycle import membership_current
-from domain.services.attendance_status import attendance_status, LATE_EXIT_MESSAGE
+from domain.services.attendance_status import attendance_status, LATE_EXIT_MESSAGE, GENERAL_LATE_EXIT_MESSAGE
 from domain.services.schedule_sessions import enrollment_session, next_session
+from domain.services.attendance_windows import class_visit_near_now, schedule_near_now
 from application.read_models import AttendanceCriteria, PageRequest
 
 
@@ -22,6 +23,9 @@ class AttendanceService:
     def __init__(self, gym, clock=None):
         self.gym = gym
         self.clock = clock or (lambda: datetime.now(LIMA))
+
+    def synchronize(self):
+        return self.gym.reconcile_attendance(self.now())
 
     def now(self):
         return self.clock().astimezone(LIMA).replace(microsecond=0)
@@ -43,7 +47,8 @@ class AttendanceService:
         result = {**deepcopy(row), "cliente_nombre": client.get("nombre", "Cliente"),
                   "cliente_dni": client.get("dni", ""), "estado": self.status(row),
                   "version": int(row.get("version") or 0), "tipo": self.kind(row)}
-        result["aviso"] = LATE_EXIT_MESSAGE if result["estado"] == "incompleta" else ""
+        result["aviso"] = ((GENERAL_LATE_EXIT_MESSAGE if self.kind(row) == "general" else LATE_EXIT_MESSAGE)
+                           if result["estado"] == "incompleta" else "")
         if not admin:
             for key in ("auditoria", "id_usuario_registra"):
                 result.pop(key, None)
@@ -67,6 +72,7 @@ class AttendanceService:
         admin = user.role == "admin"
         if not admin and not user.id_cliente:
             raise ValueError("No encontramos tu cliente vinculado.")
+        self.synchronize()
         criteria = AttendanceCriteria(client_id=None if admin else user.id_cliente, dni=dni,
             since=str(desde) if desde else "", until=str(hasta) if hasta else "",
             service=servicio, status=estado, kind=tipo, include_annulled=admin, at=self.now().isoformat())
@@ -80,6 +86,7 @@ class AttendanceService:
         admin = user.role == "admin"
         if not admin and not user.id_cliente:
             raise ValueError("No encontramos tu cliente vinculado.")
+        self.synchronize()
         data = self.gym.attendance_summary(today, None if admin else user.id_cliente)
         clients = {int(row["id_cliente"]): row for row in data.clients}
         present = lambda row: self.present(row, admin, clients.get(self.client_id(row), {}))
@@ -112,10 +119,16 @@ class AttendanceService:
 
     def check_occupancy(self, client_id):
         inside = [r for r in self.gym.asistencia() if not r.get("anulado") and not r.get("hora_salida")]
-        if any(self.client_id(r) == client_id for r in inside):
-            raise ValueError("El cliente tiene una entrada sin salida. Registra su salida primero.")
+        pending = next((r for r in inside if self.client_id(r) == client_id), None)
+        if pending:
+            raise AttendanceConflict(self.pending_message(pending))
         if len({self.client_id(r) for r in inside}) >= self.capacity():
             raise ValueError("El gimnasio alcanzó su aforo. Registra una salida antes de otra entrada.")
+
+    def pending_message(self, pending):
+        origin = "general" if self.kind(pending) == "general" else "por horarios"
+        return (f"El cliente tiene una entrada sin salida en la asistencia {origin}. "
+                "Registra la salida de esa asistencia antes de registrar otra entrada.")
 
     def general_context(self, client_id, now):
         client, member = self.client_context(client_id, now)
@@ -146,6 +159,7 @@ class AttendanceService:
         return client, member, schedule
 
     def lookup(self, dni):
+        self.synchronize()
         client = self.gym.get_cliente_by_dni(dni)
         if not client:
             raise ValueError("No se encontró un cliente con ese DNI.")
@@ -178,10 +192,16 @@ class AttendanceService:
             self.general_context(client_id, now)
         except ValueError as error:
             reason = str(error)
+        latest_general = next((r for r in sorted(self.gym.asistencia(), key=lambda r: r["id_asistencia"], reverse=True)
+                               if self.client_id(r) == client_id and self.kind(r) == "general"
+                               and not r.get("anulado")), None)
         return {"cliente": {k: client.get(k) for k in ("id_cliente", "nombre", "dni", "plan", "estado")},
                 "membresia": {k: member.get(k) for k in ("fecha_inicio", "fecha_fin", "estado", "estado_pago")} if member else None,
                 "general": {"puede_entrar": not reason, "motivo": reason,
-                            "asistencia_abierta": self.present(open_record) if open_record else None},
+                            "coincidencia_horario": bool(open_record and self.kind(open_record) == 'horario'
+                                and class_visit_near_now(open_record, now)),
+                            "asistencia_abierta": self.present(open_record) if open_record else None,
+                            "ultima_visita": self.present(latest_general) if latest_general else None},
                 "horarios": schedules, "fecha": now.date().isoformat(), "server_now": now.isoformat()}
 
     def general_retry(self, rows, client_id, request_id):
@@ -198,6 +218,7 @@ class AttendanceService:
         return {"horarios": schedules, "fecha": now.date().isoformat(), "server_now": now.isoformat()}
 
     def roster(self, schedule_id, fecha=None):
+        self.synchronize()
         now = self.now()
         day = date.fromisoformat(str(fecha)).isoformat() if fecha else now.date().isoformat()
         schedule = self.gym.get_horario_servicio(schedule_id)
@@ -212,6 +233,7 @@ class AttendanceService:
             client = self.gym.get_cliente(int(enrollment["id_cliente"])) or {}
             record = self.existing(enrollment, day)
             reason = ""
+            pending = None
             if not record:
                 if day != now.date().isoformat():
                     reason = "La entrada se habilita el día de esta sesión (hora de Perú)."
@@ -220,9 +242,15 @@ class AttendanceService:
                         self.entry_context(enrollment, now)
                     except ValueError as error:
                         reason = str(error)
+                if schedule_near_now(schedule, day, now):
+                    pending = next((row for row in self.gym.asistencia()
+                        if self.client_id(row) == int(enrollment["id_cliente"])
+                        and not row.get("anulado") and not row.get("hora_salida")), None)
             students.append({"id_matricula": enrollment["id_matricula"],
                 "cliente": {k: client.get(k) for k in ("id_cliente", "nombre", "dni", "estado")},
                 "asistencia": self.present(record, client=client) if record else None,
+                "asistencia_abierta": self.present(pending, client=client) if pending else None,
+                "motivo_coincidencia": self.pending_message(pending) if pending else '',
                 "puede_entrar": not record and not reason, "motivo": reason})
         students.sort(key=lambda s: (str(s["cliente"].get("nombre") or "").casefold(), s["id_matricula"]))
         return {"horario": schedule, "clientes": students, "fecha": day, "server_now": now.isoformat()}
@@ -233,6 +261,7 @@ class AttendanceService:
                 + timedelta(hours=1)).isoformat()
 
     def enter_general(self, dni, request_id, actor):
+        self.synchronize()
         client = self.gym.get_cliente_by_dni(dni)
         if not client:
             raise ValueError("No se encontró un cliente con ese DNI.")
@@ -244,6 +273,7 @@ class AttendanceService:
         client, member = self.general_context(client_id, now)
         row = {"id_cliente": client_id, "id_cliente_num": client_id, "id_membresia": member["id_membresia"],
                "id_matricula": None, "id_horario_servicio": None, "servicio": "gimnasio",
+               "limite_salida": (now + timedelta(hours=3)).isoformat(), "cierre_automatico": False,
                "fecha": now.date().isoformat(), "hora": now.strftime("%H:%M:%S"),
                "hora_entrada": now.strftime("%H:%M:%S"), "hora_salida": "", "fecha_salida": None,
                "id_usuario_registra": actor.id_usuario or actor.id, "anulado": False}
@@ -255,6 +285,7 @@ class AttendanceService:
                      and r.get("id_matricula") == enrollment["id_matricula"] and r.get("fecha") == day), None)
 
     def enter(self, payload, actor):
+        self.synchronize()
         now = self.now()
         enrollment_id = payload.get("id_matricula")
         if not enrollment_id:
@@ -291,6 +322,7 @@ class AttendanceService:
         return deepcopy(row)
 
     def exit(self, record_id, actor):
+        self.synchronize()
         row = self.get(record_id)
         if row.get("anulado"):
             raise ValueError("La asistencia está anulada.")
@@ -315,6 +347,7 @@ class AttendanceService:
             raise ValueError("Indica también la hora de salida.")
 
     def correct(self, record_id, payload, actor, annul=False):
+        self.synchronize()
         row = self.get(record_id)
         if row.get("anulado"):
             raise ValueError("La asistencia ya está anulada.")

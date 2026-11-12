@@ -1,0 +1,559 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "notificaciones",
+  "counts": {
+    "backend": {
+      "collected": 21,
+      "passed": 19,
+      "skipped": 2
+    },
+    "frontend": {
+      "collected": 0,
+      "passed": 0,
+      "skipped": 0
+    },
+    "total": 21,
+    "passed": 19,
+    "skipped": 2
+  },
+  "cases": [
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 32,
+      "name": "test_https_sender_preserves_recipient_and_updates_queued_sender",
+      "source_function": "test_https_sender_preserves_recipient_and_updates_queued_sender",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "sender.send(payload, \"enrollment/12\") == \"email-123\"",
+        "payload == original",
+        "request.full_url == \"https://api.resend.com/emails\""
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_https_sender_preserves_recipient_and_updates_queued_sender",
+      "command": "python -m pytest tests/notificaciones/integracion/test_resend_email.py::test_https_sender_preserves_recipient_and_updates_queued_sender -q",
+      "id": "CT-M11-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 60,
+      "name": "test_provider_errors_are_safe_for_queue_and_logs[401]",
+      "source_function": "test_provider_errors_are_safe_for_queue_and_logs",
+      "variant": "401",
+      "parameter_names": [
+        "status"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "\"Resend\" in str(failure.value)",
+        "\"re_test_private\" not in str(failure.value)",
+        "\"client@example.com\" not in str(failure.value)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[401]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[401]' -q",
+      "id": "CT-M11-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 60,
+      "name": "test_provider_errors_are_safe_for_queue_and_logs[403]",
+      "source_function": "test_provider_errors_are_safe_for_queue_and_logs",
+      "variant": "403",
+      "parameter_names": [
+        "status"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "\"Resend\" in str(failure.value)",
+        "\"re_test_private\" not in str(failure.value)",
+        "\"client@example.com\" not in str(failure.value)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[403]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[403]' -q",
+      "id": "CT-M11-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 60,
+      "name": "test_provider_errors_are_safe_for_queue_and_logs[409]",
+      "source_function": "test_provider_errors_are_safe_for_queue_and_logs",
+      "variant": "409",
+      "parameter_names": [
+        "status"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "\"Resend\" in str(failure.value)",
+        "\"re_test_private\" not in str(failure.value)",
+        "\"client@example.com\" not in str(failure.value)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[409]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[409]' -q",
+      "id": "CT-M11-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 60,
+      "name": "test_provider_errors_are_safe_for_queue_and_logs[422]",
+      "source_function": "test_provider_errors_are_safe_for_queue_and_logs",
+      "variant": "422",
+      "parameter_names": [
+        "status"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "\"Resend\" in str(failure.value)",
+        "\"re_test_private\" not in str(failure.value)",
+        "\"client@example.com\" not in str(failure.value)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[422]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[422]' -q",
+      "id": "CT-M11-I-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 60,
+      "name": "test_provider_errors_are_safe_for_queue_and_logs[429]",
+      "source_function": "test_provider_errors_are_safe_for_queue_and_logs",
+      "variant": "429",
+      "parameter_names": [
+        "status"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "\"Resend\" in str(failure.value)",
+        "\"re_test_private\" not in str(failure.value)",
+        "\"client@example.com\" not in str(failure.value)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[429]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[429]' -q",
+      "id": "CT-M11-I-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 60,
+      "name": "test_provider_errors_are_safe_for_queue_and_logs[500]",
+      "source_function": "test_provider_errors_are_safe_for_queue_and_logs",
+      "variant": "500",
+      "parameter_names": [
+        "status"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "\"Resend\" in str(failure.value)",
+        "\"re_test_private\" not in str(failure.value)",
+        "\"client@example.com\" not in str(failure.value)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[500]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_provider_errors_are_safe_for_queue_and_logs[500]' -q",
+      "id": "CT-M11-I-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 74,
+      "name": "test_no_delivery_id_is_not_reported_as_sent[not json]",
+      "source_function": "test_no_delivery_id_is_not_reported_as_sent",
+      "variant": "not json",
+      "parameter_names": [
+        "response"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_no_delivery_id_is_not_reported_as_sent[not json]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_no_delivery_id_is_not_reported_as_sent[not json]' -q",
+      "id": "CT-M11-I-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 74,
+      "name": "test_no_delivery_id_is_not_reported_as_sent[null]",
+      "source_function": "test_no_delivery_id_is_not_reported_as_sent",
+      "variant": "null",
+      "parameter_names": [
+        "response"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_no_delivery_id_is_not_reported_as_sent[null]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_no_delivery_id_is_not_reported_as_sent[null]' -q",
+      "id": "CT-M11-I-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 74,
+      "name": "test_no_delivery_id_is_not_reported_as_sent[{\"id\":null}]",
+      "source_function": "test_no_delivery_id_is_not_reported_as_sent",
+      "variant": "{\"id\":null}",
+      "parameter_names": [
+        "response"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_no_delivery_id_is_not_reported_as_sent[{\"id\":null}]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_no_delivery_id_is_not_reported_as_sent[{\"id\":null}]' -q",
+      "id": "CT-M11-I-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 74,
+      "name": "test_no_delivery_id_is_not_reported_as_sent[{}]",
+      "source_function": "test_no_delivery_id_is_not_reported_as_sent",
+      "variant": "{}",
+      "parameter_names": [
+        "response"
+      ],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_no_delivery_id_is_not_reported_as_sent[{}]",
+      "command": "python -m pytest 'tests/notificaciones/integracion/test_resend_email.py::test_no_delivery_id_is_not_reported_as_sent[{}]' -q",
+      "id": "CT-M11-I-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 80,
+      "name": "test_timeout_keeps_membership_pending",
+      "source_function": "test_timeout_keeps_membership_pending",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "service.configured",
+        "result[\"status\"] == \"queued\"",
+        "\"error\" in outcomes[0] and \"delivery_id\" not in outcomes[0]"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_timeout_keeps_membership_pending",
+      "command": "python -m pytest tests/notificaciones/integracion/test_resend_email.py::test_timeout_keeps_membership_pending -q",
+      "id": "CT-M11-I-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 102,
+      "name": "test_success_records_provider_id_for_membership",
+      "source_function": "test_success_records_provider_id_for_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch",
+        "settings",
+        "payload"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"status\"] == \"sent\"",
+        "outcomes == [{\"delivery_id\": \"accepted-id\"}]"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_success_records_provider_id_for_membership",
+      "command": "python -m pytest tests/notificaciones/integracion/test_resend_email.py::test_success_records_provider_id_for_membership -q",
+      "id": "CT-M11-I-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 118,
+      "name": "test_schedule_cancelled_before_sending_when_enrollment_changes",
+      "source_function": "test_schedule_cancelled_before_sending_when_enrollment_changes",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "settings"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "service.configured",
+        "service.process_one(\"enrollment/12\")[\"status\"] == \"cancelled\"",
+        "outcomes == [{\"cancelled\": True}]"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_schedule_cancelled_before_sending_when_enrollment_changes",
+      "command": "python -m pytest tests/notificaciones/integracion/test_resend_email.py::test_schedule_cancelled_before_sending_when_enrollment_changes -q",
+      "id": "CT-M11-I-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 141,
+      "name": "test_templates_work_without_gmail",
+      "source_function": "test_templates_work_without_gmail",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "settings"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"from\"] == \"Silver Gym Surco <onboarding@resend.dev>\"",
+        "\"https://gym.vercel.app/login\" in result[\"html\"]",
+        "\"https://gym.vercel.app/user/schedule\" in schedule[\"html\"]"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_templates_work_without_gmail",
+      "command": "python -m pytest tests/notificaciones/integracion/test_resend_email.py::test_templates_work_without_gmail -q",
+      "id": "CT-M11-I-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "line": 157,
+      "name": "test_missing_key_disables_notifications_and_key_is_private",
+      "source_function": "test_missing_key_disables_notifications_and_key_is_private",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not Settings().has_email_credentials",
+        "configured.has_email_credentials",
+        "\"re_environment_test\" not in repr(configured)"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_resend_email.py::test_missing_key_disables_notifications_and_key_is_private",
+      "command": "python -m pytest tests/notificaciones/integracion/test_resend_email.py::test_missing_key_disables_notifications_and_key_is_private -q",
+      "id": "CT-M11-I-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_schedule_calendar.py",
+      "line": 12,
+      "name": "test_week_attendance_matches_date_and_client_across_month_boundary",
+      "source_function": "test_week_attendance_matches_date_and_client_across_month_boundary",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "previous['horarios'][0]['fecha'] == '2026-08-31'",
+        "previous['horarios'][0]['asistencia']['id_asistencia'] == 1",
+        "previous['visitas_por_fecha'] == {'2026-08-31': 1}"
+      ],
+      "checks_in_source": 7,
+      "selector": "tests/notificaciones/integracion/test_schedule_calendar.py::test_week_attendance_matches_date_and_client_across_month_boundary",
+      "command": "python -m pytest tests/notificaciones/integracion/test_schedule_calendar.py::test_week_attendance_matches_date_and_client_across_month_boundary -q",
+      "id": "CT-M11-I-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_schedule_calendar.py",
+      "line": 37,
+      "name": "test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month",
+      "source_function": "test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "'31/08/2026' in mail['text']",
+        "'/user/schedule?fecha=2026-08-31' in mail['text']",
+        "'/user/schedule?fecha=2026-08-31' in mail['html']"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/notificaciones/integracion/test_schedule_calendar.py::test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month",
+      "command": "python -m pytest tests/notificaciones/integracion/test_schedule_calendar.py::test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month -q",
+      "id": "CT-M11-I-BE-018"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "integracion",
+      "path": "backend/tests/notificaciones/integracion/test_schedule_calendar.py",
+      "line": 49,
+      "name": "test_enrollment_email_indica_una_sesion_con_su_fecha",
+      "source_function": "test_enrollment_email_indica_una_sesion_con_su_fecha",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "'Cada lunes' not in mail['text']",
+        "'02/11/2026' in mail['text']",
+        "'?fecha=2026-11-02' in mail['text']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/notificaciones/integracion/test_schedule_calendar.py::test_enrollment_email_indica_una_sesion_con_su_fecha",
+      "command": "python -m pytest tests/notificaciones/integracion/test_schedule_calendar.py::test_enrollment_email_indica_una_sesion_con_su_fecha -q",
+      "id": "CT-M11-I-BE-019"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "postgres",
+      "path": "backend/tests/notificaciones/postgres/test_membership_renewal_postgres.py",
+      "line": 27,
+      "name": "test_aviso_deduplicado_y_reclamado_una_sola_vez",
+      "source_function": "test_aviso_deduplicado_y_reclamado_una_sola_vez",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.sql('select count(*) from public.membership_email_notifications;') == '2'",
+        "database.sql(\"set role service_role; select count(*) from public.claim_membership_email('uno','membership/1/expiring');\") == '1'",
+        "database.sql(\"set role service_role; select count(*) from public.claim_membership_email('dos','membership/1/expiring');\") == '0'"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/notificaciones/postgres/test_membership_renewal_postgres.py::test_aviso_deduplicado_y_reclamado_una_sola_vez",
+      "command": "python -m pytest tests/notificaciones/postgres/test_membership_renewal_postgres.py::test_aviso_deduplicado_y_reclamado_una_sola_vez -q",
+      "id": "CT-M11-P-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "notificaciones",
+      "type": "postgres",
+      "path": "backend/tests/notificaciones/postgres/test_membership_renewal_postgres.py",
+      "line": 38,
+      "name": "test_la_migracion_conserva_privacidad_y_validacion_de_eventos",
+      "source_function": "test_la_migracion_conserva_privacidad_y_validacion_de_eventos",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match='check constraint')",
+        "pytest.raises(RuntimeError, match='permission denied')",
+        "pytest.raises(RuntimeError, match='permission denied')"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/notificaciones/postgres/test_membership_renewal_postgres.py::test_la_migracion_conserva_privacidad_y_validacion_de_eventos",
+      "command": "python -m pytest tests/notificaciones/postgres/test_membership_renewal_postgres.py::test_la_migracion_conserva_privacidad_y_validacion_de_eventos -q",
+      "id": "CT-M11-P-BE-002"
+    }
+  ]
+}

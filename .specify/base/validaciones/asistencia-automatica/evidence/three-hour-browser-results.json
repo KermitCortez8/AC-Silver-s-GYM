@@ -1,0 +1,9 @@
+{
+  "origen": "Interfaz real y respuestas simuladas; persistencia y cron se verifican aparte en PostgreSQL.",
+  "errors": [],
+  "estado": "incompleta",
+  "cierreAutomatico": true,
+  "nuevaEntradaDisponible": true,
+  "salidaPendiente": false,
+  "aforoLiberado": true
+}

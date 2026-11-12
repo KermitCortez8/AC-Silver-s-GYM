@@ -76,3 +76,12 @@ async def process_pending_preregistrations(settings):
         return create_client_payments_service(ClientsService(gym), gym, settings)
     if settings.has_supabase_credentials and settings.stripe_secret_key:
         await maintain_preregistrations(factory)
+
+
+async def process_membership_expiration_reminders(settings):
+    if not settings.has_supabase_credentials:
+        return
+    await membership_notifications.process_expiration_reminders(
+        create_membership_notifications(settings),
+        lambda: create_gym_service(settings.supabase_url, settings.supabase_key),
+    )

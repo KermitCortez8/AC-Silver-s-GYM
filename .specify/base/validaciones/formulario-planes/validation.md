@@ -23,7 +23,7 @@ vigencia ni las membresías contratadas.
 
 - `npm test --prefix frontend`: **298 pruebas aprobadas**, incluidas cuatro
   nuevas de opciones, conservación de duración, precio y validación del formulario.
-- `node --test frontend/tests/39-membership-plan-form.test.js`: **4 aprobadas**
+- `node --test frontend/tests/planes_promociones/unitarias/membership-plan-form.test.js`: **4 aprobadas**
   tras el ajuste final del mensaje de validación.
 - `npm run build --prefix frontend`: **aprobado**.
 - `node .specify/base/validaciones/formulario-planes/evidence/browser-review.cjs`:

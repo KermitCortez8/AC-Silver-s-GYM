@@ -1,0 +1,2648 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "membresias_pagos",
+  "counts": {
+    "backend": {
+      "collected": 91,
+      "passed": 91,
+      "skipped": 0
+    },
+    "frontend": {
+      "collected": 17,
+      "passed": 17,
+      "skipped": 0
+    },
+    "total": 108,
+    "passed": 108,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "unitarias",
+      "path": "frontend/tests/membresias_pagos/unitarias/admin-client-payment.test.js",
+      "line": 5,
+      "name": "only admin-created clients with an unpaid membership can pay from the panel",
+      "source_function": "'only admin-created clients with an unpaid membership can pay from the panel'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(canPayClientWithStripe(client), true)",
+        "assert.equal(canPayClientWithStripe({ ...client, registrationOrigin }), false)",
+        "assert.equal(canPayClientWithStripe({ ...client, paymentStatus: 'PAGADO' }), false)"
+      ],
+      "checks_in_source": 5,
+      "selector": "only admin-created clients with an unpaid membership can pay from the panel",
+      "command": "node --test '--test-name-pattern=^only\\ admin\\-created\\ clients\\ with\\ an\\ unpaid\\ membership\\ can\\ pay\\ from\\ the\\ panel$' tests/membresias_pagos/unitarias/admin-client-payment.test.js",
+      "id": "CT-M03-U-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "unitarias",
+      "path": "frontend/tests/membresias_pagos/unitarias/membership-payments.test.js",
+      "line": 13,
+      "name": "payment totals include only confirmed amounts and keep pending amounts separate",
+      "source_function": "'payment totals include only confirmed amounts and keep pending amounts separate'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(summarizeMembershipPayments(payments), { total: 4, paid: 2, collected: 148, pending: 1, outstanding: 199, })"
+      ],
+      "checks_in_source": 1,
+      "selector": "payment totals include only confirmed amounts and keep pending amounts separate",
+      "command": "node --test '--test-name-pattern=^payment\\ totals\\ include\\ only\\ confirmed\\ amounts\\ and\\ keep\\ pending\\ amounts\\ separate$' tests/membresias_pagos/unitarias/membership-payments.test.js",
+      "id": "CT-M03-U-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "unitarias",
+      "path": "frontend/tests/membresias_pagos/unitarias/membership-payments.test.js",
+      "line": 19,
+      "name": "payment search finds names without accents, DNI and Stripe references",
+      "source_function": "'payment search finds names without accents, DNI and Stripe references'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(filterMembershipPayments(payments, { search: 'jose' }).length, 2)",
+        "assert.equal(filterMembershipPayments(payments, { search: '12345678' })[0].id_membresia, 3)",
+        "assert.equal(filterMembershipPayments(payments, { search: 'cs_paid' })[0].id_membresia, 3)"
+      ],
+      "checks_in_source": 3,
+      "selector": "payment search finds names without accents, DNI and Stripe references",
+      "command": "node --test '--test-name-pattern=^payment\\ search\\ finds\\ names\\ without\\ accents,\\ DNI\\ and\\ Stripe\\ references$' tests/membresias_pagos/unitarias/membership-payments.test.js",
+      "id": "CT-M03-U-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "unitarias",
+      "path": "frontend/tests/membresias_pagos/unitarias/membership-payments.test.js",
+      "line": 25,
+      "name": "combined payment filters apply to the summary and keep dates inclusive",
+      "source_function": "'combined payment filters apply to the summary and keep dates inclusive'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(filtered.length, 1)",
+        "assert.equal(summarizeMembershipPayments(filtered).collected, 69)",
+        "assert.equal(filterMembershipPayments(payments, { from: '2026-09-01' }).length, 2)"
+      ],
+      "checks_in_source": 4,
+      "selector": "combined payment filters apply to the summary and keep dates inclusive",
+      "command": "node --test '--test-name-pattern=^combined\\ payment\\ filters\\ apply\\ to\\ the\\ summary\\ and\\ keep\\ dates\\ inclusive$' tests/membresias_pagos/unitarias/membership-payments.test.js",
+      "id": "CT-M03-U-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "unitarias",
+      "path": "frontend/tests/membresias_pagos/unitarias/membership-payments.test.js",
+      "line": 35,
+      "name": "payments and the previous configuration path select payment resources",
+      "source_function": "'payments and the previous configuration path select payment resources'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(sectionForPath('/admin/payments'), 'payments')",
+        "assert.equal(sectionForPath('/admin/settings'), 'payments')"
+      ],
+      "checks_in_source": 2,
+      "selector": "payments and the previous configuration path select payment resources",
+      "command": "node --test '--test-name-pattern=^payments\\ and\\ the\\ previous\\ configuration\\ path\\ select\\ payment\\ resources$' tests/membresias_pagos/unitarias/membership-payments.test.js",
+      "id": "CT-M03-U-FE-005"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 40,
+      "name": "test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase",
+      "source_function": "test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "first.status_code == 200",
+        "first.json()['membership_status'] == 'ACTIVO'",
+        "first.json()['fecha_inicio'] == '2026-11-11'"
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase -q",
+      "id": "CT-M03-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 58,
+      "name": "test_cash_requires_receipt_confirmation_and_current_price_without_partial_writes",
+      "source_function": "test_cash_requires_receipt_confirmation_and_current_price_without_partial_writes",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "http.post(url, json={**request, 'pago_recibido': False}).status_code == 400",
+        "http.post(url, json={**request, 'monto_pago': request['monto_pago'] + 1}).status_code == 400",
+        "len(gym.membresias_por_cliente(source['id_cliente'])) == 1"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_cash_requires_receipt_confirmation_and_current_price_without_partial_writes",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_cash_requires_receipt_confirmation_and_current_price_without_partial_writes -q",
+      "id": "CT-M03-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 67,
+      "name": "test_admin_stripe_reuses_pending_checkout_and_returns_to_admin",
+      "source_function": "test_admin_stripe_reuses_pending_checkout_and_returns_to_admin",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "first.status_code == 200",
+        "first.json()['payment']['checkout_url'].startswith('https://checkout.stripe.com/')",
+        "calls[0][1] == {'admin': True}"
+      ],
+      "checks_in_source": 8,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_stripe_reuses_pending_checkout_and_returns_to_admin",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_stripe_reuses_pending_checkout_and_returns_to_admin -q",
+      "id": "CT-M03-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 82,
+      "name": "test_cash_double_submission_is_atomic_even_when_concurrent",
+      "source_function": "test_cash_double_submission_is_atomic_even_when_concurrent",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "results.count('ACTIVO') == 1",
+        "len(gym.membresias_por_cliente(source['id_cliente'])) == 2"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_cash_double_submission_is_atomic_even_when_concurrent",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_cash_double_submission_is_atomic_even_when_concurrent -q",
+      "id": "CT-M03-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 97,
+      "name": "test_renewal_endpoints_reject_non_staff_sessions[trainer]",
+      "source_function": "test_renewal_endpoints_reject_non_staff_sessions",
+      "variant": "trainer",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "http.get(f\"/api/clientes/{source['id_cliente']}/renovacion\").status_code == 403",
+        "http.post(f\"/api/clientes/{source['id_cliente']}/renovar-membresia\", json=request).status_code == 403",
+        "len(gym.membresias_por_cliente(source['id_cliente'])) == 1"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_renewal_endpoints_reject_non_staff_sessions[trainer]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_renewal_endpoints_reject_non_staff_sessions[trainer]' -q",
+      "id": "CT-M03-I-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 97,
+      "name": "test_renewal_endpoints_reject_non_staff_sessions[user]",
+      "source_function": "test_renewal_endpoints_reject_non_staff_sessions",
+      "variant": "user",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "http.get(f\"/api/clientes/{source['id_cliente']}/renovacion\").status_code == 403",
+        "http.post(f\"/api/clientes/{source['id_cliente']}/renovar-membresia\", json=request).status_code == 403",
+        "len(gym.membresias_por_cliente(source['id_cliente'])) == 1"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_renewal_endpoints_reject_non_staff_sessions[user]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_renewal_endpoints_reject_non_staff_sessions[user]' -q",
+      "id": "CT-M03-I-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 106,
+      "name": "test_first_paid_but_unactivated_membership_cannot_be_renewed",
+      "source_function": "test_first_paid_but_unactivated_membership_cannot_be_renewed",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "http.get(f\"/api/clientes/{source['id_cliente']}/renovacion\").status_code == 400"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_first_paid_but_unactivated_membership_cannot_be_renewed",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_first_paid_but_unactivated_membership_cannot_be_renewed -q",
+      "id": "CT-M03-I-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 112,
+      "name": "test_staff_can_renew_long_expired_membership_without_email_token_or_stripe_config",
+      "source_function": "test_staff_can_renew_long_expired_membership_without_email_token_or_stripe_config",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result.status_code == 200 and result.json()['fecha_inicio'] == '2026-11-09'",
+        "not calls"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_staff_can_renew_long_expired_membership_without_email_token_or_stripe_config",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_staff_can_renew_long_expired_membership_without_email_token_or_stripe_config -q",
+      "id": "CT-M03-I-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 124,
+      "name": "test_renewal_is_available_for_clients_from_either_registration_origin[ADMIN]",
+      "source_function": "test_renewal_is_available_for_clients_from_either_registration_origin",
+      "variant": "ADMIN",
+      "parameter_names": [
+        "origin"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200 and response.json()['membership_status'] == 'ACTIVO'"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_renewal_is_available_for_clients_from_either_registration_origin[ADMIN]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_renewal_is_available_for_clients_from_either_registration_origin[ADMIN]' -q",
+      "id": "CT-M03-I-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 124,
+      "name": "test_renewal_is_available_for_clients_from_either_registration_origin[PUBLICO]",
+      "source_function": "test_renewal_is_available_for_clients_from_either_registration_origin",
+      "variant": "PUBLICO",
+      "parameter_names": [
+        "origin"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200 and response.json()['membership_status'] == 'ACTIVO'"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_renewal_is_available_for_clients_from_either_registration_origin[PUBLICO]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_renewal_is_available_for_clients_from_either_registration_origin[PUBLICO]' -q",
+      "id": "CT-M03-I-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 132,
+      "name": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[-1-True]",
+      "source_function": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction",
+      "variant": "-1-True",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "preview.status_code == (200 if allowed else 400)",
+        "client['renewal_allowed'] is allowed",
+        "response.status_code == (200 if allowed else 400)"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[-1-True]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[-1-True]' -q",
+      "id": "CT-M03-I-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 132,
+      "name": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[0-True]",
+      "source_function": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction",
+      "variant": "0-True",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "preview.status_code == (200 if allowed else 400)",
+        "client['renewal_allowed'] is allowed",
+        "response.status_code == (200 if allowed else 400)"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[0-True]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[0-True]' -q",
+      "id": "CT-M03-I-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 132,
+      "name": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[3-True]",
+      "source_function": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction",
+      "variant": "3-True",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "preview.status_code == (200 if allowed else 400)",
+        "client['renewal_allowed'] is allowed",
+        "response.status_code == (200 if allowed else 400)"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[3-True]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[3-True]' -q",
+      "id": "CT-M03-I-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 132,
+      "name": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[7-True]",
+      "source_function": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction",
+      "variant": "7-True",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "preview.status_code == (200 if allowed else 400)",
+        "client['renewal_allowed'] is allowed",
+        "response.status_code == (200 if allowed else 400)"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[7-True]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[7-True]' -q",
+      "id": "CT-M03-I-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 132,
+      "name": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[8-False]",
+      "source_function": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction",
+      "variant": "8-False",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "preview.status_code == (200 if allowed else 400)",
+        "client['renewal_allowed'] is allowed",
+        "response.status_code == (200 if allowed else 400)"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[8-False]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction[8-False]' -q",
+      "id": "CT-M03-I-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "line": 152,
+      "name": "test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window",
+      "source_function": "test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "admin",
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "http.post(f\"/api/clientes/{source['id_cliente']}/renovar-membresia\", json=request).status_code == 400",
+        "len(gym.membresias_por_cliente(source['id_cliente'])) == 1 and not calls",
+        "pytest.raises(ValueError, match='7 días')"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_admin_membership_renewal.py::test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window -q",
+      "id": "CT-M03-I-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 55,
+      "name": "test_access_includes_last_day_and_expiration_preserves_payment_history",
+      "source_function": "test_access_includes_last_day_and_expiration_preserves_payment_history",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.get_cliente(account['id_cliente'])['estado'] == 'VENCIDA'",
+        "account['estado'] == 'ACTIVO'",
+        "gym.state['membresia'][0] == {**original, 'estado': 'VENCIDA'}"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_access_includes_last_day_and_expiration_preserves_payment_history",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_access_includes_last_day_and_expiration_preserves_payment_history -q",
+      "id": "CT-M03-I-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 75,
+      "name": "test_date_boundary_uses_peru_midnight[2026-10-02T04:59:59+00:00-2026-10-01]",
+      "source_function": "test_date_boundary_uses_peru_midnight",
+      "variant": "2026-10-02T04:59:59+00:00-2026-10-01",
+      "parameter_names": [
+        "instant",
+        "expected"
+      ],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "domain._today_iso() == expected"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_date_boundary_uses_peru_midnight[2026-10-02T04:59:59+00:00-2026-10-01]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_expiration.py::test_date_boundary_uses_peru_midnight[2026-10-02T04:59:59+00:00-2026-10-01]' -q",
+      "id": "CT-M03-I-BE-018"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 75,
+      "name": "test_date_boundary_uses_peru_midnight[2026-10-02T05:00:00+00:00-2026-10-02]",
+      "source_function": "test_date_boundary_uses_peru_midnight",
+      "variant": "2026-10-02T05:00:00+00:00-2026-10-02",
+      "parameter_names": [
+        "instant",
+        "expected"
+      ],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "domain._today_iso() == expected"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_date_boundary_uses_peru_midnight[2026-10-02T05:00:00+00:00-2026-10-02]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_expiration.py::test_date_boundary_uses_peru_midnight[2026-10-02T05:00:00+00:00-2026-10-02]' -q",
+      "id": "CT-M03-I-BE-019"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 84,
+      "name": "test_expired_password_login_and_existing_signed_token_are_blocked",
+      "source_function": "test_expired_password_login_and_existing_signed_token_are_blocked",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "login.status_code == 200",
+        "client.get('/private', headers=headers).status_code == 200",
+        "gym.get_cliente(gym.state['clientes'][0]['id_cliente'])['estado'] == 'VENCIDA'"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_expired_password_login_and_existing_signed_token_are_blocked",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_expired_password_login_and_existing_signed_token_are_blocked -q",
+      "id": "CT-M03-I-BE-020"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 102,
+      "name": "test_linked_google_login_is_blocked_after_expiration",
+      "source_function": "test_linked_google_login_is_blocked_after_expiration",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 403",
+        "response.json()['detail']['code'] == 'membership_expired'"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_linked_google_login_is_blocked_after_expiration",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_linked_google_login_is_blocked_after_expiration -q",
+      "id": "CT-M03-I-BE-021"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 120,
+      "name": "test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes0]",
+      "source_function": "test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership",
+      "variant": "changes0",
+      "parameter_names": [
+        "changes"
+      ],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ClientMembershipRequired)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes0]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes0]' -q",
+      "id": "CT-M03-I-BE-022"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 120,
+      "name": "test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes1]",
+      "source_function": "test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership",
+      "variant": "changes1",
+      "parameter_names": [
+        "changes"
+      ],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ClientMembershipRequired)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes1]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes1]' -q",
+      "id": "CT-M03-I-BE-023"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 120,
+      "name": "test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes2]",
+      "source_function": "test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership",
+      "variant": "changes2",
+      "parameter_names": [
+        "changes"
+      ],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ClientMembershipRequired)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes2]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes2]' -q",
+      "id": "CT-M03-I-BE-024"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 120,
+      "name": "test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes3]",
+      "source_function": "test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership",
+      "variant": "changes3",
+      "parameter_names": [
+        "changes"
+      ],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ClientMembershipRequired)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes3]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership[changes3]' -q",
+      "id": "CT-M03-I-BE-025"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 126,
+      "name": "test_pending_registration_with_placeholder_dates_does_not_expire",
+      "source_function": "test_pending_registration_with_placeholder_dates_does_not_expire",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.expire_memberships() is False",
+        "gym.state['clientes'][0]['estado'] == 'PENDIENTE_PAGO'"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_pending_registration_with_placeholder_dates_does_not_expire",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_pending_registration_with_placeholder_dates_does_not_expire -q",
+      "id": "CT-M03-I-BE-026"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 133,
+      "name": "test_current_paid_renewal_preserves_access_and_expires_only_old_membership",
+      "source_function": "test_current_paid_renewal_preserves_access_and_expires_only_old_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.expire_memberships() is True",
+        "next(row for row in gym.membresias() if row['id_membresia'] == previous['id_membresia'])['estado'] == 'VENCIDA'",
+        "gym.state['clientes'][0]['estado'] == 'ACTIVO'"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_current_paid_renewal_preserves_access_and_expires_only_old_membership",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_current_paid_renewal_preserves_access_and_expires_only_old_membership -q",
+      "id": "CT-M03-I-BE-027"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 143,
+      "name": "test_expired_membership_cannot_be_reactivated_or_extended_through_edit",
+      "source_function": "test_expired_membership_cannot_be_reactivated_or_extended_through_edit",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(gym.state['membresia']) == 1",
+        "gym.state['membresia'][0]['fecha_fin'] == '2026-09-30'",
+        "pytest.raises(ValueError, match='vencida')"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_expired_membership_cannot_be_reactivated_or_extended_through_edit",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_expired_membership_cannot_be_reactivated_or_extended_through_edit -q",
+      "id": "CT-M03-I-BE-028"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 153,
+      "name": "test_duplicate_stripe_payment_cannot_unblock_expired_account",
+      "source_function": "test_duplicate_stripe_payment_cannot_unblock_expired_account",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.latest_membership(membership['id_cliente'])['estado'] == 'VENCIDA'",
+        "gym.state['clientes'][0]['estado'] == 'VENCIDA'"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_duplicate_stripe_payment_cannot_unblock_expired_account",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_duplicate_stripe_payment_cannot_unblock_expired_account -q",
+      "id": "CT-M03-I-BE-029"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 166,
+      "name": "test_paid_renewal_restores_access_without_another_admin_activation",
+      "source_function": "test_paid_renewal_restores_access_without_another_admin_activation",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.state['clientes'][0]['estado'] == 'ACTIVO'",
+        "old['estado'] == 'VENCIDA'",
+        "old['fecha_fin'] == '2026-09-30'"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_paid_renewal_restores_access_without_another_admin_activation",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_paid_renewal_restores_access_without_another_admin_activation -q",
+      "id": "CT-M03-I-BE-030"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 180,
+      "name": "test_no_change_expiration_does_not_write_or_extend_refresh_ttl",
+      "source_function": "test_no_change_expiration_does_not_write_or_extend_refresh_ttl",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.expire_memberships() is False",
+        "{key: gym.state[key] for key in ('clientes', 'membresia')} == before"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_no_change_expiration_does_not_write_or_extend_refresh_ttl",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_no_change_expiration_does_not_write_or_extend_refresh_ttl -q",
+      "id": "CT-M03-I-BE-031"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 188,
+      "name": "test_supabase_expiration_persists_membership_and_boolean_account_block",
+      "source_function": "test_supabase_expiration_persists_membership_and_boolean_account_block",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "writes == []",
+        "service.clientes_normalized()[0]['estado'] == 'VENCIDA'",
+        "writes == []"
+      ],
+      "checks_in_source": 12,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_supabase_expiration_persists_membership_and_boolean_account_block",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_supabase_expiration_persists_membership_and_boolean_account_block -q",
+      "id": "CT-M03-I-BE-032"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 229,
+      "name": "test_inactive_supabase_account_is_exposed_as_expired_after_reload",
+      "source_function": "test_inactive_supabase_account_is_exposed_as_expired_after_reload",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "apply_membership_expiration(state, '2026-10-01') is True",
+        "client['estado'] == 'VENCIDA'"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_inactive_supabase_account_is_exposed_as_expired_after_reload",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_inactive_supabase_account_is_exposed_as_expired_after_reload -q",
+      "id": "CT-M03-I-BE-033"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_expiration.py",
+      "line": 240,
+      "name": "test_internal_staff_account_does_not_require_a_membership",
+      "source_function": "test_internal_staff_account_does_not_require_a_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "gym",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "profile.role == 'admin'"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_expiration.py::test_internal_staff_account_does_not_require_a_membership",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_expiration.py::test_internal_staff_account_does_not_require_a_membership -q",
+      "id": "CT-M03-I-BE-034"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_payments.py",
+      "line": 36,
+      "name": "test_verified_stripe_registration_appears_once_in_payment_history",
+      "source_function": "test_verified_stripe_registration_appears_once_in_payment_history",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(pending) == 1",
+        "pending[0][\"estado_pago\"] == \"PENDIENTE\"",
+        "pending[0][\"fecha_pago\"] == \"\""
+      ],
+      "checks_in_source": 16,
+      "selector": "tests/membresias_pagos/integracion/test_membership_payments.py::test_verified_stripe_registration_appears_once_in_payment_history",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_payments.py::test_verified_stripe_registration_appears_once_in_payment_history -q",
+      "id": "CT-M03-I-BE-035"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_payments.py",
+      "line": 79,
+      "name": "test_history_keeps_older_payments_and_saved_discounted_amount",
+      "source_function": "test_history_keeps_older_payments_and_saved_discounted_amount",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "[row[\"id_membresia\"] for row in rows] == [2, 1]",
+        "rows[0][\"plan\"] == \"3 MESES\"",
+        "rows[0][\"estado_pago\"] == \"PENDIENTE\""
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_membership_payments.py::test_history_keeps_older_payments_and_saved_discounted_amount",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_payments.py::test_history_keeps_older_payments_and_saved_discounted_amount -q",
+      "id": "CT-M03-I-BE-036"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_payments.py",
+      "line": 99,
+      "name": "test_manual_payments_are_identified_and_not_relabelled_as_stripe",
+      "source_function": "test_manual_payments_are_identified_and_not_relabelled_as_stripe",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "row[\"metodo_pago\"] == \"efectivo\"",
+        "row[\"referencia_pago\"].startswith(\"manual:\")",
+        "row[\"estado_pago\"] == \"PAGADO\""
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_membership_payments.py::test_manual_payments_are_identified_and_not_relabelled_as_stripe",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_payments.py::test_manual_payments_are_identified_and_not_relabelled_as_stripe -q",
+      "id": "CT-M03-I-BE-037"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_payments.py",
+      "line": 110,
+      "name": "test_payment_history_requires_staff_access[admin-200]",
+      "source_function": "test_payment_history_requires_staff_access",
+      "variant": "admin-200",
+      "parameter_names": [
+        "role",
+        "expected"
+      ],
+      "fixtures": [
+        "api"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/pagos/membresias\").status_code == expected"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_staff_access[admin-200]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_staff_access[admin-200]' -q",
+      "id": "CT-M03-I-BE-038"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_payments.py",
+      "line": 110,
+      "name": "test_payment_history_requires_staff_access[staff-200]",
+      "source_function": "test_payment_history_requires_staff_access",
+      "variant": "staff-200",
+      "parameter_names": [
+        "role",
+        "expected"
+      ],
+      "fixtures": [
+        "api"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/pagos/membresias\").status_code == expected"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_staff_access[staff-200]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_staff_access[staff-200]' -q",
+      "id": "CT-M03-I-BE-039"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_payments.py",
+      "line": 110,
+      "name": "test_payment_history_requires_staff_access[trainer-403]",
+      "source_function": "test_payment_history_requires_staff_access",
+      "variant": "trainer-403",
+      "parameter_names": [
+        "role",
+        "expected"
+      ],
+      "fixtures": [
+        "api"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/pagos/membresias\").status_code == expected"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_staff_access[trainer-403]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_staff_access[trainer-403]' -q",
+      "id": "CT-M03-I-BE-040"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_payments.py",
+      "line": 110,
+      "name": "test_payment_history_requires_staff_access[user-403]",
+      "source_function": "test_payment_history_requires_staff_access",
+      "variant": "user-403",
+      "parameter_names": [
+        "role",
+        "expected"
+      ],
+      "fixtures": [
+        "api"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/pagos/membresias\").status_code == expected"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_staff_access[user-403]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_staff_access[user-403]' -q",
+      "id": "CT-M03-I-BE-041"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_payments.py",
+      "line": 118,
+      "name": "test_payment_history_requires_authentication",
+      "source_function": "test_payment_history_requires_authentication",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/pagos/membresias\").status_code == 401"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_authentication",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_payments.py::test_payment_history_requires_authentication -q",
+      "id": "CT-M03-I-BE-042"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 35,
+      "name": "test_link_details_and_checkout_reuse_pending_without_mutating_source",
+      "source_function": "test_link_details_and_checkout_reuse_pending_without_mutating_source",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(gym.membresias_por_cliente(source['id_cliente'])) == 2",
+        "len({c['membresia']['id_membresia'] for c in calls}) == 1",
+        "calls[0]['membresia']['estado_pago'] == 'PENDIENTE'"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_link_details_and_checkout_reuse_pending_without_mutating_source",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_link_details_and_checkout_reuse_pending_without_mutating_source -q",
+      "id": "CT-M03-I-BE-043"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 49,
+      "name": "test_modified_expired_and_early_links_are_rejected",
+      "source_function": "test_modified_expired_and_early_links_are_rejected",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not calls",
+        "pytest.raises(ValueError, match='enlace')",
+        "pytest.raises(ValueError, match='enlace')"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_modified_expired_and_early_links_are_rejected",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_modified_expired_and_early_links_are_rejected -q",
+      "id": "CT-M03-I-BE-044"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 61,
+      "name": "test_price_change_rejected_and_paid_renewal_prevents_new_charge",
+      "source_function": "test_price_change_rejected_and_paid_renewal_prevents_new_charge",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(gym.membresias_por_cliente(source['id_cliente'])) == 1",
+        "service.details(token)['renovada'] is True",
+        "service.details(token)['monto_pago'] == amount"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_price_change_rejected_and_paid_renewal_prevents_new_charge",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_price_change_rejected_and_paid_renewal_prevents_new_charge -q",
+      "id": "CT-M03-I-BE-045"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 81,
+      "name": "test_reminders_select_lima_window_and_skip_paid_renewal",
+      "source_function": "test_reminders_select_lima_window_and_skip_paid_renewal",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not events",
+        "events[-1][0] == 'expiring'",
+        "events[-1][0] == 'expiring'"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_reminders_select_lima_window_and_skip_paid_renewal",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_reminders_select_lima_window_and_skip_paid_renewal -q",
+      "id": "CT-M03-I-BE-046"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 102,
+      "name": "test_checkout_reuses_open_session_and_retries_only_expired_session",
+      "source_function": "test_checkout_reuses_open_session_and_retries_only_expired_session",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(calls) == 1",
+        "len(calls) == 2",
+        "calls[-1]['checkout_attempt'] == 'cs_test_renewal'"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_checkout_reuses_open_session_and_retries_only_expired_session",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_checkout_reuses_open_session_and_retries_only_expired_session -q",
+      "id": "CT-M03-I-BE-047"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 118,
+      "name": "test_public_api_uses_personal_link_and_rejects_invalid_amounts",
+      "source_function": "test_public_api_uses_personal_link_and_rejects_invalid_amounts",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 200",
+        "http.get('/api/renovacion', params={'token': 'alterado'}).status_code == 400",
+        "http.post('/api/renovacion/checkout', json={'token': token, 'monto_pago': -1}).status_code == 422"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_public_api_uses_personal_link_and_rejects_invalid_amounts",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_public_api_uses_personal_link_and_rejects_invalid_amounts -q",
+      "id": "CT-M03-I-BE-048"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 137,
+      "name": "test_early_renewal_payment_preserves_current_access",
+      "source_function": "test_early_renewal_payment_preserves_current_access",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.get_cliente(source['id_cliente'])['estado'] == 'ACTIVO'",
+        "gym.membership(source['id_cliente'], source['id_membresia'])['fecha_fin'] == '2026-11-10'"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_early_renewal_payment_preserves_current_access",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_early_renewal_payment_preserves_current_access -q",
+      "id": "CT-M03-I-BE-049"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 152,
+      "name": "test_expired_renewal_activates_on_verified_payment_and_duplicate_does_not_extend",
+      "source_function": "test_expired_renewal_activates_on_verified_payment_and_duplicate_does_not_extend",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result['membership_status'] == 'ACTIVO'",
+        "result['fecha_inicio'] == '2026-11-11'",
+        "result['fecha_fin'] == '2026-12-11'"
+      ],
+      "checks_in_source": 8,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_expired_renewal_activates_on_verified_payment_and_duplicate_does_not_extend",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_expired_renewal_activates_on_verified_payment_and_duplicate_does_not_extend -q",
+      "id": "CT-M03-I-BE-050"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 187,
+      "name": "test_early_renewal_starts_after_inclusive_last_day_and_is_not_activated_twice",
+      "source_function": "test_early_renewal_starts_after_inclusive_last_day_and_is_not_activated_twice",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "renewed['estado'] == 'ACTIVO'",
+        "renewed['fecha_inicio'] == '2026-11-11'",
+        "renewed['fecha_fin'] == '2026-12-11'"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_early_renewal_starts_after_inclusive_last_day_and_is_not_activated_twice",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_early_renewal_starts_after_inclusive_last_day_and_is_not_activated_twice -q",
+      "id": "CT-M03-I-BE-051"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 202,
+      "name": "test_paid_history_without_any_initial_activation_cannot_bypass_first_activation",
+      "source_function": "test_paid_history_without_any_initial_activation_cannot_bypass_first_activation",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.latest_membership(client_id)['estado'] == 'EN_TRAMITE'",
+        "gym.latest_membership(client_id)['estado'] == 'EN_TRAMITE'",
+        "gym.get_cliente(client_id)['estado'] != 'ACTIVO'"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_paid_history_without_any_initial_activation_cannot_bypass_first_activation",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_paid_history_without_any_initial_activation_cannot_bypass_first_activation -q",
+      "id": "CT-M03-I-BE-052"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 218,
+      "name": "test_reconfirmation_recovers_previously_paid_pending_renewal_without_new_charge",
+      "source_function": "test_reconfirmation_recovers_previously_paid_pending_renewal_without_new_charge",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "renewed['estado'] == 'ACTIVO'",
+        "renewed['fecha_inicio'] == '2026-11-11'",
+        "renewed['fecha_pago'] == '2026-11-10'"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_reconfirmation_recovers_previously_paid_pending_renewal_without_new_charge",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_reconfirmation_recovers_previously_paid_pending_renewal_without_new_charge -q",
+      "id": "CT-M03-I-BE-053"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 236,
+      "name": "test_personal_link_and_checkout_use_last_week_or_expired_membership[-1-True]",
+      "source_function": "test_personal_link_and_checkout_use_last_week_or_expired_membership",
+      "variant": "-1-True",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "service.checkout(token, amount)['checkout_url']",
+        "len(calls) == 1",
+        "not calls and len(gym.membresias_por_cliente(source['id_cliente'])) == 1"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[-1-True]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[-1-True]' -q",
+      "id": "CT-M03-I-BE-054"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 236,
+      "name": "test_personal_link_and_checkout_use_last_week_or_expired_membership[0-True]",
+      "source_function": "test_personal_link_and_checkout_use_last_week_or_expired_membership",
+      "variant": "0-True",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "service.checkout(token, amount)['checkout_url']",
+        "len(calls) == 1",
+        "not calls and len(gym.membresias_por_cliente(source['id_cliente'])) == 1"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[0-True]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[0-True]' -q",
+      "id": "CT-M03-I-BE-055"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 236,
+      "name": "test_personal_link_and_checkout_use_last_week_or_expired_membership[3-True]",
+      "source_function": "test_personal_link_and_checkout_use_last_week_or_expired_membership",
+      "variant": "3-True",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "service.checkout(token, amount)['checkout_url']",
+        "len(calls) == 1",
+        "not calls and len(gym.membresias_por_cliente(source['id_cliente'])) == 1"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[3-True]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[3-True]' -q",
+      "id": "CT-M03-I-BE-056"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 236,
+      "name": "test_personal_link_and_checkout_use_last_week_or_expired_membership[7-True]",
+      "source_function": "test_personal_link_and_checkout_use_last_week_or_expired_membership",
+      "variant": "7-True",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "service.checkout(token, amount)['checkout_url']",
+        "len(calls) == 1",
+        "not calls and len(gym.membresias_por_cliente(source['id_cliente'])) == 1"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[7-True]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[7-True]' -q",
+      "id": "CT-M03-I-BE-057"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 236,
+      "name": "test_personal_link_and_checkout_use_last_week_or_expired_membership[8-False]",
+      "source_function": "test_personal_link_and_checkout_use_last_week_or_expired_membership",
+      "variant": "8-False",
+      "parameter_names": [
+        "days",
+        "allowed"
+      ],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "service.checkout(token, amount)['checkout_url']",
+        "len(calls) == 1",
+        "not calls and len(gym.membresias_por_cliente(source['id_cliente'])) == 1"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[8-False]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_renewal.py::test_personal_link_and_checkout_use_last_week_or_expired_membership[8-False]' -q",
+      "id": "CT-M03-I-BE-058"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_renewal.py",
+      "line": 254,
+      "name": "test_expiration_notice_requires_an_activated_period_not_initial_payment_or_future_period",
+      "source_function": "test_expiration_notice_requires_an_activated_period_not_initial_payment_or_future_period",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "renewal",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not events",
+        "not events"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_membership_renewal.py::test_expiration_notice_requires_an_activated_period_not_initial_payment_or_future_period",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_renewal.py::test_expiration_notice_requires_an_activated_period_not_initial_payment_or_future_period -q",
+      "id": "CT-M03-I-BE-059"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "line": 10,
+      "name": "test_registration_payment_activation_and_expiry_use_only_three_states",
+      "source_function": "test_registration_payment_activation_and_expiry_use_only_three_states",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "membership['estado'] == 'EN_TRAMITE'",
+        "membership['estado_pago'] == 'PENDIENTE'",
+        "membership['estado'] == 'EN_TRAMITE'"
+      ],
+      "checks_in_source": 8,
+      "selector": "tests/membresias_pagos/integracion/test_membership_states.py::test_registration_payment_activation_and_expiry_use_only_three_states",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_states.py::test_registration_payment_activation_and_expiry_use_only_three_states -q",
+      "id": "CT-M03-I-BE-060"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "line": 37,
+      "name": "test_membership_input_rejects_fourth_states[BLOQUEADA]",
+      "source_function": "test_membership_input_rejects_fourth_states",
+      "variant": "BLOQUEADA",
+      "parameter_names": [
+        "state"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_states.py::test_membership_input_rejects_fourth_states[BLOQUEADA]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_states.py::test_membership_input_rejects_fourth_states[BLOQUEADA]' -q",
+      "id": "CT-M03-I-BE-061"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "line": 37,
+      "name": "test_membership_input_rejects_fourth_states[INACTIVO]",
+      "source_function": "test_membership_input_rejects_fourth_states",
+      "variant": "INACTIVO",
+      "parameter_names": [
+        "state"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_states.py::test_membership_input_rejects_fourth_states[INACTIVO]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_states.py::test_membership_input_rejects_fourth_states[INACTIVO]' -q",
+      "id": "CT-M03-I-BE-062"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "line": 37,
+      "name": "test_membership_input_rejects_fourth_states[OTRO]",
+      "source_function": "test_membership_input_rejects_fourth_states",
+      "variant": "OTRO",
+      "parameter_names": [
+        "state"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_states.py::test_membership_input_rejects_fourth_states[OTRO]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_states.py::test_membership_input_rejects_fourth_states[OTRO]' -q",
+      "id": "CT-M03-I-BE-063"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "line": 37,
+      "name": "test_membership_input_rejects_fourth_states[PENDIENTE_PAGO]",
+      "source_function": "test_membership_input_rejects_fourth_states",
+      "variant": "PENDIENTE_PAGO",
+      "parameter_names": [
+        "state"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValidationError)"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_membership_states.py::test_membership_input_rejects_fourth_states[PENDIENTE_PAGO]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_membership_states.py::test_membership_input_rejects_fourth_states[PENDIENTE_PAGO]' -q",
+      "id": "CT-M03-I-BE-064"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "line": 42,
+      "name": "test_legacy_pending_state_does_not_become_paid_when_normalized",
+      "source_function": "test_legacy_pending_state_does_not_become_paid_when_normalized",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "membership['estado'] == 'EN_TRAMITE'",
+        "membership['estado_pago'] == 'PENDIENTE'",
+        "remote['Estado'] == 'EN_TRAMITE'"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/membresias_pagos/integracion/test_membership_states.py::test_legacy_pending_state_does_not_become_paid_when_normalized",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_states.py::test_legacy_pending_state_does_not_become_paid_when_normalized -q",
+      "id": "CT-M03-I-BE-065"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "line": 54,
+      "name": "test_new_membership_stays_in_progress_until_paid_and_activated",
+      "source_function": "test_new_membership_stays_in_progress_until_paid_and_activated",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "membership['estado'] == 'EN_TRAMITE'",
+        "membership['estado_pago'] == 'PENDIENTE'",
+        "pytest.raises(ValueError, match='sin pago confirmado')"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_membership_states.py::test_new_membership_stays_in_progress_until_paid_and_activated",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_states.py::test_new_membership_stays_in_progress_until_paid_and_activated -q",
+      "id": "CT-M03-I-BE-066"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "line": 70,
+      "name": "test_editing_or_loading_expired_client_does_not_create_an_active_renewal",
+      "source_function": "test_editing_or_loading_expired_client_does_not_create_an_active_renewal",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "membership['estado'] == 'EN_TRAMITE'",
+        "membership['estado_pago'] == 'PENDIENTE'",
+        "len(normalized['membresia']) == 1"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/membresias_pagos/integracion/test_membership_states.py::test_editing_or_loading_expired_client_does_not_create_an_active_renewal",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_membership_states.py::test_editing_or_loading_expired_client_does_not_create_an_active_renewal -q",
+      "id": "CT-M03-I-BE-067"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 47,
+      "name": "test_checkout_creates_hosted_stripe_session",
+      "source_function": "test_checkout_creates_hosted_stripe_session",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result == { \"configured\": True, \"session_id\": \"cs_test_123\", \"checkout_url\": \"https://checkout.stripe.com/c/pay/cs_test_123\", \"amount\": 79.9, \"currency\": \"PEN\", }",
+        "checkout[\"mode\"] == \"payment\"",
+        "checkout[\"payment_method_types\"] == [\"card\"]"
+      ],
+      "checks_in_source": 14,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_creates_hosted_stripe_session",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_creates_hosted_stripe_session -q",
+      "id": "CT-M03-I-BE-068"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 78,
+      "name": "test_checkout_retries_reuse_key_across_service_instances",
+      "source_function": "test_checkout_retries_reuse_key_across_service_instances",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "first == retry"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_retries_reuse_key_across_service_instances",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_retries_reuse_key_across_service_instances -q",
+      "id": "CT-M03-I-BE-069"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 91,
+      "name": "test_checkout_changed_parameters_do_not_reuse_key[changed0]",
+      "source_function": "test_checkout_changed_parameters_do_not_reuse_key",
+      "variant": "changed0",
+      "parameter_names": [
+        "changed"
+      ],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "original[\"idempotency_key\"] != updated[\"idempotency_key\"]",
+        "updated == retry"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_changed_parameters_do_not_reuse_key[changed0]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_changed_parameters_do_not_reuse_key[changed0]' -q",
+      "id": "CT-M03-I-BE-070"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 91,
+      "name": "test_checkout_changed_parameters_do_not_reuse_key[changed1]",
+      "source_function": "test_checkout_changed_parameters_do_not_reuse_key",
+      "variant": "changed1",
+      "parameter_names": [
+        "changed"
+      ],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "original[\"idempotency_key\"] != updated[\"idempotency_key\"]",
+        "updated == retry"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_changed_parameters_do_not_reuse_key[changed1]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_changed_parameters_do_not_reuse_key[changed1]' -q",
+      "id": "CT-M03-I-BE-071"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 91,
+      "name": "test_checkout_changed_parameters_do_not_reuse_key[changed2]",
+      "source_function": "test_checkout_changed_parameters_do_not_reuse_key",
+      "variant": "changed2",
+      "parameter_names": [
+        "changed"
+      ],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "original[\"idempotency_key\"] != updated[\"idempotency_key\"]",
+        "updated == retry"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_changed_parameters_do_not_reuse_key[changed2]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_changed_parameters_do_not_reuse_key[changed2]' -q",
+      "id": "CT-M03-I-BE-072"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 91,
+      "name": "test_checkout_changed_parameters_do_not_reuse_key[changed3]",
+      "source_function": "test_checkout_changed_parameters_do_not_reuse_key",
+      "variant": "changed3",
+      "parameter_names": [
+        "changed"
+      ],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "original[\"idempotency_key\"] != updated[\"idempotency_key\"]",
+        "updated == retry"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_changed_parameters_do_not_reuse_key[changed3]",
+      "command": "python -m pytest 'tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_changed_parameters_do_not_reuse_key[changed3]' -q",
+      "id": "CT-M03-I-BE-073"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 100,
+      "name": "test_checkout_reports_missing_stripe_configuration",
+      "source_function": "test_checkout_reports_missing_stripe_configuration",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.create_membership_checkout({}) == { \"configured\": False, \"message\": \"Stripe no está configurado\", }"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_reports_missing_stripe_configuration",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_reports_missing_stripe_configuration -q",
+      "id": "CT-M03-I-BE-074"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 109,
+      "name": "test_checkout_rejects_live_key_in_test_mode",
+      "source_function": "test_checkout_rejects_live_key_in_test_mode",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match=\"STRIPE_MODE=test\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_rejects_live_key_in_test_mode",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_rejects_live_key_in_test_mode -q",
+      "id": "CT-M03-I-BE-075"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 119,
+      "name": "test_checkout_requires_webhook_before_accepting_payments",
+      "source_function": "test_checkout_requires_webhook_before_accepting_payments",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match=\"STRIPE_WEBHOOK_SECRET\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_requires_webhook_before_accepting_payments",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_checkout.py::test_checkout_requires_webhook_before_accepting_payments -q",
+      "id": "CT-M03-I-BE-076"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_checkout.py",
+      "line": 129,
+      "name": "test_webhook_validation_uses_raw_payload_and_signing_secret",
+      "source_function": "test_webhook_validation_uses_raw_payload_and_signing_secret",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "event[\"id\"] == \"evt_test\"",
+        "captured == { \"payload\": b'{\"id\":\"evt_test\"}', \"signature\": \"t=1,v1=signature\", \"secret\": \"whsec_example\", }"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_checkout.py::test_webhook_validation_uses_raw_payload_and_signing_secret",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_checkout.py::test_webhook_validation_uses_raw_payload_and_signing_secret -q",
+      "id": "CT-M03-I-BE-077"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 62,
+      "name": "test_confirm_verified_checkout_persists_paid_session",
+      "source_function": "test_confirm_verified_checkout_persists_paid_session",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"confirmed\"] is True",
+        "result[\"id_cliente\"] == 12",
+        "result[\"payment_status\"] == \"paid\""
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_persists_paid_session",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_persists_paid_session -q",
+      "id": "CT-M03-I-BE-078"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 82,
+      "name": "test_confirm_verified_checkout_does_not_persist_unpaid_session",
+      "source_function": "test_confirm_verified_checkout_does_not_persist_unpaid_session",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result == {\"confirmed\": False, \"payment_status\": \"unpaid\"}",
+        "clients.confirmations == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_does_not_persist_unpaid_session",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_does_not_persist_unpaid_session -q",
+      "id": "CT-M03-I-BE-079"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 92,
+      "name": "test_confirm_verified_checkout_rejects_wrong_amount",
+      "source_function": "test_confirm_verified_checkout_rejects_wrong_amount",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "clients.confirmations == []",
+        "pytest.raises(ValueError, match=\"importe\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_rejects_wrong_amount",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_rejects_wrong_amount -q",
+      "id": "CT-M03-I-BE-080"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 102,
+      "name": "test_confirm_verified_checkout_rejects_unrelated_metadata",
+      "source_function": "test_confirm_verified_checkout_rejects_unrelated_metadata",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "clients.confirmations == []",
+        "pytest.raises(ValueError, match=\"metadatos\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_rejects_unrelated_metadata",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_rejects_unrelated_metadata -q",
+      "id": "CT-M03-I-BE-081"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 112,
+      "name": "test_confirm_verified_checkout_rejects_another_membership",
+      "source_function": "test_confirm_verified_checkout_rejects_another_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "clients.confirmations == []",
+        "pytest.raises(ValueError, match=\"membresía\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_rejects_another_membership",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_rejects_another_membership -q",
+      "id": "CT-M03-I-BE-082"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 126,
+      "name": "test_confirm_verified_checkout_rejects_live_session_in_test_mode",
+      "source_function": "test_confirm_verified_checkout_rejects_live_session_in_test_mode",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "clients.confirmations == []",
+        "pytest.raises(ValueError, match=\"modo configurado\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_rejects_live_session_in_test_mode",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_confirm_verified_checkout_rejects_live_session_in_test_mode -q",
+      "id": "CT-M03-I-BE-083"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 140,
+      "name": "test_payment_amount_uses_price_saved_on_membership",
+      "source_function": "test_payment_amount_uses_price_saved_on_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "service.payment_amount_matches(12, 79.0, id_membresia=34) is True",
+        "service.payment_amount_matches(12, 199.0, id_membresia=34) is False"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_payment_amount_uses_price_saved_on_membership",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_payment_amount_uses_price_saved_on_membership -q",
+      "id": "CT-M03-I-BE-084"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 170,
+      "name": "test_duplicate_confirmation_does_not_revert_active_membership",
+      "source_function": "test_duplicate_confirmation_does_not_revert_active_membership",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "gym.state[\"clientes\"][0][\"estado\"] == \"ACTIVO\"",
+        "gym.state[\"membresia\"][0][\"estado\"] == \"ACTIVO\"",
+        "gym.state[\"membresia\"][0][\"estado_pago\"] == \"PAGADO\""
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_duplicate_confirmation_does_not_revert_active_membership",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_duplicate_confirmation_does_not_revert_active_membership -q",
+      "id": "CT-M03-I-BE-085"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 198,
+      "name": "test_duplicate_confirmation_repairs_pending_client_after_partial_write",
+      "source_function": "test_duplicate_confirmation_repairs_pending_client_after_partial_write",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "gym.state[\"clientes\"][0][\"estado\"] == \"EN_TRAMITE\""
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_duplicate_confirmation_repairs_pending_client_after_partial_write",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_duplicate_confirmation_repairs_pending_client_after_partial_write -q",
+      "id": "CT-M03-I-BE-086"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 222,
+      "name": "test_membership_cannot_be_activated_before_payment",
+      "source_function": "test_membership_cannot_be_activated_before_payment",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "gym.state[\"clientes\"][0][\"estado\"] == \"PENDIENTE_PAGO\"",
+        "pytest.raises(ValueError, match=\"sin pago confirmado\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_membership_cannot_be_activated_before_payment",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_membership_cannot_be_activated_before_payment -q",
+      "id": "CT-M03-I-BE-087"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 239,
+      "name": "test_activating_an_active_membership_does_not_extend_its_dates",
+      "source_function": "test_activating_an_active_membership_does_not_extend_its_dates",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "gym.state[\"clientes\"][0][\"estado\"] == \"ACTIVO\"",
+        "gym.state[\"membresia\"][0][\"fecha_inicio\"] == \"2026-01-01\"",
+        "gym.state[\"membresia\"][0][\"fecha_fin\"] == \"2026-01-31\""
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_activating_an_active_membership_does_not_extend_its_dates",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_activating_an_active_membership_does_not_extend_its_dates -q",
+      "id": "CT-M03-I-BE-088"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py",
+      "line": 260,
+      "name": "test_public_registration_ignores_payment_fields_from_browser",
+      "source_function": "test_public_registration_ignores_payment_fields_from_browser",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "\"metodo_pago\" not in payload",
+        "\"referencia_pago\" not in payload"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_public_registration_ignores_payment_fields_from_browser",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_stripe_confirmation.py::test_public_registration_ignores_payment_fields_from_browser -q",
+      "id": "CT-M03-I-BE-089"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_supabase_payment_safety.py",
+      "line": 19,
+      "name": "test_payment_schema_reports_missing_migration",
+      "source_function": "test_payment_schema_reports_missing_migration",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match=\"001_add_membership_payment_fields.sql\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_supabase_payment_safety.py::test_payment_schema_reports_missing_migration",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_supabase_payment_safety.py::test_payment_schema_reports_missing_migration -q",
+      "id": "CT-M03-I-BE-090"
+    },
+    {
+      "component": "backend",
+      "module": "membresias_pagos",
+      "type": "integracion",
+      "path": "backend/tests/membresias_pagos/integracion/test_supabase_payment_safety.py",
+      "line": 28,
+      "name": "test_payment_schema_does_not_hide_connection_errors",
+      "source_function": "test_payment_schema_does_not_hide_connection_errors",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match=\"401\")"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/membresias_pagos/integracion/test_supabase_payment_safety.py::test_payment_schema_does_not_hide_connection_errors",
+      "command": "python -m pytest tests/membresias_pagos/integracion/test_supabase_payment_safety.py::test_payment_schema_does_not_hide_connection_errors -q",
+      "id": "CT-M03-I-BE-091"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "line": 31,
+      "name": "permite renovar activos/vencidos y conserva la activación inicial",
+      "source_function": "'permite renovar activos/vencidos y conserva la activación inicial'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(canRenewClientMembership(client), true)",
+        "assert.equal(canRenewClientMembership({ ...client, status: 'ACTIVO' }), true)",
+        "assert.equal(canRenewClientMembership({ ...client, status: 'EN_TRAMITE' }), false)"
+      ],
+      "checks_in_source": 4,
+      "selector": "permite renovar activos/vencidos y conserva la activación inicial",
+      "command": "node --test '--test-name-pattern=^permite\\ renovar\\ activos/vencidos\\ y\\ conserva\\ la\\ activación\\ inicial$' tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "id": "CT-M03-F-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "line": 37,
+      "name": "revisar detalles no cobra y efectivo exige confirmación de recibo",
+      "source_function": "'revisar detalles no cobra y efectivo exige confirmación de recibo'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(state.renewalDetails.value.monto_pago, 80)",
+        "assert.equal(posts, 0)",
+        "assert.equal(posts, 0)"
+      ],
+      "checks_in_source": 5,
+      "selector": "revisar detalles no cobra y efectivo exige confirmación de recibo",
+      "command": "node --test '--test-name-pattern=^revisar\\ detalles\\ no\\ cobra\\ y\\ efectivo\\ exige\\ confirmación\\ de\\ recibo$' tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "id": "CT-M03-F-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "line": 46,
+      "name": "confirmar efectivo bloquea clics duplicados y actualiza la ficha guardada",
+      "source_function": "'confirmar efectivo bloquea clics duplicados y actualiza la ficha guardada'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(path, '/clientes/1/renovar-membresia')",
+        "assert.equal(token, 'token-sintetico')",
+        "assert.equal(payload.metodo_pago, 'efectivo')"
+      ],
+      "checks_in_source": 10,
+      "selector": "confirmar efectivo bloquea clics duplicados y actualiza la ficha guardada",
+      "command": "node --test '--test-name-pattern=^confirmar\\ efectivo\\ bloquea\\ clics\\ duplicados\\ y\\ actualiza\\ la\\ ficha\\ guardada$' tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "id": "CT-M03-F-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "line": 62,
+      "name": "compra pendiente selecciona Stripe y reutiliza la compra del servidor",
+      "source_function": "'compra pendiente selecciona Stripe y reutiliza la compra del servidor'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(payload.metodo_pago, 'stripe')",
+        "assert.equal(payload.id_membresia_origen, 4)",
+        "assert.equal(payload.monto_pago, 80)"
+      ],
+      "checks_in_source": 5,
+      "selector": "compra pendiente selecciona Stripe y reutiliza la compra del servidor",
+      "command": "node --test '--test-name-pattern=^compra\\ pendiente\\ selecciona\\ Stripe\\ y\\ reutiliza\\ la\\ compra\\ del\\ servidor$' tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "id": "CT-M03-F-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "line": 75,
+      "name": "error de precio conserva el diálogo sin anunciar renovación ni duplicar el cobro",
+      "source_function": "'error de precio conserva el diálogo sin anunciar renovación ni duplicar el cobro'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(state.renewalError.value, /precio cambió/)",
+        "assert.notEqual(state.pendingRenewal.value, null)",
+        "assert.equal(state.renewingClientId.value, '')"
+      ],
+      "checks_in_source": 5,
+      "selector": "error de precio conserva el diálogo sin anunciar renovación ni duplicar el cobro",
+      "command": "node --test '--test-name-pattern=^error\\ de\\ precio\\ conserva\\ el\\ diálogo\\ sin\\ anunciar\\ renovación\\ ni\\ duplicar\\ el\\ cobro$' tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "id": "CT-M03-F-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "line": 82,
+      "name": "cerrar o cambiar de sesión descarta una respuesta pendiente de detalles",
+      "source_function": "'cerrar o cambiar de sesión descarta una respuesta pendiente de detalles'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(state.pendingRenewal.value, null)",
+        "assert.equal(state.renewalDetails.value, null)",
+        "assert.equal(switched.renewalDetails.value, null)"
+      ],
+      "checks_in_source": 3,
+      "selector": "cerrar o cambiar de sesión descarta una respuesta pendiente de detalles",
+      "command": "node --test '--test-name-pattern=^cerrar\\ o\\ cambiar\\ de\\ sesión\\ descarta\\ una\\ respuesta\\ pendiente\\ de\\ detalles$' tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "id": "CT-M03-F-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "line": 90,
+      "name": "el botón solo permite vencidas o los últimos siete días, con fecha de Perú",
+      "source_function": "'el botón solo permite vencidas o los últimos siete días, con fecha de Perú'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(canRenewClientMembership({ ...client, status: 'ACTIVO', membershipEnd: end }, today), allowed)",
+        "assert.equal(canRenewClientMembership({ ...client, membershipEnd: '' }, today), false)",
+        "assert.equal(canRenewClientMembership({ ...client, membershipEnd: '2026-02-30' }, today), false)"
+      ],
+      "checks_in_source": 4,
+      "selector": "el botón solo permite vencidas o los últimos siete días, con fecha de Perú",
+      "command": "node --test '--test-name-pattern=^el\\ botón\\ solo\\ permite\\ vencidas\\ o\\ los\\ últimos\\ siete\\ días,\\ con\\ fecha\\ de\\ Perú$' tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "id": "CT-M03-F-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "line": 99,
+      "name": "el botón respeta la elegibilidad del servidor aunque la última fila sea una compra pendiente",
+      "source_function": "'el botón respeta la elegibilidad del servidor aunque la última fila sea una compra pendiente'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(canRenewClientMembership({ ...pending, canRenewMembership: false }), false)",
+        "assert.equal(canRenewClientMembership({ ...pending, canRenewMembership: true }), true)"
+      ],
+      "checks_in_source": 2,
+      "selector": "el botón respeta la elegibilidad del servidor aunque la última fila sea una compra pendiente",
+      "command": "node --test '--test-name-pattern=^el\\ botón\\ respeta\\ la\\ elegibilidad\\ del\\ servidor\\ aunque\\ la\\ última\\ fila\\ sea\\ una\\ compra\\ pendiente$' tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "id": "CT-M03-F-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/membership-renewal.test.js",
+      "line": 29,
+      "name": "revisa detalles sin iniciar pago y exige enlace personal",
+      "source_function": "'revisa detalles sin iniciar pago y exige enlace personal'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(mounted.setup.details.monto_pago, 120)",
+        "assert.equal(posts, 0)",
+        "assert.ok(gets > 0)"
+      ],
+      "checks_in_source": 5,
+      "selector": "revisa detalles sin iniciar pago y exige enlace personal",
+      "command": "node --test '--test-name-pattern=^revisa\\ detalles\\ sin\\ iniciar\\ pago\\ y\\ exige\\ enlace\\ personal$' tests/membresias_pagos/interfaz/membership-renewal.test.js",
+      "id": "CT-M03-F-FE-009"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/membership-renewal.test.js",
+      "line": 41,
+      "name": "un precio desactualizado muestra error y permite recargar sin redirigir",
+      "source_function": "'un precio desactualizado muestra error y permite recargar sin redirigir'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(payload.token, 'personal')",
+        "assert.equal(payload.monto_pago, 120)",
+        "assert.match(mounted.setup.error, /precio cambió/)"
+      ],
+      "checks_in_source": 5,
+      "selector": "un precio desactualizado muestra error y permite recargar sin redirigir",
+      "command": "node --test '--test-name-pattern=^un\\ precio\\ desactualizado\\ muestra\\ error\\ y\\ permite\\ recargar\\ sin\\ redirigir$' tests/membresias_pagos/interfaz/membership-renewal.test.js",
+      "id": "CT-M03-F-FE-010"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/membership-renewal.test.js",
+      "line": 52,
+      "name": "una renovación pagada bloquea el botón de compra",
+      "source_function": "'una renovación pagada bloquea el botón de compra'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(posts, 0)"
+      ],
+      "checks_in_source": 1,
+      "selector": "una renovación pagada bloquea el botón de compra",
+      "command": "node --test '--test-name-pattern=^una\\ renovación\\ pagada\\ bloquea\\ el\\ botón\\ de\\ compra$' tests/membresias_pagos/interfaz/membership-renewal.test.js",
+      "id": "CT-M03-F-FE-011"
+    },
+    {
+      "component": "frontend",
+      "module": "membresias_pagos",
+      "type": "interfaz",
+      "path": "frontend/tests/membresias_pagos/interfaz/membership-renewal.test.js",
+      "line": 58,
+      "name": "cambiar de enlace descarta los detalles anteriores",
+      "source_function": "'cambiar de enlace descarta los detalles anteriores'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(mounted.setup.details, null)",
+        "assert.match(mounted.setup.error, /incompleto/)"
+      ],
+      "checks_in_source": 2,
+      "selector": "cambiar de enlace descarta los detalles anteriores",
+      "command": "node --test '--test-name-pattern=^cambiar\\ de\\ enlace\\ descarta\\ los\\ detalles\\ anteriores$' tests/membresias_pagos/interfaz/membership-renewal.test.js",
+      "id": "CT-M03-F-FE-012"
+    }
+  ]
+}

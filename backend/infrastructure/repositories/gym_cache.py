@@ -20,8 +20,12 @@ class GymCache:
             selected = self.state if resources is None else {key: self.state[key] for key in resources if key in self.state}
             return operation(deepcopy(selected))
 
-    def invalidate(self):
+    def invalidate(self, resources=None):
         self.last_refresh_at = 0.0
-        self.resource_refreshed_at.clear()
+        if resources is None:
+            self.resource_refreshed_at.clear()
+        else:
+            for resource in resources:
+                self.resource_refreshed_at.pop(resource, None)
 
 

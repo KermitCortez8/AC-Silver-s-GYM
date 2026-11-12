@@ -37,10 +37,10 @@ capturador que impide enviarla. Esta comprobación no certifica borrados reales.
 
 ## Regresión y resultados
 
-- [32-http-error-control.test.js](../../../../frontend/tests/32-http-error-control.test.js):
+- [http-error-control.test.js](../../../../frontend/tests/transversales/integracion/http-error-control.test.js):
   respuesta 204 con stream de navegador, tanto en API como repositorio, sin
   leer el cuerpo ni repetir DELETE; conservación de otros estados sin cuerpo.
-- [test_client_flow_control.py](../../../../backend/tests/test_client_flow_control.py):
+- [test_client_flow_control.py](../../../../backend/tests/transversales/integracion/test_client_flow_control.py):
   checkout público abierto/expirado sin pago ni notificación, reintento sin
   duplicados y borrado HTTP 204 conservando otro cliente y su membresía.
 - `npm test` en `frontend`: 290 pruebas correctas.
