@@ -260,7 +260,10 @@ y ejecuta Nginx como usuario `nginx` en el puerto 8080. Node y las pruebas no
 forman parte de esa imagen final.
 
 Los `.dockerignore` excluyen archivos de entorno, dependencias locales y otros
-artefactos del contexto de construcción. Los valores `VITE_*` se incorporan al
+artefactos del contexto de construcción. El backend conserva las suites bajo
+`tests/<módulo>/<tipo>/` y los dobles/fixtures de `tests/soporte/`; excluye
+`tests/**/manuales/`. Este contexto se utiliza tanto en la validación de PR como
+en el CI posterior al merge. Los valores `VITE_*` se incorporan al
 JavaScript al compilar: son configuración pública. Cambiarlos en Docker requiere
 reconstruir el frontend; las claves privadas se inyectan solo en el backend.
 
