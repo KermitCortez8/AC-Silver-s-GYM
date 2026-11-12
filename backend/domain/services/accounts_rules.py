@@ -9,7 +9,7 @@ from domain.services.client_identifiers import parse_client_id
 from typing import Any
 from domain.form_limits import SHORT_TEXT_LIMIT
 from domain.validation import required_text, account_email, dni_number, phone_number
-from domain.services.membership_lifecycle import normalize_membership_status, project_memberships
+from domain.services.membership_lifecycle import normalize_membership_status, project_memberships, membership_renewable
 
 
 def user_role_prefix(role: str) -> str:
@@ -251,8 +251,15 @@ class AccountsRules:
     def clientes_normalized(self) -> list[dict[str, Any]]:
         state = project_memberships(self.context.state, self.context.today())
         latest_by_client = {}
+        activated_by_client = {}
         for membership in state.get("membresia", []):
             client_id = int(membership.get("id_cliente", 0) or 0)
+            if (membership.get('estado_pago') == 'PAGADO'
+                    and normalize_membership_status(membership.get('estado')) in {'ACTIVO', 'VENCIDA'}
+                    and membership.get('fecha_inicio') and membership.get('fecha_fin')):
+                previous = activated_by_client.get(client_id)
+                if previous is None or int(membership['id_membresia']) > int(previous['id_membresia']):
+                    activated_by_client[client_id] = membership
             latest = latest_by_client.get(client_id)
             if latest is None or int(membership.get("id_membresia", 0) or 0) > int(latest.get("id_membresia", 0) or 0):
                 latest_by_client[client_id] = membership
@@ -273,6 +280,7 @@ class AccountsRules:
                     "id_membresia": membership.get("id_membresia"),
                     "id_promocion": membership.get("id_promocion"),
                     "membership_status": normalize_membership_status(membership.get("estado") or row["estado"]),
+                    "renewal_allowed": membership_renewable(activated_by_client.get(int(row['id_cliente']), {}), self.context.today()),
                     "membership_start": membership.get("fecha_inicio", ""),
                     "membership_end": membership.get("fecha_fin", ""),
                     "payment_status": membership.get("estado_pago", ""),
@@ -436,6 +444,18 @@ class AccountsRules:
                 except Exception:
                     return False
 
+            cliente = next((c for c in state["clientes"] if matches_id(c.get("id_cliente"))), None)
+            if cliente:
+                # Retirar la cuenta conserva la compra, su comprador y sus importes.
+                for pedido in state.get("pedidos_tienda", []):
+                    if not matches_id(pedido.get("id_cliente")):
+                        continue
+                    if not pedido.get("cliente_nombre") or pedido["cliente_nombre"] == "Cliente":
+                        pedido["cliente_nombre"] = cliente.get("nombre") or "Cliente"
+                    for campo in ("correo", "dni"):
+                        if not pedido.get(f"cliente_{campo}"):
+                            pedido[f"cliente_{campo}"] = cliente.get(campo) or ""
+                    pedido["id_cliente"] = None
             state["clientes"] = [c for c in state["clientes"] if not matches_id(c.get("id_cliente"))]
             state["membresia"] = [m for m in state["membresia"] if not matches_id(m.get("id_cliente"))]
             state["asistencia"] = [a for a in state["asistencia"] if not matches_id(a.get("id_cliente_num") or a.get("id_cliente") or a.get("id_cliente_uid"))]

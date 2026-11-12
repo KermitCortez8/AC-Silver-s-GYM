@@ -1,0 +1,406 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "tienda_pedidos",
+  "counts": {
+    "backend": {
+      "collected": 5,
+      "passed": 5,
+      "skipped": 0
+    },
+    "frontend": {
+      "collected": 10,
+      "passed": 10,
+      "skipped": 0
+    },
+    "total": 15,
+    "passed": 15,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "component": "backend",
+      "module": "tienda_pedidos",
+      "type": "integracion",
+      "path": "backend/tests/tienda_pedidos/integracion/test_store_images.py",
+      "line": 24,
+      "name": "test_image_upload_and_listing_preserve_public_urls",
+      "source_function": "test_image_upload_and_listing_preserve_public_urls",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "tmp_path_factory",
+        "images_api",
+        "tmp_path"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 201",
+        "re.fullmatch(r\"producto-demo-[a-f0-9]{12}\\.png\", record[\"name\"])",
+        "record[\"url\"] == f\"/api/uploads/store-images/{record['name']}\""
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/tienda_pedidos/integracion/test_store_images.py::test_image_upload_and_listing_preserve_public_urls",
+      "command": "python -m pytest tests/tienda_pedidos/integracion/test_store_images.py::test_image_upload_and_listing_preserve_public_urls -q",
+      "id": "CT-M09-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "tienda_pedidos",
+      "type": "integracion",
+      "path": "backend/tests/tienda_pedidos/integracion/test_store_images.py",
+      "line": 41,
+      "name": "test_invalid_uploads_are_rejected_before_storage[empty]",
+      "source_function": "test_invalid_uploads_are_rejected_before_storage",
+      "variant": "empty",
+      "parameter_names": [
+        "filename",
+        "data",
+        "mime"
+      ],
+      "fixtures": [
+        "tmp_path_factory",
+        "images_api",
+        "tmp_path"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "list(directory.iterdir()) == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/tienda_pedidos/integracion/test_store_images.py::test_invalid_uploads_are_rejected_before_storage[empty]",
+      "command": "python -m pytest 'tests/tienda_pedidos/integracion/test_store_images.py::test_invalid_uploads_are_rejected_before_storage[empty]' -q",
+      "id": "CT-M09-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "tienda_pedidos",
+      "type": "integracion",
+      "path": "backend/tests/tienda_pedidos/integracion/test_store_images.py",
+      "line": 41,
+      "name": "test_invalid_uploads_are_rejected_before_storage[svg]",
+      "source_function": "test_invalid_uploads_are_rejected_before_storage",
+      "variant": "svg",
+      "parameter_names": [
+        "filename",
+        "data",
+        "mime"
+      ],
+      "fixtures": [
+        "tmp_path_factory",
+        "images_api",
+        "tmp_path"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "list(directory.iterdir()) == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/tienda_pedidos/integracion/test_store_images.py::test_invalid_uploads_are_rejected_before_storage[svg]",
+      "command": "python -m pytest 'tests/tienda_pedidos/integracion/test_store_images.py::test_invalid_uploads_are_rejected_before_storage[svg]' -q",
+      "id": "CT-M09-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "tienda_pedidos",
+      "type": "integracion",
+      "path": "backend/tests/tienda_pedidos/integracion/test_store_images.py",
+      "line": 41,
+      "name": "test_invalid_uploads_are_rejected_before_storage[too-large]",
+      "source_function": "test_invalid_uploads_are_rejected_before_storage",
+      "variant": "too-large",
+      "parameter_names": [
+        "filename",
+        "data",
+        "mime"
+      ],
+      "fixtures": [
+        "tmp_path_factory",
+        "images_api",
+        "tmp_path"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "list(directory.iterdir()) == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/tienda_pedidos/integracion/test_store_images.py::test_invalid_uploads_are_rejected_before_storage[too-large]",
+      "command": "python -m pytest 'tests/tienda_pedidos/integracion/test_store_images.py::test_invalid_uploads_are_rejected_before_storage[too-large]' -q",
+      "id": "CT-M09-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "tienda_pedidos",
+      "type": "integracion",
+      "path": "backend/tests/tienda_pedidos/integracion/test_store_images.py",
+      "line": 41,
+      "name": "test_invalid_uploads_are_rejected_before_storage[wrong-mime]",
+      "source_function": "test_invalid_uploads_are_rejected_before_storage",
+      "variant": "wrong-mime",
+      "parameter_names": [
+        "filename",
+        "data",
+        "mime"
+      ],
+      "fixtures": [
+        "tmp_path_factory",
+        "images_api",
+        "tmp_path"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "list(directory.iterdir()) == []"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/tienda_pedidos/integracion/test_store_images.py::test_invalid_uploads_are_rejected_before_storage[wrong-mime]",
+      "command": "python -m pytest 'tests/tienda_pedidos/integracion/test_store_images.py::test_invalid_uploads_are_rejected_before_storage[wrong-mime]' -q",
+      "id": "CT-M09-I-BE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 5,
+      "name": "editing a store product preserves a zero threshold through the actual view and save payload",
+      "source_function": "'editing a store product preserves a zero threshold through the actual view and save payload'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(setup.form.minimo, 0)",
+        "assert.equal(setup.stockBarColor(product), 'bg-emerald-400')",
+        "assert.equal(setup.form.minimo, 5)"
+      ],
+      "checks_in_source": 5,
+      "selector": "editing a store product preserves a zero threshold through the actual view and save payload",
+      "command": "node --test '--test-name-pattern=^editing\\ a\\ store\\ product\\ preserves\\ a\\ zero\\ threshold\\ through\\ the\\ actual\\ view\\ and\\ save\\ payload$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 21,
+      "name": "la papelera conserva su pestaña y las acciones de restaurar y eliminar",
+      "source_function": "'la papelera conserva su pestaña y las acciones de restaurar y eliminar'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(setup.activeTab, 'papelera')",
+        "assert.ok(setup.tabs.some(tab => tab.value === 'papelera'))",
+        "assert.match(html, /Agua archivada/)"
+      ],
+      "checks_in_source": 5,
+      "selector": "la papelera conserva su pestaña y las acciones de restaurar y eliminar",
+      "command": "node --test '--test-name-pattern=^la\\ papelera\\ conserva\\ su\\ pestaña\\ y\\ las\\ acciones\\ de\\ restaurar\\ y\\ eliminar$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 32,
+      "name": "a failed product save preserves the editor and its entered values",
+      "source_function": "'a failed product save preserves the editor and its entered values'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(setup.isProductEditorOpen, true)",
+        "assert.equal(setup.form.nombre, 'Agua')",
+        "assert.equal(setup.isSaving, false)"
+      ],
+      "checks_in_source": 4,
+      "selector": "a failed product save preserves the editor and its entered values",
+      "command": "node --test '--test-name-pattern=^a\\ failed\\ product\\ save\\ preserves\\ the\\ editor\\ and\\ its\\ entered\\ values$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 45,
+      "name": "extracted product dialog hides the inventory link and renders the image picker",
+      "source_function": "'extracted product dialog hides the inventory link and renders the image picker'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(dialogs, /Agua editada/)",
+        "assert.doesNotMatch(dialogs, /Item de inventario|Almacén Agua/)",
+        "assert.match(dialogs, /agua.png/)"
+      ],
+      "checks_in_source": 4,
+      "selector": "extracted product dialog hides the inventory link and renders the image picker",
+      "command": "node --test '--test-name-pattern=^extracted\\ product\\ dialog\\ hides\\ the\\ inventory\\ link\\ and\\ renders\\ the\\ image\\ picker$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 61,
+      "name": "product editor validates quantities before sending them",
+      "source_function": "'product editor validates quantities before sending them'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(saves, 0)",
+        "assert.equal(setup.feedbackTone, 'error')",
+        "assert.equal(setup.isProductEditorOpen, true)"
+      ],
+      "checks_in_source": 3,
+      "selector": "product editor validates quantities before sending them",
+      "command": "node --test '--test-name-pattern=^product\\ editor\\ validates\\ quantities\\ before\\ sending\\ them$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 74,
+      "name": "order status saves cannot overlap and retain their draft after failure",
+      "source_function": "'order status saves cannot overlap and retain their draft after failure'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 1)",
+        "assert.equal(setup.ensureDraft(order).estado_pedido, 'CONFIRMADO')",
+        "assert.equal(setup.ensureDraft(order).observacion_admin, 'Recoger mañana')"
+      ],
+      "checks_in_source": 5,
+      "selector": "order status saves cannot overlap and retain their draft after failure",
+      "command": "node --test '--test-name-pattern=^order\\ status\\ saves\\ cannot\\ overlap\\ and\\ retain\\ their\\ draft\\ after\\ failure$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 93,
+      "name": "store quantity errors are visible and do not change the cart",
+      "source_function": "'store quantity errors are visible and do not change the cart'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(gym.cart.length, 0)",
+        "assert.equal(setup.feedbackTone, 'error')",
+        "assert.equal(gym.cart[0].cantidad, 2)"
+      ],
+      "checks_in_source": 7,
+      "selector": "store quantity errors are visible and do not change the cart",
+      "command": "node --test '--test-name-pattern=^store\\ quantity\\ errors\\ are\\ visible\\ and\\ do\\ not\\ change\\ the\\ cart$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 113,
+      "name": "failed gallery refresh preserves previously loaded images",
+      "source_function": "'failed gallery refresh preserves previously loaded images'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(setup.bucketImages.length, 1)",
+        "assert.equal(setup.bucketImages[0].name, 'agua.png')",
+        "assert.equal(setup.imageFeedbackTone, 'error')"
+      ],
+      "checks_in_source": 4,
+      "selector": "failed gallery refresh preserves previously loaded images",
+      "command": "node --test '--test-name-pattern=^failed\\ gallery\\ refresh\\ preserves\\ previously\\ loaded\\ images$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 124,
+      "name": "checkout validates customer data and prevents duplicate payments while preserving failed drafts",
+      "source_function": "'checkout validates customer data and prevents duplicate payments while preserving failed drafts'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 0)",
+        "assert.match(setup.feedback, /Solo se permiten correos/)",
+        "assert.equal(calls, 0)"
+      ],
+      "checks_in_source": 11,
+      "selector": "checkout validates customer data and prevents duplicate payments while preserving failed drafts",
+      "command": "node --test '--test-name-pattern=^checkout\\ validates\\ customer\\ data\\ and\\ prevents\\ duplicate\\ payments\\ while\\ preserving\\ failed\\ drafts$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-009"
+    },
+    {
+      "component": "frontend",
+      "module": "tienda_pedidos",
+      "type": "interfaz",
+      "path": "frontend/tests/tienda_pedidos/interfaz/formularios.test.js",
+      "line": 156,
+      "name": "client quantities never exceed the available stock and out-of-stock products are hidden",
+      "source_function": "'client quantities never exceed the available stock and out-of-stock products are hidden'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(setup.catalogProducts.map((p) => p.id_producto), [1])",
+        "assert.equal(event.target.value, '3')",
+        "assert.equal(setup.cantidadInput[1], 3)"
+      ],
+      "checks_in_source": 7,
+      "selector": "client quantities never exceed the available stock and out-of-stock products are hidden",
+      "command": "node --test '--test-name-pattern=^client\\ quantities\\ never\\ exceed\\ the\\ available\\ stock\\ and\\ out\\-of\\-stock\\ products\\ are\\ hidden$' tests/tienda_pedidos/interfaz/formularios.test.js",
+      "id": "CT-M09-F-FE-010"
+    }
+  ]
+}

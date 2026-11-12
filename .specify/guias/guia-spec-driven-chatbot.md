@@ -443,16 +443,16 @@ respuestas del modelo elegido.
 
 Pruebas de regresión existentes que conviene revisar y seleccionar según el diff:
 
-- Backend: [permisos y cargas por recurso](../../backend/tests/test_scoped_operations.py),
-  [vigencia](../../backend/tests/test_membership_expiration.py),
-  [capas](../../backend/tests/test_layer_boundaries.py),
-  [regresiones](../../backend/tests/test_review_regressions.py) y
-  [control de errores](../../backend/tests/test_module_error_control.py).
-- Frontend: [sesión](../../frontend/tests/14-session-validation.test.js),
-  [capas](../../frontend/tests/23-layer-boundaries.test.js),
-  [contexto por aplicación](../../frontend/tests/28-application-context.test.js),
-  [errores HTTP](../../frontend/tests/32-http-error-control.test.js) y
-  [validación de respuestas](../../frontend/tests/35-response-identifiers.test.js).
+- Backend: [permisos y cargas por recurso](../../backend/tests/transversales/integracion/test_scoped_operations.py),
+  [vigencia](../../backend/tests/membresias_pagos/integracion/test_membership_expiration.py),
+  [capas](../../backend/tests/transversales/arquitectura/test_layer_boundaries.py),
+  [regresiones](../../backend/tests/transversales/integracion/test_review_regressions.py) y
+  [control de errores](../../backend/tests/transversales/integracion/test_module_error_control.py).
+- Frontend: [sesión](../../frontend/tests/identidad_acceso/integracion/session-validation.test.js),
+  [capas](../../frontend/tests/transversales/arquitectura/layer-boundaries.test.js),
+  [contexto por aplicación](../../frontend/tests/paneles_configuracion/integracion/application-context.test.js),
+  [errores HTTP](../../frontend/tests/transversales/integracion/http-error-control.test.js) y
+  [validación de respuestas](../../frontend/tests/transversales/integracion/response-identifiers.test.js).
 
 Las pruebas específicas nuevas se añaden en las carpetas actuales `backend/tests/`
 y `frontend/tests/`; no crear otro framework sin necesidad. El proyecto frontend

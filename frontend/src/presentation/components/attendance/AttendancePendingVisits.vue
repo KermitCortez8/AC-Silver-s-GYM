@@ -41,6 +41,7 @@
           <div>
             <h3>{{ record.cliente_nombre }}</h3>
             <p>DNI {{ record.cliente_dni }}</p>
+            <span v-if="record.estado === 'incompleta'" class="att-badge incompleta">Incompleta</span>
           </div>
         </div>
         <div class="att-person-bottom">

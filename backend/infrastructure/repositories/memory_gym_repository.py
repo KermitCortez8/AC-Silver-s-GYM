@@ -25,6 +25,14 @@ class MemoryGymRepository:
                       if (match := re.search(r"(\d+)$", str(row.get(key) or "")))]
             floors[table] = max(floors.get(table, 0), max(values, default=0))
 
+    def reconcile_attendance(self, now):
+        from domain.services.attendance_maintenance import reconcile_attendance
+        with self.lock:
+            rows = deepcopy(self.state.get("asistencia", []))
+            count = reconcile_attendance(rows, now)
+            self.state["asistencia"] = rows
+            return count
+
     def attendance_page(self, criteria, request):
         from infrastructure.repositories.memory_attendance_history import attendance_page
         with self.lock:

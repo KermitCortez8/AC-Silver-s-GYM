@@ -33,7 +33,7 @@ del componente cuando corresponda. No hay script `npm run lint` en este proyecto
 
 ## PostgreSQL y migraciones
 
-[test_atomic_transactions_postgres.py](../../backend/tests/test_atomic_transactions_postgres.py)
+[test_atomic_transactions_postgres.py](../../backend/tests/transversales/postgres/test_atomic_transactions_postgres.py)
 requiere `GYM_TEST_POSTGRES_CONTAINER` apuntando a un PostgreSQL desechable con
 base `gym_test`, usuario `postgres` y acceso por `docker exec`. Su fixture trunca
 tablas y aplica 014/015/016, `018_archivar_inventario_tienda.sql`,
@@ -41,13 +41,15 @@ tablas y aplica 014/015/016, `018_archivar_inventario_tienda.sql`,
 reproducible está en [pr-validation.yml](../../.github/workflows/pr-validation.yml).
 Sin esa variable estas pruebas se omiten, y debe informarse la omisión.
 El mismo job incluye
-[test_public_preregistrations_postgres.py](../../backend/tests/test_public_preregistrations_postgres.py),
+[test_public_preregistrations_postgres.py](../../backend/tests/clientes/postgres/test_public_preregistrations_postgres.py),
 que comprueba privacidad, atomicidad y concurrencia de la conversión a cliente,
-[test_attendance_deadline_postgres.py](../../backend/tests/test_attendance_deadline_postgres.py)
-y [test_schedule_sessions_postgres.py](../../backend/tests/test_schedule_sessions_postgres.py).
-Los dos últimos comprueban el plazo de salida de asistencia, permisos, reservas
+[test_attendance_deadline_postgres.py](../../backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py),
+[test_automatic_attendance_postgres.py](../../backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py)
+y [test_schedule_sessions_postgres.py](../../backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py).
+Los módulos de asistencia y sesiones comprueban el plazo de salida de asistencia, permisos, reservas
 por fecha, cupos y recordatorios con las migraciones especializadas 005/013/018
-y 002/005/006/013/018/019, respectivamente. Cada módulo prepara su propio esquema
+y 002/005/006/013/018/019. La automatización agrega 021 y 023; las pruebas
+de programación real usan 022 cuando la imagen dispone de pg_cron. Cada módulo prepara su propio esquema
 sintético y sus dependencias en la base desechable.
 
 El conjunto de migraciones presupone un esquema previo: no asumir que constituye
@@ -56,7 +58,7 @@ compartidas y archivos de rollback. Seleccionar dependencias por nombre y conten
 no ejecutar ciegamente todos los `.sql` en orden alfabético. Para persistencia
 actual, consultar las precondiciones y enlaces SQL de [arquitectura](arquitectura.md).
 
-Los scripts de [tests/manual](../../backend/tests/manual/README.md) no son pytest;
+Los scripts de [pruebas manuales](../../backend/tests/soporte/manuales.md) no son pytest;
 algunos escriben sobre la base configurada.
 
 ## Evidencia de cierre

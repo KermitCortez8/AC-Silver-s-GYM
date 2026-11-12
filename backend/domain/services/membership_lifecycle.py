@@ -4,6 +4,10 @@ from __future__ import annotations
 from datetime import date
 
 
+RENEWAL_LEAD_DAYS = 7
+RENEWAL_WINDOW_MESSAGE = 'Solo puedes renovar una membresía vencida o cuando faltan 7 días o menos para su vencimiento.'
+
+
 ACTIVE = {"ACTIVA", "ACTIVO"}
 EXPIRED = {"VENCIDA", "VENCIDO"}
 
@@ -45,6 +49,16 @@ def membership_current(membership: dict, today: str) -> bool:
         and start and end and start <= date.fromisoformat(today) <= end
     )
 
+
+
+def membership_renewable(membership: dict, today: str) -> bool:
+    """Vencida o dentro de su última semana inclusiva, con activación y pago previos."""
+    from datetime import timedelta
+    start, end, current = _date(membership.get('fecha_inicio')), _date(membership.get('fecha_fin')), _date(today)
+    return bool(start and end and current and start <= current and start <= end
+                and _status(membership) in ACTIVE | EXPIRED
+                and str(membership.get('estado_pago') or '').strip().upper() == 'PAGADO'
+                and end <= current + timedelta(days=RENEWAL_LEAD_DAYS))
 
 def apply_membership_expiration(state: dict, today: str) -> bool:
     changed = False

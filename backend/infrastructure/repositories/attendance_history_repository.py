@@ -58,9 +58,10 @@ class AttendanceHistoryRepository:
         elif criteria.status == "completada":
             conditions.append("hora_salida.not.is.null")
             conditions.append("or(salida_tardia.is.null,salida_tardia.eq.false)")
+            conditions.append("or(cierre_automatico.is.null,cierre_automatico.eq.false)")
         elif criteria.status == "incompleta":
             at = criteria.at or datetime.now(LIMA).isoformat()
-            conditions.append(f"or(salida_tardia.eq.true,and(hora_salida.is.null,limite_salida.lt.{at}))")
+            conditions.append(f"or(cierre_automatico.eq.true,salida_tardia.eq.true,and(hora_salida.is.null,limite_salida.lt.{at}))")
         if conditions:
             filters["and"] = "(" + ",".join(conditions) + ")"
         page = self.database.select_page("ASISTENCIA", filters,

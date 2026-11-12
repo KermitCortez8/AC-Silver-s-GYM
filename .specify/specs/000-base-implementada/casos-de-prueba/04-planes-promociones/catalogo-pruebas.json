@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "planes_promociones",
+  "counts": {
+    "backend": {
+      "collected": 3,
+      "passed": 3,
+      "skipped": 0
+    },
+    "frontend": {
+      "collected": 10,
+      "passed": 10,
+      "skipped": 0
+    },
+    "total": 13,
+    "passed": 13,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "component": "backend",
+      "module": "planes_promociones",
+      "type": "unitarias",
+      "path": "backend/tests/planes_promociones/unitarias/test_promocion_cupos.py",
+      "line": 5,
+      "name": "test_promocion_limite_cupos_exhaustion",
+      "source_function": "test_promocion_limite_cupos_exhaustion",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "promo[\"limite_cupos\"] == 2",
+        "promo[\"usos_actuales\"] == 1",
+        "v is not None"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/planes_promociones/unitarias/test_promocion_cupos.py::test_promocion_limite_cupos_exhaustion",
+      "command": "python -m pytest tests/planes_promociones/unitarias/test_promocion_cupos.py::test_promocion_limite_cupos_exhaustion -q",
+      "id": "CT-M04-U-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "planes_promociones",
+      "type": "unitarias",
+      "path": "backend/tests/planes_promociones/unitarias/test_promocion_navidad.py",
+      "line": 20,
+      "name": "test_prevent_promocion_overlap",
+      "source_function": "test_prevent_promocion_overlap",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "promo1[\"id_promocion\"] > 0",
+        "promo_mensual[\"id_promocion\"] > 0",
+        "pytest.raises(ValueError, match=\"Ya existe una promoción vigente\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/planes_promociones/unitarias/test_promocion_navidad.py::test_prevent_promocion_overlap",
+      "command": "python -m pytest tests/planes_promociones/unitarias/test_promocion_navidad.py::test_prevent_promocion_overlap -q",
+      "id": "CT-M04-U-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "planes_promociones",
+      "type": "unitarias",
+      "path": "backend/tests/planes_promociones/unitarias/test_promocion_navidad.py",
+      "line": 60,
+      "name": "test_promociones_vigentes_publicas_and_autoapply",
+      "source_function": "test_promociones_vigentes_publicas_and_autoapply",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "len(vigentes) == 1",
+        "vigentes[0][\"nombre\"] == \"Navidad Especial\"",
+        "vigentes[0][\"valor_descuento\"] == 20.0"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/planes_promociones/unitarias/test_promocion_navidad.py::test_promociones_vigentes_publicas_and_autoapply",
+      "command": "python -m pytest tests/planes_promociones/unitarias/test_promocion_navidad.py::test_promociones_vigentes_publicas_and_autoapply -q",
+      "id": "CT-M04-U-BE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "unitarias",
+      "path": "frontend/tests/planes_promociones/unitarias/membership-plan-form.test.js",
+      "line": 5,
+      "name": "las duraciones disponibles producen planes válidos sin texto libre",
+      "source_function": "'las duraciones disponibles producen planes válidos sin texto libre'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(options.map(option => option.value), [ '1 día', '7 días', '15 días', '30 días', '60 días', '90 días', '180 días', '365 días', ])",
+        "assert.deepEqual(membershipPlanErrors({ name: 'Plan nuevo', duration: value, price: 80 }), {})"
+      ],
+      "checks_in_source": 2,
+      "selector": "las duraciones disponibles producen planes válidos sin texto libre",
+      "command": "node --test '--test-name-pattern=^las\\ duraciones\\ disponibles\\ producen\\ planes\\ válidos\\ sin\\ texto\\ libre$' tests/planes_promociones/unitarias/membership-plan-form.test.js",
+      "id": "CT-M04-U-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "unitarias",
+      "path": "frontend/tests/planes_promociones/unitarias/membership-plan-form.test.js",
+      "line": 15,
+      "name": "las duraciones guardadas se conservan sin convertir meses, años o días",
+      "source_function": "'las duraciones guardadas se conservan sin convertir meses, años o días'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(options.filter(option => option.value === duration).length, 1)",
+        "assert.deepEqual(membershipPlanErrors({ name: 'Plan existente', duration, price: 0 }), {})",
+        "assert.equal(planDurationOptions('30 días').filter(option => option.value === '30 días').length, 1)"
+      ],
+      "checks_in_source": 4,
+      "selector": "las duraciones guardadas se conservan sin convertir meses, años o días",
+      "command": "node --test '--test-name-pattern=^las\\ duraciones\\ guardadas\\ se\\ conservan\\ sin\\ convertir\\ meses,\\ años\\ o\\ días$' tests/planes_promociones/unitarias/membership-plan-form.test.js",
+      "id": "CT-M04-U-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "unitarias",
+      "path": "frontend/tests/planes_promociones/unitarias/membership-plan-form.test.js",
+      "line": 25,
+      "name": "el formulario identifica los campos obligatorios y acepta un precio cero explícito",
+      "source_function": "'el formulario identifica los campos obligatorios y acepta un precio cero explícito'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(Object.keys(membershipPlanErrors({ name: '', duration: '30 días', price: '' })), ['name', 'price'])",
+        "assert.deepEqual(membershipPlanErrors({ name: 'Acceso de prueba', duration: '1 día', price: 0 }), {})",
+        "assert.ok(membershipPlanErrors({ name: 'Plan', duration: '30 días', price }).price)"
+      ],
+      "checks_in_source": 3,
+      "selector": "el formulario identifica los campos obligatorios y acepta un precio cero explícito",
+      "command": "node --test '--test-name-pattern=^el\\ formulario\\ identifica\\ los\\ campos\\ obligatorios\\ y\\ acepta\\ un\\ precio\\ cero\\ explícito$' tests/planes_promociones/unitarias/membership-plan-form.test.js",
+      "id": "CT-M04-U-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "unitarias",
+      "path": "frontend/tests/planes_promociones/unitarias/membership-plan-form.test.js",
+      "line": 33,
+      "name": "el formulario rechaza una duración inválida y conserva el límite de nombre de 50",
+      "source_function": "'el formulario rechaza una duración inválida y conserva el límite de nombre de 50'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(membershipPlanErrors(plan), {})",
+        "assert.ok(membershipPlanErrors({ ...plan, name: 'Á'.repeat(51) }).name)",
+        "assert.ok(membershipPlanErrors({ ...plan, duration }).duration)"
+      ],
+      "checks_in_source": 3,
+      "selector": "el formulario rechaza una duración inválida y conserva el límite de nombre de 50",
+      "command": "node --test '--test-name-pattern=^el\\ formulario\\ rechaza\\ una\\ duración\\ inválida\\ y\\ conserva\\ el\\ límite\\ de\\ nombre\\ de\\ 50$' tests/planes_promociones/unitarias/membership-plan-form.test.js",
+      "id": "CT-M04-U-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "integracion",
+      "path": "frontend/tests/planes_promociones/integracion/plan-directory.test.js",
+      "line": 13,
+      "name": "el catálogo combina búsqueda sin tildes con disponibilidad y cuenta planes activos",
+      "source_function": "'el catálogo combina búsqueda sin tildes con disponibilidad y cuenta planes activos'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(catalog.activeCount.value, 2)",
+        "assert.deepEqual(catalog.filteredPlans.value.map(plan => plan.id), ['pm-1'])",
+        "assert.equal(catalog.filteredPlans.value.length, 0)"
+      ],
+      "checks_in_source": 6,
+      "selector": "el catálogo combina búsqueda sin tildes con disponibilidad y cuenta planes activos",
+      "command": "node --test '--test-name-pattern=^el\\ catálogo\\ combina\\ búsqueda\\ sin\\ tildes\\ con\\ disponibilidad\\ y\\ cuenta\\ planes\\ activos$' tests/planes_promociones/integracion/plan-directory.test.js",
+      "id": "CT-M04-I-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "integracion",
+      "path": "frontend/tests/planes_promociones/integracion/plan-directory.test.js",
+      "line": 27,
+      "name": "el orden por precio conserva cero y no altera el catálogo original",
+      "source_function": "'el orden por precio conserva cero y no altera el catálogo original'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(catalog.filteredPlans.value.map(plan => plan.price), [0, 80, 500])",
+        "assert.deepEqual(catalog.filteredPlans.value.map(plan => plan.price), [500, 80, 0])",
+        "assert.deepEqual(catalog.plans.value.map(plan => plan.id), ['pm-1', 'pm-2', 'pm-3'])"
+      ],
+      "checks_in_source": 3,
+      "selector": "el orden por precio conserva cero y no altera el catálogo original",
+      "command": "node --test '--test-name-pattern=^el\\ orden\\ por\\ precio\\ conserva\\ cero\\ y\\ no\\ altera\\ el\\ catálogo\\ original$' tests/planes_promociones/integracion/plan-directory.test.js",
+      "id": "CT-M04-I-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "integracion",
+      "path": "frontend/tests/planes_promociones/integracion/plan-directory.test.js",
+      "line": 36,
+      "name": "la carga evita consultas duplicadas y finaliza el estado de espera",
+      "source_function": "'la carga evita consultas duplicadas y finaliza el estado de espera'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.deepEqual(options, { section: 'plans' })",
+        "assert.equal(catalog.loading.value, true)",
+        "assert.equal(calls, 1)"
+      ],
+      "checks_in_source": 4,
+      "selector": "la carga evita consultas duplicadas y finaliza el estado de espera",
+      "command": "node --test '--test-name-pattern=^la\\ carga\\ evita\\ consultas\\ duplicadas\\ y\\ finaliza\\ el\\ estado\\ de\\ espera$' tests/planes_promociones/integracion/plan-directory.test.js",
+      "id": "CT-M04-I-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "integracion",
+      "path": "frontend/tests/planes_promociones/integracion/plan-directory.test.js",
+      "line": 49,
+      "name": "un fallo de carga conserva los planes y un reintento limpia el error",
+      "source_function": "'un fallo de carga conserva los planes y un reintento limpia el error'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(catalog.loadError.value, 'Servicio temporalmente indisponible')",
+        "assert.equal(catalog.loading.value, false)",
+        "assert.equal(catalog.plans.value.length, 3)"
+      ],
+      "checks_in_source": 4,
+      "selector": "un fallo de carga conserva los planes y un reintento limpia el error",
+      "command": "node --test '--test-name-pattern=^un\\ fallo\\ de\\ carga\\ conserva\\ los\\ planes\\ y\\ un\\ reintento\\ limpia\\ el\\ error$' tests/planes_promociones/integracion/plan-directory.test.js",
+      "id": "CT-M04-I-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "interfaz",
+      "path": "frontend/tests/planes_promociones/interfaz/formularios.test.js",
+      "line": 5,
+      "name": "promotion saves reject duplicate clicks and retain the draft with an inline error",
+      "source_function": "'promotion saves reject duplicate clicks and retain the draft with an inline error'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(calls, 1)",
+        "assert.equal(setup.isModalOpen, true)",
+        "assert.equal(setup.modalError, 'Sin conexión')"
+      ],
+      "checks_in_source": 6,
+      "selector": "promotion saves reject duplicate clicks and retain the draft with an inline error",
+      "command": "node --test '--test-name-pattern=^promotion\\ saves\\ reject\\ duplicate\\ clicks\\ and\\ retain\\ the\\ draft\\ with\\ an\\ inline\\ error$' tests/planes_promociones/interfaz/formularios.test.js",
+      "id": "CT-M04-F-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "planes_promociones",
+      "type": "interfaz",
+      "path": "frontend/tests/planes_promociones/interfaz/formularios.test.js",
+      "line": 26,
+      "name": "promotion deletion preserves its confirmation and target after failure",
+      "source_function": "'promotion deletion preserves its confirmation and target after failure'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(setup.promoToDelete.id_promocion, 1)",
+        "assert.equal(setup.deleteError, 'No se pudo eliminar')",
+        "assert.equal(setup.deleting, false)"
+      ],
+      "checks_in_source": 3,
+      "selector": "promotion deletion preserves its confirmation and target after failure",
+      "command": "node --test '--test-name-pattern=^promotion\\ deletion\\ preserves\\ its\\ confirmation\\ and\\ target\\ after\\ failure$' tests/planes_promociones/interfaz/formularios.test.js",
+      "id": "CT-M04-F-FE-002"
+    }
+  ]
+}

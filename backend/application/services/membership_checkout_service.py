@@ -158,10 +158,11 @@ def confirm_verified_checkout(
             (saved.get("membresia") or {}).get("estado")
             or "EN_TRAMITE"
         ),
-        "message": (
-            "Su cuenta ha sido inicializada. "
-            "A la espera de activación de membresía."
-        ),
+        "message": ("Renovación confirmada y activada automáticamente."
+                    if (saved.get("membresia") or {}).get("estado") == "ACTIVO"
+                    else "Pago confirmado. La primera membresía requiere activación administrativa."),
+        "fecha_inicio": (saved.get("membresia") or {}).get("fecha_inicio"),
+        "fecha_fin": (saved.get("membresia") or {}).get("fecha_fin"),
         "notification": notification,
     }
 

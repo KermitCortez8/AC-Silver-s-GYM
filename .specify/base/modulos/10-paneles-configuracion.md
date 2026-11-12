@@ -32,11 +32,11 @@ vigencias y navegar entre secciones mientras una carga ajena permanece pendiente
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_review_regressions.py](../../../backend/tests/test_review_regressions.py): `test_summary_counts_only_paid_current_memberships_with_canonical_and_legacy_states`; [20-client-dashboard.test.js](../../../frontend/tests/20-client-dashboard.test.js). |
-| CA-02 | [20-client-dashboard.test.js](../../../frontend/tests/20-client-dashboard.test.js). |
-| CA-03 | [test_supabase_refresh.py](../../../backend/tests/test_supabase_refresh.py): `test_sections_load_only_needed_tables_and_preserve_other_sections`, `test_health_check_does_not_refresh_admin_histories`; [27-scoped-gym-modules.test.js](../../../frontend/tests/27-scoped-gym-modules.test.js). |
-| CA-04 | [28-application-context.test.js](../../../frontend/tests/28-application-context.test.js) y [15-sync-resources.test.js](../../../frontend/tests/15-sync-resources.test.js). |
-| CA-05 | [21-module-navigation.test.js](../../../frontend/tests/21-module-navigation.test.js). |
+| CA-01 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_summary_counts_only_paid_current_memberships_with_canonical_and_legacy_states`; [client-dashboard.test.js](../../../frontend/tests/paneles_configuracion/unitarias/client-dashboard.test.js). |
+| CA-02 | [client-dashboard.test.js](../../../frontend/tests/paneles_configuracion/unitarias/client-dashboard.test.js). |
+| CA-03 | [test_supabase_refresh.py](../../../backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py): `test_sections_load_only_needed_tables_and_preserve_other_sections`, `test_health_check_does_not_refresh_admin_histories`; [scoped-gym-modules.test.js](../../../frontend/tests/paneles_configuracion/integracion/scoped-gym-modules.test.js). |
+| CA-04 | [application-context.test.js](../../../frontend/tests/paneles_configuracion/integracion/application-context.test.js) y [sync-resources.test.js](../../../frontend/tests/paneles_configuracion/integracion/sync-resources.test.js). |
+| CA-05 | [module-navigation.test.js](../../../frontend/tests/paneles_configuracion/integracion/module-navigation.test.js). |
 
 ## 4. Technical Constraints
 

@@ -46,6 +46,6 @@ Con teclado: abrir/cerrar panel, foco inicial/restaurado, etiqueta y anuncios de
 
 Desde raíz: `python .specify/.codex/hooks/validate.py --feature 002-chatbot-clientes --stage implement`.
 Desde frontend: `npm test` y `npm run build`.
-Desde backend: `python -m pytest tests/test_chatbot_service.py tests/test_chatbot_routes.py tests/test_chatbot_quota_postgres.py tests/test_schedule_enrollment.py tests/test_schedule_sessions.py tests/test_public_preregistrations.py`.
+Desde backend: `python -m pytest tests/test_chatbot_service.py tests/test_chatbot_routes.py tests/test_chatbot_quota_postgres.py tests/horarios_matriculas/integracion/test_schedule_enrollment.py tests/horarios_matriculas/integracion/test_schedule_sessions.py tests/clientes/integracion/test_public_preregistrations.py`.
 
 Los archivos `test_chatbot_*` se crean en las tareas. Configurar PostgreSQL según harness vigente; una prueba omitida no acredita concurrencia. Estos comandos de producto se ejecutan al implementar, no por crear el plan.

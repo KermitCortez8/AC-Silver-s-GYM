@@ -43,13 +43,13 @@ sintéticos, comprobar ocupación y cancelar una matrícula propia.
 
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_schedule_catalog_includes_exercise_and_available_slots`. |
-| CA-02 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_enrollment_moves_class_to_client_schedule_and_respects_capacity`. |
-| CA-03 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_user_routes_always_use_client_from_authenticated_session`. |
-| CA-04 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_client_can_only_cancel_own_enrollment`. |
-| CA-05 | [test_schedule_enrollment.py](../../../backend/tests/test_schedule_enrollment.py): `test_enrollment_requires_atomic_rpc_before_writing`; [test_enrollment_errors.py](../../../backend/tests/test_enrollment_errors.py). |
-| CA-06 | [31-module-error-control.test.js](../../../frontend/tests/31-module-error-control.test.js): respuestas anteriores a guardar/cancelar y lecturas fuera de orden; [revisión del portal](../validaciones/horarios-cliente/validation.md): foco, intervalo, navegación y conservación ante errores. |
-| CA-07 | [test_schedule_sessions.py](../../../backend/tests/test_schedule_sessions.py), [test_schedule_sessions_postgres.py](../../../backend/tests/test_schedule_sessions_postgres.py), [13-schedule-calendar.test.js](../../../frontend/tests/13-schedule-calendar.test.js). |
+| CA-01 | [test_schedule_enrollment.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py): `test_schedule_catalog_includes_exercise_and_available_slots`. |
+| CA-02 | [test_schedule_enrollment.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py): `test_enrollment_moves_class_to_client_schedule_and_respects_capacity`. |
+| CA-03 | [test_schedule_enrollment.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py): `test_user_routes_always_use_client_from_authenticated_session`. |
+| CA-04 | [test_schedule_enrollment.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py): `test_client_can_only_cancel_own_enrollment`. |
+| CA-05 | [test_schedule_enrollment.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py): `test_enrollment_requires_atomic_rpc_before_writing`; [test_enrollment_errors.py](../../../backend/tests/horarios_matriculas/integracion/test_enrollment_errors.py). |
+| CA-06 | [module-error-control.test.js](../../../frontend/tests/transversales/integracion/module-error-control.test.js): respuestas anteriores a guardar/cancelar y lecturas fuera de orden; [revisión del portal](../validaciones/horarios-cliente/validation.md): foco, intervalo, navegación y conservación ante errores. |
+| CA-07 | [test_schedule_sessions.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_sessions.py), [test_schedule_sessions_postgres.py](../../../backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py), [schedule-calendar.test.js](../../../frontend/tests/horarios_matriculas/unitarias/schedule-calendar.test.js). |
 | CA-08 | Las mismas regresiones y el [recorrido visual por sesiones](../validaciones/matriculas-sesiones/validation.md). |
 
 ## 4. Technical Constraints
@@ -96,9 +96,9 @@ reducir cupos valida la mayor ocupación de sus sesiones futuras, sin sumarlas.
 ## 7. Definition of Done
 
 Verificar cupos, identidad, cancelación, errores de almacenamiento y calendario
-con [test_schedule_calendar.py](../../../backend/tests/test_schedule_calendar.py),
-[11-schedule-enrollment.test.js](../../../frontend/tests/11-schedule-enrollment.test.js)
-y [13-schedule-calendar.test.js](../../../frontend/tests/13-schedule-calendar.test.js)
+con [test_schedule_calendar.py](../../../backend/tests/notificaciones/integracion/test_schedule_calendar.py),
+[schedule-enrollment.test.js](../../../frontend/tests/horarios_matriculas/unitarias/schedule-enrollment.test.js)
+y [schedule-calendar.test.js](../../../frontend/tests/horarios_matriculas/unitarias/schedule-calendar.test.js)
 según el cambio. Cumplir el [DoD](../../docs/DoD.md).
 
 ### Validación de horarios (feature 001)
@@ -108,7 +108,7 @@ sobrante, AM/PM fuera de 1–12 y segundos no cero. Las horas admitidas se guard
 como HH:MM de 24 horas para su uso por asistencia. Se mantiene lectura de AM/PM
 histórico y duración de 60 o 120 minutos.
 Regresiones y recorrido de cupos/cancelación en
-[test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+[test_client_flow_control.py](../../../backend/tests/transversales/integracion/test_client_flow_control.py).
 
 ### Límites de formularios
 

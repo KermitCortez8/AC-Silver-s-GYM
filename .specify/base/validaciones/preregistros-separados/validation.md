@@ -80,18 +80,18 @@ Comprobaciones ejecutadas:
 - `git diff --check` sin errores. Las vistas se mantienen bajo 500 líneas.
 - CI incorpora la nueva suite SQL al job que crea PostgreSQL desechable.
 
-- [test_public_preregistrations.py](../../../../backend/tests/test_public_preregistrations.py):
+- [test_public_preregistrations.py](../../../../backend/tests/clientes/integracion/test_public_preregistrations.py):
   solicitud privada, reintentos, credenciales/DNI, Google, importe guardado,
   checkout fallido, verificación, duplicados, caducidad, pago en proceso,
   respuesta incierta, reserva de promoción, recuperación y cliente eliminado.
-- [test_preregistration_gateway.py](../../../../backend/tests/test_preregistration_gateway.py):
+- [test_preregistration_gateway.py](../../../../backend/tests/clientes/integracion/test_preregistration_gateway.py):
   parámetros y claves estables, metadatos sin datos personales y recuperación
   paginada por referencia e intento, sin interpretar errores como ausencia de pago.
-- [test_public_preregistrations_postgres.py](../../../../backend/tests/test_public_preregistrations_postgres.py):
+- [test_public_preregistrations_postgres.py](../../../../backend/tests/clientes/postgres/test_public_preregistrations_postgres.py):
   privacidad/RLS, rollback completo ante fallo de membresía, confirmación desde
   dos servidores, alta concurrente de la misma identidad y reconciliación pagada.
-- [36-client-flow-control.test.js](../../../../frontend/tests/36-client-flow-control.test.js)
-  y [38-client-catalog.test.js](../../../../frontend/tests/38-client-catalog.test.js):
+- [client-flow-control.test.js](../../../../frontend/tests/clientes/interfaz/client-flow-control.test.js)
+  y [client-catalog.test.js](../../../../frontend/tests/clientes/interfaz/client-catalog.test.js):
   no agregar solicitudes al directorio ni inventar un código de cliente,
   conservación del borrador y retorno identificado por token, con rechazo de
   una confirmación ajena. Se conserva el retorno numérico de sesiones anteriores.

@@ -31,11 +31,11 @@ Codex completa el análisis antes de planificar. No acredita ejecución de prueb
 - [Asistencia](../../../backend/application/services/attendance_service.py): entrada y vigencia.
 - [Ciclo compartido](../../../backend/domain/services/membership_lifecycle.py): fechas y estados.
 - [Rutas](../../../backend/presentation/routes/clients_routes.py) y [errores](../../../backend/presentation/error_handlers.py).
-- [Registro/pagos](../../../backend/tests/test_admin_client_payment.py),
-  [vigencia](../../../backend/tests/test_membership_expiration.py),
-  [matrículas](../../../backend/tests/test_schedule_enrollment.py),
-  [asistencia](../../../backend/tests/test_general_attendance.py),
-  [matriz HTTP](../../../backend/tests/test_module_error_control.py).
+- [Registro/pagos](../../../backend/tests/clientes/integracion/test_admin_client_payment.py),
+  [vigencia](../../../backend/tests/membresias_pagos/integracion/test_membership_expiration.py),
+  [matrículas](../../../backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py),
+  [asistencia](../../../backend/tests/asistencias/integracion/test_general_attendance.py),
+  [matriz HTTP](../../../backend/tests/transversales/integracion/test_module_error_control.py).
 
 ## Restricciones que se deben contrastar
 

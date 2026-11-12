@@ -19,6 +19,8 @@ def _map_attendance(row: dict[str, Any]) -> dict[str, Any]:
         "fecha_salida": str(row.get("fecha_salida") or "") or None,
         "limite_salida": str(row.get("limite_salida") or "") or None,
         "salida_tardia": bool(row.get("salida_tardia", False)),
+        "estado_asistencia": row.get("estado_asistencia"),
+        "cierre_automatico": bool(row.get("cierre_automatico", False)),
         "anulado": bool(row.get("anulado", False)),
         "auditoria": row.get("auditoria") or [],
         "version": int(row.get("version") or 0),

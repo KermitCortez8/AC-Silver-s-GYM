@@ -98,7 +98,7 @@ export const useClientMembershipActions = ({
         viewingClient.value = { ...saved };
       }
       feedbackTone.value = "success";
-      feedbackMessage.value = `Pago de ${saved.id} confirmado correctamente. Ya puedes activar la membresía.`;
+      feedbackMessage.value = `Pago de ${saved.id} confirmado correctamente. ${saved.membershipStatus === 'ACTIVO' ? 'Renovación activada automáticamente.' : 'Su primera membresía requiere activación.'}`;
     } catch (error) {
       feedbackTone.value = "error";
       feedbackMessage.value =
@@ -186,7 +186,7 @@ export const useClientMembershipActions = ({
           );
           feedbackTone.value = result.confirmed ? "success" : "info";
           feedbackMessage.value = result.confirmed
-            ? `Pago de SGCLI${String(result.id_cliente).padStart(3, "0")} confirmado. Ya puedes activar su membresía.`
+            ? `Pago de SGCLI${String(result.id_cliente).padStart(3, "0")} confirmado. ${result.membership_status === 'ACTIVO' ? 'Renovación activada automáticamente.' : 'Su primera membresía requiere activación.'}`
             : "Stripe todavía no confirmó el pago. Actualiza la lista en unos momentos.";
         } else {
           feedbackTone.value = "info";
@@ -200,7 +200,7 @@ export const useClientMembershipActions = ({
         feedbackMessage.value = `${error.message || "No se pudo verificar el pago."} Recarga esta página para volver a comprobarlo.`;
       }
     }
-    await refreshClients(Boolean(stripeResult));
+    await refreshClients(true);
   };
 
   return {

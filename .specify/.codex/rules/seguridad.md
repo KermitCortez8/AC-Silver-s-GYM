@@ -25,8 +25,9 @@ La API exige Bearer válido y vuelve a resolver la cuenta mediante
 [AuthService](../../../backend/application/services/auth_service.py). Desactivar una
 cuenta interna revoca su acceso aunque el token todavía no haya expirado.
 Google se verifica en el servidor; una vinculación requerida se informa como
-conflicto. El cliente necesita activación y membresía pagada/vigente para el acceso
-que controla el servicio. Los usuarios internos no requieren membresía.
+conflicto. El cliente necesita activación inicial y membresía pagada/vigente para
+el acceso. Las renovaciones de una cuenta previamente activada se habilitan con
+el pago confirmado por el servidor. Los usuarios internos no requieren membresía.
 
 Las claves privadas de Supabase, Stripe y Resend permanecen fuera del frontend.
 Los valores `VITE_*` se incluyen en la compilación pública; no colocar allí
@@ -59,12 +60,12 @@ su despliegue/configuración no se demuestra por tener su código en el reposito
 
 ## Evidencia
 
-Reutilizar [test_priority_fixes.py](../../../backend/tests/test_priority_fixes.py),
-[test_review_regressions.py](../../../backend/tests/test_review_regressions.py),
-[test_scoped_operations.py](../../../backend/tests/test_scoped_operations.py),
-[test_stripe_confirmation.py](../../../backend/tests/test_stripe_confirmation.py),
-[test_store_images.py](../../../backend/tests/test_store_images.py) y
-[test_resend_email.py](../../../backend/tests/test_resend_email.py) según el alcance.
+Reutilizar [test_priority_fixes.py](../../../backend/tests/transversales/integracion/test_priority_fixes.py),
+[test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py),
+[test_scoped_operations.py](../../../backend/tests/transversales/integracion/test_scoped_operations.py),
+[test_stripe_confirmation.py](../../../backend/tests/membresias_pagos/integracion/test_stripe_confirmation.py),
+[test_store_images.py](../../../backend/tests/tienda_pedidos/integracion/test_store_images.py) y
+[test_resend_email.py](../../../backend/tests/notificaciones/integracion/test_resend_email.py) según el alcance.
 Los documentos de auditoría registran problemas y correcciones históricas;
 no son una declaración de ausencia de vulnerabilidades.
 

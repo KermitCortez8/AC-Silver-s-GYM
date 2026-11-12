@@ -1,0 +1,3128 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-10",
+  "reference_commit": "7744c6c",
+  "scope": "Árbol de trabajo con suites reorganizadas; ejecución sin PostgreSQL configurado.",
+  "module": "asistencias",
+  "counts": {
+    "backend": {
+      "collected": 101,
+      "passed": 79,
+      "skipped": 22
+    },
+    "frontend": {
+      "collected": 17,
+      "passed": 17,
+      "skipped": 0
+    },
+    "total": 118,
+    "passed": 96,
+    "skipped": 22
+  },
+  "cases": [
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 43,
+      "name": "test_membership_queries_follow_the_attendance_clock",
+      "source_function": "test_membership_queries_follow_the_attendance_clock",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.gym.get_cliente(1)[\"estado\"] == \"ACTIVO\"",
+        "attendance.membership(1, attendance.now().date().isoformat())",
+        "attendance.gym.get_cliente(1)[\"estado\"] == \"VENCIDA\""
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_membership_queries_follow_the_attendance_clock",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_membership_queries_follow_the_attendance_clock -q",
+      "id": "CT-M06-I-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 67,
+      "name": "test_expired_class_rejects_entry_and_explains_why[14:00:00]",
+      "source_function": "test_expired_class_rejects_entry_and_explains_why",
+      "variant": "14:00:00",
+      "parameter_names": [
+        "hour"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "schedule[\"puede_entrar\"] is False",
+        "schedule[\"asistencia\"] is None",
+        "\"La hora de esta clase ya pasó\" in schedule[\"motivo\"]"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_expired_class_rejects_entry_and_explains_why[14:00:00]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_expired_class_rejects_entry_and_explains_why[14:00:00]' -q",
+      "id": "CT-M06-I-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 67,
+      "name": "test_expired_class_rejects_entry_and_explains_why[14:00:01]",
+      "source_function": "test_expired_class_rejects_entry_and_explains_why",
+      "variant": "14:00:01",
+      "parameter_names": [
+        "hour"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "schedule[\"puede_entrar\"] is False",
+        "schedule[\"asistencia\"] is None",
+        "\"La hora de esta clase ya pasó\" in schedule[\"motivo\"]"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_expired_class_rejects_entry_and_explains_why[14:00:01]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_expired_class_rejects_entry_and_explains_why[14:00:01]' -q",
+      "id": "CT-M06-I-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 67,
+      "name": "test_expired_class_rejects_entry_and_explains_why[23:59:59]",
+      "source_function": "test_expired_class_rejects_entry_and_explains_why",
+      "variant": "23:59:59",
+      "parameter_names": [
+        "hour"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "schedule[\"puede_entrar\"] is False",
+        "schedule[\"asistencia\"] is None",
+        "\"La hora de esta clase ya pasó\" in schedule[\"motivo\"]"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_expired_class_rejects_entry_and_explains_why[23:59:59]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_expired_class_rejects_entry_and_explains_why[23:59:59]' -q",
+      "id": "CT-M06-I-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 81,
+      "name": "test_class_accepts_entry_within_schedule[10:00:00]",
+      "source_function": "test_class_accepts_entry_within_schedule",
+      "variant": "10:00:00",
+      "parameter_names": [
+        "hour"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.lookup(\"11111111\")[\"horarios\"][0][\"puede_entrar\"]",
+        "attendance.enter({\"id_matricula\": 1}, admin)[\"hora_entrada\"] == hour"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_class_accepts_entry_within_schedule[10:00:00]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_class_accepts_entry_within_schedule[10:00:00]' -q",
+      "id": "CT-M06-I-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 81,
+      "name": "test_class_accepts_entry_within_schedule[13:59:59]",
+      "source_function": "test_class_accepts_entry_within_schedule",
+      "variant": "13:59:59",
+      "parameter_names": [
+        "hour"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.lookup(\"11111111\")[\"horarios\"][0][\"puede_entrar\"]",
+        "attendance.enter({\"id_matricula\": 1}, admin)[\"hora_entrada\"] == hour"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_class_accepts_entry_within_schedule[13:59:59]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_class_accepts_entry_within_schedule[13:59:59]' -q",
+      "id": "CT-M06-I-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 88,
+      "name": "test_class_before_start_is_not_reported_as_expired",
+      "source_function": "test_class_before_start_is_not_reported_as_expired",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not schedule[\"puede_entrar\"]",
+        "\"La entrada se habilita de 10:00 a 14:00\" in schedule[\"motivo\"]",
+        "attendance.gym.state[\"asistencia\"] == []"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_class_before_start_is_not_reported_as_expired",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_class_before_start_is_not_reported_as_expired -q",
+      "id": "CT-M06-I-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 99,
+      "name": "test_schedule_retry_and_exit_still_work_after_class_end",
+      "source_function": "test_schedule_retry_and_exit_still_work_after_class_end",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.enter({\"id_matricula\": 1}, admin)[\"id_asistencia\"] == row[\"id_asistencia\"]",
+        "len(attendance.gym.state[\"asistencia\"]) == 1",
+        "attendance.exit(row[\"id_asistencia\"], admin)[\"hora_salida\"] == \"14:30:00\""
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_schedule_retry_and_exit_still_work_after_class_end",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_schedule_retry_and_exit_still_work_after_class_end -q",
+      "id": "CT-M06-I-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 108,
+      "name": "test_class_uses_lima_server_time_instead_of_submitted_time",
+      "source_function": "test_class_uses_lima_server_time_instead_of_submitted_time",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.gym.state[\"asistencia\"] == []",
+        "pytest.raises(ValueError, match=\"La hora de esta clase ya pasó\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_class_uses_lima_server_time_instead_of_submitted_time",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_class_uses_lima_server_time_instead_of_submitted_time -q",
+      "id": "CT-M06-I-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 117,
+      "name": "test_class_expiring_between_lookup_and_entry_is_rejected",
+      "source_function": "test_class_expiring_between_lookup_and_entry_is_rejected",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.lookup(\"11111111\")[\"horarios\"][0][\"puede_entrar\"]",
+        "attendance.gym.state[\"asistencia\"] == []",
+        "pytest.raises(ValueError, match=\"La hora de esta clase ya pasó\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_class_expiring_between_lookup_and_entry_is_rejected",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_class_expiring_between_lookup_and_entry_is_rejected -q",
+      "id": "CT-M06-I-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 126,
+      "name": "test_transaction_revalidates_class_expiration",
+      "source_function": "test_transaction_revalidates_class_expiration",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.gym.state[\"asistencia\"] == []",
+        "pytest.raises(ValueError, match=\"La hora de esta clase ya pasó\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_transaction_revalidates_class_expiration",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_transaction_revalidates_class_expiration -q",
+      "id": "CT-M06-I-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 137,
+      "name": "test_entry_without_enrollment_and_exit_use_server_clock",
+      "source_function": "test_entry_without_enrollment_and_exit_use_server_clock",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "lookup[\"horarios\"] == []",
+        "lookup[\"general\"][\"puede_entrar\"]",
+        "(row[\"tipo\"], row[\"id_matricula\"], row[\"id_horario_servicio\"]) == (\"general\", None, None)"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_entry_without_enrollment_and_exit_use_server_clock",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_entry_without_enrollment_and_exit_use_server_clock -q",
+      "id": "CT-M06-I-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 151,
+      "name": "test_retries_do_not_duplicate_even_after_exit",
+      "source_function": "test_retries_do_not_duplicate_even_after_exit",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.enter_general(\"11111111\", request_id, admin)[\"id_asistencia\"] == first[\"id_asistencia\"]",
+        "attendance.enter_general(\"11111111\", request_id, admin)[\"estado\"] == \"completada\"",
+        "len(attendance.gym.state[\"asistencia\"]) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_retries_do_not_duplicate_even_after_exit",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_retries_do_not_duplicate_even_after_exit -q",
+      "id": "CT-M06-I-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 164,
+      "name": "test_entry_requires_current_paid_membership[estado-INACTIVO]",
+      "source_function": "test_entry_requires_current_paid_membership",
+      "variant": "estado-INACTIVO",
+      "parameter_names": [
+        "field",
+        "value"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not attendance.lookup(\"11111111\")[\"general\"][\"puede_entrar\"]",
+        "attendance.gym.state[\"asistencia\"] == []",
+        "pytest.raises(ValueError, match=\"membresía activa, pagada y vigente\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership[estado-INACTIVO]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership[estado-INACTIVO]' -q",
+      "id": "CT-M06-I-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 164,
+      "name": "test_entry_requires_current_paid_membership[estado_pago-PENDIENTE]",
+      "source_function": "test_entry_requires_current_paid_membership",
+      "variant": "estado_pago-PENDIENTE",
+      "parameter_names": [
+        "field",
+        "value"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not attendance.lookup(\"11111111\")[\"general\"][\"puede_entrar\"]",
+        "attendance.gym.state[\"asistencia\"] == []",
+        "pytest.raises(ValueError, match=\"membresía activa, pagada y vigente\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership[estado_pago-PENDIENTE]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership[estado_pago-PENDIENTE]' -q",
+      "id": "CT-M06-I-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 164,
+      "name": "test_entry_requires_current_paid_membership[fecha_fin-2026-10-06]",
+      "source_function": "test_entry_requires_current_paid_membership",
+      "variant": "fecha_fin-2026-10-06",
+      "parameter_names": [
+        "field",
+        "value"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not attendance.lookup(\"11111111\")[\"general\"][\"puede_entrar\"]",
+        "attendance.gym.state[\"asistencia\"] == []",
+        "pytest.raises(ValueError, match=\"membresía activa, pagada y vigente\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership[fecha_fin-2026-10-06]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership[fecha_fin-2026-10-06]' -q",
+      "id": "CT-M06-I-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 164,
+      "name": "test_entry_requires_current_paid_membership[fecha_inicio-2026-10-08]",
+      "source_function": "test_entry_requires_current_paid_membership",
+      "variant": "fecha_inicio-2026-10-08",
+      "parameter_names": [
+        "field",
+        "value"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not attendance.lookup(\"11111111\")[\"general\"][\"puede_entrar\"]",
+        "attendance.gym.state[\"asistencia\"] == []",
+        "pytest.raises(ValueError, match=\"membresía activa, pagada y vigente\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership[fecha_inicio-2026-10-08]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership[fecha_inicio-2026-10-08]' -q",
+      "id": "CT-M06-I-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 172,
+      "name": "test_entry_requires_active_account_and_known_dni",
+      "source_function": "test_entry_requires_active_account_and_known_dni",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "pytest.raises(ValueError, match=\"No se encontró\")",
+        "pytest.raises(ValueError, match=\"activada\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni -q",
+      "id": "CT-M06-I-BE-018"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 181,
+      "name": "test_open_entry_blocks_other_kind[general]",
+      "source_function": "test_open_entry_blocks_other_kind",
+      "variant": "general",
+      "parameter_names": [
+        "first_kind"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.lookup(\"11111111\")[\"general\"][\"asistencia_abierta\"][\"id_asistencia\"] == row[\"id_asistencia\"]",
+        "not lookup['general']['puede_entrar']",
+        "f\"asistencia {'general' if first_kind == 'general' else 'por horarios'}\" in lookup['general']['motivo']"
+      ],
+      "checks_in_source": 12,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_open_entry_blocks_other_kind[general]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_open_entry_blocks_other_kind[general]' -q",
+      "id": "CT-M06-I-BE-019"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 181,
+      "name": "test_open_entry_blocks_other_kind[horario]",
+      "source_function": "test_open_entry_blocks_other_kind",
+      "variant": "horario",
+      "parameter_names": [
+        "first_kind"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.lookup(\"11111111\")[\"general\"][\"asistencia_abierta\"][\"id_asistencia\"] == row[\"id_asistencia\"]",
+        "not lookup['general']['puede_entrar']",
+        "f\"asistencia {'general' if first_kind == 'general' else 'por horarios'}\" in lookup['general']['motivo']"
+      ],
+      "checks_in_source": 12,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_open_entry_blocks_other_kind[horario]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_open_entry_blocks_other_kind[horario]' -q",
+      "id": "CT-M06-I-BE-020"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 208,
+      "name": "test_capacity_is_shared_by_general_and_schedule_entries",
+      "source_function": "test_capacity_is_shared_by_general_and_schedule_entries",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "(summary[\"dentro\"], summary[\"capacidad\"], summary[\"disponibles\"]) == (1, 1, 0)",
+        "attendance.summary(admin)[\"entradas\"] == 2",
+        "pytest.raises(ValueError, match=\"aforo\")"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_capacity_is_shared_by_general_and_schedule_entries",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_capacity_is_shared_by_general_and_schedule_entries -q",
+      "id": "CT-M06-I-BE-021"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 221,
+      "name": "test_stale_parallel_writes_cannot_exceed_capacity",
+      "source_function": "test_stale_parallel_writes_cannot_exceed_capacity",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "sum(result is not None for result in results) == 1",
+        "attendance.summary(admin)[\"dentro\"] == 1",
+        "first[\"tipo\"] == \"general\""
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_stale_parallel_writes_cannot_exceed_capacity",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_stale_parallel_writes_cannot_exceed_capacity -q",
+      "id": "CT-M06-I-BE-022"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 242,
+      "name": "test_history_filters_and_client_privacy",
+      "source_function": "test_history_filters_and_client_privacy",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(attendance.records(admin, tipo=\"general\")) == 2",
+        "len(attendance.records(admin, tipo=\"horario\")) == 1",
+        "len(attendance.records(admin, servicio=\"gimnasio\", dni=\"11111111\")) == 1"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_history_filters_and_client_privacy",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_history_filters_and_client_privacy -q",
+      "id": "CT-M06-I-BE-023"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 257,
+      "name": "test_general_corrections_and_annulment_remain_audited",
+      "source_function": "test_general_corrections_and_annulment_remain_audited",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "changed[\"tipo\"] == \"general\" and changed[\"version\"] == 2",
+        "annulled[\"estado\"] == \"anulada\" and len(annulled[\"auditoria\"]) == 3",
+        "attendance.summary(admin)[\"dentro\"] == 0"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited -q",
+      "id": "CT-M06-I-BE-024"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 271,
+      "name": "test_supabase_mapping_preserves_general_visit",
+      "source_function": "test_supabase_mapping_preserves_general_visit",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "payload[\"servicio\"] == \"gimnasio\" and payload[\"id_matricula\"] is None",
+        "attendance.present(mapped)[\"tipo\"] == \"general\"",
+        "mapped[\"auditoria\"][0][\"request_id\"] == row[\"auditoria\"][0][\"request_id\"]"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_supabase_mapping_preserves_general_visit",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_supabase_mapping_preserves_general_visit -q",
+      "id": "CT-M06-I-BE-025"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 295,
+      "name": "test_expired_class_api_returns_error_without_saving[/asistencia/checkin-dni-payload2]",
+      "source_function": "test_expired_class_api_returns_error_without_saving",
+      "variant": "/asistencia/checkin-dni-payload2",
+      "parameter_names": [
+        "path",
+        "payload"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "response.json()[\"detail\"] == \"La hora de esta clase ya pasó. No se puede registrar la asistencia.\"",
+        "attendance.gym.state[\"asistencia\"] == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_expired_class_api_returns_error_without_saving[/asistencia/checkin-dni-payload2]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_expired_class_api_returns_error_without_saving[/asistencia/checkin-dni-payload2]' -q",
+      "id": "CT-M06-I-BE-026"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 295,
+      "name": "test_expired_class_api_returns_error_without_saving[/asistencia/checkin-payload1]",
+      "source_function": "test_expired_class_api_returns_error_without_saving",
+      "variant": "/asistencia/checkin-payload1",
+      "parameter_names": [
+        "path",
+        "payload"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "response.json()[\"detail\"] == \"La hora de esta clase ya pasó. No se puede registrar la asistencia.\"",
+        "attendance.gym.state[\"asistencia\"] == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_expired_class_api_returns_error_without_saving[/asistencia/checkin-payload1]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_expired_class_api_returns_error_without_saving[/asistencia/checkin-payload1]' -q",
+      "id": "CT-M06-I-BE-027"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 295,
+      "name": "test_expired_class_api_returns_error_without_saving[/asistencia/entrada-payload0]",
+      "source_function": "test_expired_class_api_returns_error_without_saving",
+      "variant": "/asistencia/entrada-payload0",
+      "parameter_names": [
+        "path",
+        "payload"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 400",
+        "response.json()[\"detail\"] == \"La hora de esta clase ya pasó. No se puede registrar la asistencia.\"",
+        "attendance.gym.state[\"asistencia\"] == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_expired_class_api_returns_error_without_saving[/asistencia/entrada-payload0]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_expired_class_api_returns_error_without_saving[/asistencia/entrada-payload0]' -q",
+      "id": "CT-M06-I-BE-028"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 305,
+      "name": "test_general_api_validates_payload_and_preserves_schedule_endpoint",
+      "source_function": "test_general_api_validates_payload_and_preserves_schedule_endpoint",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.post(\"/asistencia/general/entrada\", json={\"dni\": \"11111111\"}).status_code == 422",
+        "client.post(\"/asistencia/general/entrada\", json={\"dni\": \"invalid\", \"request_id\": str(uuid4())}).status_code == 422",
+        "client.post(\"/asistencia/entrada\", json={\"dni\": \"11111111\"}).status_code == 400"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_general_api_validates_payload_and_preserves_schedule_endpoint",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_general_api_validates_payload_and_preserves_schedule_endpoint -q",
+      "id": "CT-M06-I-BE-029"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 317,
+      "name": "test_only_admin_can_register_general_visit[staff]",
+      "source_function": "test_only_admin_can_register_general_visit",
+      "variant": "staff",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 403"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_only_admin_can_register_general_visit[staff]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_only_admin_can_register_general_visit[staff]' -q",
+      "id": "CT-M06-I-BE-030"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 317,
+      "name": "test_only_admin_can_register_general_visit[trainer]",
+      "source_function": "test_only_admin_can_register_general_visit",
+      "variant": "trainer",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 403"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_only_admin_can_register_general_visit[trainer]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_only_admin_can_register_general_visit[trainer]' -q",
+      "id": "CT-M06-I-BE-031"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 317,
+      "name": "test_only_admin_can_register_general_visit[user]",
+      "source_function": "test_only_admin_can_register_general_visit",
+      "variant": "user",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 403"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_only_admin_can_register_general_visit[user]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_only_admin_can_register_general_visit[user]' -q",
+      "id": "CT-M06-I-BE-032"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 325,
+      "name": "test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida[general]",
+      "source_function": "test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida",
+      "variant": "general",
+      "parameter_names": [
+        "first_kind"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "blocked.status_code == 409",
+        "f\"asistencia {'general' if first_kind == 'general' else 'por horarios'}\" in blocked.json()['detail']",
+        "'Registra la salida de esa asistencia' in blocked.json()['detail']"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida[general]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida[general]' -q",
+      "id": "CT-M06-I-BE-033"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 325,
+      "name": "test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida[horario]",
+      "source_function": "test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida",
+      "variant": "horario",
+      "parameter_names": [
+        "first_kind"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "blocked.status_code == 409",
+        "f\"asistencia {'general' if first_kind == 'general' else 'por horarios'}\" in blocked.json()['detail']",
+        "'Registra la salida de esa asistencia' in blocked.json()['detail']"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida[horario]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_general_attendance.py::test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida[horario]' -q",
+      "id": "CT-M06-I-BE-034"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 345,
+      "name": "test_clase_incompleta_sin_salida_sigue_bloqueando_general",
+      "source_function": "test_clase_incompleta_sin_salida_sigue_bloqueando_general",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "response.status_code == 409 and 'asistencia por horarios' in response.json()['detail']",
+        "len(rows) == 1 and rows[0]['id_asistencia'] == first['id_asistencia']",
+        "not rows[0]['hora_salida']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_clase_incompleta_sin_salida_sigue_bloqueando_general",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_clase_incompleta_sin_salida_sigue_bloqueando_general -q",
+      "id": "CT-M06-I-BE-035"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 357,
+      "name": "test_client_week_contains_only_own_general_visits",
+      "source_function": "test_client_week_contains_only_own_general_visits",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "result[\"visitas\"] == 1 and len(result[\"generales\"]) == 1",
+        "result[\"generales\"][0][\"cliente_dni\"] == \"11111111\"",
+        "\"auditoria\" not in result[\"generales\"][0]"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_client_week_contains_only_own_general_visits",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_client_week_contains_only_own_general_visits -q",
+      "id": "CT-M06-I-BE-036"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 368,
+      "name": "test_general_tres_horas_exactas_admiten_salida_real",
+      "source_function": "test_general_tres_horas_exactas_admiten_salida_real",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "row['limite_salida'] == '2026-10-07T13:30:00-05:00'",
+        "attendance.summary(admin)['dentro'] == 1",
+        "saved['estado'] == 'completada' and not saved['cierre_automatico']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_general_tres_horas_exactas_admiten_salida_real",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_general_tres_horas_exactas_admiten_salida_real -q",
+      "id": "CT-M06-I-BE-037"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 377,
+      "name": "test_general_se_cierra_incompleta_y_libera_aforo_al_superar_tres_horas",
+      "source_function": "test_general_se_cierra_incompleta_y_libera_aforo_al_superar_tres_horas",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "summary['dentro'] == 0 and summary['salidas'] == 1",
+        "summary['pendientes'] == []",
+        "closed['hora_salida'] == '13:30:00' and closed['fecha_salida'] == '2026-10-07'"
+      ],
+      "checks_in_source": 11,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_general_se_cierra_incompleta_y_libera_aforo_al_superar_tres_horas",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_general_se_cierra_incompleta_y_libera_aforo_al_superar_tres_horas -q",
+      "id": "CT-M06-I-BE-038"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 397,
+      "name": "test_cierre_general_cruza_medianoche_y_conserva_privacidad",
+      "source_function": "test_cierre_general_cruza_medianoche_y_conserva_privacidad",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "rows[0]['fecha_salida'] == '2026-10-08' and rows[0]['hora_salida'] == '01:15:00'",
+        "rows[0]['cierre_automatico'] and rows[0]['estado'] == 'incompleta'",
+        "'auditoria' not in rows[0]"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_cierre_general_cruza_medianoche_y_conserva_privacidad",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_cierre_general_cruza_medianoche_y_conserva_privacidad -q",
+      "id": "CT-M06-I-BE-039"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 409,
+      "name": "test_cierre_general_admite_correccion_documentada_de_salida_real",
+      "source_function": "test_cierre_general_admite_correccion_documentada_de_salida_real",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "corrected['estado'] == 'completada' and not corrected['cierre_automatico']",
+        "any(e['accion'] == 'cierre_automatico' for e in corrected['auditoria'])"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_cierre_general_admite_correccion_documentada_de_salida_real",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_cierre_general_admite_correccion_documentada_de_salida_real -q",
+      "id": "CT-M06-I-BE-040"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "line": 422,
+      "name": "test_reconciliacion_observa_cierre_del_cron_aunque_ya_no_haya_vencidas",
+      "source_function": "test_reconciliacion_observa_cierre_del_cron_aunque_ya_no_haya_vencidas",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "repository.reconcile_attendance(datetime(2026, 10, 7, 13, 30, 1, tzinfo=LIMA)) == 0",
+        "'asistencia' not in repository.cache.resource_refreshed_at",
+        "repository.cache.resource_refreshed_at['clientes'] == 10.0"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/asistencias/integracion/test_general_attendance.py::test_reconciliacion_observa_cierre_del_cron_aunque_ya_no_haya_vencidas",
+      "command": "python -m pytest tests/asistencias/integracion/test_general_attendance.py::test_reconciliacion_observa_cierre_del_cron_aunque_ya_no_haya_vencidas -q",
+      "id": "CT-M06-I-BE-041"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 23,
+      "name": "test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario",
+      "source_function": "test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "[s[\"id_horario_servicio\"] for s in catalog[\"horarios\"]] == [1, 2]",
+        "[s[\"matriculados\"] for s in catalog[\"horarios\"]] == [1, 1]",
+        "roster[\"fecha\"] == \"2026-10-07\""
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario -q",
+      "id": "CT-M06-I-BE-042"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 50,
+      "name": "test_lista_informa_si_la_entrada_esta_dentro_del_horario[09:59:59-False]",
+      "source_function": "test_lista_informa_si_la_entrada_esta_dentro_del_horario",
+      "variant": "09:59:59-False",
+      "parameter_names": [
+        "hour",
+        "allowed"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "student[\"puede_entrar\"] is allowed",
+        "bool(student[\"motivo\"]) is not allowed"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_lista_informa_si_la_entrada_esta_dentro_del_horario[09:59:59-False]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_lista_informa_si_la_entrada_esta_dentro_del_horario[09:59:59-False]' -q",
+      "id": "CT-M06-I-BE-043"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 50,
+      "name": "test_lista_informa_si_la_entrada_esta_dentro_del_horario[10:00:00-True]",
+      "source_function": "test_lista_informa_si_la_entrada_esta_dentro_del_horario",
+      "variant": "10:00:00-True",
+      "parameter_names": [
+        "hour",
+        "allowed"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "student[\"puede_entrar\"] is allowed",
+        "bool(student[\"motivo\"]) is not allowed"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_lista_informa_si_la_entrada_esta_dentro_del_horario[10:00:00-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_lista_informa_si_la_entrada_esta_dentro_del_horario[10:00:00-True]' -q",
+      "id": "CT-M06-I-BE-044"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 50,
+      "name": "test_lista_informa_si_la_entrada_esta_dentro_del_horario[13:59:59-True]",
+      "source_function": "test_lista_informa_si_la_entrada_esta_dentro_del_horario",
+      "variant": "13:59:59-True",
+      "parameter_names": [
+        "hour",
+        "allowed"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "student[\"puede_entrar\"] is allowed",
+        "bool(student[\"motivo\"]) is not allowed"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_lista_informa_si_la_entrada_esta_dentro_del_horario[13:59:59-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_lista_informa_si_la_entrada_esta_dentro_del_horario[13:59:59-True]' -q",
+      "id": "CT-M06-I-BE-045"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 50,
+      "name": "test_lista_informa_si_la_entrada_esta_dentro_del_horario[14:00:00-False]",
+      "source_function": "test_lista_informa_si_la_entrada_esta_dentro_del_horario",
+      "variant": "14:00:00-False",
+      "parameter_names": [
+        "hour",
+        "allowed"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "student[\"puede_entrar\"] is allowed",
+        "bool(student[\"motivo\"]) is not allowed"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_lista_informa_si_la_entrada_esta_dentro_del_horario[14:00:00-False]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_lista_informa_si_la_entrada_esta_dentro_del_horario[14:00:00-False]' -q",
+      "id": "CT-M06-I-BE-046"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 61,
+      "name": "test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:29:59-False]",
+      "source_function": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "variant": "09:29:59-False",
+      "parameter_names": [
+        "hour",
+        "overlap"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not student['puede_entrar']",
+        "bool(student['asistencia_abierta']) is overlap",
+        "student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:29:59-False]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:29:59-False]' -q",
+      "id": "CT-M06-I-BE-047"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 61,
+      "name": "test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:30:00-True]",
+      "source_function": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "variant": "09:30:00-True",
+      "parameter_names": [
+        "hour",
+        "overlap"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not student['puede_entrar']",
+        "bool(student['asistencia_abierta']) is overlap",
+        "student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:30:00-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:30:00-True]' -q",
+      "id": "CT-M06-I-BE-048"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 61,
+      "name": "test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:59:59-True]",
+      "source_function": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "variant": "09:59:59-True",
+      "parameter_names": [
+        "hour",
+        "overlap"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not student['puede_entrar']",
+        "bool(student['asistencia_abierta']) is overlap",
+        "student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:59:59-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[09:59:59-True]' -q",
+      "id": "CT-M06-I-BE-049"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 61,
+      "name": "test_aviso_cruzado_incluye_margen_de_treinta_minutos[10:00:00-True]",
+      "source_function": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "variant": "10:00:00-True",
+      "parameter_names": [
+        "hour",
+        "overlap"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not student['puede_entrar']",
+        "bool(student['asistencia_abierta']) is overlap",
+        "student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[10:00:00-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[10:00:00-True]' -q",
+      "id": "CT-M06-I-BE-050"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 61,
+      "name": "test_aviso_cruzado_incluye_margen_de_treinta_minutos[13:59:59-True]",
+      "source_function": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "variant": "13:59:59-True",
+      "parameter_names": [
+        "hour",
+        "overlap"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not student['puede_entrar']",
+        "bool(student['asistencia_abierta']) is overlap",
+        "student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[13:59:59-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[13:59:59-True]' -q",
+      "id": "CT-M06-I-BE-051"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 61,
+      "name": "test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:00:00-True]",
+      "source_function": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "variant": "14:00:00-True",
+      "parameter_names": [
+        "hour",
+        "overlap"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not student['puede_entrar']",
+        "bool(student['asistencia_abierta']) is overlap",
+        "student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:00:00-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:00:00-True]' -q",
+      "id": "CT-M06-I-BE-052"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 61,
+      "name": "test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:30:00-True]",
+      "source_function": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "variant": "14:30:00-True",
+      "parameter_names": [
+        "hour",
+        "overlap"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not student['puede_entrar']",
+        "bool(student['asistencia_abierta']) is overlap",
+        "student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:30:00-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:30:00-True]' -q",
+      "id": "CT-M06-I-BE-053"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 61,
+      "name": "test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:30:01-False]",
+      "source_function": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "variant": "14:30:01-False",
+      "parameter_names": [
+        "hour",
+        "overlap"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "not student['puede_entrar']",
+        "bool(student['asistencia_abierta']) is overlap",
+        "student['asistencia_abierta']['id_asistencia'] == opened['id_asistencia']"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:30:01-False]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos[14:30:01-False]' -q",
+      "id": "CT-M06-I-BE-054"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 75,
+      "name": "test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual",
+      "source_function": "test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "student['asistencia_abierta'] is None",
+        "'el día de esta sesión' in student['motivo']"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual -q",
+      "id": "CT-M06-I-BE-055"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 86,
+      "name": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:00:00-True]",
+      "source_function": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin",
+      "variant": "14:00:00-True",
+      "parameter_names": [
+        "hour",
+        "near"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "general['coincidencia_horario'] is near",
+        "general['asistencia_abierta']['id_asistencia'] == row['id_asistencia']",
+        "not general['puede_entrar']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:00:00-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:00:00-True]' -q",
+      "id": "CT-M06-I-BE-056"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 86,
+      "name": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:30:00-True]",
+      "source_function": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin",
+      "variant": "14:30:00-True",
+      "parameter_names": [
+        "hour",
+        "near"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "general['coincidencia_horario'] is near",
+        "general['asistencia_abierta']['id_asistencia'] == row['id_asistencia']",
+        "not general['puede_entrar']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:30:00-True]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:30:00-True]' -q",
+      "id": "CT-M06-I-BE-057"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 86,
+      "name": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:30:01-False]",
+      "source_function": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin",
+      "variant": "14:30:01-False",
+      "parameter_names": [
+        "hour",
+        "near"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "general['coincidencia_horario'] is near",
+        "general['asistencia_abierta']['id_asistencia'] == row['id_asistencia']",
+        "not general['puede_entrar']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:30:01-False]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[14:30:01-False]' -q",
+      "id": "CT-M06-I-BE-058"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 86,
+      "name": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[15:00:01-False]",
+      "source_function": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin",
+      "variant": "15:00:01-False",
+      "parameter_names": [
+        "hour",
+        "near"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "general['coincidencia_horario'] is near",
+        "general['asistencia_abierta']['id_asistencia'] == row['id_asistencia']",
+        "not general['puede_entrar']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[15:00:01-False]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin[15:00:01-False]' -q",
+      "id": "CT-M06-I-BE-059"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 98,
+      "name": "test_visita_cerrada_no_provoca_aviso_aunque_haya_menos_de_treinta_minutos",
+      "source_function": "test_visita_cerrada_no_provoca_aviso_aunque_haya_menos_de_treinta_minutos",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "general['puede_entrar'] and not general['coincidencia_horario']",
+        "general['asistencia_abierta'] is None"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_visita_cerrada_no_provoca_aviso_aunque_haya_menos_de_treinta_minutos",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_visita_cerrada_no_provoca_aviso_aunque_haya_menos_de_treinta_minutos -q",
+      "id": "CT-M06-I-BE-060"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 108,
+      "name": "test_coincidencia_cruza_medianoche_con_margen_inclusivo",
+      "source_function": "test_coincidencia_cruza_medianoche_con_margen_inclusivo",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.lookup('11111111')['general']['coincidencia_horario']",
+        "not attendance.lookup('11111111')['general']['coincidencia_horario']"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_coincidencia_cruza_medianoche_con_margen_inclusivo",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_coincidencia_cruza_medianoche_con_margen_inclusivo -q",
+      "id": "CT-M06-I-BE-061"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 121,
+      "name": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[10:30:00-completada]",
+      "source_function": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta",
+      "variant": "10:30:00-completada",
+      "parameter_names": [
+        "hour",
+        "status"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "row[\"limite_salida\"] == \"2026-10-07T15:00:00-05:00\"",
+        "saved[\"estado\"] == status",
+        "saved[\"hora_salida\"] == hour"
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[10:30:00-completada]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[10:30:00-completada]' -q",
+      "id": "CT-M06-I-BE-062"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 121,
+      "name": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[14:30:00-completada]",
+      "source_function": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta",
+      "variant": "14:30:00-completada",
+      "parameter_names": [
+        "hour",
+        "status"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "row[\"limite_salida\"] == \"2026-10-07T15:00:00-05:00\"",
+        "saved[\"estado\"] == status",
+        "saved[\"hora_salida\"] == hour"
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[14:30:00-completada]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[14:30:00-completada]' -q",
+      "id": "CT-M06-I-BE-063"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 121,
+      "name": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[15:00:00-completada]",
+      "source_function": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta",
+      "variant": "15:00:00-completada",
+      "parameter_names": [
+        "hour",
+        "status"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "row[\"limite_salida\"] == \"2026-10-07T15:00:00-05:00\"",
+        "saved[\"estado\"] == status",
+        "saved[\"hora_salida\"] == hour"
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[15:00:00-completada]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[15:00:00-completada]' -q",
+      "id": "CT-M06-I-BE-064"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 121,
+      "name": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[15:00:01-incompleta]",
+      "source_function": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta",
+      "variant": "15:00:01-incompleta",
+      "parameter_names": [
+        "hour",
+        "status"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "row[\"limite_salida\"] == \"2026-10-07T15:00:00-05:00\"",
+        "saved[\"estado\"] == status",
+        "saved[\"hora_salida\"] == hour"
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[15:00:01-incompleta]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[15:00:01-incompleta]' -q",
+      "id": "CT-M06-I-BE-065"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 121,
+      "name": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[23:59:59-incompleta]",
+      "source_function": "test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta",
+      "variant": "23:59:59-incompleta",
+      "parameter_names": [
+        "hour",
+        "status"
+      ],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "row[\"limite_salida\"] == \"2026-10-07T15:00:00-05:00\"",
+        "saved[\"estado\"] == status",
+        "saved[\"hora_salida\"] == hour"
+      ],
+      "checks_in_source": 9,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[23:59:59-incompleta]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_salida_se_guarda_y_superar_una_hora_deja_asistencia_incompleta[23:59:59-incompleta]' -q",
+      "id": "CT-M06-I-BE-066"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 139,
+      "name": "test_falta_de_salida_pasa_a_incompleta_sin_inventar_hora_ni_dejar_de_contar_aforo",
+      "source_function": "test_falta_de_salida_pasa_a_incompleta_sin_inventar_hora_ni_dejar_de_contar_aforo",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "attendance.roster(1)[\"clientes\"][0][\"asistencia\"][\"estado\"] == \"dentro\"",
+        "pending[\"estado\"] == \"incompleta\" and pending[\"aviso\"] == LATE_EXIT_MESSAGE",
+        "not pending[\"hora_salida\"]"
+      ],
+      "checks_in_source": 8,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_falta_de_salida_pasa_a_incompleta_sin_inventar_hora_ni_dejar_de_contar_aforo",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_falta_de_salida_pasa_a_incompleta_sin_inventar_hora_ni_dejar_de_contar_aforo -q",
+      "id": "CT-M06-I-BE-067"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 155,
+      "name": "test_limite_original_sobrevive_a_edicion_del_horario_y_recarga",
+      "source_function": "test_limite_original_sobrevive_a_edicion_del_horario_y_recarga",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "mapped[\"limite_salida\"] == row[\"limite_salida\"]",
+        "saved[\"estado\"] == \"incompleta\"",
+        "_map_attendance(_attendance_to_remote(saved))[\"salida_tardia\"]"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_limite_original_sobrevive_a_edicion_del_horario_y_recarga",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_limite_original_sobrevive_a_edicion_del_horario_y_recarga -q",
+      "id": "CT-M06-I-BE-068"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 168,
+      "name": "test_limite_y_salida_cruzan_medianoche",
+      "source_function": "test_limite_y_salida_cruzan_medianoche",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "row[\"limite_salida\"] == \"2026-10-08T00:30:00-05:00\"",
+        "saved[\"estado\"] == \"incompleta\" and saved[\"fecha_salida\"] == \"2026-10-08\""
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_limite_y_salida_cruzan_medianoche",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_limite_y_salida_cruzan_medianoche -q",
+      "id": "CT-M06-I-BE-069"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 179,
+      "name": "test_cliente_solo_consulta_su_incompleta_sin_auditoria",
+      "source_function": "test_cliente_solo_consulta_su_incompleta_sin_auditoria",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "len(rows) == 1 and \"auditoria\" not in rows[0]",
+        "\"id_usuario_registra\" not in rows[0]",
+        "attendance.records(SimpleNamespace(role=\"user\", id_cliente=2), estado=\"incompleta\") == []"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_cliente_solo_consulta_su_incompleta_sin_auditoria",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_cliente_solo_consulta_su_incompleta_sin_auditoria -q",
+      "id": "CT-M06-I-BE-070"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 190,
+      "name": "test_listas_de_matriculados_requieren_administrador[staff]",
+      "source_function": "test_listas_de_matriculados_requieren_administrador",
+      "variant": "staff",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/asistencia/horarios\").status_code == 403",
+        "client.get(\"/asistencia/horarios/1/clientes\").status_code == 403"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_listas_de_matriculados_requieren_administrador[staff]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_listas_de_matriculados_requieren_administrador[staff]' -q",
+      "id": "CT-M06-I-BE-071"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 190,
+      "name": "test_listas_de_matriculados_requieren_administrador[trainer]",
+      "source_function": "test_listas_de_matriculados_requieren_administrador",
+      "variant": "trainer",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/asistencia/horarios\").status_code == 403",
+        "client.get(\"/asistencia/horarios/1/clientes\").status_code == 403"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_listas_de_matriculados_requieren_administrador[trainer]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_listas_de_matriculados_requieren_administrador[trainer]' -q",
+      "id": "CT-M06-I-BE-072"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 190,
+      "name": "test_listas_de_matriculados_requieren_administrador[user]",
+      "source_function": "test_listas_de_matriculados_requieren_administrador",
+      "variant": "user",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/asistencia/horarios\").status_code == 403",
+        "client.get(\"/asistencia/horarios/1/clientes\").status_code == 403"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_listas_de_matriculados_requieren_administrador[user]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_listas_de_matriculados_requieren_administrador[user]' -q",
+      "id": "CT-M06-I-BE-073"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 198,
+      "name": "test_recorrido_http_lista_entrada_y_salida_incompleta",
+      "source_function": "test_recorrido_http_lista_entrada_y_salida_incompleta",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "api",
+        "attendance",
+        "monkeypatch",
+        "admin"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "client.get(\"/asistencia/horarios\").json()[\"horarios\"][0][\"matriculados\"] == 1",
+        "response.status_code == 200 and response.json()[\"estado\"] == \"incompleta\"",
+        "response.json()[\"aviso\"] == LATE_EXIT_MESSAGE"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_recorrido_http_lista_entrada_y_salida_incompleta",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_recorrido_http_lista_entrada_y_salida_incompleta -q",
+      "id": "CT-M06-I-BE-074"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 214,
+      "name": "test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[completada-salida_tardia.eq.false]",
+      "source_function": "test_estado_incompleto_se_filtra_en_persistencia_con_paginacion",
+      "variant": "completada-salida_tardia.eq.false",
+      "parameter_names": [
+        "status",
+        "condition"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "table == \"ASISTENCIA\" and filters[\"id_cliente\"] == \"in.(1)\"",
+        "bounds[\"offset\"] == 10 and condition in filters[\"and\"]",
+        "\"anulado.eq.false\" in filters[\"and\"]"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[completada-salida_tardia.eq.false]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[completada-salida_tardia.eq.false]' -q",
+      "id": "CT-M06-I-BE-075"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 214,
+      "name": "test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[dentro-limite_salida.gte.]",
+      "source_function": "test_estado_incompleto_se_filtra_en_persistencia_con_paginacion",
+      "variant": "dentro-limite_salida.gte.",
+      "parameter_names": [
+        "status",
+        "condition"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "table == \"ASISTENCIA\" and filters[\"id_cliente\"] == \"in.(1)\"",
+        "bounds[\"offset\"] == 10 and condition in filters[\"and\"]",
+        "\"anulado.eq.false\" in filters[\"and\"]"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[dentro-limite_salida.gte.]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[dentro-limite_salida.gte.]' -q",
+      "id": "CT-M06-I-BE-076"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 214,
+      "name": "test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[incompleta-salida_tardia.eq.true]",
+      "source_function": "test_estado_incompleto_se_filtra_en_persistencia_con_paginacion",
+      "variant": "incompleta-salida_tardia.eq.true",
+      "parameter_names": [
+        "status",
+        "condition"
+      ],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "table == \"ASISTENCIA\" and filters[\"id_cliente\"] == \"in.(1)\"",
+        "bounds[\"offset\"] == 10 and condition in filters[\"and\"]",
+        "\"anulado.eq.false\" in filters[\"and\"]"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[incompleta-salida_tardia.eq.true]",
+      "command": "python -m pytest 'tests/asistencias/integracion/test_schedule_attendance.py::test_estado_incompleto_se_filtra_en_persistencia_con_paginacion[incompleta-salida_tardia.eq.true]' -q",
+      "id": "CT-M06-I-BE-077"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 228,
+      "name": "test_esquema_sin_migracion_018_rechaza_antes_de_escribir",
+      "source_function": "test_esquema_sin_migracion_018_rechaza_antes_de_escribir",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [],
+      "status": "passed",
+      "expected_checks": [
+        "table == \"ASISTENCIA\" and columns == {\"limite_salida\", \"salida_tardia\", \"estado_asistencia\", \"cierre_automatico\"}",
+        "pytest.raises(RuntimeError, match=\"018\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_esquema_sin_migracion_018_rechaza_antes_de_escribir",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_esquema_sin_migracion_018_rechaza_antes_de_escribir -q",
+      "id": "CT-M06-I-BE-078"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "integracion",
+      "path": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "line": 239,
+      "name": "test_estado_automatico_recargado_y_aviso_general_no_se_confunden_con_clase",
+      "source_function": "test_estado_automatico_recargado_y_aviso_general_no_se_confunden_con_clase",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "attendance",
+        "monkeypatch"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "presented['estado'] == 'incompleta'",
+        "presented['aviso'] == GENERAL_LATE_EXIT_MESSAGE",
+        "not presented['hora_salida']"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/integracion/test_schedule_attendance.py::test_estado_automatico_recargado_y_aviso_general_no_se_confunden_con_clase",
+      "command": "python -m pytest tests/asistencias/integracion/test_schedule_attendance.py::test_estado_automatico_recargado_y_aviso_general_no_se_confunden_con_clase -q",
+      "id": "CT-M06-I-BE-079"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py",
+      "line": 50,
+      "name": "test_rpc_guarda_limite_no_acepta_hora_del_cliente_y_conserva_reintentos",
+      "source_function": "test_rpc_guarda_limite_no_acepta_hora_del_cliente_y_conserva_reintentos",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "row[\"limite_salida\"] is not None and row[\"salida_tardia\"] is False",
+        "not row[\"limite_salida\"].startswith(\"2000-\")",
+        "repeated[\"limite_salida\"] == row[\"limite_salida\"]"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_guarda_limite_no_acepta_hora_del_cliente_y_conserva_reintentos",
+      "command": "python -m pytest tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_guarda_limite_no_acepta_hora_del_cliente_y_conserva_reintentos -q",
+      "id": "CT-M06-P-BE-001"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py",
+      "line": 62,
+      "name": "test_rpc_rechaza_clase_terminada_sin_guardar",
+      "source_function": "test_rpc_rechaza_clase_terminada_sin_guardar",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.rows(\"ASISTENCIA\") == []",
+        "pytest.raises(RuntimeError, match=\"La hora de esta clase ya pasó\")"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_rechaza_clase_terminada_sin_guardar",
+      "command": "python -m pytest tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_rechaza_clase_terminada_sin_guardar -q",
+      "id": "CT-M06-P-BE-002"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py",
+      "line": 69,
+      "name": "test_rpc_salida_fuera_de_plazo_persiste_tardia_y_auditoria",
+      "source_function": "test_rpc_salida_fuera_de_plazo_persiste_tardia_y_auditoria",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "saved[\"salida_tardia\"] is True",
+        "saved[\"hora_salida\"] != \"00:00:00\"",
+        "len(saved[\"auditoria\"]) == 2"
+      ],
+      "checks_in_source": 5,
+      "selector": "tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_salida_fuera_de_plazo_persiste_tardia_y_auditoria",
+      "command": "python -m pytest tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_salida_fuera_de_plazo_persiste_tardia_y_auditoria -q",
+      "id": "CT-M06-P-BE-003"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py",
+      "line": 82,
+      "name": "test_rpc_limite_inclusivo_y_correccion_auditada[00-False]",
+      "source_function": "test_rpc_limite_inclusivo_y_correccion_auditada",
+      "variant": "00-False",
+      "parameter_names": [
+        "second",
+        "late"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "saved[\"salida_tardia\"] is late",
+        "saved[\"limite_salida\"].startswith(yesterday)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_limite_inclusivo_y_correccion_auditada[00-False]",
+      "command": "python -m pytest 'tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_limite_inclusivo_y_correccion_auditada[00-False]' -q",
+      "id": "CT-M06-P-BE-004"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py",
+      "line": 82,
+      "name": "test_rpc_limite_inclusivo_y_correccion_auditada[01-True]",
+      "source_function": "test_rpc_limite_inclusivo_y_correccion_auditada",
+      "variant": "01-True",
+      "parameter_names": [
+        "second",
+        "late"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "saved[\"salida_tardia\"] is late",
+        "saved[\"limite_salida\"].startswith(yesterday)"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_limite_inclusivo_y_correccion_auditada[01-True]",
+      "command": "python -m pytest 'tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_rpc_limite_inclusivo_y_correccion_auditada[01-True]' -q",
+      "id": "CT-M06-P-BE-005"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py",
+      "line": 93,
+      "name": "test_migracion_repetible_completa_abiertas_y_conserva_cerradas_y_permisos",
+      "source_function": "test_migracion_repetible_completa_abiertas_y_conserva_cerradas_y_permisos",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.rows(\"ASISTENCIA\")[0][\"limite_salida\"] == first",
+        "row[\"id_asistencia\"] == database.rows(\"ASISTENCIA\")[0][\"id_asistencia\"]",
+        "database.sql(f\"select has_function_privilege('{role}', 'public.guardar_asistencia(jsonb,integer,jsonb)', 'EXECUTE');\") == \"f\""
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_migracion_repetible_completa_abiertas_y_conserva_cerradas_y_permisos",
+      "command": "python -m pytest tests/asistencias/postgres/test_attendance_deadline_postgres.py::test_migracion_repetible_completa_abiertas_y_conserva_cerradas_y_permisos -q",
+      "id": "CT-M06-P-BE-006"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py",
+      "line": 63,
+      "name": "test_rpc_bloquea_otro_tipo_hasta_guardar_salida[general]",
+      "source_function": "test_rpc_bloquea_otro_tipo_hasta_guardar_salida",
+      "variant": "general",
+      "parameter_names": [
+        "first_kind"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "len(database.rows('ASISTENCIA')) == 1",
+        "closed['hora_salida']",
+        "following['id_asistencia'] != first['id_asistencia']"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_rpc_bloquea_otro_tipo_hasta_guardar_salida[general]",
+      "command": "python -m pytest 'tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_rpc_bloquea_otro_tipo_hasta_guardar_salida[general]' -q",
+      "id": "CT-M06-P-BE-007"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py",
+      "line": 63,
+      "name": "test_rpc_bloquea_otro_tipo_hasta_guardar_salida[horario]",
+      "source_function": "test_rpc_bloquea_otro_tipo_hasta_guardar_salida",
+      "variant": "horario",
+      "parameter_names": [
+        "first_kind"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "len(database.rows('ASISTENCIA')) == 1",
+        "closed['hora_salida']",
+        "following['id_asistencia'] != first['id_asistencia']"
+      ],
+      "checks_in_source": 6,
+      "selector": "tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_rpc_bloquea_otro_tipo_hasta_guardar_salida[horario]",
+      "command": "python -m pytest 'tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_rpc_bloquea_otro_tipo_hasta_guardar_salida[horario]' -q",
+      "id": "CT-M06-P-BE-008"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py",
+      "line": 78,
+      "name": "test_rpc_entradas_general_y_horario_simultaneas_guardan_solo_una",
+      "source_function": "test_rpc_entradas_general_y_horario_simultaneas_guardan_solo_una",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "sum(result is not None for result in results) == 1",
+        "len(database.rows('ASISTENCIA')) == 1",
+        "'entrada sin salida' in str(error)"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_rpc_entradas_general_y_horario_simultaneas_guardan_solo_una",
+      "command": "python -m pytest tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_rpc_entradas_general_y_horario_simultaneas_guardan_solo_una -q",
+      "id": "CT-M06-P-BE-009"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py",
+      "line": 95,
+      "name": "test_matricula_entrada_admin_y_salida_omitida[cron]",
+      "source_function": "test_matricula_entrada_admin_y_salida_omitida",
+      "variant": "cron",
+      "parameter_names": [
+        "process"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "enrollment['id_cliente'] == 95 and enrollment['id_horario_servicio'] == 24",
+        "row['Fecha'] == enrollment['fecha_clase']",
+        "row['estado_asistencia'] == 'dentro' and not row['hora_salida']"
+      ],
+      "checks_in_source": 23,
+      "selector": "tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_matricula_entrada_admin_y_salida_omitida[cron]",
+      "command": "python -m pytest 'tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_matricula_entrada_admin_y_salida_omitida[cron]' -q",
+      "id": "CT-M06-P-BE-010"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py",
+      "line": 95,
+      "name": "test_matricula_entrada_admin_y_salida_omitida[rpc]",
+      "source_function": "test_matricula_entrada_admin_y_salida_omitida",
+      "variant": "rpc",
+      "parameter_names": [
+        "process"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "enrollment['id_cliente'] == 95 and enrollment['id_horario_servicio'] == 24",
+        "row['Fecha'] == enrollment['fecha_clase']",
+        "row['estado_asistencia'] == 'dentro' and not row['hora_salida']"
+      ],
+      "checks_in_source": 23,
+      "selector": "tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_matricula_entrada_admin_y_salida_omitida[rpc]",
+      "command": "python -m pytest 'tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py::test_matricula_entrada_admin_y_salida_omitida[rpc]' -q",
+      "id": "CT-M06-P-BE-011"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 45,
+      "name": "test_limite_exacto_y_hora_inclusiva",
+      "source_function": "test_limite_exacto_y_hora_inclusiva",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.sql(\"\"\"select public.estado_visita_asistencia(false, '2026-11-08T12:00:00-05:00', '2026-11-08 12:00:00', false, '2026-11-09T12:00:00-05:00');\"\"\") == 'completada'",
+        "database.sql(f\"\"\"select public.estado_visita_asistencia(false, '2026-11-08T12:00:00-05:00', null, false, '2026-11-08T{end}-05:00');\"\"\") == expected"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_limite_exacto_y_hora_inclusiva",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_limite_exacto_y_hora_inclusiva -q",
+      "id": "CT-M06-P-BE-012"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 54,
+      "name": "test_cron_persiste_sin_pantalla_y_sin_inventar_salida",
+      "source_function": "test_cron_persiste_sin_pantalla_y_sin_inventar_salida",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "row['estado_asistencia'] == 'dentro'",
+        "database.sql(\"select count(*) from cron.job where jobname='silver-gym-incomplete-attendance' and active;\") == '1'",
+        "persisted['estado_asistencia'] == 'incompleta'"
+      ],
+      "checks_in_source": 8,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_cron_persiste_sin_pantalla_y_sin_inventar_salida",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_cron_persiste_sin_pantalla_y_sin_inventar_salida -q",
+      "id": "CT-M06-P-BE-013"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 79,
+      "name": "test_salida_real_y_proceso_concurrente_no_se_sobrescriben",
+      "source_function": "test_salida_real_y_proceso_concurrente_no_se_sobrescriben",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "result['hora_salida'] and result['estado_asistencia'] == 'incompleta'",
+        "result['salida_tardia'] is True and result['version'] == 2",
+        "sum(e['accion'] == 'incompleta_automatica' for e in result['auditoria']) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_salida_real_y_proceso_concurrente_no_se_sobrescriben",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_salida_real_y_proceso_concurrente_no_se_sobrescriben -q",
+      "id": "CT-M06-P-BE-014"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 93,
+      "name": "test_correccion_documentada_puede_recuperar_la_salida_real",
+      "source_function": "test_correccion_documentada_puede_recuperar_la_salida_real",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "saved['estado_asistencia'] == 'completada'",
+        "saved['salida_tardia'] is False",
+        "any(e['accion'] == 'incompleta_automatica' for e in saved['auditoria'])"
+      ],
+      "checks_in_source": 3,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_correccion_documentada_puede_recuperar_la_salida_real",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_correccion_documentada_puede_recuperar_la_salida_real -q",
+      "id": "CT-M06-P-BE-015"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 106,
+      "name": "test_migracion_repetible_no_duplica_auditoria_y_estado_no_se_falsifica",
+      "source_function": "test_migracion_repetible_no_duplica_auditoria_y_estado_no_se_falsifica",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "database.rows('ASISTENCIA')[0]['auditoria'] == before['auditoria']",
+        "saved['estado_asistencia'] == 'incompleta'"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_migracion_repetible_no_duplica_auditoria_y_estado_no_se_falsifica",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_migracion_repetible_no_duplica_auditoria_y_estado_no_se_falsifica -q",
+      "id": "CT-M06-P-BE-016"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 119,
+      "name": "test_proceso_automatico_no_es_una_operacion_publica[anon]",
+      "source_function": "test_proceso_automatico_no_es_una_operacion_publica",
+      "variant": "anon",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match='permission denied')"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_proceso_automatico_no_es_una_operacion_publica[anon]",
+      "command": "python -m pytest 'tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_proceso_automatico_no_es_una_operacion_publica[anon]' -q",
+      "id": "CT-M06-P-BE-017"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 119,
+      "name": "test_proceso_automatico_no_es_una_operacion_publica[authenticated]",
+      "source_function": "test_proceso_automatico_no_es_una_operacion_publica",
+      "variant": "authenticated",
+      "parameter_names": [
+        "role"
+      ],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "pytest.raises(RuntimeError, match='permission denied')"
+      ],
+      "checks_in_source": 1,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_proceso_automatico_no_es_una_operacion_publica[authenticated]",
+      "command": "python -m pytest 'tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_proceso_automatico_no_es_una_operacion_publica[authenticated]' -q",
+      "id": "CT-M06-P-BE-018"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 130,
+      "name": "test_general_guarda_plazo_servidor_e_ignora_cierre_enviado",
+      "source_function": "test_general_guarda_plazo_servidor_e_ignora_cierre_enviado",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "not row['cierre_automatico'] and row['estado_asistencia'] == 'dentro'",
+        "database.sql('''select limite_salida = ((\"Fecha\"::date + hora_entrada::time + interval '3 hours') at time zone 'America/Lima') from public.\"ASISTENCIA\";''') == 't'"
+      ],
+      "checks_in_source": 2,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_general_guarda_plazo_servidor_e_ignora_cierre_enviado",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_general_guarda_plazo_servidor_e_ignora_cierre_enviado -q",
+      "id": "CT-M06-P-BE-019"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 137,
+      "name": "test_cron_cierra_general_sin_actividad_y_libera_aforo",
+      "source_function": "test_cron_cierra_general_sin_actividad_y_libera_aforo",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "closed['cierre_automatico'] and closed['estado_asistencia'] == 'incompleta'",
+        "closed['hora_salida'] and closed['fecha_salida'] and closed['version'] == 2",
+        "database.sql('''select count(*) from public.\"ASISTENCIA\" where not anulado and coalesce(hora_salida::text,'')='';''') == '0'"
+      ],
+      "checks_in_source": 7,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_cron_cierra_general_sin_actividad_y_libera_aforo",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_cron_cierra_general_sin_actividad_y_libera_aforo -q",
+      "id": "CT-M06-P-BE-020"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 163,
+      "name": "test_migracion_recupera_abiertas_antiguas_y_correccion_conserva_auditoria",
+      "source_function": "test_migracion_recupera_abiertas_antiguas_y_correccion_conserva_auditoria",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "closed['cierre_automatico'] and closed['hora_salida'] == '01:30:00'",
+        "database.rows('ASISTENCIA')[0]['auditoria'] == before",
+        "not saved['cierre_automatico'] and saved['estado_asistencia'] == 'completada'"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_migracion_recupera_abiertas_antiguas_y_correccion_conserva_auditoria",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_migracion_recupera_abiertas_antiguas_y_correccion_conserva_auditoria -q",
+      "id": "CT-M06-P-BE-021"
+    },
+    {
+      "component": "backend",
+      "module": "asistencias",
+      "type": "postgres",
+      "path": "backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py",
+      "line": 178,
+      "name": "test_cierre_general_y_salida_manual_concurrentes_conservan_primera_salida",
+      "source_function": "test_cierre_general_y_salida_manual_concurrentes_conservan_primera_salida",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "database",
+        "clean"
+      ],
+      "status": "skipped",
+      "expected_checks": [
+        "persisted['estado_asistencia'] == 'incompleta' and persisted['version'] == 2",
+        "persisted['hora_salida'] == first['hora_salida']",
+        "sum(e['accion'] in ('salida', 'cierre_automatico') for e in persisted['auditoria']) == 1"
+      ],
+      "checks_in_source": 4,
+      "selector": "tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_cierre_general_y_salida_manual_concurrentes_conservan_primera_salida",
+      "command": "python -m pytest tests/asistencias/postgres/test_automatic_attendance_postgres.py::test_cierre_general_y_salida_manual_concurrentes_conservan_primera_salida -q",
+      "id": "CT-M06-P-BE-022"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 7,
+      "name": "attendance ignores replaced searches and responses received after disposal",
+      "source_function": "'attendance ignores replaced searches and responses received after disposal'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(s.clientData.cliente.dni, '87654321')",
+        "assert.equal(s.clientData, null)"
+      ],
+      "checks_in_source": 2,
+      "selector": "attendance ignores replaced searches and responses received after disposal",
+      "command": "node --test '--test-name-pattern=^attendance\\ ignores\\ replaced\\ searches\\ and\\ responses\\ received\\ after\\ disposal$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-001"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 37,
+      "name": "general attendance retains its request identity after failure and starts a new identity after success",
+      "source_function": "'general attendance retains its request identity after failure and starts a new identity after success'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(dni, '12345678')",
+        "assert.equal(s.error, 'Conexión interrumpida')",
+        "assert.equal(s.clientData.cliente.dni, '12345678')"
+      ],
+      "checks_in_source": 6,
+      "selector": "general attendance retains its request identity after failure and starts a new identity after success",
+      "command": "node --test '--test-name-pattern=^general\\ attendance\\ retains\\ its\\ request\\ identity\\ after\\ failure\\ and\\ starts\\ a\\ new\\ identity\\ after\\ success$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-002"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 67,
+      "name": "general attendance shows the pending schedule visit and offers only its exit",
+      "source_function": "'general attendance shows the pending schedule visit and offers only its exit'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(harness.html, /Entrada en asistencia por horarios/)",
+        "assert.ok(harness.html.includes(message))",
+        "assert.match(harness.html, /Registrar salida/)"
+      ],
+      "checks_in_source": 4,
+      "selector": "general attendance shows the pending schedule visit and offers only its exit",
+      "command": "node --test '--test-name-pattern=^general\\ attendance\\ shows\\ the\\ pending\\ schedule\\ visit\\ and\\ offers\\ only\\ its\\ exit$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-003"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 84,
+      "name": "schedule roster blocks general overlap and refreshes eligibility after closing the pending visit",
+      "source_function": "'schedule roster blocks general overlap and refreshes eligibility after closing the pending visit'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(id, 18)",
+        "assert.equal(id, 7)",
+        "assert.ok(harness.html.includes(message))"
+      ],
+      "checks_in_source": 9,
+      "selector": "schedule roster blocks general overlap and refreshes eligibility after closing the pending visit",
+      "command": "node --test '--test-name-pattern=^schedule\\ roster\\ blocks\\ general\\ overlap\\ and\\ refreshes\\ eligibility\\ after\\ closing\\ the\\ pending\\ visit$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-004"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 114,
+      "name": "a concurrent schedule entry refreshes the general block without reporting success",
+      "source_function": "'a concurrent schedule entry refreshes the general block without reporting success'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(harness.setup.error, message)",
+        "assert.equal(harness.setup.feedback, '')",
+        "assert.equal(harness.setup.clientData.general.puede_entrar, false)"
+      ],
+      "checks_in_source": 4,
+      "selector": "a concurrent schedule entry refreshes the general block without reporting success",
+      "command": "node --test '--test-name-pattern=^a\\ concurrent\\ schedule\\ entry\\ refreshes\\ the\\ general\\ block\\ without\\ reporting\\ success$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-005"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 135,
+      "name": "un horario de otra fecha muestra su motivo sin ofrecer salida de otra visita",
+      "source_function": "'un horario de otra fecha muestra su motivo sin ofrecer salida de otra visita'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.ok(harness.html.includes(reason))",
+        "assert.doesNotMatch(harness.html, /Registrar salida pendiente/)",
+        "assert.match(harness.html, /<button(?=[^>]*disabled)(?=[^>]*aria-label=\"Registrar entrada de Ana\")[^>]*>/)"
+      ],
+      "checks_in_source": 3,
+      "selector": "un horario de otra fecha muestra su motivo sin ofrecer salida de otra visita",
+      "command": "node --test '--test-name-pattern=^un\\ horario\\ de\\ otra\\ fecha\\ muestra\\ su\\ motivo\\ sin\\ ofrecer\\ salida\\ de\\ otra\\ visita$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-006"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 152,
+      "name": "una clase pendiente fuera del margen conserva su salida sin mostrar aviso de coincidencia",
+      "source_function": "'una clase pendiente fuera del margen conserva su salida sin mostrar aviso de coincidencia'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.ok(!harness.html.includes(message))",
+        "assert.match(harness.html, /Registrar salida/)",
+        "assert.doesNotMatch(harness.html, /Registrar entrada al gimnasio/)"
+      ],
+      "checks_in_source": 3,
+      "selector": "una clase pendiente fuera del margen conserva su salida sin mostrar aviso de coincidencia",
+      "command": "node --test '--test-name-pattern=^una\\ clase\\ pendiente\\ fuera\\ del\\ margen\\ conserva\\ su\\ salida\\ sin\\ mostrar\\ aviso\\ de\\ coincidencia$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-007"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 169,
+      "name": "attendance shows class expiration and clears entry availability after a stale lookup",
+      "source_function": "'attendance shows class expiration and clears entry availability after a stale lookup'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(s.clientData.horarios[0].puede_entrar, true)",
+        "assert.equal(s.error, message)",
+        "assert.equal(s.feedback, '')"
+      ],
+      "checks_in_source": 7,
+      "selector": "attendance shows class expiration and clears entry availability after a stale lookup",
+      "command": "node --test '--test-name-pattern=^attendance\\ shows\\ class\\ expiration\\ and\\ clears\\ entry\\ availability\\ after\\ a\\ stale\\ lookup$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-008"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 202,
+      "name": "attendance prevents duplicate writes and preserves the last summary when refresh fails",
+      "source_function": "'attendance prevents duplicate writes and preserves the last summary when refresh fails'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(writes, 1)",
+        "assert.equal(s.busy, 'entry-7')",
+        "assert.equal(s.summary.entradas, 2)"
+      ],
+      "checks_in_source": 6,
+      "selector": "attendance prevents duplicate writes and preserves the last summary when refresh fails",
+      "command": "node --test '--test-name-pattern=^attendance\\ prevents\\ duplicate\\ writes\\ and\\ preserves\\ the\\ last\\ summary\\ when\\ refresh\\ fails$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-009"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 238,
+      "name": "asistencia reutiliza el calendario de horarios y conserva matriculados y pendientes",
+      "source_function": "'asistencia reutiliza el calendario de horarios y conserva matriculados y pendientes'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(harness.html, /Selecciona una clase/)",
+        "assert.match(harness.html, /Calendario de clases/)",
+        "assert.match(harness.html, /Semana 4/)"
+      ],
+      "checks_in_source": 13,
+      "selector": "asistencia reutiliza el calendario de horarios y conserva matriculados y pendientes",
+      "command": "node --test '--test-name-pattern=^asistencia\\ reutiliza\\ el\\ calendario\\ de\\ horarios\\ y\\ conserva\\ matriculados\\ y\\ pendientes$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-010"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 289,
+      "name": "el calendario de asistencia filtra por día y selecciona la lista por id del horario",
+      "source_function": "'el calendario de asistencia filtra por día y selecciona la lista por id del horario'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(control.visibleSchedules.length, 2)",
+        "assert.deepEqual(control.visibleSchedules.map((item) => item.id_horario_servicio), [2])",
+        "assert.equal(harness.setup.selectedSchedule, 2)"
+      ],
+      "checks_in_source": 5,
+      "selector": "el calendario de asistencia filtra por día y selecciona la lista por id del horario",
+      "command": "node --test '--test-name-pattern=^el\\ calendario\\ de\\ asistencia\\ filtra\\ por\\ día\\ y\\ selecciona\\ la\\ lista\\ por\\ id\\ del\\ horario$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-011"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 318,
+      "name": "el calendario de asistencia bloquea cambios de clase mientras guarda",
+      "source_function": "'el calendario de asistencia bloquea cambios de clase mientras guarda'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(harness.child('ExcelScheduleGrid').props.interactive, false)",
+        "assert.equal(harness.setup.selectedSchedule, 1)"
+      ],
+      "checks_in_source": 2,
+      "selector": "el calendario de asistencia bloquea cambios de clase mientras guarda",
+      "command": "node --test '--test-name-pattern=^el\\ calendario\\ de\\ asistencia\\ bloquea\\ cambios\\ de\\ clase\\ mientras\\ guarda$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-012"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 335,
+      "name": "la lista descarta respuestas de otro horario y al desmontar",
+      "source_function": "'la lista descarta respuestas de otro horario y al desmontar'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(s.roster.horario.id_horario_servicio, 2)",
+        "assert.equal(s.roster, null)"
+      ],
+      "checks_in_source": 2,
+      "selector": "la lista descarta respuestas de otro horario y al desmontar",
+      "command": "node --test '--test-name-pattern=^la\\ lista\\ descarta\\ respuestas\\ de\\ otro\\ horario\\ y\\ al\\ desmontar$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-013"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 358,
+      "name": "asistencia separa fechas del mismo horario y descarta respuestas de otra semana",
+      "source_function": "'asistencia separa fechas del mismo horario y descarta respuestas de otra semana'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(harness.setup.roster.fecha, '2026-10-31')",
+        "assert.equal(harness.setup.selectedSession, '2026-10-31')",
+        "assert.equal(harness.setup.roster, null)"
+      ],
+      "checks_in_source": 6,
+      "selector": "asistencia separa fechas del mismo horario y descarta respuestas de otra semana",
+      "command": "node --test '--test-name-pattern=^asistencia\\ separa\\ fechas\\ del\\ mismo\\ horario\\ y\\ descarta\\ respuestas\\ de\\ otra\\ semana$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-014"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 386,
+      "name": "registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso",
+      "source_function": "'registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.equal(id, 7)",
+        "assert.equal(s.selectedSchedule, 1)",
+        "assert.equal(s.roster.clientes[0].asistencia.id_asistencia, 9)"
+      ],
+      "checks_in_source": 6,
+      "selector": "registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso",
+      "command": "node --test '--test-name-pattern=^registrar\\ entrada\\ desde\\ la\\ lista\\ actualiza\\ la\\ misma\\ clase\\ y\\ la\\ salida\\ tardía\\ muestra\\ aviso$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-015"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 416,
+      "name": "las visitas generales incompletas muestran el estado y conservan la salida real pendiente",
+      "source_function": "'las visitas generales incompletas muestran el estado y conservan la salida real pendiente'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(general, /Visita incompleta sin salida/)",
+        "assert.match(general, /<span class=\"[^\"]*incompleta[^\"]*\">Incompleta/)",
+        "assert.match(general, /Registrar salida/)"
+      ],
+      "checks_in_source": 7,
+      "selector": "las visitas generales incompletas muestran el estado y conservan la salida real pendiente",
+      "command": "node --test '--test-name-pattern=^las\\ visitas\\ generales\\ incompletas\\ muestran\\ el\\ estado\\ y\\ conservan\\ la\\ salida\\ real\\ pendiente$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-016"
+    },
+    {
+      "component": "frontend",
+      "module": "asistencias",
+      "type": "interfaz",
+      "path": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "line": 442,
+      "name": "el cierre automático general se muestra como incompleto y permite un nuevo ingreso",
+      "source_function": "'el cierre automático general se muestra como incompleto y permite un nuevo ingreso'",
+      "variant": null,
+      "parameter_names": [],
+      "fixtures": [
+        "Preparación y dobles del archivo fuente"
+      ],
+      "status": "passed",
+      "expected_checks": [
+        "assert.match(html, /Visita anterior cerrada automáticamente/)",
+        "assert.match(html, /Cierre 13:00/)",
+        "assert.match(html, /Incompleta/)"
+      ],
+      "checks_in_source": 5,
+      "selector": "el cierre automático general se muestra como incompleto y permite un nuevo ingreso",
+      "command": "node --test '--test-name-pattern=^el\\ cierre\\ automático\\ general\\ se\\ muestra\\ como\\ incompleto\\ y\\ permite\\ un\\ nuevo\\ ingreso$' tests/asistencias/interfaz/flujos.test.js",
+      "id": "CT-M06-F-FE-017"
+    }
+  ]
+}

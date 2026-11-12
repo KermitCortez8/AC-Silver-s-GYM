@@ -31,9 +31,18 @@ class GymChangePlanner:
         if "pedidos_tienda" in changed_keys:
             before = {int(row["id_pedido"]): row for row in previous.get("pedidos_tienda", [])}
             after = {int(row["id_pedido"]): row for row in current.get("pedidos_tienda", [])}
-            operations.extend(table_changes("VENTAS", "id_venta",
-                [self.tables.prepare_write("VENTAS", store._sale_to_remote(row)) for row in before.values()],
-                [self.tables.prepare_write("VENTAS", store._sale_to_remote(row)) for row in after.values()]))
+            previous_sales = {identity: self.tables.prepare_write("VENTAS", store._sale_to_remote(row))
+                              for identity, row in before.items()}
+            sale_changes = table_changes("VENTAS", "id_venta", list(previous_sales.values()),
+                [self.tables.prepare_write("VENTAS", store._sale_to_remote(row)) for row in after.values()])
+            for operation in sale_changes:
+                if operation["action"] == "update":
+                    # Al desvincular una cuenta no reescribir campos históricos
+                    # normalizados (fechas, pago o importes) que no han cambiado.
+                    old = previous_sales[operation["id"]]
+                    operation["body"] = {key: value for key, value in operation["body"].items()
+                                         if key == "id_venta" or value != old.get(key)}
+            operations.extend(sale_changes)
             for identity in before.keys() | after.keys():
                 old, new = before.get(identity), after.get(identity)
                 if old is None or new is None or old.get("items") != new.get("items"):

@@ -18,6 +18,24 @@ class ClientPaymentsService:
     def gateway(self):
         return self.gateway_factory(self.settings)
 
+    def renewal(self):
+        from application.services.membership_renewal_service import MembershipRenewalService
+        return MembershipRenewalService(self.gym, self.settings, self.gateway())
+
+    def renew_admin(self, client_id, payload):
+        renewal = self.renewal()
+        if payload['metodo_pago'] == 'stripe':
+            return {'metodo_pago': 'stripe', 'payment': renewal.admin_checkout(
+                client_id, payload['id_membresia_origen'], payload['monto_pago'])}
+        if not payload.get('pago_recibido'):
+            raise ValueError('Confirma que recibiste el pago en efectivo antes de renovar')
+        saved = renewal.admin_cash(client_id, payload['id_membresia_origen'], payload['monto_pago'])
+        notification = self.notify(self.settings, self.clients, saved, 'payment')
+        membership = saved['membresia']
+        return {'metodo_pago': 'efectivo', 'id_cliente': client_id, 'membership_status': membership['estado'],
+                'fecha_inicio': membership['fecha_inicio'], 'fecha_fin': membership['fecha_fin'],
+                'notification': notification}
+
     def register_public(self, payload):
         if not self.settings.has_supabase_credentials:
             raise RuntimeError("Supabase debe estar configurado para registrar pagos de membresía")

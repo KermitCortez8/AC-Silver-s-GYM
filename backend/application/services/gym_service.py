@@ -53,6 +53,9 @@ class GymService:
     def membership_payment_data(self):
         return self.executor.query(MembershipPaymentQuery())
 
+    def reconcile_attendance(self, now):
+        return self.repository.reconcile_attendance(now)
+
     def attendance_page(self, criteria, request):
         return self.repository.attendance_page(criteria, request)
 

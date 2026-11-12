@@ -31,7 +31,7 @@ Se corrigen estados y acciones de las pantallas existentes, conservando dependen
 - `backend/domain/services/memberships_rules.py`: proteger edición y confirmación económica.
 - `backend/domain/services/schedules_rules.py`: día válido y horas canónicas al guardar.
 - `backend/application/services/attendance_service.py`: usar vigencia compartida.
-- `backend/tests/test_client_flow_control.py`: regresiones e integración.
+- `backend/tests/transversales/integracion/test_client_flow_control.py`: regresiones e integración.
 - `.specify/base/modulos/`: contratos afectados.
 
 ## Diseño del cambio
@@ -79,5 +79,5 @@ mostrará error/pendiente como estados terminados y permitirá volver a consulta
 sesión sin iniciar otro cobro. Validará el cliente devuelto por servidor y descartará
 respuestas de rutas anteriores. El pago manual se bloquea mientras está en curso;
 tras activar se actualizan los detalles del cliente con la respuesta confirmada.
-Pruebas de regresión en frontend/tests/36-client-flow-control.test.js y capturas en
+Pruebas de regresión en frontend/tests/clientes/interfaz/client-flow-control.test.js y capturas en
 navegador con API simulada. Se mantienen los servicios y el tema actuales.

@@ -21,7 +21,19 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
 1. **CA-01.** Dado un cliente activado con membresía pagada y vigente, al
    registrar entrada general con DNI y `request_id` válido se usa el reloj del servidor.
 2. **CA-02.** Dada una entrada abierta, no se admite otra para el mismo cliente;
-   las entradas generales y de clase comparten aforo.
+   las entradas generales y de clase comparten aforo. El bloqueo aplica en ambos
+   sentidos entre horarios y general hasta guardar la salida de la visita anterior.
+   La API devuelve 409 con el origen de la entrada pendiente; el administrador
+   puede registrar esa salida desde la ficha general o la lista del horario.
+   En la lista del horario, el aviso cruzado y la salida de otra visita solo se
+   ofrecen cuando la franja de la sesión está en curso o a no más de 30 minutos
+   del instante actual. El margen es inclusivo en ambos extremos y puede cruzar
+   medianoche. Otra fecha o un intervalo lejano muestran su motivo temporal;
+   una visita anterior con salida no bloquea otra por ser del mismo día.
+   En general, el aviso cruzado de una clase utiliza su fin original guardado
+   más 30 minutos; después se conserva la visita pendiente y su salida, sin
+   presentar un aviso de coincidencia temporal. La admisión al horario sigue
+   permitida únicamente dentro de su intervalo real.
 3. **CA-03.** Dado un reintento con el mismo `request_id`, se devuelve la visita
    previa sin duplicarla, incluso si ya se cerró.
 4. **CA-04.** Dado un actor `staff`, `trainer` o `user`, al intentar registrar
@@ -50,18 +62,25 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
    en el límite de una hora aún puede completarse. Historial y exportación admiten
    el filtro de incompletas sin ampliar el acceso de una sesión de cliente.
 
+11. **CA-11.** Una visita general sin salida se cierra automáticamente al superar
+    tres horas desde la entrada: guarda la hora límite como cierre automático,
+    queda incompleta, libera aforo y permite un nuevo ingreso. Exactamente a las
+    tres horas todavía admite una salida manual completada. El historial y Excel
+    distinguen la salida automática de una real; la auditoría conserva el evento.
+
 | Criterio | Evidencia existente |
 | --- | --- |
-| CA-01 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_entry_without_enrollment_and_exit_use_server_clock`, `test_entry_requires_current_paid_membership`. |
-| CA-02 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_open_entry_blocks_other_kind`, `test_capacity_is_shared_by_general_and_schedule_entries`, `test_stale_parallel_writes_cannot_exceed_capacity`. |
-| CA-03 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_retries_do_not_duplicate_even_after_exit`. |
-| CA-04 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_only_admin_can_register_general_visit`. |
-| CA-05 | [test_scoped_operations.py](../../../backend/tests/test_scoped_operations.py): `test_dni_filter_cannot_override_the_session_client`, `test_history_passes_client_scope_to_persistence_and_hides_audit`. |
-| CA-06 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_general_corrections_and_annulment_remain_audited`; [test_remaining_smells.py](../../../backend/tests/test_remaining_smells.py): `test_remote_summary_uses_counts_open_visits_and_eight_recent_records`. |
-| CA-07 | [test_general_attendance.py](../../../backend/tests/test_general_attendance.py): `test_expired_class_rejects_entry_and_explains_why`, `test_expired_class_api_returns_error_without_saving`, `test_transaction_revalidates_class_expiration`, `test_schedule_retry_and_exit_still_work_after_class_end`; [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js): error y actualización de ficha tras vencer la clase. |
-| CA-08 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario`, permisos y recorrido HTTP; [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js): calendario compartido, cupos, filtro, selección, bloqueo al guardar y descarte de respuestas obsoletas. |
-| CA-09 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): `test_lista_informa_si_la_entrada_esta_dentro_del_horario`; [test_attendance_deadline_postgres.py](../../../backend/tests/test_attendance_deadline_postgres.py): `test_rpc_rechaza_clase_terminada_sin_guardar`. |
-| CA-10 | [test_schedule_attendance.py](../../../backend/tests/test_schedule_attendance.py): límites, cambio de día, historial privado, persistencia y cambio de horario; [test_attendance_deadline_postgres.py](../../../backend/tests/test_attendance_deadline_postgres.py): RPC, auditoría, límite inclusivo y migración repetible. |
+| CA-01 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_entry_without_enrollment_and_exit_use_server_clock`, `test_entry_requires_current_paid_membership`. |
+| CA-02 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_open_entry_blocks_other_kind`, `test_capacity_is_shared_by_general_and_schedule_entries`, `test_stale_parallel_writes_cannot_exceed_capacity`. |
+| CA-03 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_retries_do_not_duplicate_even_after_exit`. |
+| CA-04 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_only_admin_can_register_general_visit`. |
+| CA-05 | [test_scoped_operations.py](../../../backend/tests/transversales/integracion/test_scoped_operations.py): `test_dni_filter_cannot_override_the_session_client`, `test_history_passes_client_scope_to_persistence_and_hides_audit`. |
+| CA-06 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_general_corrections_and_annulment_remain_audited`; [test_remaining_smells.py](../../../backend/tests/transversales/integracion/test_remaining_smells.py): `test_remote_summary_uses_counts_open_visits_and_eight_recent_records`. |
+| CA-07 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py): `test_expired_class_rejects_entry_and_explains_why`, `test_expired_class_api_returns_error_without_saving`, `test_transaction_revalidates_class_expiration`, `test_schedule_retry_and_exit_still_work_after_class_end`; [asistencias · flujos.test.js](../../../frontend/tests/asistencias/interfaz/flujos.test.js): error y actualización de ficha tras vencer la clase. |
+| CA-08 | [test_schedule_attendance.py](../../../backend/tests/asistencias/integracion/test_schedule_attendance.py): `test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario`, permisos y recorrido HTTP; [asistencias · flujos.test.js](../../../frontend/tests/asistencias/interfaz/flujos.test.js): calendario compartido, cupos, filtro, selección, bloqueo al guardar y descarte de respuestas obsoletas. |
+| CA-09 | [test_schedule_attendance.py](../../../backend/tests/asistencias/integracion/test_schedule_attendance.py): `test_lista_informa_si_la_entrada_esta_dentro_del_horario`; [test_attendance_deadline_postgres.py](../../../backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py): `test_rpc_rechaza_clase_terminada_sin_guardar`. |
+| CA-10 | [test_schedule_attendance.py](../../../backend/tests/asistencias/integracion/test_schedule_attendance.py): límites, cambio de día, historial privado, persistencia y cambio de horario; [test_attendance_deadline_postgres.py](../../../backend/tests/asistencias/postgres/test_attendance_deadline_postgres.py): RPC, auditoría, límite inclusivo y migración repetible. |
+| CA-11 | [test_general_attendance.py](../../../backend/tests/asistencias/integracion/test_general_attendance.py) y [test_automatic_attendance_postgres.py](../../../backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py): límite inclusivo, cierre, aforo, reingreso, auditoría y cron real. |
 
 ## 4. Technical Constraints
 
@@ -81,6 +100,18 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
   matrícula/horario nulos. No hay tabla separada de visitas generales.
   `limite_salida` conserva fecha/hora de fin más una hora en cada nueva visita de clase;
   `salida_tardia` se calcula en la RPC y se conserva al recargar.
+  [021_persist_attendance_status.sql](../../../backend/migrations/021_persist_attendance_status.sql)
+  incorpora `estado_asistencia`, un trigger de coherencia y el proceso privado
+  `marcar_asistencias_incompletas`.
+  [022_attendance_status_cron.sql](../../../backend/migrations/022_attendance_status_cron.sql)
+  programa el guardado cada diez segundos mediante pg_cron. Una transición automática
+  conserva las horas reales y la versión de edición, y añade un evento de Sistema;
+  no provoca conflictos artificiales al registrar la salida.
+  [023_general_attendance_three_hour_close.sql](../../../backend/migrations/023_general_attendance_three_hour_close.sql)
+  fija `limite_salida` general en entrada más tres horas y añade `cierre_automatico`.
+  El cierre sí incrementa la versión, porque modifica la salida y libera aforo;
+  una salida reintentada devuelve el cierre existente. Las consultas también
+  reconcilian vencimientos mediante la misma función privada y el reloj de la base.
 - UI: `/admin/attendance` y `/user/attendance`,
   [AttendanceView.vue](../../../frontend/src/presentation/views/AttendanceView.vue),
   [UserAttendanceView.vue](../../../frontend/src/presentation/views/UserAttendanceView.vue).
@@ -95,6 +126,10 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
 No usar el reloj del navegador como autoridad de entrada. No equiparar permisos
 de `staff` con `admin`. No confundir resumen especializado con carga de todo el
 historial. No publicar auditoría al cliente ni mezclar fechas de clases semanales.
+La comprobación de entrada abierta no se limita al servicio ni al día actual.
+Una clase incompleta sin salida también bloquea el acceso general. La RPC de
+asistencia conserva la exclusión mutua para impedir dos ingresos simultáneos.
+Las consultas solo orientan la interfaz; guardar vuelve a validar en el servidor.
 
 ## 6. Edge Cases
 
@@ -104,11 +139,15 @@ historial. No publicar auditoría al cliente ni mezclar fechas de clases semanal
   Una clase terminada sin entrada queda sin registro; no se crea una visita
   ni se persiste una inasistencia automática. Las horas enviadas por el navegador
   no permiten registrar una nueva entrada fuera del intervalo.
-- Reingreso general el mismo día tras cerrar: permitir con nueva identidad de solicitud.
-- Salida pendiente de un día anterior: continúa contando como visita abierta.
-- Una incompleta sin salida continúa consumiendo aforo hasta registrar la salida
-  real; el vencimiento no inventa una salida. Su estado se calcula al consultar,
-  sin depender de un cron ni de que una pantalla permanezca abierta.
+- Reingreso general el mismo día tras una salida manual o cierre automático:
+  permitir con nueva identidad de solicitud. Repetir la solicitud anterior devuelve
+  la visita ya cerrada sin duplicarla.
+- Una visita general abierta de días anteriores se cierra al reconciliar o migrar,
+  usando la entrada original más tres horas; el plazo puede cruzar medianoche.
+- Una incompleta de clase sin salida continúa consumiendo aforo hasta registrar la salida
+  real; el vencimiento no inventa una salida. Su estado se guarda automáticamente en `estado_asistencia` por un trabajo de
+  base de datos cada diez segundos, sin depender del navegador ni del backend.
+  La lectura aplica también el límite mientras llega la siguiente ejecución.
 - El plazo usa el horario guardado al entrar y puede cruzar medianoche. Editar
   o desactivar la clase no cambia el límite de visitas ya registradas.
 - La migración 018 asigna un límite a visitas de clase abiertas usando el horario
@@ -120,10 +159,38 @@ historial. No publicar auditoría al cliente ni mezclar fechas de clases semanal
   administrativo como en `mi-semana`. Una respuesta de otra fecha se descarta en
   el frontend; un fallo de carga no muestra los clientes de la selección anterior.
 
+### Guardado automático del estado
+
+Clases: al superar estrictamente el fin original más una hora sin salida, se guarda
+**incompleta** aunque nadie consulte. No crea salida ni libera aforo. Una salida
+real tardía posterior conserva el estado incompleto.
+
+Gimnasio general: al superar tres horas desde la entrada sin salida, se guarda
+**incompleta** y se CIERRA la visita. El sistema guarda fecha/hora del límite,
+`cierre_automatico=true` y un evento del Sistema; libera aforo. Esa hora representa
+un cierre administrativo automático, no una salida real observada. Una corrección
+con motivo puede reconstruir la salida real y conserva la evidencia del cierre.
+Las generales históricas ya cerradas no se reclasifican al migrar.
+
+El trabajo programado tiene una frecuencia de diez segundos: la materialización
+ocurre en la primera ejecución posterior al límite. Exactamente en el límite aún
+puede completarse. La programación requiere aplicar 021, 022 y 023 con pg_cron habilitado;
+la presencia de esos archivos no acredita su instalación en una base remota.
+
+Evidencia de persistencia sin navegador, concurrencia, límites y permisos:
+[test_automatic_attendance_postgres.py](../../../backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py).
+El recorrido completo desde matrícula hasta entrada administrativa, falta de
+salida, bloqueo de reingreso y salida tardía se comprueba en
+[test_attendance_enrollment_flow_postgres.py](../../../backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py),
+con RPC y, cuando está disponible, cron real. Ver la
+[prueba del flujo](../validaciones/prueba-asistencia-horario/validation.md).
+El [bloqueo entre tipos de asistencia](../validaciones/bloqueo-asistencia/validation.md)
+registra las pruebas HTTP, SQL concurrentes y visuales del control en ambos sentidos.
+
 ## 7. Definition of Done
 
 Verificar privacidad, aforo, reintentos, auditoría, reloj y paginación afectados.
-Para cambios de UI, reutilizar [29-view-flows.test.js](../../../frontend/tests/29-view-flows.test.js)
+Para cambios de UI, reutilizar [asistencias · flujos.test.js](../../../frontend/tests/asistencias/interfaz/flujos.test.js)
 y registrar revisión visual. Cumplir el [DoD](../../docs/DoD.md).
 
 ### Vigencia compartida (feature 001)
@@ -132,7 +199,7 @@ La selección de membresía en asistencia reutiliza membership_current, igual qu
 autenticación: exige pago confirmado y fechas civiles válidas con día final inclusivo.
 Fechas ausentes o imposibles no autorizan entradas ni consumen aforo.
 Regresiones y recorrido integrado en
-[test_client_flow_control.py](../../../backend/tests/test_client_flow_control.py).
+[test_client_flow_control.py](../../../backend/tests/transversales/integracion/test_client_flow_control.py).
 
 Verificación del aviso de clase terminada y sus límites en
 [validation.md](../validaciones/asistencias/validation.md).
