@@ -115,9 +115,10 @@ test('recuperación reúne datos solo en el navegador sin enviarlos a la API', a
   await page.getByLabel('Correo', { exact: true }).fill('prueba@example.com');
   await page.getByLabel('DNI', { exact: true }).fill('12345678');
   await page.getByLabel('Número telefónico').fill('900000001');
-  await page.getByRole('button', { name: 'Reunir datos aquí' }).click();
+  await expect(page.getByText('Tu solicitud aún no se enviará al gimnasio.')).toBeVisible();
+  await page.getByRole('button', { name: 'Dejar datos listos' }).click();
 
-  await expect(page.getByRole('log')).toContainText('Todavía no se enviaron');
+  await expect(page.getByRole('log')).toContainText('La solicitud aún no se ha enviado al gimnasio');
   await expect(page.getByRole('log')).not.toContainText('prueba@example.com');
   expect(requests).toHaveLength(1);
   expect(requests[0]).toContain('quiero recuperar mi cuenta');
@@ -125,7 +126,7 @@ test('recuperación reúne datos solo en el navegador sin enviarlos a la API', a
   expect(requests[0]).not.toContain('12345678');
   await page.getByRole('button', { name: 'Cerrar asistente' }).click();
   await page.getByRole('button', { name: 'Abrir asistente del gimnasio' }).click();
-  await expect(page.getByRole('log')).not.toContainText('Reuní los datos');
+  await expect(page.getByRole('log')).not.toContainText('tus datos quedaron preparados');
 });
 
 test('dato personal escrito en el chat se bloquea antes de llamar a la API', async ({ page }) => {

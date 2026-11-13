@@ -32,7 +32,7 @@
         <p v-if="busy" class="text-sm text-slate-500">Consultando…</p>
       </div>
       <form v-if="recoveryActive" class="space-y-2 border-t border-slate-200 p-3" @submit.prevent="collectRecovery">
-        <p class="text-xs text-slate-600">Solo para esta demostración. Estos datos no salen de tu navegador.</p>
+        <p class="text-xs text-slate-600">Tu solicitud aún no se enviará al gimnasio.</p>
         <label class="block text-xs font-semibold text-slate-700" for="recovery-email">Correo</label>
         <input id="recovery-email" v-model.trim="recoveryDraft.correo" type="email" required autocomplete="off" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
         <div class="grid grid-cols-2 gap-2">
@@ -46,7 +46,7 @@
           </div>
         </div>
         <div class="flex gap-2">
-          <button type="submit" class="flex-1 rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white">Reunir datos aquí</button>
+          <button type="submit" class="flex-1 rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white">Dejar datos listos</button>
           <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" @click="cancelRecovery">Cancelar</button>
         </div>
       </form>
@@ -96,7 +96,7 @@ function collectRecovery() {
   cancelRecovery();
   messages.value.push({
     from: 'agent',
-    text: 'Reuní los datos solo en esta pestaña. Todavía no se enviaron ni se guardaron en el servidor; el dueño no recibió una solicitud. Al cerrar el chat, se borrarán.',
+    text: 'Listo, tus datos quedaron preparados en esta sesión. La solicitud aún no se ha enviado al gimnasio.',
   });
 }
 watch([() => messages.value.length, busy], async () => {
