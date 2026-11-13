@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from domain.services.agent_policy import (
     asks_for_public_schedules, contains_sensitive, requests_private_action,
-    validate_message, validate_tool,
+    social_reply, validate_message, validate_tool,
 )
 from domain.services.public_gym_knowledge import PUBLIC_TOPICS
 
@@ -56,6 +56,10 @@ class AgentService:
         if requests_private_action(text):
             return {**base, "estado": "fuera_de_alcance", "texto": "Esa gestión requiere usar los formularios y controles de la plataforma.",
                     "enlaces": [{"texto": "Ir al acceso", "ruta": "/login"}]}
+        courtesy = social_reply(text)
+        if courtesy:
+            self._conversations.put(identifier, last_topic or "")
+            return {**base, "estado": "respondida", "texto": courtesy}
         if asks_for_public_schedules(text) or (
             last_topic == "consultar_informacion_publica:actividades"
             and re.search(r"\bhorarios?\b", text, re.I)

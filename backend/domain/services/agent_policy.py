@@ -2,6 +2,7 @@
 
 import json
 import re
+import unicodedata
 
 from domain.services.public_gym_knowledge import PUBLIC_TOPICS
 
@@ -25,6 +26,23 @@ _PRIVATE = re.compile(
     r"\b(?:paga|pagar|p[aá]game|realizar un pago|hacer un pago)\b", re.I,
 )
 
+_SOCIAL_REPLIES = {
+    "hola": "¡Hola! Soy Silver. Puedo ayudarte con planes, horarios de clases, tipos de entrenamiento y dudas públicas del gimnasio. ¿Qué te gustaría saber?",
+    "gracias": "¡De nada! Si tienes otra pregunta sobre el gimnasio, aquí estoy.",
+    "despedida": "¡Hasta luego! Que tengas un buen día.",
+    "confirmacion": "¡Claro! Si tienes otra pregunta sobre el gimnasio, dime.",
+}
+_SOCIAL_MESSAGES = {
+    "hola": "hola", "holi": "hola", "buenas": "hola", "buenos dias": "hola",
+    "buenas tardes": "hola", "buenas noches": "hola", "saludos": "hola",
+    "que tal": "hola", "como estas": "hola",
+    "gracias": "gracias", "muchas gracias": "gracias", "mil gracias": "gracias",
+    "ok gracias": "gracias", "vale gracias": "gracias", "genial gracias": "gracias",
+    "adios": "despedida", "chau": "despedida", "chao": "despedida",
+    "hasta luego": "despedida", "nos vemos": "despedida", "bye": "despedida",
+    "ok": "confirmacion", "vale": "confirmacion", "listo": "confirmacion",
+}
+
 
 def validate_message(message: str) -> str:
     text = message.strip()
@@ -39,6 +57,17 @@ def contains_sensitive(text: str) -> bool:
 
 def requests_private_action(text: str) -> bool:
     return bool(_PRIVATE.search(text))
+
+
+def social_reply(text: str) -> str | None:
+    """Responde cortesías breves sin enviar contenido al proveedor externo."""
+    plain = "".join(
+        char for char in unicodedata.normalize("NFD", text.casefold())
+        if unicodedata.category(char) != "Mn"
+    )
+    normalized = " ".join(re.sub(r"[^a-z\s]", " ", plain).split())
+    category = _SOCIAL_MESSAGES.get(normalized)
+    return _SOCIAL_REPLIES.get(category)
 
 
 def asks_for_public_schedules(text: str) -> bool:

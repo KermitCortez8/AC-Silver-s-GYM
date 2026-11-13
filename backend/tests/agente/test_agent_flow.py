@@ -43,6 +43,42 @@ def make_service(tool="consultar_planes"):
     return AgentService(catalog, provider, ConversationTopics()), catalog, provider
 
 
+@pytest.mark.parametrize("message, expected", [
+    ("hola", "¡Hola!"), ("Buenas noches!", "¡Hola!"),
+    ("gracias", "¡De nada!"), ("Muchas gracias :)!", "¡De nada!"),
+    ("chau", "¡Hasta luego!"), ("ok", "¡Claro!"),
+])
+def test_short_social_messages_get_natural_reply_without_external_calls(message, expected):
+    service, catalog, provider = make_service(None)
+    service._budget = AgentBudget(per_minute=1, per_day=1)
+
+    result = service.respond(message)
+
+    assert result["estado"] == "respondida"
+    assert result["texto"].startswith(expected)
+    assert result["enlaces"] == []
+    assert provider.calls == catalog.calls == []
+    assert service._budget._daily_count == 0
+
+
+def test_courtesy_does_not_erase_previous_topic():
+    service, _catalog, provider = make_service()
+    first = service.respond("¿Cuánto cuesta el plan mensual?")
+    thanks = service.respond("gracias", first["id_conversacion"])
+    service.respond("¿Y el precio?", thanks["id_conversacion"])
+
+    assert thanks["id_conversacion"] == first["id_conversacion"]
+    assert provider.calls[-1][1] == "consultar_planes"
+
+
+def test_greeting_inside_business_question_keeps_business_request():
+    service, catalog, provider = make_service()
+    result = service.respond("Hola, ¿qué planes tienen?")
+    assert "Planes disponibles" in result["texto"]
+    assert catalog.calls == ["planes"]
+    assert len(provider.calls) == 1
+
+
 def test_plan_price_changes_with_catalog():
     service, catalog, _provider = make_service()
     first = service.respond("¿Cuánto cuesta el plan mensual?")
