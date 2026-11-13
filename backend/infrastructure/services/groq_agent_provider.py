@@ -1,8 +1,6 @@
 """Adaptador de selección de herramientas mediante Groq; sin acciones externas."""
 
-import json
-import urllib.error
-import urllib.request
+import httpx
 
 
 class ProviderUnavailable(Exception):
@@ -44,15 +42,15 @@ class GroqAgentProvider:
             "temperature": 0,
             "max_tokens": 120,
         }
-        request = urllib.request.Request(
-            self.URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"},
-            method="POST",
-        )
         try:
-            with urllib.request.urlopen(request, timeout=15) as response:
-                result = json.load(response)
+            response = httpx.post(
+                self.URL,
+                json=payload,
+                headers={"Authorization": f"Bearer {self._api_key}"},
+                timeout=15,
+            )
+            response.raise_for_status()
+            result = response.json()
             calls = result["choices"][0]["message"].get("tool_calls") or []
             if not calls:
                 return None
@@ -60,5 +58,9 @@ class GroqAgentProvider:
                 raise ProviderUnavailable("Selección ambigua")
             tool = calls[0]["function"]
             return tool["name"], tool.get("arguments", "{}")
-        except (OSError, ValueError, KeyError, IndexError, TypeError) as error:
-            raise ProviderUnavailable("No se pudo consultar el proveedor") from error
+        except (
+            httpx.HTTPError, ValueError, KeyError, IndexError, TypeError
+        ) as error:
+            raise ProviderUnavailable(
+                "No se pudo consultar el proveedor"
+            ) from error

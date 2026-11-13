@@ -12,4 +12,4 @@ Las pruebas de backend sustituyen proveedor y catálogo; Playwright intercepta `
 
 ## Comprobación con proveedor real
 
-El backend lee la clave existente de `GROQ_API_KEY` si el responsable la configura; esta entrega no crea ni cambia archivos `.env` ni establece variables de entorno. También se necesita el backend con acceso a los catálogos. Antes de habilitar tráfico público se requiere cuota distribuida y revisión de privacidad; el cupo actual solo protege una instancia. No se ha ejecutado una llamada real a Groq en esta entrega.
+Con autorización del responsable se creó una clave nueva en Groq y se guardó únicamente en el `backend/.env` local, ignorado por Git; la clave anterior quedó intacta. Se comprobó manualmente el recorrido interfaz → ruta FastAPI → proveedor Groq → herramienta `consultar_planes` → respuesta, mediante un backend local aislado con catálogo sintético. Este entorno no accede a Supabase ni ejecuta cobros, correos o tareas de inicio del backend normal. Antes de habilitar tráfico público se requiere cuota distribuida y revisión de privacidad; el cupo actual solo protege una instancia.

@@ -1,6 +1,6 @@
 # Validación de la primera versión del agente
 
-**Fecha:** 2026-11-12. **Rama:** `levano/agenteAgente`. Datos de prueba sintéticos; cero llamadas reales a Groq, Supabase, Stripe o correo en la batería nueva.
+**Fecha:** 2026-11-12. **Rama:** `levano/agenteAgente`. La batería automatizada usa datos sintéticos y no llama a Groq, Supabase, Stripe ni correo. La comprobación manual posterior sí llamó a Groq con un catálogo sintético y el backend local aislado.
 
 ## Matriz de casos
 
@@ -29,7 +29,7 @@ Una ejecución paralela de la batería frontend informó un fallo de archivo en 
 ## Límites y pendientes
 
 - No se guardó una línea base comparable de esta rama antes de añadir los casos nuevos; no se afirma un antes/después medido.
-- Playwright comprueba la interfaz con API simulada. pytest comprueba la ruta y la aplicación con proveedor/catálogos falsos. Falta una prueba conjunta con un backend aislado y una prueba controlada de acceso al modelo real.
+- Playwright comprueba la interfaz con API simulada. pytest comprueba la ruta y la aplicación con proveedor/catálogos falsos. En una comprobación manual adicional, la interfaz llamó al backend local aislado, Groq seleccionó `consultar_planes` y se mostró la respuesta con precios sintéticos. No es una prueba automatizada contra Supabase.
 - El límite de llamadas es atómico **dentro de un proceso**, no entre varias instancias. Se necesita cuota distribuida antes de exposición pública real.
 - El filtro de datos personales cubre los patrones probados; requiere revisión adicional antes de enviar consultas libres de usuarios reales a un proveedor externo.
 - SonarQube/Quality Gate no se ejecutó para esta rama. La validación documental general de Spec Kit presenta 11 errores previos de descubrimiento de skills; no afectan la ejecución de las pruebas de producto.

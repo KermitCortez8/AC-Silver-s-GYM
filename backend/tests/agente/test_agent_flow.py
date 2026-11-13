@@ -1,8 +1,6 @@
 """Casos de aceptación de la consulta pública; no usan red ni base real."""
 
 import pytest
-import io
-import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
@@ -163,19 +161,29 @@ def test_missing_provider_key_does_not_call_external_service():
 def test_groq_adapter_requests_only_local_read_tools(monkeypatch):
     requests = []
 
-    def fake_urlopen(request, timeout):
-        requests.append((request, timeout))
-        return io.BytesIO(json.dumps({"choices": [{"message": {"tool_calls": [
-            {"function": {"name": "consultar_planes", "arguments": "{ }"}}
-        ]}}]}).encode())
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
 
-    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+        def json(self):
+            return {"choices": [{"message": {"tool_calls": [
+                {"function": {"name": "consultar_planes", "arguments": "{ }"}}
+            ]}}]}
+
+    def fake_post(url, *, json, headers, timeout):
+        requests.append((url, json, headers, timeout))
+        return FakeResponse()
+
+    monkeypatch.setattr("httpx.post", fake_post)
     provider = GroqAgentProvider("synthetic-key")
-    assert provider.select_tool("¿Cuánto cuesta el plan?") == ("consultar_planes", "{ }")
-    request, timeout = requests[0]
-    payload = json.loads(request.data)
+    assert provider.select_tool("¿Cuánto cuesta el plan?") == (
+        "consultar_planes", "{ }"
+    )
+    url, payload, headers, timeout = requests[0]
+    assert url == GroqAgentProvider.URL
     assert timeout == 15
     assert {tool["function"]["name"] for tool in payload["tools"]} == {
         "consultar_planes", "consultar_horarios_publicos",
     }
-    assert "synthetic-key" not in request.data.decode()
+    assert headers["Authorization"] == "Bearer synthetic-key"
+    assert "synthetic-key" not in str(payload)
