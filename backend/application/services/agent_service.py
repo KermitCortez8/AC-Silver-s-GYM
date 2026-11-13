@@ -7,7 +7,8 @@ import unicodedata
 from uuid import uuid4
 
 from domain.services.agent_policy import (
-    asks_for_account_recovery, asks_for_public_schedules, contains_sensitive,
+    asks_for_account_recovery, asks_for_public_schedules,
+    asks_for_registration_guidance, contains_sensitive,
     requests_private_action,
     SOCIAL_REPLIES, social_reply, validate_message, validate_tool,
 )
@@ -63,14 +64,17 @@ class AgentService:
                 {"texto": "Ir al acceso", "ruta": "/login"},
                 {"texto": "Ver ubicación", "ruta": "/#ubicacion"},
             ], "accion": "recuperacion_local"}
-        if requests_private_action(text):
+        registration_guidance = asks_for_registration_guidance(text)
+        if requests_private_action(text) and not registration_guidance:
             return {**base, "estado": "fuera_de_alcance", "texto": "Esa gestión requiere usar los formularios y controles de la plataforma.",
                     "enlaces": [{"texto": "Ir al acceso", "ruta": "/login"}]}
         courtesy = social_reply(text)
         if courtesy:
             self._conversations.put(identifier, last_topic or "")
             return {**base, "estado": "respondida", "texto": courtesy}
-        if asks_for_public_schedules(text) or (
+        if registration_guidance:
+            selection = ("consultar_informacion_publica", '{"tema":"registro"}')
+        elif asks_for_public_schedules(text) or (
             last_topic == "consultar_informacion_publica:actividades"
             and re.search(r"\bhorarios?\b", text, re.I)
         ):

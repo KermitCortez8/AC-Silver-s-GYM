@@ -34,6 +34,7 @@ SOCIAL_REPLIES = {
     "ayuda": "Puedo ayudarte a consultar planes, horarios de clases, tipos de entrenamiento y otras dudas públicas del gimnasio. ¿Por dónde empezamos?",
     "bien": "¡Me alegra! Si te surge alguna duda sobre el gimnasio, aquí estoy.",
     "gracias": "¡De nada! Si tienes otra pregunta sobre el gimnasio, aquí estoy.",
+    "consulta": "Claro, cuéntame qué te gustaría consultar sobre el gimnasio.",
     "despedida": "¡Hasta luego! Que tengas un buen día.",
     "confirmacion": "¡Claro! Si tienes otra pregunta sobre el gimnasio, dime.",
 }
@@ -84,6 +85,14 @@ def asks_for_account_recovery(text: str) -> bool:
     )
 
 
+def asks_for_registration_guidance(text: str) -> bool:
+    """Reconoce preguntas sobre el proceso, sin ejecutar un registro."""
+    return bool(
+        re.search(r"\b(?:registr\w*|preinscri\w*|inscri\w*)\b|\bcrear (?:una? )?cuenta\b", text, re.I)
+        and re.search(r"\b(?:c[oó]mo|paso a paso|ayud\w*|gu[ií]a|proceso|qu[eé] debo hacer)\b", text, re.I)
+    )
+
+
 def social_reply(text: str) -> str | None:
     """Responde cortesías breves sin enviar contenido al proveedor externo."""
     plain = "".join(
@@ -110,6 +119,25 @@ def social_reply(text: str) -> str | None:
         category = "gracias"
     if category is None and re.fullmatch(r"(?:muchas|mil)? ?gracias(?: silver| chat)?", normalized):
         category = "gracias"
+    if category is None and re.fullmatch(
+        r"(?:vale |ok |bueno |si )?(?:todo )?bien(?: creo yo| creo| gracias)?",
+        normalized,
+    ):
+        category = "bien"
+    if category is None and re.fullmatch(
+        r"(?:no )?tranquil[oa](?: solo)?(?: queria consultar(?: nada mas| nomas)?)?"
+        r"(?: (?:muchas|mil)? gracias)?",
+        normalized,
+    ):
+        category = "gracias" if normalized.endswith("gracias") else "confirmacion"
+    if category is None and re.fullmatch(
+        r"(?:no )?(?:tranquil[oa] )?(?:solo )?queria consultar"
+        r"(?: nada mas| nomas)? (?:muchas|mil)? ?gracias",
+        normalized,
+    ):
+        category = "gracias"
+    if category is None and re.fullmatch(r"(?:solo )?queria consultar(?: algo)?", normalized):
+        category = "consulta"
     return SOCIAL_REPLIES.get(category)
 
 

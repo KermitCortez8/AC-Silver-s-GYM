@@ -45,8 +45,14 @@ PUBLIC_TOPICS = {
     },
     "registro": {
         "texto": (
-            "Puedes iniciar tu preinscripción en la página de registro y "
-            "elegir allí un plan. El chat no registra cuentas ni confirma pagos."
+            "Para registrarte en Silver Gym:\n"
+            "1. Abre la página de Registro y elige un plan de membresía.\n"
+            "2. Completa tu nombre, correo, DNI y teléfono. Usa una contraseña "
+            "o la opción de Google si está disponible.\n"
+            "3. Revisa tus datos y pulsa «Pagar con Stripe» para ir al pago seguro.\n"
+            "4. Tras confirmarse el pago, tu cuenta requerirá activación "
+            "administrativa antes de que puedas ingresar.\n"
+            "El chat solo te orienta; no realiza el registro ni el pago."
         ),
         "enlace": ("Ir al registro", "/registro"),
     },

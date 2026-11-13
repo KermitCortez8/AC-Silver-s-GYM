@@ -7,7 +7,8 @@ from datetime import datetime, timedelta, timezone
 from application.services.agent_budget import AgentBudget, RateLimitExceeded
 from application.services.agent_service import AgentService, ConversationTopics
 from domain.services.agent_policy import (
-    asks_for_account_recovery, asks_for_public_schedules, contains_sensitive,
+    asks_for_account_recovery, asks_for_public_schedules,
+    asks_for_registration_guidance, contains_sensitive,
     requests_private_action,
 )
 from infrastructure.services.groq_agent_provider import GroqAgentProvider, ProviderUnavailable
@@ -55,6 +56,10 @@ def make_service(tool="consultar_planes"):
     ("¿Y tú?", "¡Todo bien por aquí"),
     ("Bien, gracias", "¡Me alegra!"),
     ("Bien, ¿y tú?", "¡Me alegra!"),
+    ("vale, todo bien creo yo", "¡Me alegra!"),
+    ("no tranquilo, quería consultar, muchas gracias", "¡De nada!"),
+    ("no, tranquilo, solo quería consultar, gracias", "¡De nada!"),
+    ("solo quería consultar", "Claro, cuéntame"),
     ("¿Cómo te llamas?", "Soy Silver"),
     ("¿En qué me puedes ayudar?", "Puedo ayudarte"),
     ("gracias", "¡De nada!"), ("Muchas gracias :)!", "¡De nada!"),
@@ -83,6 +88,48 @@ def test_courtesy_does_not_erase_previous_topic():
 
     assert thanks["id_conversacion"] == first["id_conversacion"]
     assert provider.calls[-1][1] == "consultar_planes"
+
+
+def test_farewell_after_schedules_uses_conversation_context_without_repeating_prompt():
+    service, catalog, provider = make_service("consultar_horarios_publicos")
+    first = service.respond("Dime los horarios de las clases")
+    second = service.respond("vale, todo bien creo yo", first["id_conversacion"])
+    third = service.respond("no tranquilo, quería consultar, muchas gracias", second["id_conversacion"])
+
+    assert "Horarios publicados" in first["texto"]
+    assert second["texto"].startswith("¡Me alegra!")
+    assert third["texto"].startswith("¡De nada!")
+    assert "Te sigo" not in second["texto"] + third["texto"]
+    assert provider.calls == []
+    assert catalog.calls == ["horarios"]
+
+
+@pytest.mark.parametrize("question", [
+    "tú puedes ayudarme paso a paso de cómo registrarme?",
+    "¿Cómo me inscribo en el gimnasio?",
+    "Gracias, ¿cómo puedo crear una cuenta?",
+])
+def test_registration_guidance_uses_verified_steps_without_provider(question):
+    service, catalog, provider = make_service(None)
+
+    result = service.respond(question)
+
+    assert asks_for_registration_guidance(question)
+    assert "1. Abre la página de Registro" in result["texto"]
+    assert "Pagar con Stripe" in result["texto"]
+    assert "activación administrativa" in result["texto"]
+    assert result["enlaces"] == [{"texto": "Ir al registro", "ruta": "/registro"}]
+    assert provider.calls == catalog.calls == []
+
+
+def test_direct_request_to_enrol_is_not_treated_as_how_to_guidance():
+    service, catalog, provider = make_service(None)
+
+    result = service.respond("Inscríbeme a spinning")
+
+    assert not asks_for_registration_guidance("Inscríbeme a spinning")
+    assert result["estado"] == "fuera_de_alcance"
+    assert provider.calls == catalog.calls == []
 
 
 def test_greeting_then_wellbeing_question_does_not_repeat_introduction():
