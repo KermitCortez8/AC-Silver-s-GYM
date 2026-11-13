@@ -27,7 +27,12 @@ _PRIVATE = re.compile(
 )
 
 _SOCIAL_REPLIES = {
-    "hola": "¡Hola! Soy Silver. Puedo ayudarte con planes, horarios de clases, tipos de entrenamiento y dudas públicas del gimnasio. ¿Qué te gustaría saber?",
+    "hola": "¡Hola! Soy Silver. ¿Qué tal? Puedo ayudarte con planes, clases, horarios y dudas sobre el gimnasio.",
+    "bienestar": "¡Hola! Todo bien, gracias por preguntar. ¿Y tú? Si quieres, puedo ayudarte con planes, clases u horarios del gimnasio.",
+    "seguimiento": "¡Todo bien por aquí, gracias! ¿Te ayudo con algún plan, clase u horario?",
+    "identidad": "Soy Silver, el asistente de Silver Gym. Puedo orientarte sobre información pública del gimnasio. ¿Qué te gustaría saber?",
+    "ayuda": "Puedo ayudarte a consultar planes, horarios de clases, tipos de entrenamiento y otras dudas públicas del gimnasio. ¿Por dónde empezamos?",
+    "bien": "¡Me alegra! Si te surge alguna duda sobre el gimnasio, aquí estoy.",
     "gracias": "¡De nada! Si tienes otra pregunta sobre el gimnasio, aquí estoy.",
     "despedida": "¡Hasta luego! Que tengas un buen día.",
     "confirmacion": "¡Claro! Si tienes otra pregunta sobre el gimnasio, dime.",
@@ -35,7 +40,14 @@ _SOCIAL_REPLIES = {
 _SOCIAL_MESSAGES = {
     "hola": "hola", "holi": "hola", "buenas": "hola", "buenos dias": "hola",
     "buenas tardes": "hola", "buenas noches": "hola", "saludos": "hola",
-    "que tal": "hola", "como estas": "hola",
+    "que tal": "bienestar", "como estas": "bienestar", "como te va": "bienestar",
+    "todo bien": "bienestar", "y tu": "seguimiento",
+    "quien eres": "identidad", "como te llamas": "identidad",
+    "que haces": "ayuda", "que puedes hacer": "ayuda",
+    "en que me ayudas": "ayuda", "en que me puedes ayudar": "ayuda",
+    "bien gracias": "bien", "todo bien gracias": "bien",
+    "muy bien gracias": "bien", "estoy bien gracias": "bien",
+    "bien y tu": "bien", "todo bien y tu": "bien",
     "gracias": "gracias", "muchas gracias": "gracias", "mil gracias": "gracias",
     "ok gracias": "gracias", "vale gracias": "gracias", "genial gracias": "gracias",
     "adios": "despedida", "chau": "despedida", "chao": "despedida",
@@ -67,6 +79,17 @@ def social_reply(text: str) -> str | None:
     )
     normalized = " ".join(re.sub(r"[^a-z\s]", " ", plain).split())
     category = _SOCIAL_MESSAGES.get(normalized)
+    if category is None and re.fullmatch(
+        r"(?:hola|holi|buenas|buenos dias|buenas tardes|buenas noches)"
+        r"(?: silver| chat)? (?:como estas|que tal|como te va|todo bien)(?: tu)?",
+        normalized,
+    ):
+        category = "bienestar"
+    if category is None and re.fullmatch(
+        r"(?:muchas|mil)? ?gracias por (?:la|el|tu) "
+        r"(?:informacion|info|ayuda|respuesta|dato|datos)", normalized,
+    ):
+        category = "gracias"
     return _SOCIAL_REPLIES.get(category)
 
 

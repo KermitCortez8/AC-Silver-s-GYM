@@ -45,7 +45,16 @@ def make_service(tool="consultar_planes"):
 
 @pytest.mark.parametrize("message, expected", [
     ("hola", "¡Hola!"), ("Buenas noches!", "¡Hola!"),
+    ("hola como estas", "¡Hola! Todo bien"),
+    ("Hola, Silver, ¿qué tal?", "¡Hola! Todo bien"),
+    ("¿Cómo estás?", "¡Hola! Todo bien"),
+    ("¿Y tú?", "¡Todo bien por aquí"),
+    ("Bien, gracias", "¡Me alegra!"),
+    ("Bien, ¿y tú?", "¡Me alegra!"),
+    ("¿Cómo te llamas?", "Soy Silver"),
+    ("¿En qué me puedes ayudar?", "Puedo ayudarte"),
     ("gracias", "¡De nada!"), ("Muchas gracias :)!", "¡De nada!"),
+    ("Gracias por la información", "¡De nada!"),
     ("chau", "¡Hasta luego!"), ("ok", "¡Claro!"),
 ])
 def test_short_social_messages_get_natural_reply_without_external_calls(message, expected):
@@ -74,6 +83,14 @@ def test_courtesy_does_not_erase_previous_topic():
 def test_greeting_inside_business_question_keeps_business_request():
     service, catalog, provider = make_service()
     result = service.respond("Hola, ¿qué planes tienen?")
+    assert "Planes disponibles" in result["texto"]
+    assert catalog.calls == ["planes"]
+    assert len(provider.calls) == 1
+
+
+def test_wellbeing_phrase_does_not_hide_business_question():
+    service, catalog, provider = make_service()
+    result = service.respond("Hola, ¿cómo estás? ¿Qué planes tienen?")
     assert "Planes disponibles" in result["texto"]
     assert catalog.calls == ["planes"]
     assert len(provider.calls) == 1
