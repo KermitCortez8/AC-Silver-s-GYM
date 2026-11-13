@@ -46,7 +46,7 @@ def asks_for_public_schedules(text: str) -> bool:
     return bool(
         re.search(r"\bhorarios?\b", text, re.I)
         and re.search(
-            r"\b(?:ejercici\w*|clases?|entren\w*|gimnas\w*|gym|"
+            r"\b(?:ejercici\w*|clases?|actividades?|entren\w*|gimnas\w*|gym|"
             r"fitness|muscul\w*|cardio|baile|spinning|yoga)\b",
             text, re.I,
         )

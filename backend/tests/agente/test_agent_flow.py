@@ -57,8 +57,8 @@ def test_plan_price_changes_with_catalog():
 def test_public_schedule_from_service():
     service, catalog, _provider = make_service("consultar_horarios_publicos")
     result = service.respond("¿Cuándo hay spinning?")
-    assert "Spinning: Lunes 08:00–09:00" in result["texto"]
-    assert result["texto"].startswith("Clases publicadas:\n• Spinning")
+    assert "Spinning:\n• Lunes 08:00–09:00" in result["texto"]
+    assert result["texto"].startswith("Horarios publicados por actividad:\nSpinning:")
     assert catalog.calls == ["horarios"]
 
 
@@ -68,9 +68,43 @@ def test_explicit_gym_schedule_question_recovers_from_no_model_selection():
     result = service.respond("Entonces, dime los horarios de cada ejercicios que hay")
 
     assert result["estado"] == "respondida"
-    assert "Spinning: Lunes 08:00–09:00" in result["texto"]
+    assert "Spinning:\n• Lunes 08:00–09:00" in result["texto"]
     assert catalog.calls == ["horarios"]
-    assert len(provider.calls) == 1
+    assert provider.calls == []
+
+
+def test_all_public_schedules_are_shown_without_truncation():
+    service, catalog, provider = make_service(None)
+    catalog.horarios_servicio = lambda *, solo_activos: [
+        {
+            "servicio": ["Fitness", "Musculacion", "Cardio", "Baile"][index % 4],
+            "dia": "Lunes", "hora_inicio": f"{index:02d}:00", "hora_fin": f"{index:02d}:30",
+        }
+        for index in range(23)
+    ]
+
+    result = service.respond("Dime los horarios de todas las clases")
+
+    assert result["texto"].count("• Lunes") == 23
+    assert all(label in result["texto"] for label in ("Fitness:", "Musculación:", "Cardio:", "Baile:"))
+    assert provider.calls == []
+
+
+def test_specific_activity_does_not_show_other_schedules():
+    service, catalog, _provider = make_service(None)
+    catalog.horarios_servicio = lambda *, solo_activos: [
+        {"servicio": "Baile", "dia": "Martes", "hora_inicio": "18:00", "hora_fin": "19:00"},
+        {"servicio": "Cardio", "dia": "Jueves", "hora_inicio": "07:00", "hora_fin": "08:00"},
+    ]
+    result = service.respond("¿Cuáles son los horarios de baile?")
+    assert "Baile:\n• Martes 18:00–19:00" in result["texto"]
+    assert "Cardio" not in result["texto"]
+
+
+def test_activity_without_public_schedules_is_not_invented():
+    service, _catalog, _provider = make_service(None)
+    result = service.respond("¿Qué horarios tiene yoga?")
+    assert result["texto"] == "No encontré horarios públicos activos para esa actividad."
 
 
 def test_unrelated_schedule_question_is_not_classified_as_gym_schedule():

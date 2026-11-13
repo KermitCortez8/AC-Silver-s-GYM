@@ -12,7 +12,8 @@ PUBLIC_TOPICS = {
             "• Musculación: trabajo de fuerza.\n"
             "• Cardio: entrenamiento de resistencia.\n"
             "• Baile: clases grupales.\n"
-            "Los horarios concretos se consultan aparte."
+            "Puedes pedirme los horarios de estas actividades y te mostraré "
+            "las clases publicadas."
         ),
         "enlace": ("Ver servicios", "/#servicios"),
     },

@@ -1,7 +1,7 @@
 # Agente de atención del gimnasio · primera entrega
 
 **ID:** `003-agente-gimnasio` · **Rama:** `levano/agenteAgente` · **Fecha:** 2026-11-12.
-**Estado:** versión pública implementada y verificada con dobles de prueba; conexión real a Groq comprobada manualmente con datos sintéticos.
+**Estado:** versión pública implementada y verificada con dobles de prueba; conexión real a Groq y lectura del catálogo de Supabase comprobadas manualmente en una API local aislada.
 **Contexto:** [fuentes y código actual](context.md).
 
 ## 1. Sprint Goal

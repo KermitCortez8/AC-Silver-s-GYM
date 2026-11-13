@@ -1,7 +1,7 @@
 # Plan de implementación: agente de atención del gimnasio
 
 **Rama:** `levano/agenteAgente` · **Fecha:** 2026-11-12 · **SPEC:** [spec.md](spec.md) · **Contexto:** [context.md](context.md).
-**Estado:** primera versión implementada; verificación real de Groq y cuota distribuida pendientes.
+**Estado:** primera versión implementada; Groq y lectura de Supabase comprobados localmente. Cuota distribuida y revisión de privacidad pendientes para exposición pública.
 
 ## Summary
 

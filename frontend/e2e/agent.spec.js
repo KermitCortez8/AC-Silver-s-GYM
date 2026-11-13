@@ -40,11 +40,12 @@ test('visitante pregunta por un plan y ve una respuesta del agente', async ({ pa
 test('visitante pregunta por clases publicadas', async ({ page }) => {
   await setup(page, { body: {
     id_conversacion: 'synthetic-conversation', estado: 'respondida',
-    texto: 'Clases publicadas: Spinning: Lunes 08:00–09:00',
+    texto: 'Horarios publicados por actividad:\nSpinning:\n• Lunes 08:00–09:00',
     enlaces: [{ texto: 'Ver inicio', ruta: '/' }],
   } });
   await ask(page, '¿Cuándo hay spinning?');
-  await expect(page.getByRole('log')).toContainText('Spinning: Lunes 08:00–09:00');
+  await expect(page.getByRole('log')).toContainText('Spinning:');
+  await expect(page.getByRole('log')).toContainText('Lunes 08:00–09:00');
 });
 
 test('visitante pregunta por tipos de entrenamiento', async ({ page }) => {

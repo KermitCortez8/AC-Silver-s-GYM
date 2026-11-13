@@ -8,6 +8,18 @@ from fastapi.testclient import TestClient
 from presentation.dependencies import get_gym_service
 from presentation.routes import agent_routes
 from application.services.agent_budget import AgentBudget
+from app.agent_readonly_app import app as readonly_app
+
+
+def test_local_demo_exposes_only_public_catalog_reads_and_agent():
+    with TestClient(readonly_app) as client:
+        paths = client.get("/openapi.json").json()["paths"]
+    assert set(paths) == {
+        "/api/agente/mensajes", "/api/gym/horarios-publicos",
+        "/api/planes-membresia", "/api/promociones/vigentes-publico",
+    }
+    assert all(set(operations) == ({"post"} if path.endswith("/mensajes") else {"get"})
+               for path, operations in paths.items())
 
 
 class FakeGym:
