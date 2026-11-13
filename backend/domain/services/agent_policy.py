@@ -13,7 +13,7 @@ ALLOWED_TOOLS = frozenset({
 
 _SENSITIVE = (
     re.compile(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}"),
-    re.compile(r"\b(?:contrase(?:ñ|n)a|password|clave|pin|cvv)\b", re.I),
+    re.compile(r"\b(?:contrase(?:ñ|n)a|password|clave|pin|cvv)\s*(?:es|:|=)\s*\S+", re.I),
     re.compile(r"\b(?:\d[ -]?){13,19}\b"),
     re.compile(r"\b\d{8,9}\b"),
     re.compile(r"\b(?:dni|tel[eé]fono)\s*[:#]?\s*\d{8,9}\b", re.I),
@@ -28,7 +28,7 @@ _PRIVATE = re.compile(
 
 SOCIAL_REPLIES = {
     "hola": "¡Hola! Soy Silver. ¿Qué tal? Puedo ayudarte con planes, clases, horarios y dudas sobre el gimnasio.",
-    "bienestar": "¡Hola! Todo bien, gracias por preguntar. ¿Y tú? Si quieres, puedo ayudarte con planes, clases u horarios del gimnasio.",
+    "bienestar": "Todo bien, gracias por preguntar. ¿Y tú? Si quieres, puedo ayudarte con planes, clases u horarios del gimnasio.",
     "seguimiento": "¡Todo bien por aquí, gracias! ¿Te ayudo con algún plan, clase u horario?",
     "identidad": "Soy Silver, el asistente de Silver Gym. Puedo orientarte sobre información pública del gimnasio. ¿Qué te gustaría saber?",
     "ayuda": "Puedo ayudarte a consultar planes, horarios de clases, tipos de entrenamiento y otras dudas públicas del gimnasio. ¿Por dónde empezamos?",
@@ -40,7 +40,9 @@ SOCIAL_REPLIES = {
 _SOCIAL_MESSAGES = {
     "hola": "hola", "holi": "hola", "buenas": "hola", "buenos dias": "hola",
     "buenas tardes": "hola", "buenas noches": "hola", "saludos": "hola",
-    "que tal": "bienestar", "como estas": "bienestar", "como te va": "bienestar",
+    "que tal": "bienestar", "que tal todo": "bienestar",
+    "como estas": "bienestar", "como te va": "bienestar",
+    "como va todo": "bienestar",
     "todo bien": "bienestar", "y tu": "seguimiento",
     "quien eres": "identidad", "como te llamas": "identidad",
     "que haces": "ayuda", "que puedes hacer": "ayuda",
@@ -71,6 +73,17 @@ def requests_private_action(text: str) -> bool:
     return bool(_PRIVATE.search(text))
 
 
+def asks_for_account_recovery(text: str) -> bool:
+    """Distingue ayuda para volver a entrar de una petición de ejecutar el cambio."""
+    return bool(
+        re.search(r"\b(?:recuper\w*|restablec\w*|olvid\w*|perd\w*)\b", text, re.I)
+        and re.search(
+            r"\b(?:cuenta|acceso|contrase(?:ñ|n)a|clave|password|login|sesi[oó]n)\b",
+            text, re.I,
+        )
+    )
+
+
 def social_reply(text: str) -> str | None:
     """Responde cortesías breves sin enviar contenido al proveedor externo."""
     plain = "".join(
@@ -78,11 +91,13 @@ def social_reply(text: str) -> str | None:
         if unicodedata.category(char) != "Mn"
     )
     normalized = " ".join(re.sub(r"[^a-z\s]", " ", plain).split())
+    normalized = re.sub(r"^(?:silver|chat) | (?:silver|chat)$", "", normalized)
     category = _SOCIAL_MESSAGES.get(normalized)
     greeting = r"(?:hola|holi|buenas|buenos dias|buenas tardes|buenas noches)"
     if category is None and re.fullmatch(
         rf"(?:{greeting}(?: silver| chat)? )?"
-        r"(?:como estas|que tal|como te va|todo bien)(?: tu| silver| chat)?",
+        r"(?:como estas|que tal(?: todo)?|como te va|como va todo|todo bien)"
+        r"(?: tu| silver| chat)?",
         normalized,
     ):
         category = "bienestar"

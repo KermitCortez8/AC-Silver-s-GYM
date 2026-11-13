@@ -19,12 +19,13 @@
 | AG-11 | CA-01, CA-02 | HTTP; aislamiento | La API de demostración solo expone el chat y tres consultas públicas GET; no publica rutas de escritura. | Alta | `backend/tests/agente/test_agent_http.py` |
 | AG-12 | CA-04, CA-06 | Dominio y aplicación; regresión | Saludos, agradecimientos y despedidas breves reciben respuesta sin proveedor, presupuesto ni catálogo; una pregunta de negocio con saludo conserva su intención. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
 | AG-13 | CA-06, CA-07 | Aplicación; regresión | La IA solo puede elegir una intención social aprobada o marcar un tema claramente ajeno. Una pregunta ambigua mantiene la conversación; una segunda pregunta ajena recibe una redirección más directa. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
+| AG-14 | CA-03, CA-05 | Dominio y aplicación; regresión | Recuperar cuenta u olvidar contraseña orienta al acceso y al personal; un mensaje con correo o clave real se bloquea antes de cualquier proveedor. | Alta | `backend/tests/agente/test_agent_flow.py` y navegador local |
 
 ## Resultados
 
 | Comando | Resultado |
 | --- | --- |
-| `pytest tests/agente tests/planes_promociones tests/horarios_matriculas/integracion -q -p no:cacheprovider --tb=short` | 83 aprobadas; 2 advertencias de deprecación de dependencias. |
+| `pytest tests/agente tests/planes_promociones tests/horarios_matriculas/integracion -q -p no:cacheprovider --tb=short` | 91 aprobadas; 2 advertencias de deprecación de dependencias. |
 | `npm test -- --test-concurrency=1` | 373 aprobadas, 0 fallidas. |
 | `npx playwright test e2e/agent.spec.js` con configuración local temporal que reutiliza el servidor de demostración | 21 aprobadas: 7 escenarios × Chromium, Firefox y WebKit. |
 | `npm run build` | Compilación Vite aprobada. |
@@ -39,6 +40,7 @@ Una ejecución paralela de la batería frontend informó un fallo de archivo en 
 - Ante «dime los horarios de cada ejercicios que hay», el proveedor podía no elegir herramienta y el backend devolvía fuera de alcance. Las preguntas explícitas de horarios del gimnasio ahora consultan directamente el servicio real, sin depender de que Groq elija herramienta. Una actividad concreta filtra la respuesta; una actividad sin horarios activos recibe un mensaje sin inventar clases. La interfaz distingue el límite temporal (429) de una indisponibilidad del servidor.
 - Las respuestas con varios planes, horarios o tipos de entrenamiento se presentan en líneas con viñetas. Se comprobó visualmente en el chat local que la lista completa de actividades queda visible; la prueba funcional verifica también el desplazamiento automático de una lista larga en tres motores.
 - Se comprobó en el navegador local una conversación breve: «Hola, ¿cómo estás?», «Bien, ¿y tú?», «¿Cómo te llamas?» y «Gracias por la información». También se verificó «como estás silver» seguido de dos preguntas ajenas; la primera redirigió con suavidad y la segunda de manera más directa. «Hola, ¿qué planes tienen?» sigue consultando el catálogo. Las pruebas automatizadas confirman que las cortesías comunes no invocan al proveedor, no gastan cuota y no borran el tema previo. El proveedor solo puede seleccionar intenciones sociales de una lista validada.
+- Se comprobó en el navegador local «hola» → «qué tal todo» sin repetir la presentación. Dos consultas consecutivas de recuperación mostraron la orientación específica y enlaces a Acceso y Ubicación. La app no implementa restablecimiento automático de contraseña; el chat no afirma que pueda cambiarla.
 - El límite de llamadas es atómico **dentro de un proceso**, no entre varias instancias. Se necesita cuota distribuida antes de exposición pública real.
 - El filtro de datos personales cubre los patrones probados; requiere revisión adicional antes de enviar consultas libres de usuarios reales a un proveedor externo.
 - SonarQube/Quality Gate no se ejecutó para esta rama. La validación documental general de Spec Kit presenta 11 errores previos de descubrimiento de skills; no afectan la ejecución de las pruebas de producto.

@@ -7,7 +7,8 @@ import unicodedata
 from uuid import uuid4
 
 from domain.services.agent_policy import (
-    asks_for_public_schedules, contains_sensitive, requests_private_action,
+    asks_for_account_recovery, asks_for_public_schedules, contains_sensitive,
+    requests_private_action,
     SOCIAL_REPLIES, social_reply, validate_message, validate_tool,
 )
 from domain.services.public_gym_knowledge import PUBLIC_TOPICS
@@ -53,6 +54,17 @@ class AgentService:
         base = {"id_conversacion": identifier, "enlaces": []}
         if contains_sensitive(text):
             return {**base, "estado": "bloqueado", "texto": "Por tu seguridad, no compartas datos personales, claves ni datos de pago por el chat."}
+        if asks_for_account_recovery(text):
+            self._conversations.put(identifier, last_topic or "")
+            return {**base, "estado": "respondida", "texto": (
+                "Si no puedes entrar a tu cuenta, abre la página de Acceso. "
+                "La web no ofrece restablecimiento automático de contraseña en este momento. "
+                "Para revisar tu caso, consulta con el personal del gimnasio. "
+                "Por seguridad, no compartas aquí tu clave ni datos personales."
+            ), "enlaces": [
+                {"texto": "Ir al acceso", "ruta": "/login"},
+                {"texto": "Ver ubicación", "ruta": "/#ubicacion"},
+            ]}
         if requests_private_action(text):
             return {**base, "estado": "fuera_de_alcance", "texto": "Esa gestión requiere usar los formularios y controles de la plataforma.",
                     "enlaces": [{"texto": "Ir al acceso", "ruta": "/login"}]}

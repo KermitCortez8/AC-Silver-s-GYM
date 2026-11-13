@@ -7,7 +7,8 @@ from datetime import datetime, timedelta, timezone
 from application.services.agent_budget import AgentBudget, RateLimitExceeded
 from application.services.agent_service import AgentService, ConversationTopics
 from domain.services.agent_policy import (
-    asks_for_public_schedules, contains_sensitive, requests_private_action,
+    asks_for_account_recovery, asks_for_public_schedules, contains_sensitive,
+    requests_private_action,
 )
 from infrastructure.services.groq_agent_provider import GroqAgentProvider, ProviderUnavailable
 
@@ -45,10 +46,12 @@ def make_service(tool="consultar_planes"):
 
 @pytest.mark.parametrize("message, expected", [
     ("hola", "¡Hola!"), ("Buenas noches!", "¡Hola!"),
-    ("hola como estas", "¡Hola! Todo bien"),
-    ("Hola, Silver, ¿qué tal?", "¡Hola! Todo bien"),
-    ("¿Cómo estás, Silver?", "¡Hola! Todo bien"),
-    ("¿Cómo estás?", "¡Hola! Todo bien"),
+    ("hola como estas", "Todo bien"),
+    ("Hola, Silver, ¿qué tal?", "Todo bien"),
+    ("¿Cómo estás, Silver?", "Todo bien"),
+    ("¿Cómo estás?", "Todo bien"),
+    ("que tal todo", "Todo bien"),
+    ("Silver, ¿cómo va todo?", "Todo bien"),
     ("¿Y tú?", "¡Todo bien por aquí"),
     ("Bien, gracias", "¡Me alegra!"),
     ("Bien, ¿y tú?", "¡Me alegra!"),
@@ -80,6 +83,41 @@ def test_courtesy_does_not_erase_previous_topic():
 
     assert thanks["id_conversacion"] == first["id_conversacion"]
     assert provider.calls[-1][1] == "consultar_planes"
+
+
+def test_greeting_then_wellbeing_question_does_not_repeat_introduction():
+    service, catalog, provider = make_service(None)
+    greeting = service.respond("hola")
+    follow_up = service.respond("que tal todo", greeting["id_conversacion"])
+
+    assert greeting["texto"].startswith("¡Hola! Soy Silver")
+    assert follow_up["texto"].startswith("Todo bien, gracias por preguntar")
+    assert "Soy Silver" not in follow_up["texto"]
+    assert provider.calls == catalog.calls == []
+
+
+@pytest.mark.parametrize("question", [
+    "quiero recuperar mi cuenta", "olvidé mi contraseña", "perdí acceso a mi cuenta",
+])
+def test_account_recovery_question_gives_real_next_step_without_external_calls(question):
+    service, catalog, provider = make_service(None)
+    result = service.respond(question)
+
+    assert asks_for_account_recovery(question)
+    assert result["estado"] == "respondida"
+    assert "no ofrece restablecimiento automático" in result["texto"]
+    assert result["enlaces"] == [
+        {"texto": "Ir al acceso", "ruta": "/login"},
+        {"texto": "Ver ubicación", "ruta": "/#ubicacion"},
+    ]
+    assert provider.calls == catalog.calls == []
+
+
+def test_recovery_question_with_personal_data_is_blocked_first():
+    service, catalog, provider = make_service(None)
+    result = service.respond("Olvidé mi contraseña; mi correo es persona@example.com")
+    assert result["estado"] == "bloqueado"
+    assert provider.calls == catalog.calls == []
 
 
 def test_greeting_inside_business_question_keeps_business_request():
@@ -196,7 +234,7 @@ def test_unclear_question_keeps_offering_help():
 def test_provider_can_choose_bounded_social_reply_without_catalog():
     service, catalog, provider = make_service("conversar")
     provider.arguments = '{"intencion":"bienestar"}'
-    result = service.respond("Silver, ¿cómo va todo?")
+    result = service.respond("Silver, ¿cómo te sientes hoy?")
     assert result["estado"] == "respondida"
     assert "Todo bien" in result["texto"]
     assert catalog.calls == []
@@ -210,7 +248,7 @@ def test_provider_cannot_invent_social_intentions(arguments):
     service, catalog, provider = make_service("conversar")
     provider.arguments = arguments
     with pytest.raises(ValueError, match="no permitida"):
-        service.respond("Silver, ¿cómo va todo?")
+        service.respond("Silver, ¿cómo te sientes hoy?")
     assert catalog.calls == []
 
 
@@ -269,7 +307,8 @@ def test_provider_failure_does_not_consult_catalog():
 
 
 @pytest.mark.parametrize("message", [
-    "Mi clave es Secreta123", "Paga con 4557 1234 5678 9012", "Escríbeme a persona@example.com",
+    "Mi clave es Secreta123", "Mi contraseña es Secreta123",
+    "Paga con 4557 1234 5678 9012", "Escríbeme a persona@example.com",
 ])
 def test_sensitive_input_never_reaches_provider_or_catalog(message):
     service, catalog, provider = make_service()
