@@ -57,14 +57,14 @@ class AgentService:
         if asks_for_account_recovery(text):
             self._conversations.put(identifier, last_topic or "")
             return {**base, "estado": "respondida", "texto": (
-                "Si no puedes entrar a tu cuenta, abre la página de Acceso. "
-                "La web no ofrece restablecimiento automático de contraseña en este momento. "
-                "Para revisar tu caso, consulta con el personal del gimnasio. "
-                "Por seguridad, no compartas aquí tu clave ni datos personales."
+                "Claro, puedo ayudarte a preparar una solicitud de recuperación. "
+                "Completa tu correo, DNI y número telefónico en el formulario de abajo. "
+                "Por ahora es una demostración: los datos quedan solo en este navegador y "
+                "no se envían ni se guardan en el servidor. El dueño todavía no recibirá un aviso."
             ), "enlaces": [
                 {"texto": "Ir al acceso", "ruta": "/login"},
                 {"texto": "Ver ubicación", "ruta": "/#ubicacion"},
-            ]}
+            ], "accion": "recuperacion_local"}
         if requests_private_action(text):
             return {**base, "estado": "fuera_de_alcance", "texto": "Esa gestión requiere usar los formularios y controles de la plataforma.",
                     "enlaces": [{"texto": "Ir al acceso", "ruta": "/login"}]}

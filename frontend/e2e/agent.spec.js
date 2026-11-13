@@ -99,3 +99,44 @@ test('operación privada se orienta a controles de la plataforma', async ({ page
   await expect(page.getByRole('log')).toContainText('Esa gestión requiere');
   await expect(page.getByRole('link', { name: 'Ir al acceso' })).toHaveAttribute('href', '/login');
 });
+
+test('recuperación reúne datos solo en el navegador sin enviarlos a la API', async ({ page }) => {
+  await setup(page, { body: {
+    id_conversacion: 'synthetic-conversation', estado: 'respondida',
+    texto: 'Completa tu correo, DNI y número telefónico en el formulario de abajo.',
+    accion: 'recuperacion_local', enlaces: [],
+  } });
+  const requests = [];
+  page.on('request', request => {
+    if (request.url().endsWith('/agente/mensajes')) requests.push(request.postData());
+  });
+
+  await ask(page, 'quiero recuperar mi cuenta');
+  await page.getByLabel('Correo', { exact: true }).fill('prueba@example.com');
+  await page.getByLabel('DNI', { exact: true }).fill('12345678');
+  await page.getByLabel('Número telefónico').fill('900000001');
+  await page.getByRole('button', { name: 'Reunir datos aquí' }).click();
+
+  await expect(page.getByRole('log')).toContainText('Todavía no se enviaron');
+  await expect(page.getByRole('log')).not.toContainText('prueba@example.com');
+  expect(requests).toHaveLength(1);
+  expect(requests[0]).toContain('quiero recuperar mi cuenta');
+  expect(requests[0]).not.toContain('prueba@example.com');
+  expect(requests[0]).not.toContain('12345678');
+  await page.getByRole('button', { name: 'Cerrar asistente' }).click();
+  await page.getByRole('button', { name: 'Abrir asistente del gimnasio' }).click();
+  await expect(page.getByRole('log')).not.toContainText('Reuní los datos');
+});
+
+test('dato personal escrito en el chat se bloquea antes de llamar a la API', async ({ page }) => {
+  await setup(page, { body: { id_conversacion: 'synthetic-conversation', estado: 'respondida', texto: 'No debería llegar.', enlaces: [] } });
+  const requests = [];
+  page.on('request', request => {
+    if (request.url().endsWith('/agente/mensajes')) requests.push(request.postData());
+  });
+
+  await ask(page, 'prueba@example.com');
+
+  await expect(page.getByRole('log')).toContainText('no escribas datos personales');
+  expect(requests).toHaveLength(0);
+});
