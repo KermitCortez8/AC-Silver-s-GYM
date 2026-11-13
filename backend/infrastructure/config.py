@@ -47,6 +47,7 @@ class Settings(BaseModel):
     frontend_public_url: str = "http://localhost:5173"
     google_client_id: str = ""
     auth_secret_key: str = ""
+    groq_api_key: str = Field(default="", repr=False, exclude=True)
     resend_api_key: str = Field(default="", repr=False, exclude=True)
     email_from: str = "onboarding@resend.dev"
     email_from_name: str = "Silver Gym Surco"
@@ -92,6 +93,7 @@ def get_settings() -> Settings:
         frontend_public_url=(os.getenv("FRONTEND_PUBLIC_URL") or "http://localhost:5173").strip().rstrip("/"),
         google_client_id=(os.getenv("GOOGLE_CLIENT_ID") or "").strip(),
         auth_secret_key=(os.getenv("AUTH_SECRET_KEY") or "").strip(),
+        groq_api_key=(os.getenv("GROQ_API_KEY") or "").strip(),
         resend_api_key=(os.getenv("RESEND_API_KEY") or "").strip(),
         email_from=(os.getenv("EMAIL_FROM") or "onboarding@resend.dev").strip(),
         email_from_name=(os.getenv("EMAIL_FROM_NAME") or "Silver Gym Surco").strip(),
