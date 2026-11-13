@@ -1,12 +1,12 @@
 # Agente de atención del gimnasio · primera entrega
 
 **ID:** `003-agente-gimnasio` · **Rama:** `levano/agenteAgente` · **Fecha:** 2026-11-12.
-**Estado:** primera versión implementada y verificada con dobles de prueba; proveedor real pendiente de comprobar.
+**Estado:** versión pública implementada y verificada con dobles de prueba; conexión real a Groq comprobada manualmente con datos sintéticos.
 **Contexto:** [fuentes y código actual](context.md).
 
 ## 1. Sprint Goal
 
-Un visitante pregunta en español por planes y clases. El agente consulta las fuentes públicas actuales del gimnasio y responde con datos verificables. Si no puede confirmarlos, ofrece una salida útil sin inventar información. Esta primera entrega demuestra el recorrido completo desde la interfaz hasta las consultas del negocio y el proveedor de IA.
+Un visitante pregunta en español por planes, clases e información pública del gimnasio. El agente consulta catálogos actuales o fichas públicas revisadas y responde con datos verificables. Si no puede confirmarlos, ofrece una salida útil sin inventar información. Esta entrega demuestra el recorrido desde la interfaz hasta las consultas del negocio y el proveedor de IA.
 
 ## 2. User Story
 
@@ -36,6 +36,7 @@ Como visitante, quiero recibir orientación sin que el agente revele datos priva
 6. **CA-06.** Si el usuario o proveedor intenta cambiar permisos o solicitar una herramienta no autorizada, el sistema rechaza la operación.
 7. **CA-07.** Dos conversaciones simultáneas no comparten contexto; una segunda consulta del mismo visitante conserva solo el contexto necesario.
 8. **CA-08.** Los casos normales, de error y de abuso se pueden repetir con proveedor falso y datos de prueba sin pagos, correos ni llamadas externas reales.
+9. **CA-09.** Una pregunta sobre servicios, ubicación o preparación para la primera visita devuelve una ficha pública pertinente con enlace a su página; una selección de tema ajeno o argumentos extra se rechaza.
 
 | Criterio | Evidencia |
 | --- | --- |
@@ -44,6 +45,7 @@ Como visitante, quiero recibir orientación sin que el agente revele datos priva
 | CA-04 | Prueba de fallo del proveedor y acceso a pantallas públicas. |
 | CA-07 | Prueba de aislamiento de dos conversaciones. |
 | CA-08 | Batería automatizada con datos sintéticos y registro de ejecución. |
+| CA-09 | Pruebas de fichas públicas, argumentos rechazados y recorrido de tipos de entrenamiento en tres motores. |
 
 ### Requisitos funcionales
 
@@ -52,6 +54,7 @@ Como visitante, quiero recibir orientación sin que el agente revele datos priva
 - **FR-003:** Bloquear datos sensibles, operaciones prohibidas y cambios de instrucciones por texto o salida del proveedor (CA-03, CA-05, CA-06).
 - **FR-004:** Mantener contexto mínimo y aislado, con salida comprensible ante fallos (CA-04, CA-07).
 - **FR-005:** Permitir pruebas del recorrido con dobles controlados de proveedor y datos (CA-08).
+- **FR-006:** Consultar fichas aprobadas de información pública sin abrir archivos internos al modelo (CA-09).
 
 ### Entidades y resultados medibles
 
@@ -65,6 +68,7 @@ Turno de conversación, consulta autorizada y respuesta basada en datos público
 
 - Mantener las capas de presentación, aplicación, dominio e infraestructura. La interfaz solicita atención; el backend controla las herramientas y valida su resultado.
 - Reutilizar las consultas públicas de planes y horarios. El agente no consulta tablas directamente ni copia precios u horarios en el prompt.
+- Las fichas de información general se mantienen revisadas a partir de la web pública; no se indexa todo el repositorio ni se envían sus documentos privados al proveedor.
 - El modelo y sus credenciales pertenecen al backend. La elección técnica se documenta en el plan; esta spec no crea claves ni variables de entorno.
 - Las operaciones privadas conservan la sesión y permisos existentes. Esta entrega es pública y de solo lectura.
 - El [SPEC anterior](../002-chatbot-clientes/spec.md) y los prototipos orientan la experiencia; no prueban una integración terminada. El trabajo de Rodrigo se consulta solo como referencia, sin traerlo automáticamente a esta rama.
@@ -87,10 +91,11 @@ Turno de conversación, consulta autorizada y respuesta basada en datos público
 | Herramienta ajena o argumentos inválidos | Se rechaza sin efecto externo. | CA-03, CA-06 |
 | Contraseña o tarjeta en el mensaje | Advertencia local; el dato no llega al proveedor. | CA-05 |
 | Conversaciones simultáneas | Cada una conserva su contexto aislado. | CA-07 |
+| Tema público desconocido o argumento malformado | Se rechaza sin consultar otras fuentes. | CA-09 |
 
 ### Decisiones de alcance
 
-- La primera entrega es pública y de solo lectura: planes y horarios actuales mediante herramientas controladas. Esto fija una primera versión demostrable del agente.
+- La entrega sigue siendo pública y de solo lectura: planes y horarios actuales mediante herramientas controladas, más información general de las páginas públicas.
 - Matrículas, cancelaciones, compras y consultas privadas serán ampliaciones con criterios y confirmaciones propios.
 - El trabajo de Rodrigo se usa como referencia, según indicó el usuario; no se fusiona en esta rama.
 

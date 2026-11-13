@@ -7,6 +7,7 @@ from uuid import uuid4
 from domain.services.agent_policy import (
     contains_sensitive, requests_private_action, validate_message, validate_tool,
 )
+from domain.services.public_gym_knowledge import PUBLIC_TOPICS
 
 
 class ConversationTopics:
@@ -49,8 +50,8 @@ class AgentService:
             self._budget.reserve()
         selection = self._provider.select_tool(text, last_topic)
         if not selection:
-            return {**base, "estado": "fuera_de_alcance", "texto": "Puedo ayudarte con planes de membresía y horarios de clases."}
-        tool = validate_tool(*selection)
+            return {**base, "estado": "fuera_de_alcance", "texto": "Puedo orientarte sobre los servicios y la información pública del gimnasio. No tengo datos confirmados para esa pregunta."}
+        tool, topic = validate_tool(*selection)
         if tool == "consultar_planes":
             plans = self._gym.planes_membresia()
             lines = []
@@ -62,7 +63,7 @@ class AgentService:
                     lines.append(f"{name}: S/ {price}" + (f" · {duration}" if duration else ""))
             reply = "Planes disponibles: " + "; ".join(lines) if lines else "No puedo confirmar los planes en este momento."
             route, label = "/registro", "Ver registro"
-        else:
+        elif tool == "consultar_horarios_publicos":
             schedules = self._gym.horarios_servicio(solo_activos=True)
             lines = []
             for row in schedules[:10]:
@@ -74,6 +75,11 @@ class AgentService:
                     lines.append(f"{service}: {day} {start}–{end}")
             reply = "Clases publicadas: " + "; ".join(lines) if lines else "No puedo confirmar los horarios en este momento."
             route, label = "/", "Ver inicio"
-        self._conversations.put(identifier, tool)
+        else:
+            fact = PUBLIC_TOPICS[topic]
+            reply = fact["texto"]
+            label, route = fact["enlace"]
+            lines = [reply]
+        self._conversations.put(identifier, f"{tool}:{topic}" if topic else tool)
         return {**base, "estado": "respondida" if lines else "sin_datos", "texto": reply,
                 "enlaces": [{"texto": label, "ruta": route}]}

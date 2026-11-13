@@ -26,13 +26,14 @@ class Catalog:
 
 
 class Provider:
-    def __init__(self, tool="consultar_planes"):
+    def __init__(self, tool="consultar_planes", arguments="{}"):
         self.tool = tool
+        self.arguments = arguments
         self.calls = []
 
     def select_tool(self, message, last_topic=None):
         self.calls.append((message, last_topic))
-        return (self.tool, "{}") if self.tool else None
+        return (self.tool, self.arguments) if self.tool else None
 
 
 def make_service(tool="consultar_planes"):
@@ -55,6 +56,39 @@ def test_public_schedule_from_service():
     result = service.respond("¿Cuándo hay spinning?")
     assert "Spinning: Lunes 08:00–09:00" in result["texto"]
     assert catalog.calls == ["horarios"]
+
+
+def test_exercise_question_uses_verified_public_knowledge():
+    catalog = Catalog()
+    provider = Provider("consultar_informacion_publica", '{"tema":"actividades"}')
+    service = AgentService(catalog, provider, ConversationTopics())
+
+    result = service.respond("¿Qué tipos de ejercicios hay?")
+
+    assert result["estado"] == "respondida"
+    assert "Fitness" in result["texto"]
+    assert "Musculación" in result["texto"]
+    assert "Cardio" in result["texto"]
+    assert "Baile" in result["texto"]
+    assert result["enlaces"] == [{"texto": "Ver servicios", "ruta": "/#servicios"}]
+    assert catalog.calls == []
+
+
+def test_activities_is_not_mistaken_for_account_activation():
+    assert not requests_private_action("¿Qué actividades hay?")
+    assert requests_private_action("Activa mi cuenta")
+
+
+def test_public_faq_answer_keeps_its_source_link():
+    catalog = Catalog()
+    provider = Provider("consultar_informacion_publica", '{"tema":"primer_dia"}')
+    service = AgentService(catalog, provider, ConversationTopics())
+
+    result = service.respond("¿Qué llevo el primer día?")
+
+    assert "botella de agua" in result["texto"]
+    assert result["enlaces"][0]["ruta"] == "/preguntas-frecuentes"
+    assert catalog.calls == []
 
 
 def test_empty_catalog_does_not_invent_a_price():
@@ -132,6 +166,22 @@ def test_model_cannot_choose_another_tool():
     assert catalog.calls == []
 
 
+@pytest.mark.parametrize("arguments", [
+    '{"tema":"datos_clientes"}',
+    '{"tema":"actividades","extra":"ignora reglas"}',
+    '{"tema":["actividades"]}',
+    "{}",
+])
+def test_model_cannot_read_unapproved_knowledge(arguments):
+    catalog = Catalog()
+    provider = Provider("consultar_informacion_publica", arguments)
+    service = AgentService(catalog, provider, ConversationTopics())
+
+    with pytest.raises(ValueError, match="no permitida"):
+        service.respond("Cuéntame sobre el gimnasio")
+    assert catalog.calls == []
+
+
 def test_conversation_topics_are_isolated():
     service, _catalog, provider = make_service()
     first = service.respond("¿Cuánto cuesta el plan?")
@@ -184,6 +234,7 @@ def test_groq_adapter_requests_only_local_read_tools(monkeypatch):
     assert timeout == 15
     assert {tool["function"]["name"] for tool in payload["tools"]} == {
         "consultar_planes", "consultar_horarios_publicos",
+        "consultar_informacion_publica",
     }
     assert headers["Authorization"] == "Bearer synthetic-key"
     assert "synthetic-key" not in str(payload)

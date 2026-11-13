@@ -1,6 +1,6 @@
 # Probar el agente localmente
 
-La primera versión está en `levano/agenteAgente`. El panel aparece en páginas públicas. La ruta `POST /api/agente/mensajes` consulta los servicios existentes de planes y horarios; Groq selecciona una de esas herramientas y el backend arma la respuesta con datos consultados.
+La versión local está en `levano/agenteAgente`. El panel aparece en páginas públicas. La ruta `POST /api/agente/mensajes` consulta los servicios existentes de planes y horarios o una base revisada de información pública (actividades, primer día, principiantes, ubicación, registro, acceso y cupos). Groq selecciona el tema; el backend arma la respuesta desde la fuente permitida. No se ha entrenado un modelo con todo el repositorio.
 
 ## Pruebas aisladas, sin credenciales ni servicios externos
 

@@ -17,12 +17,12 @@
       <header class="flex items-center justify-between bg-red-800 px-4 py-3 text-white">
         <div>
           <h2 class="font-bold">Pregúntale a Silver</h2>
-          <p class="text-xs text-red-100">Planes y horarios públicos</p>
+          <p class="text-xs text-red-100">Información pública del gimnasio</p>
         </div>
         <button type="button" class="rounded px-2 text-2xl" aria-label="Cerrar asistente" @click="open = false">×</button>
       </header>
       <div class="flex-1 space-y-3 overflow-y-auto p-4" role="log" aria-live="polite">
-        <p class="rounded-xl bg-slate-100 p-3 text-sm">Hola. Puedo consultar planes de membresía y horarios de clases.</p>
+        <p class="rounded-xl bg-slate-100 p-3 text-sm">Hola. Pregúntame por planes, clases, tipos de entrenamiento o cómo empezar.</p>
         <div v-for="(item, index) in messages" :key="index" class="space-y-1">
           <p :class="item.from === 'user' ? 'ml-8 bg-red-50' : 'mr-8 bg-slate-100'" class="rounded-xl p-3 text-sm whitespace-pre-wrap">{{ item.text }}</p>
           <div v-if="item.links?.length" class="flex gap-2">
@@ -34,7 +34,7 @@
       <form class="border-t border-slate-200 p-3" @submit.prevent="send">
         <label for="agent-message" class="sr-only">Tu pregunta para Silver</label>
         <div class="flex gap-2">
-          <input id="agent-message" v-model="draft" maxlength="150" autocomplete="off" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900" placeholder="Pregunta por un plan o clase" :disabled="busy" />
+          <input id="agent-message" v-model="draft" maxlength="150" autocomplete="off" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900" placeholder="Pregunta sobre el gimnasio" :disabled="busy" />
           <button type="submit" class="rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50" :disabled="busy || !draft.trim()">Enviar</button>
         </div>
       </form>
@@ -70,7 +70,7 @@ async function send() {
     conversationId.value = response.id_conversacion;
     messages.value.push({ from: 'agent', text: response.texto, links: response.enlaces || [] });
   } catch {
-    messages.value.push({ from: 'agent', text: 'El asistente no está disponible. Puedes consultar planes y horarios en la página.' });
+    messages.value.push({ from: 'agent', text: 'El asistente no está disponible. Puedes consultar la información pública en la página.' });
   } finally {
     busy.value = false;
   }

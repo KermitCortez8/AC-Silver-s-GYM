@@ -47,6 +47,17 @@ test('visitante pregunta por clases publicadas', async ({ page }) => {
   await expect(page.getByRole('log')).toContainText('Spinning: Lunes 08:00–09:00');
 });
 
+test('visitante pregunta por tipos de entrenamiento', async ({ page }) => {
+  await setup(page, { body: {
+    id_conversacion: 'synthetic-conversation', estado: 'respondida',
+    texto: 'En la web se muestran Fitness, Musculación, Cardio y Baile.',
+    enlaces: [{ texto: 'Ver servicios', ruta: '/#servicios' }],
+  } });
+  await ask(page, '¿Qué tipo de ejercicios hay?');
+  await expect(page.getByRole('log')).toContainText('Fitness, Musculación, Cardio y Baile');
+  await expect(page.getByRole('link', { name: 'Ver servicios' })).toHaveAttribute('href', '/#servicios');
+});
+
 test('caída del proveedor muestra orientación y conserva la página', async ({ page }) => {
   await setup(page, { status: 503, body: { detail: 'No disponible' } });
   await ask(page, '¿Cuánto cuesta el plan?');
