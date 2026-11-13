@@ -1,6 +1,6 @@
 # Validación de la primera versión del agente
 
-**Fecha:** 2026-11-12. **Rama:** `levano/agenteAgente`. La batería automatizada usa datos sintéticos y no llama a Groq, Supabase, Stripe ni correo. La comprobación manual posterior conectó la API local de solo lectura al catálogo real de Supabase; otras preguntas públicas usan Groq para elegir una herramienta permitida.
+**Fecha:** 2026-11-12. **Rama:** `levano/agenteAgente.v1`. La batería automatizada usa datos sintéticos y no llama a Groq, Supabase, Stripe ni correo. La comprobación manual posterior conectó la API local de solo lectura al catálogo real de Supabase; otras preguntas públicas usan Groq para elegir una herramienta permitida.
 
 ## Matriz de casos
 

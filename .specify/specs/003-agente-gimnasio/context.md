@@ -1,6 +1,6 @@
 # Contexto: agente de atención del gimnasio
 
-Fecha: 2026-11-12. Rama `levano/agenteAgente`, creada desde `develop`. Este documento registra fuentes y decisiones de especificación; no acredita código ni pruebas del agente.
+Fecha: 2026-11-12. Rama `levano/agenteAgente.v1`, creada desde `develop`. Este documento registra fuentes y decisiones de especificación; no acredita código ni pruebas del agente.
 
 ## Base consultada
 

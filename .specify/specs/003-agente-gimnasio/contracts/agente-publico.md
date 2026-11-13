@@ -1,6 +1,6 @@
 # Contrato implementado: atención pública del agente
 
-Implementado en `levano/agenteAgente`; aún no integrado en `develop`.
+Implementado en `levano/agenteAgente.v1`; aún no integrado en `develop`.
 
 `POST /api/agente/mensajes` recibe JSON con `mensaje` (1–150 caracteres) e `id_conversacion` opaco opcional. No acepta rol, ID de cliente, URL, SQL, precio ni nombre de herramienta enviados por el navegador. La identidad de cliente no se infiere del texto.
 
