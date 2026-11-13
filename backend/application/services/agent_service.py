@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from domain.services.agent_policy import (
     asks_for_public_schedules, contains_sensitive, requests_private_action,
-    social_reply, validate_message, validate_tool,
+    SOCIAL_REPLIES, social_reply, validate_message, validate_tool,
 )
 from domain.services.public_gym_knowledge import PUBLIC_TOPICS
 
@@ -70,8 +70,25 @@ class AgentService:
                 self._budget.reserve()
             selection = self._provider.select_tool(text, last_topic)
         if not selection:
-            return {**base, "estado": "fuera_de_alcance", "texto": "Puedo orientarte sobre los servicios y la información pública del gimnasio. No tengo datos confirmados para esa pregunta."}
+            self._conversations.put(identifier, last_topic or "")
+            return {**base, "estado": "respondida", "texto": (
+                "Te sigo. Cuéntame un poco más: ¿te interesa un plan, una clase, un horario "
+                "o saber cómo empezar en el gimnasio?"
+            )}
         tool, topic = validate_tool(*selection)
+        if tool == "conversar":
+            self._conversations.put(identifier, last_topic or "")
+            return {**base, "estado": "respondida", "texto": SOCIAL_REPLIES[topic]}
+        if tool == "fuera_de_tema":
+            reply = (
+                "Para ayudarte mejor, centrémonos en Silver Gym. Dime si buscas un plan, "
+                "una clase o un horario."
+                if last_topic == "fuera_de_tema" else
+                "Ese tema ya se aleja un poco del gimnasio. Si quieres, te ayudo con algo "
+                "de Silver Gym: planes, clases, horarios o cómo empezar."
+            )
+            self._conversations.put(identifier, "fuera_de_tema")
+            return {**base, "estado": "fuera_de_alcance", "texto": reply}
         if tool == "consultar_planes":
             plans = self._gym.planes_membresia()
             lines = []

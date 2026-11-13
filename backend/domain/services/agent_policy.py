@@ -8,7 +8,7 @@ from domain.services.public_gym_knowledge import PUBLIC_TOPICS
 
 ALLOWED_TOOLS = frozenset({
     "consultar_planes", "consultar_horarios_publicos",
-    "consultar_informacion_publica",
+    "consultar_informacion_publica", "conversar", "fuera_de_tema",
 })
 
 _SENSITIVE = (
@@ -26,7 +26,7 @@ _PRIVATE = re.compile(
     r"\b(?:paga|pagar|p[aá]game|realizar un pago|hacer un pago)\b", re.I,
 )
 
-_SOCIAL_REPLIES = {
+SOCIAL_REPLIES = {
     "hola": "¡Hola! Soy Silver. ¿Qué tal? Puedo ayudarte con planes, clases, horarios y dudas sobre el gimnasio.",
     "bienestar": "¡Hola! Todo bien, gracias por preguntar. ¿Y tú? Si quieres, puedo ayudarte con planes, clases u horarios del gimnasio.",
     "seguimiento": "¡Todo bien por aquí, gracias! ¿Te ayudo con algún plan, clase u horario?",
@@ -79,18 +79,23 @@ def social_reply(text: str) -> str | None:
     )
     normalized = " ".join(re.sub(r"[^a-z\s]", " ", plain).split())
     category = _SOCIAL_MESSAGES.get(normalized)
+    greeting = r"(?:hola|holi|buenas|buenos dias|buenas tardes|buenas noches)"
     if category is None and re.fullmatch(
-        r"(?:hola|holi|buenas|buenos dias|buenas tardes|buenas noches)"
-        r"(?: silver| chat)? (?:como estas|que tal|como te va|todo bien)(?: tu)?",
+        rf"(?:{greeting}(?: silver| chat)? )?"
+        r"(?:como estas|que tal|como te va|todo bien)(?: tu| silver| chat)?",
         normalized,
     ):
         category = "bienestar"
+    if category is None and re.fullmatch(rf"{greeting}(?: silver| chat)?", normalized):
+        category = "hola"
     if category is None and re.fullmatch(
         r"(?:muchas|mil)? ?gracias por (?:la|el|tu) "
         r"(?:informacion|info|ayuda|respuesta|dato|datos)", normalized,
     ):
         category = "gracias"
-    return _SOCIAL_REPLIES.get(category)
+    if category is None and re.fullmatch(r"(?:muchas|mil)? ?gracias(?: silver| chat)?", normalized):
+        category = "gracias"
+    return SOCIAL_REPLIES.get(category)
 
 
 def asks_for_public_schedules(text: str) -> bool:
@@ -118,6 +123,12 @@ def validate_tool(name: str, arguments: str) -> tuple[str, str | None]:
                 or topic not in PUBLIC_TOPICS):
             raise ValueError("El agente solicitó una acción no permitida.")
         return name, topic
+    if name == "conversar":
+        category = parsed.get("intencion")
+        if (set(parsed) != {"intencion"} or not isinstance(category, str)
+                or category not in SOCIAL_REPLIES):
+            raise ValueError("El agente solicitó una acción no permitida.")
+        return name, category
     if parsed:
         raise ValueError("El agente solicitó una acción no permitida.")
     return name, None

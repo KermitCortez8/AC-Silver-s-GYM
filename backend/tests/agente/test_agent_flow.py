@@ -47,6 +47,7 @@ def make_service(tool="consultar_planes"):
     ("hola", "¡Hola!"), ("Buenas noches!", "¡Hola!"),
     ("hola como estas", "¡Hola! Todo bien"),
     ("Hola, Silver, ¿qué tal?", "¡Hola! Todo bien"),
+    ("¿Cómo estás, Silver?", "¡Hola! Todo bien"),
     ("¿Cómo estás?", "¡Hola! Todo bien"),
     ("¿Y tú?", "¡Todo bien por aquí"),
     ("Bien, gracias", "¡Me alegra!"),
@@ -55,6 +56,7 @@ def make_service(tool="consultar_planes"):
     ("¿En qué me puedes ayudar?", "Puedo ayudarte"),
     ("gracias", "¡De nada!"), ("Muchas gracias :)!", "¡De nada!"),
     ("Gracias por la información", "¡De nada!"),
+    ("Gracias, Silver", "¡De nada!"),
     ("chau", "¡Hasta luego!"), ("ok", "¡Claro!"),
 ])
 def test_short_social_messages_get_natural_reply_without_external_calls(message, expected):
@@ -162,9 +164,53 @@ def test_activity_without_public_schedules_is_not_invented():
 
 def test_unrelated_schedule_question_is_not_classified_as_gym_schedule():
     assert not asks_for_public_schedules("¿Cuáles son los horarios de vuelos?")
-    service, catalog, _provider = make_service(None)
+    service, catalog, _provider = make_service("fuera_de_tema")
     result = service.respond("¿Cuáles son los horarios de vuelos?")
     assert result["estado"] == "fuera_de_alcance"
+    assert "Silver Gym" in result["texto"]
+    assert catalog.calls == []
+
+
+def test_repeated_off_topic_question_redirects_more_directly_then_resets():
+    service, catalog, provider = make_service("fuera_de_tema")
+    first = service.respond("¿Qué sabes del papa?")
+    second = service.respond("¿Y de política?", first["id_conversacion"])
+    provider.tool = "consultar_planes"
+    third = service.respond("¿Qué planes tienen?", second["id_conversacion"])
+
+    assert "se aleja un poco" in first["texto"]
+    assert "centrémonos en Silver Gym" in second["texto"]
+    assert third["estado"] == "respondida"
+    assert catalog.calls == ["planes"]
+
+
+def test_unclear_question_keeps_offering_help():
+    service, catalog, provider = make_service(None)
+    result = service.respond("¿Me puedes explicar un poco más?")
+    assert result["estado"] == "respondida"
+    assert "Cuéntame un poco más" in result["texto"]
+    assert service.respond("¿Y los precios?", result["id_conversacion"])["id_conversacion"] == result["id_conversacion"]
+    assert provider.calls and catalog.calls == []
+
+
+def test_provider_can_choose_bounded_social_reply_without_catalog():
+    service, catalog, provider = make_service("conversar")
+    provider.arguments = '{"intencion":"bienestar"}'
+    result = service.respond("Silver, ¿cómo va todo?")
+    assert result["estado"] == "respondida"
+    assert "Todo bien" in result["texto"]
+    assert catalog.calls == []
+
+
+@pytest.mark.parametrize("arguments", [
+    '{"intencion":"datos_privados"}', '{"intencion":"bienestar","extra":true}',
+    "{}",
+])
+def test_provider_cannot_invent_social_intentions(arguments):
+    service, catalog, provider = make_service("conversar")
+    provider.arguments = arguments
+    with pytest.raises(ValueError, match="no permitida"):
+        service.respond("Silver, ¿cómo va todo?")
     assert catalog.calls == []
 
 
@@ -349,7 +395,7 @@ def test_groq_adapter_requests_only_local_read_tools(monkeypatch):
     assert timeout == 15
     assert {tool["function"]["name"] for tool in payload["tools"]} == {
         "consultar_planes", "consultar_horarios_publicos",
-        "consultar_informacion_publica",
+        "consultar_informacion_publica", "conversar", "fuera_de_tema",
     }
     assert headers["Authorization"] == "Bearer synthetic-key"
     assert "synthetic-key" not in str(payload)

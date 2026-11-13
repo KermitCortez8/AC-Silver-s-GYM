@@ -18,12 +18,13 @@
 | AG-10 | CA-02 | Aplicación; regresión | 23 horarios de cuatro actividades se muestran completos; una consulta concreta filtra las demás y no inventa horarios para otra actividad. | Alta | `backend/tests/agente/test_agent_flow.py` y comprobación manual con Supabase |
 | AG-11 | CA-01, CA-02 | HTTP; aislamiento | La API de demostración solo expone el chat y tres consultas públicas GET; no publica rutas de escritura. | Alta | `backend/tests/agente/test_agent_http.py` |
 | AG-12 | CA-04, CA-06 | Dominio y aplicación; regresión | Saludos, agradecimientos y despedidas breves reciben respuesta sin proveedor, presupuesto ni catálogo; una pregunta de negocio con saludo conserva su intención. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
+| AG-13 | CA-06, CA-07 | Aplicación; regresión | La IA solo puede elegir una intención social aprobada o marcar un tema claramente ajeno. Una pregunta ambigua mantiene la conversación; una segunda pregunta ajena recibe una redirección más directa. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
 
 ## Resultados
 
 | Comando | Resultado |
 | --- | --- |
-| `pytest tests/agente tests/planes_promociones tests/horarios_matriculas/integracion -q -p no:cacheprovider --tb=short` | 75 aprobadas; 2 advertencias de deprecación de dependencias. |
+| `pytest tests/agente tests/planes_promociones tests/horarios_matriculas/integracion -q -p no:cacheprovider --tb=short` | 83 aprobadas; 2 advertencias de deprecación de dependencias. |
 | `npm test -- --test-concurrency=1` | 373 aprobadas, 0 fallidas. |
 | `npx playwright test e2e/agent.spec.js` con configuración local temporal que reutiliza el servidor de demostración | 21 aprobadas: 7 escenarios × Chromium, Firefox y WebKit. |
 | `npm run build` | Compilación Vite aprobada. |
@@ -37,7 +38,7 @@ Una ejecución paralela de la batería frontend informó un fallo de archivo en 
 - Playwright comprueba la interfaz con API simulada. pytest comprueba la ruta y la aplicación con proveedor/catálogos falsos. La comprobación manual adicional sí recorrió frontend → proxy local → API → servicio → Supabase. Las consultas públicas devolvieron 23 horarios activos, 4 planes y 0 promociones vigentes en ese momento. El navegador mostró las cuatro actividades y las 23 sesiones en el chat sin los horarios ficticios de Spinning y Yoga; tras cargar el catálogo, la tarjeta de Baile mostró sus 5 sesiones reales. Esta comprobación manual no reemplaza una batería automatizada contra Supabase.
 - Ante «dime los horarios de cada ejercicios que hay», el proveedor podía no elegir herramienta y el backend devolvía fuera de alcance. Las preguntas explícitas de horarios del gimnasio ahora consultan directamente el servicio real, sin depender de que Groq elija herramienta. Una actividad concreta filtra la respuesta; una actividad sin horarios activos recibe un mensaje sin inventar clases. La interfaz distingue el límite temporal (429) de una indisponibilidad del servidor.
 - Las respuestas con varios planes, horarios o tipos de entrenamiento se presentan en líneas con viñetas. Se comprobó visualmente en el chat local que la lista completa de actividades queda visible; la prueba funcional verifica también el desplazamiento automático de una lista larga en tres motores.
-- Se comprobó en el navegador local una conversación breve: «Hola, ¿cómo estás?», «Bien, ¿y tú?», «¿Cómo te llamas?» y «Gracias por la información». «Hola, ¿qué planes tienen?» sigue consultando el catálogo. Las pruebas automatizadas confirman que las cortesías breves no invocan al proveedor, no gastan cuota y no borran el tema previo.
+- Se comprobó en el navegador local una conversación breve: «Hola, ¿cómo estás?», «Bien, ¿y tú?», «¿Cómo te llamas?» y «Gracias por la información». También se verificó «como estás silver» seguido de dos preguntas ajenas; la primera redirigió con suavidad y la segunda de manera más directa. «Hola, ¿qué planes tienen?» sigue consultando el catálogo. Las pruebas automatizadas confirman que las cortesías comunes no invocan al proveedor, no gastan cuota y no borran el tema previo. El proveedor solo puede seleccionar intenciones sociales de una lista validada.
 - El límite de llamadas es atómico **dentro de un proceso**, no entre varias instancias. Se necesita cuota distribuida antes de exposición pública real.
 - El filtro de datos personales cubre los patrones probados; requiere revisión adicional antes de enviar consultas libres de usuarios reales a un proveedor externo.
 - SonarQube/Quality Gate no se ejecutó para esta rama. La validación documental general de Spec Kit presenta 11 errores previos de descubrimiento de skills; no afectan la ejecución de las pruebas de producto.

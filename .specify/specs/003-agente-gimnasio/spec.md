@@ -76,7 +76,7 @@ Turno de conversación, consulta autorizada y respuesta basada en datos público
 
 ## 5. Guardrails
 
-- El modelo puede solicitar únicamente las consultas públicas autorizadas para esta entrega. El backend decide si las ejecuta.
+- El modelo puede seleccionar únicamente consultas públicas y categorías conversacionales autorizadas para esta entrega. El backend valida la selección y decide qué consulta ejecutar o qué respuesta revisada mostrar.
 - Una respuesta no cobra, activa membresías, matricula, cancela, modifica precios ni consulta datos de terceros.
 - No exponer claves, tokens, datos de pago, mensajes ajenos ni información personal al proveedor o en logs.
 - No usar datos fijos del prompt como fuente de verdad de precios, cupos u horarios actuales.
