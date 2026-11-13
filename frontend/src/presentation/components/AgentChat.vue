@@ -21,7 +21,7 @@
         </div>
         <button type="button" class="rounded px-2 text-2xl" aria-label="Cerrar asistente" @click="open = false">×</button>
       </header>
-      <div class="flex-1 space-y-3 overflow-y-auto p-4" role="log" aria-live="polite">
+      <div ref="logRef" class="flex-1 space-y-3 overflow-y-auto p-4" role="log" aria-live="polite">
         <p class="rounded-xl bg-slate-100 p-3 text-sm">Hola. Pregúntame por planes, clases, tipos de entrenamiento o cómo empezar.</p>
         <div v-for="(item, index) in messages" :key="index" class="space-y-1">
           <p :class="item.from === 'user' ? 'ml-8 bg-red-50' : 'mr-8 bg-slate-100'" class="rounded-xl p-3 text-sm whitespace-pre-wrap">{{ item.text }}</p>
@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { createAgentService } from '../../application/services/agentService.js';
 
@@ -53,6 +53,11 @@ const draft = ref('');
 const busy = ref(false);
 const messages = ref([]);
 const conversationId = ref(null);
+const logRef = ref(null);
+watch([() => messages.value.length, busy], async () => {
+  await nextTick();
+  if (logRef.value) logRef.value.scrollTop = logRef.value.scrollHeight;
+});
 watch(() => route.fullPath, () => {
   open.value = false;
   messages.value = [];

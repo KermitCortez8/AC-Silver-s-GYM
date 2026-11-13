@@ -64,7 +64,10 @@ class AgentService:
                 duration = str(plan.get("duracion") or "").strip()
                 if name and price is not None:
                     lines.append(f"{name}: S/ {price}" + (f" · {duration}" if duration else ""))
-            reply = "Planes disponibles: " + "; ".join(lines) if lines else "No puedo confirmar los planes en este momento."
+            reply = (
+                "Planes disponibles:\n" + "\n".join(f"• {line}" for line in lines)
+                if lines else "No puedo confirmar los planes en este momento."
+            )
             route, label = "/registro", "Ver registro"
         elif tool == "consultar_horarios_publicos":
             schedules = self._gym.horarios_servicio(solo_activos=True)
@@ -76,7 +79,10 @@ class AgentService:
                 end = str(row.get("hora_fin") or "").strip()
                 if service and day and start and end:
                     lines.append(f"{service}: {day} {start}–{end}")
-            reply = "Clases publicadas: " + "; ".join(lines) if lines else "No puedo confirmar los horarios en este momento."
+            reply = (
+                "Clases publicadas:\n" + "\n".join(f"• {line}" for line in lines)
+                if lines else "No puedo confirmar los horarios en este momento."
+            )
             route, label = "/", "Ver inicio"
         else:
             fact = PUBLIC_TOPICS[topic]

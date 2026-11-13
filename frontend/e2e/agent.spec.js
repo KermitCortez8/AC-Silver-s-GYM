@@ -50,12 +50,26 @@ test('visitante pregunta por clases publicadas', async ({ page }) => {
 test('visitante pregunta por tipos de entrenamiento', async ({ page }) => {
   await setup(page, { body: {
     id_conversacion: 'synthetic-conversation', estado: 'respondida',
-    texto: 'En la web se muestran Fitness, Musculación, Cardio y Baile.',
+    texto: 'Tipos de entrenamiento:\n• Fitness: entrenamiento general.\n• Musculación: trabajo de fuerza.\n• Cardio: entrenamiento de resistencia.\n• Baile: clases grupales.',
     enlaces: [{ texto: 'Ver servicios', ruta: '/#servicios' }],
   } });
   await ask(page, '¿Qué tipo de ejercicios hay?');
-  await expect(page.getByRole('log')).toContainText('Fitness, Musculación, Cardio y Baile');
+  const reply = page.getByRole('log').locator('p').last();
+  await expect(reply).toContainText('Tipos de entrenamiento:');
+  await expect(reply).toHaveCSS('white-space', 'pre-wrap');
+  expect(await reply.textContent()).toContain('\n• Musculación:');
   await expect(page.getByRole('link', { name: 'Ver servicios' })).toHaveAttribute('href', '/#servicios');
+});
+
+test('una lista larga desplaza el chat hasta el final', async ({ page }) => {
+  await setup(page, { body: {
+    id_conversacion: 'synthetic-conversation', estado: 'respondida',
+    texto: `Clases publicadas:\n${Array.from({ length: 18 }, (_, index) => `• Clase ${index + 1}: Lunes 08:00–09:00`).join('\n')}`,
+    enlaces: [],
+  } });
+  await ask(page, 'Dime los horarios de las clases');
+  await expect(page.getByRole('log')).toContainText('Clase 18');
+  await expect.poll(() => page.getByRole('log').evaluate(element => element.scrollTop)).toBeGreaterThan(0);
 });
 
 test('caída del proveedor muestra orientación y conserva la página', async ({ page }) => {

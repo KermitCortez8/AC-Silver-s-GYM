@@ -50,6 +50,7 @@ def test_plan_price_changes_with_catalog():
     second = service.respond("¿Cuánto cuesta el plan mensual?", first["id_conversacion"])
     assert "S/ 80" in first["texto"]
     assert "S/ 90" in second["texto"]
+    assert first["texto"].startswith("Planes disponibles:\n• Mensual: S/ 80")
     assert catalog.calls == ["planes", "planes"]
 
 
@@ -57,6 +58,7 @@ def test_public_schedule_from_service():
     service, catalog, _provider = make_service("consultar_horarios_publicos")
     result = service.respond("¿Cuándo hay spinning?")
     assert "Spinning: Lunes 08:00–09:00" in result["texto"]
+    assert result["texto"].startswith("Clases publicadas:\n• Spinning")
     assert catalog.calls == ["horarios"]
 
 
@@ -91,6 +93,11 @@ def test_exercise_question_uses_verified_public_knowledge():
     assert "Musculación" in result["texto"]
     assert "Cardio" in result["texto"]
     assert "Baile" in result["texto"]
+    assert result["texto"].splitlines()[:3] == [
+        "Tipos de entrenamiento:",
+        "• Fitness: entrenamiento general.",
+        "• Musculación: trabajo de fuerza.",
+    ]
     assert result["enlaces"] == [{"texto": "Ver servicios", "ruta": "/#servicios"}]
     assert catalog.calls == []
 

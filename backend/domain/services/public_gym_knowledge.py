@@ -7,17 +7,22 @@ Nunca incluir datos de clientes, claves, reglas internas ni contenido de .env.
 PUBLIC_TOPICS = {
     "actividades": {
         "texto": (
-            "En la web se muestran Fitness (entrenamiento general), "
-            "Musculación (trabajo de fuerza), Cardio (resistencia) y Baile "
-            "(clases grupales). Los horarios concretos se consultan aparte."
+            "Tipos de entrenamiento:\n"
+            "• Fitness: entrenamiento general.\n"
+            "• Musculación: trabajo de fuerza.\n"
+            "• Cardio: entrenamiento de resistencia.\n"
+            "• Baile: clases grupales.\n"
+            "Los horarios concretos se consultan aparte."
         ),
         "enlace": ("Ver servicios", "/#servicios"),
     },
     "primer_dia": {
         "texto": (
-            "Para el primer día, la página de preguntas frecuentes recomienda "
-            "ropa cómoda, zapatillas deportivas, una botella de agua y una "
-            "toalla pequeña."
+            "Para tu primer día, la página de preguntas frecuentes recomienda:\n"
+            "• Ropa cómoda.\n"
+            "• Zapatillas deportivas.\n"
+            "• Una botella de agua.\n"
+            "• Una toalla pequeña."
         ),
         "enlace": ("Ver preguntas frecuentes", "/preguntas-frecuentes"),
     },
