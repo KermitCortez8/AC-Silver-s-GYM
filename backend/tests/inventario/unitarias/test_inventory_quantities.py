@@ -22,6 +22,24 @@ def test_inventory_and_store_contracts_reject_malformed_quantities(value):
             model.model_validate({**defaults, "cantidad": value})
 
 
+@pytest.mark.parametrize("changes, message", [
+    ({"categoria": ""}, "Categoría es obligatorio"),
+    ({"categoria": "   "}, "Categoría es obligatorio"),
+    ({"categoria": None}, "Categoría es obligatorio"),
+    ({"precio_venta": 0}, "Precio debe ser mayor que 0"),
+    ({"precio_venta": -15}, "no puede ser negativo"),
+])
+def test_store_product_contract_requires_category_and_positive_price(changes, message):
+    # La API exige lo mismo que el formulario de Tienda.
+    with pytest.raises(ValidationError, match=message):
+        ProductoTiendaInput.model_validate({"nombre_producto": "Agua", "categoria": "Bebidas", "precio_venta": 2, **changes})
+
+
+def test_store_product_contract_keeps_default_category_and_trims_it():
+    assert ProductoTiendaInput.model_validate({"nombre_producto": "Agua", "precio_venta": 2}).categoria == "General"
+    assert ProductoTiendaInput.model_validate({"nombre_producto": "Agua", "categoria": " Bebidas ", "precio_venta": 0.5}).categoria == "Bebidas"
+
+
 def test_zero_stock_is_valid_and_zero_movement_is_rejected():
     item = InventarioInput(nombre_item="Agua", tipo="Tienda", cantidad_stock="0", stock_minimo="0")
     assert item.cantidad_stock == item.stock_minimo == 0

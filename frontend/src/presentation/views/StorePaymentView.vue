@@ -223,7 +223,8 @@ const submitPayment = async () => {
   let redirecting = false;
   try {
     const invalid = requiredTextError(payment.customerName, 'El nombre del cliente')
-      || emailError(payment.customerEmail)
+      // Correo de contacto del pedido: basta un formato válido (la regla de dominio es solo para cuentas).
+      || emailError(payment.customerEmail, { account: false })
       || dniError(payment.dni, false)
       || (!isCard.value && requiredTextError(payment.reference, 'El código de referencia de pago'));
     if (invalid) throw new Error(invalid);
