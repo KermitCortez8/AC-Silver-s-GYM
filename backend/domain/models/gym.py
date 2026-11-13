@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal, Optional
 
 from pydantic import BaseModel, Field, ConfigDict, StringConstraints, field_validator, model_validator
-from domain.validation import account_email, dni_number, integer_quantity, phone_number
+from domain.validation import account_email, dni_number, email_address, integer_quantity, phone_number
 from domain.validation import required_text, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
 
 from domain.form_limits import SHORT_TEXT_LIMIT, LONG_TEXT_LIMIT, INVENTORY_TEXT_LIMIT, INVENTORY_NOTE_LIMIT
@@ -37,7 +37,8 @@ class ValidatedInput(BaseModel):
     @field_validator("cliente_correo", check_fields=False)
     @classmethod
     def valid_order_email(cls, value):
-        return account_email(value) if value else ""
+        # Correo de contacto del pedido: formato válido sin restringir dominio (la regla de dominio es para cuentas).
+        return email_address(value) if value else ""
 
     @field_validator("cliente_dni", check_fields=False)
     @classmethod
@@ -237,6 +238,19 @@ class ProductoTiendaInput(ValidatedInput):
     stock_minimo: Optional[int] = 5
     estado: Optional[str] = "Disponible"
     imagen_url: Optional[str] = ""
+
+    # Mismos obligatorios que el formulario de Tienda: categoría con texto y precio mayor que cero.
+    @field_validator("categoria")
+    @classmethod
+    def categoria_obligatoria(cls, value):
+        return required_text(value, "Categoría")
+
+    @field_validator("precio_venta")
+    @classmethod
+    def precio_positivo(cls, value):
+        if value is None or value <= 0:
+            raise ValueError("Precio debe ser mayor que 0")
+        return value
 
 
 class PedidoTiendaItemInput(ValidatedInput):

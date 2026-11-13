@@ -124,13 +124,13 @@ test('failed gallery refresh preserves previously loaded images', async (t) => {
 test('checkout validates customer data and prevents duplicate payments while preserving failed drafts', async () => {
   const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
   gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
-  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@gmail.com.otro.org', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@', dni: '12345678', method: 'yape', reference: 'PAY-1' });
   let calls = 0;
   let rejectSave;
   gym.createStoreOrder = () => { calls++; return new Promise((_resolve, reject) => { rejectSave = reject; }); };
   await setup.submitPayment();
   assert.equal(calls, 0);
-  assert.match(setup.feedback, /Solo se permiten correos/);
+  assert.match(setup.feedback, /correo válido/);
   setup.payment.customerEmail = 'ana@hotmail.com';
   setup.payment.dni = 'abc';
   await setup.submitPayment();
@@ -153,11 +153,34 @@ test('checkout validates customer data and prevents duplicate payments while pre
   assert.equal(gym.cart.length, 1);
 });
 
-test('client quantities never exceed the available stock and out-of-stock products are hidden', async () => {
+test('checkout accepts the contact email of a client account outside the sign-up domains', async () => {
+  const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
+  gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'socio@outlook.com', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  const sent = [];
+  gym.createStoreOrder = async (order) => { sent.push(order); throw new Error('Servicio no disponible'); };
+  await setup.submitPayment();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].cliente_correo, 'socio@outlook.com');
+  assert.equal(setup.feedback, 'Servicio no disponible');
+});
+
+test('client quantities never exceed the available stock and out-of-stock products are shown as unavailable', async () => {
   const { setup, gym } = await setupView('StoreView', '/user/store');
   const product = { id_producto: 1, nombre: 'Toalla', precio: 10, cantidad: 3, estado: 'Disponible' };
-  gym.productos_tienda = [product, { id_producto: 2, nombre: 'Guantes', precio: 5, cantidad: 0, estado: 'Agotado' }];
-  assert.deepEqual(setup.catalogProducts.map((p) => p.id_producto), [1]);
+  const soldOut = { id_producto: 2, nombre: 'Guantes', precio: 5, cantidad: 0, estado: 'Agotado' };
+  gym.productos_tienda = [
+    soldOut,
+    product,
+    { id_producto: 3, nombre: 'Gorra', precio: 0, cantidad: 4, estado: 'Descatalogado' },
+    { id_producto: 4, nombre: 'Mochila', precio: 20, cantidad: 2, estado: 'Disponible', archivado: true },
+  ];
+  assert.deepEqual(setup.catalogProducts.map((p) => p.id_producto), [2, 1]);
+  assert.deepEqual(setup.visibleProducts.map((p) => p.id_producto), [1, 2]);
+  assert.equal(setup.canBuy(soldOut), false);
+  setup.agregarAlCarrito(soldOut);
+  assert.equal(gym.cart.length, 0);
+  assert.match(setup.feedbackMessage, /no está disponible/);
   const event = { target: { value: '9' } };
   setup.setQuantity(product, event);
   assert.equal(event.target.value, '3');
