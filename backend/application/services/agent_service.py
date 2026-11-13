@@ -5,7 +5,8 @@ from threading import Lock
 from uuid import uuid4
 
 from domain.services.agent_policy import (
-    contains_sensitive, requests_private_action, validate_message, validate_tool,
+    asks_for_public_schedules, contains_sensitive, requests_private_action,
+    validate_message, validate_tool,
 )
 from domain.services.public_gym_knowledge import PUBLIC_TOPICS
 
@@ -49,6 +50,8 @@ class AgentService:
         if self._budget:
             self._budget.reserve()
         selection = self._provider.select_tool(text, last_topic)
+        if not selection and asks_for_public_schedules(text):
+            selection = ("consultar_horarios_publicos", "{}")
         if not selection:
             return {**base, "estado": "fuera_de_alcance", "texto": "Puedo orientarte sobre los servicios y la información pública del gimnasio. No tengo datos confirmados para esa pregunta."}
         tool, topic = validate_tool(*selection)

@@ -6,7 +6,9 @@ from datetime import datetime, timedelta, timezone
 
 from application.services.agent_budget import AgentBudget, RateLimitExceeded
 from application.services.agent_service import AgentService, ConversationTopics
-from domain.services.agent_policy import contains_sensitive, requests_private_action
+from domain.services.agent_policy import (
+    asks_for_public_schedules, contains_sensitive, requests_private_action,
+)
 from infrastructure.services.groq_agent_provider import GroqAgentProvider, ProviderUnavailable
 
 
@@ -56,6 +58,25 @@ def test_public_schedule_from_service():
     result = service.respond("¿Cuándo hay spinning?")
     assert "Spinning: Lunes 08:00–09:00" in result["texto"]
     assert catalog.calls == ["horarios"]
+
+
+def test_explicit_gym_schedule_question_recovers_from_no_model_selection():
+    service, catalog, provider = make_service(None)
+
+    result = service.respond("Entonces, dime los horarios de cada ejercicios que hay")
+
+    assert result["estado"] == "respondida"
+    assert "Spinning: Lunes 08:00–09:00" in result["texto"]
+    assert catalog.calls == ["horarios"]
+    assert len(provider.calls) == 1
+
+
+def test_unrelated_schedule_question_is_not_classified_as_gym_schedule():
+    assert not asks_for_public_schedules("¿Cuáles son los horarios de vuelos?")
+    service, catalog, _provider = make_service(None)
+    result = service.respond("¿Cuáles son los horarios de vuelos?")
+    assert result["estado"] == "fuera_de_alcance"
+    assert catalog.calls == []
 
 
 def test_exercise_question_uses_verified_public_knowledge():

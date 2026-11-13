@@ -61,10 +61,17 @@ test('visitante pregunta por tipos de entrenamiento', async ({ page }) => {
 test('caída del proveedor muestra orientación y conserva la página', async ({ page }) => {
   await setup(page, { status: 503, body: { detail: 'No disponible' } });
   await ask(page, '¿Cuánto cuesta el plan?');
-  await expect(page.getByRole('log')).toContainText('El asistente no está disponible');
+  await expect(page.getByRole('log')).toContainText('No pude consultar el servidor ahora');
   await expect(page.getByRole('button', { name: 'Cerrar asistente' })).toBeVisible();
   await page.getByRole('button', { name: 'Cerrar asistente' }).click();
   await expect(page.getByRole('button', { name: 'Abrir asistente del gimnasio' })).toBeVisible();
+});
+
+test('límite temporal muestra la causa sin afirmar que el tema es ajeno', async ({ page }) => {
+  await setup(page, { status: 429, body: { detail: 'Límite temporal' } });
+  await ask(page, 'Dime los horarios de las clases');
+  await expect(page.getByRole('log')).toContainText('límite temporal de consultas');
+  await expect(page.getByRole('log')).not.toContainText('No tengo datos confirmados');
 });
 
 test('operación privada se orienta a controles de la plataforma', async ({ page }) => {

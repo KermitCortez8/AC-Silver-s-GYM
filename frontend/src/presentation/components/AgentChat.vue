@@ -69,8 +69,11 @@ async function send() {
     const response = await createAgentService().send(text, conversationId.value);
     conversationId.value = response.id_conversacion;
     messages.value.push({ from: 'agent', text: response.texto, links: response.enlaces || [] });
-  } catch {
-    messages.value.push({ from: 'agent', text: 'El asistente no está disponible. Puedes consultar la información pública en la página.' });
+  } catch (error) {
+    const text = error?.status === 429
+      ? 'Se alcanzó el límite temporal de consultas. Inténtalo de nuevo en un minuto.'
+      : 'No pude consultar el servidor ahora. Inténtalo de nuevo o revisa la información pública en la página.';
+    messages.value.push({ from: 'agent', text });
   } finally {
     busy.value = false;
   }

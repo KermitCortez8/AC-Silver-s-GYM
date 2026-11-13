@@ -31,6 +31,6 @@ def message(payload: AgentRequest, gym: GymService = Depends(get_gym_service)):
     except RateLimitExceeded as error:
         raise HTTPException(status_code=429, detail=str(error)) from error
     except ProviderUnavailable as error:
-        raise HTTPException(status_code=503, detail="El asistente no está disponible. Consulta los planes y horarios en la página.") from error
+        raise HTTPException(status_code=503, detail="El asistente no está disponible. Consulta la información pública en la página.") from error
     except (OSError, RuntimeError) as error:
         raise HTTPException(status_code=503, detail="No se pudo consultar el catálogo. Inténtalo de nuevo más tarde.") from error

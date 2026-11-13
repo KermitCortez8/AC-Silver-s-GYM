@@ -41,6 +41,18 @@ def requests_private_action(text: str) -> bool:
     return bool(_PRIVATE.search(text))
 
 
+def asks_for_public_schedules(text: str) -> bool:
+    """Reconoce preguntas explícitas por horarios de entrenamiento del gimnasio."""
+    return bool(
+        re.search(r"\bhorarios?\b", text, re.I)
+        and re.search(
+            r"\b(?:ejercici\w*|clases?|entren\w*|gimnas\w*|gym|"
+            r"fitness|muscul\w*|cardio|baile|spinning|yoga)\b",
+            text, re.I,
+        )
+    )
+
+
 def validate_tool(name: str, arguments: str) -> tuple[str, str | None]:
     try:
         parsed = json.loads(arguments or "{}")
