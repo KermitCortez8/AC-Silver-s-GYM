@@ -766,6 +766,7 @@ test('inventory, orders, promotions and payments load only their own data', asyn
   assert.deepEqual(paths.sort(), [
     '/api/inventario',
     '/api/inventario/movimientos',
+    '/api/inventario/unidades',
   ]);
 
   paths.length = 0;
@@ -806,6 +807,7 @@ test('admin store shares its resources with inventory and orders', async () => {
   assert.deepEqual(paths.sort(), [
     '/api/clientes',
     '/api/inventario',
+    '/api/inventario/unidades',
     '/api/tienda',
     '/api/tienda/pedidos',
   ]);

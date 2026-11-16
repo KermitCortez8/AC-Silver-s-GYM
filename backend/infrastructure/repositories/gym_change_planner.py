@@ -1,4 +1,5 @@
 """Planifica y confirma el conjunto de cambios de una unidad de negocio."""
+from application.errors import SchemaNotReady
 from infrastructure.repositories.atomic_changes import commit_snapshot, table_changes
 from infrastructure.repositories.gym_tables import CORE_TABLES
 from infrastructure.repositories.mappers import store
@@ -21,6 +22,8 @@ class GymChangePlanner:
             if key not in CORE_TABLES:
                 continue
             table, _local_pk, remote_pk = CORE_TABLES[key]
+            if table == "INVENTARIO_UNIDADES" and table in self.tables.metadata.missing_tables:
+                raise SchemaNotReady("026_inventario_unidades.sql")
             if table in self.tables.metadata.missing_tables:
                 raise RuntimeError(f"La tabla {table} no está disponible; no se guardó ningún cambio")
             before = [self.tables.prepare_write(table, to_remote_body(key, row))

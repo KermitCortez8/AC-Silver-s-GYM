@@ -11,7 +11,10 @@ from domain.errors import EntityNotFound
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from presentation.dependencies import get_gym_service, get_optional_actor_id, require_admin_or_staff
-from domain.models.gym import InventarioInput, MovimientoInventarioInput, MovimientoInventarioUpdateInput
+from domain.models.gym import (
+    InventarioInput, InventarioUnidadBajaInput, InventarioUnidadUpdateInput, MovimientoInventarioInput,
+    MovimientoInventarioUpdateInput,
+)
 from application.services.gym_service import GymService
 
 router = APIRouter(prefix="/inventario", tags=["inventario"], dependencies=[Depends(require_admin_or_staff)])
@@ -75,6 +78,35 @@ def registrar_movimiento(payload: MovimientoInventarioInput, gym_service: GymSer
 def actualizar_movimiento(id_mov: int, payload: MovimientoInventarioUpdateInput, gym_service: GymService = Depends(get_gym_service)):
     try:
         return gym_service.actualizar_movimiento_inventario(id_mov, payload.model_dump(exclude_none=True))
+    except ValueError as error:
+        status_code = status.HTTP_404_NOT_FOUND if isinstance(error, EntityNotFound) else status.HTTP_400_BAD_REQUEST
+        raise http_error(error, validation_status=status_code) from error
+
+
+# GET /inventario/unidades: lista las unidades con N° de activo propio (equipos y accesorios).
+@router.get("/unidades")
+def list_unidades(gym_service: GymService = Depends(get_gym_service)):
+    return gym_service.unidades_inventario()
+
+
+# PUT /inventario/unidades/{id_unidad}: cambia el estado, la ubicación o las observaciones de una unidad.
+@router.put("/unidades/{id_unidad}")
+def actualizar_unidad(id_unidad: int, payload: InventarioUnidadUpdateInput, gym_service: GymService = Depends(get_gym_service)):
+    try:
+        return gym_service.actualizar_unidad_inventario(id_unidad, payload.model_dump(exclude_none=True))
+    except ValueError as error:
+        status_code = status.HTTP_404_NOT_FOUND if isinstance(error, EntityNotFound) else status.HTTP_400_BAD_REQUEST
+        raise http_error(error, validation_status=status_code) from error
+
+
+# DELETE /inventario/unidades/{id_unidad}: da de baja la unidad con una salida; su historial se conserva.
+@router.delete("/unidades/{id_unidad}")
+def dar_de_baja_unidad(id_unidad: int, payload: InventarioUnidadBajaInput | None = None,
+                       gym_service: GymService = Depends(get_gym_service),
+                       actor_id: str = Depends(get_optional_actor_id)):
+    datos = payload.model_dump() if payload else {}
+    try:
+        return gym_service.dar_de_baja_unidad_inventario(id_unidad, {**datos, "id_usuario": actor_id})
     except ValueError as error:
         status_code = status.HTTP_404_NOT_FOUND if isinstance(error, EntityNotFound) else status.HTTP_400_BAD_REQUEST
         raise http_error(error, validation_status=status_code) from error

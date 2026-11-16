@@ -14,7 +14,7 @@ class MemoryGymRepository:
 
     def _remember_identities(self):
         keys = {"preregistros": "id_preregistro", "usuario": "id_usuario", "clientes": "id_cliente", "membresia": "id_membresia",
-                "planes_membresia": "id_pm", "promociones": "id_promocion", "inventario": "id_item",
+                "planes_membresia": "id_pm", "promociones": "id_promocion", "inventario": "id_item", "inventario_unidades": "id_unidad",
                 "productos_tienda": "id_producto", "pedidos_tienda": "id_pedido", "mov_inv": "id_mov",
                 "catalogo_rutina": "id_rutina", "horario": "id_horario", "horarios_servicio": "id_horario_servicio",
                 "matriculas_horario": "id_matricula", "rutina_progreso": "id_progreso",

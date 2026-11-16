@@ -1,3 +1,4 @@
+import { isUnitCategory, unitPrefix } from '../../../domain/utils/inventoryUnits.js';
 import { feedbackClass as noticeClassFor } from '../../utils/feedback.js';
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -114,13 +115,17 @@ export const useInventoryWorkspace = () => {
   };
 
   const isTiendaForm = computed(() => String(form.category || '').trim().toLowerCase() === 'tienda');
+  // Equipos y accesorios: cada unidad recibe su N° de activo y el estado sale de sus unidades.
+  const isUnitForm = computed(() => isUnitCategory(form.category));
+  const unitCodeExample = computed(() => `N°-${unitPrefix(form.name)}-001`);
   // En articulos de Tienda el estado lo calcula el backend; solo se marca o desmarca Descontinuado.
   const isDiscontinuedForm = computed({
     get: () => form.status === 'Descontinuado',
     set: (value) => { form.status = value ? 'Descontinuado' : 'Disponible'; },
   });
   const statusPreview = computed(() => {
-    if (!isTiendaForm.value || form.status === 'Descontinuado') return form.status;
+    if (!isTiendaForm.value && !isUnitForm.value) return form.status;
+    if (form.status === 'Descontinuado') return form.status;
     const current = inventory.value.find((item) => item.id === editingId.value)?.status;
     return editingId.value && current && current !== 'Descontinuado' ? current : 'Automático';
   });
@@ -380,7 +385,7 @@ export const useInventoryWorkspace = () => {
     paginaInicio, totalPages, inventoryPaginado, categorySummary, editingId,
     isEditorOpen, isSaving, editorError, feedbackMessage, feedbackTone,
     formErrors, warnings, touch, isInvalid, form, categoryOptions,
-    editorLocationOptions, unitOptions, stepQuantity, isTiendaForm, isDiscontinuedForm,
+    editorLocationOptions, unitOptions, stepQuantity, isTiendaForm, isUnitForm, unitCodeExample, isDiscontinuedForm,
     statusPreview, feedbackToneClass, isLowStock, categoryDotPalette, categoryDotColor,
     inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,
     resetForm, openNewItem, closeEditor, editItem, requiredFields,

@@ -13,6 +13,7 @@ class Resource(StrEnum):
     HORARIOS_SERVICIO = 'horarios_servicio'
     MATRICULAS_HORARIO = 'matriculas_horario'
     INVENTARIO = 'inventario'
+    INVENTARIO_UNIDADES = 'inventario_unidades'
     PRODUCTOS_TIENDA = 'productos_tienda'
     MOV_INV = 'mov_inv'
     TICKETS_ATENCION = 'tickets_atencion'

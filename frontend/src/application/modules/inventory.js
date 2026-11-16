@@ -128,5 +128,22 @@ export const createInventoryModule = (ctx, repository) => {
     return saved;
   };
 
-  return { lowStockInventory, upsertInventoryItem, deleteInventoryItem, refreshInventoryMovementsFromBackend, upsertInventoryToServer, registrarMovimientoToServer, updateInventoryMovement };
+  const updateInventoryUnit = async (idUnidad, payload) => {
+    if (!ctx.apiBase) throw new Error('No hay backend configurado');
+    const saved = requireRecord(await remote.updateInventoryUnit(idUnidad, payload), 'id_unidad');
+    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    return saved;
+  };
+
+  // Dar de baja una unidad registra una salida de esa unidad; su historial se conserva.
+  const retireInventoryUnit = async (idUnidad, motivo = '') => {
+    if (!ctx.apiBase) throw new Error('No hay backend configurado');
+    const saved = await remote.retireInventoryUnit(idUnidad, { motivo });
+    requireRecord(saved);
+    requireRecord(saved.movimiento, 'id_mov');
+    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    return saved;
+  };
+
+  return { lowStockInventory, upsertInventoryItem, deleteInventoryItem, refreshInventoryMovementsFromBackend, upsertInventoryToServer, registrarMovimientoToServer, updateInventoryMovement, updateInventoryUnit, retireInventoryUnit };
 };

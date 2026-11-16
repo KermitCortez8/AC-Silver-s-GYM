@@ -2,7 +2,10 @@
 from __future__ import annotations
 from domain.errors import EntityNotFound
 from domain.validation import nonnegative, required_text, integer_quantity
+from domain.form_limits import INVENTORY_TEXT_LIMIT
 
+import re
+import unicodedata
 from typing import Any
 from domain.services.gym_values import TIPO_TIENDA, ESTADO_DESCONTINUADO, ESTADO_DISPONIBLE, ESTADO_STOCK_BAJO, ESTADO_AGOTADO, DESTINO_TIENDA, DESTINO_VENTA, _MOVIMIENTO_PEDIDO
 
@@ -10,6 +13,32 @@ from domain.services.gym_values import TIPO_TIENDA, ESTADO_DESCONTINUADO, ESTADO
 from dataclasses import dataclass
 from typing import Callable
 from domain.services.rule_context import RuleContext
+
+
+# Equipos y accesorios llevan N° de activo por unidad (1008-MC-001); el resto cuenta solo cantidad.
+ESTADOS_UNIDAD = ("Operativo", "En mantenimiento", "Fuera de servicio")
+ESTADO_UNIDAD_BAJA = "Dado de baja"
+_PALABRAS_VACIAS = {"de", "del", "la", "las", "el", "los", "para", "por", "con", "y", "a", "al", "en", "un", "una"}
+
+
+def es_categoria_por_unidad(tipo: Any) -> bool:
+    valor = str(tipo or "").strip().lower()
+    return valor.startswith("equipo") or valor.startswith("accesorio")
+
+
+def prefijo_activo(nombre: Any) -> str:
+    """Iniciales de las dos primeras palabras significativas; misma regla que la migración 026."""
+    texto = unicodedata.normalize("NFKD", str(nombre or "")).encode("ascii", "ignore").decode().lower()
+    palabras = [p for p in re.split(r"[^a-z]+", texto) if p and p not in _PALABRAS_VACIAS]
+    if not palabras:
+        return "AC"
+    if len(palabras) == 1:
+        return palabras[0][:2].ljust(2, "x").upper()
+    return (palabras[0][0] + palabras[1][0]).upper()
+
+
+def codigo_unidad(n_activo: Any, prefijo: str, correlativo: int) -> str:
+    return f"{int(n_activo or 0)}-{prefijo}-{correlativo:03d}"
 
 
 @dataclass(frozen=True)
@@ -94,6 +123,64 @@ class InventoryRules:
         return next((p for p in state.get("productos_tienda", []) if int(p.get("id_item") or 0) == int(id_item)), None)
 
     @staticmethod
+    def _usa_unidades(item: dict[str, Any] | None) -> bool:
+        # Los artículos anteriores a la migración 026 no tienen prefijo y siguen contando solo cantidad.
+        return bool(item) and es_categoria_por_unidad(item.get("tipo")) and bool(item.get("prefijo_activo"))
+
+    @staticmethod
+    def _unidades_de(state: dict[str, Any], id_item: Any, activas: bool = True) -> list[dict[str, Any]]:
+        return [
+            u for u in state.get("inventario_unidades", [])
+            if int(u.get("id_item") or 0) == int(id_item or 0)
+            and (not activas or u.get("estado") != ESTADO_UNIDAD_BAJA)
+        ]
+
+    def _crear_unidades(self, state: dict[str, Any], item: dict[str, Any], cantidad: int, fecha: str = "") -> list[dict[str, Any]]:
+        unidades = state.setdefault("inventario_unidades", [])
+        siguiente = max((int(u.get("correlativo") or 0) for u in self._unidades_de(state, item["id_item"], activas=False)), default=0)
+        creadas = []
+        for correlativo in range(siguiente + 1, siguiente + cantidad + 1):
+            unidad = {
+                "id_unidad": self.context.next_int_id_in_state(state, "inventario_unidades", "id_unidad"),
+                "id_item": int(item["id_item"]),
+                "correlativo": correlativo,
+                "codigo": codigo_unidad(item.get("n_activo"), item["prefijo_activo"], correlativo),
+                "estado": "Operativo",
+                "ubicacion": str(item.get("ubicacion") or "Almacén"),
+                "observaciones": "",
+                "fecha_alta": self.context.safe_date(fecha),
+                "fecha_baja": None,
+            }
+            unidades.append(unidad)
+            creadas.append(unidad)
+        return creadas
+
+    @staticmethod
+    def _anotar_unidades(mov: dict[str, Any], unidades: list[dict[str, Any]]) -> None:
+        # MOV_INV guarda qué códigos de activo entraron; las altas siempre son correlativas.
+        if not unidades:
+            return
+        codigos = unidades[0]["codigo"] if len(unidades) == 1 else f"{unidades[0]['codigo']} a {unidades[-1]['codigo']}"
+        texto = f"{'Unidad' if len(unidades) == 1 else 'Unidades'}: {codigos}"
+        mov["descripcion"] = f"{mov['descripcion']} · {texto}" if mov.get("descripcion") else texto
+
+    def _sincronizar_items_por_unidad(self, state: dict[str, Any]) -> None:
+        # El stock es la cantidad de unidades activas y el estado resume el de sus unidades.
+        # Cada operación solo carga sus recursos: sin INVENTARIO_UNIDADES no hay nada que sincronizar
+        # (si se tomara como lista vacía, los equipos quedarían en 0 al operar desde Tienda o Pedidos).
+        if "inventario_unidades" not in state:
+            return
+        for item in state.get("inventario", []):
+            if not self._usa_unidades(item):
+                continue
+            activas = self._unidades_de(state, item["id_item"])
+            item["cantidad_stock"] = len(activas)
+            if str(item.get("estado") or "") == ESTADO_DESCONTINUADO:
+                continue
+            estados = {u.get("estado") for u in activas}
+            item["estado"] = next((e for e in ESTADOS_UNIDAD if e in estados), ESTADO_AGOTADO)
+
+    @staticmethod
     def _normalizar_destino(tipo: str, destino: Any) -> str | None:
         valor = str(destino or "").strip().upper()
         if tipo != "salida" or not valor:
@@ -103,6 +190,7 @@ class InventoryRules:
         return valor
 
     def _actualizar_estados_tienda(self, state: dict[str, Any]) -> None:
+        self._sincronizar_items_por_unidad(state)
         self._actualizar_estados_items_tienda(state)
         for producto in state.get("productos_tienda", []):
             stock = int(producto.get("cantidad_stock") or 0)
@@ -183,15 +271,25 @@ class InventoryRules:
                 # El stock solo cambia mediante movimientos; editar el ítem no lo modifica.
                 item["cantidad_stock"] = int(previo.get("cantidad_stock", 0) or 0)
                 item["n_activo"] = int(item.get("n_activo") or previo.get("n_activo") or self._next_n_activo(state))
+                # El prefijo es fijo: renombrar el artículo no cambia los códigos de sus unidades.
+                item["prefijo_activo"] = str(previo.get("prefijo_activo") or "")
                 state["inventario"][idx] = item
+                if es_categoria_por_unidad(item.get("tipo")) and not item["prefijo_activo"]:
+                    # Pasa a controlarse por unidad: el stock que ya tenía recibe sus códigos.
+                    item["prefijo_activo"] = prefijo_activo(item.get("nombre_item"))
+                    if not self._unidades_de(state, item["id_item"], activas=False):
+                        self._crear_unidades(state, item, item["cantidad_stock"])
             else:
                 item["cantidad_stock"] = 0
                 item["n_activo"] = int(item.get("n_activo") or self._next_n_activo(state))
+                item["prefijo_activo"] = prefijo_activo(item.get("nombre_item")) if es_categoria_por_unidad(item.get("tipo")) else ""
                 state["inventario"].insert(0, item)
                 if stock_inicial > 0:
-                    self._aplicar_movimiento(
+                    mov = self._aplicar_movimiento(
                         state, item, "entrada", stock_inicial, "Alta de ítem: saldo inicial", id_usuario=id_usuario
                     )
+                    if self._usa_unidades(item):
+                        self._anotar_unidades(mov, self._crear_unidades(state, item, stock_inicial, mov["fecha_movimiento"]))
             if self._es_item_tienda(item):
                 self._crear_producto_para_item(state, item)
             self._actualizar_estados_tienda(state)
@@ -221,6 +319,58 @@ class InventoryRules:
 
         return self.context.change(_fn)
 
+    def _unidades_elegidas(self, state: dict[str, Any], item: dict[str, Any], ids: Any) -> list[dict[str, Any]]:
+        ids = [integer_quantity(i, minimum=1) for i in (ids or [])]
+        if not ids:
+            raise ValueError("Elige las unidades que salen")
+        if len(set(ids)) != len(ids):
+            raise ValueError("Una unidad está repetida en la salida")
+        activas = {int(u["id_unidad"]): u for u in self._unidades_de(state, item["id_item"])}
+        if any(i not in activas for i in ids):
+            raise ValueError("Alguna unidad elegida ya no está activa o no pertenece al artículo")
+        return [activas[i] for i in ids]
+
+    def unidades_inventario(self) -> list[dict[str, Any]]:
+        return self.context.state.get("inventario_unidades", [])
+
+    def actualizar_unidad_inventario(self, id_unidad: int, payload: dict[str, Any]) -> dict[str, Any]:
+        def _fn(state: dict[str, Any]):
+            unidad = next((u for u in state.get("inventario_unidades", []) if int(u.get("id_unidad") or 0) == int(id_unidad)), None)
+            if not unidad:
+                raise EntityNotFound("Unidad no encontrada")
+            if unidad.get("estado") == ESTADO_UNIDAD_BAJA:
+                raise ValueError("La unidad está dada de baja y no se puede editar")
+            item = self._find_item_in_state(state, unidad.get("id_item"))
+            if item and item.get("archivado"):
+                raise ValueError("El artículo está archivado y no admite cambios")
+            estado = str(payload.get("estado") or unidad.get("estado") or "Operativo")
+            if estado not in ESTADOS_UNIDAD:
+                raise ValueError("Estado de unidad inválido; para retirarla usa Dar de baja")
+            unidad["estado"] = estado
+            if payload.get("ubicacion") is not None:
+                unidad["ubicacion"] = required_text(payload["ubicacion"], "La ubicación", INVENTORY_TEXT_LIMIT)
+            if payload.get("observaciones") is not None:
+                unidad["observaciones"] = str(payload["observaciones"]).strip()
+            self._actualizar_estados_tienda(state)
+            return unidad
+
+        return self.context.change(_fn)
+
+    def dar_de_baja_unidad_inventario(self, id_unidad: int, payload: dict[str, Any]) -> dict[str, Any]:
+        # La baja es una salida de una unidad: queda en Movimientos y la unidad conserva su historial.
+        unidad = next((u for u in self.context.state.get("inventario_unidades", []) if int(u.get("id_unidad") or 0) == int(id_unidad)), None)
+        if not unidad:
+            raise EntityNotFound("Unidad no encontrada")
+        return self.registrar_movimiento_inventario({
+            "id_item": unidad["id_item"],
+            "id_usuario": payload.get("id_usuario"),
+            "tipo_movimiento": "salida",
+            "cantidad": 1,
+            "unidades": [int(id_unidad)],
+            "descripcion": str(payload.get("motivo") or "Baja de unidad").strip(),
+            "fecha_movimiento": str(payload.get("fecha_movimiento") or ""),
+        })
+
     def movimientos_inventario(self) -> list[dict[str, Any]]:
         return self.context.state["mov_inv"]
 
@@ -248,16 +398,33 @@ class InventoryRules:
             producto = self._producto_de_item(state, id_item) if destino == DESTINO_TIENDA else None
             if destino == DESTINO_TIENDA and not producto:
                 raise ValueError("El ítem no tiene un producto de Tienda enlazado para reponer")
+            cantidad = integer_quantity(payload.get("cantidad", 1), minimum=1)
+            descripcion = str(payload.get("descripcion") or "")
+            salientes: list[dict[str, Any]] = []
+            if self._usa_unidades(item):
+                if tipo == "ajuste":
+                    raise ValueError("Los equipos con N° de activo por unidad no admiten ajustes: registra una entrada o una salida")
+                if tipo == "salida":
+                    salientes = self._unidades_elegidas(state, item, payload.get("unidades"))
+                    cantidad = len(salientes)
+                    codigos = "Unidades: " + ", ".join(u["codigo"] for u in salientes)
+                    descripcion = f"{descripcion} · {codigos}" if descripcion else codigos
             mov = self._aplicar_movimiento(
                 state,
                 item,
                 tipo,
-                integer_quantity(payload.get("cantidad", 1), minimum=1),
-                str(payload.get("descripcion") or ""),
+                cantidad,
+                descripcion,
                 id_usuario=id_usuario,
                 fecha=str(payload.get("fecha_movimiento") or ""),
                 destino=destino,
             )
+            if self._usa_unidades(item):
+                if tipo == "entrada":
+                    self._anotar_unidades(mov, self._crear_unidades(state, item, cantidad, mov["fecha_movimiento"]))
+                for unidad in salientes:
+                    unidad["estado"] = ESTADO_UNIDAD_BAJA
+                    unidad["fecha_baja"] = mov["fecha_movimiento"]
             if producto:
                 # Reposición: las unidades salen de la reserva y entran al stock de la tienda.
                 producto["cantidad_stock"] = int(producto.get("cantidad_stock") or 0) + int(mov["cantidad"])
@@ -313,6 +480,12 @@ class InventoryRules:
                     prefijo = prefijo_pedido.group(0)
                     if not descripcion.startswith(prefijo):
                         descripcion = f"{prefijo} - {descripcion}" if descripcion else prefijo
+
+            if cambia_stock and any(
+                self._usa_unidades(self._find_item_in_state(state, i)) for i in (item_actual, nuevo_item)
+            ):
+                # Cada entrada o salida creó o dio de baja unidades concretas.
+                raise ValueError("Los movimientos de equipos con unidades solo permiten cambiar la fecha y la descripción")
 
             nuevos_stocks: list[tuple[dict[str, Any], int]] = []
             nuevos_stocks_tienda: list[tuple[dict[str, Any], int]] = []

@@ -41,6 +41,8 @@ def compose_domain(context):
         es_item_tienda=inventory._es_item_tienda,
         find_item_in_state=inventory._find_item_in_state,
         next_n_activo=inventory._next_n_activo,
+        aplicar_movimiento=inventory._aplicar_movimiento,
+        actor_usuario_id=inventory._actor_usuario_id,
     ))
     schedules = SchedulesRules(context, SchedulesDependencies(
         active_membership_for_cliente=memberships._active_membership_for_cliente,

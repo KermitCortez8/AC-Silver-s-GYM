@@ -151,7 +151,7 @@ def test_tc077_fallo_de_consulta_no_presenta_resumen_parcial(documented_api, mon
 
 def test_tc139_dos_salidas_simultaneas_consumen_la_ultima_unidad_una_vez(documented_api):
     api = documented_api
-    item = api.client.post("/api/inventario", json={"nombre_item": "Recurso QA", "tipo": "Equipo", "cantidad_stock": 1}).json()
+    item = api.client.post("/api/inventario", json={"nombre_item": "Recurso QA", "tipo": "Limpieza", "cantidad_stock": 1}).json()
     def consume(_index):
         return api.client.post("/api/inventario/movimientos", json={"id_item": item["id_item"], "id_usuario": "SGADM001",
                              "tipo_movimiento": "salida", "cantidad": 1, "descripcion": "Salida concurrente QA"})

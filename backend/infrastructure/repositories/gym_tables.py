@@ -13,6 +13,7 @@ CORE_TABLES = {'planes_membresia': ('PLANES_MEMBRESIA', 'id_pm', 'id_PM'),
  'membresia': ('MEMBRESIA', 'id_membresia', 'id_membresia'),
  'usuario': ('USUARIO', 'id_usuario', 'id_usuario'),
  'inventario': ('INVENTARIO', 'id_item', 'id_item'),
+ 'inventario_unidades': ('INVENTARIO_UNIDADES', 'id_unidad', 'id_unidad'),
  'productos_tienda': ('TIENDA_PRODUCTOS', 'id_producto', 'id_producto'),
  'catalogo_rutina': ('CATALOGO_RUTINA', 'id_rutina', 'id_rutina'),
  'horario': ('HORARIO', 'id_horario', 'id_horario'),
@@ -27,7 +28,7 @@ SYNC_STATE_KEYS = tuple(CORE_TABLES.keys()) + ('pedidos_tienda',)
 
 READ_STATE_KEYS = SYNC_STATE_KEYS + ('configuracion_gimnasio',)
 
-RELATED_READS = (frozenset(('clientes', 'membresia')), frozenset(('inventario', 'productos_tienda')), frozenset(('horarios_servicio', 'matriculas_horario')))
+RELATED_READS = (frozenset(('clientes', 'membresia')), frozenset(('inventario', 'inventario_unidades', 'productos_tienda')), frozenset(('horarios_servicio', 'matriculas_horario')))
 
 def selected_resources(resources=None) -> set[str]:
     selected = set(READ_STATE_KEYS if resources is None else resources)

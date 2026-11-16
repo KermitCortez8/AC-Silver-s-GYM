@@ -7,8 +7,10 @@ from tests.soporte.testiny_api import business_state, documented_api  # noqa: F4
 
 
 def article(api, **changes):
+    # Artículo sin N° de activo por unidad: los equipos y accesorios tienen su propio flujo
+    # de unidades (test_inventario_unidades.py) y no admiten salidas sin elegir unidades ni ajustes.
     response = api.client.post("/api/inventario", json={
-        "nombre_item": "Mancuerna QA", "tipo": "Equipo", "cantidad_stock": 10,
+        "nombre_item": "Mancuerna QA", "tipo": "Limpieza", "cantidad_stock": 10,
         "stock_minimo": 3, "unidad_venta": "unidad", "precio_venta": 15,
         "ubicacion": "Almacén QA", "estado": "Disponible", **changes,
     })

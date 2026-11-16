@@ -16,5 +16,13 @@ export const createInventoryRepository = (http, apiBase) => ({
   updateInventoryMovement: (idMov, payload, token) => dataRequest(http, `${apiBase}/inventario/movimientos/${idMov}`, {
     method: 'PUT',
     body: JSON.stringify(payload)
+  }, token),
+  updateInventoryUnit: (idUnidad, payload, token) => dataRequest(http, `${apiBase}/inventario/unidades/${idUnidad}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  }, token),
+  retireInventoryUnit: (idUnidad, payload, token) => dataRequest(http, `${apiBase}/inventario/unidades/${idUnidad}`, {
+    method: 'DELETE',
+    body: JSON.stringify(payload)
   }, token)
 });
