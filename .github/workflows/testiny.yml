@@ -1,0 +1,72 @@
+name: Publicar resultados en Testiny
+
+on:
+  workflow_run:
+    workflows: [Validar PR, CI/CD Pipeline GYM]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: gym-testiny-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  automation:
+    name: Importar JUnit por módulo y tipo
+    if: >-
+      vars.TESTINY_ENABLED == 'true' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      contains(fromJSON('["success", "failure", "timed_out"]'), github.event.workflow_run.conclusion)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # workflow_run dispone de secretos: ejecutar únicamente herramientas de la rama predeterminada.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: .github/scripts/testiny/package-lock.json
+      - name: Instalar importador con versión y lockfile fijos
+        working-directory: .github/scripts/testiny
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Descargar únicamente informes del workflow de origen
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          pattern: gym-junit-*-${{ github.event.workflow_run.run_attempt }}
+          path: ${{ runner.temp }}/testiny-incoming
+          # Cada suite tiene XML/metadatos propios; no mezclar intentos anteriores.
+          merge-multiple: true
+      - name: Validar y ordenar informes sin credenciales de Testiny
+        run: >-
+          python .github/scripts/testiny/publish.py
+          --incoming "$RUNNER_TEMP/testiny-incoming"
+          --output "$RUNNER_TEMP/testiny-normalized"
+      - name: Publicar resultados automatizados
+        env:
+          TESTINY_API_KEY: ${{ secrets.TESTINY_API_KEY }}
+          TESTINY_PROJECT: ${{ vars.TESTINY_PROJECT || 'SILVE' }}
+        run: >-
+          python .github/scripts/testiny/publish.py
+          --incoming "$RUNNER_TEMP/testiny-incoming"
+          --output "$RUNNER_TEMP/testiny-normalized"
+          --publish
+      - name: Conservar informes ordenados y resumen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gym-testiny-normalized
+          path: ${{ runner.temp }}/testiny-normalized
+          if-no-files-found: warn
+          retention-days: 14
