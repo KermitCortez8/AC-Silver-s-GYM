@@ -25,13 +25,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Construir imagen de pruebas
-        run: docker build --target test --tag gym-pr-test ./${{ matrix.component }}
-      - name: Ejecutar pruebas sin red ni credenciales de producción
-        run: >-
-          docker run --rm --network none
-          --env AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef
-          gym-pr-test
+      - name: Ejecutar pruebas y conservar JUnit
+        uses: ./.github/actions/test-with-report
+        with:
+          component: ${{ matrix.component }}
       - name: Compilar frontend de producción
         if: matrix.component == 'frontend'
         run: docker build --tag gym-pr-frontend ./frontend
@@ -47,7 +44,16 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno check supabase/functions/schedule-emails/index.ts
-      - run: deno test supabase/tests/
+      - name: Probar recordatorios y generar JUnit
+        run: |
+          mkdir -p "$RUNNER_TEMP/gym-reports"
+          deno test --junit-path="$RUNNER_TEMP/gym-reports/schedule-emails.xml" supabase/tests/
+      - name: Conservar resultados de recordatorios
+        if: always()
+        uses: ./.github/actions/upload-junit
+        with:
+          component: schedule-emails
+          report: ${{ runner.temp }}/gym-reports/schedule-emails.xml
 
   postgres:
     name: Contratos y concurrencia en PostgreSQL
@@ -82,7 +88,16 @@ jobs:
           backend/tests/asistencias/postgres/test_automatic_attendance_postgres.py
           backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py
           backend/tests/asistencias/postgres/test_attendance_enrollment_flow_postgres.py
+          backend/tests/clientes/postgres/test_client_deletion_postgres.py
+          backend/tests/notificaciones/postgres/test_membership_renewal_postgres.py
+          --junitxml=${{ runner.temp }}/gym-reports/postgres.xml
           -q
+      - name: Conservar resultados de PostgreSQL
+        if: always()
+        uses: ./.github/actions/upload-junit
+        with:
+          component: postgres
+          report: ${{ runner.temp }}/gym-reports/postgres.xml
       - name: Limpiar PostgreSQL
         if: always()
         run: docker rm --force gym-pr-postgres

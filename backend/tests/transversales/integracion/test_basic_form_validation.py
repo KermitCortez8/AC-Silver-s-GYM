@@ -116,10 +116,20 @@ def test_plan_price_preserves_cents_from_http_schema_through_domain_save():
     assert saved['precio'] == 79.90
 
 
-@pytest.mark.parametrize('field,value,expected', [('cliente_correo', 'ana@example.org', 'Solo se permiten correos'),
+@pytest.mark.parametrize('field,value,expected', [('cliente_correo', 'ana@', 'correo válido'),
+                                                 ('cliente_correo', 'ana gmail.com', 'correo válido'),
                                                  ('cliente_dni', '123abc', 'exactamente 8')])
 def test_order_customer_details_reject_invalid_email_and_dni(field, value, expected):
     from domain.models.gym import PedidoTiendaInput, PedidoTiendaCheckoutInput
     for model in (PedidoTiendaInput, PedidoTiendaCheckoutInput):
         with pytest.raises(ValidationError, match=expected):
             model.model_validate({field: value, 'items': [{'id_producto': 1, 'cantidad': 1}]})
+
+
+@pytest.mark.parametrize('email', ['Socio@Outlook.com', 'cliente@yahoo.es', 'ana@gmail.com'])
+def test_order_contact_email_accepts_any_valid_domain(email):
+    # El correo del pedido solo es de contacto: un socio con cuenta @outlook.com debe poder comprar.
+    from domain.models.gym import PedidoTiendaInput, PedidoTiendaCheckoutInput
+    for model in (PedidoTiendaInput, PedidoTiendaCheckoutInput):
+        order = model.model_validate({'cliente_correo': email, 'items': [{'id_producto': 1, 'cantidad': 1}]})
+        assert order.cliente_correo == email.lower()

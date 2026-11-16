@@ -89,7 +89,15 @@ jobs:
       - name: Validar función de recordatorios
         run: deno check supabase/functions/schedule-emails/index.ts
       - name: Pruebas de correo sin red ni credenciales
-        run: deno test supabase/tests/
+        run: |
+          mkdir -p "$RUNNER_TEMP/gym-reports"
+          deno test --junit-path="$RUNNER_TEMP/gym-reports/schedule-emails.xml" supabase/tests/
+      - name: Conservar resultados de recordatorios
+        if: always()
+        uses: ./.github/actions/upload-junit
+        with:
+          component: schedule-emails
+          report: ${{ runner.temp }}/gym-reports/schedule-emails.xml
 
   backend-ci:
     needs: [docker-ci]
@@ -101,13 +109,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           persist-credentials: false
-      - name: Construir imagen de pruebas del backend
-        run: docker build --target test --tag gym-backend-test ./backend
-      - name: Detectar errores de Python y ejecutar pruebas en Docker
-        run: >-
-          docker run --rm --network none
-          --env AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef
-          gym-backend-test
+      - name: Detectar errores de Python, ejecutar pruebas y conservar JUnit
+        uses: ./.github/actions/test-with-report
+        with:
+          component: backend
 
   frontend-ci:
     needs: [docker-ci]
@@ -119,10 +124,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           persist-credentials: false
-      - name: Construir imagen de pruebas del frontend
-        run: docker build --target test --tag gym-frontend-test ./frontend
-      - name: Ejecutar pruebas del frontend en Docker
-        run: docker run --rm --network none gym-frontend-test
+      - name: Ejecutar pruebas del frontend y conservar JUnit
+        uses: ./.github/actions/test-with-report
+        with:
+          component: frontend
 
   deploy-vercel:
     needs: [backend-ci, frontend-ci, schedule-emails-ci]
