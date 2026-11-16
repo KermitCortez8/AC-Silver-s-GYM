@@ -11,6 +11,7 @@ su despliegue, configuración de proveedores ni ejecución actual de todas las p
 | [Instrucciones de Codex](../../AGENTS.md) | Índice breve, comandos y reglas básicas. |
 | [Flujo Spec Driven](../guias/spec-driven.md) | Trabajar con Codex y GitHub Spec Kit sobre este sistema. |
 | [Integración continua con Testiny](../guias/testiny-ci.md) | Configurar GitHub Actions, recoger JUnit y consultar resultados por módulo y tipo. |
+| [Casos documentados y automatización](testiny/README.md) | Catálogo Testiny, revisión de oráculos y trazabilidad del mínimo del 50 %. |
 | [Guía práctica: chatbot](../guias/guia-spec-driven-chatbot.md) | Todos los comandos de terminal y skills de Codex, desde la idea hasta tareas, implementación, pruebas y cierre. |
 | [Integración instalada](../README.md) | Carpeta central, CLI, skills y comprobaciones del flujo. |
 | [Constitución](../memory/constitution.md) | Principios que gobiernan cambios futuros. |
