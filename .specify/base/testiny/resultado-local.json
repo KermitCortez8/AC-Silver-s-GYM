@@ -1,0 +1,29 @@
+{
+  "total_documentados": 199,
+  "minimo_requerido": 100,
+  "revisados": 100,
+  "ejecutados": 100,
+  "aprobados": 100,
+  "fallidos": 0,
+  "sin_ejecucion_completa": 0,
+  "pendientes_de_automatizar": 99,
+  "porcentaje_ejecutado": 50.25,
+  "fecha": "2026-11-15",
+  "modalidad": "Local aislada; sin publicación remota",
+  "backend_aprobadas": 866,
+  "backend_omitidas": 57,
+  "frontend_aprobadas": 386,
+  "grupos_pruebas_revisadas": 192,
+  "pasos_revisados": 316,
+  "tipos_documentados": {
+    "Funcional": 56,
+    "Seguridad": 9,
+    "Regresión": 6,
+    "Integración": 12,
+    "Unitaria": 11,
+    "Rendimiento": 2,
+    "Compatibilidad": 1,
+    "Arquitectura": 2,
+    "Comprobación básica (Sanity)": 1
+  }
+}

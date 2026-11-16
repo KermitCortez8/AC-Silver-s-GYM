@@ -548,8 +548,11 @@ class MembershipsRules:
         id_pm = int(payload.get("id_pm", 0))
         if not self.dependencies.get_cliente(id_cliente):
             raise ValueError("Cliente no encontrado")
-        if not self.get_plan_membresia(id_pm):
+        plan = self.get_plan_membresia(id_pm)
+        if not plan:
             raise ValueError("Plan de membresía no encontrado")
+        if not plan.get("activo", True):
+            raise ValueError("El plan seleccionado ya no está disponible")
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):

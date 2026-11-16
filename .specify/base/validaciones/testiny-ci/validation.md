@@ -70,10 +70,152 @@ esas pruebas se simula; no utiliza credenciales ni contacta a Testiny.
   permanecen como omitidas; no se cuentan como aprobaciones. En PR, el job SQL
   existente incorpora las ocho suites PostgreSQL disponibles, incluidas las
   dos de eliminación de clientes y renovación de membresías.
-- **Publicación real:** no se configuraron secretos, variables ni ajustes remotos;
-  no hubo importaciones, despliegues ni cambios en casos o runs manuales de Testiny.
-  La primera ejecución completa en GitHub y el envío remoto quedan pendientes
-  de incorporar los archivos, configurar la clave y habilitar `TESTINY_ENABLED`.
+- **Publicación real, verificación inicial:** en esa etapa no se configuraron
+  secretos, variables ni ajustes remotos; tampoco se hicieron importaciones,
+  despliegues ni cambios en casos o runs manuales de Testiny. El usuario configuró
+  después los secretos y variables y ejecutó el pipeline; su diagnóstico está abajo.
+
+## Corrección del primer envío real a Testiny
+
+La [ejecución 43782181497](https://github.com/KermitCortez8/AC-Silver-s-GYM/actions/runs/43782181497)
+del 2026-11-16 00:44 UTC descargó los cuatro informes y los normalizó correctamente.
+La CLI 1.43.1 autenticó la clave y resolvió el proyecto `SILVE`, pero el primer
+envío terminó con:
+
+```text
+Invalid string: 'isValidAutomationSourceName' validation failed
+at AutomationResults.source (API_INVALID_INPUT_DATA)
+```
+
+Causa: la fuente `GYM - Backend` contenía espacios. El validador incluido en la
+CLI fijada admite el patrón `^[$a-z][$a-z0-9_.-]*$`, sin distinción de mayúsculas,
+y excluye nombres reservados de objetos JavaScript. Los identificadores técnicos
+elegidos para la corrección son `gym-backend`, `gym-frontend`, `gym-postgres` y
+`gym-notificaciones-deno`. Las carpetas de módulos y tipos mantienen sus nombres.
+
+El integrador valida su convención `gym-` y palabras en minúsculas con guiones
+antes de iniciar cualquier envío. La regresión comprueba las cuatro fuentes
+contra el patrón de la API y simula una fuente inválida en el segundo componente:
+ningún importador debe ejecutarse, incluido el del primer componente válido.
+No se modifican las credenciales ni las variables de GitHub.
+
+Los informes de origen de esa ejecución muestran backend: 818 casos, 57 omitidos;
+frontend: 373 casos; PostgreSQL: 57 casos, 3 omitidos; Deno: 7 casos. Los cuatro
+carecen de fallos/errores y sus jobs de GitHub terminaron correctamente.
+Esto documenta la ejecución Linux posterior a la validación local de arriba;
+no convierte omisiones en aprobaciones.
+
+El aviso de Node.js 20 corresponde al runtime interno de las acciones y no causó
+este error de validación: los pasos de instalación, descarga y normalización
+terminaron correctamente. El importador se ejecutó con Node 22.23.4.
+
+Comprobación de la corrección: la suite específica contiene ahora 16 pruebas,
+con 15 aprobadas y una omitida por permisos de enlaces de Windows.
+El hook global mantiene las once skills no descubribles del checkout Windows.
+La suite global terminó con 29 pruebas: 15 aprobadas, 13 errores de preparación
+por `WinError 1314` y una omitida. Los enlaces locales modificados son válidos
+y `git diff --check` terminó con código 0.
+La importación corregida queda pendiente de incorporar el cambio en `main`
+y volver a ejecutar únicamente el publicador. El diagnóstico y las pruebas de
+regresión no realizan una importación remota.
 
 La [guía de configuración](../../../guias/testiny-ci.md) recoge la activación,
 las fuentes, las omisiones, los reintentos y la revisión local sin publicación.
+
+## Ejecución de al menos el 50 % del catálogo documentado
+
+Petición: ejecutar al menos la mitad de los casos de Testiny, revisando primero
+que sus pruebas estén implementadas correctamente. No se dedujo cobertura por
+coincidir en módulo/RF ni se usaron las pruebas del integrador como evidencia
+funcional del producto.
+
+Consulta de solo lectura con Chromium/Playwright aislado, el 2026-11-15:
+**199 casos** actuales del proyecto `SILVE`, frente a los 191 del snapshot anterior.
+Mínimo calculado: `ceil(199 / 2) = 100`. Se conservaron módulos, IDs, tipos,
+RF/CUS y todos los casos en el denominador.
+
+La [revisión versionada](../../testiny/README.md) selecciona **100 casos**,
+**316 pasos/resultados esperados** y **192 grupos de pruebas**. El CSV completo
+explica correspondencias y pendientes; los archivos de aserciones/soporte tienen
+huellas SHA-256 normalizadas a LF. Los artefactos de CI incluyen las huellas del
+checkout probado, para no aceptar la revisión de otro contenido con el mismo
+nombre de test.
+
+### Fallo encontrado y corregido antes de integrar
+
+La nueva regresión de TC-43 reprodujo un HTTP 200 al crear una membresía con un
+plan guardado como `activo=False`. Faltaba la validación de disponibilidad en
+`MembershipsRules.crear_membresia`. Se añadió antes de la escritura; ahora los
+planes inexistentes/inactivos rechazan sin modificar el estado y volver a elegir
+un plan activo permite crear una sola compra. La suite completa posterior pasó.
+El [contrato de membresías](../../modulos/03-membresias-pagos.md) registra el borde.
+
+TC-101 y TC-104 muestran diferencias de mensaje/método; TC-51–53 tienen una traza
+heredada por revisar y TC-194 indica una redirección distinta. TC-102, 119 y 174
+tienen evidencia parcial. Ninguno se cuenta entre los 100 aprobados. No se
+cambiaron resultados esperados ni se modificaron casos/runs manuales para
+convertir esos pendientes en aprobaciones.
+
+### Verificación ejecutada
+
+Se copiaron fuentes sin `.env` a carpetas temporales independientes. Backend con
+Python 3.12 y dependencias de desarrollo; frontend con `npm ci` aislado y Node
+**22.23.4**, versión de la ejecución GitHub consultada. No se tocaron los
+`node_modules` del usuario ni su sesión de Edge.
+
+| Comprobación | Resultado final |
+| --- | --- |
+| `python -B -m pytest tests/ -q --junitxml=.../backend.xml` | **866 aprobadas, 57 omitidas, 0 fallos**, 39,24 s. |
+| Node `--test` con `node-junit.mjs` y destino `frontend.xml` | **386 aprobadas, 0 fallos/omisiones**. |
+| `flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics` | Código 0; ninguna incidencia seleccionada. |
+| `vite build` con la instalación aislada | Código 0. |
+| `python -B -m unittest discover -s .specify/tests -p 'test_testiny*.py' -q` | **32 pruebas: 31 aprobadas y 1 omitida** por privilegio de enlaces Windows. |
+| `publish.py --incoming ... --output ... --documented` sin `--publish` | **100/199 (50,25 %), 100 aprobados, 0 fallos/omisiones** entre los revisados. |
+| Preparación con metadatos de origen simulados y acción `upload-junit` real | Mismo resultado 100/199; huellas verificadas, sin API ni publicación. Metadatos backend 13.956 bytes/frontend 7.772, dentro del límite. |
+| `actionlint .github/workflows/testiny.yml` | Código 0. |
+| `git diff --check` | Código 0. |
+
+La prueba de temporizador fallida anteriormente con Node 22.14 pasó con
+22.23.4 sin modificar el temporizador ni sus aserciones. No se actualizaron
+dependencias de la aplicación para conseguir ese resultado.
+
+Las propiedades de medición de TC-178/179 están presentes en el JUnit original:
+traza inicio/fin/error de lecturas, máximo de conexiones, filas transferidas,
+consultas y segundos. pytest avisa que `record_property` no pertenece al esquema
+xunit2 estricto; la extracción confirmó las propiedades en ambos casos. La
+normalización mantiene los resultados y conserva el XML original en su artefacto
+de suite. También aparece el aviso de deprecación de TestClient/httpx; no hay
+fallos asociados. Las mediciones usan proveedor doble y no certifican SLA remoto.
+
+Los informes completos de esta sesión están en
+`%TEMP%/gym-testiny-coverage-20261115/`: `backend.xml`, `frontend.xml`, logs de
+suites y carpeta `resultado/` con XML de casos, JSON y CSV. El
+[resumen conservado en el repositorio](../../testiny/resultado-local.json)
+contiene los recuentos finales sin inventar un ID de GitHub o Testiny.
+
+### Control incorporado y límites pendientes
+
+Solo después de revisar y ejecutar esos casos se activó `--documented` en los
+dos pasos del publicador. La fuente nueva `gym-casos-documentados` tiene una
+clave estable por TC, RF/CUS, tipo e hipervínculo al caso manual. Los otros 99
+siguen pendientes y no generan automatizaciones sin revisión.
+
+La comprobación específica cubre redondeo, unicidad, variantes, skips, fallos,
+todos los pasos, cambios de catálogo/aserciones, huellas LF/CRLF, metadatos del
+checkout, trazabilidad y rechazo de pruebas del integrador como cobertura.
+El control exige ejecución completa, no un porcentaje ficticio de aprobaciones.
+
+La validación global sigue encontrando **11 skills no descubribles** por el
+checkout Windows. La suite global de herramientas terminó con **45 pruebas:
+31 aprobadas, 13 errores de preparación `WinError 1314` y 1 omitida**. Los
+enlaces no se modificaron para eludir ese límite. Docker no está disponible;
+no se ejecutó PostgreSQL local y las 57 omisiones no acreditan SQL.
+
+Esta verificación es por API/servicios/componentes y dobles explícitos, con
+datos sintéticos. No acredita todos los clics manuales, E2E de navegador,
+Supabase/Google/Stripe/Resend productivos ni compatibilidad entre navegadores.
+No se hicieron cobros, correos reales, despliegues, push ni importaciones
+remotas. Para comprobar el envío en GitHub hay que incorporar los cambios a
+la rama predeterminada y ejecutar **todas** las suites de nuevo: los artefactos
+anteriores no contienen las nuevas huellas de revisión. Esto sustituye, para
+esta ampliación, la indicación anterior de repetir únicamente el publicador.
