@@ -1,0 +1,43 @@
+name: Conservar JUnit y revisión probada
+description: Guarda resultados y el commit exacto del checkout, incluido el merge provisional de un PR.
+inputs:
+  component:
+    required: true
+    description: Suite del informe
+  report:
+    required: true
+    description: Ruta absoluta al JUnit generado
+runs:
+  using: composite
+  steps:
+    - name: Registrar la revisión y ejecución de origen
+      id: metadata
+      shell: bash
+      env:
+        REPORT_COMPONENT: ${{ inputs.component }}
+        REPORT_FILE: ${{ inputs.report }}
+      run: |
+        python3 - <<'PY'
+        import json, os, pathlib, subprocess
+        report = pathlib.Path(os.environ['REPORT_FILE'])
+        destination = report.with_suffix('.metadata.json')
+        with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+            output.write(f'file={destination}\n')
+        if report.is_file():
+            metadata = {
+                'component': os.environ['REPORT_COMPONENT'],
+                'repository': os.environ['GITHUB_REPOSITORY'],
+                'run_id': os.environ['GITHUB_RUN_ID'],
+                'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+                'commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+            }
+            destination.write_text(json.dumps(metadata), encoding='utf-8')
+        PY
+    - uses: actions/upload-artifact@v4
+      with:
+        name: gym-junit-${{ inputs.component }}-${{ github.run_attempt }}
+        path: |
+          ${{ inputs.report }}
+          ${{ steps.metadata.outputs.file }}
+        if-no-files-found: warn
+        retention-days: 14
