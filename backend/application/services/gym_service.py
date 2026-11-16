@@ -289,6 +289,15 @@ class GymService:
     def actualizar_movimiento_inventario(self, id_mov: int, payload: dict[str, Any]) -> dict[str, Any]:
         return InventoryOperations(self.executor).actualizar_movimiento_inventario(id_mov, payload)
 
+    def unidades_inventario(self) -> list[dict[str, Any]]:
+        return InventoryOperations(self.executor).unidades_inventario()
+
+    def actualizar_unidad_inventario(self, id_unidad: int, payload: dict[str, Any]) -> dict[str, Any]:
+        return InventoryOperations(self.executor).actualizar_unidad_inventario(id_unidad, payload)
+
+    def dar_de_baja_unidad_inventario(self, id_unidad: int, payload: dict[str, Any]) -> dict[str, Any]:
+        return InventoryOperations(self.executor).dar_de_baja_unidad_inventario(id_unidad, payload)
+
     def catalogo_rutina(self) -> list[dict[str, Any]]:
         return SchedulesOperations(self.executor).catalogo_rutina()
 

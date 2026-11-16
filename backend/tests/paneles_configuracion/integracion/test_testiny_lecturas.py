@@ -36,7 +36,7 @@ def test_tc178_registra_inicio_fin_errores_y_maximo_de_conexiones(record_propert
     started = perf_counter()
     service_with_remote(Remote()).ensure_fresh()
     elapsed = perf_counter() - started
-    assert len(trace) == 19 and counters == {"active": 0, "peak": 6}
+    assert len(trace) == 20 and counters == {"active": 0, "peak": 6}
     assert all(row["end"] >= row["start"] and row["error"] is None for row in trace)
     assert max(row["start"] for row in trace[:6]) <= min(row["end"] for row in trace[:6])
     record_property("qa_lecturas", json.dumps(trace))

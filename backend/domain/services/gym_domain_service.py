@@ -73,6 +73,7 @@ class GymDomainService:
     def _seed(self) -> dict[str, Any]:
         return {
             "inventario": [],
+            "inventario_unidades": [],
             "mov_inv": [],
             "productos_tienda": [],
             "pedidos_tienda": [],

@@ -50,7 +50,8 @@ def test_remote_reads_overlap_without_exceeding_six_connections():
 
     service = service_with_remote(Remote())
     service.ensure_fresh()
-    assert counts['started'] == 19
+    # Una lectura por tabla, incluida INVENTARIO_UNIDADES (migración 026).
+    assert counts['started'] == 20
     assert counts['peak'] == 6
     assert service._last_refresh_at > 0
 

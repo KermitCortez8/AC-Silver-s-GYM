@@ -285,6 +285,19 @@ class MovimientoInventarioInput(ValidatedInput):
     cantidad: int = Field(default=1, ge=1)
     # Solo para salidas: "TIENDA" repone el stock del producto enlazado.
     destino: str | None = None
+    # Salidas de equipos con N° de activo por unidad: las unidades exactas que salen.
+    unidades: list[int] | None = None
+
+
+class InventarioUnidadUpdateInput(ValidatedInput):
+    estado: Literal["Operativo", "En mantenimiento", "Fuera de servicio"] | None = None
+    ubicacion: str | None = Field(default=None, max_length=INVENTORY_TEXT_LIMIT)
+    observaciones: str | None = Field(default=None, max_length=INVENTORY_NOTE_LIMIT)
+
+
+class InventarioUnidadBajaInput(ValidatedInput):
+    motivo: str = Field(default="", max_length=INVENTORY_NOTE_LIMIT)
+    fecha_movimiento: str = ""
 
 
 class MovimientoInventarioUpdateInput(ValidatedInput):

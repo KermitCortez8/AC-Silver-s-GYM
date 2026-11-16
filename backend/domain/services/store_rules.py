@@ -6,7 +6,7 @@ from domain.errors import EntityNotFound
 from datetime import datetime, timezone
 from typing import Any
 from domain.money import cents, order_totals
-from domain.services.gym_values import TIPO_TIENDA, ESTADO_PAGO_PAGADO, ESTADO_PAGO_PENDIENTE, ESTADO_PEDIDO_CANCELADO, _pedido_pagado, _parse_utc, PedidoCanceladoConPagoError
+from domain.services.gym_values import TIPO_TIENDA, DESTINO_TIENDA, ESTADO_PAGO_PAGADO, ESTADO_PAGO_PENDIENTE, ESTADO_PEDIDO_CANCELADO, _pedido_pagado, _parse_utc, PedidoCanceladoConPagoError
 
 
 from dataclasses import dataclass
@@ -20,6 +20,8 @@ class StoreDependencies:
     es_item_tienda: Callable
     find_item_in_state: Callable
     next_n_activo: Callable
+    aplicar_movimiento: Callable
+    actor_usuario_id: Callable
 
 
 class StoreRules:
@@ -76,6 +78,8 @@ class StoreRules:
         return next((p for p in self.context.state.get("productos_tienda", []) if int(p.get("id_producto", 0)) == int(id_producto)), None)
 
     def upsert_producto_tienda(self, payload: dict[str, Any], actor: Any = None) -> dict[str, Any]:
+        id_usuario = self.dependencies.actor_usuario_id(actor)
+
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             productos = state.setdefault("productos_tienda", [])
@@ -148,6 +152,13 @@ class StoreRules:
                 productos[idx] = producto
             else:
                 productos.insert(0, producto)
+                if item and stock_solicitado > 0:
+                    # MOV_INV registra el saldo inicial: entra al almacén y pasa a Tienda en la misma
+                    # operación, así el stock de INVENTARIO no cambia y la Tienda queda trazada.
+                    aplicar = self.dependencies.aplicar_movimiento
+                    aplicar(state, item, "entrada", stock_solicitado, "Alta de producto en Tienda: saldo inicial", id_usuario)
+                    aplicar(state, item, "salida", stock_solicitado, "Alta de producto en Tienda: pasa al stock de Tienda",
+                            id_usuario, destino=DESTINO_TIENDA)
             self.dependencies.actualizar_estados_tienda(state)
             return producto
 

@@ -31,9 +31,12 @@ class UpsertProductoTiendaCommand:
     operation_kind: ClassVar[str] = 'command'
     payload: Record
     actor: object = None
+    # USUARIO y MOV_INV: el alta con stock inicial queda registrada en Movimientos.
     resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
         Resource.INVENTARIO,
         Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
     )
 
     def run(self, rules: DomainComponents) -> Record:

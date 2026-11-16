@@ -12,6 +12,7 @@ def to_remote_body(state_key: str, row: dict[str, Any]) -> dict[str, Any]:
         "usuario": accounts._user_to_remote,
         "inventario": inventory._inventory_to_remote,
         "mov_inv": inventory._inventory_move_to_remote,
+        "inventario_unidades": inventory._inventory_unit_to_remote,
         "productos_tienda": inventory._product_to_remote,
         "catalogo_rutina": schedules._routine_to_remote,
         "horario": schedules._schedule_to_remote,

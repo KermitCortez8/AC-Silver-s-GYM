@@ -290,6 +290,7 @@
               <p v-else>
                 El N° de artículo se genera automáticamente y el stock inicial queda registrado como una entrada en Movimientos.
                 <span v-if="isTiendaForm" class="font-bold">Al ser Tipo "Tienda" se creará su producto en la tienda, sin stock y oculto hasta que le asignes precio.</span>
+                <span v-else-if="isUnitForm" class="font-bold">Cada unidad del stock inicial recibe su propio N° de activo ({{ unitCodeExample }}, -002...).</span>
               </p>
             </div>
           </div>
@@ -317,6 +318,10 @@
                 Los artículos de Tienda cambian solos a Disponible, Stock bajo o Agotado según su stock y su stock mínimo en Inventario.
               </p>
             </template>
+            <p v-else-if="isUnitForm" id="inv-status" class="inv-info">
+              <Info :size="16" aria-hidden="true" />
+              El estado de equipos y accesorios sale de sus unidades: se cambia en Detalles, en el botón del N° de activo.
+            </p>
             <select v-else id="inv-status" v-model="form.status" class="field-input">
               <option>Operativo</option>
               <option>En mantenimiento</option>
@@ -362,7 +367,7 @@
       eyebrow="Inventario · Detalles"
       :title="detailItem?.name || 'Artículo'"
       :subtitle="detailItem ? `N° de artículo ${detailItem.inventoryCode}` : ''"
-      size="lg"
+      size="xl"
       @close="detailItem = null"
     >
       <template v-if="detailItem">
@@ -382,18 +387,34 @@
           </div>
         </div>
 
-        <dl class="rm-section grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt class="inv-label">Ubicación</dt>
-            <dd class="mt-1 text-slate-300">{{ detailItem.location || 'Sin ubicación' }}</dd>
+        <!-- Izquierda: ubicación y observaciones. Derecha: N° de activo y la lista desplegable de sus unidades. -->
+        <dl class="rm-section grid items-start gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <div class="grid gap-3">
+            <div>
+              <dt class="inv-label">Ubicación</dt>
+              <dd class="mt-1 text-slate-300">{{ detailItem.location || 'Sin ubicación' }}</dd>
+            </div>
+            <div>
+              <dt class="inv-label">Observaciones</dt>
+              <dd class="mt-1 text-slate-300">{{ detailItem.observations || 'Sin observaciones' }}</dd>
+            </div>
           </div>
-          <div>
+          <div class="min-w-0">
             <dt class="inv-label">N° activo</dt>
-            <dd class="mt-1 text-slate-300">{{ detailItem.n_activo || 'Auto' }}</dd>
-          </div>
-          <div class="sm:col-span-2">
-            <dt class="inv-label">Observaciones</dt>
-            <dd class="mt-1 text-slate-300">{{ detailItem.observations || 'Sin observaciones' }}</dd>
+            <dd class="mt-1">
+              <button
+                v-if="detailItem.byUnit"
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-sm font-black text-amber-100 transition hover:bg-amber-400/20"
+                :aria-expanded="unitsOpen"
+                @click="unitsOpen = !unitsOpen"
+              >
+                {{ detailItem.n_activo }} · {{ detailItem.quantity }} {{ detailItem.quantity === 1 ? 'unidad' : 'unidades' }}
+                <ChevronDown :size="16" aria-hidden="true" :class="{ 'rotate-180': unitsOpen }" class="transition" />
+              </button>
+              <span v-else class="text-slate-300">{{ detailItem.n_activo || 'Auto' }}</span>
+              <InventoryUnitsPanel v-if="detailItem.byUnit && unitsOpen" :item="detailItem" />
+            </dd>
           </div>
         </dl>
 
@@ -423,7 +444,9 @@
 
 <script setup>
 import QuantityInput from '../components/QuantityInput.vue';
-import { AlertCircle, Boxes, ClipboardCheck, Eye, History, Info, Package } from 'lucide-vue-next';
+import { AlertCircle, Boxes, ChevronDown, ClipboardCheck, Eye, History, Info, Package } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
+import InventoryUnitsPanel from '../components/inventory/InventoryUnitsPanel.vue';
 import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import ResourceModal from '../components/ResourceModal.vue';
 import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
@@ -444,7 +467,7 @@ const {
   paginaInicio, totalPages, inventoryPaginado, categorySummary, editingId,
   isEditorOpen, isSaving, editorError, feedbackMessage, feedbackTone,
   formErrors, warnings, touch, isInvalid, form, categoryOptions,
-  editorLocationOptions, unitOptions, stepQuantity, isTiendaForm, isDiscontinuedForm,
+  editorLocationOptions, unitOptions, stepQuantity, isTiendaForm, isUnitForm, unitCodeExample, isDiscontinuedForm,
   statusPreview, feedbackToneClass, isLowStock, categoryDotPalette, categoryDotColor,
   inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,
   resetForm, openNewItem, closeEditor, editItem, requiredFields,
@@ -452,6 +475,10 @@ const {
   movementClass, signedQuantity, openDetails, editFromDetails,
   limitObservations, handleTabsKeydown,
 } = useInventoryWorkspace();
+
+// Lista desplegable de unidades del N° de activo; se cierra al cambiar de artículo.
+const unitsOpen = ref(false);
+watch(detailItem, () => { unitsOpen.value = false; });
 
 </script>
 
