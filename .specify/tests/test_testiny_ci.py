@@ -62,6 +62,33 @@ class TestinyIntegrationTests(unittest.TestCase):
         self.assertEqual(self.modules["clientes"], "MOD-02 - Clientes")
         self.assertEqual(self.modules["notificaciones"], "MOD-11 - Notificaciones")
 
+    def test_fuentes_distintas_respetan_el_formato_de_la_api_testiny(self):
+        sources = []
+        for component in integration.SOURCES:
+            with self.subTest(component=component):
+                command = integration.import_command({"component": component, "file": "informe.xml"}, "SILVE", {}, "node")
+                source = command[command.index("--source") + 1]
+                # Regla de la API incluida en la CLI 1.43.1; los espacios causaron
+                # API_INVALID_INPUT_DATA en la primera ejecución de GitHub.
+                self.assertRegex(source, r"(?i)^[$a-z][$a-z0-9_.-]*$")
+                sources.append(source)
+        self.assertEqual(len(sources), len(set(sources)))
+
+    def test_fuente_invalida_detiene_toda_publicacion_antes_de_enviar(self):
+        self.basic_report()
+        self.report('<testsuite><testcase name="tests/clientes/unitarias/test.mjs::caso"/></testsuite>', "frontend")
+        event = self.root / "event.json"
+        event.write_text(json.dumps(self.event), encoding="utf-8")
+        cli = self.root / "cli.js"
+        cli.touch()
+        with mock.patch.dict(os.environ, {"TESTINY_API_KEY": "clave-sintetica"}), \
+                mock.patch.dict(integration.SOURCES, {"frontend": "GYM - Frontend"}), \
+                mock.patch.object(integration, "CLI_ENTRY", cli), \
+                mock.patch.object(integration.shutil, "which", return_value="node"), \
+                mock.patch.object(integration.subprocess, "run") as execute:
+            self.assertEqual(self.invoke("--publish", "--event", str(event)), 1)
+            execute.assert_not_called()
+
     def test_preserva_fallos_errores_omisiones_y_claves_estables(self):
         source = self.report('''<testsuites><testsuite name="pytest">
           <testcase name="correcto" classname="tests.clientes.unitarias.test_lookup" time="0.3"/>

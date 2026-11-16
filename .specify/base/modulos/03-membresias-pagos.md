@@ -72,6 +72,10 @@ una membresía vencida mediante edición o evento Stripe duplicado.
 
 ## 6. Edge Cases
 
+- Compra con plan inexistente o inactivo: `/api/membresias` rechaza antes de
+  crear la compra; seleccionar un plan activo permite reintentar. Regresión:
+  [test_testiny_reglas.py](../../../backend/tests/transversales/integracion/test_testiny_reglas.py),
+  `test_tc043_plan_no_disponible_no_genera_compra` (TC-43 de Testiny).
 - Webhook/retorno duplicados: conservar idempotencia y el estado ya activo.
 - Membresía futura, impaga o cuenta sin activación: no conceder acceso por el
   mero flag de cuenta activa.

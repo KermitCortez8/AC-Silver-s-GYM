@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -18,10 +19,11 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[3]
 CLI_ENTRY = Path(__file__).parent / "node_modules/@testiny/cli/testiny-importer.js"
 SOURCES = {
-    "backend": "GYM - Backend",
-    "frontend": "GYM - Frontend",
-    "postgres": "GYM - PostgreSQL",
-    "schedule-emails": "GYM - Notificaciones Deno",
+    "backend": "gym-backend",
+    "frontend": "gym-frontend",
+    "postgres": "gym-postgres",
+    "schedule-emails": "gym-notificaciones-deno",
+    "casos-documentados": "gym-casos-documentados",
 }
 LEVELS = {
     "unitarias": "Unitarias", "integracion": "Integración",
@@ -82,7 +84,7 @@ def case_identity(case: ET.Element, component: str, modules: dict[str, str], anc
     return clean_text(name, 2_000), f"{module}.{level}.{filename}", f"gym-{component}-{digest}"
 
 
-def normalize_report(source: Path, destination: Path, component: str, modules: dict[str, str]):
+def normalize_report(source: Path, destination: Path, component: str, modules: dict[str, str], evidence=None):
     if source.is_symlink() or source.stat().st_size > MAX_REPORT_BYTES:
         raise ValueError(f"Informe no admitido: {source.name}")
     data = source.read_bytes().decode("utf-8-sig")
@@ -135,6 +137,16 @@ def normalize_report(source: Path, destination: Path, component: str, modules: d
                 totals["skipped"] += 1
             elif status not in {"passed", "pass", "success", "run"}:
                 raise ValueError(f"Estado JUnit sin resultado interpretable: {status}")
+        if evidence is not None:
+            identifier = case.get("classname", "")
+            original_name = case.get("name", "")
+            if component == "frontend":
+                identifier, original_name = original_name.split("::", 1)
+            outcome = next((tag for tag in ("error", "failure", "skipped")
+                            if result.find(tag) is not None), "passed")
+            evidence.append({"componente": component, "clase": identifier,
+                             "prueba": original_name, "ancestros": list(reversed(ancestors)),
+                             "estado": outcome, "duracion": duration})
     for suite in suites.values():
         children = suite.findall("testcase")
         suite.set("tests", str(len(children)))
@@ -148,10 +160,13 @@ def normalize_report(source: Path, destination: Path, component: str, modules: d
     return totals
 
 
-def prepare_reports(incoming: Path, output: Path) -> list[dict]:
+def prepare_reports(incoming: Path, output: Path, documented=False) -> list[dict]:
     modules = module_registry()
     prepared = []
+    evidence = []
     for component in SOURCES:
+        if component == "casos-documentados":
+            continue  # Siempre se calcula desde pruebas reales; no aceptar XML ajeno para este resumen.
         source = incoming / f"{component}.xml"
         if not source.is_file():
             continue
@@ -159,16 +174,24 @@ def prepare_reports(incoming: Path, output: Path) -> list[dict]:
             raise ValueError("Informe fuera del directorio de artefactos")
         destination = output / f"{component}.xml"
         report = {"component": component, "file": str(destination),
-                  **normalize_report(source, destination, component, modules)}
+                  **normalize_report(source, destination, component, modules, evidence)}
         metadata = source.with_suffix(".metadata.json")
         if metadata.is_file():
             if (metadata.is_symlink() or not metadata.resolve().is_relative_to(incoming.resolve())
-                    or metadata.stat().st_size > 8_192):
+                    or metadata.stat().st_size > 262_144):
                 raise ValueError("Metadatos del informe fuera de límite")
             report["metadata"] = json.loads(metadata.read_text(encoding="utf-8"))
         prepared.append(report)
     if not prepared:
         raise ValueError("No hay informes JUnit de estas suites; no se creará una ejecución vacía")
+    if documented:
+        spec = importlib.util.spec_from_file_location("gym_documented_cases", Path(__file__).with_name("documented_cases.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        report, summary = module.build_report(ROOT, output, evidence, prepared)
+        print(f"Casos documentados ejecutados: {summary['ejecutados']}/{summary['total_documentados']} "
+              f"({summary['porcentaje_ejecutado']} %)")
+        prepared.append(report)
     output.mkdir(parents=True, exist_ok=True)
     (output / "resumen.json").write_text(json.dumps(prepared, indent=2, ensure_ascii=False), encoding="utf-8")
     return prepared
@@ -210,13 +233,22 @@ def report_fields(report: dict, origin: dict[str, str]) -> dict[str, str]:
 
 
 def import_command(report: dict, project: str, fields: dict[str, str], node: str):
-    return [node, str(CLI_ENTRY), "automation", "--project", project,
-            "--source", SOURCES[report["component"]], "--no-attachments",
+    source = SOURCES[report["component"]]
+    # Convención del proyecto compatible con isValidAutomationSourceName de la CLI:
+    # sin espacios ni acentos, con prefijo propio que evita nombres reservados.
+    if not re.fullmatch(r"gym-[a-z0-9]+(?:-[a-z0-9]+)*", source):
+        raise ValueError(f"Fuente de Testiny inválida: {source!r}; "
+                         "usar gym- y palabras en minúsculas separadas por guiones")
+    command = [node, str(CLI_ENTRY), "automation", "--project", project,
+            "--source", source, "--no-attachments",
             "--junit-classname-as-folder", "nested", "--junit-duration-unit", "sec",
             "--run-fields", "ci_repository,ci_run_id,ci_retry",
             "--run-title-pattern", "%{ci_workflow_name} - %{vc_ref} - %{ci_run_id} (%{ci_retry})",
             "--field-values", ",".join(f"{key}={value}" for key, value in fields.items()),
             "--junit", report["file"]]
+    if report["component"] == "casos-documentados":
+        command.extend(["--custom-result-fields", "rf,cus,manual_case_url,testiny_case_id,tipo_documentado"])
+    return command
 
 
 def main(argv=None) -> int:
@@ -226,9 +258,10 @@ def main(argv=None) -> int:
     parser.add_argument("--event", type=Path, default=os.environ.get("GITHUB_EVENT_PATH"))
     parser.add_argument("--project", default=os.environ.get("TESTINY_PROJECT", "SILVE"))
     parser.add_argument("--publish", action="store_true", help="Importa en Testiny; por defecto solo prepara XML")
+    parser.add_argument("--documented", action="store_true", help="Exige ejecutar al menos el 50 % de casos documentados revisados")
     args = parser.parse_args(argv)
     try:
-        reports = prepare_reports(args.incoming, args.output)
+        reports = prepare_reports(args.incoming, args.output, args.documented)
         print(json.dumps(reports, ensure_ascii=False, indent=2))
         if not args.publish:
             print("Solo preparación local. No se contactó a Testiny.")

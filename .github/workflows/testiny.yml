@@ -53,6 +53,21 @@ jobs:
           python .github/scripts/testiny/publish.py
           --incoming "$RUNNER_TEMP/testiny-incoming"
           --output "$RUNNER_TEMP/testiny-normalized"
+          --documented
+      - name: Resumir cobertura de casos documentados
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'testiny-normalized/cobertura-documentada.json'
+          if path.is_file():
+              data = json.loads(path.read_text(encoding='utf-8'))
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
+                  output.write('### Casos documentados de Testiny\n\n')
+                  output.write(f"Ejecutados: **{data['ejecutados']}/{data['total_documentados']} ({data['porcentaje_ejecutado']} %)**. ")
+                  output.write(f"Mínimo: {data['minimo_requerido']}; aprobados: {data['aprobados']}; fallidos: {data['fallidos']}.\n\n")
+                  output.write('Consultar `cobertura-documentada.json` y `trazabilidad-documentada.csv` en el artefacto `gym-testiny-normalized`.\n')
+          PY
       - name: Publicar resultados automatizados
         env:
           TESTINY_API_KEY: ${{ secrets.TESTINY_API_KEY }}
@@ -61,6 +76,7 @@ jobs:
           python .github/scripts/testiny/publish.py
           --incoming "$RUNNER_TEMP/testiny-incoming"
           --output "$RUNNER_TEMP/testiny-normalized"
+          --documented
           --publish
       - name: Conservar informes ordenados y resumen
         if: always()
