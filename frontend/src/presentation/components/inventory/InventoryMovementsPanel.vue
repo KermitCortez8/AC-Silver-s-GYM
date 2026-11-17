@@ -141,7 +141,7 @@
         <div class="grid gap-4">
           <label class="space-y-2">
             <span class="inv-label inv-required">Articulo</span>
-            <select v-model.number="form.id_item" class="field-input" :class="{ 'is-invalid': isInvalid('id_item', formErrors.includes('Artículo')) }" :disabled="lockedByOrder" @change="touch('id_item')">
+            <select v-model.number="form.id_item" class="field-input" :class="{ 'is-invalid': isInvalid('id_item', formErrors.includes('Artículo')) }" :disabled="isLocked" @change="touch('id_item')">
               <option :value="0">Selecciona un articulo</option>
               <option v-for="item in activeInventory" :key="item.id" :value="itemNumber(item)">
                 {{ item.inventoryCode }} - {{ item.name }} ({{ item.quantity }})
@@ -158,11 +158,26 @@
                 class="rm-choice"
                 :class="[`rm-choice--${option.value}`, { 'is-active': form.tipo_movimiento === option.value }]"
               >
-                <input v-model="form.tipo_movimiento" type="radio" name="tipo_movimiento" :value="option.value" class="sr-only" :disabled="lockedByOrder" />
+                <input v-model="form.tipo_movimiento" type="radio" name="tipo_movimiento" :value="option.value" class="sr-only" :disabled="isLocked || (option.value === 'ajuste' && unitItem)" />
                 <component :is="option.icon" :size="18" aria-hidden="true" />
                 {{ option.label }}
               </label>
             </div>
+            <p v-if="unitItem && !isLocked" class="text-xs text-slate-400">
+              Equipo con N° de activo por unidad: cada entrada crea códigos nuevos ({{ selectedItem.n_activo }}-...-001) y no admite ajustes.
+            </p>
+          </div>
+          <div v-if="needsUnitPick" class="space-y-2">
+            <span class="inv-label inv-required">Unidades que salen</span>
+            <div v-if="selectableUnits.length" class="grid max-h-48 gap-1 overflow-y-auto rounded-2xl border border-white/10 p-2 sm:grid-cols-2">
+              <label v-for="unit in selectableUnits" :key="unit.id_unidad" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-white/5">
+                <input v-model="form.unidades" type="checkbox" :value="unit.id_unidad" class="h-4 w-4 accent-amber-400" />
+                <span class="font-mono font-bold">{{ unit.codigo }}</span>
+                <span class="truncate text-xs text-slate-400">{{ unit.estado }}</span>
+              </label>
+            </div>
+            <p v-else class="text-xs text-slate-400">Este artículo no tiene unidades activas.</p>
+            <FieldError class="inv-field-error" :message="unitsWarning" />
           </div>
         </div>
       </fieldset>
@@ -177,7 +192,7 @@
               v-model="form.cantidad"
               class="field-input"
               :class="{ 'is-invalid': isInvalid('cantidad', formErrors.includes('Cantidad')) }"
-              :disabled="lockedByOrder"
+              :disabled="isLocked || needsUnitPick"
               @update:model-value="touch('cantidad')"
             />
             <FieldError class="inv-field-error" :message="warnings.cantidad" />
@@ -188,7 +203,7 @@
           </label>
           <label v-if="form.tipo_movimiento === 'salida'" class="space-y-2 sm:col-span-2">
             <span class="inv-label">Destino</span>
-            <select v-if="!lockedByOrder" v-model="form.destino" class="field-input">
+            <select v-if="!isLocked" v-model="form.destino" class="field-input">
               <option value="">Sin destino (uso interno, merma, baja...)</option>
               <option value="TIENDA" :disabled="!linkedProduct">Tienda - reponer stock{{ linkedProduct ? '' : ' (sin producto enlazado)' }}</option>
             </select>
@@ -207,6 +222,10 @@
       <p v-if="lockedByOrder" class="inv-info">
         <Info :size="16" aria-hidden="true" />
         Movimiento de un pedido de Tienda: solo puedes cambiar la fecha y la descripción. La referencia al pedido se conserva.
+      </p>
+      <p v-else-if="lockedByUnits" class="inv-info">
+        <Info :size="16" aria-hidden="true" />
+        Movimiento de un equipo con N° de activo por unidad: solo puedes cambiar la fecha y la descripción. Para retirar otra unidad registra una nueva salida.
       </p>
       <div v-else-if="selectedItem" class="space-y-2 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-xs leading-5 text-amber-50">
         <p class="rm-section-title" style="margin-bottom: 0.25rem"><TrendingUp :size="14" aria-hidden="true" /> Vista previa del stock</p>
@@ -257,6 +276,7 @@ import { useLiveWarnings } from '../../composables/useLiveWarnings.js';
 import { clampText, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, NOTES_MAX_LENGTH, sortRows } from '../../../domain/utils/inputRules.js';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { useGymStore } from '../../../application/stores/gymStore';
+import { isActiveUnit } from '../../../domain/utils/inventoryUnits.js';
 
 const movementTypes = [
   { value: 'entrada', label: 'Entrada', icon: ArrowDownToLine },
@@ -286,7 +306,7 @@ const products = computed(() => gymStore.productos_tienda || []);
 const movements = computed(() => gymStore.inventoryMovements || []);
 const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 const today = () => limaDate();
-const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, destino: '', fecha_movimiento: today(), descripcion: '' });
+const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, destino: '', fecha_movimiento: today(), descripcion: '', unidades: [] });
 const form = reactive(emptyForm());
 
 const itemNumber = (item) => Number(String(item.id).replace('item-', ''));
@@ -295,6 +315,21 @@ const orderNumber = (movement) => String(movement?.descripcion || '').match(ORDE
 const destinationOf = (movement) => String(movement?.destino || '').toUpperCase() || (orderNumber(movement) ? 'VENTA' : '');
 const lockedByOrder = computed(() => Boolean(editingMovement.value && destinationOf(editingMovement.value) === 'VENTA'));
 const selectedItem = computed(() => inventory.value.find((item) => itemNumber(item) === Number(form.id_item)) || null);
+// Equipos y accesorios con N° de activo por unidad: la salida elige unidades y no hay ajustes.
+const unitItem = computed(() => Boolean(selectedItem.value?.byUnit));
+const lockedByUnits = computed(() => Boolean(editingMovement.value) && unitItem.value);
+const isLocked = computed(() => lockedByOrder.value || lockedByUnits.value);
+const needsUnitPick = computed(() => !editingMovement.value && unitItem.value && form.tipo_movimiento === 'salida');
+const selectableUnits = computed(() => (gymStore.inventoryUnits || [])
+  .filter((unit) => Number(unit.id_item) === Number(form.id_item) && isActiveUnit(unit))
+  .sort((a, b) => Number(a.correlativo) - Number(b.correlativo)));
+const unitsWarning = ref('');
+watch(() => form.id_item, () => { form.unidades = []; });
+watch(unitItem, (byUnit) => { if (byUnit && form.tipo_movimiento === 'ajuste' && !editingMovement.value) form.tipo_movimiento = 'entrada'; });
+watch(() => form.unidades.length, (count) => {
+  if (needsUnitPick.value) form.cantidad = Math.max(1, count);
+  if (count) unitsWarning.value = '';
+});
 const productForItem = (idItem) => products.value.find((product) => Number(product.id_item) === Number(idItem)) || null;
 const linkedProduct = computed(() => productForItem(form.id_item));
 const isRestock = computed(() => form.tipo_movimiento === 'salida' && form.destino === 'TIENDA');
@@ -402,7 +437,7 @@ const requiredMovementFields = [
 const { warnings, touch, touchAll, reset: resetWarnings, isInvalid } = useLiveWarnings({
   id_item: () => (Number(form.id_item) ? '' : 'Selecciona un articulo.'),
   cantidad: () => {
-    if (lockedByOrder.value) return '';
+    if (isLocked.value || needsUnitPick.value) return '';
     const label = form.tipo_movimiento === 'ajuste' ? 'El stock exacto' : 'La cantidad';
     const invalid = quantityError(form.cantidad, { label, min: 1 });
     if (invalid || !selectedItem.value) return invalid;
@@ -442,6 +477,7 @@ const openEdit = (movement) => {
     destino: destinationOf(movement),
     fecha_movimiento: movement.fecha_movimiento || today(),
     descripcion: movement.descripcion || '',
+    unidades: [],
   });
   modalError.value = '';
   formErrors.value = [];
@@ -468,22 +504,31 @@ const save = async () => {
     return;
   }
   try {
-    const cantidad = lockedByOrder.value ? undefined : parseQuantity(form.cantidad, { min: 1 });
+    if (needsUnitPick.value && !form.unidades.length) {
+      unitsWarning.value = 'Elige las unidades que salen.';
+      throw new Error('Elige las unidades que salen.');
+    }
+    const cantidad = isLocked.value ? undefined : needsUnitPick.value ? form.unidades.length : parseQuantity(form.cantidad, { min: 1 });
     if (!form.id_item) throw new Error('Selecciona un artículo de inventario.');
-    if (!lockedByOrder.value && projectedStock.value < 0) throw new Error('No hay stock suficiente en Inventario para este movimiento.');
-    if (!lockedByOrder.value && projectedStoreStock.value < 0) throw new Error('La Tienda ya vendió esas unidades; no puedes reducir la reposición.');
+    if (!isLocked.value && projectedStock.value < 0) throw new Error('No hay stock suficiente en Inventario para este movimiento.');
+    if (!isLocked.value && projectedStoreStock.value < 0) throw new Error('La Tienda ya vendió esas unidades; no puedes reducir la reposición.');
     const destino = form.tipo_movimiento === 'salida' ? form.destino : '';
     const descripcion = clampText(form.descripcion, NOTES_MAX_LENGTH).value;
     isSaving.value = true;
     if (editingMovement.value) {
-      const payload = lockedByOrder.value
+      const fields = { ...form };
+      delete fields.unidades;
+      const payload = isLocked.value
         ? { fecha_movimiento: form.fecha_movimiento, descripcion }
-        : { ...form, cantidad, destino, descripcion };
+        : { ...fields, cantidad, destino, descripcion };
       await gymStore.updateInventoryMovement(editingMovement.value.id_mov, payload);
       feedback.value = 'Movimiento actualizado y stock recalculado.';
     } else {
+      const fields = { ...form };
+      delete fields.unidades;
       await gymStore.registrarMovimientoToServer({
-        ...form,
+        ...fields,
+        ...(needsUnitPick.value ? { unidades: [...form.unidades] } : {}),
         cantidad,
         descripcion,
         destino: destino || null,

@@ -124,6 +124,7 @@ export const createGymModules = (state, repositories, services = getApplicationS
     fetchTrainerOverview: schedules.fetchTrainerOverview,
     get generation() { return state.generation; },
     inventory: state.inventory,
+    inventoryUnits: state.inventoryUnits,
     isSyncing: state.isSyncing,
     members: state.members,
     membershipPayments: state.membershipPayments,

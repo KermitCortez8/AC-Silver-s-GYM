@@ -195,6 +195,39 @@ class TestinyIntegrationTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 integration.run_fields(event)
 
+    def test_publica_merge_del_pipeline_con_su_revision_e_intento(self):
+        event = {"repository": {"full_name": "equipo/gym"}, "action": "closed",
+                 "pull_request": {"merged": True, "merge_commit_sha": "b" * 40,
+                                  "base": {"ref": "main"}}}
+        environment = {"GITHUB_EVENT_NAME": "pull_request", "GITHUB_WORKFLOW": "CI/CD Pipeline GYM",
+                       "GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "2",
+                       "GITHUB_SERVER_URL": "https://github.com"}
+        with mock.patch.dict(os.environ, environment, clear=True):
+            fields = integration.run_fields(event)
+            self.assertEqual(fields["vc_commit"], "b" * 40)
+            self.assertEqual(fields["ci_run_id"], "123")
+            self.assertEqual(fields["ci_retry"], "2")
+            self.assertEqual(fields["ci_workflow_name"], "CI/CD Pipeline GYM")
+            for change in ({"merged": False}, {"base": {"ref": "develop"}}):
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    integration.run_fields({**event, "pull_request": {**event["pull_request"], **change}})
+            with mock.patch.dict(os.environ, {"GITHUB_WORKFLOW": "Validar PR"}):
+                with self.assertRaises(ValueError):
+                    integration.run_fields(event)
+
+    def test_workflow_publica_solo_el_merge_a_main_y_usa_sus_artefactos(self):
+        workflow = (ROOT / ".github/workflows/ci-cd.yml").read_text(encoding="utf-8")
+        trigger = workflow.split("permissions:", 1)[0]
+        self.assertNotIn("workflow_run:", trigger)
+        self.assertIn("branches: [main]", trigger)
+        self.assertIn("types: [closed]", trigger)
+        publication = workflow.split("\n  testiny:", 1)[1]
+        self.assertIn("github.event.pull_request.merged == true", publication)
+        self.assertIn("github.event.pull_request.base.ref == 'main'", publication)
+        self.assertIn("run-id: ${{ github.run_id }}", publication)
+        self.assertIn("pattern: gym-junit-*-${{ github.run_attempt }}", publication)
+        self.assertNotIn("github.event.workflow_run", publication)
+
     def test_preparacion_local_no_contacta_testiny_aunque_exista_una_clave(self):
         self.basic_report()
         with mock.patch.dict(os.environ, {"TESTINY_API_KEY": "clave-sintetica"}), \

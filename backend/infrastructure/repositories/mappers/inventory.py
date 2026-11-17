@@ -1,7 +1,7 @@
 """Mapeos de inventory: conversión explícita entre filas y datos de negocio."""
 from __future__ import annotations
 from typing import Any
-from .common import _remote_user_id_or_none, _date_or_today, _remote_user_id
+from .common import _remote_user_id_or_none, _date_or_today, _date_or_none, _remote_user_id
 
 
 def _map_inventory(row: dict[str, Any]) -> dict[str, Any]:
@@ -19,6 +19,7 @@ def _map_inventory(row: dict[str, Any]) -> dict[str, Any]:
         "observaciones": str(row.get("observaciones") or ""),
         "archivado": bool(row.get("archivado") or False),
         "eliminado": bool(row.get("eliminado") or False),
+        "prefijo_activo": str(row.get("prefijo_activo") or ""),
     }
 
 
@@ -31,6 +32,8 @@ def _archived_field(row: dict[str, Any]) -> dict[str, Any]:
 def _inventory_to_remote(row: dict[str, Any]) -> dict[str, Any]:
     return {
         **_archived_field(row),
+        # El prefijo solo viaja cuando existe: sin la migración 026 los demás artículos se siguen guardando.
+        **({"prefijo_activo": str(row["prefijo_activo"])} if row.get("prefijo_activo") else {}),
         "id_item": int(row.get("id_item", 0) or 0),
         "Nombre_item": str(row.get("nombre_item") or ""),
         "Tipo": str(row.get("tipo") or "General"),
@@ -42,6 +45,34 @@ def _inventory_to_remote(row: dict[str, Any]) -> dict[str, Any]:
         "stock_minimo": int(row["stock_minimo"] if row.get("stock_minimo") is not None else 1),
         "ubicacion": str(row.get("ubicacion") or "Almacén"),
         "observaciones": str(row.get("observaciones") or ""),
+    }
+
+
+def _map_inventory_unit(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id_unidad": int(row.get("id_unidad", 0) or 0),
+        "id_item": int(row.get("id_item", 0) or 0),
+        "correlativo": int(row.get("correlativo", 0) or 0),
+        "codigo": str(row.get("codigo") or ""),
+        "estado": str(row.get("estado") or "Operativo"),
+        "ubicacion": str(row.get("ubicacion") or "Almacén"),
+        "observaciones": str(row.get("observaciones") or ""),
+        "fecha_alta": str(row.get("fecha_alta") or "")[:10],
+        "fecha_baja": str(row.get("fecha_baja") or "")[:10] or None,
+    }
+
+
+def _inventory_unit_to_remote(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id_unidad": int(row.get("id_unidad", 0) or 0),
+        "id_item": int(row.get("id_item", 0) or 0),
+        "correlativo": int(row.get("correlativo", 0) or 0),
+        "codigo": str(row.get("codigo") or ""),
+        "estado": str(row.get("estado") or "Operativo"),
+        "ubicacion": str(row.get("ubicacion") or "Almacén"),
+        "observaciones": str(row.get("observaciones") or ""),
+        "fecha_alta": _date_or_today(row.get("fecha_alta")),
+        "fecha_baja": _date_or_none(row.get("fecha_baja")),
     }
 
 

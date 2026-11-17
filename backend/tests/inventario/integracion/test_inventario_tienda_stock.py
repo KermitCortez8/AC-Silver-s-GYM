@@ -216,6 +216,18 @@ def test_producto_nuevo_desde_tienda_crea_su_reserva_vacia() -> None:
     assert (item["tipo"], item["cantidad_stock"]) == ("Tienda", 0)
     assert producto["cantidad_stock"] == 48
     assert producto["estado"] == "Disponible"
+    # MOV_INV registra el saldo inicial: entra a la reserva y pasa a Tienda; la reserva queda en 0.
+    movimientos = sorted(service.movimientos_inventario(), key=lambda m: m["id_mov"])
+    assert [(m["tipo_movimiento"], m["cantidad"], m["destino"]) for m in movimientos] == [
+        ("entrada", 48, None),
+        ("salida", 48, "TIENDA"),
+    ]
+    assert all(m["id_item"] == producto["id_item"] for m in movimientos)
+
+
+def test_producto_nuevo_sin_stock_no_registra_movimientos() -> None:
+    service = _service()
+    service.upsert_producto_tienda({"nombre_producto": "Toalla", "precio_venta": 12, "cantidad_stock": 0})
     assert service.movimientos_inventario() == []
 
 
@@ -564,11 +576,12 @@ def test_descontinuado_es_manual_y_se_respeta() -> None:
     assert _estado(service, item["id_item"]) == "Agotado"
 
 
-def test_equipo_del_gimnasio_conserva_su_estado_manual() -> None:
+def test_articulo_sin_unidades_conserva_su_estado_manual() -> None:
+    # Los equipos y accesorios toman el estado de sus unidades; el resto lo fija el admin.
     service = _service()
-    equipo = service.upsert_inventario({"nombre_item": "Banca", "tipo": "Equipo de fuerza", "cantidad_stock": 0, "estado": "En mantenimiento"})
+    articulo = service.upsert_inventario({"nombre_item": "Escoba", "tipo": "Limpieza", "cantidad_stock": 0, "estado": "En mantenimiento"})
 
-    assert _estado(service, equipo["id_item"]) == "En mantenimiento"
+    assert _estado(service, articulo["id_item"]) == "En mantenimiento"
 
 
 def test_estados_calculados_se_guardan_en_supabase_al_leer() -> None:
@@ -638,7 +651,7 @@ def test_eliminar_definitivo_exige_pasar_antes_por_la_papelera() -> None:
 def test_eliminar_definitivo_sin_historial_borra_el_producto_y_su_item() -> None:
     service = _service()
     creado = service.upsert_producto_tienda(
-        {"nombre_producto": "Gorra", "precio_venta": 20, "categoria": "Accesorios", "cantidad_stock": 2}
+        {"nombre_producto": "Gorra", "precio_venta": 20, "categoria": "Accesorios", "cantidad_stock": 0}
     )
     service.delete_producto_tienda(creado["id_producto"])
 

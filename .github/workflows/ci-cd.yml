@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 # Cada PR conserva su ejecución; otro merge no cancela su despliegue.
 concurrency:
@@ -16,6 +17,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  documentation:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Comprobar contexto, contratos e integración oficial aislada
+        run: |
+          python .specify/.codex/hooks/validate.py
+          python -B -m unittest discover -s .specify/tests -v
+
   docker-ci:
     name: Validar construcción, arranque y proxy en Docker
     if: github.event.pull_request.merged == true
@@ -130,7 +151,7 @@ jobs:
           component: frontend
 
   deploy-vercel:
-    needs: [backend-ci, frontend-ci, schedule-emails-ci]
+    needs: [documentation, backend-ci, frontend-ci, schedule-emails-ci]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -165,7 +186,7 @@ jobs:
         run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
 
   deploy-render:
-    needs: [backend-ci, frontend-ci, schedule-emails-ci]
+    needs: [documentation, backend-ci, frontend-ci, schedule-emails-ci]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -186,3 +207,78 @@ jobs:
             --request POST --get --data-urlencode "ref=$DEPLOY_SHA" \
             --output /dev/null "$RENDER_DEPLOY_HOOK_URL"
           echo "Render aceptó la solicitud. El resultado del despliegue se consulta en Render."
+
+  testiny:
+    needs: [documentation, docker-ci, backend-ci, frontend-ci, schedule-emails-ci]
+    name: Importar JUnit por módulo y tipo
+    if: >-
+      always() && !cancelled() && vars.TESTINY_ENABLED == 'true' &&
+      github.event_name == 'pull_request' && github.event.action == 'closed' &&
+      github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' &&
+      contains(needs.*.result, 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Publicar los informes de la misma revisión fusionada que ejecutó las pruebas.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: .github/scripts/testiny/package-lock.json
+      - name: Instalar importador con versión y lockfile fijos
+        working-directory: .github/scripts/testiny
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Descargar únicamente informes del workflow de origen
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.run_id }}
+          pattern: gym-junit-*-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/testiny-incoming
+          # Cada suite tiene XML/metadatos propios; no mezclar intentos anteriores.
+          merge-multiple: true
+      - name: Validar y ordenar informes sin credenciales de Testiny
+        run: >-
+          python .github/scripts/testiny/publish.py
+          --incoming "$RUNNER_TEMP/testiny-incoming"
+          --output "$RUNNER_TEMP/testiny-normalized"
+          --documented
+      - name: Resumir cobertura de casos documentados
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'testiny-normalized/cobertura-documentada.json'
+          if path.is_file():
+              data = json.loads(path.read_text(encoding='utf-8'))
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
+                  output.write('### Casos documentados de Testiny\n\n')
+                  output.write(f"Ejecutados: **{data['ejecutados']}/{data['total_documentados']} ({data['porcentaje_ejecutado']} %)**. ")
+                  output.write(f"Mínimo: {data['minimo_requerido']}; aprobados: {data['aprobados']}; fallidos: {data['fallidos']}.\n\n")
+                  output.write('Consultar `cobertura-documentada.json` y `trazabilidad-documentada.csv` en el artefacto `gym-testiny-normalized`.\n')
+          PY
+      - name: Publicar resultados automatizados
+        env:
+          TESTINY_API_KEY: ${{ secrets.TESTINY_API_KEY }}
+          TESTINY_PROJECT: ${{ vars.TESTINY_PROJECT || 'SILVE' }}
+        run: >-
+          python .github/scripts/testiny/publish.py
+          --incoming "$RUNNER_TEMP/testiny-incoming"
+          --output "$RUNNER_TEMP/testiny-normalized"
+          --documented
+          --publish
+      - name: Conservar informes ordenados y resumen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gym-testiny-normalized
+          path: ${{ runner.temp }}/testiny-normalized
+          if-no-files-found: warn
+          retention-days: 14
