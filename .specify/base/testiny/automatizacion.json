@@ -168,7 +168,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio",
       "minimo_variantes": 1,
-      "sha256": "7a00db7a06673657a0b60471d991075554f4471985d1cb2896fb22e673d4733e"
+      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_editar_item_no_modifica_el_stock": {
       "componente": "backend",
@@ -176,7 +176,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_editar_item_no_modifica_el_stock",
       "minimo_variantes": 1,
-      "sha256": "7a00db7a06673657a0b60471d991075554f4471985d1cb2896fb22e673d4733e"
+      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos": {
       "componente": "backend",
@@ -184,7 +184,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos",
       "minimo_variantes": 1,
-      "sha256": "7a00db7a06673657a0b60471d991075554f4471985d1cb2896fb22e673d4733e"
+      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_movimientos_de_pedido_solo_editan_fecha_y_descripcion": {
       "componente": "backend",
@@ -192,7 +192,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_movimientos_de_pedido_solo_editan_fecha_y_descripcion",
       "minimo_variantes": 1,
-      "sha256": "7a00db7a06673657a0b60471d991075554f4471985d1cb2896fb22e673d4733e"
+      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto": {
       "componente": "backend",
@@ -200,7 +200,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto",
       "minimo_variantes": 1,
-      "sha256": "7a00db7a06673657a0b60471d991075554f4471985d1cb2896fb22e673d4733e"
+      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_restaurar_producto_lo_devuelve_con_su_item": {
       "componente": "backend",
@@ -208,7 +208,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_restaurar_producto_lo_devuelve_con_su_item",
       "minimo_variantes": 1,
-      "sha256": "7a00db7a06673657a0b60471d991075554f4471985d1cb2896fb22e673d4733e"
+      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final": {
       "componente": "backend",
@@ -216,7 +216,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
       "minimo_variantes": 1,
-      "sha256": "7a00db7a06673657a0b60471d991075554f4471985d1cb2896fb22e673d4733e"
+      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc081_tc082_crea_y_consulta_todos_los_datos_sin_mutar_stock": {
       "componente": "backend",
@@ -224,7 +224,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc081_tc082_crea_y_consulta_todos_los_datos_sin_mutar_stock",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc083_editar_ubicacion_no_modifica_existencias_ni_movimientos": {
       "componente": "backend",
@@ -232,7 +232,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc083_editar_ubicacion_no_modifica_existencias_ni_movimientos",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc084_retirar_recurso_libre_no_afecta_otro": {
       "componente": "backend",
@@ -240,7 +240,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc084_retirar_recurso_libre_no_afecta_otro",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc085_datos_invalidos_no_crean_ni_modifican_recursos": {
       "componente": "backend",
@@ -248,7 +248,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc085_datos_invalidos_no_crean_ni_modifican_recursos",
       "minimo_variantes": 4,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc086_historial_se_conserva_al_retirar_articulo": {
       "componente": "backend",
@@ -256,7 +256,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc086_historial_se_conserva_al_retirar_articulo",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc087_tc088_tc089_movimientos_guardan_saldo_actor_y_motivo[ajuste-8-8]": {
       "componente": "backend",
@@ -264,7 +264,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc087_tc088_tc089_movimientos_guardan_saldo_actor_y_motivo[ajuste-8-8]",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc087_tc088_tc089_movimientos_guardan_saldo_actor_y_motivo[entrada-5-15]": {
       "componente": "backend",
@@ -272,7 +272,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc087_tc088_tc089_movimientos_guardan_saldo_actor_y_motivo[entrada-5-15]",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc087_tc088_tc089_movimientos_guardan_saldo_actor_y_motivo[salida-3-7]": {
       "componente": "backend",
@@ -280,7 +280,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc087_tc088_tc089_movimientos_guardan_saldo_actor_y_motivo[salida-3-7]",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc090_movimiento_invalido_conserva_stock_e_historia": {
       "componente": "backend",
@@ -288,7 +288,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc090_movimiento_invalido_conserva_stock_e_historia",
       "minimo_variantes": 5,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc091_salida_insuficiente_no_tiene_escrituras_parciales": {
       "componente": "backend",
@@ -296,7 +296,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc091_salida_insuficiente_no_tiene_escrituras_parciales",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc166_reposicion_10_y_2_se_guarda_completa_o_revierte": {
       "componente": "backend",
@@ -304,7 +304,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc166_reposicion_10_y_2_se_guarda_completa_o_revierte",
       "minimo_variantes": 2,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc192_corregir_movimiento_recalcula_un_solo_registro": {
       "componente": "backend",
@@ -312,7 +312,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc192_corregir_movimiento_recalcula_un_solo_registro",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc193_estado_automatico_en_limites_y_descontinuado_manual": {
       "componente": "backend",
@@ -320,7 +320,7 @@
       "clase": "tests.inventario.integracion.test_testiny_inventario",
       "prueba": "test_tc193_estado_automatico_en_limites_y_descontinuado_manual",
       "minimo_variantes": 1,
-      "sha256": "57cca0b07c092eab6c6d206e7d38806084dc68822e604441fea135cb15c59022"
+      "sha256": "4b33ea545ac6fe57b69bf809f301752615e99c22539886d5242c7bf7beec55a8"
     },
     "BE:inventario/unitarias/test_inventory_quantities.py::test_invalid_movements_do_not_change_stock_or_history": {
       "componente": "backend",
@@ -496,7 +496,7 @@
       "clase": "tests.paneles_configuracion.integracion.test_supabase_refresh",
       "prueba": "test_failed_user_update_restores_account_without_discarding_other_sections",
       "minimo_variantes": 1,
-      "sha256": "5fec246f816eceff8ddf2ae248316bc20a051190c0043b8400a9352dba3856f6"
+      "sha256": "9bb8ecc8d9a2d5511412687c8fff68b38ebce4a98babe995759b573461659944"
     },
     "BE:paneles_configuracion/integracion/test_supabase_refresh.py::test_remote_reads_overlap_without_exceeding_six_connections": {
       "componente": "backend",
@@ -504,7 +504,7 @@
       "clase": "tests.paneles_configuracion.integracion.test_supabase_refresh",
       "prueba": "test_remote_reads_overlap_without_exceeding_six_connections",
       "minimo_variantes": 1,
-      "sha256": "5fec246f816eceff8ddf2ae248316bc20a051190c0043b8400a9352dba3856f6"
+      "sha256": "9bb8ecc8d9a2d5511412687c8fff68b38ebce4a98babe995759b573461659944"
     },
     "BE:paneles_configuracion/integracion/test_supabase_refresh.py::test_required_remote_failure_preserves_previous_state_and_refresh_time": {
       "componente": "backend",
@@ -512,7 +512,7 @@
       "clase": "tests.paneles_configuracion.integracion.test_supabase_refresh",
       "prueba": "test_required_remote_failure_preserves_previous_state_and_refresh_time",
       "minimo_variantes": 1,
-      "sha256": "5fec246f816eceff8ddf2ae248316bc20a051190c0043b8400a9352dba3856f6"
+      "sha256": "9bb8ecc8d9a2d5511412687c8fff68b38ebce4a98babe995759b573461659944"
     },
     "BE:paneles_configuracion/integracion/test_supabase_refresh.py::test_saving_and_deleting_users_does_not_load_other_sections": {
       "componente": "backend",
@@ -520,7 +520,7 @@
       "clase": "tests.paneles_configuracion.integracion.test_supabase_refresh",
       "prueba": "test_saving_and_deleting_users_does_not_load_other_sections",
       "minimo_variantes": 1,
-      "sha256": "5fec246f816eceff8ddf2ae248316bc20a051190c0043b8400a9352dba3856f6"
+      "sha256": "9bb8ecc8d9a2d5511412687c8fff68b38ebce4a98babe995759b573461659944"
     },
     "BE:paneles_configuracion/integracion/test_supabase_refresh.py::test_sections_load_only_needed_tables_and_preserve_other_sections": {
       "componente": "backend",
@@ -528,7 +528,7 @@
       "clase": "tests.paneles_configuracion.integracion.test_supabase_refresh",
       "prueba": "test_sections_load_only_needed_tables_and_preserve_other_sections",
       "minimo_variantes": 1,
-      "sha256": "5fec246f816eceff8ddf2ae248316bc20a051190c0043b8400a9352dba3856f6"
+      "sha256": "9bb8ecc8d9a2d5511412687c8fff68b38ebce4a98babe995759b573461659944"
     },
     "BE:paneles_configuracion/integracion/test_supabase_refresh.py::test_table_cache_expiration_is_independent_between_sections": {
       "componente": "backend",
@@ -536,7 +536,7 @@
       "clase": "tests.paneles_configuracion.integracion.test_supabase_refresh",
       "prueba": "test_table_cache_expiration_is_independent_between_sections",
       "minimo_variantes": 1,
-      "sha256": "5fec246f816eceff8ddf2ae248316bc20a051190c0043b8400a9352dba3856f6"
+      "sha256": "9bb8ecc8d9a2d5511412687c8fff68b38ebce4a98babe995759b573461659944"
     },
     "BE:paneles_configuracion/integracion/test_testiny_lecturas.py::test_tc178_registra_inicio_fin_errores_y_maximo_de_conexiones": {
       "componente": "backend",
@@ -544,7 +544,7 @@
       "clase": "tests.paneles_configuracion.integracion.test_testiny_lecturas",
       "prueba": "test_tc178_registra_inicio_fin_errores_y_maximo_de_conexiones",
       "minimo_variantes": 1,
-      "sha256": "0569a568003ebde96e076544f7dca153aa8c4a714325cfbf09fee9aa26e8e480"
+      "sha256": "3fde9aefb10a3fcefc0332c7ca1c3f7db5359fa2ee84c46fb7a453f94ec8f51d"
     },
     "BE:rutinas_progreso/integracion/test_testiny_rutinas.py::test_tc079_tc121_cliente_inexistente_no_se_asocia_ni_muestra_otro": {
       "componente": "backend",
@@ -968,7 +968,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc010_datos_y_roles_invalidos_permiten_corregir_sin_duplicar",
       "minimo_variantes": 5,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc011_solo_admin_staff_gestionan_usuarios": {
       "componente": "backend",
@@ -976,7 +976,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc011_solo_admin_staff_gestionan_usuarios",
       "minimo_variantes": 1,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc042_cliente_inexistente_no_tiene_resumen_ni_compra_huerfana": {
       "componente": "backend",
@@ -984,7 +984,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc042_cliente_inexistente_no_tiene_resumen_ni_compra_huerfana",
       "minimo_variantes": 1,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc043_plan_no_disponible_no_genera_compra": {
       "componente": "backend",
@@ -992,7 +992,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc043_plan_no_disponible_no_genera_compra",
       "minimo_variantes": 2,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc044_compra_incompleta_no_tiene_escrituras": {
       "componente": "backend",
@@ -1000,7 +1000,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc044_compra_incompleta_no_tiene_escrituras",
       "minimo_variantes": 3,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc049_sin_vencimientos_elegibles_no_envia_ni_cambia_historia": {
       "componente": "backend",
@@ -1008,7 +1008,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc049_sin_vencimientos_elegibles_no_envia_ni_cambia_historia",
       "minimo_variantes": 4,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc050_fechas_invalidas_no_dan_acceso_y_corregirlas_conserva_pago": {
       "componente": "backend",
@@ -1016,7 +1016,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc050_fechas_invalidas_no_dan_acceso_y_corregirlas_conserva_pago",
       "minimo_variantes": 3,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc076_resumen_vacio_tiene_ceros_sin_crear_datos": {
       "componente": "backend",
@@ -1024,7 +1024,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc076_resumen_vacio_tiene_ceros_sin_crear_datos",
       "minimo_variantes": 1,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc077_fallo_de_consulta_no_presenta_resumen_parcial": {
       "componente": "backend",
@@ -1032,7 +1032,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc077_fallo_de_consulta_no_presenta_resumen_parcial",
       "minimo_variantes": 1,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "BE:transversales/integracion/test_testiny_reglas.py::test_tc139_dos_salidas_simultaneas_consumen_la_ultima_unidad_una_vez": {
       "componente": "backend",
@@ -1040,7 +1040,7 @@
       "clase": "tests.transversales.integracion.test_testiny_reglas",
       "prueba": "test_tc139_dos_salidas_simultaneas_consumen_la_ultima_unidad_una_vez",
       "minimo_variantes": 1,
-      "sha256": "9704d5c7389fe4f2101d633761077941eda462f1452a0830dff9a5b3bfa71ba5"
+      "sha256": "f53bb15fa44ba4bca8250f811e5c01d8197fc193f983e76e36f2078f9d4173ff"
     },
     "FE:clientes/unitarias/client-directory.test.js::legacy inactive accounts are in progress and do not add a fourth state": {
       "componente": "frontend",
@@ -1512,7 +1512,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "a failed users request clears only its section loading status",
       "minimo_variantes": 1,
-      "sha256": "338cf166bd2fb6ce32bedc671e0ed2ce0c7a2b93b888139fb81471ee11e228b1"
+      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
     },
     "FE:transversales/integracion/navigation-stores.test.js::each admin section loads only its resources and shares them with the dashboard": {
       "componente": "frontend",
@@ -1520,7 +1520,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "each admin section loads only its resources and shares them with the dashboard",
       "minimo_variantes": 1,
-      "sha256": "338cf166bd2fb6ce32bedc671e0ed2ce0c7a2b93b888139fb81471ee11e228b1"
+      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
     },
     "FE:transversales/integracion/navigation-stores.test.js::failed forced refresh is not cached and a later navigation retries it": {
       "componente": "frontend",
@@ -1528,7 +1528,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "failed forced refresh is not cached and a later navigation retries it",
       "minimo_variantes": 1,
-      "sha256": "338cf166bd2fb6ce32bedc671e0ed2ce0c7a2b93b888139fb81471ee11e228b1"
+      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
     },
     "FE:transversales/integracion/navigation-stores.test.js::switching to users is not delayed by a pending client list": {
       "componente": "frontend",
@@ -1536,7 +1536,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "switching to users is not delayed by a pending client list",
       "minimo_variantes": 1,
-      "sha256": "338cf166bd2fb6ce32bedc671e0ed2ce0c7a2b93b888139fb81471ee11e228b1"
+      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
     },
     "FE:transversales/integracion/navigation-stores.test.js::users finish loading while a previous section still has pending requests": {
       "componente": "frontend",
@@ -1544,7 +1544,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "users finish loading while a previous section still has pending requests",
       "minimo_variantes": 1,
-      "sha256": "338cf166bd2fb6ce32bedc671e0ed2ce0c7a2b93b888139fb81471ee11e228b1"
+      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
     }
   },
   "casos": [

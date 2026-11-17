@@ -286,3 +286,36 @@ cuando Windows conserva los enlaces como texto; esa limitación queda documentad
 | unittest `test_skill_aliases.py` | 5 aprobadas; incluye Windows, Linux, destinos inválidos y rama symlink. |
 | git diff --check | Aprobada. |
 | Suite completa Spec Driven | No repetida: sus fixtures crean symlinks y requieren permisos que esta sesión de Windows no tiene. |
+
+## Revisión desactualizada de fuentes Testiny · 2026-11-17
+
+Síntoma: el publicador falla en la preparación local con «La prueba
+BE:inventario/integracion/test_inventario_tienda_stock.py::test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio
+cambió o no tiene una revisión válida». No alcanza a ejecutar la publicación.
+
+Causa: el registro SHA-256 cubre archivos completos. Los cambios de inventario
+por unidades y carga de INVENTARIO_UNIDADES modificaron seis archivos incluidos
+en la revisión (42 selectores), aunque la primera función nombrada no cambió.
+Se compararon con las versiones registradas en 4b63165 y 573b907, se revisaron
+los pasos asociados y se actualizaron únicamente las seis huellas. La revisión
+razonada queda en `base/testiny/revision.md`. No se altera el catálogo, el mínimo
+del 50 %, los 100 casos seleccionados ni los controles del publicador.
+
+Regresión: `test_revision_del_repositorio_coincide_con_las_pruebas_actuales`
+ejecuta load_review contra las fuentes reales. Reprodujo el mismo error antes
+del ajuste y pasa después. Se ejecutará en el job documental de los PR.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Backend: inventario/tienda, oráculos de inventario, inventario por unidades, supabase_refresh, oráculo de lecturas y reglas transversales | 128 aprobadas; aviso existente de Starlette/httpx. |
+| Frontend: navigation-stores.test.js | 30 aprobadas; avisos existentes de Pinia y error sintético de proveedor esperado por su prueba. |
+| unittest test_testiny_documented.py | 17 aprobadas. |
+| unittest test_testiny_ci.py | 17 aprobadas, 1 omitida por privilegios de symlinks. Reporter Node real incluido. |
+| Hook documental | Aprobado: 135 documentos y 14 contratos. |
+| git diff --check | Aprobada. |
+
+Se prepararon Python/Node temporales fuera del repositorio y dependencias locales
+ignoradas para verificar. Python de Windows necesitó tzdata local. No se publicaron
+resultados ni se usaron credenciales de Testiny. No se reejecutaron las suites
+completas del producto ni se acreditaron nuevamente los 100 casos: CI debe generar
+informes nuevos del commit corregido. Cambios locales sin commit ni push.
