@@ -75,7 +75,7 @@ Los fallidos se publican como fallidos y cuentan como ejecutados, no aprobados.
 
 5. **Comprobar una ejecución normal.** Abrir o actualizar un PR del propio
    repositorio hacia `develop` o `main`. En `Actions`, esperar a que termine
-   `Validar PR` y después abrir `Publicar resultados en Testiny`. Sus logs deben
+   `Validar PR` y después abrir `CI/CD Pipeline GYM`, job `Importar JUnit por módulo y tipo`. Sus logs deben
    mostrar los recuentos y los identificadores de las ejecuciones importadas.
    En Testiny, seleccionar `SILVE → Automation` y comprobar las fuentes anteriores.
    El resumen de GitHub debe mostrar al menos `100/199` casos documentados.
@@ -101,8 +101,7 @@ Los artefactos de GitHub se conservan durante catorce días.
 Los resultados incluyen el repositorio, rama, URL de GitHub Actions, número de
 ejecución, intento y revisión exacta probada. `vc_commit` identifica el checkout
 que generó el informe; en un PR puede ser el merge provisional.
-`vc_source_commit` conserva el SHA de origen del evento. La ejecución del
-publicador tiene otro ID y no sustituye esos datos.
+`vc_source_commit` conserva el SHA de origen del evento. Para los PR, la ejecución del publicador tiene otro ID y no sustituye esos datos; en merges se publica desde la propia ejecución de CI/CD.
 
 Se publican informes disponibles aunque una prueba haya fallado. Los fallos,
 errores y omisiones conservan su estado; el job original continúa fallando.
@@ -119,7 +118,7 @@ con cambios en pruebas revisadas puede requerir actualizar esa revisión allí.
 
 El publicador acepta los workflows `Validar PR` y `CI/CD Pipeline GYM` del propio
 repositorio, terminados con éxito, fallo o timeout. Excluye ejecuciones canceladas
-y PR de forks. El código del importador se obtiene de la rama predeterminada,
+y PR de forks. Para los PR, el código del importador se obtiene de la rama predeterminada; para los merges, del commit fusionado,
 y la clave solo se entrega al paso de publicación. Los adjuntos están desactivados.
 
 La publicación es independiente del despliegue existente en Vercel/Render.
@@ -191,7 +190,7 @@ usar `Re-run all jobs` en el workflow de origen.
 
 ## Archivos y evidencia
 
-- [Publicador de GitHub Actions](../../.github/workflows/testiny.yml).
+- [Publicador de GitHub Actions](../../.github/workflows/ci-cd.yml).
 - [Validación de PR](../../.github/workflows/pr-validation.yml) y
   [pipeline de merge y despliegue](../../.github/workflows/ci-cd.yml).
 - [Acción de pruebas Docker](../../.github/actions/test-with-report/action.yml) y

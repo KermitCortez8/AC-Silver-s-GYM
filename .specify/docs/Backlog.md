@@ -12,7 +12,7 @@ por Codex y Spec Kit, no reconstruir módulos ni ejecutar una nueva refactorizac
 | Siete componentes por spec | [Base 000](../specs/000-base-implementada/spec.md) y plantilla local. |
 | Reglas transversales | Constitución, arquitectura, diseño, seguridad y DoD. |
 | Flujo para próximos cambios | [Spec Driven](../guias/spec-driven.md), plantillas de plan y tareas. |
-| Control automático documental | Validador local y workflow `spec-docs.yml`. |
+| Control automático documental | Validador local y workflow `pr-validation.yml`. |
 | Herramientas y organización | [Índice central](../README.md), [estructura](../guias/estructura-codex.md) y [procedencia](../UPSTREAM.md). |
 
 ## Próximo sprint

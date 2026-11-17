@@ -219,3 +219,24 @@ remotas. Para comprobar el envío en GitHub hay que incorporar los cambios a
 la rama predeterminada y ejecutar **todas** las suites de nuevo: los artefactos
 anteriores no contienen las nuevas huellas de revisión. Esto sustituye, para
 esta ampliación, la indicación anterior de repetir únicamente el publicador.
+
+## Consolidación de workflows · 2026-11-17
+
+Se sustituyen los cuatro workflows por `pr-validation.yml` y `ci-cd.yml`.
+Ambos incluyen validación documental y pruebas de Spec Driven. CI/CD publica
+los resultados de PR mediante `workflow_run` (solo `Validar PR`) y los de merge
+en su propia ejecución; no se escucha a sí mismo ni despliega por ese evento.
+La documentación se añade a los requisitos de ambos despliegues.
+
+Regresión: la publicación acepta el evento de merge a `main` conservando ID,
+intento y commit; rechaza PR sin fusionar, otras ramas y otros workflows.
+
+| Comprobación local | Resultado |
+| --- | --- |
+| actionlint 1.7.7, ambos workflows | Aprobada; shellcheck no instalado, desactivado. |
+| unittest `test_testiny_ci.py` | 15 aprobadas, 2 omitidas: privilegio de symlinks y Node ausente. |
+| Hook global `validate.py` | Falló: las once skills nativas no son descubribles en este checkout de Windows. |
+| Suite completa `.specify/tests` | Interrumpida tras errores de preparación de fixtures que requieren enlaces simbólicos; Windows no concede ese privilegio. |
+| git diff --check | Aprobada. |
+
+No se ejecutaron workflows remotos, despliegues ni publicaciones reales en Testiny.

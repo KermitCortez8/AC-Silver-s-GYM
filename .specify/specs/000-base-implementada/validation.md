@@ -20,7 +20,7 @@ control documental. Referencia funcional: `fc1577e`.
 
 La [tabla de criterios](spec.md) enlaza los documentos que satisfacen CA-01…CA-08.
 La comprobación puede repetirse desde la raíz con el validador; el
-[workflow](../../../.github/workflows/spec-docs.yml) la ejecutará en los PR configurados
+[workflow](../../../.github/workflows/pr-validation.yml) la ejecutará en los PR configurados
 una vez incorporado al repositorio remoto.
 
 ## Límites de esta verificación
