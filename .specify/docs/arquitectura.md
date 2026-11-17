@@ -383,9 +383,8 @@ en un registro ni despliega esos contenedores en Vercel o Render.
 
 | Workflow | Disparador | Comprobaciones y resultado |
 | --- | --- | --- |
-| [pr-validation.yml](../../.github/workflows/pr-validation.yml) | PR a `develop` o `main`. | Targets Docker `test`, compilación frontend, Deno y PostgreSQL 16 desechable para contratos/concurrencia. |
-| [spec-docs.yml](../../.github/workflows/spec-docs.yml) | PR a `develop` o `main`; ejecución manual. | Validación de contexto/documentación y pruebas aisladas de Spec Driven. |
-| [ci-cd.yml](../../.github/workflows/ci-cd.yml) | PR fusionado a `main`. | Construcción/arranque/proxy con Compose, tests backend/frontend/Deno y despliegue condicionado al éxito. |
+| [pr-validation.yml](../../.github/workflows/pr-validation.yml) | PR a `develop` o `main`. | Targets Docker `test`, compilación frontend, Deno, PostgreSQL 16 desechable para contratos/concurrencia y validación documental/Spec Driven. |
+| [ci-cd.yml](../../.github/workflows/ci-cd.yml) | PR fusionado a `main`. | Validación documental, construcción/arranque/proxy con Compose, tests backend/frontend/Deno y despliegue condicionado al éxito. También publica en Testiny los resultados del merge y de los PR mediante workflow_run, sin desplegar en ese evento. |
 
 Los targets `test` se ejecutan con `--network none` y sin credenciales de
 producción. PostgreSQL real se valida en el job específico de PR; no forma parte

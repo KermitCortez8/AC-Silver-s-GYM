@@ -199,6 +199,21 @@ def prepare_reports(incoming: Path, output: Path, documented=False) -> list[dict
 
 def run_fields(event: dict) -> dict[str, str]:
     run = event.get("workflow_run") or {}
+    if not run:
+        pr = event.get("pull_request") or {}
+        if (os.environ.get("GITHUB_EVENT_NAME") != "pull_request"
+                or os.environ.get("GITHUB_WORKFLOW") != "CI/CD Pipeline GYM"
+                or event.get("action") != "closed" or pr.get("merged") is not True
+                or (pr.get("base") or {}).get("ref") != "main"):
+            raise ValueError("Solo se publica el merge a main del pipeline CI/CD")
+        repository = (event.get("repository") or {}).get("full_name", "")
+        run = {
+            "id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+            "name": "CI/CD Pipeline GYM", "conclusion": "success",
+            "head_repository": {"full_name": repository},
+            "head_sha": pr.get("merge_commit_sha", ""), "head_branch": "main",
+            "html_url": f"{os.environ['GITHUB_SERVER_URL']}/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+        }
     repository = (event.get("repository") or {}).get("full_name", "")
     head_repository = (run.get("head_repository") or {}).get("full_name", "")
     if not repository or repository != head_repository:
