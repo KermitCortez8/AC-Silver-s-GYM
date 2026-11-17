@@ -15,6 +15,7 @@ API key y dos variables de GitHub; los archivos por sí solos no habilitan enví
 | `gym-frontend` | Node: unitarias, integración e interfaz | PR a `develop`/`main` y merge a `main` |
 | `gym-postgres` | Ocho suites de contratos, transacciones y concurrencia con base desechable | PR a `develop`/`main` |
 | `gym-notificaciones-deno` | Pruebas de recordatorios de la Edge Function | PR a `develop`/`main` y merge a `main` |
+| `gym-navegador` | Chromium: acceso válido/inválido, alta de inventario y salida de stock, con capturas de la misma ejecución | PR a `develop`/`main` y merge a `main`; solo el merge a `main` publica |
 | `gym-casos-documentados` | Un resultado por caso documentado revisado, derivado de sus pruebas obligatorias | Después de las suites, si se alcanza el mínimo del 50 % |
 
 Dentro de cada fuente, las carpetas siguen `módulo → tipo → archivo`. Los nombres
@@ -119,7 +120,8 @@ con cambios en pruebas revisadas puede requerir actualizar esa revisión allí.
 El job solo acepta PR cerrados y fusionados hacia `main`. No existe un disparador
 `workflow_run`: validar un PR o fusionar en `develop` no publica resultados.
 El importador se obtiene del commit fusionado y la clave solo se entrega al paso
-de publicación. Los adjuntos están desactivados.
+de publicación. Los adjuntos están habilitados únicamente para `gym-navegador`,
+con capturas PNG verificadas; las suites técnicas conservan `--no-attachments`.
 
 La publicación es independiente del despliegue existente en Vercel/Render.
 No vuelve a ejecutar las suites: importa los informes que estas generan. La
@@ -129,6 +131,60 @@ huellas necesarias para acreditar el catálogo revisado. Tampoco se usa la cuent
 de prueba de la web desplegada.
 
 ## Revisión local sin publicar
+
+### Descripciones y capturas automáticas
+
+Todos los resultados técnicos incluyen un resumen con prueba, origen, estado y
+duración. Los casos documentados incluyen además sus pasos y resultados esperados.
+Se usa `--include-passed-details` para conservar mensajes también al aprobar.
+
+La suite [de navegador](../../.github/scripts/browser-tests/playwright.config.mjs)
+abre Chromium contra la interfaz Vue y una API FastAPI con rutas y autenticación
+reales. El repositorio se sustituye por memoria volátil con una cuenta sintética;
+Google es un doble explícito y se bloquean peticiones externas del navegador.
+No prueba Supabase, Google, Stripe o Resend productivos. No se modifica la API
+desplegada: el servidor QA solo existe en `backend/tests/soporte/browser_server.py`,
+exige activación y clave locales, y se enlaza a `127.0.0.1`.
+
+Cada recorrido guarda descripción, resultado esperado, pasos realmente ejecutados,
+capturas durante el flujo y pantalla final, incluso si falla. El manifiesto
+`browser.evidence.json` relaciona caso, estado y SHA-256 de sus imágenes con el
+JUnit. El publicador rechaza estados incoherentes, capturas ausentes o alteradas,
+rutas arbitrarias y archivos que no sean PNG. Los límites son ocho capturas por
+caso, 5 MiB por imagen, 50 MiB por informe y 200 casos visuales.
+
+Los PR guardan JUnit/capturas en `gym-junit-browser-<intento>` y las trazas de fallo
+en `gym-browser-diagnostics-<intento>`, por 14 días. No envían nada a Testiny.
+El merge a `main` vuelve a ejecutar los recorridos y publica sus propias capturas,
+en la fuente `gym-navegador`. Las trazas quedan solo en GitHub; no se publican.
+Estos recorridos también deben pasar antes de desplegar. Las imágenes no se
+reutilizan como evidencia de otras pruebas ni aumentan la cobertura documentada
+sin revisar explícitamente su correspondencia.
+
+Para ejecutar localmente, instalar las dependencias de `backend/requirements-dev.txt`
+(en Windows también `tzdata`), ejecutar `npm ci` en `frontend` y después:
+
+```bash
+cd .github/scripts/browser-tests
+npm ci
+npx playwright install chromium
+npm test
+```
+
+Se necesitan Python 3.12 y Node 22 en PATH. Los informes locales se guardan en
+`.artifacts/browser/`, ignorado por Git. En Linux, instalar dependencias de
+Chromium con `npx playwright install --with-deps chromium`, como hace CI.
+
+Preparación local de los informes visuales, sin clave ni envío:
+
+```bash
+python .github/scripts/testiny/publish.py --incoming .artifacts/browser --output .artifacts/browser-normalized
+```
+
+Las pruebas unitarias, de API o SQL no abren una pantalla. Sus resultados conservan
+su resumen técnico; únicamente los recorridos de navegador tienen capturas reales.
+
+### Descargar informes de GitHub
 
 Descargar los artefactos JUnit de un mismo intento y extraer sus XML y metadatos
 en una carpeta común fuera del repositorio, por ejemplo:

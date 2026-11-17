@@ -1,0 +1,50 @@
+name: Recorridos reales con capturas
+description: Ejecuta Chromium contra frontend y API local con datos sintéticos; conserva JUnit y evidencia.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: npm
+        cache-dependency-path: |
+          frontend/package-lock.json
+          .github/scripts/browser-tests/package-lock.json
+    - name: Preparar API de prueba
+      shell: bash
+      run: pip install -r backend/requirements-dev.txt
+    - name: Instalar dependencias de interfaz
+      shell: bash
+      working-directory: frontend
+      run: npm ci --no-audit --no-fund
+    - name: Instalar ejecutor y Chromium
+      shell: bash
+      working-directory: .github/scripts/browser-tests
+      run: |
+        npm ci --ignore-scripts --no-audit --no-fund
+        npx playwright install --with-deps chromium
+    - name: Ejecutar recorridos y capturar resultados
+      shell: bash
+      working-directory: .github/scripts/browser-tests
+      env:
+        GYM_BROWSER_REPORT_DIR: ${{ runner.temp }}/gym-reports
+      run: npm test
+    - name: Conservar resultados y capturas de la ejecución
+      if: always()
+      uses: ./.github/actions/upload-junit
+      with:
+        component: browser
+        report: ${{ runner.temp }}/gym-reports/browser.xml
+        evidence: ${{ runner.temp }}/gym-reports/evidence
+        manifest: ${{ runner.temp }}/gym-reports/browser.evidence.json
+    - name: Conservar diagnóstico Playwright sin publicarlo en Testiny
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: gym-browser-diagnostics-${{ github.run_attempt }}
+        path: ${{ runner.temp }}/gym-reports/playwright
+        if-no-files-found: warn
+        retention-days: 14

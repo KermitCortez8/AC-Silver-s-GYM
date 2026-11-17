@@ -71,3 +71,6 @@ AGENTS.override.md
 
 # Configuración local de Claude Code (launch.json, ajustes personales)
 .claude/
+
+# Informes y capturas generados por las pruebas de navegador
+.artifacts/

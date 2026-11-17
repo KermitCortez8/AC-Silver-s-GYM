@@ -173,6 +173,12 @@ def build_report(root: Path, output: Path, records: list[dict], reports: list[di
                            "rf": ", ".join(case["rf"]), "cus": case["cus"],
                            "tipo_documentado": case["tipo"], "manual_case_url": case["url"]}.items():
             ET.SubElement(properties, "property", name=key, value=str(value))
+        steps = "\n".join(f"{number}. {step['accion']}\n   Esperado: {step['esperado']}"
+                          for number, step in enumerate(case["pasos"], 1))
+        ET.SubElement(node, "system-out").text = (
+            f"Caso: {case['titulo']}\n{steps}\nResultado obtenido: {result['estado']}\n"
+            "Derivado de los selectores obligatorios revisados; no acredita un recorrido visual.\n"
+            "Pruebas: " + ", ".join(result["pruebas"]))
         if result["estado"] == "skipped":
             message = "Automatización completa pendiente de revisión" if not result["revisado"] else "Pruebas obligatorias ausentes u omitidas: " + ", ".join(result["pendientes"])
             ET.SubElement(node, "skipped", message=message)

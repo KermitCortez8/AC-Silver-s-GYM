@@ -17,6 +17,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  browser-ci:
+    name: Recorridos de navegador con evidencia
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/browser-tests
+
   documentation:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     runs-on: ubuntu-latest
@@ -151,7 +163,7 @@ jobs:
           component: frontend
 
   deploy-vercel:
-    needs: [documentation, backend-ci, frontend-ci, schedule-emails-ci]
+    needs: [documentation, backend-ci, frontend-ci, schedule-emails-ci, browser-ci]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -186,7 +198,7 @@ jobs:
         run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
 
   deploy-render:
-    needs: [documentation, backend-ci, frontend-ci, schedule-emails-ci]
+    needs: [documentation, backend-ci, frontend-ci, schedule-emails-ci, browser-ci]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -209,7 +221,7 @@ jobs:
           echo "Render aceptó la solicitud. El resultado del despliegue se consulta en Render."
 
   testiny:
-    needs: [documentation, docker-ci, backend-ci, frontend-ci, schedule-emails-ci]
+    needs: [documentation, docker-ci, backend-ci, frontend-ci, schedule-emails-ci, browser-ci]
     name: Importar JUnit por módulo y tipo
     if: >-
       always() && !cancelled() && vars.TESTINY_ENABLED == 'true' &&
