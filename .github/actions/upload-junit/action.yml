@@ -7,6 +7,14 @@ inputs:
   report:
     required: true
     description: Ruta absoluta al JUnit generado
+  evidence:
+    required: false
+    default: ''
+    description: Directorio de capturas de navegador
+  manifest:
+    required: false
+    default: ''
+    description: Manifiesto de evidencia visual
 runs:
   using: composite
   steps:
@@ -26,10 +34,15 @@ runs:
         if report.is_file():
             component = os.environ['REPORT_COMPONENT']
             test_root = {'backend': 'backend/tests', 'frontend': 'frontend/tests',
-                         'postgres': 'backend/tests', 'schedule-emails': 'supabase/tests'}[component]
+                         'postgres': 'backend/tests', 'schedule-emails': 'supabase/tests',
+                         'browser': '.github/scripts/browser-tests'}[component]
             sources = {path.as_posix(): hashlib.sha256(path.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
                        for path in pathlib.Path(test_root).rglob('*')
-                       if path.is_file() and path.suffix in {'.py', '.js', '.ts'}}
+                       if path.is_file() and path.suffix in {'.py', '.js', '.ts', '.mjs'}
+                       and 'node_modules' not in path.parts}
+            if component == 'browser':
+                fixture = pathlib.Path('backend/tests/soporte/browser_server.py')
+                sources[fixture.as_posix()] = hashlib.sha256(fixture.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
             metadata = {
                 'component': component,
                 'repository': os.environ['GITHUB_REPOSITORY'],
@@ -46,5 +59,7 @@ runs:
         path: |
           ${{ inputs.report }}
           ${{ steps.metadata.outputs.file }}
+          ${{ inputs.evidence }}
+          ${{ inputs.manifest }}
         if-no-files-found: warn
         retention-days: 14

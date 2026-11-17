@@ -391,6 +391,14 @@ producción. PostgreSQL real se valida en el job específico de PR; no forma par
 del Compose de aplicación ni se repite como job independiente en el pipeline de
 merge. Cerrar un PR sin fusionarlo no ejecuta el pipeline de publicación.
 
+Ambos workflows añaden recorridos Chromium con Playwright mediante la acción
+[browser-tests](../../.github/actions/browser-tests/action.yml). Arrancan la
+interfaz y una API con autenticación real sobre memoria QA, sin servicios externos.
+Guardan JUnit, descripciones, PNG y trazas de fallo; solo el merge a `main` envía
+las PNG verificadas a `gym-navegador` en Testiny. Las pruebas técnicas mantienen
+sus fuentes y no reciben capturas ajenas. Los recorridos bloquean ambos
+despliegues si fallan. Véase [evidencia visual](../guias/testiny-ci.md).
+
 Tras las pruebas de merge, Vercel recupera variables de producción, compila y
 publica el resultado con su CLI. Render recibe un Deploy Hook con el mismo commit.
 Los secretos de Actions son `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
