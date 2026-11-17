@@ -15,6 +15,10 @@ spec.loader.exec_module(documented)
 
 
 class DocumentedCasesTests(unittest.TestCase):
+    def test_revision_del_repositorio_coincide_con_las_pruebas_actuales(self):
+        # Detectar revisiones obsoletas al validar el PR, antes de publicar.
+        documented.load_review(ROOT)
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="gym cobertura ")
         self.addCleanup(temporary.cleanup)

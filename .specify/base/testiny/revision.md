@@ -124,3 +124,27 @@ Los hallazgos no cambian los casos/runs manuales en Testiny. Los demás casos pe
 | [TC-198](https://app.testiny.io/SILVE/testcases/tc/198/edit) | RF21, RF23, RF24 | CUS21, CUS23, CUS24 | Seguridad | MOD-09 | Aprobado |
 
 Los tipos son los documentados en Testiny; cada prueba técnica conserva además su tipo por carpeta. No se suman pruebas unitarias, variantes o varios RF como si fueran casos manuales distintos.
+
+## Revisión de fuentes · 2026-11-17
+
+Se revisaron los cambios posteriores al registro inicial que invalidaban las
+huellas de seis archivos (42 selectores). El catálogo de 199 casos, los 100
+casos seleccionados, sus pasos y el mínimo del 50 % se mantienen.
+
+- Inventario/tienda: se registra el saldo inicial del producto en movimientos;
+  el fixture sin historial usa stock cero. Los selectores revisados mantienen
+  sus aserciones de reserva, reposición, cancelación y conservación de ventas.
+- Inventario genérico y concurrencia: los fixtures usan categoría `Limpieza`,
+  sin unidades identificadas. Conservan las comprobaciones de stock, edición,
+  validaciones, historial y exclusión concurrente. El flujo de equipos por unidad
+  se comprueba por separado en `test_inventario_unidades.py`.
+- Lecturas: la carga completa pasa de 19 a 20 tablas al incorporar
+  `INVENTARIO_UNIDADES`; mantiene el máximo de seis conexiones.
+- Navegación: Inventario y el panel compartido incluyen `/api/inventario/unidades`
+  entre los recursos esperados; se conservan los contratos de carga por módulo.
+
+Se actualizan únicamente las huellas SHA-256 de estas fuentes tras compararlas
+con sus versiones revisadas. La nueva regresión ejecuta `load_review` sobre el
+repositorio real para detectar futuras desactualizaciones durante el PR.
+Esta revisión no acredita nuevamente por sí sola los 100 casos: su ejecución
+completa exige informes nuevos de las suites, validados con `--documented`.
