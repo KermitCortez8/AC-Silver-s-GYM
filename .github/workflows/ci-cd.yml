@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [main]
     types: [closed]
-  # Los resultados de PR se publican sin ejecutar despliegues.
-  workflow_run:
-    workflows: [Validar PR]
-    types: [completed]
 
 permissions:
   contents: read
@@ -17,7 +13,7 @@ permissions:
 
 # Cada PR conserva su ejecución; otro merge no cancela su despliegue.
 concurrency:
-  group: gym-cicd-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt || github.run_attempt }}
+  group: gym-merge-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
@@ -217,18 +213,16 @@ jobs:
     name: Importar JUnit por módulo y tipo
     if: >-
       always() && !cancelled() && vars.TESTINY_ENABLED == 'true' &&
-      ((github.event_name == 'pull_request' && github.event.pull_request.merged == true &&
-        contains(needs.*.result, 'success')) ||
-       (github.event_name == 'workflow_run' &&
-        github.event.workflow_run.head_repository.full_name == github.repository &&
-        contains(fromJSON('["success", "failure", "timed_out"]'), github.event.workflow_run.conclusion)))
+      github.event_name == 'pull_request' && github.event.action == 'closed' &&
+      github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' &&
+      contains(needs.*.result, 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # workflow_run dispone de secretos: ejecutar únicamente herramientas de la rama predeterminada.
+      # Publicar los informes de la misma revisión fusionada que ejecutó las pruebas.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.repository.default_branch || github.event.pull_request.merge_commit_sha }}
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -245,8 +239,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: ${{ github.event.workflow_run.id || github.run_id }}
-          pattern: gym-junit-*-${{ github.event.workflow_run.run_attempt || github.run_attempt }}
+          run-id: ${{ github.run_id }}
+          pattern: gym-junit-*-${{ github.run_attempt }}
           path: ${{ runner.temp }}/testiny-incoming
           # Cada suite tiene XML/metadatos propios; no mezclar intentos anteriores.
           merge-multiple: true

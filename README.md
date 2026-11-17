@@ -146,8 +146,8 @@ Function está en [arquitectura](.specify/docs/arquitectura.md).
 Los PR a `develop` y `main` ejecutan
 [validación de componentes](.github/workflows/pr-validation.yml): imágenes de
 prueba backend/frontend, compilación de producción, comprobaciones Deno y un
-PostgreSQL 16 desechable para contratos y concurrencia. Otro
-[workflow documental](.github/workflows/spec-docs.yml) verifica la integración
+PostgreSQL 16 desechable para contratos y concurrencia. El mismo
+[workflow de PR](.github/workflows/pr-validation.yml) verifica la integración
 Spec Driven y sus documentos.
 
 Al fusionar un PR hacia `main`,

@@ -215,6 +215,19 @@ class TestinyIntegrationTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     integration.run_fields(event)
 
+    def test_workflow_publica_solo_el_merge_a_main_y_usa_sus_artefactos(self):
+        workflow = (ROOT / ".github/workflows/ci-cd.yml").read_text(encoding="utf-8")
+        trigger = workflow.split("permissions:", 1)[0]
+        self.assertNotIn("workflow_run:", trigger)
+        self.assertIn("branches: [main]", trigger)
+        self.assertIn("types: [closed]", trigger)
+        publication = workflow.split("\n  testiny:", 1)[1]
+        self.assertIn("github.event.pull_request.merged == true", publication)
+        self.assertIn("github.event.pull_request.base.ref == 'main'", publication)
+        self.assertIn("run-id: ${{ github.run_id }}", publication)
+        self.assertIn("pattern: gym-junit-*-${{ github.run_attempt }}", publication)
+        self.assertNotIn("github.event.workflow_run", publication)
+
     def test_preparacion_local_no_contacta_testiny_aunque_exista_una_clave(self):
         self.basic_report()
         with mock.patch.dict(os.environ, {"TESTINY_API_KEY": "clave-sintetica"}), \
