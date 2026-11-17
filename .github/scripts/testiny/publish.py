@@ -23,6 +23,7 @@ SOURCES = {
     "frontend": "gym-frontend",
     "postgres": "gym-postgres",
     "schedule-emails": "gym-notificaciones-deno",
+    "browser": "gym-navegador",
     "casos-documentados": "gym-casos-documentados",
 }
 LEVELS = {
@@ -75,6 +76,8 @@ def case_identity(case: ET.Element, component: str, modules: dict[str, str], anc
         module, level = modules["notificaciones"], "Integración Deno"
     if component == "postgres":
         level = "Integración PostgreSQL"
+    if component == "browser":
+        level = "Recorridos en navegador"
     filename = Path(identifier.replace("\\", "/")).name or "suite"
     if component in {"backend", "postgres"}:
         filename = identifier.split(".")[-1] or "colección"
@@ -84,7 +87,67 @@ def case_identity(case: ET.Element, component: str, modules: dict[str, str], anc
     return clean_text(name, 2_000), f"{module}.{level}.{filename}", f"gym-{component}-{digest}"
 
 
-def normalize_report(source: Path, destination: Path, component: str, modules: dict[str, str], evidence=None):
+def browser_manifest(incoming: Path) -> dict:
+    path = incoming / "browser.evidence.json"
+    if (not path.is_file() or path.is_symlink() or path.stat().st_size > 1024 * 1024
+            or not path.resolve().is_relative_to(incoming.resolve())):
+        raise ValueError("Falta el manifiesto de evidencia de navegador o es inválido")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if (not isinstance(data, dict) or data.get("version") != 1
+            or not isinstance(data.get("cases"), list) or len(data["cases"]) > 200):
+        raise ValueError("Formato de evidencia de navegador inválido")
+    result = {}
+    for entry in data["cases"]:
+        if not isinstance(entry, dict):
+            raise ValueError("Caso de evidencia inválido")
+        identity = (entry.get("classname"), entry.get("name"))
+        if not all(isinstance(value, str) and value for value in identity) or identity in result:
+            raise ValueError("Evidencia sin identidad o duplicada")
+        result[identity] = entry
+    return result
+
+
+def attach_browser_evidence(entry: dict, case: ET.Element, incoming: Path, output: Path, outcome: str, budget: dict) -> str:
+    """Solo admite PNG verificadas, con ruta y hash cerrados; nunca rutas del JUnit."""
+    expected_status = {"passed": "passed", "skipped": "skipped"}.get(entry.get("status"), "failure")
+    if expected_status != outcome:
+        raise ValueError("El resultado visual no coincide con el JUnit")
+    files = entry.get("files")
+    if not isinstance(files, list) or len(files) > 8 or (outcome != "skipped" and not files):
+        raise ValueError("Faltan capturas de la ejecución o hay demasiadas")
+    properties = case.find("properties")
+    for attachment in files:
+        if not isinstance(attachment, dict):
+            raise ValueError("Captura inválida")
+        name = attachment.get("path", "")
+        digest = attachment.get("sha256", "")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest) or name != f"evidence/browser/{digest}.png":
+            raise ValueError("Ruta de captura no admitida")
+        source = incoming / name
+        if (not source.is_file() or source.is_symlink() or not source.resolve().is_relative_to(incoming.resolve())
+                or source.stat().st_size > 5 * 1024 * 1024):
+            raise ValueError("Captura ausente o fuera de los límites")
+        budget["bytes"] += source.stat().st_size
+        if budget["bytes"] > 50 * 1024 * 1024:
+            raise ValueError("La evidencia supera 50 MiB por informe")
+        content = source.read_bytes()
+        if (not content.startswith(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
+                or len(content) < 33 or hashlib.sha256(content).hexdigest() != digest):
+            raise ValueError("La captura no es PNG o su huella cambió")
+        destination = output / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(content)
+        ET.SubElement(properties, "property", name="attachment", value=name)
+    steps = entry.get("steps", [])
+    if not isinstance(steps, list) or len(steps) > 100 or not all(isinstance(step, str) for step in steps):
+        raise ValueError("Pasos de evidencia inválidos")
+    return clean_text(f"Descripción: {entry.get('description', '')}\n"
+                      f"Resultado esperado: {entry.get('expected', '')}\n"
+                      "Pasos ejecutados (los pasos posteriores a un fallo no se acreditan):\n" + "\n".join(steps))
+
+
+def normalize_report(source: Path, destination: Path, component: str, modules: dict[str, str], evidence=None,
+                     visual=None):
     if source.is_symlink() or source.stat().st_size > MAX_REPORT_BYTES:
         raise ValueError(f"Informe no admitido: {source.name}")
     data = source.read_bytes().decode("utf-8-sig")
@@ -101,7 +164,9 @@ def normalize_report(source: Path, destination: Path, component: str, modules: d
     suites: dict[str, ET.Element] = {}
     totals = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0}
     identities = set()
+    visual_budget = {"bytes": 0}
     for case in cases:
+        original_name = case.get("name", "")
         ancestors = []
         parent = parents.get(case)
         while parent is not None and component == "frontend":
@@ -137,7 +202,19 @@ def normalize_report(source: Path, destination: Path, component: str, modules: d
                 totals["skipped"] += 1
             elif status not in {"passed", "pass", "success", "run"}:
                 raise ValueError(f"Estado JUnit sin resultado interpretable: {status}")
-        if evidence is not None:
+        outcome = next((tag for tag in ("error", "failure", "skipped")
+                        if result.find(tag) is not None), "passed")
+        details = (f"Prueba: {clean_text(original_name)}\nOrigen: {clean_text(case.get('classname', ''))}\n"
+                   f"Suite: {component}\nResultado obtenido: {outcome}\nDuración: {duration:.3f} s.\n")
+        if component == "browser":
+            entry = (visual or {}).pop((case.get("classname", ""), original_name), None)
+            if entry is None:
+                raise ValueError("El caso JUnit no tiene evidencia de su propia ejecución")
+            details += attach_browser_evidence(entry, result, source.parent, destination.parent, outcome, visual_budget)
+        else:
+            details += "Comprobación técnica automatizada; no representa un recorrido de navegador."
+        ET.SubElement(result, "system-out").text = details
+        if evidence is not None and component != "browser":
             identifier = case.get("classname", "")
             original_name = case.get("name", "")
             if component == "frontend":
@@ -155,6 +232,8 @@ def normalize_report(source: Path, destination: Path, component: str, modules: d
         suite.set("time", f"{sum(float(child.get('time')) for child in children):.6f}")
     for key, value in totals.items():
         root.set(key, str(value))
+    if component == "browser" and visual:
+        raise ValueError("El manifiesto contiene evidencia ajena a este JUnit")
     destination.parent.mkdir(parents=True, exist_ok=True)
     ET.ElementTree(root).write(destination, encoding="utf-8", xml_declaration=True)
     return totals
@@ -174,7 +253,8 @@ def prepare_reports(incoming: Path, output: Path, documented=False) -> list[dict
             raise ValueError("Informe fuera del directorio de artefactos")
         destination = output / f"{component}.xml"
         report = {"component": component, "file": str(destination),
-                  **normalize_report(source, destination, component, modules, evidence)}
+                  **normalize_report(source, destination, component, modules, evidence,
+                                     browser_manifest(incoming) if component == "browser" else None)}
         metadata = source.with_suffix(".metadata.json")
         if metadata.is_file():
             if (metadata.is_symlink() or not metadata.resolve().is_relative_to(incoming.resolve())
@@ -255,12 +335,17 @@ def import_command(report: dict, project: str, fields: dict[str, str], node: str
         raise ValueError(f"Fuente de Testiny inválida: {source!r}; "
                          "usar gym- y palabras en minúsculas separadas por guiones")
     command = [node, str(CLI_ENTRY), "automation", "--project", project,
-            "--source", source, "--no-attachments",
+            "--source", source,
+            "--include-passed-details",
             "--junit-classname-as-folder", "nested", "--junit-duration-unit", "sec",
             "--run-fields", "ci_repository,ci_run_id,ci_retry",
             "--run-title-pattern", "%{ci_workflow_name} - %{vc_ref} - %{ci_run_id} (%{ci_retry})",
             "--field-values", ",".join(f"{key}={value}" for key, value in fields.items()),
             "--junit", report["file"]]
+    if report["component"] == "browser":
+        command.extend(["--attachment-path", str(Path(report["file"]).parent)])
+    else:
+        command.append("--no-attachments")
     if report["component"] == "casos-documentados":
         command.extend(["--custom-result-fields", "rf,cus,manual_case_url,testiny_case_id,tipo_documentado"])
     return command

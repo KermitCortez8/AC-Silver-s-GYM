@@ -319,3 +319,62 @@ ignoradas para verificar. Python de Windows necesitó tzdata local. No se public
 resultados ni se usaron credenciales de Testiny. No se reejecutaron las suites
 completas del producto ni se acreditaron nuevamente los 100 casos: CI debe generar
 informes nuevos del commit corregido. Cambios locales sin commit ni push.
+
+## Descripciones y capturas de navegador en CI · 2026-11-17
+
+Pedido: conservar automáticamente descripción y evidencia visual del recorrido
+real de la aplicación, con publicación exclusivamente tras merge a `main`.
+
+Se incorpora Playwright 1.65.1 con lockfile y acción compartida, manteniendo solo
+los dos workflows existentes. Arranca Vue/Vite y la API FastAPI de QA sobre
+memoria volátil, con autenticación por contraseña y roles reales. El servidor
+solo se enlaza a 127.0.0.1 y exige activación/clave locales; no forma parte de
+app.main. Google es un doble declarado; se bloquean peticiones externas.
+
+Los cuatro recorridos comprueban acceso válido, contraseña inválida, alta de un
+artículo con stock 10 persistido al recargar y salida de 3 con stock final 7.
+Generan siete capturas de pasos/pantalla final en total, JUnit y manifiesto por
+caso. Se revisó visualmente la captura de stock final: ACT-0001, Escoba QA,
+Limpieza, 7 unidades y mínimo 3. Los datos y la cuenta son sintéticos.
+
+Los resultados técnicos reciben resumen de origen/estado/duración; los casos
+documentados incluyen pasos y resultados esperados. La CLI usa
+`--include-passed-details`. Solo `gym-navegador` habilita adjuntos; el normalizador
+valida identidad/estado, rutas cerradas, hashes y formato PNG. Rechaza evidencia
+alterada, ausente o ajena. Conserva el fallo si la prueba falla. Límites: 200
+casos visuales, ocho imágenes por caso, 5 MiB por PNG y 50 MiB por informe.
+No aumenta la cobertura de los 199 casos documentados sin correspondencia revisada.
+
+En PR se conservan únicamente artefactos de GitHub. Tras merge a `main` se
+repiten los recorridos y se publican sus propias PNG en `gym-navegador`.
+Las trazas de fallo quedan en GitHub, no en Testiny. Los recorridos deben pasar
+antes de desplegar Vercel/Render. Se mantienen los disparadores solo de main
+para publicación y todas las suites previas.
+
+| Verificación | Resultado |
+| --- | --- |
+| Playwright/Chromium, ejecución final con Node 22.23.5 | 4 aprobadas, 0 omitidas. Siete PNG reales generadas. |
+| Preparación de browser.xml con publish.py, sin --publish | 4 aprobadas, 0 fallos; adjuntos normalizados y descripciones conservados. No contactó Testiny. |
+| Backend completo | 892 aprobadas, 59 omitidas (PostgreSQL sin contenedor), 1 aviso previo Starlette/httpx. Incluye 3 nuevas pruebas del servidor QA. |
+| Frontend completo con Node 22.23.5 | 389 aprobadas. |
+| Build de frontend | Aprobado. Avisos de tamaño de chunks/tiempos de plugins existentes. |
+| unittest test_browser_evidence.py | 7 aprobadas: validación de archivos, inyección, identidad, estados y conservación de fallos. |
+| unittest test_testiny_ci.py | 17 aprobadas, 1 omitida por privilegio de symlinks de Windows. Reporter Node real incluido. |
+| unittest test_testiny_documented.py | 17 aprobadas. Mantiene catálogo, selectores y mínimo. |
+| actionlint 1.7.7 para ambos workflows | Aprobado; shellcheck no disponible localmente. |
+| Python embebido de la acción upload-junit | Sintaxis comprobada con ast.parse. |
+| Hook documental y git diff --check | Aprobados. |
+
+El primer frontend completo con Node 22.17 dio 388/389: el mock de intervalos de
+la prueba existente del temporizador falló al reiniciar. Se reprodujo aislado y
+pasó con Node 22.23.5; el frontend completo pasó con esa versión actual de la
+rama 22 usada por Actions. No se cambió el código ni la prueba del temporizador.
+Las primeras ejecuciones de navegador detectaron selectores que se ajustaron a
+los nombres accesibles reales (botón de acceso y etiquetas de movimientos).
+
+La suite completa de scripts Spec Driven no se repitió por los fixtures de
+symlinks sin privilegios en este Windows; se ejecutaron las suites del integrador
+indicadas arriba. No se ejecutó PostgreSQL real, Deno ni despliegues remotos.
+No se usaron credenciales ni se enviaron adjuntos a Testiny: se verificaron la
+preparación local y las opciones de la CLI 1.43.1 instalada. Los cambios siguen
+locales en feat/correcciones, sin commit, push ni sincronización de develop.

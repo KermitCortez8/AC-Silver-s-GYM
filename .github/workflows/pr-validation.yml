@@ -13,6 +13,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  browser:
+    name: Recorridos de navegador con evidencia
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/browser-tests
+
   tests:
     name: Pruebas de ${{ matrix.component }}
     runs-on: ubuntu-latest

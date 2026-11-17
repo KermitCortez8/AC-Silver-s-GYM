@@ -117,8 +117,9 @@ class TestinyIntegrationTests(unittest.TestCase):
         destination = self.output / "backend.xml"
         integration.normalize_report(source, destination, "backend", self.modules)
         text = destination.read_text(encoding="utf-8")
-        for forbidden in ["ATTACHMENT|", "file://", "../../private", "system-out", 'name="attachment"']:
+        for forbidden in ["ATTACHMENT|", "file://", "../../private", "./secret", 'name="attachment"']:
             self.assertNotIn(forbidden, text)
+        self.assertIn("Resultado obtenido: failure", text)
 
     def test_rechaza_dtd_entidades_utf16_estados_ambiguos_y_reportes_vacios(self):
         variants = [
