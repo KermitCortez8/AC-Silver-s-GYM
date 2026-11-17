@@ -240,3 +240,49 @@ intento y commit; rechaza PR sin fusionar, otras ramas y otros workflows.
 | git diff --check | Aprobada. |
 
 No se ejecutaron workflows remotos, despliegues ni publicaciones reales en Testiny.
+
+## Corrección de publicación y fallos de PR · 2026-11-17
+
+La publicación desde PR añadida en la consolidación anterior contradecía el
+alcance solicitado. Se retira `workflow_run` de CI/CD y se exige PR cerrado,
+fusionado y con destino `main` en el job Testiny. Se conservan normalización,
+cobertura, publicación y artefactos; los PR solo validan y guardan JUnit.
+Se añade regresión para los disparadores y la procedencia de los artefactos.
+
+El enlace del README apuntaba a `spec-docs.yml` retirado. Se actualiza al workflow
+integrado, corrigiendo la causa del fallo documental mostrado por GitHub.
+
+El fallo SQL de salida tardía era una carrera del fixture: adelantaba el límite
+con microsegundos, mientras `guardar_asistencia` trunca la hora al segundo.
+La prueba espera ahora al primer segundo completo posterior al límite antes de
+cerrar la visita. No cambia SQL ni las reglas de negocio de asistencia.
+
+| Comprobación | Resultado |
+| --- | --- |
+| actionlint 1.7.7, ambos workflows, sin shellcheck local | Aprobada. |
+| unittest `test_testiny_ci.py` | 16 aprobadas, 2 omitidas (symlinks y Node). |
+| Hook documental | Ya no informa del enlace roto; persisten las once skills no descubribles del checkout Windows. |
+| PostgreSQL real | No ejecutado: Docker no está disponible en esta sesión; requiere nueva ejecución en CI. |
+| Suite completa Spec Driven | No repetida por los impedimentos de symlinks ya registrados. |
+| git diff --check | Aprobada. |
+
+Cambios locales en `feat/correcciones`, sin push ni sincronización de `develop`.
+
+## Validador compatible con checkout Windows · 2026-11-17
+
+Causa: `core.symlinks=false` materializa los once enlaces Git (modo 120000)
+como archivos de texto; Windows no concede privilegio para recrearlos como
+symlinks. No se cambian los archivos de `.agents/skills` ni la configuración Git.
+
+El hook acepta en Windows solamente el destino relativo exacto esperado y exige
+el `SKILL.md` real. Sigue rechazando destinos alterados, archivos inválidos,
+directorios copiados y skills ausentes. En Linux exige symlinks reales. Esta
+compatibilidad valida el checkout, no habilita el descubrimiento nativo de skills
+cuando Windows conserva los enlaces como texto; esa limitación queda documentada.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Hook global `validate.py` | Aprobado: 135 documentos y 14 contratos. |
+| unittest `test_skill_aliases.py` | 5 aprobadas; incluye Windows, Linux, destinos inválidos y rama symlink. |
+| git diff --check | Aprobada. |
+| Suite completa Spec Driven | No repetida: sus fixtures crean symlinks y requieren permisos que esta sesión de Windows no tiene. |

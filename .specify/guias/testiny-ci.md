@@ -1,6 +1,8 @@
 # Integración continua con Testiny
 
-La integración recoge las pruebas de GitHub Actions y exige ejecutar al menos
+La integración publica únicamente después de fusionar un PR en `main`.
+Los PR y los merges a `develop` validan y conservan artefactos sin publicar.
+La publicación exige ejecutar al menos
 el **50 % de los casos documentados revisados** antes de publicar sus informes
 JUnit en **Automation** del proyecto `SILVE`. La activación requiere una
 API key y dos variables de GitHub; los archivos por sí solos no habilitan envíos.
@@ -45,10 +47,8 @@ Los fallidos se publican como fallidos y cuentan como ejecutados, no aprobados.
 ## Configuración inicial
 
 1. **Incorporar los cambios al repositorio.** Llevarlos por el flujo habitual
-   de PR hasta la rama predeterminada de GitHub, normalmente `main`. El publicador
-   usa `workflow_run`, que requiere que su archivo exista en esa rama. El primer
-   PR de instalación podría generar artefactos sin publicarlos todavía; verificar
-   la siguiente ejecución después de incorporar la integración.
+   de PR hasta `main`. El publicador está integrado en `ci-cd.yml` y se ejecuta
+   solamente cuando el PR se cierra fusionado hacia `main`.
 
 2. **Crear la clave en Testiny.** En la organización del gimnasio, abrir
    `Settings → API Keys` y crear una clave llamada `github-actions-gym`.
@@ -73,9 +73,8 @@ Los fallidos se publican como fallidos y cuentan como ejecutados, no aprobados.
    | `TESTINY_PROJECT` | `SILVE` | Proyecto de destino; también se admite su ID numérico. |
    | `TESTINY_ENABLED` | `true` | Habilita el publicador. `false` lo desactiva. |
 
-5. **Comprobar una ejecución normal.** Abrir o actualizar un PR del propio
-   repositorio hacia `develop` o `main`. En `Actions`, esperar a que termine
-   `Validar PR` y después abrir `CI/CD Pipeline GYM`, job `Importar JUnit por módulo y tipo`. Sus logs deben
+5. **Comprobar una ejecución normal.** Después de un merge a `main`, abrir en
+   `Actions` el workflow `CI/CD Pipeline GYM`, job `Importar JUnit por módulo y tipo`. Sus logs deben
    mostrar los recuentos y los identificadores de las ejecuciones importadas.
    En Testiny, seleccionar `SILVE → Automation` y comprobar las fuentes anteriores.
    El resumen de GitHub debe mostrar al menos `100/199` casos documentados.
@@ -92,8 +91,8 @@ y de los artefactos para publicar. No hace falta dar permiso de escritura genera
 
 Las suites generan `gym-junit-<suite>-<intento>` con XML, metadatos del checkout
 y huellas de los archivos de pruebas y soporte.
-Al terminar el workflow de origen, el publicador descarga solamente los
-artefactos de ese intento, valida los informes, ordena las carpetas y los importa.
+Tras las pruebas del merge a `main`, el publicador descarga solamente los
+artefactos de esa ejecución e intento, valida los informes y los importa.
 También guarda `gym-testiny-normalized` con el resumen y los XML normalizados,
 `cobertura-documentada.json` y `trazabilidad-documentada.csv` (RF–CUS–TC–pruebas).
 Los artefactos de GitHub se conservan durante catorce días.
@@ -101,7 +100,8 @@ Los artefactos de GitHub se conservan durante catorce días.
 Los resultados incluyen el repositorio, rama, URL de GitHub Actions, número de
 ejecución, intento y revisión exacta probada. `vc_commit` identifica el checkout
 que generó el informe; en un PR puede ser el merge provisional.
-`vc_source_commit` conserva el SHA de origen del evento. Para los PR, la ejecución del publicador tiene otro ID y no sustituye esos datos; en merges se publica desde la propia ejecución de CI/CD.
+`vc_source_commit` conserva el SHA de origen del evento. Se publica desde
+la propia ejecución de CI/CD del merge.
 
 Se publican informes disponibles aunque una prueba haya fallado. Los fallos,
 errores y omisiones conservan su estado; el job original continúa fallando.
@@ -116,10 +116,10 @@ snapshot versionado: debe actualizarse y revisarse cuando cambien los casos de
 Testiny. La revisión de confianza se obtiene de la rama predeterminada; un PR
 con cambios en pruebas revisadas puede requerir actualizar esa revisión allí.
 
-El publicador acepta los workflows `Validar PR` y `CI/CD Pipeline GYM` del propio
-repositorio, terminados con éxito, fallo o timeout. Excluye ejecuciones canceladas
-y PR de forks. Para los PR, el código del importador se obtiene de la rama predeterminada; para los merges, del commit fusionado,
-y la clave solo se entrega al paso de publicación. Los adjuntos están desactivados.
+El job solo acepta PR cerrados y fusionados hacia `main`. No existe un disparador
+`workflow_run`: validar un PR o fusionar en `develop` no publica resultados.
+El importador se obtiene del commit fusionado y la clave solo se entrega al paso
+de publicación. Los adjuntos están desactivados.
 
 La publicación es independiente del despliegue existente en Vercel/Render.
 No vuelve a ejecutar las suites: importa los informes que estas generan. La
