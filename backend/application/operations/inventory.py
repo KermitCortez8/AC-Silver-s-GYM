@@ -116,14 +116,34 @@ class ActualizarUnidadInventarioCommand:
     operation_kind: ClassVar[str] = 'command'
     id_unidad: int
     payload: Record
+    # MOV_INV y USUARIO: el cambio de ubicación queda registrado como traslado.
     resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
         Resource.INVENTARIO,
         Resource.INVENTARIO_UNIDADES,
         Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
     )
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.inventory.actualizar_unidad_inventario(self.id_unidad, self.payload)
+
+
+@dataclass(frozen=True)
+class RestablecerUnidadInventarioCommand:
+    operation_kind: ClassVar[str] = 'command'
+    id_unidad: int
+    payload: Record
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.INVENTARIO_UNIDADES,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+    )
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.inventory.restablecer_unidad_inventario(self.id_unidad, self.payload)
 
 
 @dataclass(frozen=True)

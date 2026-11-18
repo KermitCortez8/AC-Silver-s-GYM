@@ -106,7 +106,7 @@ export const useInventoryMovements = () => {
   };
 
   const movementLabel = (type) =>
-    ({ entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' })[type] || type;
+    ({ entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste', traslado: 'Traslado' })[type] || type;
   const movementIcon = (type) =>
     ({
       entrada: ArrowDownToLine,

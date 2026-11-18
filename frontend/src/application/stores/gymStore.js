@@ -127,6 +127,7 @@ export const useGymStore = defineStore('gym', () => {
     updateInventoryMovement: modules.inventory.updateInventoryMovement,
     updateInventoryUnit: modules.inventory.updateInventoryUnit,
     retireInventoryUnit: modules.inventory.retireInventoryUnit,
+    restoreInventoryUnit: modules.inventory.restoreInventoryUnit,
     createStoreCheckout: modules.store.createStoreCheckout,
     confirmStoreCheckoutReturn: modules.store.confirmStoreCheckoutReturn,
     cancelStoreCheckout: modules.store.cancelStoreCheckout,

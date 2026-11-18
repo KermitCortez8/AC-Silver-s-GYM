@@ -226,3 +226,105 @@ def test_operar_desde_tienda_no_borra_el_stock_de_los_equipos(documented_api) ->
     assert respuesta.status_code == 200, respuesta.text
     recargado = api.gym.get_item_inventario(equipo["id_item"])
     assert (recargado["cantidad_stock"], recargado["estado"]) == (4, "Operativo")
+
+
+def _unidad(service: LocalGymService, codigo: str) -> dict[str, Any]:
+    return next(u for u in service.unidades_inventario() if u["codigo"] == codigo)
+
+
+def _ultimo_mov(service: LocalGymService) -> dict[str, Any]:
+    return max(service.movimientos_inventario(), key=lambda m: m["id_mov"])
+
+
+def test_cambiar_ubicacion_registra_un_traslado_sin_tocar_el_stock() -> None:
+    service = _service()
+    item = _equipo(service, stock=3)
+    n = item["n_activo"]
+    unidad = _unidad(service, f"{n}-MC-002")
+    antes = len(service.movimientos_inventario())
+
+    service.actualizar_unidad_inventario(unidad["id_unidad"], {"ubicacion": "Sala de fuerza", "id_usuario": ADMIN})
+
+    mov = _ultimo_mov(service)
+    assert len(service.movimientos_inventario()) == antes + 1
+    assert (mov["tipo_movimiento"], mov["cantidad"], mov["id_unidad"]) == ("traslado", 1, unidad["id_unidad"])
+    assert mov["descripcion"] == f"Traslado {n}-MC-002: Sala de cardio → Sala de fuerza"
+    assert mov["id_usuario"] == ADMIN
+    assert service.get_item_inventario(item["id_item"])["cantidad_stock"] == 3
+    assert _unidad(service, f"{n}-MC-002")["ubicacion"] == "Sala de fuerza"
+
+
+def test_editar_unidad_sin_cambiar_ubicacion_no_registra_traslado() -> None:
+    service = _service()
+    item = _equipo(service, stock=2)
+    unidad = _unidad(service, f"{item['n_activo']}-MC-001")
+    antes = len(service.movimientos_inventario())
+
+    service.actualizar_unidad_inventario(unidad["id_unidad"], {
+        "estado": "En mantenimiento", "ubicacion": "Sala de cardio", "observaciones": "Faja gastada",
+    })
+
+    assert len(service.movimientos_inventario()) == antes
+
+
+def test_un_traslado_solo_cambia_fecha_y_descripcion() -> None:
+    service = _service()
+    item = _equipo(service, stock=2)
+    unidad = _unidad(service, f"{item['n_activo']}-MC-001")
+    service.actualizar_unidad_inventario(unidad["id_unidad"], {"ubicacion": "Sala 2"})
+    mov = _ultimo_mov(service)
+
+    with pytest.raises(ValueError, match="traslados"):
+        service.actualizar_movimiento_inventario(mov["id_mov"], {"cantidad": 3})
+    with pytest.raises(ValueError, match="traslados"):
+        service.actualizar_movimiento_inventario(mov["id_mov"], {"tipo_movimiento": "entrada"})
+
+    service.actualizar_movimiento_inventario(mov["id_mov"], {"fecha_movimiento": "2026-11-10", "descripcion": "Mudanza"})
+    editado = next(m for m in service.movimientos_inventario() if m["id_mov"] == mov["id_mov"])
+    assert (editado["fecha_movimiento"], editado["descripcion"], editado["tipo_movimiento"]) == ("2026-11-10", "Mudanza", "traslado")
+    assert service.get_item_inventario(item["id_item"])["cantidad_stock"] == 2
+
+
+def test_no_se_registran_traslados_a_mano() -> None:
+    service = _service()
+    item = _equipo(service, stock=1)
+    with pytest.raises(ValueError, match="Tipo de movimiento"):
+        _movimiento(service, item["id_item"], "traslado", cantidad=1)
+
+
+def test_restablecer_devuelve_la_misma_unidad_y_suma_stock() -> None:
+    service = _service()
+    item = _equipo(service, stock=3)
+    n = item["n_activo"]
+    unidad = _unidad(service, f"{n}-MC-003")
+    service.dar_de_baja_unidad_inventario(unidad["id_unidad"], {"id_usuario": ADMIN, "motivo": "Óxido"})
+    baja = _ultimo_mov(service)
+    assert (baja["tipo_movimiento"], baja["id_unidad"]) == ("salida", unidad["id_unidad"])
+    assert service.get_item_inventario(item["id_item"])["cantidad_stock"] == 2
+
+    resultado = service.restablecer_unidad_inventario(unidad["id_unidad"], {"id_usuario": ADMIN, "motivo": "Reparada"})
+
+    restablecida = _unidad(service, f"{n}-MC-003")
+    mov = _ultimo_mov(service)
+    assert (restablecida["estado"], restablecida["fecha_baja"]) == ("Operativo", None)
+    assert (mov["tipo_movimiento"], mov["cantidad"], mov["id_unidad"]) == ("entrada", 1, unidad["id_unidad"])
+    assert mov["descripcion"] == f"Restablecimiento {n}-MC-003 · Reparada"
+    assert resultado["stock_actual"] == 3
+    assert service.get_item_inventario(item["id_item"])["cantidad_stock"] == 3
+    # No se crearon unidades nuevas: el correlativo sigue siendo el mismo.
+    assert len(_unidades(service, item["id_item"], activas=False)) == 3
+
+
+def test_solo_se_restablece_una_unidad_dada_de_baja() -> None:
+    service = _service()
+    item = _equipo(service, stock=1)
+    unidad = _unidad(service, f"{item['n_activo']}-MC-001")
+    with pytest.raises(ValueError, match="no está dada de baja"):
+        service.restablecer_unidad_inventario(unidad["id_unidad"], {})
+
+
+def test_los_movimientos_guardan_la_hora_de_lima(monkeypatch) -> None:
+    monkeypatch.setattr("domain.services.gym_domain_service._now_iso", lambda: "2026-11-17T20:05:09+00:00")
+    service = _service()
+    _equipo(service, stock=1)
+    assert _ultimo_mov(service)["hora_movimiento"] == "15:05:09"
