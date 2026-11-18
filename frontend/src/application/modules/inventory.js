@@ -145,5 +145,15 @@ export const createInventoryModule = (ctx, repository) => {
     return saved;
   };
 
-  return { lowStockInventory, upsertInventoryItem, deleteInventoryItem, refreshInventoryMovementsFromBackend, upsertInventoryToServer, registrarMovimientoToServer, updateInventoryMovement, updateInventoryUnit, retireInventoryUnit };
+  // Restablecer devuelve a servicio la misma unidad con una entrada de 1 en Movimientos.
+  const restoreInventoryUnit = async (idUnidad, motivo = '') => {
+    if (!ctx.apiBase) throw new Error('No hay backend configurado');
+    const saved = await remote.restoreInventoryUnit(idUnidad, { motivo });
+    requireRecord(saved);
+    requireRecord(saved.movimiento, 'id_mov');
+    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    return saved;
+  };
+
+  return { lowStockInventory, upsertInventoryItem, deleteInventoryItem, refreshInventoryMovementsFromBackend, upsertInventoryToServer, registrarMovimientoToServer, updateInventoryMovement, updateInventoryUnit, retireInventoryUnit, restoreInventoryUnit };
 };

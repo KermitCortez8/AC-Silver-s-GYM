@@ -422,7 +422,7 @@
           <p class="rm-section-title"><History :size="14" aria-hidden="true" /> Últimos movimientos</p>
           <ul v-if="detailMovements.length" class="divide-y divide-white/10 text-sm">
             <li v-for="movement in detailMovements" :key="movement.id_mov" class="flex items-center justify-between gap-3 py-2">
-              <span class="text-slate-300">{{ movement.fecha_movimiento || 'Sin fecha' }}</span>
+              <span class="whitespace-nowrap text-slate-300">{{ movement.fecha_movimiento || 'Sin fecha' }}<span v-if="movementTime(movement)" class="ml-1.5 text-xs text-slate-400">{{ movementTime(movement) }}</span></span>
               <span class="rounded-full px-2.5 py-0.5 text-xs font-black capitalize" :class="movementClass(movement.tipo_movimiento)">{{ movement.tipo_movimiento }}</span>
               <span class="w-12 text-right font-bold text-white">{{ signedQuantity(movement) }}</span>
               <span class="hidden min-w-0 flex-1 truncate text-xs text-slate-400 sm:block">{{ movement.descripcion || 'Sin descripción' }}</span>
@@ -472,7 +472,7 @@ const {
   inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,
   resetForm, openNewItem, closeEditor, editItem, requiredFields,
   handleSubmit, deleteItem, detailItem, itemNumber, detailMovements,
-  movementClass, signedQuantity, openDetails, editFromDetails,
+  movementClass, signedQuantity, movementTime, openDetails, editFromDetails,
   limitObservations, handleTabsKeydown,
 } = useInventoryWorkspace();
 

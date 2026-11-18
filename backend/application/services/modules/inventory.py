@@ -5,6 +5,7 @@ from typing import Any
 from application.operations.inventory import (
     InventarioQuery, GetItemInventarioQuery, UpsertInventarioCommand, DeleteInventarioCommand, MovimientosInventarioQuery, RegistrarMovimientoInventarioCommand, ActualizarMovimientoInventarioCommand,
     UnidadesInventarioQuery, ActualizarUnidadInventarioCommand, DarDeBajaUnidadInventarioCommand,
+    RestablecerUnidadInventarioCommand,
 )
 
 
@@ -38,6 +39,9 @@ class InventoryOperations:
 
     def actualizar_unidad_inventario(self, id_unidad: int, payload: dict[str, Any]) -> dict[str, Any]:
         return self.executor.execute(ActualizarUnidadInventarioCommand(id_unidad, payload))
+
+    def restablecer_unidad_inventario(self, id_unidad: int, payload: dict[str, Any]) -> dict[str, Any]:
+        return self.executor.execute(RestablecerUnidadInventarioCommand(id_unidad, payload))
 
     def dar_de_baja_unidad_inventario(self, id_unidad: int, payload: dict[str, Any]) -> dict[str, Any]:
         return self.executor.execute(DarDeBajaUnidadInventarioCommand(id_unidad, payload))

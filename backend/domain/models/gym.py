@@ -300,6 +300,11 @@ class InventarioUnidadBajaInput(ValidatedInput):
     fecha_movimiento: str = ""
 
 
+class InventarioUnidadRestablecerInput(ValidatedInput):
+    motivo: str = Field(default="", max_length=INVENTORY_NOTE_LIMIT)
+    fecha_movimiento: str = ""
+
+
 class MovimientoInventarioUpdateInput(ValidatedInput):
     id_item: int | None = None
     tipo_movimiento: Literal["entrada", "salida", "ajuste"] | None = None
