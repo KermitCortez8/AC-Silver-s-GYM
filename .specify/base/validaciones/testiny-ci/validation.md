@@ -378,3 +378,39 @@ indicadas arriba. No se ejecutó PostgreSQL real, Deno ni despliegues remotos.
 No se usaron credenciales ni se enviaron adjuntos a Testiny: se verificaron la
 preparación local y las opciones de la CLI 1.43.1 instalada. Los cambios siguen
 locales en feat/correcciones, sin commit, push ni sincronización de develop.
+
+## Carpetas por módulo y carrera de Vite · 2026-11-18
+
+El [job frontend-ci](https://github.com/KermitCortez8/AC-Silver-s-GYM/actions/runs/44339532617/job/134925910661)
+registró cinco fallos en `tests/rutinas_progreso/interfaz/flujos.test.js`. El
+servidor Vite de esas pruebas falló en su preparación con `ENOTEMPTY` al
+intentar borrar `/app/node_modules/.vite/deps` mientras otros procesos usaban
+la caché. Todos los servidores de pruebas SSR reutilizan ahora la misma
+configuración, con el optimizador del cliente desactivado. Las pruebas se
+siguen ejecutando en paralelo.
+
+El [job de importación](https://github.com/KermitCortez8/AC-Silver-s-GYM/actions/runs/44339532617/job/134926578953)
+confirmó el envío a Testiny de 959 resultados de backend, 392 de frontend,
+7 de Deno, 4 de navegador y 100 casos documentados. El JUnit normalizado de
+esa ejecución contiene carpetas de los once módulos. Conservó los cinco
+fallos de frontend, las 60 omisiones de backend y los tres casos documentados
+afectados. La clasificación corregida toma el módulo y tipo de la ruta de
+origen. El resumen del workflow muestra los recuentos por módulo y suite,
+y se comprobó que coinciden con las carpetas del JUnit local.
+
+| Comprobación local | Resultado |
+| --- | --- |
+| Frontend con reporter JUnit, Node 22.23.5 | 389 aprobadas. |
+| Build de frontend | Aprobado. |
+| Backend con la clave sintética de CI | 892 aprobadas; 59 de PostgreSQL omitidas. |
+| Deno check y pruebas de recordatorios | Aprobado; 7 pruebas aprobadas. |
+| Playwright con Chromium y API de QA | 4 aprobadas, con evidencia propia. |
+| Preparación de informes con `--documented` | 11 módulos y 100/199 casos documentados aprobados (50,25 %). |
+| Pruebas del integrador y evidencia Playwright | 42 aprobadas; 1 omitida por privilegios de enlaces simbólicos en Windows. |
+| Suite completa de `.specify/tests` | 47 aprobadas, 1 omitida y 13 errores en el fixture que crea enlaces simbólicos (WinError 1314). |
+| Hook documental, actionlint y `git diff --check` | Aprobados. |
+
+Los informes preparados se guardaron localmente en `.artifacts/testiny-verificado/`.
+La versión corregida queda pendiente de un nuevo CI en GitHub y de la
+publicación automática tras merge a `main`. La verificación local usó Windows
+y no ejecutó Docker ni PostgreSQL real.

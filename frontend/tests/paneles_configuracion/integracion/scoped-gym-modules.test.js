@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { test, before, after } from 'node:test';
-import { createServer } from 'vite';
-import { fileURLToPath } from 'node:url';
+import { crearServidorSsr } from '../../soporte/servidor-ssr.js';
 import { createPinia, setActivePinia } from 'pinia';
 let createGymState;
 let createGymModules;
@@ -9,10 +8,7 @@ let installServices;
 let server;
 
 before(async () => {
-  server = await createServer({
-    root: fileURLToPath(new URL('../../..', import.meta.url)), configFile: false,
-    server: { middlewareMode: true, hmr: false, ws: false, watch: null },
-  });
+  server = await crearServidorSsr();
   ({ installServices } = await server.ssrLoadModule('/src/bootstrap.js'));
   ({ createGymState } = await server.ssrLoadModule('/src/application/modules/state.js'));
   ({ createGymModules } = await server.ssrLoadModule('/src/application/services/gymModules.js'));

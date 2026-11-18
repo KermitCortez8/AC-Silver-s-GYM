@@ -5,9 +5,10 @@
   "catalogo_sha256": "2608391348842747f8bf42767f73118e6288060a14bbefa7de29214a0bef7a5a",
   "alcance": "Automatización funcional por API/servicios/componentes con dobles externos explícitos. No es certificación E2E, accesibilidad ni producción.",
   "soporte": {
+    "frontend/tests/soporte/servidor-ssr.js": "a06c5f0d5ece7b7d8ea25e7e33a80649045eb72b780294fee71aab53bdd7e2e0",
     "backend/tests/soporte/testiny_api.py": "6959efdadd58f47b46d9a6f4d2c16b3a414d43fece4bc085a205776bbf2d6d6c",
-    "frontend/tests/soporte/entorno-formularios.js": "83117ad4bc74a78321dc1a1ab5516d77e637faf4d713a65753bc38804e27b4db",
-    "frontend/tests/soporte/entorno-vistas.js": "c34eb6e45e2536a46e5569baf2700c418aa55b53439af60479696a81c33fdf16"
+    "frontend/tests/soporte/entorno-formularios.js": "8aa6fd208c84864044be1a5e0d573d38d61d561909dab2cc29d6905ddf76ede1",
+    "frontend/tests/soporte/entorno-vistas.js": "92722dd8a6d22686075660caa096221fb417fd46794d966b15dd42659e199ef8"
   },
   "pruebas": {
     "BE:asistencias/integracion/test_general_attendance.py::test_retries_do_not_duplicate_even_after_exit": {
@@ -1176,7 +1177,7 @@
       "clase": "tests/paneles_configuracion/integracion/application-context.test.js",
       "prueba": "configuring another application cannot redirect existing consumers or mutate their configuration",
       "minimo_variantes": 1,
-      "sha256": "799353eb7a802d5d0500df77f0f30fa40b71c55109ec4f14b76b9732b2c79741"
+      "sha256": "5dfbf689d6b4994c084a532eb5f1e17ae53f14a0c4291a3ccd4bc74143ca969b"
     },
     "FE:paneles_configuracion/integracion/application-context.test.js::pending requests follow their own application session even after another session changes": {
       "componente": "frontend",
@@ -1184,7 +1185,7 @@
       "clase": "tests/paneles_configuracion/integracion/application-context.test.js",
       "prueba": "pending requests follow their own application session even after another session changes",
       "minimo_variantes": 1,
-      "sha256": "799353eb7a802d5d0500df77f0f30fa40b71c55109ec4f14b76b9732b2c79741"
+      "sha256": "5dfbf689d6b4994c084a532eb5f1e17ae53f14a0c4291a3ccd4bc74143ca969b"
     },
     "FE:paneles_configuracion/integracion/application-context.test.js::two gym stores synchronize through their own transports after both applications are installed": {
       "componente": "frontend",
@@ -1192,7 +1193,7 @@
       "clase": "tests/paneles_configuracion/integracion/application-context.test.js",
       "prueba": "two gym stores synchronize through their own transports after both applications are installed",
       "minimo_variantes": 1,
-      "sha256": "799353eb7a802d5d0500df77f0f30fa40b71c55109ec4f14b76b9732b2c79741"
+      "sha256": "5dfbf689d6b4994c084a532eb5f1e17ae53f14a0c4291a3ccd4bc74143ca969b"
     },
     "FE:paneles_configuracion/integracion/module-navigation.test.js::a mounted view is immediately available while its data is still loading": {
       "componente": "frontend",
@@ -1216,7 +1217,7 @@
       "clase": "tests/paneles_configuracion/integracion/scoped-gym-modules.test.js",
       "prueba": "independent module assemblies keep state isolated and do not mount operations on shared state",
       "minimo_variantes": 1,
-      "sha256": "45e0afcf99f2b487c5975537c9f3f91084e5281385842c91e9739ed936506ec8"
+      "sha256": "b138c2f8a49613b7ed0fd8e03015cfa0efcbffaa56579386b13e806f9f170f5c"
     },
     "FE:paneles_configuracion/unitarias/client-dashboard.test.js::client updates immediately move counts from payment to activation to active to expired": {
       "componente": "frontend",
@@ -1512,7 +1513,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "a failed users request clears only its section loading status",
       "minimo_variantes": 1,
-      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
+      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
     },
     "FE:transversales/integracion/navigation-stores.test.js::each admin section loads only its resources and shares them with the dashboard": {
       "componente": "frontend",
@@ -1520,7 +1521,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "each admin section loads only its resources and shares them with the dashboard",
       "minimo_variantes": 1,
-      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
+      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
     },
     "FE:transversales/integracion/navigation-stores.test.js::failed forced refresh is not cached and a later navigation retries it": {
       "componente": "frontend",
@@ -1528,7 +1529,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "failed forced refresh is not cached and a later navigation retries it",
       "minimo_variantes": 1,
-      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
+      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
     },
     "FE:transversales/integracion/navigation-stores.test.js::switching to users is not delayed by a pending client list": {
       "componente": "frontend",
@@ -1536,7 +1537,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "switching to users is not delayed by a pending client list",
       "minimo_variantes": 1,
-      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
+      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
     },
     "FE:transversales/integracion/navigation-stores.test.js::users finish loading while a previous section still has pending requests": {
       "componente": "frontend",
@@ -1544,7 +1545,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "users finish loading while a previous section still has pending requests",
       "minimo_variantes": 1,
-      "sha256": "5e21fa87e09d8354d86affc80b864d55ea5e80a03dd7c53a2d022684638f4794"
+      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
     }
   },
   "casos": [

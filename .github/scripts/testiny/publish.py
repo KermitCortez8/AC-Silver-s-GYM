@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import hashlib
 import importlib.util
 import json
@@ -69,9 +70,14 @@ def case_identity(case: ET.Element, component: str, modules: dict[str, str], anc
             raise ValueError("El JUnit del frontend no incluye el archivo; usar node-junit.mjs")
         identifier, name = original_name.split("::", 1)
         name = " / ".join([*ancestors, name])
-    tokens = re.split(r"[./\\:]", identifier + "/" + original_name)
-    module = next((modules[token] for token in tokens if token in modules), "Transversales")
-    level = next((LEVELS[token] for token in tokens if token in LEVELS), "Integración")
+    # El módulo y el nivel vienen de la ruta, incluso si el título menciona otro módulo.
+    if component in {"backend", "postgres"}:
+        folders = identifier.removeprefix("tests.").split(".")
+    else:
+        folders = identifier.replace("\\", "/").removeprefix("tests/").split("/")
+    slug, *remaining = folders
+    module = modules.get(slug, "Transversales") if remaining else "Transversales"
+    level = LEVELS.get(remaining[0], "Integración") if len(remaining) >= 2 else "Integración"
     if component == "schedule-emails":
         module, level = modules["notificaciones"], "Integración Deno"
     if component == "postgres":
@@ -272,6 +278,10 @@ def prepare_reports(incoming: Path, output: Path, documented=False) -> list[dict
         print(f"Casos documentados ejecutados: {summary['ejecutados']}/{summary['total_documentados']} "
               f"({summary['porcentaje_ejecutado']} %)")
         prepared.append(report)
+    for report in prepared:
+        cases = ET.parse(report["file"]).iter("testcase")
+        counts = Counter(case.attrib["classname"].split(".", 1)[0] for case in cases)
+        report["modulos"] = dict(sorted(counts.items()))
     output.mkdir(parents=True, exist_ok=True)
     (output / "resumen.json").write_text(json.dumps(prepared, indent=2, ensure_ascii=False), encoding="utf-8")
     return prepared

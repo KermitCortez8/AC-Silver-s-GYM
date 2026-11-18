@@ -1,15 +1,13 @@
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
-import { createServer } from 'vite';
+import { crearServidorSsr } from '../../soporte/servidor-ssr.js';
 import { fetchWithTimeout } from '../../../src/infrastructure/services/httpTransport.js';
 import { parseError } from '../../../src/infrastructure/services/apiResponse.js';
 import { dataRequest } from '../../../src/infrastructure/repositories/dataRequest.js';
 
 let server, createApiClient, createAuthService, createStoreImageService;
 before(async () => {
-  server = await createServer({ root: fileURLToPath(new URL('../../..', import.meta.url)), configFile: false,
-    server: { middlewareMode: true, hmr: false, ws: false, watch: null } });
+  server = await crearServidorSsr();
   ({ createApiClient } = await server.ssrLoadModule('/src/infrastructure/services/apiClient.js'));
   ({ createAuthService } = await server.ssrLoadModule('/src/infrastructure/services/authService.js'));
   ({ createStoreImageService } = await server.ssrLoadModule('/src/infrastructure/services/storeImageService.js'));

@@ -262,15 +262,28 @@ jobs:
           --incoming "$RUNNER_TEMP/testiny-incoming"
           --output "$RUNNER_TEMP/testiny-normalized"
           --documented
-      - name: Resumir cobertura de casos documentados
+      - name: Resumir carpetas por módulo y cobertura documentada
         if: always()
         run: |
           python - <<'PY'
           import json, os, pathlib
-          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'testiny-normalized/cobertura-documentada.json'
-          if path.is_file():
-              data = json.loads(path.read_text(encoding='utf-8'))
-              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
+          directory = pathlib.Path(os.environ['RUNNER_TEMP']) / 'testiny-normalized'
+          reports_path = directory / 'resumen.json'
+          coverage_path = directory / 'cobertura-documentada.json'
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
+              if reports_path.is_file():
+                  reports = json.loads(reports_path.read_text(encoding='utf-8'))
+                  modules = sorted({module for report in reports for module in report['modulos']})
+                  output.write('### Resultados preparados para Testiny por módulo\n\n')
+                  columns = ['Módulo', *(report['component'] for report in reports)]
+                  output.write('| ' + ' | '.join(columns) + ' |\n')
+                  output.write('| ' + ' | '.join(['---'] * len(columns)) + ' |\n')
+                  for module in modules:
+                      counts = [str(report['modulos'].get(module, 0)) for report in reports]
+                      output.write('| ' + ' | '.join([module, *counts]) + ' |\n')
+                  output.write('\n')
+              if coverage_path.is_file():
+                  data = json.loads(coverage_path.read_text(encoding='utf-8'))
                   output.write('### Casos documentados de Testiny\n\n')
                   output.write(f"Ejecutados: **{data['ejecutados']}/{data['total_documentados']} ({data['porcentaje_ejecutado']} %)**. ")
                   output.write(f"Mínimo: {data['minimo_requerido']}; aprobados: {data['aprobados']}; fallidos: {data['fallidos']}.\n\n")
