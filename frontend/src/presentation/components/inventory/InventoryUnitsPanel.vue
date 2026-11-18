@@ -51,6 +51,18 @@
                 <Trash2 :size="15" aria-hidden="true" />
               </button>
             </template>
+            <button
+              v-else
+              type="button"
+              class="unit-icon unit-icon--ok"
+              :class="{ 'is-active': mode(unit) === 'restablecer' }"
+              :aria-label="`Restablecer ${unit.codigo}`"
+              :title="`Restablecer ${unit.codigo}`"
+              :aria-expanded="mode(unit) === 'restablecer'"
+              @click="toggle(unit, 'restablecer')"
+            >
+              <RotateCcw :size="15" aria-hidden="true" />
+            </button>
           </div>
         </div>
 
@@ -106,6 +118,19 @@
             </button>
           </div>
         </form>
+
+        <form v-else-if="mode(unit) === 'restablecer'" class="unit-box unit-box--ok grid gap-2" @submit.prevent="restoreUnit(unit)">
+          <p class="unit-ok-text text-xs">Vuelve a estar Operativa con el mismo código y suma 1 al stock; queda como entrada en Movimientos.</p>
+          <input :id="`unit-restore-${unit.id_unidad}`" v-model="draft.motivo" class="inv-input unit-input" maxlength="100" placeholder="Motivo (opcional)" />
+          <div class="flex justify-end gap-1.5">
+            <button type="button" class="unit-icon" aria-label="Cancelar restablecimiento" title="Cancelar" @click="close">
+              <X :size="15" aria-hidden="true" />
+            </button>
+            <button type="submit" class="unit-icon unit-icon--ok is-active" :disabled="isSaving" :aria-label="`Confirmar restablecimiento de ${unit.codigo}`" title="Confirmar restablecimiento">
+              <Check :size="15" aria-hidden="true" />
+            </button>
+          </div>
+        </form>
       </li>
     </ul>
     <p v-else class="unit-muted mt-2 text-xs">
@@ -116,7 +141,7 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue';
-import { Check, Eye, Pencil, Trash2, X } from 'lucide-vue-next';
+import { Check, Eye, Pencil, RotateCcw, Trash2, X } from 'lucide-vue-next';
 import ExtensibleSelect from '../common/ExtensibleSelect.vue';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { isActiveUnit, UNIT_STATUSES } from '../../../domain/utils/inventoryUnits.js';
@@ -194,6 +219,11 @@ const retireUnit = (unit) => run(
   () => gymStore.retireInventoryUnit(unit.id_unidad, draft.motivo.trim()),
   `${unit.codigo} dada de baja; quedó registrada en Movimientos.`,
 );
+
+const restoreUnit = (unit) => run(
+  () => gymStore.restoreInventoryUnit(unit.id_unidad, draft.motivo.trim()),
+  `${unit.codigo} restablecida; quedó registrada en Movimientos.`,
+);
 </script>
 
 <style scoped>
@@ -211,6 +241,7 @@ const retireUnit = (unit) => run(
   --unit-primary-bg: #fbbf24;
   --unit-primary-text: #0f172a;
   --unit-ok: #a7f3d0;
+  --unit-ok-bg: rgba(52, 211, 153, 0.12);
   margin-top: 0.6rem;
 }
 /* `:root[...]` y no `:global(...)`: Vue descarta el resto del selector tras `:global()`. */
@@ -227,6 +258,7 @@ const retireUnit = (unit) => run(
   --unit-primary-bg: #2563eb;
   --unit-primary-text: #ffffff;
   --unit-ok: #047857;
+  --unit-ok-bg: #ecfdf5;
 }
 .unit-muted { color: var(--unit-muted); }
 .unit-text { color: var(--unit-text); }
@@ -270,6 +302,10 @@ const retireUnit = (unit) => run(
 .unit-box { margin-top: 0.45rem; border: 1px solid var(--unit-line); border-radius: 0.75rem; background: var(--unit-box); padding: 0.55rem 0.65rem; }
 .unit-box--danger { border-color: var(--unit-danger); background: var(--unit-danger-bg); }
 .unit-danger-text { color: var(--unit-danger); }
+.unit-icon--ok { color: var(--unit-ok); }
+.unit-icon--ok:hover, .unit-icon--ok.is-active { background: var(--unit-ok-bg); }
+.unit-box--ok { border-color: var(--unit-ok); background: var(--unit-ok-bg); }
+.unit-ok-text { color: var(--unit-ok); }
 .unit-feedback { margin-top: 0.4rem; border-radius: 0.6rem; padding: 0.35rem 0.6rem; font-size: 0.75rem; background: rgba(52, 211, 153, 0.12); color: var(--unit-ok); }
 .unit-feedback.is-error { background: var(--unit-danger-bg); color: var(--unit-danger); }
 .unit-input, .unit-select :deep(.inv-input) { padding: 0.45rem 0.7rem; font-size: 0.82rem; border-radius: 0.65rem; }

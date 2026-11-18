@@ -6,7 +6,9 @@ from domain.form_limits import INVENTORY_TEXT_LIMIT
 
 import re
 import unicodedata
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 from domain.services.gym_values import TIPO_TIENDA, ESTADO_DESCONTINUADO, ESTADO_DISPONIBLE, ESTADO_STOCK_BAJO, ESTADO_AGOTADO, DESTINO_TIENDA, DESTINO_VENTA, _MOVIMIENTO_PEDIDO
 
 
@@ -18,6 +20,9 @@ from domain.services.rule_context import RuleContext
 # Equipos y accesorios llevan N° de activo por unidad (1008-MC-001); el resto cuenta solo cantidad.
 ESTADOS_UNIDAD = ("Operativo", "En mantenimiento", "Fuera de servicio")
 ESTADO_UNIDAD_BAJA = "Dado de baja"
+# Cambio de ubicación de una unidad: queda en MOV_INV pero no altera el stock.
+TIPO_TRASLADO = "traslado"
+_LIMA = ZoneInfo("America/Lima")
 _PALABRAS_VACIAS = {"de", "del", "la", "las", "el", "los", "para", "por", "con", "y", "a", "al", "en", "un", "una"}
 
 
@@ -87,13 +92,16 @@ class InventoryRules:
         id_usuario: str | None = None,
         fecha: str = "",
         destino: str | None = None,
+        id_unidad: int | None = None,
     ) -> dict[str, Any]:
         tipo = str(tipo or "").lower()
-        if tipo not in {"entrada", "salida", "ajuste"}:
+        if tipo not in {"entrada", "salida", "ajuste", TIPO_TRASLADO}:
             raise ValueError("Tipo de movimiento inválido")
         cantidad = integer_quantity(cantidad, minimum=1)
         stock_actual = int(item.get("cantidad_stock", 0) or 0)
-        if tipo == "entrada":
+        if tipo == TIPO_TRASLADO:
+            nuevo_stock = stock_actual
+        elif tipo == "entrada":
             nuevo_stock = stock_actual + cantidad
         elif tipo == "salida":
             if stock_actual < cantidad:
@@ -112,9 +120,21 @@ class InventoryRules:
             "descripcion": descripcion,
             "cantidad": cantidad,
             "destino": destino if tipo == "salida" else None,
+            "id_unidad": int(id_unidad) if id_unidad else None,
+            "hora_movimiento": self._hora_actual(),
         }
         state["mov_inv"].insert(0, mov)
         return mov
+
+    def _hora_actual(self) -> str | None:
+        # Hora local de Lima en que se registra el movimiento (HH:MM:SS).
+        try:
+            momento = datetime.fromisoformat(str(self.context.now()).replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        if momento.tzinfo is None:
+            return momento.strftime("%H:%M:%S")
+        return momento.astimezone(_LIMA).strftime("%H:%M:%S")
 
     @staticmethod
     def _producto_de_item(state: dict[str, Any], id_item: Any) -> dict[str, Any] | None:
@@ -348,11 +368,49 @@ class InventoryRules:
                 raise ValueError("Estado de unidad inválido; para retirarla usa Dar de baja")
             unidad["estado"] = estado
             if payload.get("ubicacion") is not None:
-                unidad["ubicacion"] = required_text(payload["ubicacion"], "La ubicación", INVENTORY_TEXT_LIMIT)
+                origen = str(unidad.get("ubicacion") or "")
+                destino = required_text(payload["ubicacion"], "La ubicación", INVENTORY_TEXT_LIMIT)
+                unidad["ubicacion"] = destino
+                if item and destino != origen:
+                    # El traslado queda en MOV_INV con la unidad, el origen y el destino; el stock no cambia.
+                    self._aplicar_movimiento(
+                        state, item, TIPO_TRASLADO, 1,
+                        f"Traslado {unidad['codigo']}: {origen or 'Sin ubicación'} → {destino}",
+                        id_usuario=self.dependencies.normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None,
+                        id_unidad=unidad["id_unidad"],
+                    )
             if payload.get("observaciones") is not None:
                 unidad["observaciones"] = str(payload["observaciones"]).strip()
             self._actualizar_estados_tienda(state)
             return unidad
+
+        return self.context.change(_fn)
+
+    def restablecer_unidad_inventario(self, id_unidad: int, payload: dict[str, Any]) -> dict[str, Any]:
+        # Devuelve a servicio la misma unidad (mismo código) con una entrada de 1 ligada a ella.
+        id_usuario = self.dependencies.normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None
+
+        def _fn(state: dict[str, Any]):
+            unidad = next((u for u in state.get("inventario_unidades", []) if int(u.get("id_unidad") or 0) == int(id_unidad)), None)
+            if not unidad:
+                raise EntityNotFound("Unidad no encontrada")
+            if unidad.get("estado") != ESTADO_UNIDAD_BAJA:
+                raise ValueError("La unidad no está dada de baja")
+            item = self._find_item_in_state(state, unidad.get("id_item"))
+            if not item:
+                raise EntityNotFound("Item de inventario no encontrado")
+            if item.get("archivado"):
+                raise ValueError("El artículo está archivado y no admite movimientos")
+            motivo = str(payload.get("motivo") or "").strip()
+            descripcion = f"Restablecimiento {unidad['codigo']}" + (f" · {motivo}" if motivo else "")
+            mov = self._aplicar_movimiento(
+                state, item, "entrada", 1, descripcion, id_usuario=id_usuario,
+                fecha=str(payload.get("fecha_movimiento") or ""), id_unidad=unidad["id_unidad"],
+            )
+            unidad["estado"] = "Operativo"
+            unidad["fecha_baja"] = None
+            self._actualizar_estados_tienda(state)
+            return {"unidad": unidad, "movimiento": mov, "stock_actual": item["cantidad_stock"]}
 
         return self.context.change(_fn)
 
@@ -418,6 +476,7 @@ class InventoryRules:
                 id_usuario=id_usuario,
                 fecha=str(payload.get("fecha_movimiento") or ""),
                 destino=destino,
+                id_unidad=salientes[0]["id_unidad"] if len(salientes) == 1 else None,
             )
             if self._usa_unidades(item):
                 if tipo == "entrada":
@@ -451,6 +510,15 @@ class InventoryRules:
             nuevo_tipo = str(payload.get("tipo_movimiento") or tipo_actual).lower()
             nueva_cantidad = integer_quantity(payload.get("cantidad", cantidad_actual), minimum=1)
             nuevo_item = int(payload.get("id_item") or item_actual)
+            if tipo_actual == TIPO_TRASLADO or nuevo_tipo == TIPO_TRASLADO:
+                # Un traslado describe dónde estuvo una unidad: no se convierte ni se convierte en él.
+                if (nuevo_tipo, nueva_cantidad, nuevo_item) != (tipo_actual, cantidad_actual, item_actual):
+                    raise ValueError("Los traslados solo permiten cambiar la fecha y la descripción")
+                if payload.get("descripcion") is not None:
+                    mov["descripcion"] = str(payload["descripcion"]).strip()
+                mov["fecha_movimiento"] = self.context.safe_date(str(payload.get("fecha_movimiento") or mov.get("fecha_movimiento") or ""))
+                item_final = self._find_item_in_state(state, item_actual)
+                return {"movimiento": mov, "stock_actual": int(item_final.get("cantidad_stock", 0) or 0) if item_final else None}
             if nuevo_tipo not in {"entrada", "salida", "ajuste"}:
                 raise ValueError("Tipo de movimiento inválido")
 

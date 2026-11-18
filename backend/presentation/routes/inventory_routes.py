@@ -12,7 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from presentation.dependencies import get_gym_service, get_optional_actor_id, require_admin_or_staff
 from domain.models.gym import (
-    InventarioInput, InventarioUnidadBajaInput, InventarioUnidadUpdateInput, MovimientoInventarioInput,
+    InventarioInput, InventarioUnidadBajaInput, InventarioUnidadRestablecerInput, InventarioUnidadUpdateInput,
+    MovimientoInventarioInput,
     MovimientoInventarioUpdateInput,
 )
 from application.services.gym_service import GymService
@@ -91,9 +92,23 @@ def list_unidades(gym_service: GymService = Depends(get_gym_service)):
 
 # PUT /inventario/unidades/{id_unidad}: cambia el estado, la ubicación o las observaciones de una unidad.
 @router.put("/unidades/{id_unidad}")
-def actualizar_unidad(id_unidad: int, payload: InventarioUnidadUpdateInput, gym_service: GymService = Depends(get_gym_service)):
+def actualizar_unidad(id_unidad: int, payload: InventarioUnidadUpdateInput, gym_service: GymService = Depends(get_gym_service),
+                      actor_id: str = Depends(get_optional_actor_id)):
     try:
-        return gym_service.actualizar_unidad_inventario(id_unidad, payload.model_dump(exclude_none=True))
+        return gym_service.actualizar_unidad_inventario(id_unidad, {**payload.model_dump(exclude_none=True), "id_usuario": actor_id})
+    except ValueError as error:
+        status_code = status.HTTP_404_NOT_FOUND if isinstance(error, EntityNotFound) else status.HTTP_400_BAD_REQUEST
+        raise http_error(error, validation_status=status_code) from error
+
+
+# POST /inventario/unidades/{id_unidad}/restablecer: vuelve a activar una unidad dada de baja.
+@router.post("/unidades/{id_unidad}/restablecer")
+def restablecer_unidad(id_unidad: int, payload: InventarioUnidadRestablecerInput | None = None,
+                       gym_service: GymService = Depends(get_gym_service),
+                       actor_id: str = Depends(get_optional_actor_id)):
+    datos = payload.model_dump() if payload else {}
+    try:
+        return gym_service.restablecer_unidad_inventario(id_unidad, {**datos, "id_usuario": actor_id})
     except ValueError as error:
         status_code = status.HTTP_404_NOT_FOUND if isinstance(error, EntityNotFound) else status.HTTP_400_BAD_REQUEST
         raise http_error(error, validation_status=status_code) from error

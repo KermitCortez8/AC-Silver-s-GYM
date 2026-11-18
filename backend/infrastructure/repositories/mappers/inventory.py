@@ -86,6 +86,8 @@ def _map_inventory_move(row: dict[str, Any]) -> dict[str, Any]:
         "descripcion": str(row.get("descripcion") or ""),
         "cantidad": int(row.get("cantidad", 1) or 1),
         "destino": str(row.get("destino") or "").strip().upper() or None,
+        "id_unidad": int(row["id_unidad"]) if row.get("id_unidad") else None,
+        "hora_movimiento": str(row.get("hora_movimiento") or "")[:8] or None,
     }
 
 
@@ -99,6 +101,9 @@ def _inventory_move_to_remote(row: dict[str, Any]) -> dict[str, Any]:
         "descripcion": str(row.get("descripcion") or ""),
         "cantidad": max(1, int(row.get("cantidad", 1) or 1)),
         "destino": str(row.get("destino") or "").strip().upper() or None,
+        # Solo viajan cuando existen: sin la migración 027 los movimientos de cantidad se siguen guardando.
+        **({"id_unidad": int(row["id_unidad"])} if row.get("id_unidad") else {}),
+        **({"hora_movimiento": str(row["hora_movimiento"])[:8]} if row.get("hora_movimiento") else {}),
     }
 
 

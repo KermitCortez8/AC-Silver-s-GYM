@@ -4,14 +4,14 @@
       <div>
         <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
         <h2 class="mt-2 text-2xl font-black text-white">Movimientos de inventario</h2>
-        <p class="mt-1 text-sm text-slate-400">Entradas, salidas y ajustes del stock de cada artículo.</p>
+        <p class="mt-1 text-sm text-slate-400">Entradas, salidas, ajustes y traslados de cada artículo.</p>
       </div>
       <button type="button" class="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.02] hover:bg-orange-300" @click="openNew">
         + Registrar movimiento
       </button>
     </div>
 
-    <div class="mt-4 grid gap-3 sm:grid-cols-3">
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <button
         v-for="card in typeCards"
         :key="card.value"
@@ -49,6 +49,7 @@
         <option value="entrada">Entradas</option>
         <option value="salida">Salidas</option>
         <option value="ajuste">Ajustes</option>
+        <option value="traslado">Traslados</option>
       </select>
       <select v-model="destinationFilter" class="field-input" aria-label="Filtrar por destino" @change="page = 1">
         <option value="all">Todos los destinos</option>
@@ -78,7 +79,10 @@
           </thead>
           <tbody class="divide-y divide-white/10">
             <tr v-for="movement in pagedMovements" :key="movement.id_mov" class="transition hover:bg-white/[0.04]">
-              <td class="whitespace-nowrap px-4 py-3 text-slate-300">{{ movement.fecha_movimiento || 'Sin fecha' }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-slate-300">
+                {{ movement.fecha_movimiento || 'Sin fecha' }}
+                <span v-if="movementTime(movement)" class="block text-xs text-slate-400">{{ movementTime(movement) }}</span>
+              </td>
               <td class="px-4 py-3 font-bold text-white">
                 {{ itemName(movement.id_item) }}
                 <span v-if="orderNumber(movement)" class="ml-2 rounded-full bg-sky-400/15 px-2 py-0.5 text-[11px] font-black text-sky-200">Pedido #{{ orderNumber(movement) }}</span>
@@ -265,7 +269,7 @@ import { parseQuantity } from '../../../domain/utils/quantities.js';
 import { limaDate } from '../../../domain/utils/dates.js';
 import { quantityError } from '../../../domain/utils/formValidation.js';
 import { computed, reactive, ref, watch } from 'vue';
-import { AlertCircle, ArrowDownToLine, ArrowLeftRight, ArrowRight, ArrowUpFromLine, CalendarDays, Equal, Info, Package, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
+import { AlertCircle, ArrowDownToLine, ArrowLeftRight, ArrowRight, ArrowUpFromLine, CalendarDays, Equal, Info, MapPin, Package, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
 import ResourceModal from '../ResourceModal.vue';
 import SortableTh from '../common/SortableTh.vue';
 import TablePager from '../common/TablePager.vue';
@@ -277,12 +281,15 @@ import { clampText, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFiel
 import { useAuthStore } from '../../../application/stores/authStore';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { isActiveUnit } from '../../../domain/utils/inventoryUnits.js';
+import { movementSortKey, movementTime, signedQuantity } from '../../../domain/utils/inventoryMovements.js';
 
 const movementTypes = [
   { value: 'entrada', label: 'Entrada', icon: ArrowDownToLine },
   { value: 'salida', label: 'Salida', icon: ArrowUpFromLine },
   { value: 'ajuste', label: 'Ajuste exacto', icon: Equal },
 ];
+// Los traslados los genera el cambio de ubicación de una unidad; no se registran a mano.
+const typeIcons = { entrada: ArrowDownToLine, salida: ArrowUpFromLine, ajuste: Equal, traslado: MapPin };
 
 // Mismo criterio que el backend para reconocer los movimientos generados por pedidos.
 const ORDER_MOVEMENT = /^(?:Venta pedido|Devolución por cancelación del pedido) #(\d+)/;
@@ -361,14 +368,10 @@ const projectedStoreStock = computed(() => {
  * Gestiona esta acción de la vista.
  */
 const itemName = (idItem) => inventory.value.find((item) => itemNumber(item) === Number(idItem))?.name || `Item #${idItem}`;
-const signedQuantity = (movement) => {
-  if (movement.tipo_movimiento === 'entrada') return `+${movement.cantidad}`;
-  if (movement.tipo_movimiento === 'salida') return `-${movement.cantidad}`;
-  return `= ${movement.cantidad}`;
-};
 const movementClass = (type) => {
   if (type === 'entrada') return 'bg-emerald-400/15 text-emerald-200';
   if (type === 'salida') return 'bg-rose-400/15 text-rose-200';
+  if (type === 'traslado') return 'bg-violet-400/15 text-violet-200';
   return 'bg-cyan-400/15 text-cyan-200';
 };
 const destinationLabel = (destino) => (destino === 'TIENDA' ? 'Tienda' : destino === 'VENTA' ? 'Venta' : 'Sin destino');
@@ -376,21 +379,23 @@ const destinationClass = (destino) => (destino === 'TIENDA'
   ? 'bg-blue-400/15 text-blue-200'
   : 'bg-green-400/15 text-green-200');
 
-const typeIcon = (type) => movementTypes.find((option) => option.value === type)?.icon || SlidersHorizontal;
+const typeIcon = (type) => typeIcons[type] || SlidersHorizontal;
 const quantityClass = (type) => {
   if (type === 'entrada') return 'text-emerald-300';
   if (type === 'salida') return 'text-rose-300';
+  if (type === 'traslado') return 'text-violet-200';
   return 'text-cyan-200';
 };
 const typeCards = [
   { value: 'entrada', label: 'Entradas', icon: ArrowDownToLine, border: 'border-l-emerald-400', iconClass: 'bg-emerald-100 text-emerald-600' },
   { value: 'salida', label: 'Salidas', icon: ArrowUpFromLine, border: 'border-l-rose-400', iconClass: 'bg-rose-100 text-rose-600' },
   { value: 'ajuste', label: 'Ajustes', icon: Equal, border: 'border-l-cyan-400', iconClass: 'bg-cyan-100 text-cyan-700' },
+  { value: 'traslado', label: 'Traslados', icon: MapPin, border: 'border-l-violet-400', iconClass: 'bg-violet-100 text-violet-700' },
 ];
 const countByType = computed(() => movements.value.reduce((counts, movement) => {
   counts[movement.tipo_movimiento] = (counts[movement.tipo_movimiento] || 0) + 1;
   return counts;
-}, { entrada: 0, salida: 0, ajuste: 0 }));
+}, { entrada: 0, salida: 0, ajuste: 0, traslado: 0 }));
 
 // El buscador solo mira el nombre del articulo y la descripcion.
 const filteredMovements = computed(() => {
@@ -409,7 +414,7 @@ const filteredMovements = computed(() => {
 const sortKey = ref('');
 const sortDir = ref('asc');
 const SORT_COLUMNS = {
-  fecha: { accessor: (movement) => movement.fecha_movimiento, type: 'text' },
+  fecha: { accessor: (movement) => movementSortKey(movement), type: 'text' },
   articulo: { accessor: (movement) => itemName(movement.id_item), type: 'text' },
   cantidad: { accessor: (movement) => movement.cantidad, type: 'number' },
 };

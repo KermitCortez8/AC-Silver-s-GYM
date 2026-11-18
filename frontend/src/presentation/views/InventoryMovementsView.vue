@@ -316,7 +316,7 @@
                     class="transition ws-hover"
                   >
                     <td class="whitespace-nowrap px-4 py-3 ws-soft">
-                      {{ formatDate(movement.fecha_movimiento) }}
+                      {{ formatDate(movement.fecha_movimiento) }}<span v-if="movement.hora_movimiento"> · {{ String(movement.hora_movimiento).slice(0, 5) }}</span>
                     </td>
                     <td class="px-4 py-3 font-bold ws-text">
                       {{ itemName(movement.id_item) }}

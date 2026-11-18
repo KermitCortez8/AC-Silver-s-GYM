@@ -24,5 +24,9 @@ export const createInventoryRepository = (http, apiBase) => ({
   retireInventoryUnit: (idUnidad, payload, token) => dataRequest(http, `${apiBase}/inventario/unidades/${idUnidad}`, {
     method: 'DELETE',
     body: JSON.stringify(payload)
+  }, token),
+  restoreInventoryUnit: (idUnidad, payload, token) => dataRequest(http, `${apiBase}/inventario/unidades/${idUnidad}/restablecer`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
   }, token)
 });
