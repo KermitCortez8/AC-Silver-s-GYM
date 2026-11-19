@@ -1,3 +1,4 @@
+from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
@@ -5,9 +6,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from infrastructure.config import Settings, get_settings
-from presentation.dependencies import get_clients_service, get_current_user, get_gym_service
+from presentation.dependencies import get_client_payments_service, get_clients_service, get_current_user, get_gym_service
 from domain.models.auth import UserProfile
 from presentation.routes.clients_routes import router
+from application.services.client_payments_service import ClientPaymentsService
 from application.services.clients_service import ClientsService
 from infrastructure.services.local_gym_service import LocalGymService
 from infrastructure.services.supabase_gym_service import SupabaseGymService
@@ -270,3 +272,173 @@ def test_zero_price_is_not_replaced_with_plan_price(api):
     with pytest.raises(ValueError, match="mayor que cero"):
         stripe_service.StripeService(settings).create_membership_checkout(result, admin=True)
     assert calls == []
+
+
+def test_tc033_activacion_y_cobros_invalidos_no_dejan_cambios(api):
+    client, gym, service, _, calls = api
+    result = service.register_admin_client(PAYLOAD)
+    identity = result["cliente"]["id_cliente"]
+    url = f"/clientes/{identity}"
+    initial = deepcopy(gym.state["membresia"][0])
+    assert initial["estado"] == "EN_TRAMITE"
+    assert not initial["fecha_inicio"] and not initial["fecha_fin"]
+    activation = client.post(url + "/activar-membresia")
+    assert activation.status_code == 400 and "sin pago confirmado" in activation.text
+    assert gym.state["membresia"] == [initial]
+
+    gym.state["membresia"][0]["monto_pago"] = 0
+    before_clients = client.get("/clientes").json()
+    before_payments = client.get("/pagos/membresias").json()
+    unpaid = deepcopy(gym.state["membresia"])
+    for action in ("/confirmar-pago-manual", "/pago-stripe"):
+        response = client.post(url + action)
+        assert response.status_code == 400 and "mayor que cero" in response.text
+    assert calls == []
+    assert client.get("/clientes").json() == before_clients
+    assert client.get("/pagos/membresias").json() == before_payments
+    assert gym.state["membresia"] == unpaid
+
+
+def test_tc034_activacion_protege_fechas_y_pago(api, monkeypatch):
+    client, gym, service, _, _ = api
+    monkeypatch.setattr("domain.services.gym_domain_service._today_iso", lambda: "2026-11-19")
+    result = service.register_admin_client(PAYLOAD)
+    identity = result["cliente"]["id_cliente"]
+    service.confirm_manual_payment(identity)
+    assert client.post(f"/clientes/{identity}/activar-membresia").status_code == 200
+    before = deepcopy(gym.state["membresia"])
+    missing = client.post("/clientes/9999/activar-membresia")
+    assert missing.status_code in (400, 404) and "no encontrado" in missing.text
+    assert gym.state["membresia"] == before
+
+    assert client.post(f"/clientes/{identity}/activar-membresia").status_code == 200
+    assert gym.state["membresia"] == before
+
+    monkeypatch.setattr("domain.services.gym_domain_service._today_iso", lambda: "2027-01-19")
+    gym.expire_memberships()
+    expired = deepcopy(gym.state["membresia"])
+    assert expired[0]["estado"] == "VENCIDA"
+    refused = client.post(f"/clientes/{identity}/activar-membresia")
+    assert refused.status_code == 400 and "vencida" in refused.text
+    assert gym.state["membresia"] == expired
+
+
+def test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso(api, monkeypatch):
+    client, gym, service, settings, _ = api
+    payments = ClientPaymentsService(
+        service, gym, settings, gateway_factory=stripe_service.StripeService,
+        notify=lambda *args: {"status": "error"},
+    )
+    client.app.dependency_overrides[get_client_payments_service] = lambda: payments
+    monkeypatch.setattr("domain.services.gym_domain_service._today_iso", lambda: "2026-11-19")
+    result = client.post("/clientes/registro-admin", json=PAYLOAD).json()
+    identity = result["cliente"]["id_cliente"]
+    url = f"/clientes/{identity}"
+    assert client.post(url + "/confirmar-pago-manual").status_code == 200
+    payment = deepcopy(gym.state["membresia"][0])
+    assert (payment["estado"], payment["estado_pago"], payment["monto_pago"]) == ("EN_TRAMITE", "PAGADO", 79)
+    activated = client.post(url + "/activar-membresia")
+    assert activated.status_code == 200, activated.text
+    assert activated.json()["notification"]["status"] == "error"
+    [membership] = gym.state["membresia"]
+    assert (membership["estado"], membership["fecha_inicio"], membership["fecha_fin"]) == (
+        "ACTIVO", "2026-11-19", "2026-12-19",
+    )
+    assert membership["referencia_pago"] == payment["referencia_pago"]
+    assert gym.get_cliente(identity)["estado"] == "ACTIVO"
+    original = deepcopy(gym.state["membresia"])
+    assert client.post(url + "/activar-membresia").status_code == 200
+    assert gym.state["membresia"] == original
+
+
+def test_tc046_el_registro_admin_rechaza_promocion_inactiva_sin_consumirla(api):
+    client, gym, _, _, _ = api
+    promo = gym.upsert_promocion({"nombre": "Oferta QA", "valor_descuento": 10,
+        "tipo_descuento": "monto", "planes_aplicables": [1], "activo": False})
+    response = client.post("/clientes/registro-admin", json={**PAYLOAD, "id_promocion": promo["id_promocion"]})
+    assert response.status_code == 400 and "promoci" in response.text.lower()
+    assert gym.state["clientes"] == gym.state["membresia"] == []
+    assert gym.promociones()[0].get("usos", 0) == 0
+
+
+def test_tc013_tc014_el_alta_persiste_identidad_e_importe_y_rechaza_dni_duplicado(api):
+    client, gym, _, _, calls = api
+    response = client.post("/clientes/registro-admin", json=PAYLOAD)
+    assert response.status_code == 201, response.text
+    saved = response.json()
+    identity = saved["cliente"]["id_cliente"]
+    before = deepcopy(gym.state)
+    for _ in range(2):
+        duplicate = client.post("/clientes/registro-admin", json={
+            **PAYLOAD, "nombre": "Otro cliente", "correo": "otro@gmail.com",
+        })
+        assert duplicate.status_code == 400 and "dni" in duplicate.text.lower()
+        assert gym.state == before
+    [found] = [row for row in client.get("/clientes").json() if row["dni"] == PAYLOAD["dni"]]
+    assert (found["id_cliente"], found["nombre"], found["origen_registro"]) == (identity, PAYLOAD["nombre"], "ADMIN")
+    membership = saved["membresia"]
+    assert (membership["estado"], membership["estado_pago"], membership["monto_pago"]) == ("EN_TRAMITE", "PENDIENTE", 79)
+    assert gym.state["membresia"][0]["monto_pago"] == 79 and calls == []
+
+
+@pytest.mark.parametrize("changes", [{"nombre": ""}, {"dni": "abc"}, {"telefono": "123"},
+                                      {"correo": "malformado"}, {"password": ""}, {"plan": ""}])
+def test_tc015_alta_invalida_no_escribe_y_permite_corregir(api, changes):
+    client, gym, _, _, calls = api
+    before = deepcopy({key: value for key, value in gym.state.items() if not key.startswith("_")})
+    result = client.post("/clientes/registro-admin", json={**PAYLOAD, **changes})
+    assert result.status_code in (400, 422) and "detail" in result.json()
+    assert {key: value for key, value in gym.state.items() if not key.startswith("_")} == before
+    assert calls == []
+    created = client.post("/clientes/registro-admin", json=PAYLOAD)
+    assert created.status_code == 201
+    assert len(gym.state["clientes"]) == len(gym.state["membresia"]) == 1
+
+
+def test_tc016_tc017_consulta_y_edicion_conservan_historial_e_identidad(api):
+    client, gym, service, _, _ = api
+    created = client.post("/clientes/registro-admin", json=PAYLOAD).json()["cliente"]
+    identity = created["id_cliente"]
+    service.confirm_manual_payment(identity)
+    saved = deepcopy(gym.state["membresia"])
+    payments = client.get("/pagos/membresias").json()
+    [record] = client.get("/clientes").json()
+    assert record["id_cliente"] == identity and record["dni"] == PAYLOAD["dni"]
+    assert all(record[field] == PAYLOAD[field] for field in ("nombre", "correo", "telefono"))
+    assert saved[0]["estado_pago"] == "PAGADO" and saved[0]["estado"] == "EN_TRAMITE"
+    assert payments and gym.state["membresia"] == saved
+
+    changed = client.post("/clientes", json={**created, "nombre": "Nombre corregido", "telefono": "988888888"})
+    assert changed.status_code == 200, changed.text
+    [loaded] = client.get("/clientes").json()
+    assert (loaded["id_cliente"], loaded["id_usuario"], loaded["nombre"], loaded["telefono"]) == (
+        identity, created["id_usuario"], "Nombre corregido", "988888888",
+    )
+    assert gym.state["membresia"] == saved
+    assert [pay["id_membresia"] for pay in client.get("/pagos/membresias").json()] == [
+        pay["id_membresia"] for pay in payments
+    ]
+
+
+@pytest.mark.parametrize("change", [{"dni": "87654321"}, {"nombre": ""}, {"correo": "invalido"}, {"telefono": "123"}])
+def test_tc021_edicion_invalida_preserva_ambos_clientes(api, change):
+    client, gym, _, _, _ = api
+    first = client.post("/clientes/registro-admin", json=PAYLOAD).json()["cliente"]
+    result = client.post("/clientes/registro-admin", json={**PAYLOAD, "dni": "87654321", "correo": "otro@gmail.com"})
+    assert result.status_code == 201
+    before = client.get("/clientes").json()
+    history = deepcopy(gym.state["membresia"])
+    response = client.post("/clientes", json={**first, **change})
+    assert response.status_code in (400, 409, 422) and "detail" in response.json()
+    assert client.get("/clientes").json() == before
+    assert gym.state["membresia"] == history
+
+
+def test_tc020_referencia_ajena_al_directorio_no_abre_ni_modifica_otro_cliente(api):
+    client, gym, _, _, _ = api
+    assert client.post("/clientes/registro-admin", json=PAYLOAD).status_code == 201
+    before = client.get("/clientes").json()
+    assert gym.get_cliente(999999) is None
+    result = client.post("/clientes/999999/activar-membresia")
+    assert result.status_code in (400, 404) and "no encontrado" in result.text
+    assert client.get("/clientes").json() == before

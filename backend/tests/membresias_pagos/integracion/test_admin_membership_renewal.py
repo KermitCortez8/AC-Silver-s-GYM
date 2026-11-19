@@ -134,6 +134,7 @@ def test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction(admin,
     gym, source, calls, payments, app, http = admin
     row = next(m for m in gym.state['membresia'] if m['id_membresia'] == source['id_membresia'])
     row['fecha_fin'] = (date(2026, 11, 9) + timedelta(days=days)).isoformat()
+    original_period = (row['fecha_inicio'], row['fecha_fin'])
     url = f"/api/clientes/{source['id_cliente']}"
     preview = http.get(url + '/renovacion')
     assert preview.status_code == (200 if allowed else 400)
@@ -143,9 +144,13 @@ def test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction(admin,
                'metodo_pago': 'efectivo', 'pago_recibido': True}
     response = http.post(url + '/renovar-membresia', json=request)
     assert response.status_code == (200 if allowed else 400)
-    assert len(gym.membresias_por_cliente(source['id_cliente'])) == (2 if allowed else 1)
+    memberships = gym.membresias_por_cliente(source['id_cliente'])
+    assert len(memberships) == (2 if allowed else 1)
+    previous = next(m for m in memberships if m['id_membresia'] == source['id_membresia'])
+    assert (previous['fecha_inicio'], previous['fecha_fin']) == original_period
     assert not calls
     if not allowed:
+        assert '7 días' in preview.json()['detail']
         assert '7 días' in response.json()['detail']
 
 

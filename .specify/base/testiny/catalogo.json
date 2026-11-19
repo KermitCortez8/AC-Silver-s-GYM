@@ -1,9 +1,9 @@
 {
   "version": 1,
   "proyecto": "SILVE",
-  "fecha_consulta": "2026-11-15T20:07:47.561934-05:00",
-  "origen": "Consulta de solo lectura a Testiny mediante Chromium/Playwright; se omiten propietarios, cuentas y auditoría interna.",
-  "total": 199,
+  "fecha_consulta": "2026-11-19T12:03:24-05:00",
+  "origen": "Exportación Excel de solo lectura de todos los casos del proyecto SILVE en Testiny; se omiten propietarios, cuentas y auditoría interna.",
+  "total": 222,
   "casos": [
     {
       "id": 1,
@@ -5969,6 +5969,589 @@
         }
       ],
       "huella": "00ac3509bdfc559f28efea1c92920b447daebaf697a578f6022c576dc11bea4f"
+    },
+    {
+      "id": 200,
+      "codigo": "SG-RF03-IT02",
+      "titulo": "Caducidad y conciliación de una preinscripción con promoción",
+      "modulo": "MOD-02",
+      "nombre_modulo": "Clientes",
+      "rf": [
+        "RF03"
+      ],
+      "cus": "CUS03",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/200/edit",
+      "precondiciones": "Trazabilidad\nMOD-02 - Clientes → RF03 → CUS03\nCódigo del caso: SG-RF03-IT02\nPreinscripción pública sintética, promoción de un cupo, reloj controlado y pasarela de pago simulada.\nEvidencia del repositorio\nbackend/tests/clientes/integracion/test_public_preregistrations.py · test_expiration_archives_request_and_releases_promo_once_then_allows_new_attempt\nbackend/tests/clientes/integracion/test_public_preregistrations.py · test_periodic_reconciliation_expires_open_session_before_archiving\nbackend/tests/clientes/integracion/test_public_preregistrations.py · test_periodic_reconciliation_preserves_uncertain_payment_and_confirms_late_paid_session\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Confirmar la expiración de la sesión, repetir el evento e iniciar un intento nuevo para la misma solicitud.",
+          "esperado": "La solicitud se archiva y el cupo se libera una vez. El reintento conserva el token, obtiene una sesión distinta y el evento viejo no lo archiva."
+        },
+        {
+          "accion": "Ejecutar la conciliación automática antes del vencimiento y después sobre un checkout abierto y elegible para expirar.",
+          "esperado": "Antes del plazo no archiva. Al vencer, expira el checkout antes de archivar y no crea un cliente."
+        },
+        {
+          "accion": "Conciliar una solicitud mientras el proveedor no responde. Restaurar la respuesta con pago confirmado y conciliar de nuevo.",
+          "esperado": "La solicitud incierta sigue pendiente. El pago recuperado convierte la solicitud y crea un solo cliente."
+        }
+      ],
+      "huella": "f5d0b548b13ad68747c8745a5488259c23588a80d24c189b356dcca71cb8ccb0"
+    },
+    {
+      "id": 201,
+      "codigo": "SG-RF03-IT03",
+      "titulo": "Recuperar el checkout de un alta administrativa guardada",
+      "modulo": "MOD-02",
+      "nombre_modulo": "Clientes",
+      "rf": [
+        "RF03"
+      ],
+      "cus": "CUS03",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/201/edit",
+      "precondiciones": "Trazabilidad\nMOD-02 - Clientes → RF03 → CUS03\nCódigo del caso: SG-RF03-IT03\nPersonal autorizado y un alta con datos sintéticos. Usar el adaptador de Stripe simulado y un importe contratado de S/ 79.\nEvidencia del repositorio\nbackend/tests/clientes/integracion/test_admin_client_payment.py · test_stripe_failure_keeps_registration_available_for_retry\nbackend/tests/clientes/integracion/test_admin_client_payment.py · test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Forzar un fallo del proveedor al crear el checkout de un alta con pago por tarjeta.",
+          "esperado": "Se guarda un cliente y una membresía pendiente, con un mensaje para recuperar el pago."
+        },
+        {
+          "accion": "Preparar un alta pendiente, cambiar el precio del catálogo a S/ 999 y pedir dos veces el checkout desde la ficha.",
+          "esperado": "El importe sigue siendo S/ 79, se usa la misma clave de idempotencia y no se duplica cliente ni membresía."
+        }
+      ],
+      "huella": "eaf07b8525d918f0e7fe31f9986b1b32339c3738e9ca3fd5108e5d86d7e17baf"
+    },
+    {
+      "id": 202,
+      "codigo": "SG-RF03-FT01",
+      "titulo": "Reintentar la carga de planes y promociones conservando el alta en edición",
+      "modulo": "MOD-02",
+      "nombre_modulo": "Clientes",
+      "rf": [
+        "RF03"
+      ],
+      "cus": "CUS03",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/202/edit",
+      "precondiciones": "Trazabilidad\nMOD-02 - Clientes → RF03 → CUS03\nCódigo del caso: SG-RF03-FT01\nEditor de Clientes con un borrador válido y respuestas de planes/promociones controladas en QA.\nEvidencia del repositorio\nfrontend/tests/clientes/interfaz/client-catalog.test.js · carga fallida permite reintentar sin perder el borrador ni registrar con precios locales\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Abrir el alta con el catálogo remoto indisponible, completar los datos e intentar guardar.",
+          "esperado": "La interfaz informa la indisponibilidad, deshabilita el guardado y no envía un alta con precios locales."
+        },
+        {
+          "accion": "Restaurar ambos catálogos y pulsar la acción de reintentar en el editor.",
+          "esperado": "La interfaz mantiene el nombre ingresado y vuelve a habilitar guardado con el catálogo recuperado."
+        }
+      ],
+      "huella": "2d0f77c6c30c7dddbd61b6458961ffb2a4931cd6efda8257171ffc5a18208480"
+    },
+    {
+      "id": 203,
+      "codigo": "SG-RF09-IT01",
+      "titulo": "Aplicar la ventana de siete días en renovación administrativa",
+      "modulo": "MOD-03",
+      "nombre_modulo": "Membresías y pagos",
+      "rf": [
+        "RF09"
+      ],
+      "cus": "CUS07",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/203/edit",
+      "precondiciones": "Trazabilidad\nMOD-03 - Membresias y pagos → RF09 → CUS07\nCódigo del caso: SG-RF09-IT01\nSocio con período activado, plan de precio conocido, personal autorizado y reloj controlado en Lima. Datos separados para cada variante.\nEvidencia del repositorio\nbackend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py · test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction\nbackend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py · test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Consultar la vista previa e intentar renovar en efectivo cuando faltan ocho días para la fecha de fin.",
+          "esperado": "La API rechaza la vista previa y la renovación con motivo de siete días. El cliente figura sin renovación disponible y conserva una sola membresía."
+        },
+        {
+          "accion": "Repetir en variantes de siete días, tres días, último día y período ya vencido.",
+          "esperado": "La disponibilidad aparece habilitada. La vista previa y el pago válidos dejan dos membresías en cada variante, con el período anterior conservado."
+        },
+        {
+          "accion": "Intentar una renovación anticipada con Stripe y por creación genérica de membresía.",
+          "esperado": "Ambas vías respetan la ventana. Conserva una sola membresía y el proveedor no recibe solicitudes."
+        }
+      ],
+      "huella": "a8c11424858c15e836a8e3b24c73df74acfad421eddc49c02a78fbab5602b619"
+    },
+    {
+      "id": 204,
+      "codigo": "SG-RF10-UT01",
+      "titulo": "Excluir una promoción cuando consume el último cupo",
+      "modulo": "MOD-04",
+      "nombre_modulo": "Planes y promociones",
+      "rf": [
+        "RF10"
+      ],
+      "cus": "CUS09",
+      "tipo": "Unitaria",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/204/edit",
+      "precondiciones": "Trazabilidad\nMOD-04 - Planes y promociones → RF10 → CUS09\nCódigo del caso: SG-RF10-UT01\nPromoción activa y aplicable al plan Mensual, con límite de dos usos y un uso registrado. Evaluación sobre datos de prueba.\nEvidencia del repositorio\nbackend/tests/planes_promociones/unitarias/test_promocion_cupos.py · test_promocion_limite_cupos_exhaustion\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Consultar la promoción vigente con un uso de dos.",
+          "esperado": "La promoción se devuelve como aplicable al plan."
+        },
+        {
+          "accion": "Cambiar el contador de usos a dos y volver a consultar la promoción vigente.",
+          "esperado": "La búsqueda excluye la promoción agotada."
+        }
+      ],
+      "huella": "35fe08a2c0c4ea3c19f93da2dd0bcbf195c4da83c7dc807296b6988d8e6bfb2f"
+    },
+    {
+      "id": 205,
+      "codigo": "SG-RF14-IT02",
+      "titulo": "Bloquear la matrícula si falta la operación atómica de base de datos",
+      "modulo": "MOD-05",
+      "nombre_modulo": "Horarios y matrículas",
+      "rf": [
+        "RF14"
+      ],
+      "cus": "CUS13",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/205/edit",
+      "precondiciones": "Trazabilidad\nMOD-05 - Horarios y matriculas → RF14 → CUS13\nCódigo del caso: SG-RF14-IT02\nControlar un repositorio de QA que informa que la función de matrícula no existe. Preparar un cliente elegible, cupo disponible y estado inicial conocido.\nEvidencia del repositorio\nbackend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py · test_enrollment_requires_atomic_rpc_before_writing\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Solicitar una matrícula válida con la función atómica deshabilitada en el doble de repositorio.",
+          "esperado": "El repositorio indica que falta la migración 019_schedule_sessions.sql y no intenta escribir por una vía alternativa."
+        }
+      ],
+      "huella": "ff15ddabd54ae43c666d6de53f96e3ff566a7fa1000fc848c4f7293fe0c2fbb4"
+    },
+    {
+      "id": 206,
+      "codigo": "SG-RF15-IT02",
+      "titulo": "Mostrar coincidencia entre clase y visita general dentro del margen de 30 minutos",
+      "modulo": "MOD-06",
+      "nombre_modulo": "Asistencias",
+      "rf": [
+        "RF15"
+      ],
+      "cus": "CUS14, CUS15",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/206/edit",
+      "precondiciones": "Trazabilidad\nMOD-06 - Asistencias → RF15 → CUS14, CUS15\nCódigo del caso: SG-RF15-IT02\nSocio matriculado y habilitado, clase sintética de 10:00 a 14:00 y reloj en Lima. Preparar un estado separado por variante.\nEvidencia del repositorio\nbackend/tests/asistencias/integracion/test_schedule_attendance.py · test_aviso_cruzado_incluye_margen_de_treinta_minutos\nbackend/tests/asistencias/integracion/test_schedule_attendance.py · test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin\nbackend/tests/asistencias/integracion/test_schedule_attendance.py · test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Consultar el listado de clase con visita general abierta a las 09:29:59, 09:30, 14:30 y 14:30:01.",
+          "esperado": "La entrada se bloquea en todas las variantes. Solo dentro del margen inclusivo aparece el aviso de visita general con la asistencia correspondiente."
+        },
+        {
+          "accion": "Abrir una visita de clase, editar su horario y consultar el ingreso general después de los 30 minutos desde el fin original.",
+          "esperado": "El aviso de coincidencia usa la franja guardada. Al salir del margen desaparece el aviso; la salida de la visita abierta sigue disponible y el ingreso continúa bloqueado."
+        },
+        {
+          "accion": "Consultar la matrícula del mismo horario, pero de otra semana, mientras existe una visita abierta hoy.",
+          "esperado": "La lista de la otra sesión explica el motivo de bloqueo y no presenta la salida de la visita de hoy."
+        }
+      ],
+      "huella": "3462b0e64feded7ba4b861ead2f4b3e72ccd10886f7d417867b13865815aa3d2"
+    },
+    {
+      "id": 207,
+      "codigo": "SG-RF15-FT01",
+      "titulo": "La lista de asistencia conserva la clase y fecha seleccionadas ante respuestas tardías",
+      "modulo": "MOD-06",
+      "nombre_modulo": "Asistencias",
+      "rf": [
+        "RF15"
+      ],
+      "cus": "CUS15",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/207/edit",
+      "precondiciones": "Trazabilidad\nMOD-06 - Asistencias → RF15 → CUS15\nCódigo del caso: SG-RF15-FT01\nPanel de asistencia por clase en QA con dos horarios y dos fechas de un horario. Controlar el orden de las respuestas.\nEvidencia del repositorio\nfrontend/tests/asistencias/interfaz/flujos.test.js · la lista descarta respuestas de otro horario y al desmontar\nfrontend/tests/asistencias/interfaz/flujos.test.js · asistencia separa fechas del mismo horario y descarta respuestas de otra semana\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Seleccionar dos horarios seguidos y hacer que responda primero el segundo.",
+          "esperado": "Una respuesta tardía del primer horario no sustituye la lista del segundo."
+        },
+        {
+          "accion": "Cambiar de semana para el mismo horario y entregar tarde la respuesta de la semana anterior.",
+          "esperado": "Permanece la fecha elegida y se muestra su lista."
+        },
+        {
+          "accion": "Responder a la fecha seleccionada con datos de una fecha diferente.",
+          "esperado": "La lista queda vacía y aparece un error sobre la fecha seleccionada."
+        }
+      ],
+      "huella": "76b689932c23eb286f198c72c45fb5538e464eaee660ff471e9c0c24a21fc817"
+    },
+    {
+      "id": 208,
+      "codigo": "SG-RF17-ST01",
+      "titulo": "Informar fallos de módulos sin revelar detalles internos",
+      "modulo": "MOD-10",
+      "nombre_modulo": "Paneles y configuración",
+      "rf": [
+        "RF17"
+      ],
+      "cus": "CUS18",
+      "tipo": "Seguridad",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/208/edit",
+      "precondiciones": "Trazabilidad\nMOD-10 - Paneles y configuracion → RF17 → CUS18\nCódigo del caso: SG-RF17-ST01\nEn QA, usar solicitudes válidas y dependencias simuladas para panel, rutinas, inventario y otros módulos. Usar un marcador sintético en lugar de datos privados reales.\nEvidencia del repositorio\nbackend/tests/transversales/integracion/test_module_error_control.py · test_all_modules_report_unavailable_services_without_leaking_details\nbackend/tests/transversales/integracion/test_module_error_control.py · test_domain_errors_keep_their_status_across_routes\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Provocar indisponibilidad de persistencia y errores inesperados del servicio en las rutas configuradas del fixture.",
+          "esperado": "Responde 503 con un detalle legible. La respuesta omite el marcador privado del proveedor."
+        },
+        {
+          "accion": "Probar errores de entidad inexistente, conflicto de cupo, membresía o permiso e información inválida en las operaciones de prueba.",
+          "esperado": "Cada error conserva su código esperado 404, 409, 403 o 400."
+        }
+      ],
+      "huella": "9312c77996e13d8581c08b548b134394203d0cadb5724f0b1343cddcce23698f"
+    },
+    {
+      "id": 209,
+      "codigo": "SG-RF29-FT02",
+      "titulo": "Conservar el borrador de progreso hasta confirmar el guardado",
+      "modulo": "MOD-07",
+      "nombre_modulo": "Rutinas y progreso",
+      "rf": [
+        "RF29"
+      ],
+      "cus": "CUS29",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/209/edit",
+      "precondiciones": "Trazabilidad\nMOD-07 - Rutinas y entrenador → RF29 → CUS29\nCódigo del caso: SG-RF29-FT02\nEntrenador de QA con una asignación disponible. Simular el primer guardado fallido y el siguiente confirmado.\nEvidencia del repositorio\nfrontend/tests/rutinas_progreso/interfaz/flujos.test.js · progress keeps its draft on failure and clears it only after a confirmed save\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Marcar tres series y escribir una observación. Forzar el fallo de Guardar.",
+          "esperado": "Sigue abierto el editor, permanece el borrador y la solicitud conserva la observación y el peso cero."
+        },
+        {
+          "accion": "Reintentar con respuesta confirmada del servicio.",
+          "esperado": "Se cierra el editor y se limpia el borrador de observaciones y series."
+        }
+      ],
+      "huella": "80a6393ea74a16291b796289b4bb9d6208cf25cf9482b1023a98e78ff4e40fb1"
+    },
+    {
+      "id": 210,
+      "codigo": "SG-RF29-FT03",
+      "titulo": "Controlar el temporizador de descanso del monitor",
+      "modulo": "MOD-07",
+      "nombre_modulo": "Rutinas y progreso",
+      "rf": [
+        "RF29"
+      ],
+      "cus": "CUS29",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/210/edit",
+      "precondiciones": "Trazabilidad\nMOD-07 - Rutinas y entrenador → RF29 → CUS29\nCódigo del caso: SG-RF29-FT03\nMonitor de rutinas en un entorno QA que permite controlar el reloj o prueba directa del temporizador.\nEvidencia del repositorio\nfrontend/tests/rutinas_progreso/interfaz/flujos.test.js · one rest timer supports pause, resume, completion and disposal without leaked intervals\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Iniciar el descanso de tres segundos, avanzar un segundo, pausar y esperar cinco.",
+          "esperado": "La cuenta queda en dos segundos durante la pausa."
+        },
+        {
+          "accion": "Reanudar hasta llegar a cero. Iniciar otro descanso y salir de la vista.",
+          "esperado": "Finaliza y deja de estar activo. El temporizador del descanso siguiente deja de avanzar al desmontar la vista."
+        }
+      ],
+      "huella": "cece0b2f175007987e573b3ac528334b0ab7e49d8fa7db76c83581b64e6c6387"
+    },
+    {
+      "id": 211,
+      "codigo": "SG-RF11-IT02",
+      "titulo": "Generar avisos de clase con la fecha exacta de Lima",
+      "modulo": "MOD-11",
+      "nombre_modulo": "Notificaciones",
+      "rf": [
+        "RF11"
+      ],
+      "cus": "CUS10, CUS13",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/211/edit",
+      "precondiciones": "Trazabilidad\nMOD-11 - Notificaciones → RF11 → CUS10, CUS13\nCódigo del caso: SG-RF11-IT02\nPreparar una confirmación por una sola fecha y un recordatorio de clase cerca de un cambio de mes UTC. Usar generación local de plantillas.\nEvidencia del repositorio\nbackend/tests/notificaciones/integracion/test_schedule_calendar.py · test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month\nbackend/tests/notificaciones/integracion/test_schedule_calendar.py · test_enrollment_email_indica_una_sesion_con_su_fecha\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Generar el recordatorio para una clase cuya hora UTC ya corresponde al día siguiente.",
+          "esperado": "El texto y el enlace apuntan al día de la sesión en Lima. El texto indica la zona horaria de Perú."
+        },
+        {
+          "accion": "Generar la confirmación de una matrícula del 2 de noviembre de 2026.",
+          "esperado": "El mensaje y su enlace indican el 2 de noviembre y el texto omite recurrencia semanal."
+        }
+      ],
+      "huella": "bad46a30c1cc60ae19c812e0eaf18950375e9b1698ecf3e1300acbd78c430e3a"
+    },
+    {
+      "id": 212,
+      "codigo": "SG-RF11-IT03",
+      "titulo": "Cancelar un aviso de clase cuando cambia o se anula la matrícula",
+      "modulo": "MOD-11",
+      "nombre_modulo": "Notificaciones",
+      "rf": [
+        "RF11"
+      ],
+      "cus": "CUS10, CUS13",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/212/edit",
+      "precondiciones": "Trazabilidad\nMOD-11 - Notificaciones → RF11 → CUS10, CUS13\nCódigo del caso: SG-RF11-IT03\nCola local con un aviso de matrícula aún sin enviar. Simular que la consulta de contexto ya no devuelve una matrícula válida.\nEvidencia del repositorio\nbackend/tests/notificaciones/integracion/test_resend_email.py · test_schedule_cancelled_before_sending_when_enrollment_changes\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Procesar el aviso después de retirar su contexto de entrega por anulación o cambio.",
+          "esperado": "El aviso queda cancelado y no se invoca el remitente."
+        }
+      ],
+      "huella": "45974bf8ae3bc4cfae8cc8f6bfe5a37444950b3ecca24ceb83d87749f355f356"
+    },
+    {
+      "id": 213,
+      "codigo": "SG-RF19-RG01",
+      "titulo": "Advertir resultado incierto cuando se interrumpe la confirmación de un guardado",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF19"
+      ],
+      "cus": "CUS19",
+      "tipo": "Regresión",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/213/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF19 → CUS19\nCódigo del caso: SG-RF19-RG01\nQA con un transporte simulado que entrega las cabeceras de la respuesta, pero deja pendiente su cuerpo hasta superar el tiempo máximo.\nEvidencia del repositorio\nfrontend/tests/transversales/integracion/http-error-control.test.js · a write with stalled confirmation keeps the uncertain outcome and is not retried\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "Enviar una solicitud de guardado de inventario y dejar sin finalizar el cuerpo de la respuesta.",
+          "esperado": "Se informa tiempo agotado y resultado incierto con aviso de verificar antes de repetir. El cliente HTTP envía una sola solicitud."
+        }
+      ],
+      "huella": "6b83aa82c04d3c4ca07bf3e5332a2e46f3a3263285b7053def3207d16318290f"
+    },
+    {
+      "id": 214,
+      "codigo": "SG-RF22-FT01",
+      "titulo": "Paginar catálogos de tienda e inventario con tamaño elegido",
+      "modulo": "MOD-09",
+      "nombre_modulo": "Tienda y pedidos",
+      "rf": [
+        "RF22"
+      ],
+      "cus": "CUS22, CUS19",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/214/edit",
+      "precondiciones": "Trazabilidad\nMOD-09 - Tienda y pedidos → RF22 → CUS22, CUS19\nCódigo del caso: SG-RF22-FT01\nTienda e Inventario administrativos de QA, cada uno con 27 registros sintéticos.\nEvidencia del repositorio\nfrontend/tests/transversales/interfaz/table-pagination-views.test.js · inventario muestra solo las filas escritas y la última página trae el resto\nfrontend/tests/transversales/interfaz/table-pagination-views.test.js · tienda muestra solo las filas escritas y la última página trae el resto\nfrontend/tests/transversales/interfaz/table-pagination-views.test.js · ambas vistas renderizan el paginador con el campo de filas por página\nEjecución manual pendiente en Testiny.",
+      "pasos": [
+        {
+          "accion": "En Inventario, seleccionar cinco filas por página y navegar a la página seis.",
+          "esperado": "La primera página contiene cinco artículos, hay seis páginas y la última contiene dos."
+        },
+        {
+          "accion": "En Tienda, seleccionar cinco filas y navegar a la página seis.",
+          "esperado": "La primera página contiene cinco productos y la última contiene dos."
+        },
+        {
+          "accion": "Revisar los controles del paginador de ambas vistas.",
+          "esperado": "Ambas muestran el campo de filas por página, la acción de mostrar más filas y el resumen de rango."
+        }
+      ],
+      "huella": "c2adbf1b20fce71c98d68d3af322d35bb77d2161d92f2189fcbebbd0fbc8636e"
+    },
+    {
+      "id": 215,
+      "codigo": "SG-RF20-IT02",
+      "titulo": "Rechazar una transacción si cambió el estado desde su lectura",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF20"
+      ],
+      "cus": "CUS20",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/215/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF20 → CUS20\nCódigo del caso: SG-RF20-IT02\nPostgreSQL desechable, migraciones y datos sintéticos. Dos escrituras usan una misma instantánea inicial.\nEvidencia del repositorio\nbackend/tests/transversales/postgres/test_atomic_transactions_postgres.py · test_stale_snapshot_is_rejected_without_partial_writes\nEjecución manual pendiente en Testiny.\nEste caso requiere PostgreSQL desechable y migraciones aplicadas.",
+      "pasos": [
+        {
+          "accion": "Insertar una fila de inventario fuera de la instantánea y después intentar insertar otra usando esa instantánea anterior.",
+          "esperado": "El guardado se rechaza por conflicto y la tabla conserva una sola fila, sin insertar la segunda."
+        }
+      ],
+      "huella": "c2423206d7c0ccb406b49fc0cdc0001955d457236158fcc1fd2ca594cfac5058"
+    },
+    {
+      "id": 216,
+      "codigo": "SG-RF19-FT03",
+      "titulo": "Asignar números de activo a equipos y accesorios al darlos de alta",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF19"
+      ],
+      "cus": "CUS19",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/216/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF19 → CUS19\nCódigo del caso: SG-RF19-FT03\nPersonal de inventario de QA. Usar un equipo llamado Maquina para correr con tres unidades y artículos de control de Limpieza y Tienda.\nEvidencia del repositorio\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_alta_de_equipo_crea_una_unidad_por_stock_inicial\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_prefijo_usa_las_iniciales_de_las_palabras_significativas\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_solo_equipos_y_accesorios_se_controlan_por_unidad\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_articulos_que_no_son_equipo_no_tienen_unidades\nEjecución manual pendiente en Testiny.\nLa evidencia corresponde a main, revisión 564ae4e.",
+      "pasos": [
+        {
+          "accion": "Dar de alta el equipo con ubicación Sala de cardio y revisar stock, unidades y movimiento inicial.",
+          "esperado": "Se crean tres números con prefijo MC y correlativos 001 a 003, con estado Operativo y la ubicación indicada. El saldo es tres, con una entrada inicial."
+        },
+        {
+          "accion": "Consultar ejemplos de prefijos y comprobar la clasificación de equipos, accesorios, limpieza, tienda y general.",
+          "esperado": "Los prefijos se forman con las letras significativas. Equipos y accesorios se controlan por unidad. Los artículos de limpieza y tienda del control quedan sin unidades ni prefijo."
+        }
+      ],
+      "huella": "e582d825741a78124ee59e4caa3ab0409fde80e38b54d2e63b951b5b4976bf7d"
+    },
+    {
+      "id": 217,
+      "codigo": "SG-RF20-FT02",
+      "titulo": "Mantener correlativos y registrar los códigos al ingresar más unidades",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF20"
+      ],
+      "cus": "CUS20",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/217/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF20 → CUS20\nCódigo del caso: SG-RF20-FT02\nEquipo de QA con números de activo iniciales registrados. Preparar variantes de una y varias unidades de entrada.\nEvidencia del repositorio\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_entrada_continua_el_correlativo\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_altas_y_entradas_anotan_en_mov_inv_los_codigos_creados\nEjecución manual pendiente en Testiny.\nLa evidencia corresponde a main, revisión 564ae4e.",
+      "pasos": [
+        {
+          "accion": "Sobre un equipo con correlativos 001 y 002, registrar una entrada de dos unidades.",
+          "esperado": "Los correlativos son 001 a 004 y el stock queda en cuatro."
+        },
+        {
+          "accion": "En otra variante, revisar el alta inicial de tres unidades y registrar una entrada adicional de una unidad.",
+          "esperado": "El movimiento inicial muestra el rango 001 a 003 y el siguiente movimiento identifica el código 004."
+        }
+      ],
+      "huella": "b0afc3c89f6c8a8384da1e6f3b9c9e3c5da7d500d1767264da5ef89c5e713220"
+    },
+    {
+      "id": 218,
+      "codigo": "SG-RF20-FT03",
+      "titulo": "Dar de baja las unidades seleccionadas en una salida y conservar el historial",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF20"
+      ],
+      "cus": "CUS20",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/218/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF20 → CUS20\nCódigo del caso: SG-RF20-FT03\nEquipo de QA con tres unidades activas y otro equipo de control con números de activo propios.\nEvidencia del repositorio\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_salida_da_de_baja_las_unidades_elegidas_y_conserva_su_historial\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_salida_rechaza_unidades_invalidas\nEjecución manual pendiente en Testiny.\nLa evidencia corresponde a main, revisión 564ae4e.",
+      "pasos": [
+        {
+          "accion": "Registrar la salida seleccionando solo la segunda unidad. Consultar el movimiento y el historial.",
+          "esperado": "El movimiento registra cantidad uno y el código elegido. La unidad queda dada de baja con fecha y el stock activo pasa a dos."
+        },
+        {
+          "accion": "Registrar una entrada después de la baja y consultar los correlativos activos.",
+          "esperado": "Se genera el correlativo 004. No vuelve a usarse el código de la unidad dada de baja."
+        },
+        {
+          "accion": "En variantes independientes, intentar salida sin seleccionar, con lista vacía, con código duplicado o con una unidad de otro equipo.",
+          "esperado": "Rechaza cada variante antes de cambiar el stock activo del equipo de prueba."
+        }
+      ],
+      "huella": "5ec5083a99e2416602b0a0b4c160751415762225670362145a3b3c4066c35129"
+    },
+    {
+      "id": 219,
+      "codigo": "SG-RF19-FT04",
+      "titulo": "Recalcular el estado del equipo a partir de sus unidades y proteger las bajas",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF19"
+      ],
+      "cus": "CUS19",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/219/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF19 → CUS19\nCódigo del caso: SG-RF19-FT04\nEquipo de QA con dos unidades operativas y otra variante con una sola unidad.\nEvidencia del repositorio\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_estado_del_articulo_resume_el_de_sus_unidades\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_editar_unidad_valida_estado_y_bajas\nEjecución manual pendiente en Testiny.\nLa evidencia corresponde a main, revisión 564ae4e.",
+      "pasos": [
+        {
+          "accion": "Poner una unidad en mantenimiento y luego marcar la otra fuera de servicio.",
+          "esperado": "El artículo primero sigue Operativo y después figura En mantenimiento."
+        },
+        {
+          "accion": "Dar de baja ambas unidades por el flujo de baja y consultar el artículo.",
+          "esperado": "El saldo llega a cero y el artículo queda Agotado."
+        },
+        {
+          "accion": "En la variante de una unidad, intentar ponerla de baja mediante edición, actualizar sus observaciones y, tras una baja válida, intentar reactivarla.",
+          "esperado": "La edición directa de la baja se rechaza. La observación válida se guarda y la unidad dada de baja no vuelve a Operativo por edición."
+        }
+      ],
+      "huella": "d032fd130abe7b172c239e9b47d57bbd3fb498fe62bc38333bac3bd59f9aabc6"
+    },
+    {
+      "id": 220,
+      "codigo": "SG-RF19-RG02",
+      "titulo": "Recategorizar artículos como equipo y preservar números al renombrar",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF19"
+      ],
+      "cus": "CUS19",
+      "tipo": "Regresión",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/220/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF19 → CUS19\nCódigo del caso: SG-RF19-RG02\nDos artículos de QA. Un Banco plano general con stock dos y un equipo existente con código ya emitido.\nEvidencia del repositorio\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_articulo_que_pasa_a_equipo_recibe_codigos_para_su_stock\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_renombrar_no_cambia_el_prefijo_ni_los_codigos\nEjecución manual pendiente en Testiny.\nLa evidencia corresponde a main, revisión 564ae4e.",
+      "pasos": [
+        {
+          "accion": "Cambiar Banco plano a Equipo de fuerza y volver a consultar el artículo.",
+          "esperado": "Mantiene stock dos y genera dos códigos de activo con prefijo BP y correlativos 001 y 002."
+        },
+        {
+          "accion": "Renombrar el equipo que ya tiene código y revisar su ficha y unidades.",
+          "esperado": "Conserva el prefijo y los códigos emitidos antes del cambio de nombre."
+        }
+      ],
+      "huella": "b8392aa840f78c49422558652c82e4f7f9ab1e6daa9cd96b6a98f6684c87316c"
+    },
+    {
+      "id": 221,
+      "codigo": "SG-RF20-FT04",
+      "titulo": "Restringir ajustes y correcciones de cantidad en equipos por unidad",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF20"
+      ],
+      "cus": "CUS20",
+      "tipo": "Funcional",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/221/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF20 → CUS20\nCódigo del caso: SG-RF20-FT04\nEquipo de QA con dos unidades activas. Crear una entrada posterior para comprobar la edición de su movimiento.\nEvidencia del repositorio\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_equipos_con_unidades_no_admiten_ajustes_ni_cambios_de_cantidad\nEjecución manual pendiente en Testiny.\nLa evidencia corresponde a main, revisión 564ae4e.",
+      "pasos": [
+        {
+          "accion": "Intentar cambiar el saldo con un ajuste directo.",
+          "esperado": "El servicio rechaza el ajuste para un equipo controlado por unidad."
+        },
+        {
+          "accion": "Crear una entrada de una unidad. Intentar editar su cantidad y, en una segunda operación, su descripción.",
+          "esperado": "El cambio de cantidad se rechaza y la modificación de descripción se guarda."
+        }
+      ],
+      "huella": "653f308e520ae1ad015625ae0636aa295eb22eb4cd4e98ff71236baf3bb380b8"
+    },
+    {
+      "id": 222,
+      "codigo": "SG-RF19-IT01",
+      "titulo": "Conservar las existencias de equipos al operar el catálogo de Tienda",
+      "modulo": "MOD-08",
+      "nombre_modulo": "Inventario",
+      "rf": [
+        "RF19"
+      ],
+      "cus": "CUS19, CUS21",
+      "tipo": "Integración",
+      "url": "https://app.testiny.io/SILVE/testcases/tc/222/edit",
+      "precondiciones": "Trazabilidad\nMOD-08 - Inventario → RF19 → CUS19, CUS21\nCódigo del caso: SG-RF19-IT01\nEntorno QA con un equipo operativo y cuatro unidades. Personal autorizado para crear un producto independiente en Tienda.\nEvidencia del repositorio\nbackend/tests/inventario/integracion/test_inventario_unidades.py · test_operar_desde_tienda_no_borra_el_stock_de_los_equipos\nEjecución manual pendiente en Testiny.\nLa evidencia corresponde a main, revisión 564ae4e.",
+      "pasos": [
+        {
+          "accion": "Crear un producto de Tienda, recargar el equipo y consultar su stock y estado.",
+          "esperado": "Se guarda el producto. El equipo conserva cuatro unidades y el estado Operativo."
+        }
+      ],
+      "huella": "1f14674c802971a6017c069832407e42316b7bbbb36e5f65b40d01fb3ec775ad"
     }
   ]
 }

@@ -1,23 +1,23 @@
 <template>
   <div class="public-page faq-page min-h-screen bg-[#faf7f5] text-slate-950">
-    <header class="sticky top-0 z-40 border-b border-orange-200 bg-white/90 backdrop-blur">
+    <header class="sticky top-0 z-40 border-b border-red-200 bg-white/90 backdrop-blur">
       <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <router-link to="/" class="text-xl font-black italic tracking-tight text-orange-600">
+        <router-link to="/" class="text-xl font-black italic tracking-tight text-red-600">
           Silver Gym Surco
         </router-link>
 
         <nav class="hidden items-center gap-6 text-sm font-bold uppercase tracking-[0.04em] text-slate-700 lg:flex">
-          <router-link :to="{ path: '/', hash: '#servicios' }" class="transition hover:text-orange-600">Servicios</router-link>
-          <router-link to="/nosotros" class="transition hover:text-orange-600">Nosotros</router-link>
-          <router-link :to="{ path: '/', hash: '#membresias' }" class="transition hover:text-orange-600">Membresías</router-link>
-          <router-link :to="{ path: '/', hash: '#ubicacion' }" class="transition hover:text-orange-600">Ubicación</router-link>
+          <router-link :to="{ path: '/', hash: '#servicios' }" class="transition hover:text-red-700">Servicios</router-link>
+          <router-link to="/nosotros" class="transition hover:text-red-700">Nosotros</router-link>
+          <router-link :to="{ path: '/', hash: '#membresias' }" class="transition hover:text-red-700">Membresías</router-link>
+          <router-link :to="{ path: '/', hash: '#ubicacion' }" class="transition hover:text-red-700">Ubicación</router-link>
         </nav>
 
         <div class="flex items-center gap-2">
-          <router-link to="/registro" class="btn-cta rounded-full bg-orange-500 px-4 py-2 text-sm text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600">
+          <router-link to="/registro" class="btn-cta rounded-full bg-[var(--app-accent)] px-4 py-2 text-sm text-white shadow-lg shadow-red-500/20 transition hover:bg-[var(--app-accent-hover)]">
             Registrarse
           </router-link>
-          <router-link to="/login" class="btn-cta hidden rounded-full border border-orange-200 bg-transparent px-4 py-2 text-sm text-orange-700/80 transition hover:bg-orange-50 hover:text-orange-700 sm:inline-flex">
+          <router-link to="/login" class="btn-cta hidden rounded-full border border-red-200 bg-transparent px-4 py-2 text-sm text-red-700 transition hover:bg-red-50 hover:text-red-700 sm:inline-flex">
             Acceso a plataforma digital
           </router-link>
         </div>
@@ -27,8 +27,8 @@
     <main>
       <section class="bg-[#141110] px-4 py-16 text-white sm:px-6 lg:px-8">
         <div class="mx-auto max-w-[1600px]">
-          <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-300">
-            <span class="h-[2px] w-[18px] bg-orange-300"></span>
+          <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-red-300">
+            <span class="h-[2px] w-[18px] bg-red-300"></span>
             Ayuda
           </span>
           <h1 class="mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">Preguntas Frecuentes.</h1>
@@ -48,7 +48,7 @@
                 class="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
               >
                 <span class="text-base font-black text-white">{{ faq.question }}</span>
-                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-orange-300 text-orange-300">
+                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-red-300 text-red-300">
                   {{ openFaq === index ? '−' : '+' }}
                 </span>
               </button>
@@ -72,7 +72,7 @@
           </div>
 
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.08em] text-orange-300">Explorar</p>
+            <p class="text-xs font-black uppercase tracking-[0.08em] text-red-300">Explorar</p>
             <nav class="mt-4 flex flex-col gap-2.5">
               <router-link :to="{ path: '/', hash: '#servicios' }" class="text-sm font-semibold text-white/65 transition hover:text-white">Servicios</router-link>
               <router-link to="/nosotros" class="text-sm font-semibold text-white/65 transition hover:text-white">Nosotros</router-link>
@@ -82,14 +82,14 @@
           </div>
 
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.08em] text-orange-300">Contacto</p>
+            <p class="text-xs font-black uppercase tracking-[0.08em] text-red-300">Contacto</p>
             <div class="mt-4 flex flex-col gap-2.5">
               <span class="flex items-start gap-2 text-sm font-semibold text-white/65">
-                <svg class="mt-0.5 h-3.5 w-3.5 flex-none text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                <svg class="mt-0.5 h-3.5 w-3.5 flex-none text-red-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
                 Jirón Vista Alegre 606, Lima 15056
               </span>
               <span class="flex items-center gap-2 text-sm font-semibold text-white/65">
-                <svg class="h-3.5 w-3.5 flex-none text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <svg class="h-3.5 w-3.5 flex-none text-red-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Lun a sab
               </span>
             </div>
