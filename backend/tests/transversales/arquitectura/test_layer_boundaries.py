@@ -19,7 +19,7 @@ BACKEND = Path(__file__).resolve().parents[3]
 ])
 def test_imports_respect_layer_boundaries(layer, forbidden):
     for path in (BACKEND / layer).rglob("*.py"):
-        tree = ast.parse(path.read_text())
+        tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             names = ([node.module or ""] if isinstance(node, ast.ImportFrom)
                      else [alias.name for alias in node.names] if isinstance(node, ast.Import) else [])
@@ -32,7 +32,7 @@ def test_persistence_does_not_inherit_domain_rules():
     assert not issubclass(SupabaseGymRepository, GymDomainService)
     assert not issubclass(MemoryGymRepository, GymDomainService)
     for path in (BACKEND / "infrastructure").rglob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text())):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if not isinstance(node, ast.Attribute) or not node.attr.startswith("_"):
                 continue
             # Repositorios y adaptadores deben usar las capacidades públicas del dominio.
