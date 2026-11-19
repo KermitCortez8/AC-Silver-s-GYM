@@ -49,3 +49,7 @@ Una ejecución paralela de la batería frontend informó un fallo de archivo en 
 - El límite de llamadas es atómico **dentro de un proceso**, no entre varias instancias. Se necesita cuota distribuida antes de exposición pública real.
 - El filtro de datos personales cubre los patrones probados; requiere revisión adicional antes de enviar consultas libres de usuarios reales a un proveedor externo.
 - SonarQube/Quality Gate no se ejecutó para esta rama. La validación documental general de Spec Kit presenta 11 errores previos de descubrimiento de skills; no afectan la ejecución de las pruebas de producto.
+
+## Ajuste visual del acceso al chat · 2026-11-19
+
+Se reemplazó el botón flotante de texto por un acceso circular rojo con un ícono de asistente dibujado en SVG. Conserva la etiqueta accesible «Abrir asistente del gimnasio» y muestra «Pregúntale a Silver» al pasar el cursor o enfocar con teclado en escritorio. Se revisó visualmente a 390 × 844 y 1440 × 900 píxeles. `npm run build` terminó correctamente y los 27 casos de `frontend/e2e/agent.spec.js` pasaron en Chromium, Firefox y WebKit. Es un cambio de presentación; no se modificaron el servicio, la API ni las respuestas del agente.

@@ -3,11 +3,19 @@
     <button
       v-if="!open"
       type="button"
-      class="rounded-full bg-red-700 px-5 py-3 font-bold text-white shadow-xl hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+      class="group relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-800 text-white shadow-[0_8px_24px_rgba(127,29,29,0.32)] ring-4 ring-white/90 motion-safe:transition-transform motion-safe:duration-200 hover:-translate-y-1 hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-700"
       aria-label="Abrir asistente del gimnasio"
       @click="open = true"
     >
-      Pregúntale a Silver
+      <svg class="h-11 w-11" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M32 14V9" stroke="white" stroke-width="3.5" stroke-linecap="round" />
+        <circle cx="32" cy="7" r="3" fill="white" />
+        <path d="M18 28a14 14 0 0 1 14-14h1a14 14 0 0 1 14 14v12a10 10 0 0 1-10 10H29l-8 5v-8a10 10 0 0 1-3-7V28Z" stroke="white" stroke-width="3.5" stroke-linejoin="round" />
+        <path d="M17 30h-2a5 5 0 0 0-5 5v3a5 5 0 0 0 5 5h2m30-13h2a5 5 0 0 1 5 5v3a5 5 0 0 1-5 5h-2" stroke="white" stroke-width="3.5" stroke-linecap="round" />
+        <path d="M26 32v4m13-4v4" stroke="white" stroke-width="4" stroke-linecap="round" />
+        <path d="M28 42c2.5 2.5 6.5 2.5 9 0" stroke="white" stroke-width="3.5" stroke-linecap="round" />
+      </svg>
+      <span class="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:block">Pregúntale a Silver</span>
     </button>
     <section
       v-else
