@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { before, after, test } from "node:test";
 import { createPinia, setActivePinia } from "pinia";
-import { createServer } from "vite";
-import { fileURLToPath } from "node:url";
+import { crearServidorSsr } from '../../soporte/servidor-ssr.js';
 
 let server,
   installServices,
@@ -11,11 +10,7 @@ let server,
 let createBackendGateway, useAppResources, useAuthStore, useGymStore;
 
 before(async () => {
-  server = await createServer({
-    root: fileURLToPath(new URL("../../..", import.meta.url)),
-    configFile: false,
-    server: { middlewareMode: true, hmr: false, ws: false, watch: null },
-  });
+  server = await crearServidorSsr();
   ({ installServices } = await server.ssrLoadModule("/src/bootstrap.js"));
   ({ getApplicationServices, configureApplicationServices } =
     await server.ssrLoadModule("/src/application/ports/services.js"));

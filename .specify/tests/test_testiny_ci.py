@@ -121,6 +121,20 @@ class TestinyIntegrationTests(unittest.TestCase):
             self.assertNotIn(forbidden, text)
         self.assertIn("Resultado obtenido: failure", text)
 
+    def test_carpetas_y_recuentos_derivan_de_la_ruta_del_archivo(self):
+        self.report('''<testsuite>
+          <testcase name="tests/transversales/interfaz/comun.test.js::consulta.clientes.unitarias"/>
+          <testcase name="tests/inventario/unitarias/stock.test.js::consulta tienda_pedidos"/>
+        </testsuite>''', "frontend")
+        reports = integration.prepare_reports(self.incoming, self.output)
+        cases = ET.parse(reports[0]["file"]).findall(".//testcase")
+        self.assertEqual([case.get("classname") for case in cases], [
+            "Transversales.Funcionales de interfaz.comun_test_js",
+            "MOD-08 - Inventario.Unitarias.stock_test_js",
+        ])
+        summary = json.loads((self.output / "resumen.json").read_text(encoding="utf-8"))
+        self.assertEqual(summary[0]["modulos"], {"MOD-08 - Inventario": 1, "Transversales": 1})
+
     def test_rechaza_dtd_entidades_utf16_estados_ambiguos_y_reportes_vacios(self):
         variants = [
             '<!DOCTYPE testsuites [<!ENTITY x "contenido">]><testsuites/>',
@@ -254,6 +268,7 @@ class TestinyIntegrationTests(unittest.TestCase):
             self.assertNotIn("clave-sintetica", " ".join(command))
             self.assertIn("--no-attachments", command)
             self.assertIn("automation", command)
+            self.assertEqual(command[command.index("--junit-classname-as-folder") + 1], "nested")
             self.assertNotIn("testrun", command)
             self.assertNotIn("shell", execute.call_args.kwargs)
 

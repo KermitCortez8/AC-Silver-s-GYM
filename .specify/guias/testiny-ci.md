@@ -18,11 +18,12 @@ API key y dos variables de GitHub; los archivos por sí solos no habilitan enví
 | `gym-navegador` | Chromium: acceso válido/inválido, alta de inventario y salida de stock, con capturas de la misma ejecución | PR a `develop`/`main` y merge a `main`; solo el merge a `main` publica |
 | `gym-casos-documentados` | Un resultado por caso documentado revisado, derivado de sus pruebas obligatorias | Después de las suites, si se alcanza el mínimo del 50 % |
 
-Dentro de cada fuente, las carpetas siguen `módulo → tipo → archivo`. Los nombres
-de los once módulos se leen del [índice existente](../base/modulos/README.md).
-Las pruebas compartidas quedan en `Transversales`. El tipo se obtiene de las
-carpetas reales de pruebas; las suites específicas usan `Integración PostgreSQL`
-e `Integración Deno`.
+En `SILVE → Automation`, abre una fuente y consulta sus carpetas
+`módulo → tipo → archivo`. En `gym-casos-documentados`, el tercer nivel es el RF.
+Los nombres de los once módulos se leen del [índice existente](../base/modulos/README.md).
+La ruta de origen asigna el módulo y el tipo de la prueba técnica. Las pruebas
+compartidas quedan en `Transversales`. Las suites específicas usan
+`Integración PostgreSQL` e `Integración Deno`.
 
 Ejemplo: `gym-backend → MOD-02 - Clientes → Unitarias → test_client_lookup`.
 Las fuentes usan identificadores técnicos `gym-...`, en minúsculas y con guiones.
@@ -78,7 +79,9 @@ Los fallidos se publican como fallidos y cuentan como ejecutados, no aprobados.
    `Actions` el workflow `CI/CD Pipeline GYM`, job `Importar JUnit por módulo y tipo`. Sus logs deben
    mostrar los recuentos y los identificadores de las ejecuciones importadas.
    En Testiny, seleccionar `SILVE → Automation` y comprobar las fuentes anteriores.
-   El resumen de GitHub debe mostrar al menos `100/199` casos documentados.
+   El resumen de GitHub muestra una tabla de resultados por módulo y fuente
+   y al menos `100/199` casos documentados. `resumen.json` conserva esos recuentos
+   en el campo `modulos` de cada informe.
    El importador crea cada fuente cuando recibe su primer informe; no hace falta
    crear esas carpetas ni cargar un CSV a mano. Consultar el
    [flujo oficial para GitHub Actions](https://www.testiny.io/docs/integrations/ci-cd/github-actions/).
@@ -124,11 +127,8 @@ de publicación. Los adjuntos están habilitados únicamente para `gym-navegador
 con capturas PNG verificadas; las suites técnicas conservan `--no-attachments`.
 
 La publicación es independiente del despliegue existente en Vercel/Render.
-No vuelve a ejecutar las suites: importa los informes que estas generan. La
-verificación del envío corregido queda pendiente de incorporar estos cambios y
-ejecutar todas las suites de nuevo. Los artefactos anteriores no contienen las
-huellas necesarias para acreditar el catálogo revisado. Tampoco se usa la cuenta
-de prueba de la web desplegada.
+Importa los informes que generan las suites del merge, con las huellas del
+commit probado. Los recorridos usan la cuenta sintética de la API local de QA.
 
 ## Revisión local sin publicar
 
@@ -235,6 +235,7 @@ node .github/scripts/testiny/node_modules/@testiny/cli/testiny-importer.js autom
 | Cobertura documentada insuficiente | Consultar JSON/CSV del artefacto; ejecutar todas las suites del mismo intento, sin contar skips ni casos parciales. |
 | La ejecución no acredita las aserciones revisadas | Comparar los cambios con `automatizacion.json`; revisar pruebas y soporte. Artefactos antiguos requieren una nueva ejecución completa. |
 | Falla una suite | Corregir el fallo en el proyecto; publicar sus resultados no corrige ni oculta el error de CI. |
+| GitHub no muestra el log de `frontend-ci` | Consulta el XML de `gym-junit-frontend-<intento>`. El informe conserva el mensaje de cada prueba fallida. El error `ENOTEMPTY` en `node_modules/.vite/deps` se corrige usando el servidor SSR de pruebas con el optimizador del cliente deshabilitado. |
 | Se quiere detener el envío | Establecer `TESTINY_ENABLED=false`; las pruebas y los artefactos continúan funcionando. |
 
 No hay reintentos automáticos de importación. Si una publicación se interrumpe

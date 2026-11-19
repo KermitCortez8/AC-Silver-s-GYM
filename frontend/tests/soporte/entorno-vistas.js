@@ -1,7 +1,5 @@
 import { before, after } from 'node:test';
-import { fileURLToPath } from 'node:url';
-import { createServer } from 'vite';
-import vue from '@vitejs/plugin-vue';
+import { crearServidorSsr } from './servidor-ssr.js';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { createPinia } from 'pinia';
@@ -10,12 +8,7 @@ import { createRouter, createMemoryHistory } from 'vue-router';
 let server, installServices, useGymStore, useRestTimer;
 
 before(async () => {
-  server = await createServer({
-    root: fileURLToPath(new URL('../..', import.meta.url)),
-    configFile: false,
-    plugins: [vue()],
-    server: { middlewareMode: true, hmr: false, ws: false, watch: null },
-  });
+  server = await crearServidorSsr({ componentesVue: true });
   ({ installServices } = await server.ssrLoadModule('/src/bootstrap.js'));
   ({ useGymStore } = await server.ssrLoadModule(
     '/src/application/stores/gymStore.js',
