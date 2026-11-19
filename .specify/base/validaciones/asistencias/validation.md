@@ -155,3 +155,20 @@ Las comprobaciones de backend/PostgreSQL de las secciones anteriores son
 históricas: no se repitieron en este cambio de presentación. No se modificaron
 API, permisos ni reglas de asistencia, ni se contactó Supabase remoto.
 La suite conserva avisos de Pinia, rutas de prueba y antigüedad de Browserslist.
+
+## Calendario de Mi asistencia · 2026-11-19
+
+La consulta personal pasa de tarjetas diarias a la cuadrícula y agenda
+compartidas con administración. La vista usa las fechas de `/mi-semana` y
+distingue clases, visitas generales, salidas pendientes y cierres automáticos.
+La exportación personal se ofrece en el historial.
+
+- Chromium verificó la cuadrícula a 1440 px y la agenda a 390 px, además de
+  filtros, cambio de semana y acceso al historial.
+- Dos sesiones sintéticas contra la API local confirmaron el aislamiento en
+  calendario, historial y exportación. Las rutas de matriculados respondieron
+  403 al socio.
+- La suite de frontend aprobó 419 pruebas y compiló correctamente. La revisión
+  de backend aprobó 114 pruebas de asistencia, fechas de clase y privacidad.
+
+Las capturas locales están en `.artifacts/mi-asistencia/`.

@@ -124,6 +124,10 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
   con [ExcelScheduleGrid.vue](../../../frontend/src/presentation/components/ExcelScheduleGrid.vue)
   y [useScheduleRoster.js](../../../frontend/src/presentation/composables/attendance/useScheduleRoster.js).
   El registro general mantiene la búsqueda por DNI.
+  Mi asistencia reutiliza el calendario con vista semanal y agenda móvil.
+  Los filtros muestran las visitas propias por horario y de gimnasio general.
+  Cada bloque indica el estado, la entrada y la salida disponible.
+  El historial personal permite consultar y exportar en Excel.
 
 ## 5. Guardrails
 

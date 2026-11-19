@@ -1,5 +1,5 @@
 <template>
-  <section class="excel-shell" :class="{ 'excel-shell--interactive': interactive }">
+  <section class="excel-shell" :class="{ 'excel-shell--interactive': interactive, 'excel-shell--dated': fixedDates }">
     <div class="excel-header">
       <div class="calendar-heading">
         <span class="calendar-icon"><CalendarDays :size="21" aria-hidden="true" /></span>
@@ -10,42 +10,48 @@
           <button type="button" :aria-pressed="viewMode === 'week'" @click="viewMode = 'week'"><CalendarDays :size="15" /> Semana</button>
           <button type="button" :aria-pressed="viewMode === 'agenda'" @click="viewMode = 'agenda'"><List :size="15" /> Agenda</button>
         </div>
-        <button type="button" class="excel-export" :disabled="isExporting" @click="exportExcel">
+        <button v-if="showExport" type="button" class="excel-export" :disabled="isExporting" @click="exportExcel">
           <Download :size="15" aria-hidden="true" /><span>{{ isExporting ? 'Exportando…' : 'Exportar semana' }}</span>
         </button>
       </div>
     </div>
 
-    <ScheduleWeekPicker v-model="selectedDate" />
+    <ScheduleWeekPicker :model-value="selectedDate" @update:model-value="selectDate" />
+    <slot name="filters" />
     <div class="calendar-summary">
-      <p><strong>{{ occurrences.length }} {{ occurrences.length === 1 ? 'sesión' : 'sesiones' }}</strong><span>{{ dateLabel(visibleWeek.from) }} – {{ dateLabel(visibleWeek.to) }}</span></p>
+      <p>
+        <slot name="summary"><strong>{{ occurrences.length }} {{ occurrences.length === 1 ? 'sesión' : 'sesiones' }}</strong></slot>
+        <span>{{ dateLabel(visibleWeek.from) }} – {{ dateLabel(visibleWeek.to) }}</span>
+      </p>
       <div class="service-legend" aria-label="Servicios visibles">
         <span v-for="service in visibleServices" :key="service"><i :style="{ background: eventBorderColor(service) }"></i>{{ serviceLabel(service) }}</span>
       </div>
     </div>
     <p v-if="exportError && !modalFeedback" role="alert" class="calendar-error">{{ exportError }}</p>
-    <div v-if="(isMobile || viewMode === 'agenda') && occurrences.length" class="mobile-agenda">
+    <slot v-if="$slots.feedback" name="feedback" />
+    <div v-else-if="(isMobile || viewMode === 'agenda') && occurrences.length" class="mobile-agenda">
       <section v-for="day in agendaDays" :key="day.fecha" class="agenda-day">
         <header class="agenda-day-heading">
           <div><span class="agenda-date">{{ day.fecha.slice(-2) }}</span><div><h3>{{ dateLabel(day.fecha, { weekday: 'long', day: undefined, month: undefined, year: undefined }) }}</h3><span>{{ dateLabel(day.fecha, { day: undefined }) }}</span></div></div>
           <span class="day-count">{{ day.items.length }} {{ day.items.length === 1 ? 'sesión' : 'sesiones' }}</span>
         </header>
-        <button v-for="item in day.items" :key="`${item.id_matricula || item.id_horario_servicio}-${item.fecha}`"
-          type="button" class="agenda-event" :disabled="!interactive"
+        <component :is="agendaElement" v-for="item in day.items" :key="`${itemId(item)}-${item.fecha}`"
+          :type="agendaElement === 'button' ? 'button' : undefined" class="agenda-event"
+          :disabled="agendaElement === 'button' && !interactive"
           :class="{ 'agenda-selected': itemId(item) === String(selectedItemId) }"
           :style="{ '--service-color': eventBorderColor(item.servicio) }" @click="selectCalendarItem(item)">
-          <span class="agenda-time"><strong>{{ displayTime(item.hora_inicio) }}</strong><span>{{ displayTime(item.hora_fin) }}</span></span>
-          <span class="agenda-content"><span class="agenda-service">{{ serviceLabel(item.servicio) }}</span><strong>{{ item.rutina_nombre || 'Clase de ' + serviceLabel(item.servicio) }}</strong><span class="agenda-meta">{{ duration(item) }}<template v-if="item.checkLabel"> · {{ item.checkLabel }}</template></span></span>
-          <span class="agenda-availability"><span class="availability-badge" :class="badgeTone(item)">{{ availabilityLabel(item) }}</span><span v-if="item.cupos && !item.is_enrolled" class="capacity-track"><span :style="{ width: `${Math.min(100, 100 * Number(item.cupos_usados || 0) / Number(item.cupos))}%` }"></span></span></span>
+          <span class="agenda-time"><strong>{{ displayTime(item.hora_inicio) }}</strong><span v-if="item.hora_fin">{{ displayTime(item.hora_fin) }}</span></span>
+          <span class="agenda-content"><span class="agenda-service">{{ serviceLabel(item.servicio) }}</span><strong>{{ item.rutina_nombre || 'Clase de ' + serviceLabel(item.servicio) }}</strong><span v-if="!fixedDates || item.checkLabel" class="agenda-meta">{{ agendaMeta(item) }}</span></span>
+          <span class="agenda-availability"><span class="availability-badge" :class="badgeTone(item)">{{ activityLabel(item) }}</span><span v-if="item.cupos && !item.is_enrolled" class="capacity-track"><span :style="{ width: `${Math.min(100, 100 * Number(item.cupos_usados || 0) / Number(item.cupos))}%` }"></span></span></span>
           <ChevronRight v-if="interactive" :size="17" class="agenda-chevron" aria-hidden="true" />
-        </button>
+        </component>
       </section>
     </div>
     <div v-else-if="occurrences.length" class="excel-calendar">
       <ScheduleTimeGrid :options="calendarOptions" />
     </div>
-    <div v-else class="calendar-empty" role="status"><CalendarDays :size="32" /><h3>Una semana por organizar</h3><p>{{ items.length ? 'No hay sesiones en esta semana con los filtros actuales.' : emptyMessage }}</p></div>
-    <footer class="calendar-footer"><span><span class="status-dot"></span> {{ interactive ? 'Selecciona una clase para gestionarla' : 'Tu horario y asistencia, semana a semana' }}</span><span>Horarios semanales · Perú</span></footer>
+    <div v-else class="calendar-empty" role="status"><CalendarDays :size="32" /><h3>{{ emptyTitle }}</h3><p>{{ items.length && !fixedDates ? 'No hay sesiones en esta semana con los filtros actuales.' : emptyMessage }}</p></div>
+    <footer v-if="!fixedDates" class="calendar-footer"><span><span class="status-dot"></span> {{ interactive ? 'Selecciona una clase para gestionarla' : 'Tu horario y asistencia, semana a semana' }}</span><span>Horarios semanales · Perú</span></footer>
   </section>
 </template>
 
@@ -59,6 +65,8 @@ const ScheduleTimeGrid = defineAsyncComponent(() => import('./ScheduleTimeGrid.v
 
 const props = defineProps({
   modalFeedback: Boolean,
+  fixedDates: Boolean,
+  showExport: { type: Boolean, default: true },
   date: { type: String, default: '' },
   title: {
     type: String,
@@ -76,6 +84,7 @@ const props = defineProps({
     type: String,
     default: 'horario.xlsx',
   },
+  emptyTitle: { type: String, default: 'Una semana por organizar' },
   emptyMessage: {
     type: String,
     default: 'No hay horarios para mostrar.',
@@ -90,12 +99,21 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['select', 'range-change', 'notification']);
+const emit = defineEmits(['select', 'range-change', 'notification', 'update:date']);
 const selectedDate = ref(calendarDate(props.date));
 watch(() => props.date, (date) => { selectedDate.value = calendarDate(date); });
+const selectDate = (date) => {
+  selectedDate.value = calendarDate(date);
+  emit('update:date', selectedDate.value);
+};
 const visibleWeek = computed(() => monthWeeks(selectedDate.value.slice(0, 7)).find((week) => week.start === weekStart(selectedDate.value)));
 watch(visibleWeek, (week) => emit('range-change', { ...week, month: selectedDate.value.slice(0, 7) }), { immediate: true });
-const occurrences = computed(() => scheduleOccurrences(props.items, selectedDate.value, selectedDate.value.slice(0, 7)));
+const occurrences = computed(() => {
+  if (!props.fixedDates) return scheduleOccurrences(props.items, selectedDate.value, selectedDate.value.slice(0, 7));
+  const { from, to } = visibleWeek.value;
+  return props.items.filter((item) => item.fecha >= from && item.fecha <= to)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora_inicio.localeCompare(b.hora_inicio));
+});
 const agendaDays = computed(() => {
   const grouped = new Map();
   for (const item of occurrences.value) {
@@ -104,6 +122,7 @@ const agendaDays = computed(() => {
   }
   return [...grouped.values()];
 });
+const agendaElement = computed(() => props.fixedDates && !props.interactive ? 'div' : 'button');
 const viewport = typeof window === 'undefined' ? null : window.matchMedia('(max-width: 720px)');
 const isMobile = ref(viewport?.matches ?? false);
 const resize = (event) => { isMobile.value = event.matches; };
@@ -178,6 +197,7 @@ const serviceLabel = (service) =>
     musculacion: 'Musculación',
     cardio: 'Cardio',
     baile: 'Baile',
+    gimnasio: 'Gimnasio general',
   })[String(service || '').trim().toLowerCase()] || service || 'Servicio';
 
 const availableSlots = (item = {}) =>
@@ -192,6 +212,7 @@ const eventColor = (service) =>
     musculacion: '#bfdbfe',
     cardio: '#fde68a',
     baile: '#fecdd3',
+    gimnasio: '#ddd6fe',
   })[String(service || '').trim().toLowerCase()] || '#e2e8f0';
 
 /**
@@ -203,20 +224,37 @@ const eventBorderColor = (service) =>
     musculacion: '#38bdf8',
     cardio: '#f59e0b',
     baile: '#fb7185',
+    gimnasio: '#a78bfa',
   })[String(service || '').trim().toLowerCase()] || '#94a3b8';
 
 const duration = (item) => `${timeToMinutes(item.hora_fin) - timeToMinutes(item.hora_inicio)} min`;
-const availabilityLabel = (item) => item.activo === false ? 'Pausado' : item.is_enrolled ? 'En tu horario' : item.cupos !== undefined ? availableSlots(item) ? `${availableSlots(item)} cupos libres` : 'Completo' : 'Programado';
-const badgeTone = (item) => item.activo === false ? 'is-paused' : item.is_enrolled ? 'is-enrolled' : availableSlots(item) === 0 ? 'is-full' : availableSlots(item) <= 2 ? 'is-limited' : 'is-available';
+const agendaMeta = (item) => props.fixedDates ? item.checkLabel : [duration(item), item.checkLabel].filter(Boolean).join(' · ');
+const activityLabel = (item) => {
+  if (item.statusLabel) return item.statusLabel;
+  if (item.activo === false) return 'Pausado';
+  if (item.is_enrolled) return 'En tu horario';
+  if (item.cupos === undefined) return 'Programado';
+  const slots = availableSlots(item);
+  return slots ? `${slots} cupos libres` : 'Completo';
+};
+const badgeTone = (item) => {
+  if (item.statusTone) return item.statusTone;
+  if (item.activo === false) return 'is-paused';
+  if (item.is_enrolled) return 'is-enrolled';
+  const slots = availableSlots(item);
+  return slots === 0 ? 'is-full' : slots <= 2 ? 'is-limited' : 'is-available';
+};
+const visualEndTime = (item) => item.calendarEndTime || item.hora_fin;
+const eventTime = (item) => item.hora_fin ? `${displayTime(item.hora_inicio)} – ${displayTime(item.hora_fin)}` : displayTime(item.hora_inicio);
 
 const visibleTimeRange = computed(() => {
-  const validItems = occurrences.value.filter((item) => item.hora_inicio && item.hora_fin);
+  const validItems = occurrences.value.filter((item) => item.hora_inicio && visualEndTime(item));
   if (!validItems.length) {
     return { min: '06:00:00', max: '22:00:00' };
   }
 
   const starts = validItems.map((item) => timeToMinutes(item.hora_inicio));
-  const ends = validItems.map((item) => timeToMinutes(item.hora_fin));
+  const ends = validItems.map((item) => timeToMinutes(visualEndTime(item)));
   const min = Math.max(0, Math.floor((Math.min(...starts) - 60) / 30) * 30);
   const maxBase = Math.min(24 * 60, Math.ceil((Math.max(...ends) + 60) / 30) * 30);
   const max = Math.max(maxBase, Math.min(24 * 60, min + 240));
@@ -249,7 +287,7 @@ const eventMeta = (item) => {
 };
 
 const itemId = (item = {}) =>
-  String(item.id_horario_servicio || item.id_matricula || '');
+  String(item.calendarId || item.id_horario_servicio || item.id_matricula || '');
 
 const selectCalendarItem = (item) => {
   if (!props.interactive) return;
@@ -261,9 +299,9 @@ const calendarEvents = computed(() =>
     .map((item) => {
       const day = normalizeDay(item.dia);
       const date = item.fecha;
-      if (!date || !item.hora_inicio || !item.hora_fin) return null;
+      if (!date || !item.hora_inicio || !visualEndTime(item)) return null;
       const startTime = normalizeTime(item.hora_inicio);
-      const endTime = normalizeTime(item.hora_fin);
+      const endTime = normalizeTime(visualEndTime(item));
       const service = serviceLabel(item.servicio);
 
       const titleLines = [
@@ -274,7 +312,7 @@ const calendarEvents = computed(() =>
       ].filter(Boolean);
 
       return {
-        id: String(item.id_horario_servicio || item.id_matricula || `${item.servicio}-${day}-${item.hora_inicio}`),
+        id: itemId(item) || `${item.servicio}-${day}-${item.hora_inicio}`,
         title: titleLines.join('\n'),
         start: `${date}T${startTime}`,
         end: `${date}T${endTime}`,
@@ -319,7 +357,7 @@ const calendarOptions = computed(() => ({
   now: today,
   dayHeaderClassNames: ({ date }) => date.getMonth() + 1 !== Number(selectedDate.value.slice(5, 7)) ? ['outside-month'] : [],
   slotEventOverlap: false,
-  eventMinHeight: 78,
+  eventMinHeight: props.fixedDates ? 108 : 78,
   eventOrder: 'start,servicio,title',
   events: calendarEvents.value,
   eventClassNames: eventClassNames.value,
@@ -337,10 +375,9 @@ const calendarOptions = computed(() => ({
   eventContent: (arg) => {
     const item = arg.event.extendedProps || {};
     const service = serviceLabel(item.servicio);
-    const time = `${displayTime(item.hora_inicio)} – ${displayTime(item.hora_fin)}`;
     const routine = item.rutina_nombre || item.nombre_ejercicio || item.nombre_rutina || `Clase de ${service}`;
     const isEnrolled = Boolean(item.is_enrolled);
-    const badgeHtml = `<span class="excel-tag ${badgeTone(item)}">${escapeHtml(availabilityLabel(item))}</span>`;
+    const badgeHtml = `<span class="excel-tag ${escapeHtml(badgeTone(item))}">${escapeHtml(activityLabel(item))}</span>`;
 
     return {
       html: `
@@ -349,7 +386,7 @@ const calendarOptions = computed(() => ({
             <span class="excel-event-service">${escapeHtml(service)}</span>
           </div>
           <span class="excel-event-exercise">${escapeHtml(routine)}</span>
-          <span class="excel-event-time">${escapeHtml(time)}</span>
+          <span class="excel-event-time">${escapeHtml(eventTime(item))}</span>
           ${badgeHtml}
           ${item.checkLabel ? `<span class="excel-event-time">${escapeHtml(item.checkLabel)}</span>` : ''}
         </div>
@@ -363,7 +400,9 @@ const calendarOptions = computed(() => ({
       exercise,
       serviceLabel(item.servicio),
       dateLabel(item.fecha, { weekday: 'long' }),
-      `${displayTime(item.hora_inicio)} - ${displayTime(item.hora_fin)}`,
+      eventTime(item),
+      item.statusLabel,
+      props.fixedDates ? item.checkLabel : '',
       item.cupos !== undefined ? `Cupos: ${availableSlots(item)} libres de ${item.cupos}` : '',
       item.is_enrolled ? 'Ya matriculado' : '',
     ].filter(Boolean).join(' | ');
@@ -477,8 +516,8 @@ button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 3px
 .agenda-day-heading h3 { margin: 0 0 2px; font-size: 12px; font-weight: 700; text-transform: capitalize; }
 .agenda-day-heading div div > span, .day-count { font-size: 10px; color: var(--calendar-secondary); }
 .agenda-event { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; padding: 18px; margin-bottom: 8px; border: 1px solid var(--calendar-line); border-left: 3px solid var(--service-color); border-radius: 10px; background: var(--calendar-surface); color: var(--calendar-text); cursor: pointer; }
-.agenda-event:disabled { opacity: 1; cursor: default; }
-.agenda-event:not(:disabled):hover { background: var(--calendar-muted); }
+div.agenda-event, .agenda-event:disabled { opacity: 1; cursor: default; }
+button.agenda-event:not(:disabled):hover { background: var(--calendar-muted); }
 .agenda-time { display: flex; flex-direction: column; gap: 5px; padding-right: 18px; border-right: 1px solid var(--calendar-line); }
 .agenda-time strong { font-size: 16px; font-weight: 750; }
 .agenda-time > span { font-size: 11px; color: var(--calendar-secondary); }
@@ -501,6 +540,12 @@ button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 3px
 .calendar-empty h3 { margin: 14px 0 8px; color: var(--calendar-text); font-size: 16px; }
 .calendar-empty p, .calendar-error { font-size: 12px; }
 .calendar-error { padding: 12px 24px; color: var(--app-accent-text); }
+.excel-shell--dated :deep(.excel-tag) { margin-top: 0; }
+.excel-shell--dated .availability-badge { white-space: normal; }
+.excel-shell--dated :is(.availability-badge.is-visit-completed, :deep(.excel-tag.is-visit-completed)) { background: #dcfce7; color: #166534; }
+.excel-shell--dated :is(.availability-badge.is-visit-inside, :deep(.excel-tag.is-visit-inside)) { background: #e0f2fe; color: #075985; }
+.excel-shell--dated :is(.availability-badge.is-visit-incomplete, :deep(.excel-tag.is-visit-incomplete)) { background: #fef3c7; color: #92400e; }
+.excel-shell--dated :is(.availability-badge.is-visit-neutral, :deep(.excel-tag.is-visit-neutral)) { background: #f1f5f9; color: #334155; }
 @media (max-width: 1100px) { .excel-header { flex-wrap: wrap; } .calendar-summary { flex-wrap: wrap; } }
 @media (max-width: 720px) {
   .excel-shell { border-radius: 14px; }
@@ -509,6 +554,7 @@ button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 3px
   .calendar-heading h2 { font-size: 16px; }
   .calendar-heading p { font-size: 11px; }
   .calendar-actions { width: 100%; }
+  .excel-shell--dated .calendar-actions { display: none; }
   .calendar-actions .excel-export { padding: 0; border: 0; min-height: 28px; font-size: 11px; }
   .calendar-summary { padding: 0 16px 16px; gap: 10px; }
   .calendar-summary p > span { display: none; }

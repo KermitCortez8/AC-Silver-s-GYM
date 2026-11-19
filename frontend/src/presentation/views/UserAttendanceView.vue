@@ -1,232 +1,293 @@
 <template>
   <div class="attendance-page user-attendance">
     <header class="att-page-header">
-      <div>
+      <div class="user-attendance-heading">
+        <span class="user-attendance-icon" aria-hidden="true"><CalendarCheck :size="25" /></span>
         <h1>Mi asistencia</h1>
-        <p class="att-muted">Consulta tus clases, entradas y salidas del gimnasio.</p>
       </div>
-      <router-link class="att-button" to="/user/schedule"
-        ><CalendarDays :size="16" />Ver mis horarios</router-link
-      >
+      <router-link class="att-button" to="/user/schedule">
+        <CalendarDays :size="16" aria-hidden="true" /> Ver mis horarios
+      </router-link>
     </header>
+
     <div class="att-tabs user-attendance-nav" role="group" aria-label="Vistas de mi asistencia">
       <button type="button" :aria-pressed="!showHistory" aria-controls="attendance-week"
         @click="showHistory = false">
-        <CalendarDays :size="16" aria-hidden="true" /> Semana
+        <CalendarDays :size="16" aria-hidden="true" /> Calendario
       </button>
       <button type="button" :aria-pressed="showHistory" aria-controls="attendance-history"
-        @click="showHistory = true">
+        @click="openHistory">
         <History :size="16" aria-hidden="true" /> Historial
       </button>
     </div>
-    <section v-show="!showHistory" id="attendance-week" class="att-panel" aria-labelledby="attendance-week-title">
-      <div class="att-heading-row user-week-heading">
-        <div>
-          <h2 id="attendance-week-title">Actividad de la semana</h2>
-          <p class="att-muted">{{ dateLabel(visibleRange.from, { year: undefined }) }} – {{ dateLabel(visibleRange.to) }}</p>
-        </div>
-        <p v-if="week && !loading" class="user-week-total">
-          <strong>{{ visibleVisits }}</strong> {{ visibleVisits === 1 ? 'visita registrada' : 'visitas registradas' }}
-        </p>
-      </div>
-      <div class="user-week-picker">
-        <ScheduleWeekPicker :model-value="selectedDate" @update:model-value="selectDate" />
-      </div>
-      <p v-if="error" role="alert" class="att-message is-error">
-        {{ error }} <button class="att-link" @click="load">Reintentar</button>
-      </p>
-      <div v-if="loading" class="att-empty" role="status">
-        Cargando tu semana…
-      </div>
-      <div v-else-if="week" class="user-week-grid">
-        <article
-          v-for="day in weekDays"
-          :key="day.date"
-          class="att-week-day"
-          :class="{ 'is-current': day.date === week.hoy }"
-        >
-          <header>
-            <span>{{ day.name }}</span
-            ><strong>{{ day.date.slice(-2) }}</strong
-            ><span v-if="day.date === week.hoy" class="att-badge today"
-              >Hoy</span
-            >
-          </header>
-          <div v-if="!day.items.length && !day.generalVisits.length" class="att-muted att-small">
-            Sin actividad
+
+    <div v-show="!showHistory" id="attendance-week" :aria-busy="loading">
+      <ExcelScheduleGrid
+        v-model:date="selectedDate"
+        :items="calendarItems"
+        title="Calendario de asistencia"
+        subtitle="Consulta el estado y las horas de tus visitas."
+        :empty-title="visitType ? 'Sin actividad de este tipo' : 'Sin actividad en esta semana'"
+        :empty-message="visitType ? 'Cambia el filtro o elige otra semana.' : 'Elige otra semana para consultar tus registros.'"
+        fixed-dates
+        :show-export="false"
+        @range-change="visibleRange = $event"
+      >
+        <template #filters>
+          <div class="user-visit-filters" role="group" aria-label="Tipo de asistencia">
+            <button v-for="filter in visitTypes" :key="filter.value" type="button"
+              :aria-pressed="visitType === filter.value" @click="visitType = filter.value">
+              <component :is="filter.icon" :size="15" aria-hidden="true" /> {{ filter.label }}
+            </button>
           </div>
-          <div
-            v-for="item in day.items"
-            :key="item.id_matricula"
-            class="att-week-event"
-          >
-            <strong>{{ services[item.servicio] }}</strong>
-            <p>
-              {{ shortTime(item.hora_inicio) }} – {{ shortTime(item.hora_fin) }}
-            </p>
-            <span
-              class="att-badge"
-              :class="item.asistencia?.estado || 'neutral'"
-              >{{
-                item.asistencia
-                  ? states[item.asistencia.estado]
-                  : item.fecha > week.hoy
-                    ? 'Programado'
-                    : 'Sin registro'
-              }}</span
-            >
-            <p v-if="item.asistencia" class="att-week-times">
-              Entrada
-              {{
-                shortTime(item.asistencia.hora_entrada || item.asistencia.hora)
-              }}<br />Salida {{ shortTime(item.asistencia.hora_salida) }}
-            </p>
-          </div>
-          <div v-for="visit in day.generalVisits" :key="visit.id_asistencia" class="att-week-event">
-            <strong>Gimnasio general</strong>
-            <p>Entrada {{ shortTime(visit.hora_entrada || visit.hora) }}<br />{{ visit.cierre_automatico ? 'Cierre automático' : 'Salida' }} {{ shortTime(visit.hora_salida) }}</p>
-            <span class="att-badge" :class="visit.estado">{{ states[visit.estado] }}</span>
-          </div>
-        </article>
-      </div>
-    </section>
+        </template>
+        <template #summary>
+          <strong v-if="week && !loading">{{ visibleVisits }} {{ visibleVisits === 1 ? 'visita registrada' : 'visitas registradas' }}</strong>
+        </template>
+        <template v-if="loading || error" #feedback>
+          <p v-if="error" class="att-message is-error week-feedback" role="alert">
+            {{ error }}
+            <button type="button" class="att-link" @click="load">Reintentar</button>
+          </p>
+          <div v-else class="att-empty week-feedback" role="status">Cargando tu asistencia…</div>
+        </template>
+      </ExcelScheduleGrid>
+    </div>
+
     <div v-show="showHistory" id="attendance-history">
-      <AttendanceHistory v-if="historyOpened" />
+      <AttendanceHistory v-if="historyOpened && token" :key="token" />
     </div>
   </div>
 </template>
+
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { CalendarCheck, CalendarDays, Dumbbell, History, Layers } from 'lucide-vue-next';
 import { useRoute } from 'vue-router';
-import ScheduleWeekPicker from '../components/ScheduleWeekPicker.vue';
-import { calendarDate, monthWeeks, weekStart } from '../../domain/utils/scheduleCalendar.js';
-import {
-  CalendarDays,
-  History,
-} from 'lucide-vue-next';
 import { useAuth } from '../../application/composables/useAuth';
 import { useAttendance } from '../../application/services/attendance.js';
-import {
-  addDays,
-  dateLabel,
-  days,
-  services,
-  shortTime,
-  states,
-} from '../utils/attendance';
-import AttendanceHistory from '../components/attendance/AttendanceHistory.vue';
+import { calendarDate, weekStart } from '../../domain/utils/scheduleCalendar.js';
+import ExcelScheduleGrid from '../components/ExcelScheduleGrid.vue';
+import { dateLabel, shortTime } from '../utils/attendance.js';
 import '../styles/attendance.css';
 
-const { attendanceGet } = useAttendance();
+const AttendanceHistory = defineAsyncComponent(() => import('../components/attendance/AttendanceHistory.vue'));
 
 const { token } = useAuth();
+const { attendanceGet } = useAttendance();
 const route = useRoute();
+const selectedDate = ref(calendarDate(route.query.fecha));
+const selectedWeek = computed(() => weekStart(selectedDate.value));
+const visibleRange = ref(null);
 const showHistory = ref(false);
 const historyOpened = ref(false);
-watch(showHistory, (open) => {
-  if (open) historyOpened.value = true;
-});
-const selectedDate = ref(calendarDate(route.query.fecha));
-const visibleRange = computed(() => monthWeeks(selectedDate.value.slice(0, 7)).find((range) => range.start === weekStart(selectedDate.value)));
+const visitType = ref('');
+const visitTypes = [
+  { value: '', label: 'Todas', icon: Layers },
+  { value: 'horario', label: 'Por horario', icon: CalendarDays },
+  { value: 'general', label: 'Gimnasio general', icon: Dumbbell },
+];
+const week = ref(null);
+const loading = ref(Boolean(token.value));
+const error = ref('');
 let requestId = 0;
-const week = ref(null),
-  loading = ref(false),
-  error = ref('');
-const visibleVisits = computed(() => {
-  if (!week.value || loading.value) return '—';
-  if (!week.value.visitas_por_fecha) return week.value.visitas;
-  return Object.entries(week.value.visitas_por_fecha).reduce((sum, [date, count]) =>
-    sum + (date >= visibleRange.value.from && date <= visibleRange.value.to ? count : 0), 0);
+
+const openHistory = () => {
+  historyOpened.value = true;
+  showHistory.value = true;
+};
+
+const visitStates = {
+  completada: { statusLabel: 'Completada', statusTone: 'is-visit-completed' },
+  dentro: { statusLabel: 'En curso', statusTone: 'is-visit-inside' },
+  incompleta: { statusLabel: 'Incompleta', statusTone: 'is-visit-incomplete' },
+};
+const visitStatus = (visit, date) => visitStates[visit?.estado] || {
+  statusLabel: date > week.value.hoy ? 'Programado' : 'Sin registro',
+  statusTone: 'is-visit-neutral',
+};
+
+const checkLabel = (visit) => {
+  if (!visit) return '';
+  const entry = shortTime(visit.hora_entrada || visit.hora);
+  if (!visit.hora_salida) return `Entrada ${entry} · Salida pendiente`;
+  const exitDate = visit.fecha_salida && visit.fecha_salida !== visit.fecha
+    ? ` (${dateLabel(visit.fecha_salida, { year: undefined })})` : '';
+  const label = visit.cierre_automatico ? 'Cierre automático' : 'Salida';
+  return `Entrada ${entry} · ${label} ${shortTime(visit.hora_salida)}${exitDate}`;
+};
+
+const classItem = (item) => ({
+  calendarId: `clase-${item.id_matricula}`,
+  type: 'horario',
+  fecha: item.fecha,
+  servicio: item.servicio,
+  rutina_nombre: item.rutina_nombre || item.nombre_rutina,
+  hora_inicio: item.hora_inicio,
+  hora_fin: item.hora_fin,
+  recorded: Boolean(item.asistencia),
+  ...visitStatus(item.asistencia, item.fecha),
+  checkLabel: checkLabel(item.asistencia),
 });
-const weekDays = computed(() =>
-  Object.values(days).map((name, index) => {
-    const date = addDays(week.value.inicio, index);
-    return {
-      name,
-      date,
-      items: week.value.horarios.filter((item) => item.fecha === date),
-      generalVisits: (week.value.generales || []).filter((item) => item.fecha === date),
-    };
-  }).filter((day) => day.date >= visibleRange.value.from && day.date <= visibleRange.value.to),
-);
+
+const generalItem = (visit) => {
+  const entry = visit.hora_entrada || visit.hora;
+  const [hour, minute] = shortTime(entry).split(':').map(Number);
+  // La cuadrícula necesita altura para una entrada sin salida; la hora real del fin queda vacía.
+  const visualEnd = Math.min(24 * 60, hour * 60 + minute + 30);
+  const endTime = visit.fecha_salida > visit.fecha
+    ? '24:00'
+    : visit.hora_salida && shortTime(visit.hora_salida) > shortTime(entry)
+      ? visit.hora_salida
+      : `${String(Math.floor(visualEnd / 60)).padStart(2, '0')}:${String(visualEnd % 60).padStart(2, '0')}`;
+  return {
+    calendarId: `general-${visit.id_asistencia}`,
+    type: 'general',
+    fecha: visit.fecha,
+    servicio: 'gimnasio',
+    rutina_nombre: 'Visita al gimnasio',
+    hora_inicio: entry,
+    hora_fin: visit.hora_salida,
+    calendarEndTime: endTime,
+    recorded: true,
+    ...visitStatus(visit, visit.fecha),
+    checkLabel: checkLabel(visit),
+  };
+};
+
+const calendarItems = computed(() => {
+  if (!week.value) return [];
+  const classes = week.value.horarios.map(classItem);
+  const visits = (week.value.generales || []).map(generalItem);
+  return [...classes, ...visits].filter((item) => !visitType.value || item.type === visitType.value);
+});
+const visibleVisits = computed(() => {
+  const range = visibleRange.value;
+  return range ? calendarItems.value.filter((item) => item.recorded && item.fecha >= range.from && item.fecha <= range.to).length : 0;
+});
+
 const load = async () => {
   const id = ++requestId;
-  loading.value = true;
+  const sessionToken = token.value;
+  week.value = null;
   error.value = '';
+  loading.value = Boolean(sessionToken);
+  if (!sessionToken) return;
+
   try {
-    const result = await attendanceGet(
-      '/mi-semana',
-      { inicio: weekStart(selectedDate.value) },
-      token.value,
-    );
+    const result = await attendanceGet('/mi-semana', { inicio: selectedWeek.value }, sessionToken);
     if (id === requestId) week.value = result;
   } catch (err) {
-    if (id !== requestId) return;
-    error.value = err.message;
-    week.value = null;
+    if (id === requestId) error.value = err.message;
   } finally {
     if (id === requestId) loading.value = false;
   }
 };
-const selectDate = (date) => {
-  selectedDate.value = date;
-  load();
-};
-watch(() => route.query.fecha, (value) => selectDate(calendarDate(value)));
+
+watch(() => route.query.fecha, (value) => { selectedDate.value = calendarDate(value); });
+watch([token, selectedWeek], load);
 onMounted(load);
+onBeforeUnmount(() => { requestId++; });
 </script>
 
 <style scoped>
+.user-attendance {
+  gap: 18px;
+}
+.user-attendance-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.user-attendance-heading h1 {
+  margin: 0;
+}
+.user-attendance-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--app-accent-soft);
+  color: var(--app-accent-text);
+}
 .user-attendance-nav {
   justify-self: start;
 }
-.user-attendance-nav button {
-  font-size: 0.875rem;
+.user-attendance-nav button,
+.user-visit-filters button {
+  min-height: 40px;
 }
-.user-attendance-nav button[aria-pressed='true'] {
+.user-attendance-nav button[aria-pressed='true'],
+.user-visit-filters button[aria-pressed='true'] {
   background: var(--app-accent-soft);
   color: var(--app-accent-text);
+  border-color: var(--app-accent);
 }
+.user-attendance-nav button:focus-visible,
+.user-visit-filters button:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+#attendance-week,
 #attendance-history {
   min-width: 0;
 }
-.user-week-heading {
+.user-visit-filters {
+  display: flex;
   flex-wrap: wrap;
+  gap: 7px;
+  padding: 0 24px 16px;
 }
-.user-week-total {
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: var(--app-accent-soft);
-  color: var(--app-accent-text);
-  font-size: 0.875rem;
-}
-.user-week-picker {
-  margin: 16px 0;
+.user-visit-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
   border: 1px solid var(--app-border);
-  border-radius: 12px;
+  border-radius: 8px;
+  color: var(--app-text-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.user-visit-filters button:hover {
+  color: var(--app-text);
   background: var(--app-surface-soft);
 }
-.user-week-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
-  gap: 12px;
+.week-feedback {
+  margin: 0 24px 20px;
 }
-.user-week-grid .att-week-day {
-  min-height: 0;
-  padding: 14px;
-  background: var(--app-surface-soft);
-}
-.user-week-grid .att-week-day > header > span:first-child {
-  font-size: 0.8125rem;
-}
-.user-week-grid .att-week-event {
-  overflow-wrap: anywhere;
-}
-.user-week-grid .att-week-event > strong,
-.user-week-grid .att-week-event > p {
-  font-size: 0.875rem;
-}
-.user-week-grid .att-week-event + .att-week-event {
-  border-top: 1px solid var(--app-border);
+@media (max-width: 720px) {
+  .user-attendance .att-page-header,
+  .user-attendance-heading {
+    gap: 8px;
+  }
+  .user-attendance-heading h1 {
+    font-size: 22px;
+  }
+  .user-attendance-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  .user-attendance .att-page-header .att-button {
+    gap: 5px;
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+  .user-visit-filters {
+    gap: 5px;
+    padding: 0 16px 12px;
+  }
+  .user-visit-filters button {
+    gap: 5px;
+    padding: 6px 7px;
+  }
+  .week-feedback {
+    margin: 0 16px 16px;
+  }
 }
 </style>
