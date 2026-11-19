@@ -10,6 +10,7 @@ ALLOWED_TOOLS = frozenset({
     "consultar_planes", "consultar_horarios_publicos",
     "consultar_informacion_publica", "conversar", "fuera_de_tema",
 })
+MAX_MESSAGE_LENGTH = 500
 
 _SENSITIVE = (
     re.compile(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}"),
@@ -61,8 +62,8 @@ _SOCIAL_MESSAGES = {
 
 def validate_message(message: str) -> str:
     text = message.strip()
-    if not text or len(text) > 150:
-        raise ValueError("Escribe una consulta de 1 a 150 caracteres.")
+    if not text or len(text) > MAX_MESSAGE_LENGTH:
+        raise ValueError(f"Escribe una consulta de 1 a {MAX_MESSAGE_LENGTH} caracteres.")
     return text
 
 

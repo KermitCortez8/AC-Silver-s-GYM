@@ -2,7 +2,7 @@
 
 Implementado en `levano/agenteAgente.v1`; aún no integrado en `develop`.
 
-`POST /api/agente/mensajes` recibe JSON con `mensaje` (1–150 caracteres) e `id_conversacion` opaco opcional. No acepta rol, ID de cliente, URL, SQL, precio ni nombre de herramienta enviados por el navegador. La identidad de cliente no se infiere del texto.
+`POST /api/agente/mensajes` recibe JSON con `mensaje` (1–500 caracteres) e `id_conversacion` opaco opcional. No acepta rol, ID de cliente, URL, SQL, precio ni nombre de herramienta enviados por el navegador. La identidad de cliente no se infiere del texto.
 
 Respuesta satisfactoria: `id_conversacion`, `estado: "respondida"`, `texto` y `enlaces` de una lista permitida (`/registro`, `/`, `/login`, `/#servicios`, `/#ubicacion` o `/preguntas-frecuentes`). Sin datos confirmados se devuelve `estado: "sin_datos"`; una acción privada se devuelve como `fuera_de_alcance` y un mensaje sensible como `bloqueado`. El proveedor caído devuelve HTTP 503; la interfaz muestra orientación.
 

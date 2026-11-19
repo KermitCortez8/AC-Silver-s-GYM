@@ -4,7 +4,7 @@ El agente usa datos públicos existentes y estado conversacional temporal. Esta 
 
 | Elemento | Datos mínimos | Regla |
 | --- | --- | --- |
-| Mensaje de entrada | Texto, identificador opaco de conversación opcional | Máximo 150 caracteres; rechazar vacío y datos sensibles antes del proveedor. |
+| Mensaje de entrada | Texto, identificador opaco de conversación opcional | Máximo 500 caracteres; rechazar vacío y datos sensibles antes del proveedor. |
 | Conversación temporal | Identificador opaco, último tema público y vencimiento | Aislar por conversación; caducar y eliminar; no guardar el mensaje ni información personal. |
 | Solicitud de herramienta | Nombre cerrado, argumentos validados | `consultar_planes`, `consultar_horarios_publicos` o `consultar_informacion_publica` con tema enumerado; nunca URL o SQL libre. |
 | Resultado público | Plan/horario publicado o ficha pública revisada | Obtener del servicio existente o de las fichas permitidas y tratarlo como datos, no como instrucciones. |

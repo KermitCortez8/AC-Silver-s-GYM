@@ -43,9 +43,11 @@ def test_public_endpoint_uses_business_catalog_without_external_calls(monkeypatc
     app.dependency_overrides[get_gym_service] = FakeGym
     with TestClient(app) as client:
         result = client.post("/api/agente/mensajes", json={"mensaje": "¿Cuánto cuesta el plan mensual?"})
-        invalid = client.post("/api/agente/mensajes", json={"mensaje": "x" * 151})
+        boundary = client.post("/api/agente/mensajes", json={"mensaje": "x" * 500})
+        invalid = client.post("/api/agente/mensajes", json={"mensaje": "x" * 501})
     assert result.status_code == 200
     assert "S/ 80" in result.json()["texto"]
+    assert boundary.status_code == 200
     assert invalid.status_code == 422
 
 

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from application.services.agent_budget import AgentBudget, RateLimitExceeded
 from application.services.agent_service import AgentService, ConversationTopics
 from application.services.gym_service import GymService
+from domain.services.agent_policy import MAX_MESSAGE_LENGTH
 from infrastructure.config import get_settings
 from infrastructure.services.groq_agent_provider import GroqAgentProvider, ProviderUnavailable
 from presentation.dependencies import get_gym_service
@@ -17,7 +18,7 @@ _budget = AgentBudget()
 
 
 class AgentRequest(BaseModel):
-    mensaje: str = Field(min_length=1, max_length=150)
+    mensaje: str = Field(min_length=1, max_length=MAX_MESSAGE_LENGTH)
     id_conversacion: str | None = Field(default=None, max_length=64)
 
 

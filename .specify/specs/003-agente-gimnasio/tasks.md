@@ -21,7 +21,7 @@
 
 ## Seguridad y continuidad
 
-- [x] T010 [US2] Probar y aplicar en `backend/domain/services/agent_policy.py` longitud de 150 caracteres, bloqueo de tarjeta/contraseña, acciones privadas y herramientas desconocidas; comprobar que no llegan al proveedor ni hacen escrituras (CA-03, CA-05, CA-06).
+- [x] T010 [US2] Probar y aplicar en `backend/domain/services/agent_policy.py` longitud de 500 caracteres, bloqueo de tarjeta/contraseña, acciones privadas y herramientas desconocidas; comprobar que no llegan al proveedor ni hacen escrituras (CA-03, CA-05, CA-06).
 - [ ] T011 [US2] Definir cuota/presupuesto compartidos y almacenamiento atómico antes de llamadas reales, con prueba de límite, concurrencia y limpieza; documentar migración si se requiere (CA-06, CA-08).
 - [x] T012 [US2] Probar y aplicar aislamiento de conversación en `backend/application/services/agent_service.py`, sin persistir mensajes personales (CA-07).
 - [x] T013 [US1] Probar catálogos vacíos y caída del proveedor en backend; el panel muestra salida segura ante HTTP 503 (CA-02, CA-04).

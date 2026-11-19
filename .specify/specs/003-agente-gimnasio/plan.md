@@ -47,7 +47,7 @@ Archivos propuestos; los nombres concretos pueden ajustarse a las convenciones a
 1. Registrar línea base de pruebas relacionadas. Crear primero casos de comportamiento esperado para catálogos cambiantes, proveedor falso, datos sensibles, permisos, fallos y conversaciones aisladas.
 2. La UI envía texto acotado. La ruta valida y el servicio de aplicación usa la política de herramientas. El proveedor puede sugerir `consultar_planes` o `consultar_horarios_publicos`; el backend valida la sugerencia y obtiene datos solo de los servicios existentes.
 3. El sistema arma la parte factual desde el resultado consultado. Una salida del modelo que contradice datos reales o propone herramientas ajenas se descarta. El frontend muestra estado, texto seguro y enlaces conocidos.
-4. Mantener contexto temporal aislado. Límite de mensaje 150 caracteres. Una política de cuota y presupuesto compartidos precede a activar llamadas reales con varias instancias; probar límites con reloj/controlador falso.
+4. Mantener contexto temporal aislado. Límite de mensaje 500 caracteres. Una política de cuota y presupuesto compartidos precede a activar llamadas reales con varias instancias; probar límites con reloj/controlador falso.
 5. Los fallos de catálogo, modelo o red tienen salida pública segura. Las pruebas de integración sustituyen Groq, Supabase, pagos y correo. La comprobación real del proveedor se hace solo con configuración existente y datos controlados, después de revisar su aislamiento.
 
 ## Datos y migraciones

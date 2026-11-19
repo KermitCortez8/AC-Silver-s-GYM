@@ -70,7 +70,7 @@
       <form v-else class="border-t border-slate-200 bg-white p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.04)]" @submit.prevent="send">
         <label for="agent-message" class="sr-only">Tu pregunta para Silver</label>
         <div class="flex items-end gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 transition-colors focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100">
-          <textarea id="agent-message" ref="composerRef" v-model="draft" rows="1" wrap="soft" maxlength="150" autocomplete="off" class="agent-composer block min-h-11 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border-0 bg-transparent px-2.5 py-2.5 text-sm leading-5 text-slate-900 placeholder:text-slate-400 focus:outline-none" placeholder="Escribe tu pregunta…" :disabled="busy" @keydown="handleComposerKeydown" />
+          <textarea id="agent-message" ref="composerRef" v-model="draft" rows="1" wrap="soft" maxlength="500" autocomplete="off" class="agent-composer block min-h-11 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border-0 bg-transparent px-2.5 py-2.5 text-sm leading-5 text-slate-900 placeholder:text-slate-400 focus:outline-none" placeholder="Escribe tu pregunta…" :disabled="busy" @keydown="handleComposerKeydown" />
           <button type="submit" class="h-11 shrink-0 rounded-xl bg-red-700 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-red-800 disabled:opacity-50" :disabled="busy || !draft.trim()">Enviar</button>
         </div>
         <p class="mt-1.5 hidden px-2 text-[11px] text-slate-400 sm:block">Enter para enviar · Shift + Enter para otra línea</p>

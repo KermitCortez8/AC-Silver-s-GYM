@@ -43,10 +43,14 @@ test('el campo pasa el texto a otra línea y permite enviarlo con Enter', async 
     texto: 'Respuesta de prueba', enlaces: [],
   } });
   const composer = page.getByLabel('Tu pregunta para Silver');
+  await expect(composer).toHaveAttribute('maxlength', '500');
   const initialHeight = await composer.evaluate(element => element.clientHeight);
   await composer.fill('a'.repeat(110));
   await expect.poll(() => composer.evaluate(element => element.clientHeight)).toBeGreaterThan(initialHeight);
   expect(await composer.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  await composer.fill('a'.repeat(500));
+  await composer.press('a');
+  await expect(composer).toHaveValue('a'.repeat(500));
 
   await composer.fill('Hola');
   await composer.press('Shift+Enter');

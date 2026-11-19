@@ -59,3 +59,9 @@ Se reemplazó el botón flotante de texto por un acceso circular rojo con un íc
 Se mejoraron la cabecera, la bienvenida, las burbujas y los enlaces del panel. La entrada del mensaje ahora es un área de texto que envuelve palabras largas, crece hasta un límite y permite seguir desplazándose sin mostrar una barra gruesa. Enter envía y Shift + Enter inserta una línea. Se revisó visualmente el chat abierto en una ventana estrecha, con un mensaje de 100 caracteres sin espacios: el texto pasó a varias líneas y el botón Enviar siguió visible. La prueba nueva verifica crecimiento, ausencia de desplazamiento horizontal y ambas teclas en los tres motores.
 
 Comprobaciones: `npm test -- --test-concurrency=1`: 373/373; `npm run build`: aprobado; `frontend/e2e/agent.spec.js`: 30/30; Playwright integrado: 18/18. No se modificaron las respuestas ni la API. La demo local volvió a responder HTTP 200 en los puertos 4173 y 8765 después de la integración.
+
+## Límite de mensajes · 2026-11-19
+
+Por decisión del usuario, el mensaje público del agente admite hasta 500 caracteres. El límite se aplica en el campo, el esquema HTTP y la política de dominio; el límite de otros formularios no cambió. Antes del ajuste, el nuevo caso de 500 caracteres devolvió 422 y el campo todavía declaraba `maxlength=150`. Después, 500 caracteres devuelven 200, 501 devuelven 422 y el navegador impide añadir un carácter por encima de 500. La prueba del campo pasó en Chromium, Firefox y WebKit.
+
+Regresión posterior: backend 104/104, Playwright UI 30/30, compilación frontend aprobada y `flake8` crítico con 0 errores. No se repitieron en este ajuste las pruebas unitarias generales del frontend ni la integración de conversaciones; ambas habían pasado antes del cambio de límite. La validación documental general conserva los 11 errores previos de descubrimiento de skills.
