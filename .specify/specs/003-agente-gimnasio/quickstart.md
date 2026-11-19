@@ -1,6 +1,6 @@
 # Probar el agente localmente
 
-La versión local está en `levano/agenteAgente.v1`. El panel aparece en páginas públicas. La ruta `POST /api/agente/mensajes` consulta los servicios existentes de planes y horarios o una base revisada de información pública (actividades, primer día, principiantes, ubicación, registro, acceso y cupos). Las preguntas explícitas de horarios se resuelven directamente con el catálogo; para las demás preguntas públicas Groq selecciona el tema permitido. El backend arma la respuesta desde esa fuente. No se ha entrenado un modelo con todo el repositorio.
+El panel aparece en páginas públicas. La ruta `POST /api/agente/mensajes` consulta los servicios existentes de planes y horarios o fichas revisadas de información pública. Groq selecciona la herramienta. Ante una caída del proveedor, el catálogo de Supabase sigue disponible para consultas reconocibles de planes y horarios. El backend arma la respuesta desde la fuente seleccionada.
 
 ## Pruebas aisladas, sin credenciales ni servicios externos
 
@@ -12,7 +12,7 @@ Las pruebas de backend sustituyen proveedor y catálogo; Playwright intercepta `
 
 ## Demo local con catálogo real de solo lectura
 
-Con autorización del responsable se creó una clave nueva en Groq y se guardó únicamente en el `backend/.env` local, ignorado por Git; la clave anterior quedó intacta. El mismo archivo local ya contiene las credenciales del proyecto para la lectura de Supabase. No crear archivos de entorno ni copiar claves al repositorio.
+La demo lee las credenciales de Supabase y, si está configurada, `GROQ_API_KEY` de `backend/.env`, que está ignorado por Git.
 
 Desde `backend`, iniciar `.venv\Scripts\python.exe -m uvicorn app.agent_readonly_app:app --host 127.0.0.1 --port 8765`. Desde otra terminal, en `frontend`, iniciar `npm run dev -- --config vite.agent-readonly.config.js --host 127.0.0.1 --port 4173 --strictPort`. Abrir `http://127.0.0.1:4173/` y preguntar «Dime los horarios de todas las clases». Este montaje publica solo el asistente y las tres consultas públicas que necesita la página: planes, promociones vigentes y horarios activos del servicio real de Supabase. No inicia tareas de fondo ni ofrece rutas de pagos, correo o escritura. Vite carga el `.env` local del frontend para mostrar las imágenes públicas de Supabase; la política del servidor solo permite imágenes de ese origen y mantiene las llamadas API en el servidor local de solo lectura.
 

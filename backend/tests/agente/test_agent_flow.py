@@ -100,7 +100,7 @@ def test_farewell_after_schedules_uses_conversation_context_without_repeating_pr
     assert second["texto"].startswith("¡Me alegra!")
     assert third["texto"].startswith("¡De nada!")
     assert "Te sigo" not in second["texto"] + third["texto"]
-    assert provider.calls == []
+    assert provider.calls == [("Dime los horarios de las clases", None)]
     assert catalog.calls == ["horarios"]
 
 
@@ -214,7 +214,7 @@ def test_explicit_gym_schedule_question_recovers_from_no_model_selection():
     assert result["estado"] == "respondida"
     assert "Spinning:\n• Lunes 08:00–09:00" in result["texto"]
     assert catalog.calls == ["horarios"]
-    assert provider.calls == []
+    assert provider.calls == [("Entonces, dime los horarios de cada ejercicios que hay", None)]
 
 
 def test_all_public_schedules_are_shown_without_truncation():
@@ -231,7 +231,7 @@ def test_all_public_schedules_are_shown_without_truncation():
 
     assert result["texto"].count("• Lunes") == 23
     assert all(label in result["texto"] for label in ("Fitness:", "Musculación:", "Cardio:", "Baile:"))
-    assert provider.calls == []
+    assert provider.calls == [("Dime los horarios de todas las clases", None)]
 
 
 def test_specific_activity_does_not_show_other_schedules():
@@ -349,11 +349,36 @@ def test_empty_catalog_does_not_invent_a_price():
     assert "S/" not in result["texto"]
 
 
-def test_provider_failure_does_not_consult_catalog():
+@pytest.mark.parametrize("message", [
+    "¿Cuánto cuesta el plan?",
+    "Hola, ¿qué planes tienen?",
+    "Quiero saber los planes disponibles",
+    "¿Cuánto cuesta la mensualidad?",
+    "¿Cuánto cuesta la membresía?",
+])
+def test_provider_failure_reads_public_plans(message):
     service, catalog, provider = make_service()
-    provider.select_tool = lambda _message, _topic: (_ for _ in ()).throw(ProviderUnavailable())
+    provider.select_tool = GroqAgentProvider("").select_tool
+
+    result = service.respond(message)
+    catalog.price = 90
+    followup = service.respond("¿Y el precio?", result["id_conversacion"])
+
+    assert "S/ 80" in result["texto"]
+    assert "S/ 90" in followup["texto"]
+    assert catalog.calls == ["planes", "planes"]
+
+
+@pytest.mark.parametrize("message", [
+    "Quisiera saber algo",
+    "¿Cuánto cuesta el plan de internet?",
+    "¿Cuáles son los horarios de vuelos?",
+])
+def test_provider_failure_does_not_guess_unrecognized_catalog_intent(message):
+    service, catalog, provider = make_service()
+    provider.select_tool = GroqAgentProvider("").select_tool
     with pytest.raises(ProviderUnavailable):
-        service.respond("¿Cuánto cuesta el plan?")
+        service.respond(message)
     assert catalog.calls == []
 
 
@@ -405,9 +430,10 @@ def test_budget_blocks_provider_when_exhausted():
     service, catalog, provider = make_service()
     service._budget = AgentBudget(per_minute=1, per_day=1)
     service.respond("¿Cuánto cuesta el plan?")
+    assert "S/ 80" in service.respond("¿Cuánto cuesta el plan?")["texto"]
     with pytest.raises(RateLimitExceeded):
-        service.respond("¿Cuánto cuesta el plan?")
-    assert len(provider.calls) == 1 and catalog.calls == ["planes"]
+        service.respond("Quisiera saber algo")
+    assert len(provider.calls) == 1 and catalog.calls == ["planes", "planes"]
 
 
 def test_model_cannot_choose_another_tool():

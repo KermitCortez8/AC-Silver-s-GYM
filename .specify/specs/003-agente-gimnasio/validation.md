@@ -80,3 +80,44 @@ Se incorporó `origin/develop` en `levano/agenteAgente.v1-pruebas` sin conflicto
 | `python .specify/.codex/hooks/validate.py` | Documentación válida: 146 archivos y 15 contratos. |
 
 Estas cifras corresponden a la rama tras traer `develop`; no representan una ejecución de SonarQube ni una certificación de despliegue público.
+
+## Arranque del frontend compilado · 2026-11-19
+
+El build de producción fallaba al abrir inicio o login con `C is not a function`.
+Los archivos JavaScript de entrada y del calendario se importaban entre sí antes
+de que Vue pudiera montar la aplicación. El asistente se carga ahora bajo demanda
+en las rutas públicas que lo muestran. Playwright compila y sirve la versión de
+producción para comprobar ese arranque con la API sintética.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Chromium sobre el build de producción | Inicio y login abren sin errores. El asistente abre en inicio. |
+| Playwright de CI sobre `dist` | 4 recorridos aprobados, con capturas. |
+| Build y suite de frontend en Docker Linux | Aprobados. |
+| Validador documental y suite `.specify/tests` en Docker Linux | Validador aprobado y 62 pruebas aprobadas. |
+| Suite de frontend en Windows | 419 aprobadas y un fallo conocido en el temporizador de descanso. |
+
+## Consultas breves de horarios · 2026-11-19
+
+«Quiero saber horarios» devolvía HTTP 503 sin una clave de Groq, aunque el
+catálogo estaba disponible. Esta frase y otras preguntas breves equivalentes
+ahora consultan directamente las clases activas. Se probó el endpoint con
+cuatro variantes y un proveedor sin clave. Las 128 pruebas de agente y de
+integración de horarios y matrículas pasaron.
+
+Tras reconstruir Docker Compose, Chromium envió la pregunta desde el chat de
+`localhost:5173`. El endpoint devolvió HTTP 200 y el chat mostró los 23 horarios
+del catálogo público.
+
+## Groq con respaldo del catálogo
+
+El agente intenta primero seleccionar una herramienta con Groq. Si falla esa
+consulta, se agota el cupo o el proveedor devuelve una selección vacía, usa
+el catálogo para preguntas reconocibles de planes u horarios. Las protecciones
+de privacidad y la validación de herramientas siguen aplicándose.
+
+Pasaron 147 pruebas de agente, planes, promociones y horarios, incluida la
+llamada HTTP simulada con una clave sintética y la recuperación ante tiempo
+de espera agotado. Después de actualizar Docker Compose, Chromium comprobó
+que el chat local devuelve 23 horarios y 4 planes de Supabase. El entorno local
+carece de una clave real de Groq, por lo que la llamada real quedó sin verificar.

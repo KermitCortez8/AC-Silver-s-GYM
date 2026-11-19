@@ -144,13 +144,40 @@ def social_reply(text: str) -> str | None:
 
 def asks_for_public_schedules(text: str) -> bool:
     """Reconoce preguntas explícitas por horarios de entrenamiento del gimnasio."""
+    if not re.search(r"\bhorarios?\b", text, re.I):
+        return False
+
+    question = " ".join(text.strip(" ¿?¡!.,\t\r\n").split())
     return bool(
-        re.search(r"\bhorarios?\b", text, re.I)
-        and re.search(
+        re.search(
             r"\b(?:ejercici\w*|clases?|actividades?|entren\w*|gimnas\w*|gym|"
             r"fitness|muscul\w*|cardio|baile|spinning|yoga)\b",
             text, re.I,
         )
+        or re.fullmatch(
+            r"(?:(?:quiero|quisiera|me gustar[ií]a)(?: (?:saber|conocer|ver|consultar))? |"
+            r"cu[aá]l(?: es|es son) |qu[eé] |(?:me )?puedes (?:decir|mostrar) |y )?"
+            r"(?:el |los )?horarios?(?: (?:tienen|tienes|hay))?(?:,? por favor)?",
+            question, re.I,
+        )
+    )
+
+
+def asks_for_public_plans(text: str, *, has_plan_context: bool = False) -> bool:
+    """Reconoce consultas concretas sobre planes y precios del gimnasio."""
+    question = " ".join(text.strip(" ¿?¡!.,\t\r\n").split())
+    return bool(
+        re.fullmatch(
+            r"(?:(?:hola|buenas),? ¿?)?"
+            r"(?:(?:quiero|quisiera) (?:ver|saber|conocer|consultar) |cu[aá]les son |qu[eé] |"
+            r"cu[aá]nto (?:cuesta(?:n)?|pago por) |(?:precio|costo) (?:del|de los) )?"
+            r"(?:(?:el |los |un )?plan(?:es)?(?: (?:mensual|trimestral|semestral|anual|"
+            r"de membres[ií]a|del gimnasio|tienen|hay|disponibles|y precios))?|"
+            r"(?:la )?(?:mensualidad|membres[ií]a)|precios)"
+            r"(?:,? por favor)?",
+            question, re.I,
+        )
+        or (has_plan_context and re.fullmatch(r"(?:y )?(?:el )?(?:precio|costo)", question, re.I))
     )
 
 

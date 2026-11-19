@@ -37,7 +37,7 @@ Como visitante, quiero saber cómo registrarme y qué hacer si no puedo entrar a
 1. **CA-01.** Planes. Si hay planes públicos, una pregunta por ellos devuelve nombre, precio y duración obtenidos de `GymService`, más un enlace a Registro. Al cambiar el catálogo, cambia la respuesta; no hay precios fijos en el prompt.
 2. **CA-02.** Horarios y hechos. Una pregunta explícita por horarios del gimnasio consulta las clases públicas activas, sin depender de que Groq elija una herramienta. Se muestran los horarios actuales por actividad; si se pide una actividad concreta, se filtran las demás. Si no hay horarios para ella, no se inventan. El modelo no aporta cifras ni redacta la respuesta factual: el backend la arma desde el resultado consultado.
 3. **CA-03.** Operaciones privadas. Pedir matrícula, cobro, cancelación, activación o datos de otra persona no ejecuta la operación ni consulta datos privados; se orienta al visitante hacia los controles de la plataforma.
-4. **CA-04.** Fallos y ausencia de datos. Un catálogo vacío produce una respuesta sin cifras inventadas. Si el proveedor o catálogo falla, la API devuelve indisponibilidad y la interfaz mantiene una salida comprensible y la navegación pública. Un límite temporal se distingue de una caída del servicio.
+4. **CA-04.** Fallos y ausencia de datos. Si Groq falla o no selecciona una herramienta, el agente consulta el catálogo público para preguntas reconocibles sobre planes u horarios. Un catálogo vacío devuelve una respuesta sin cifras inventadas. La API informa indisponibilidad cuando falla el catálogo o falta una consulta de respaldo.
 5. **CA-05.** Datos sensibles. El chat intercepta los patrones probados de correo, DNI, teléfono, contraseña y tarjeta antes de llamar al proveedor; el formulario de recuperación no incorpora esos datos al historial ni al mensaje HTTP. Esta protección requiere una revisión adicional para datos personales no cubiertos por los patrones actuales.
 6. **CA-06.** Herramientas cerradas. Un mensaje del usuario no puede cambiar permisos. El backend valida nombre y argumentos de la herramienta elegida por el modelo; rechaza una operación, tema o intención no permitidos sin ejecutarlos.
 7. **CA-07.** Contexto mínimo. Cada conversación recibe un identificador opaco y conserva solo el tema público reciente durante 30 minutos en memoria del proceso. Dos identificadores no comparten ese tema; no se guarda el texto completo de la conversación en el backend.
@@ -46,7 +46,7 @@ Como visitante, quiero saber cómo registrarme y qué hacer si no puedo entrar a
 10. **CA-10.** Conversación acotada. Saludos y cortesías breves reciben respuestas naturales sin llamada al proveedor; una pregunta de negocio que contiene un saludo conserva su intención. Ante un tema claramente ajeno, el agente redirige con cortesía; una segunda pregunta ajena recibe una invitación más directa a volver al gimnasio. Una pregunta ambigua pide más detalle.
 11. **CA-11.** Recuperación local. Pedir recuperación abre un formulario para correo, DNI y teléfono. Completarlo no envía una solicitud al backend ni al dueño, no restablece la cuenta y no muestra esos datos en el historial. Al cerrar el chat se borra el borrador local.
 12. **CA-12.** Guía de registro. Preguntar cómo registrarse devuelve pasos basados en la página de Registro y un enlace a ella. La instrucción directa de inscribir o pagar no inicia ese flujo.
-13. **CA-13.** Cuota actual. Solo las preguntas que necesitan al proveedor consumen la cuota global de ese proceso: 10 selecciones por minuto y 100 por día UTC. Al agotarla, la API responde 429. Esta cuota no se comparte entre instancias y no habilita por sí sola exposición pública.
+13. **CA-13.** Cuota actual. El proveedor tiene una cuota global por proceso de 10 selecciones por minuto y 100 por día UTC. Cuando se agota, el catálogo atiende las consultas reconocibles y las demás reciben HTTP 429. La cuota se contabiliza por instancia.
 
 | Criterio | Evidencia |
 | --- | --- |
@@ -83,7 +83,7 @@ Turno de conversación, selección de herramienta, tema temporal y respuesta bas
 ## 4. Technical Constraints
 
 - Mantener presentación Vue, ruta FastAPI, aplicación, dominio e infraestructura. La interfaz envía una consulta; el backend decide qué herramienta puede ejecutarse y arma la respuesta factual.
-- Reutilizar `GymService` para planes y horarios públicos. El modelo no accede directamente a Supabase ni recibe una herramienta de consulta arbitraria. Las preguntas explícitas de horarios y la guía de registro se resuelven sin llamar al modelo.
+- Reutilizar `GymService` para planes y horarios públicos. El modelo selecciona una herramienta permitida y el backend lee los datos. Las consultas reconocibles de planes y horarios tienen un respaldo directo en el catálogo. La guía de registro se entrega desde una ficha revisada.
 - La información general proviene de fichas públicas revisadas en `public_gym_knowledge.py`. Revisarlas cuando cambien Landing o las preguntas frecuentes; no hay indexación del repositorio ni RAG en v1.
 - Groq se usa en el backend como **selector de herramientas**, con modelo `openai/gpt-oss-120b`. Su clave no se expone en `VITE_*`. Este SPEC no crea ni modifica variables de entorno.
 - El endpoint público recibe un mensaje de 1 a 500 caracteres y un identificador de conversación opcional de hasta 64. El backend conserva solo el tema reciente durante 30 minutos en memoria. El formulario de recuperación mantiene un borrador solo en el navegador.
@@ -112,7 +112,7 @@ Turno de conversación, selección de herramienta, tema temporal y respuesta bas
 | Pregunta ambigua o claramente ajena | La primera pide detalle; la segunda redirige al gimnasio sin inventar hechos. | CA-10 |
 | Recuperación de cuenta con datos de prueba | El formulario queda local; no se promete contacto ni restablecimiento. | CA-11 |
 | Pregunta «¿cómo me registro?» frente a «inscríbeme» | La primera explica el proceso; la segunda no ejecuta matrícula. | CA-03, CA-12 |
-| Cuota del proceso agotada | HTTP 429 sin llamar al proveedor. | CA-13 |
+| Cuota del proceso agotada | Lectura del catálogo para preguntas reconocibles y HTTP 429 para las demás. | CA-13 |
 
 ### Decisiones de alcance
 
