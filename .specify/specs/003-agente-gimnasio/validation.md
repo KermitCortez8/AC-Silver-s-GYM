@@ -1,6 +1,6 @@
 # Validación de la primera versión del agente
 
-La batería agrupada y el antes/después posteriores a esta primera validación están en [qa-v1-bateria.md](qa-v1-bateria.md).
+La batería agrupada y el antes/después posteriores a esta primera validación están en [qa-v1-bateria.md](qa-v1-bateria.md). La relación entre casos y criterios se revisó el 2026-11-19; los resultados de ejecución indicados abajo conservan sus fechas originales.
 
 **Fecha:** 2026-11-12. **Rama:** `levano/agenteAgente.v1`. La batería automatizada usa datos sintéticos y no llama a Groq, Supabase, Stripe ni correo. La comprobación manual posterior conectó la API local de solo lectura al catálogo real de Supabase; otras preguntas públicas usan Groq para elegir una herramienta permitida.
 
@@ -15,14 +15,14 @@ La batería agrupada y el antes/después posteriores a esta primera validación 
 | AG-05 | CA-07 | Aplicación; unitarias | Dos conversaciones; contexto separado. | Media | `backend/tests/agente/test_agent_flow.py` |
 | AG-06 | CA-04, CA-08 | Ruta HTTP; integración aislada | Solicitud válida y mensaje demasiado largo; respuesta y 422. | Alta | `backend/tests/agente/test_agent_http.py` |
 | AG-07 | CA-01, CA-04, CA-08 | UI; funcional | Plan, clase, error y acción privada; panel y navegación visibles. | Alta | `frontend/e2e/agent.spec.js` en 3 motores |
-| AG-08 | CA-06, CA-08 | Aplicación; concurrencia | Diez reservas simultáneas con cupo 3; exactamente 3 permitidas. | Alta | `backend/tests/agente/test_agent_flow.py` |
+| AG-08 | CA-08, CA-13 | Aplicación; concurrencia | Diez reservas simultáneas con cupo 3; exactamente 3 permitidas. | Alta | `backend/tests/agente/test_agent_flow.py` |
 | AG-09 | CA-09 | Dominio, aplicación y UI | Pregunta por ejercicios o primer día; ficha pública pertinente y enlace. Tema malformado o ajeno rechazado. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/e2e/agent.spec.js` |
 | AG-10 | CA-02 | Aplicación; regresión | 23 horarios de cuatro actividades se muestran completos; una consulta concreta filtra las demás y no inventa horarios para otra actividad. | Alta | `backend/tests/agente/test_agent_flow.py` y comprobación manual con Supabase |
 | AG-11 | CA-01, CA-02 | HTTP; aislamiento | La API de demostración solo expone el chat y tres consultas públicas GET; no publica rutas de escritura. | Alta | `backend/tests/agente/test_agent_http.py` |
-| AG-12 | CA-04, CA-06 | Dominio y aplicación; regresión | Saludos, agradecimientos y despedidas breves reciben respuesta sin proveedor, presupuesto ni catálogo; una pregunta de negocio con saludo conserva su intención. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
-| AG-13 | CA-06, CA-07 | Aplicación; regresión | La IA solo puede elegir una intención social aprobada o marcar un tema claramente ajeno. Una pregunta ambigua mantiene la conversación; una segunda pregunta ajena recibe una redirección más directa. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
-| AG-14 | CA-03, CA-05 | Dominio, aplicación y UI; regresión | Recuperar cuenta u olvidar contraseña abre el formulario local para correo, DNI y teléfono. Estos datos no salen a la API ni se muestran en el historial; un mensaje con correo o clave real se bloquea antes de cualquier proveedor. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/e2e/agent.spec.js` y navegador local |
-| AG-15 | CA-04, CA-09 | Dominio y aplicación; regresión | Frases de cierre después de una consulta de horarios reciben una respuesta natural sin repetir la pregunta genérica. Pedir ayuda paso a paso para registrarse devuelve el flujo publicado y el enlace a Registro; una orden de inscripción directa conserva su bloqueo. | Media | `backend/tests/agente/test_agent_flow.py` y API local |
+| AG-12 | CA-10 | Dominio y aplicación; regresión | Saludos, agradecimientos y despedidas breves reciben respuesta sin proveedor, presupuesto ni catálogo; una pregunta de negocio con saludo conserva su intención. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
+| AG-13 | CA-06, CA-07, CA-10 | Aplicación; regresión | La IA solo puede elegir una intención social aprobada o marcar un tema claramente ajeno. Una pregunta ambigua mantiene la conversación; una segunda pregunta ajena recibe una redirección más directa. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
+| AG-14 | CA-05, CA-11 | Dominio, aplicación y UI; regresión | Recuperar cuenta u olvidar contraseña abre el formulario local para correo, DNI y teléfono. Estos datos no salen a la API ni se muestran en el historial; un mensaje con correo o clave real se bloquea antes de cualquier proveedor. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/e2e/agent.spec.js` y navegador local |
+| AG-15 | CA-03, CA-10, CA-12 | Dominio y aplicación; regresión | Frases de cierre después de una consulta de horarios reciben una respuesta natural sin repetir la pregunta genérica. Pedir ayuda paso a paso para registrarse devuelve el flujo publicado y el enlace a Registro; una orden de inscripción directa conserva su bloqueo. | Media | `backend/tests/agente/test_agent_flow.py` y API local |
 
 ## Resultados
 

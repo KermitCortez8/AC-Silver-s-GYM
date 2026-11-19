@@ -1,11 +1,11 @@
 # Plan de implementación: agente de atención del gimnasio
 
-**Rama:** `levano/agenteAgente.v1` · **Fecha:** 2026-11-12 · **SPEC:** [spec.md](spec.md) · **Contexto:** [context.md](context.md).
-**Estado:** primera versión implementada; Groq y lectura de Supabase comprobados localmente. Cuota distribuida y revisión de privacidad pendientes para exposición pública.
+**Rama:** `levano/agenteAgente.v1` · **Plan original:** 2026-11-12 · **SPEC vigente revisado:** 2026-11-19 en [spec.md](spec.md) · **Contexto:** [context.md](context.md).
+**Estado:** primera versión implementada en su rama; Groq y lectura de Supabase comprobados localmente. Cuota distribuida, revisión de privacidad e integración a `develop` pendientes. Este plan conserva decisiones de construcción; la descripción verificable actual está en el SPEC y la [batería](qa-v1-bateria.md).
 
 ## Summary
 
-En esta rama hay catálogos públicos de planes y horarios, pero no un agente integrado. Se añadirá un flujo público de solo lectura: el visitante pregunta, el backend decide entre dos herramientas autorizadas, consulta los servicios existentes, valida los datos afirmables y devuelve una respuesta segura. El proveedor inicial planificado es Groq con `openai/gpt-oss-120b`, según la referencia técnica de Rodrigo; el caso de uso no dependerá de ese proveedor para poder probarlo con un falso.
+La propuesta inicial partió de catálogos públicos sin agente. La v1 añadió el flujo de solo lectura: el visitante pregunta, el backend limita la selección a herramientas autorizadas, consulta los servicios existentes y compone una respuesta segura. Las preguntas explícitas de horarios y la guía de registro se resuelven sin llamar al modelo. Groq con `openai/gpt-oss-120b` selecciona herramientas en las demás preguntas; las pruebas aisladas usan un proveedor falso.
 
 ## Technical Context
 
@@ -64,6 +64,10 @@ El recorrido de consulta no modifica tablas de negocio. Si la cuota compartida n
 | CA-05 | `agent_policy.py`, adaptador | pytest con datos sensibles sintéticos | Proveedor falso no recibe el contenido. |
 | CA-07 | `agent_service.py` | pytest de dos conversaciones y continuación | Contexto aislado. |
 | CA-08 | backend/frontend/Playwright | suites aisladas con fakes | Ejecución repetible sin efectos externos. |
+| CA-09, CA-12 | `public_gym_knowledge.py`, `agent_service.py` | pytest de fichas y guía de registro | Texto revisado y enlace público; sin registro ejecutado. |
+| CA-10 | `agent_policy.py`, `agent_service.py` | pytest de cortesías, ambigüedad y desvío | Respuesta natural y redirección sin acceso a datos privados. |
+| CA-11 | `AgentChat.vue`, servicio | Playwright de recuperación con API simulada y conectada | Correo, DNI y teléfono del formulario no salen a la API. |
+| CA-13 | `agent_budget.py`, ruta | pytest de límite y concurrencia; Playwright del estado 429 | Límite por proceso observable; cuota distribuida pendiente. |
 
 ## Complexity Tracking
 

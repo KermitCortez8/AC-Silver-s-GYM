@@ -1,6 +1,6 @@
 # Batería de pruebas del agente v1
 
-**Rama de trabajo:** `levano/agenteAgente.v1-pruebas`, creada desde `levano/agenteAgente.v1` (`55f6ec5`). **Fecha:** 2026-11-13. Esta batería acompaña los [criterios de aceptación](spec.md) y conserva la versión v1 ya publicada como línea base.
+**Rama de trabajo:** `levano/agenteAgente.v1-pruebas`, creada desde `levano/agenteAgente.v1` (`55f6ec5`). **Ejecuciones:** 2026-11-13; **trazabilidad revisada:** 2026-11-19. Esta batería acompaña los [criterios de aceptación](spec.md) y conserva la versión v1 ya publicada como línea base. La revisión documental no constituye una nueva ejecución de pruebas.
 
 ## Plan y recorrido
 
@@ -40,12 +40,12 @@ El proveedor de IA **elige una herramienta** cuando hace falta; el backend valid
 
 | Flujo / caso | Criterio | Capa y herramienta | Datos y pasos | Resultado esperado | Prioridad | Evidencia |
 | --- | --- | --- | --- | --- | --- | --- |
-| F1-01 Plan | CA-01, CA-02, CA-08 | Vue → API → servicio → catálogo controlado; Playwright | Abrir chat y preguntar precio de un plan de prueba. | El texto refleja S/ 91 y 31 días del catálogo controlado; ofrece Registro; HTTP 200. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
-| F1-02 Horario | CA-01, CA-02, CA-08 | Vue → API → servicio → catálogo controlado; Playwright | En la misma conversación, preguntar horario de Baile. | Muestra lunes 07:00–08:00, valor leído del catálogo controlado; HTTP 200. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
-| F1-03 Fuente actual | CA-01, CA-02 | Vue → API → servicio → repositorio → Supabase; Playwright de solo lectura | Leer horarios públicos y pedir todos los horarios en el chat. | Al menos un horario real y su actividad aparecen en la respuesta; no hay escrituras. | Alta | `frontend/e2e-live/agent-catalog.spec.js` |
-| F2-01 Recuperación | CA-03, CA-05, CA-08 | Vue → API → servicio; Playwright | Pedir recuperación y completar correo, DNI y teléfono sintéticos. | Se abre el formulario; solo sale a la API la pregunta inicial; no sale ningún dato del formulario. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
-| R-01 Regresión UI | CA-01, CA-03, CA-04, CA-05, CA-08, CA-09 | Interfaz; Playwright con API simulada | Planes, clases, lista larga, caída, límite, acción privada, recuperación y PII. | Los nueve escenarios pasan en Chromium, Firefox y WebKit. | Alta | `frontend/e2e/agent.spec.js` |
-| R-02 Regresión backend | CA-01 a CA-09 | Servicio, dominio y ruta; pytest | Datos sintéticos y proveedor falso. | Casos de permisos, catálogos, conversación y HTTP pasan sin servicios externos. | Alta | `backend/tests/agente/` |
+| F1-01 Plan | CA-01, CA-08 | Vue → API → servicio → catálogo controlado; Playwright | Abrir chat y preguntar precio de un plan de prueba. | El texto refleja S/ 91 y 31 días del catálogo controlado; ofrece Registro; HTTP 200. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
+| F1-02 Horario | CA-02, CA-08 | Vue → API → servicio → catálogo controlado; Playwright | En la misma conversación, preguntar horario de Baile. | Muestra lunes 07:00–08:00, valor leído del catálogo controlado; HTTP 200. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
+| F1-03 Fuente actual | CA-02 | Vue → API → servicio → repositorio → Supabase; Playwright de solo lectura | Leer horarios públicos y pedir todos los horarios en el chat. | Al menos un horario real y su actividad aparecen en la respuesta; no hay escrituras. | Alta | `frontend/e2e-live/agent-catalog.spec.js` |
+| F2-01 Recuperación | CA-05, CA-08, CA-11 | Vue → API → servicio; Playwright | Pedir recuperación y completar correo, DNI y teléfono sintéticos. | Se abre el formulario; solo sale a la API la pregunta inicial; no sale ningún dato del formulario. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
+| R-01 Regresión UI | CA-01, CA-02, CA-03, CA-04, CA-05, CA-08, CA-09, CA-11, CA-13 | Interfaz; Playwright con API simulada | Planes, clases, lista larga, caída, límite, acción privada, recuperación y PII. | Los nueve escenarios pasan en Chromium, Firefox y WebKit. | Alta | `frontend/e2e/agent.spec.js` |
+| R-02 Regresión backend | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07, CA-08, CA-09, CA-10, CA-11, CA-12, CA-13 (componente backend) | Servicio, dominio y ruta; pytest | Datos sintéticos y proveedor falso. | Casos de permisos, catálogos, conversación y HTTP pasan sin servicios externos. La privacidad del formulario se comprueba en F2-01/R-01. | Alta | `backend/tests/agente/` |
 
 Los casos F1-01/02 forman un flujo compartido: la misma persona pregunta por un plan y luego por horarios, con el mismo chat. El test usa un proceso FastAPI real y el proxy de Vite; sustituye únicamente el proveedor y el catálogo. F1-03 comprueba por separado la lectura del catálogo real de Supabase a través de la API pública. No prueba escrituras, pagos ni correos.
 
