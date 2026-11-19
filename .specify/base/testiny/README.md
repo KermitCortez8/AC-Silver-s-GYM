@@ -1,21 +1,20 @@
 # Casos documentados y automatización de Testiny
 
-Catálogo consultado el **2026-11-15** mediante Chromium/Playwright en una sesión
-independiente de Edge: **199 casos** del proyecto `SILVE`. No se modificaron los
-casos ni los runs manuales durante esta revisión.
+Catálogo sincronizado el **2026-11-19** con la exportación de todos los
+**222 casos** del proyecto `SILVE`. Los 23 casos nuevos corresponden a los
+IDs 200 a 222. Se acreditaron 22 y queda pendiente el TC-215 de PostgreSQL.
 
-La ejecución local verificó **100/199 casos (50,25 %)**: 100 aprobados, ninguno
-fallido y ninguno omitido entre los seleccionados. Los otros 99 permanecen en el
-denominador. Se conservan los módulos y los RF/CUS del catálogo; compartir un RF
-no acredita otro caso.
+La ejecución local verificó **179 de 222 casos (80,63 %)**, todos aprobados.
+Incluye el TC-195 con Stripe sandbox. La ejecución habitual sin Stripe sandbox
+acredita 178 de 222 (80,18 %). Quedan 43 casos pendientes de cobertura completa.
 
 | Archivo | Contenido |
 | --- | --- |
 | [catalogo.json](catalogo.json) | Snapshot de títulos, precondiciones, pasos, resultados, módulos, tipos, RF/CUS e IDs de Testiny; sin datos de propietarios o auditoría. |
 | [automatizacion.json](automatizacion.json) | Revisión de cada resultado esperado, pruebas concretas obligatorias y huellas de sus aserciones y soporte. |
-| [revision.md](revision.md) | Matriz legible de los 100 casos y diferencias pendientes. |
-| [trazabilidad.csv](trazabilidad.csv) | Los 199 casos con RF, CUS, tipo, alcance revisado y selectores de prueba; abrir como UTF-8 en Excel. |
-| [resultado-local.json](resultado-local.json) | Recuentos de la ejecución local, tipos y 316 resultados esperados revisados de los 100 casos. |
+| [revision.md](revision.md) | Matriz histórica, notas de sincronización y ampliación de la cobertura. |
+| [trazabilidad.csv](trazabilidad.csv) | Los 222 casos con RF, CUS, tipo, alcance revisado y selectores de prueba; abrir como UTF-8 en Excel. |
+| [resultado-local.json](resultado-local.json) | Resultado local con los recuentos de cobertura y de ambas suites. |
 | [Evidencia de ejecución](../validaciones/testiny-ci/validation.md) | Comandos, resultados y límites de la verificación. |
 
 ## Alcance comprobado
@@ -41,12 +40,13 @@ aunque tenga varias pruebas o comparta una prueba con otro caso.
 
 Un fallo conserva el resultado fallido y cuenta como ejecución, nunca como
 aprobación. Las pruebas del integrador no acreditan casos del producto.
-El mínimo es `ceil(total / 2)`: con 199 se necesitan 100. CI exige ese mínimo
+El mínimo es el 80 % redondeado hacia arriba. Con 222 se necesitan 178. CI exige ese mínimo
 antes de publicar cualquier fuente en Testiny. Si falta evidencia, falla el
 publicador y conserva el diagnóstico en artefactos. Este control pertenece al
 publicador posterior a las suites; no añade una dependencia al despliegue.
 
-La fuente `gym-casos-documentados` contiene un resultado por caso revisado, con
+La fuente `gym-casos-documentados` contiene un resultado por caso del catálogo,
+con estado omitido para los casos sin evidencia completa. Cada entrada conserva
 clave estable `SILVE-TC-<id>` y campos `rf`, `cus`, `testiny_case_id`,
 `tipo_documentado` y `manual_case_url`. Es evidencia derivada de pruebas reales;
 no escribe resultados en runs manuales. Las fuentes técnicas siguen mostrando

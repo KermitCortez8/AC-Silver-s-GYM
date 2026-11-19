@@ -32,17 +32,17 @@ class DocumentedCasesTests(unittest.TestCase):
                            "modulo": "MOD-01", "nombre_modulo": "Identidad y acceso", "rf": ["RF01"],
                            "cus": "CUS01", "tipo": "Funcional", "url": f"https://app.testiny.io/SILVE/testcases/tc/{i}/edit",
                            "pasos": [{"accion": "Actuar", "esperado": "Estado correcto"}, {"accion": "Consultar", "esperado": "Sin cambios ajenos"}]}
-                      for i in (1, 2, 3)}
-        self.catalog = {"proyecto": "SILVE", "total": 3, "casos": list(self.cases.values())}
+                      for i in range(1, 7)}
+        self.catalog = {"proyecto": "SILVE", "total": 6, "casos": list(self.cases.values())}
         self.proofs = {f"proof-{i}": {"componente": "backend", "clase": "tests.test_qa", "prueba": f"test_case_{i}",
                                       "archivo": "backend/tests/test_qa.py", "sha256": documented.source_fingerprint(self.source),
-                                      "minimo_variantes": 1} for i in (1, 2)}
+                                      "minimo_variantes": 1} for i in range(1, 6)}
         self.entries = [{"id": i, "huella": f"case-{i}", "revision": "Oráculos revisados contra las aserciones",
                          "pasos": [{"paso": step, "pruebas": [f"proof-{i}"], "verificacion": "Comparar el estado y su relectura"}
-                                   for step in (1, 2)]} for i in (1, 2)]
+                                   for step in (1, 2)]} for i in range(1, 6)]
         self.records = [{"componente": "backend", "clase": "tests.test_qa", "prueba": f"test_case_{i}",
-                         "estado": "passed", "duracion": 0.1, "ancestros": []} for i in (1, 2)]
-        self.review = {"catalogo_sha256": documented.fingerprint(self.catalog), "minimo_porcentaje": 50,
+                         "estado": "passed", "duracion": 0.1, "ancestros": []} for i in range(1, 6)]
+        self.review = {"catalogo_sha256": documented.fingerprint(self.catalog), "minimo_porcentaje": 80,
                        "pruebas": self.proofs, "casos": self.entries}
         self.write()
 
@@ -52,16 +52,34 @@ class DocumentedCasesTests(unittest.TestCase):
 
     def test_porcentaje_cuenta_casos_unicos_y_redondea_el_minimo_hacia_arriba(self):
         report, summary = documented.build_report(self.root, self.root / "out", self.records, [])
-        self.assertEqual((summary["ejecutados"], summary["total_documentados"], summary["minimo_requerido"]), (2, 3, 2))
-        self.assertEqual(summary["porcentaje_ejecutado"], 66.67)
-        self.assertEqual(report["tests"], 2)  # Solo revisados; el catálogo completo sigue en el resumen.
+        self.assertEqual((summary["ejecutados"], summary["total_documentados"], summary["minimo_requerido"]), (5, 6, 5))
+        self.assertEqual(summary["porcentaje_ejecutado"], 83.33)
+        self.assertEqual((report["tests"], report["skipped"]), (6, 1))
+        pending = ET.parse(report["file"]).find(".//testcase[@name='TC-6 | SG-RF01-QA6 | Caso 6']/skipped")
+        self.assertEqual(pending.get("message"), "Automatización completa pendiente de revisión")
 
     def test_cien_variantes_de_una_prueba_no_acreditan_otro_caso(self):
         records = [{**self.records[0], "prueba": f"test_case_1[{i}]"} for i in range(100)]
-        with self.assertRaisesRegex(ValueError, "1/3"):
+        with self.assertRaisesRegex(ValueError, "1/6"):
             documented.build_report(self.root, self.root / "out", records, [])
         summary = json.loads((self.root / "out/cobertura-documentada.json").read_text())
         self.assertEqual(summary["ejecutados"], 1)
+
+    def test_catalogo_ampliado_deja_diagnostico_y_bloquea_publicacion(self):
+        self.catalog["casos"].extend({**self.cases[6], "id": i} for i in range(7, 223))
+        self.catalog["total"] = 222
+        self.review["catalogo_sha256"] = documented.fingerprint(self.catalog)
+        self.write()
+
+        cases, _, selected = documented.load_review(self.root)
+        self.assertEqual((len(cases), len(selected)), (222, 5))
+        output = self.root / "out"
+        with self.assertRaisesRegex(ValueError, "5/222; mínimo 178"):
+            documented.build_report(self.root, output, self.records, [])
+        summary = json.loads((output / "cobertura-documentada.json").read_text())
+        self.assertEqual(summary["pendientes_de_automatizar"], 217)
+        self.assertEqual(len(summary["casos"]), 222)
+        self.assertEqual(len(ET.parse(output / "casos-documentados.xml").findall(".//testcase")), 222)
 
     def test_una_omision_no_es_aprobacion_ni_ejecucion_completa(self):
         records = deepcopy(self.records)
@@ -72,7 +90,7 @@ class DocumentedCasesTests(unittest.TestCase):
     def test_fallo_real_se_conserva_y_no_se_convierte_en_pass(self):
         self.records[1]["estado"] = "failure"
         report, summary = documented.build_report(self.root, self.root / "out", self.records, [])
-        self.assertEqual((summary["ejecutados"], summary["aprobados"], report["failures"]), (2, 1, 1))
+        self.assertEqual((summary["ejecutados"], summary["aprobados"], report["failures"]), (5, 4, 1))
         self.assertIsNotNone(ET.parse(report["file"]).find(".//testcase/failure"))
 
     def test_todas_las_variantes_del_oraculo_son_obligatorias(self):
@@ -103,7 +121,7 @@ class DocumentedCasesTests(unittest.TestCase):
                     "sources": {"backend/tests/test_qa.py": documented.source_fingerprint(self.source)}}
         reports = [{"component": "backend", "metadata": metadata}]
         _report, summary = documented.build_report(self.root, self.root / "out", self.records, reports)
-        self.assertEqual(summary["ejecutados"], 2)
+        self.assertEqual(summary["ejecutados"], 5)
         metadata["sources"]["backend/tests/test_qa.py"] = "b" * 64
         with self.assertRaisesRegex(ValueError, "aserciones revisadas"):
             documented.build_report(self.root, self.root / "out", self.records, reports)
@@ -122,7 +140,7 @@ class DocumentedCasesTests(unittest.TestCase):
         self.entries.pop()
         self.review["minimo_porcentaje"] = 1
         self.write()
-        with self.assertRaisesRegex(ValueError, "mínimo del 50"):
+        with self.assertRaisesRegex(ValueError, "mínimo del 80"):
             documented.load_review(self.root)
 
     def test_no_usa_las_pruebas_del_integrador_como_pruebas_del_producto(self):

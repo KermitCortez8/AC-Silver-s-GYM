@@ -159,22 +159,77 @@ def test_retries_do_not_duplicate_even_after_exit(attendance, admin):
     assert enter(attendance, admin)["id_asistencia"] != first["id_asistencia"]
 
 
+def test_tc064_ingreso_salida_en_limite_y_reingreso_real(attendance, admin):
+    attendance.clock = lambda: datetime(2026, 10, 7, 10, tzinfo=LIMA)
+    lookup = attendance.lookup("11111111")
+    assert lookup["cliente"]["id_cliente"] == 1 and lookup["cliente"]["estado"] == "ACTIVO"
+    assert lookup["membresia"]["estado_pago"] == "PAGADO"
+    assert lookup["membresia"]["fecha_fin"] == "2026-10-31"
+    assert lookup["general"]["puede_entrar"] and attendance.summary(admin)["dentro"] == 0
+    row = enter(attendance, admin)
+    assert row["id_cliente"] == row["id_membresia"] == 1
+    assert row["id_usuario_registra"] == admin.id_usuario and row["hora_entrada"] == "10:00:00"
+    assert datetime.fromisoformat(row["limite_salida"]) == datetime(2026, 10, 7, 13, tzinfo=LIMA)
+    assert attendance.summary(admin)["dentro"] == 1
+    attendance.clock = lambda: datetime(2026, 10, 7, 13, tzinfo=LIMA)
+    closed = attendance.exit(row["id_asistencia"], admin)
+    assert (closed["estado"], closed["hora_salida"]) == ("completada", "13:00:00")
+    assert attendance.summary(admin)["dentro"] == 0
+    repeated = enter(attendance, admin)
+    assert repeated["id_asistencia"] != row["id_asistencia"] and repeated["fecha"] == row["fecha"]
+    assert len(attendance.gym.state["asistencia"]) == 2 and attendance.summary(admin)["dentro"] == 1
+
+
+def test_tc065_entrada_y_salida_de_clase_conservan_fecha_y_limite(attendance, admin):
+    enroll(attendance)
+    attendance.gym.state["horarios_servicio"][0]["hora_fin"] = "11:00"
+    roster = attendance.roster(1, "2026-10-07")
+    assert [client["id_matricula"] for client in roster["clientes"]] == [1]
+    assert attendance.gym.state["asistencia"] == []
+    row = attendance.enter({"id_matricula": 1}, admin)
+    assert (row["id_cliente"], row["id_matricula"], row["id_horario_servicio"], row["id_membresia"]) == (1, 1, 1, 1)
+    assert row["id_usuario_registra"] == admin.id_usuario and row["hora_entrada"] == "10:30:00"
+    assert datetime.fromisoformat(row["limite_salida"]) == datetime(2026, 10, 7, 12, tzinfo=LIMA)
+    assert attendance.summary(admin)["dentro"] == 1
+    attendance.clock = lambda: datetime(2026, 10, 7, 12, tzinfo=LIMA)
+    closed = attendance.exit(row["id_asistencia"], admin)
+    assert (closed["estado"], closed["hora_salida"], closed["limite_salida"]) == (
+        "completada", "12:00:00", row["limite_salida"],
+    )
+    assert attendance.summary(admin)["dentro"] == 0
+    assert attendance.enter({"id_matricula": 1}, admin)["id_asistencia"] == row["id_asistencia"]
+    assert len(attendance.gym.state["asistencia"]) == 1
+
+
 @pytest.mark.parametrize("field,value", [("estado", "INACTIVO"), ("estado_pago", "PENDIENTE"),
                                           ("fecha_fin", "2026-10-06"), ("fecha_inicio", "2026-10-08")])
 def test_entry_requires_current_paid_membership(attendance, admin, field, value):
+    original = attendance.gym.state["membresia"][0][field]
     attendance.gym.state["membresia"][0][field] = value
     with pytest.raises(ValueError, match="membresía activa, pagada y vigente"):
         enter(attendance, admin)
     assert not attendance.lookup("11111111")["general"]["puede_entrar"]
     assert attendance.gym.state["asistencia"] == []
+    assert attendance.summary(admin)["dentro"] == 0
+
+    attendance.gym.state["membresia"][0][field] = original
+    assert attendance.lookup("11111111")["general"]["puede_entrar"]
+    assert enter(attendance, admin)["estado"] == "dentro"
 
 
 def test_entry_requires_active_account_and_known_dni(attendance, admin):
+    with pytest.raises(ValueError, match="No se encontró"):
+        attendance.lookup("99999999")
     with pytest.raises(ValueError, match="No se encontró"):
         enter(attendance, admin, "99999999")
     attendance.gym.state["clientes"][0]["estado"] = "INACTIVO"
     with pytest.raises(ValueError, match="activada"):
         enter(attendance, admin)
+    assert attendance.gym.state["asistencia"] == []
+    assert attendance.summary(admin)["dentro"] == 0
+
+    attendance.gym.state["clientes"][0]["estado"] = "ACTIVO"
+    assert enter(attendance, admin)["estado"] == "dentro"
 
 
 @pytest.mark.parametrize("first_kind", ["general", "horario"])
@@ -260,12 +315,27 @@ def test_general_corrections_and_annulment_remain_audited(attendance, admin):
                                  "fecha": "2026-10-07", "hora_entrada": "10:00:00",
                                  "hora_salida": "", "fecha_salida": None}, admin)
     assert changed["tipo"] == "general" and changed["version"] == 2
+    competing_admin = SimpleNamespace(role="admin", id="other", id_usuario="SGUSU002", name="Otro administrador")
     with pytest.raises(AttendanceConflict):
-        attendance.correct(row["id_asistencia"], {"version": 1, "motivo": "Registro duplicado"}, admin, annul=True)
+        attendance.correct(row["id_asistencia"], {"version": 1, "motivo": "Registro duplicado"}, competing_admin, annul=True)
+    assert attendance.get(row["id_asistencia"])["hora_entrada"] == "10:00:00"
+    assert attendance.summary(admin)["dentro"] == 1
     annulled = attendance.correct(row["id_asistencia"], {"version": 2, "motivo": "Registro duplicado"}, admin, annul=True)
     assert annulled["estado"] == "anulada" and len(annulled["auditoria"]) == 3
+    [archived] = attendance.history(admin, estado="anulada")["items"]
+    assert archived["id_asistencia"] == row["id_asistencia"]
+    assert archived["auditoria"][-1]["actor_id"] == admin.id_usuario
+    assert archived["auditoria"][-1]["motivo"] == "Registro duplicado"
+    assert archived["auditoria"][-2]["accion"] == "correccion"
+    assert all(entry["actor_id"] != competing_admin.id_usuario for entry in archived["auditoria"])
+    for annul in (False, True):
+        with pytest.raises(ValueError, match="ya está anulada"):
+            attendance.correct(row["id_asistencia"], {"version": 3, "motivo": "Intento repetido"}, admin, annul=annul)
+    assert attendance.get(row["id_asistencia"])["auditoria"] == archived["auditoria"]
     assert attendance.summary(admin)["dentro"] == 0
-    assert attendance.records(SimpleNamespace(role="user", id_cliente=1)) == []
+    customer = SimpleNamespace(role="user", id_cliente=1)
+    assert attendance.history(customer)["items"] == []
+    assert attendance.records(customer) == []
 
 
 def test_supabase_mapping_preserves_general_visit(attendance, admin):
@@ -319,6 +389,47 @@ def test_only_admin_can_register_general_visit(api, role):
     app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role=role, id_cliente=1)
     response = client.post("/asistencia/general/entrada", json={"dni": "11111111", "request_id": str(uuid4())})
     assert response.status_code == 403
+
+
+@pytest.mark.parametrize("day,hour,allowed", [
+    (7, 9, False), (7, 10, True), (7, 11, False), (8, 10, False), (14, 10, False),
+])
+def test_tc068_solo_permite_entrada_en_fecha_de_matricula_y_dentro_del_bloque(api, attendance, day, hour, allowed):
+    enroll(attendance)
+    attendance.gym.state["horarios_servicio"][0]["hora_fin"] = "11:00"
+    attendance.clock = lambda: datetime(2026, 10, day, hour, tzinfo=LIMA)
+    client, _ = api
+    request = client.post("/asistencia/entrada", json={"id_matricula": 1})
+    assert (request.status_code == 200) is allowed
+    assert len(attendance.gym.state["asistencia"]) == int(allowed)
+    if not allowed:
+        assert "detail" in request.json()
+
+
+@pytest.mark.parametrize("role", ["staff", "user"])
+def test_tc068_staff_y_cliente_no_pueden_marcar_entrada_o_salida(api, attendance, role):
+    enroll(attendance)
+    client, app = api
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role=role, id_cliente=1)
+    for action, payload in (("entrada", {"id_matricula": 1}), ("salida", {"id_asistencia": 1})):
+        assert client.post(f"/asistencia/{action}", json=payload).status_code == 403
+    assert attendance.gym.state["asistencia"] == []
+
+
+def test_tc072_filtro_vacio_y_referencia_ausente_conservan_historial(api, attendance, admin):
+    saved = enter(attendance, admin)
+    client, _ = api
+    history = "/asistencia/historial"
+    initial = client.get(history).json()
+    assert initial["total"] == 1 and initial["items"][0]["id_asistencia"] == saved["id_asistencia"]
+    assert client.get(history, params={"dni": "99999999"}).json()["total"] == 0
+    missing = "/asistencia/999999"
+    correction = client.put(missing, json={"version": 1, "motivo": "Corrección QA",
+                                            "fecha": "2026-10-07", "hora_entrada": "10:00:00"})
+    annulment = client.post(missing + "/anular", json={"version": 1, "motivo": "Anulación QA"})
+    for result in (correction, annulment):
+        assert result.status_code in (400, 404) and "no encontr" in result.text
+    assert client.get(history, params={"page": 1}).json() == initial
 
 
 @pytest.mark.parametrize('first_kind', ['general', 'horario'])

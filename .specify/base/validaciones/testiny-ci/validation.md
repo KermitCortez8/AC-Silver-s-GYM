@@ -414,3 +414,82 @@ Los informes preparados se guardaron localmente en `.artifacts/testiny-verificad
 La versión corregida queda pendiente de un nuevo CI en GitHub y de la
 publicación automática tras merge a `main`. La verificación local usó Windows
 y no ejecutó Docker ni PostgreSQL real.
+
+## Sincronización del catálogo SILVE · 2026-11-19
+
+La exportación de todos los casos de SILVE devolvió 222 IDs únicos. Los 199
+casos previos coinciden en títulos, tipos, módulos, precondiciones y pasos. Se
+incorporaron los TC-200 a TC-222 con 48 resultados esperados. Siguen pendientes
+de revisión automatizada, junto con los 99 anteriores.
+
+| Comprobación local | Resultado |
+| --- | --- |
+| Backend, pytest con Python en modo UTF-8 | 899 aprobadas y 60 omitidas por falta de PostgreSQL desechable. |
+| Frontend con reporter JUnit, Node 22.23.5 | 392 aprobadas. |
+| Importador y revisión, `test_testiny*.py` | 36 aprobadas y 1 omitida por permisos de enlaces simbólicos. |
+| Preparación con `--documented`, sin publicar | 100 aprobados de 222 (45,05 %). El publicador conservó el diagnóstico y rechazó el envío por el mínimo de 111. |
+| Suite completa de `.specify/tests` | 48 aprobadas, 1 omitida y 13 errores al crear enlaces simbólicos en Windows (WinError 1314). |
+| Hook documental y `git diff --check` | Aprobados. |
+
+El informe y la trazabilidad de esta ejecución están en
+`.artifacts/testiny-catalogo/normalized/`.
+
+## Ampliación de la cobertura · 2026-11-19
+
+Se añadieron 42 revisiones completas sobre el mismo catálogo de 222 casos. Los
+JUnit de backend y frontend de esta ejecución acreditan 142 casos aprobados de
+222 (63,96 %), con 80 pendientes. Se mantuvo el mínimo del 50 %.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Backend en modo UTF-8, pytest con JUnit | 917 aprobadas y 60 omitidas sin PostgreSQL desechable. |
+| Frontend, Node 22.23.5 con reporter JUnit | 400 aprobadas. |
+| Compilación de frontend | Aprobada. |
+| Chromium y API local de QA | Límite de búsqueda, estado vacío y limpieza verificados en 1440 y 390 px. |
+| Importador y revisión Testiny | 36 aprobadas y 1 omitida por permisos de enlaces simbólicos en Windows. |
+| `publish.py --documented` | Preparó 142 resultados documentados, todos aprobados, sin publicación remota. |
+| Hook documental y `git diff --check` | Aprobados. |
+
+El informe, el JUnit y las capturas locales están en
+`.artifacts/testiny-ampliacion/`. Los casos pendientes y los requisitos de
+entorno se conservan en el CSV de trazabilidad.
+
+## Mínimo del 80 % y Stripe sandbox · 2026-11-19
+
+Se repitió el TC-195 desde pytest contra Stripe en modo de prueba, con webhook
+real y repositorio local aislado. La ejecución local registró 918 aprobadas y
+60 omitidas en backend y 400 aprobadas en frontend. Con ambos JUnit se generó
+un informe de 222 casos documentados, con 143 aprobados y 79 omitidos. El
+publicador conservó el informe y rechazó el envío por quedar debajo de 178.
+
+El TC-195 es optativo y la ejecución normal de backend de CI lo deja omitido.
+El JUnit preparado, el diagnóstico y la captura del carrito restaurado quedan
+en `.artifacts/testiny-80/`.
+
+## Cumplimiento del mínimo del 80 % · 2026-11-19
+
+Se vincularon los resultados esperados de 36 casos adicionales de SILVE con
+aserciones de API, servicios y vistas. El publicador local aceptó los dos
+informes de 222 casos.
+
+| Ejecución local | Backend | Frontend | Casos documentados aprobados |
+| --- | ---: | ---: | ---: |
+| Con Stripe sandbox y webhook de prueba | 968 aprobadas, 60 omitidas | 417 aprobadas | 179 de 222 (80,63 %) |
+| Habitual, con TC-195 optativo omitido | 967 aprobadas, 61 omitidas | 417 aprobadas | 178 de 222 (80,18 %) |
+
+Ambas corridas terminaron sin fallos del backend ni del frontend. PostgreSQL
+desechable quedó fuera de la ejecución local. El verificador del publicador se
+ejecutó mediante `publish.py --documented`. Los JUnit originales, los informes
+normalizados y la captura de Stripe quedaron en `.artifacts/testiny-80-completo/`.
+La validación de Testiny del espacio de trabajo registró 35 pruebas aprobadas y
+dos omitidas. Windows impidió los escenarios de Spec Kit que crean enlaces
+simbólicos.
+
+La prueba **SG-RF23-IT01 · Pago con tarjeta reserva stock y deja el pedido
+pendiente hasta confirmar en Stripe** (TC-195) se identifica con
+`test_testiny_checkout_stripe.py` y un selector que describe el recorrido.
+La ejecución optativa pasó con el nombre nuevo y su JUnit coincidió con la
+trazabilidad. La corrida habitual del backend registró 967 aprobadas y 61
+omitidas. Con el JUnit vigente del frontend, el publicador local confirmó
+178 de 222 casos (80,18 %). Los informes están en
+`.artifacts/testiny-checkout-stripe/`.

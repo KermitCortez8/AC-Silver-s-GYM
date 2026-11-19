@@ -368,7 +368,7 @@ def main(argv=None) -> int:
     parser.add_argument("--event", type=Path, default=os.environ.get("GITHUB_EVENT_PATH"))
     parser.add_argument("--project", default=os.environ.get("TESTINY_PROJECT", "SILVE"))
     parser.add_argument("--publish", action="store_true", help="Importa en Testiny; por defecto solo prepara XML")
-    parser.add_argument("--documented", action="store_true", help="Exige ejecutar al menos el 50 % de casos documentados revisados")
+    parser.add_argument("--documented", action="store_true", help="Exige el mínimo configurado de casos documentados ejecutados")
     args = parser.parse_args(argv)
     try:
         reports = prepare_reports(args.incoming, args.output, args.documented)
