@@ -53,3 +53,9 @@ Una ejecución paralela de la batería frontend informó un fallo de archivo en 
 ## Ajuste visual del acceso al chat · 2026-11-19
 
 Se reemplazó el botón flotante de texto por un acceso circular rojo con un ícono de asistente dibujado en SVG. Conserva la etiqueta accesible «Abrir asistente del gimnasio» y muestra «Pregúntale a Silver» al pasar el cursor o enfocar con teclado en escritorio. Se revisó visualmente a 390 × 844 y 1440 × 900 píxeles. `npm run build` terminó correctamente y los 27 casos de `frontend/e2e/agent.spec.js` pasaron en Chromium, Firefox y WebKit. Es un cambio de presentación; no se modificaron el servicio, la API ni las respuestas del agente.
+
+## Panel y campo multilínea · 2026-11-19
+
+Se mejoraron la cabecera, la bienvenida, las burbujas y los enlaces del panel. La entrada del mensaje ahora es un área de texto que envuelve palabras largas, crece hasta un límite y permite seguir desplazándose sin mostrar una barra gruesa. Enter envía y Shift + Enter inserta una línea. Se revisó visualmente el chat abierto en una ventana estrecha, con un mensaje de 100 caracteres sin espacios: el texto pasó a varias líneas y el botón Enviar siguió visible. La prueba nueva verifica crecimiento, ausencia de desplazamiento horizontal y ambas teclas en los tres motores.
+
+Comprobaciones: `npm test -- --test-concurrency=1`: 373/373; `npm run build`: aprobado; `frontend/e2e/agent.spec.js`: 30/30; Playwright integrado: 18/18. No se modificaron las respuestas ni la API. La demo local volvió a responder HTTP 200 en los puertos 4173 y 8765 después de la integración.

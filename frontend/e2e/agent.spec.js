@@ -37,6 +37,26 @@ test('visitante pregunta por un plan y ve una respuesta del agente', async ({ pa
   await expect(page.getByRole('link', { name: 'Ver registro' })).toHaveAttribute('href', '/registro');
 });
 
+test('el campo pasa el texto a otra línea y permite enviarlo con Enter', async ({ page }) => {
+  await setup(page, { body: {
+    id_conversacion: 'synthetic-conversation', estado: 'respondida',
+    texto: 'Respuesta de prueba', enlaces: [],
+  } });
+  const composer = page.getByLabel('Tu pregunta para Silver');
+  const initialHeight = await composer.evaluate(element => element.clientHeight);
+  await composer.fill('a'.repeat(110));
+  await expect.poll(() => composer.evaluate(element => element.clientHeight)).toBeGreaterThan(initialHeight);
+  expect(await composer.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+
+  await composer.fill('Hola');
+  await composer.press('Shift+Enter');
+  await composer.pressSequentially('Quiero un plan');
+  await expect(composer).toHaveValue('Hola\nQuiero un plan');
+  await composer.press('Enter');
+  await expect(page.getByRole('log')).toContainText('Respuesta de prueba');
+  await expect(composer).toHaveValue('');
+});
+
 test('visitante pregunta por clases publicadas', async ({ page }) => {
   await setup(page, { body: {
     id_conversacion: 'synthetic-conversation', estado: 'respondida',

@@ -20,24 +20,33 @@
     <section
       v-else
       aria-label="Asistente del gimnasio"
-      class="flex h-[min(34rem,calc(100vh-2.5rem))] w-[min(23rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-slate-300 bg-white text-slate-900 shadow-2xl"
+      class="flex h-[min(36rem,calc(100dvh-2.5rem))] w-[min(24rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white text-slate-900 shadow-[0_18px_60px_rgba(15,23,42,0.24)]"
     >
-      <header class="flex items-center justify-between bg-red-800 px-4 py-3 text-white">
-        <div>
-          <h2 class="font-bold">Pregúntale a Silver</h2>
-          <p class="text-xs text-red-100">Información pública del gimnasio</p>
+      <header class="flex items-center gap-3 bg-gradient-to-r from-red-900 via-red-800 to-red-700 px-4 py-3.5 text-white">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25" aria-hidden="true">
+          <svg class="h-7 w-7" viewBox="0 0 32 32" fill="none">
+            <path d="M16 6V3m-8 9a7 7 0 0 1 7-7h2a7 7 0 0 1 7 7v7a6 6 0 0 1-6 6h-5l-5 3v-6a6 6 0 0 1-1-3v-7Z" stroke="white" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+            <path d="M12 15v2m8-2v2m-6 3c1 1 3 1 4 0" stroke="white" stroke-width="2" stroke-linecap="round" />
+          </svg>
         </div>
-        <button type="button" class="rounded px-2 text-2xl" aria-label="Cerrar asistente" @click="closeChat">×</button>
+        <div class="min-w-0 flex-1">
+          <h2 class="text-sm font-bold tracking-wide">Pregúntale a Silver</h2>
+          <p class="mt-0.5 text-xs text-red-100">Planes, clases y horarios</p>
+        </div>
+        <button type="button" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xl leading-none text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" aria-label="Cerrar asistente" @click="closeChat">×</button>
       </header>
-      <div ref="logRef" class="flex-1 space-y-3 overflow-y-auto p-4" role="log" aria-live="polite">
-        <p class="rounded-xl bg-slate-100 p-3 text-sm">Hola. Pregúntame por planes, clases, tipos de entrenamiento o cómo empezar.</p>
-        <div v-for="(item, index) in messages" :key="index" class="space-y-1">
-          <p :class="item.from === 'user' ? 'ml-8 bg-red-50' : 'mr-8 bg-slate-100'" class="rounded-xl p-3 text-sm whitespace-pre-wrap">{{ item.text }}</p>
-          <div v-if="item.links?.length" class="flex gap-2">
-            <router-link v-for="link in item.links" :key="link.ruta" :to="link.ruta" class="text-sm font-semibold text-red-700 underline">{{ link.texto }}</router-link>
+      <div ref="logRef" class="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-[#faf7f6] to-white p-4" role="log" aria-live="polite">
+        <div class="flex items-end gap-2">
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-700 text-xs font-bold text-white" aria-hidden="true">S</span>
+          <p class="max-w-[85%] rounded-2xl rounded-bl-md bg-white px-3.5 py-3 text-[13px] leading-5 text-slate-700 shadow-sm ring-1 ring-slate-200">Hola. Pregúntame por planes, clases, tipos de entrenamiento o cómo empezar.</p>
+        </div>
+        <div v-for="(item, index) in messages" :key="index" class="flex flex-col gap-2" :class="item.from === 'user' ? 'items-end' : 'items-start'">
+          <p :class="item.from === 'user' ? 'rounded-br-md bg-red-100 text-slate-900' : 'rounded-bl-md bg-white text-slate-700 ring-1 ring-slate-200'" class="max-w-[88%] break-words whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[13px] leading-5 shadow-sm">{{ item.text }}</p>
+          <div v-if="item.links?.length" class="flex flex-wrap gap-2 pl-1">
+            <router-link v-for="link in item.links" :key="link.ruta" :to="link.ruta" class="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 no-underline transition-colors hover:bg-red-50">{{ link.texto }}</router-link>
           </div>
         </div>
-        <p v-if="busy" class="text-sm text-slate-500">Consultando…</p>
+        <p v-if="busy" class="pl-9 text-xs text-slate-500">Silver está escribiendo…</p>
       </div>
       <form v-if="recoveryActive" class="space-y-2 border-t border-slate-200 p-3" @submit.prevent="collectRecovery">
         <p class="text-xs text-slate-600">Tu solicitud aún no se enviará al gimnasio.</p>
@@ -58,12 +67,13 @@
           <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" @click="cancelRecovery">Cancelar</button>
         </div>
       </form>
-      <form v-else class="border-t border-slate-200 p-3" @submit.prevent="send">
+      <form v-else class="border-t border-slate-200 bg-white p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.04)]" @submit.prevent="send">
         <label for="agent-message" class="sr-only">Tu pregunta para Silver</label>
-        <div class="flex gap-2">
-          <input id="agent-message" v-model="draft" maxlength="150" autocomplete="off" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900" placeholder="Pregunta sobre el gimnasio" :disabled="busy" />
-          <button type="submit" class="rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50" :disabled="busy || !draft.trim()">Enviar</button>
+        <div class="flex items-end gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 transition-colors focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100">
+          <textarea id="agent-message" ref="composerRef" v-model="draft" rows="1" wrap="soft" maxlength="150" autocomplete="off" class="agent-composer block min-h-11 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border-0 bg-transparent px-2.5 py-2.5 text-sm leading-5 text-slate-900 placeholder:text-slate-400 focus:outline-none" placeholder="Escribe tu pregunta…" :disabled="busy" @keydown="handleComposerKeydown" />
+          <button type="submit" class="h-11 shrink-0 rounded-xl bg-red-700 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-red-800 disabled:opacity-50" :disabled="busy || !draft.trim()">Enviar</button>
         </div>
+        <p class="mt-1.5 hidden px-2 text-[11px] text-slate-400 sm:block">Enter para enviar · Shift + Enter para otra línea</p>
       </form>
     </section>
   </div>
@@ -81,6 +91,7 @@ const busy = ref(false);
 const messages = ref([]);
 const conversationId = ref(null);
 const logRef = ref(null);
+const composerRef = ref(null);
 const recoveryActive = ref(false);
 const recoveryDraft = ref({ correo: '', dni: '', telefono: '' });
 const pendingRecovery = ref(null);
@@ -107,6 +118,21 @@ function collectRecovery() {
     text: 'Listo, tus datos quedaron preparados en esta sesión. La solicitud aún no se ha enviado al gimnasio.',
   });
 }
+function resizeComposer() {
+  const composer = composerRef.value;
+  if (!composer) return;
+  composer.style.height = 'auto';
+  composer.style.height = `${Math.min(composer.scrollHeight, 112)}px`;
+}
+function handleComposerKeydown(event) {
+  if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+  event.preventDefault();
+  send();
+}
+watch(draft, async () => {
+  await nextTick();
+  resizeComposer();
+});
 watch([() => messages.value.length, busy], async () => {
   await nextTick();
   if (logRef.value) logRef.value.scrollTop = logRef.value.scrollHeight;
@@ -141,3 +167,13 @@ async function send() {
   }
 }
 </script>
+
+<style scoped>
+.agent-composer {
+  scrollbar-width: none;
+}
+
+.agent-composer::-webkit-scrollbar {
+  display: none;
+}
+</style>
