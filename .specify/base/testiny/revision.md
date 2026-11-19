@@ -148,3 +148,12 @@ con sus versiones revisadas. La nueva regresión ejecuta `load_review` sobre el
 repositorio real para detectar futuras desactualizaciones durante el PR.
 Esta revisión no acredita nuevamente por sí sola los 100 casos: su ejecución
 completa exige informes nuevos de las suites, validados con `--documented`.
+
+## Configuración SSR de frontend · 2026-11-18
+
+La preparación de las pruebas que cargan módulos con Vite usa un servidor SSR
+compartido con la optimización de dependencias del cliente desactivada. Se
+revisaron los cambios en los selectores de frontend y sus fixtures. Las
+aserciones, los datos y los resultados esperados permanecen iguales. Las
+huellas de las fuentes afectadas y del nuevo soporte se registran en
+`automatizacion.json`.
