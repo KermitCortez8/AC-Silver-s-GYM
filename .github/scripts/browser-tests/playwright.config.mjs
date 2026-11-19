@@ -36,7 +36,7 @@ export default defineConfig({
       timeout: 60000,
     },
     {
-      command: 'node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173 --strictPort',
+      command: 'npm run build && npm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
       cwd: path.join(root, 'frontend'),
       url: 'http://127.0.0.1:4173/login',
       env: {

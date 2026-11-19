@@ -6,8 +6,10 @@ from threading import Lock
 import unicodedata
 from uuid import uuid4
 
+from application.errors import ProviderUnavailable
+from application.services.agent_budget import RateLimitExceeded
 from domain.services.agent_policy import (
-    asks_for_account_recovery, asks_for_public_schedules,
+    asks_for_account_recovery, asks_for_public_plans, asks_for_public_schedules,
     asks_for_registration_guidance, contains_sensitive,
     requests_private_action,
     SOCIAL_REPLIES, social_reply, validate_message, validate_tool,
@@ -20,6 +22,17 @@ def _plain(value: str) -> str:
         char for char in unicodedata.normalize("NFD", value.casefold())
         if unicodedata.category(char) != "Mn"
     )
+
+
+def _catalog_selection(text: str, last_topic: str | None) -> tuple[str, str] | None:
+    if asks_for_public_schedules(text) or (
+        last_topic == "consultar_informacion_publica:actividades"
+        and re.search(r"\bhorarios?\b", text, re.I)
+    ):
+        return "consultar_horarios_publicos", "{}"
+    if asks_for_public_plans(text, has_plan_context=last_topic == "consultar_planes"):
+        return "consultar_planes", "{}"
+    return None
 
 
 class ConversationTopics:
@@ -49,6 +62,18 @@ class AgentService:
         self._conversations = conversations
         self._budget = budget
 
+    def _select_tool(self, text: str, last_topic: str | None) -> tuple[str, str] | None:
+        try:
+            if self._budget:
+                self._budget.reserve()
+            selection = self._provider.select_tool(text, last_topic)
+        except (ProviderUnavailable, RateLimitExceeded):
+            fallback = _catalog_selection(text, last_topic)
+            if fallback is None:
+                raise
+            return fallback
+        return selection or _catalog_selection(text, last_topic)
+
     def respond(self, message: str, conversation_id: str | None = None) -> dict:
         text = validate_message(message)
         identifier, last_topic = self._conversations.get(conversation_id)
@@ -74,15 +99,8 @@ class AgentService:
             return {**base, "estado": "respondida", "texto": courtesy}
         if registration_guidance:
             selection = ("consultar_informacion_publica", '{"tema":"registro"}')
-        elif asks_for_public_schedules(text) or (
-            last_topic == "consultar_informacion_publica:actividades"
-            and re.search(r"\bhorarios?\b", text, re.I)
-        ):
-            selection = ("consultar_horarios_publicos", "{}")
         else:
-            if self._budget:
-                self._budget.reserve()
-            selection = self._provider.select_tool(text, last_topic)
+            selection = self._select_tool(text, last_topic)
         if not selection:
             self._conversations.put(identifier, last_topic or "")
             return {**base, "estado": "respondida", "texto": (

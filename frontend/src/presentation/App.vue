@@ -41,11 +41,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import AgentChat from './components/AgentChat.vue';
 import { useAuthStore } from '../application/stores/authStore';
 import { useGymStore } from '../application/stores/gymStore';
+
+const AgentChat = defineAsyncComponent(() => import('./components/AgentChat.vue'));
 
 const authStore = useAuthStore();
 const gymStore = useGymStore();

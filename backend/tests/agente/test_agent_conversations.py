@@ -75,7 +75,9 @@ def test_conv_01_visitor_moves_from_greeting_to_registration_without_enrolment()
     thanks = ask(service, "Gracias", identifier)
     assert "De nada" in thanks["texto"]
     assert catalog.reads == ["planes", "horarios"]
-    assert [message for message, _ in provider.calls] == ["¿Cuánto cuesta el plan?"]
+    assert [message for message, _ in provider.calls] == [
+        "¿Cuánto cuesta el plan?", "¿Qué horarios tiene Baile?",
+    ]
 
 
 def test_conv_02_activity_followup_uses_schedules_but_does_not_claim_live_capacity():
@@ -94,7 +96,7 @@ def test_conv_02_activity_followup_uses_schedules_but_does_not_claim_live_capaci
     assert "está lleno" not in capacity["texto"].casefold()
     assert catalog.reads == ["horarios"]
     assert [message for message, _ in provider.calls] == [
-        "¿Qué tipos de ejercicios hay?", "¿Hay cupo en Baile el lunes?",
+        "¿Qué tipos de ejercicios hay?", "¿Y los horarios?", "¿Hay cupo en Baile el lunes?",
     ]
 
 
