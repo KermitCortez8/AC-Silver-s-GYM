@@ -1,0 +1,77 @@
+name: Pruebas Docker con informe JUnit
+description: Ejecuta la suite existente sin red y conserva su resultado incluso si falla.
+inputs:
+  component:
+    description: backend o frontend
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Preparar nombres y destino del informe
+      id: config
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+      run: |
+        case "$COMPONENT" in backend|frontend) ;; *) exit 2 ;; esac
+        echo "container=gym-test-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${COMPONENT}" >> "$GITHUB_OUTPUT"
+        echo "image=gym-test-${COMPONENT}" >> "$GITHUB_OUTPUT"
+        mkdir -p "$RUNNER_TEMP/gym-reports/$COMPONENT"
+    - name: Construir imagen de pruebas
+      id: build
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+        IMAGE: ${{ steps.config.outputs.image }}
+      run: docker build --target test --tag "$IMAGE" "./$COMPONENT"
+    - name: Detectar errores de Python
+      if: inputs.component == 'backend'
+      shell: bash
+      env:
+        IMAGE: ${{ steps.config.outputs.image }}
+      run: docker run --rm --network none "$IMAGE" python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: Ejecutar suite sin red ni credenciales de producción
+      id: tests
+      if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+        IMAGE: ${{ steps.config.outputs.image }}
+        CONTAINER: ${{ steps.config.outputs.container }}
+      run: |
+        if [ "$COMPONENT" = backend ]; then
+          docker run --name "$CONTAINER" --network none \
+            --env AUTH_SECRET_KEY=ci-only-test-key-not-for-production-0123456789abcdef \
+            "$IMAGE" python -m pytest tests/ -q -p no:cacheprovider --junitxml=/tmp/test-results.xml
+        else
+          docker run --name "$CONTAINER" --network none \
+            --mount "type=bind,source=$GITHUB_WORKSPACE/.github/scripts/testiny/node-junit.mjs,target=/tmp/node-junit.mjs,readonly" \
+            "$IMAGE" node --test \
+            --test-reporter=spec --test-reporter=/tmp/node-junit.mjs \
+            --test-reporter-destination=stdout --test-reporter-destination=/tmp/test-results.xml
+        fi
+    - name: Recuperar informe del contenedor
+      if: ${{ always() && steps.tests.outcome != 'skipped' }}
+      shell: bash
+      env:
+        COMPONENT: ${{ inputs.component }}
+        CONTAINER: ${{ steps.config.outputs.container }}
+      run: |
+        if ! docker cp "$CONTAINER:/tmp/test-results.xml" "$RUNNER_TEMP/gym-reports/$COMPONENT/$COMPONENT.xml"; then
+          echo '::warning::La suite terminó sin generar un informe JUnit completo. No se inventarán resultados.'
+        fi
+    - name: Conservar JUnit como artefacto de GitHub
+      if: ${{ always() }}
+      uses: ./.github/actions/upload-junit
+      with:
+        component: ${{ inputs.component }}
+        report: ${{ runner.temp }}/gym-reports/${{ inputs.component }}/${{ inputs.component }}.xml
+    - name: Limpiar el contenedor de pruebas
+      if: ${{ always() && steps.config.outcome == 'success' }}
+      shell: bash
+      env:
+        CONTAINER: ${{ steps.config.outputs.container }}
+      run: |
+        if docker container inspect "$CONTAINER" > /dev/null 2>&1; then
+          docker rm --force "$CONTAINER"
+        fi

@@ -34,29 +34,35 @@ Como visitante, quiero saber cómo registrarme y qué hacer si no puedo entrar a
 
 ## 3. Acceptance Criteria
 
-1. **CA-01 · Planes.** Si hay planes públicos, una pregunta por ellos devuelve nombre, precio y duración obtenidos de `GymService`, más un enlace a Registro. Al cambiar el catálogo, cambia la respuesta; no hay precios fijos en el prompt.
-2. **CA-02 · Horarios y hechos.** Una pregunta explícita por horarios del gimnasio consulta las clases públicas activas, sin depender de que Groq elija una herramienta. Se muestran los horarios actuales por actividad; si se pide una actividad concreta, se filtran las demás. Si no hay horarios para ella, no se inventan. El modelo no aporta cifras ni redacta la respuesta factual: el backend la arma desde el resultado consultado.
-3. **CA-03 · Operaciones privadas.** Pedir matrícula, cobro, cancelación, activación o datos de otra persona no ejecuta la operación ni consulta datos privados; se orienta al visitante hacia los controles de la plataforma.
-4. **CA-04 · Fallos y ausencia de datos.** Un catálogo vacío produce una respuesta sin cifras inventadas. Si el proveedor o catálogo falla, la API devuelve indisponibilidad y la interfaz mantiene una salida comprensible y la navegación pública. Un límite temporal se distingue de una caída del servicio.
-5. **CA-05 · Datos sensibles.** El chat intercepta los patrones probados de correo, DNI, teléfono, contraseña y tarjeta antes de llamar al proveedor; el formulario de recuperación no incorpora esos datos al historial ni al mensaje HTTP. Esta protección requiere una revisión adicional para datos personales no cubiertos por los patrones actuales.
-6. **CA-06 · Herramientas cerradas.** Un mensaje del usuario no puede cambiar permisos. El backend valida nombre y argumentos de la herramienta elegida por el modelo; rechaza una operación, tema o intención no permitidos sin ejecutarlos.
-7. **CA-07 · Contexto mínimo.** Cada conversación recibe un identificador opaco y conserva solo el tema público reciente durante 30 minutos en memoria del proceso. Dos identificadores no comparten ese tema; no se guarda el texto completo de la conversación en el backend.
-8. **CA-08 · Prueba repetible.** Los casos normales, de error y de abuso se ejecutan con proveedor y catálogo controlados sin pagos, correos ni llamadas reales. Una prueba opcional y separada compara el horario mostrado con la lectura pública actual de Supabase.
-9. **CA-09 · Información pública revisada.** Preguntas sobre actividades, primera visita, principiantes, ubicación, registro, acceso o cupos devuelven la ficha pública aprobada y su enlace. Un tema desconocido o argumentos adicionales se rechazan.
-10. **CA-10 · Conversación acotada.** Saludos y cortesías breves reciben respuestas naturales sin llamada al proveedor; una pregunta de negocio que contiene un saludo conserva su intención. Ante un tema claramente ajeno, el agente redirige con cortesía; una segunda pregunta ajena recibe una invitación más directa a volver al gimnasio. Una pregunta ambigua pide más detalle.
-11. **CA-11 · Recuperación local.** Pedir recuperación abre un formulario para correo, DNI y teléfono. Completarlo no envía una solicitud al backend ni al dueño, no restablece la cuenta y no muestra esos datos en el historial. Al cerrar el chat se borra el borrador local.
-12. **CA-12 · Guía de registro.** Preguntar cómo registrarse devuelve pasos basados en la página de Registro y un enlace a ella. La instrucción directa de inscribir o pagar no inicia ese flujo.
-13. **CA-13 · Cuota actual.** Solo las preguntas que necesitan al proveedor consumen la cuota global de ese proceso: 10 selecciones por minuto y 100 por día UTC. Al agotarla, la API responde 429. Esta cuota no se comparte entre instancias y no habilita por sí sola exposición pública.
+1. **CA-01.** Planes. Si hay planes públicos, una pregunta por ellos devuelve nombre, precio y duración obtenidos de `GymService`, más un enlace a Registro. Al cambiar el catálogo, cambia la respuesta; no hay precios fijos en el prompt.
+2. **CA-02.** Horarios y hechos. Una pregunta explícita por horarios del gimnasio consulta las clases públicas activas, sin depender de que Groq elija una herramienta. Se muestran los horarios actuales por actividad; si se pide una actividad concreta, se filtran las demás. Si no hay horarios para ella, no se inventan. El modelo no aporta cifras ni redacta la respuesta factual: el backend la arma desde el resultado consultado.
+3. **CA-03.** Operaciones privadas. Pedir matrícula, cobro, cancelación, activación o datos de otra persona no ejecuta la operación ni consulta datos privados; se orienta al visitante hacia los controles de la plataforma.
+4. **CA-04.** Fallos y ausencia de datos. Un catálogo vacío produce una respuesta sin cifras inventadas. Si el proveedor o catálogo falla, la API devuelve indisponibilidad y la interfaz mantiene una salida comprensible y la navegación pública. Un límite temporal se distingue de una caída del servicio.
+5. **CA-05.** Datos sensibles. El chat intercepta los patrones probados de correo, DNI, teléfono, contraseña y tarjeta antes de llamar al proveedor; el formulario de recuperación no incorpora esos datos al historial ni al mensaje HTTP. Esta protección requiere una revisión adicional para datos personales no cubiertos por los patrones actuales.
+6. **CA-06.** Herramientas cerradas. Un mensaje del usuario no puede cambiar permisos. El backend valida nombre y argumentos de la herramienta elegida por el modelo; rechaza una operación, tema o intención no permitidos sin ejecutarlos.
+7. **CA-07.** Contexto mínimo. Cada conversación recibe un identificador opaco y conserva solo el tema público reciente durante 30 minutos en memoria del proceso. Dos identificadores no comparten ese tema; no se guarda el texto completo de la conversación en el backend.
+8. **CA-08.** Prueba repetible. Los casos normales, de error y de abuso se ejecutan con proveedor y catálogo controlados sin pagos, correos ni llamadas reales. Una prueba opcional y separada compara el horario mostrado con la lectura pública actual de Supabase.
+9. **CA-09.** Información pública revisada. Preguntas sobre actividades, primera visita, principiantes, ubicación, registro, acceso o cupos devuelven la ficha pública aprobada y su enlace. Un tema desconocido o argumentos adicionales se rechazan.
+10. **CA-10.** Conversación acotada. Saludos y cortesías breves reciben respuestas naturales sin llamada al proveedor; una pregunta de negocio que contiene un saludo conserva su intención. Ante un tema claramente ajeno, el agente redirige con cortesía; una segunda pregunta ajena recibe una invitación más directa a volver al gimnasio. Una pregunta ambigua pide más detalle.
+11. **CA-11.** Recuperación local. Pedir recuperación abre un formulario para correo, DNI y teléfono. Completarlo no envía una solicitud al backend ni al dueño, no restablece la cuenta y no muestra esos datos en el historial. Al cerrar el chat se borra el borrador local.
+12. **CA-12.** Guía de registro. Preguntar cómo registrarse devuelve pasos basados en la página de Registro y un enlace a ella. La instrucción directa de inscribir o pagar no inicia ese flujo.
+13. **CA-13.** Cuota actual. Solo las preguntas que necesitan al proveedor consumen la cuota global de ese proceso: 10 selecciones por minuto y 100 por día UTC. Al agotarla, la API responde 429. Esta cuota no se comparte entre instancias y no habilita por sí sola exposición pública.
 
 | Criterio | Evidencia |
 | --- | --- |
-| CA-01, CA-02 | Catálogos cambiantes en `backend/tests/agente/test_agent_flow.py`; recorrido conectado y lectura pública en [batería](qa-v1-bateria.md). |
-| CA-03, CA-05, CA-06 | Política y servicio en `backend/tests/agente/test_agent_flow.py`; bloqueo y recuperación en `frontend/e2e/agent.spec.js`. |
-| CA-04, CA-13 | Fallo y cuota en `backend/tests/agente/test_agent_http.py`; estados visibles en `frontend/e2e/agent.spec.js`. |
-| CA-07 | Aislamiento y expiración en `backend/tests/agente/test_agent_flow.py`. |
-| CA-08 | [Matriz y resultados](qa-v1-bateria.md), con pruebas aisladas y caso real de solo lectura separados. |
-| CA-09, CA-10, CA-12 | Fichas, cortesías, redirección y guía en `backend/tests/agente/test_agent_flow.py`; UI de actividades en `frontend/e2e/agent.spec.js`. |
-| CA-11 | `backend/tests/agente/test_agent_flow.py`, `frontend/e2e/agent.spec.js` y recorrido conectado en `frontend/e2e-integration/agent-flow.spec.js`. |
+| CA-01 | Catálogos cambiantes en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
+| CA-02 | Horarios y lectura pública en [batería](qa-v1-bateria.md). |
+| CA-03 | Operaciones privadas en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
+| CA-04 | Fallos y estados visibles en [pruebas HTTP](../../../backend/tests/agente/test_agent_http.py). |
+| CA-05 | Datos sensibles en [pruebas de interfaz](../../../frontend/e2e/agent.spec.js). |
+| CA-06 | Herramientas cerradas en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
+| CA-07 | Aislamiento y expiración en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
+| CA-08 | Casos aislados y lectura real en [matriz y resultados](qa-v1-bateria.md). |
+| CA-09 | Fichas públicas en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
+| CA-10 | Cortesías y redirección en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
+| CA-11 | Recuperación local en [pruebas de interfaz](../../../frontend/e2e/agent.spec.js) y [recorrido conectado](../../../frontend/e2e-integration/agent-flow.spec.js). |
+| CA-12 | Guía de registro en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
+| CA-13 | Cuota por proceso en [pruebas HTTP](../../../backend/tests/agente/test_agent_http.py). |
 
 ### Requisitos funcionales
 

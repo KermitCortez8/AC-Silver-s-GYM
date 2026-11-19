@@ -9,7 +9,8 @@
     >
       <a
         :href="href"
-        :class="route.path === '/nosotros' && item.id === 'nosotros' ? 'text-orange-600' : 'transition hover:text-orange-600'"
+        class="transition hover:text-red-700"
+        :class="{ 'text-red-700': route.path === '/nosotros' && item.id === 'nosotros' }"
         :aria-current="route.path === '/nosotros' && item.id === 'nosotros' ? 'page' : undefined"
         @click="selectItem($event, item, navigate)"
       >

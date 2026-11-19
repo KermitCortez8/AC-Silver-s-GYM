@@ -112,6 +112,10 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
   El cierre sí incrementa la versión, porque modifica la salida y libera aforo;
   una salida reintentada devuelve el cierre existente. Las consultas también
   reconcilian vencimientos mediante la misma función privada y el reloj de la base.
+  La migración conserva internamente la RPC instalada por 018 o 019 y reconcilia
+  antes de invocarla, manteniendo la admisión por fecha, los permisos y los reintentos.
+  Su función auxiliar no tiene permiso de ejecución para `service_role`, `anon`
+  ni `authenticated`. Ver la [corrección de CI](../validaciones/correccion-ci/validation.md).
 - UI: `/admin/attendance` y `/user/attendance`,
   [AttendanceView.vue](../../../frontend/src/presentation/views/AttendanceView.vue),
   [UserAttendanceView.vue](../../../frontend/src/presentation/views/UserAttendanceView.vue).

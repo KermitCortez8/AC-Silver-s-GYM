@@ -1,11 +1,9 @@
 """Ruta HTTP aislada, con catálogo y proveedor falsos."""
 
-from types import SimpleNamespace
-
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from presentation.dependencies import get_gym_service
+from presentation.dependencies import get_agent_provider, get_gym_service
 from presentation.routes import agent_routes
 from application.services.agent_budget import AgentBudget
 from app.agent_readonly_app import app as readonly_app
@@ -35,12 +33,11 @@ class FakeProvider:
         return "consultar_planes", "{}"
 
 
-def test_public_endpoint_uses_business_catalog_without_external_calls(monkeypatch):
-    monkeypatch.setattr(agent_routes, "get_settings", lambda: SimpleNamespace(groq_api_key="test"))
-    monkeypatch.setattr(agent_routes, "GroqAgentProvider", FakeProvider)
+def test_public_endpoint_uses_business_catalog_without_external_calls():
     app = FastAPI()
     app.include_router(agent_routes.router, prefix="/api")
     app.dependency_overrides[get_gym_service] = FakeGym
+    app.dependency_overrides[get_agent_provider] = lambda: FakeProvider("test")
     with TestClient(app) as client:
         result = client.post("/api/agente/mensajes", json={"mensaje": "¿Cuánto cuesta el plan mensual?"})
         boundary = client.post("/api/agente/mensajes", json={"mensaje": "x" * 500})
@@ -52,12 +49,11 @@ def test_public_endpoint_uses_business_catalog_without_external_calls(monkeypatc
 
 
 def test_public_endpoint_returns_429_when_budget_is_exhausted(monkeypatch):
-    monkeypatch.setattr(agent_routes, "get_settings", lambda: SimpleNamespace(groq_api_key="test"))
-    monkeypatch.setattr(agent_routes, "GroqAgentProvider", FakeProvider)
     monkeypatch.setattr(agent_routes, "_budget", AgentBudget(per_minute=1, per_day=1))
     app = FastAPI()
     app.include_router(agent_routes.router, prefix="/api")
     app.dependency_overrides[get_gym_service] = FakeGym
+    app.dependency_overrides[get_agent_provider] = lambda: FakeProvider("test")
     with TestClient(app) as client:
         first = client.post("/api/agente/mensajes", json={"mensaje": "¿Cuánto cuesta el plan?"})
         second = client.post("/api/agente/mensajes", json={"mensaje": "¿Cuánto cuesta el plan?"})

@@ -63,7 +63,8 @@ def database():
     database.sql((BACKEND / 'tests/soporte/fixtures/priority_schema.sql').read_text())
     for filename in ['014_preserve_business_fields.sql', '015_atomic_gym_transactions.sql',
                      '016_transaction_sequence_permissions.sql', '018_archivar_inventario_tienda.sql',
-                     '019_papelera_tienda.sql', '020_public_preregistrations.sql']:
+                     '019_papelera_tienda.sql', '020_public_preregistrations.sql',
+                     '026_inventario_unidades.sql', '027_mov_inv_unidad_hora.sql']:
         migration = (BACKEND / 'migrations' / filename).read_text()
         database.sql(migration)
         database.sql(migration)  # El despliegue repetido no debe borrar ni duplicar datos.
@@ -338,3 +339,51 @@ def test_routine_transaction_ignores_a_concurrent_attendance_write(database, mon
     assert remote.commits == 1
     assert database.rows('CATALOGO_RUTINA')[0]['id_rutina'] == routine['id_rutina']
     assert len(database.rows('ASISTENCIA')) == 1
+
+
+def test_unit_migration_numbers_existing_equipment_once(database):
+    database.sql('''insert into public."INVENTARIO" (id_item,"Nombre_item","Tipo","Cantidad_Stock_E","Estado","N_ACTIVO",ubicacion)
+                   values (1,'Máquina para correr','Equipo cardiovascular',3,'En mantenimiento',1008,'Sala de cardio'),
+                          (2,'Desinfectante','Limpieza',4,'Operativo',1009,'Almacén');''')
+    migration = (BACKEND / 'migrations/026_inventario_unidades.sql').read_text()
+    database.sql(migration)
+    database.sql(migration)  # Repetirla no duplica unidades.
+    units = sorted(database.rows('INVENTARIO_UNIDADES'), key=lambda row: row['correlativo'])
+    assert [row['codigo'] for row in units] == ['1008-MC-001', '1008-MC-002', '1008-MC-003']
+    assert {(row['id_item'], row['estado'], row['ubicacion']) for row in units} == {(1, 'En mantenimiento', 'Sala de cardio')}
+    prefixes = {row['id_item']: row['prefijo_activo'] for row in database.rows('INVENTARIO')}
+    assert prefixes == {1: 'MC', 2: ''}
+
+
+def test_equipment_units_are_committed_atomically(database, monkeypatch):
+    gym = service(database, monkeypatch)
+    item = gym.upsert_inventario(dict(nombre_item='Bicicleta estatica', tipo='Equipo cardiovascular', cantidad_stock=2,
+                                      estado='Operativo', ubicacion='Sala de cardio'))
+    first = next(u for u in gym.unidades_inventario() if u['correlativo'] == 1)
+    gym.actualizar_unidad_inventario(first['id_unidad'], {'estado': 'En mantenimiento', 'ubicacion': 'Taller'})
+    gym.repository._last_refresh_at = 0
+    gym.ensure_fresh()
+    rows = sorted(database.rows('INVENTARIO_UNIDADES'), key=lambda row: row['correlativo'])
+    assert [row['codigo'] for row in rows] == [f"{item['n_activo']}-BE-001", f"{item['n_activo']}-BE-002"]
+    assert (rows[0]['estado'], rows[0]['ubicacion']) == ('En mantenimiento', 'Taller')
+    assert gym.get_item_inventario(item['id_item'])['cantidad_stock'] == 2
+
+
+
+def test_unit_transfer_and_restore_are_stored_with_unit_and_time(database, monkeypatch):
+    gym = service(database, monkeypatch)
+    admin = gym.upsert_usuario(dict(nombre='Admin', correo='admin@gmail.com', rol='admin', password='secret123'))
+    gym.upsert_inventario(dict(nombre_item='Banco plano', tipo='Equipo de fuerza', cantidad_stock=2,
+                               estado='Operativo', ubicacion='Almacén'))
+    first = next(u for u in gym.unidades_inventario() if u['correlativo'] == 1)
+    gym.actualizar_unidad_inventario(first['id_unidad'], {'ubicacion': 'Sala de fuerza', 'id_usuario': admin['id_usuario']})
+    gym.dar_de_baja_unidad_inventario(first['id_unidad'], {'motivo': 'Rota', 'id_usuario': admin['id_usuario']})
+    gym.restablecer_unidad_inventario(first['id_unidad'], {'motivo': 'Soldada', 'id_usuario': admin['id_usuario']})
+    rows = sorted(database.rows('MOV_INV'), key=lambda row: row['id_mov'])
+    assert [row['tipo_movimiento'] for row in rows] == ['entrada', 'traslado', 'salida', 'entrada']
+    assert [row['id_unidad'] for row in rows] == [None, first['id_unidad'], first['id_unidad'], first['id_unidad']]
+    assert all(row['hora_movimiento'] for row in rows)
+    unit = next(row for row in database.rows('INVENTARIO_UNIDADES') if row['id_unidad'] == first['id_unidad'])
+    assert (unit['estado'], unit['ubicacion'], unit['fecha_baja']) == ('Operativo', 'Sala de fuerza', None)
+    item = database.rows('INVENTARIO')[0]
+    assert item['Cantidad_Stock_E'] == 2

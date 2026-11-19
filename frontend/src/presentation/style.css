@@ -508,7 +508,7 @@ video {
 
 .module-loading-fade-enter-active,
 .module-loading-fade-leave-active {
-  transition: opacity 220ms ease;
+  transition: opacity 100ms ease;
 }
 
 .module-loading-fade-leave-active {
@@ -518,6 +518,13 @@ video {
 .module-loading-fade-enter-from,
 .module-loading-fade-leave-to {
   opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .module-loading-fade-enter-active,
+  .module-loading-fade-leave-active {
+    transition: none;
+  }
 }
 
 @media (max-width: 640px) {

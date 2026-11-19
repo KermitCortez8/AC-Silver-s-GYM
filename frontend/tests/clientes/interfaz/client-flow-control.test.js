@@ -1,16 +1,13 @@
 import assert from 'node:assert/strict';
 import { before, after, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
-import { createServer } from 'vite';
-import vue from '@vitejs/plugin-vue';
+import { crearServidorSsr } from '../../soporte/servidor-ssr.js';
 import { createSSRApp, h, ref } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
 let server, installServices, useClientMembershipActions;
 before(async () => {
-  server = await createServer({ root: fileURLToPath(new URL('../../..', import.meta.url)), configFile: false,
-    plugins: [vue()], server: { middlewareMode: true, hmr: false, ws: false, watch: null } });
+  server = await crearServidorSsr({ componentesVue: true });
   ({ installServices } = await server.ssrLoadModule('/src/bootstrap.js'));
   ({ useClientMembershipActions } = await server.ssrLoadModule('/src/presentation/composables/clients/useClientMembershipActions.js'));
 });
@@ -47,6 +44,35 @@ test('el pago pendiente se distingue de la carga y permite volver a consultar', 
   await view.setup.confirmPaidCheckout();
   assert.equal(view.setup.confirmationState, 'pending'); assert.equal(view.setup.resultStyle.title, 'Pago pendiente de confirmación');
   assert.equal(view.setup.canRetryConfirmation, true); view.dispose();
+});
+test('el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez', async () => {
+  const calls = [];
+  const view = await paymentView(async path => {
+    calls.push(path);
+    if (calls.length === 1) return { confirmed: false };
+    if (calls.length === 2) throw new Error('Proveedor indisponible');
+    return { confirmed: true, id_cliente: 1, membership_status: 'ACTIVO' };
+  }, '?result=pending&session_id=cs_test');
+  const interrupted = await paymentView(() => assert.fail('Un retorno sin sesión no cobra'), '?result=failure');
+  try {
+    await view.setup.confirmPaidCheckout();
+    assert.equal(view.setup.resultStyle.title, 'Pago pendiente de confirmación');
+    assert.equal(view.setup.canRetryConfirmation, true);
+    await view.setup.confirmPaidCheckout();
+    assert.equal(view.setup.resultStyle.title, 'No se pudo verificar el pago');
+    assert.equal(view.setup.canRetryConfirmation, true);
+    assert.equal(interrupted.setup.resultStyle.title, 'El pago no se completó');
+
+    await view.setup.confirmPaidCheckout();
+    assert.equal(view.setup.resultStyle.status, 'Pago confirmado; renovación activa');
+    assert.equal(view.setup.canRetryConfirmation, false);
+    assert.equal(calls.length, 3);
+    assert.match(calls[0], /confirmar-retorno\?session_id=cs_test/);
+    assert.ok(calls.every(path => path === calls[0]));
+  } finally {
+    view.dispose();
+    interrupted.dispose();
+  }
 });
 test('no muestra confirmado el pago de otro cliente', async () => {
   const view = await paymentView(async () => ({ confirmed: true, id_cliente: 2 }));

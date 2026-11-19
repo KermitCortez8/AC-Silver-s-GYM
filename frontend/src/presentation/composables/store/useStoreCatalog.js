@@ -35,8 +35,8 @@ export const useStoreCatalog = () => {
   const catalogProducts = computed(() =>
     isAdmin.value
       ? productos.value
-      // El cliente no ve productos descatalogados ni sin stock.
-      : productos.value.filter((p) => p.estado !== 'Descatalogado' && Number(p.cantidad || 0) > 0),
+      // El cliente no ve productos descatalogados o archivados; los agotados se muestran como no disponibles.
+      : productos.value.filter((p) => p.estado !== 'Descatalogado' && !p.archivado),
   );
   const categories = computed(() =>
     [
@@ -276,6 +276,11 @@ export const useStoreCatalog = () => {
     catch (error) { cartError(error); }
   };
   const agregarAlCarrito = (producto) => {
+    if (!canBuy(producto)) {
+      feedbackTone.value = 'error';
+      feedbackMessage.value = `${producto.nombre} no está disponible para compra.`;
+      return;
+    }
     if (!availableFor(producto)) {
       feedbackTone.value = 'error';
       feedbackMessage.value = `Ya tienes en el carrito todo el stock de ${producto.nombre}.`;

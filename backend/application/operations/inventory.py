@@ -34,6 +34,7 @@ class UpsertInventarioCommand:
     resources: ClassVar[tuple[Resource, ...]] = (
         Resource.USUARIO,
         Resource.INVENTARIO,
+        Resource.INVENTARIO_UNIDADES,
         Resource.PRODUCTOS_TIENDA,
         Resource.MOV_INV,
     )
@@ -49,6 +50,7 @@ class DeleteInventarioCommand:
     resources: ClassVar[tuple[Resource, ...]] = (
         Resource.USUARIO,
         Resource.INVENTARIO,
+        Resource.INVENTARIO_UNIDADES,
         Resource.PRODUCTOS_TIENDA,
         Resource.MOV_INV,
     )
@@ -73,6 +75,7 @@ class RegistrarMovimientoInventarioCommand:
     resources: ClassVar[tuple[Resource, ...]] = (
         Resource.USUARIO,
         Resource.INVENTARIO,
+        Resource.INVENTARIO_UNIDADES,
         Resource.PRODUCTOS_TIENDA,
         Resource.MOV_INV,
     )
@@ -89,6 +92,7 @@ class ActualizarMovimientoInventarioCommand:
     resources: ClassVar[tuple[Resource, ...]] = (
         Resource.USUARIO,
         Resource.INVENTARIO,
+        Resource.INVENTARIO_UNIDADES,
         Resource.PRODUCTOS_TIENDA,
         Resource.MOV_INV,
     )
@@ -96,3 +100,64 @@ class ActualizarMovimientoInventarioCommand:
     def run(self, rules: DomainComponents) -> Record:
         return rules.inventory.actualizar_movimiento_inventario(self.id_mov, self.payload)
 
+
+
+@dataclass(frozen=True)
+class UnidadesInventarioQuery:
+    operation_kind: ClassVar[str] = 'query'
+    resources: ClassVar[tuple[Resource, ...]] = (Resource.INVENTARIO, Resource.INVENTARIO_UNIDADES)
+
+    def run(self, rules: DomainComponents) -> list[Record]:
+        return rules.inventory.unidades_inventario()
+
+
+@dataclass(frozen=True)
+class ActualizarUnidadInventarioCommand:
+    operation_kind: ClassVar[str] = 'command'
+    id_unidad: int
+    payload: Record
+    # MOV_INV y USUARIO: el cambio de ubicación queda registrado como traslado.
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.INVENTARIO_UNIDADES,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+    )
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.inventory.actualizar_unidad_inventario(self.id_unidad, self.payload)
+
+
+@dataclass(frozen=True)
+class RestablecerUnidadInventarioCommand:
+    operation_kind: ClassVar[str] = 'command'
+    id_unidad: int
+    payload: Record
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.INVENTARIO_UNIDADES,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+    )
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.inventory.restablecer_unidad_inventario(self.id_unidad, self.payload)
+
+
+@dataclass(frozen=True)
+class DarDeBajaUnidadInventarioCommand:
+    operation_kind: ClassVar[str] = 'command'
+    id_unidad: int
+    payload: Record
+    resources: ClassVar[tuple[Resource, ...]] = (
+        Resource.USUARIO,
+        Resource.INVENTARIO,
+        Resource.INVENTARIO_UNIDADES,
+        Resource.PRODUCTOS_TIENDA,
+        Resource.MOV_INV,
+    )
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.inventory.dar_de_baja_unidad_inventario(self.id_unidad, self.payload)

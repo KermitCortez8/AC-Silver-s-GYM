@@ -3,8 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { before, after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { createServer } from 'vite';
-import vue from '@vitejs/plugin-vue';
+import { crearServidorSsr } from '../../soporte/servidor-ssr.js';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import {
@@ -14,10 +13,7 @@ import {
 let server;
 
 before(async () => {
-  server = await createServer({
-    root: fileURLToPath(new URL('../../..', import.meta.url)), configFile: false, plugins: [vue()],
-    server: { middlewareMode: true, hmr: false, ws: false, watch: null },
-  });
+  server = await crearServidorSsr({ componentesVue: true });
 });
 
 after(async () => { await server?.close(); });

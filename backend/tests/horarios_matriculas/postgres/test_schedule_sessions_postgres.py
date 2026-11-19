@@ -82,6 +82,21 @@ def test_rpc_asistencia_rechaza_matricula_de_otra_semana_sin_guardar(database):
     assert saved["Fecha"] == today["fecha_clase"]
 
 
+def test_cierre_general_conserva_validacion_de_fecha_en_rpc_instalada(database):
+    for name in ['021_persist_attendance_status.sql', '023_general_attendance_three_hour_close.sql']:
+        database.sql((BACKEND / 'migrations' / name).read_text())
+    future = enroll(database, offset=7)
+    with pytest.raises(RuntimeError, match='fecha de esta clase'):
+        save(database, {'id_cliente': 1, 'id_membresia': 1,
+                        'id_matricula': future['id_matricula'], 'servicio': 'fitness'})
+    assert database.rows('ASISTENCIA') == []
+    today = enroll(database)
+    saved = save(database, {'id_cliente': 1, 'id_membresia': 1,
+                           'id_matricula': today['id_matricula'], 'servicio': 'fitness'})
+    assert saved['Fecha'] == today['fecha_clase']
+    assert saved['estado_asistencia'] == 'dentro' and not saved['cierre_automatico']
+
+
 @pytest.mark.parametrize("offset,message", [(1, "día del horario"), (-7, "fecha de clase vigente")])
 def test_rpc_rechaza_fecha_incompatible_o_pasada(database, offset, message):
     with pytest.raises(RuntimeError, match=message):

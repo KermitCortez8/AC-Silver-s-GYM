@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, test } from 'node:test';
 import { createPinia } from 'pinia';
-import { createServer } from 'vite';
-import { fileURLToPath } from 'node:url';
+import { crearServidorSsr } from '../../soporte/servidor-ssr.js';
 
 let server;
 let useAuthStore;
@@ -106,16 +105,7 @@ test('gym configuration loads and saves data, preserving the last settings if th
 
 before(async () => {
   // Vite resuelve los imports del store sin abrir puertos ni conectar con la API.
-  server = await createServer({
-    root: fileURLToPath(new URL('../../..', import.meta.url)),
-    configFile: false,
-    server: {
-      middlewareMode: true,
-      hmr: false,
-      ws: false,
-      watch: null,
-    },
-  });
+  server = await crearServidorSsr();
 
   ({ installServices } = await server.ssrLoadModule('/src/bootstrap.js'));
   ({ useAuthStore } = await server.ssrLoadModule('/src/application/stores/authStore.js'));
@@ -766,6 +756,7 @@ test('inventory, orders, promotions and payments load only their own data', asyn
   assert.deepEqual(paths.sort(), [
     '/api/inventario',
     '/api/inventario/movimientos',
+    '/api/inventario/unidades',
   ]);
 
   paths.length = 0;
@@ -806,6 +797,7 @@ test('admin store shares its resources with inventory and orders', async () => {
   assert.deepEqual(paths.sort(), [
     '/api/clientes',
     '/api/inventario',
+    '/api/inventario/unidades',
     '/api/tienda',
     '/api/tienda/pedidos',
   ]);

@@ -1,3 +1,4 @@
+import { isUnitCategory } from '../../domain/utils/inventoryUnits.js';
 import { requireList, requireRecord } from '../services/responseValidation.js';
 /** Estado y operaciones del módulo synchronization. */
 import { normalizeBackendClientToMember, normalizeUser, normalizePlanFromBackend } from '../../domain/utils/gymRules.js';
@@ -68,7 +69,9 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
           status: i.estado || '',
           observations: i.observaciones || '',
           archived: Boolean(i.archivado),
+          byUnit: Boolean(i.prefijo_activo) && isUnitCategory(i.tipo),
         }));
+        ctx.inventoryUnits.value = requireList(await getList('/inventario/unidades'), 'id_unidad');
       }],
         ['Movimientos', ctx.refreshInventoryMovementsFromBackend]);
       tasks.push(['Productos', ctx.refreshStoreProductsFromBackend],

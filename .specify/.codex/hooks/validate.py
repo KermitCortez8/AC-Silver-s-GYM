@@ -106,6 +106,23 @@ def feature_directory(root: Path, identifier: str) -> Path:
     return directory
 
 
+def valid_skill_alias(alias: Path, expected: Path) -> bool:
+    """Comprueba symlinks y su representación de checkout Git en Windows."""
+    if not (expected / "SKILL.md").is_file():
+        return False
+    if alias.is_symlink():
+        return alias.resolve() == expected.resolve() and (alias / "SKILL.md").is_file()
+    # core.symlinks=false materializa el blob del enlace como archivo de texto.
+    # No equivale a descubrimiento nativo; solo valida su destino en el checkout.
+    if sys.platform != "win32" or not alias.is_file() or alias.stat().st_size > 512:
+        return False
+    try:
+        target = alias.read_text(encoding="utf-8").rstrip("\r\n")
+    except (OSError, UnicodeError):
+        return False
+    return target == f"../../.specify/.codex/skills/{alias.name}"
+
+
 def check_structure(root: Path) -> list[str]:
     load_settings(root)
     module_contracts(root)
@@ -125,7 +142,7 @@ def check_structure(root: Path) -> list[str]:
     for name in skills:
         alias = root / ".agents/skills" / name
         expected = base / ".codex/skills" / name
-        if not alias.is_symlink() or alias.resolve() != expected.resolve() or not (alias / "SKILL.md").is_file():
+        if not valid_skill_alias(alias, expected):
             errors.append(f"Skill no descubrible: {name}")
     return errors
 

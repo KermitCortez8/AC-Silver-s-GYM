@@ -2,12 +2,9 @@
 
 import httpx
 
+from application.errors import ProviderUnavailable
 from domain.services.agent_policy import SOCIAL_REPLIES
 from domain.services.public_gym_knowledge import PUBLIC_TOPICS
-
-
-class ProviderUnavailable(Exception):
-    pass
 
 
 class GroqAgentProvider:

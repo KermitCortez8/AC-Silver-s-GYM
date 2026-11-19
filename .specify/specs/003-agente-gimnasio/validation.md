@@ -64,4 +64,19 @@ Comprobaciones: `npm test -- --test-concurrency=1`: 373/373; `npm run build`: ap
 
 Por decisión del usuario, el mensaje público del agente admite hasta 500 caracteres. El límite se aplica en el campo, el esquema HTTP y la política de dominio; el límite de otros formularios no cambió. Antes del ajuste, el nuevo caso de 500 caracteres devolvió 422 y el campo todavía declaraba `maxlength=150`. Después, 500 caracteres devuelven 200, 501 devuelven 422 y el navegador impide añadir un carácter por encima de 500. La prueba del campo pasó en Chromium, Firefox y WebKit.
 
-Regresión posterior: backend 104/104, Playwright UI 30/30, compilación frontend aprobada y `flake8` crítico con 0 errores. No se repitieron en este ajuste las pruebas unitarias generales del frontend ni la integración de conversaciones; ambas habían pasado antes del cambio de límite. La validación documental general conserva los 11 errores previos de descubrimiento de skills.
+Regresión posterior: backend 104/104, Playwright UI 30/30, compilación frontend aprobada y `flake8` crítico con 0 errores. No se repitieron en este ajuste las pruebas unitarias generales del frontend ni la integración de conversaciones; ambas habían pasado antes del cambio de límite. La validación documental general conservaba 11 errores previos de descubrimiento de skills; se resolvieron durante la integración de `develop` descrita abajo.
+
+## Integración de `origin/develop` · 2026-11-19
+
+Se incorporó `origin/develop` en `levano/agenteAgente.v1-pruebas` sin conflictos de Git. La regla nueva de arquitectura detectó que la ruta del agente importaba infraestructura; se movió la construcción del proveedor a `presentation.dependencies` y el error compartido a `application.errors`. Dos pruebas de arquitectura se ajustaron para leer los archivos Python en UTF-8 en Windows. El SPEC y su trazabilidad se adaptaron al validador documental actualizado.
+
+| Comprobación sobre el código combinado | Resultado |
+| --- | --- |
+| `pytest tests -q -p no:cacheprovider --tb=short` | 1045 aprobadas, 61 omitidas y 2 advertencias de dependencias. Las pruebas PostgreSQL que requieren `GYM_TEST_POSTGRES_CONTAINER` quedaron omitidas. |
+| `npm test -- --test-concurrency=1` | 418 aprobadas. |
+| `npm run build` | Aprobado. |
+| `npx playwright test e2e/agent.spec.js --config node_modules/.cache/agent-playwright.config.js` | 30 aprobadas en Chromium, Firefox y WebKit. |
+| `npx playwright test --config playwright.agent-integration.config.js` | 18 aprobadas en Chromium, Firefox y WebKit con API y catálogo controlados. |
+| `python .specify/.codex/hooks/validate.py` | Documentación válida: 146 archivos y 15 contratos. |
+
+Estas cifras corresponden a la rama tras traer `develop`; no representan una ejecución de SonarQube ni una certificación de despliegue público.

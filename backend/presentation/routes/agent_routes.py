@@ -4,12 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from application.services.agent_budget import AgentBudget, RateLimitExceeded
+from application.errors import ProviderUnavailable
 from application.services.agent_service import AgentService, ConversationTopics
 from application.services.gym_service import GymService
 from domain.services.agent_policy import MAX_MESSAGE_LENGTH
-from infrastructure.config import get_settings
-from infrastructure.services.groq_agent_provider import GroqAgentProvider, ProviderUnavailable
-from presentation.dependencies import get_gym_service
+from presentation.dependencies import get_agent_provider, get_gym_service
 
 
 router = APIRouter(prefix="/agente", tags=["agente"])
@@ -23,8 +22,8 @@ class AgentRequest(BaseModel):
 
 
 @router.post("/mensajes")
-def message(payload: AgentRequest, gym: GymService = Depends(get_gym_service)):
-    service = AgentService(gym, GroqAgentProvider(get_settings().groq_api_key), _conversations, _budget)
+def message(payload: AgentRequest, gym: GymService = Depends(get_gym_service), provider=Depends(get_agent_provider)):
+    service = AgentService(gym, provider, _conversations, _budget)
     try:
         return service.respond(payload.mensaje, payload.id_conversacion)
     except ValueError as error:

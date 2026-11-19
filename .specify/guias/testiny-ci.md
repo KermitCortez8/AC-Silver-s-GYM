@@ -1,0 +1,283 @@
+# Integración continua con Testiny
+
+La integración publica únicamente después de fusionar un PR en `main`.
+Los PR y los merges a `develop` validan y conservan artefactos sin publicar.
+La publicación exige ejecutar al menos
+el **80 % del catálogo completo de casos documentados** antes de publicar sus informes
+JUnit en **Automation** del proyecto `SILVE`. La activación requiere una
+API key y dos variables de GitHub; los archivos por sí solos no habilitan envíos.
+
+## Organización de resultados
+
+| Fuente en Testiny | Pruebas recogidas | Cuándo se generan |
+| --- | --- | --- |
+| `gym-backend` | pytest: unitarias, integración, arquitectura y omisiones de PostgreSQL sin contenedor | PR a `develop`/`main` y merge a `main` |
+| `gym-frontend` | Node: unitarias, integración e interfaz | PR a `develop`/`main` y merge a `main` |
+| `gym-postgres` | Ocho suites de contratos, transacciones y concurrencia con base desechable | PR a `develop`/`main` |
+| `gym-notificaciones-deno` | Pruebas de recordatorios de la Edge Function | PR a `develop`/`main` y merge a `main` |
+| `gym-navegador` | Chromium: acceso válido/inválido, alta de inventario y salida de stock, con capturas de la misma ejecución | PR a `develop`/`main` y merge a `main`; solo el merge a `main` publica |
+| `gym-casos-documentados` | Un resultado por caso documentado. Los pendientes figuran como omitidos | Después de las suites, si se alcanza el mínimo del 80 % |
+
+En `SILVE → Automation`, abre una fuente y consulta sus carpetas
+`módulo → tipo → archivo`. En `gym-casos-documentados`, el tercer nivel es el RF.
+Los nombres de los once módulos se leen del [índice existente](../base/modulos/README.md).
+La ruta de origen asigna el módulo y el tipo de la prueba técnica. Las pruebas
+compartidas quedan en `Transversales`. Las suites específicas usan
+`Integración PostgreSQL` e `Integración Deno`.
+
+Ejemplo: `gym-backend → MOD-02 - Clientes → Unitarias → test_client_lookup`.
+Las fuentes usan identificadores técnicos `gym-...`, en minúsculas y con guiones.
+Los nombres descriptivos de módulos y tipos conservan espacios y acentos en sus
+carpetas. La validación local de las fuentes ocurre antes de iniciar los envíos.
+Las claves técnicas se conservan entre ejecuciones mientras no cambien el archivo,
+la clase o el nombre de la prueba. Mover o renombrar una prueba puede crear otra identidad.
+
+Los RF y CUS mantienen la trazabilidad documentada en los casos manuales. La
+fuente `gym-casos-documentados` añade RF, CUS, tipo, ID y enlace del caso manual
+mediante una correspondencia revisada de pasos y aserciones. Las otras fuentes
+conservan las pruebas técnicas individuales. Testiny mantiene separados los
+casos automatizados y manuales, y actualmente no ofrece su vinculación automática.
+Véase la [guía oficial de Automation](https://www.testiny.io/docs/automation/importing-results/#test-cases).
+
+El [catálogo sincronizado](../base/testiny/README.md) incluye **222 casos** y
+**179 con ejecución local verificada (80,63 %)**, incluido el TC-195 en el
+sandbox de Stripe. La corrida habitual sin Stripe sandbox acredita **178 (80,18 %)**.
+El denominador sigue siendo 222. Se deben acreditar al menos
+**178 casos ejecutados** para publicar. El cálculo exige todos los resultados
+esperados y variantes obligatorias de cada caso.
+Los fallidos se publican como fallidos y cuentan como ejecutados, no aprobados.
+
+**SG-RF23-IT01 · Pago con tarjeta reserva stock y deja el pedido pendiente hasta
+confirmar en Stripe** (TC-195) requiere una ejecución optativa con acceso a Stripe sandbox.
+Con las dependencias del frontend y Playwright instaladas, definir
+`GYM_TEST_STRIPE_CLI` con la ruta al ejecutable de Stripe CLI y cargar una clave
+`sk_test_` en el entorno del backend con `STRIPE_MODE=test`. Ejecutar desde
+`backend`:
+
+```bash
+python -m pytest tests/tienda_pedidos/integracion/test_testiny_checkout_stripe.py -q --junitxml=../.artifacts/testiny-stripe/backend.xml
+```
+
+La prueba arranca una API aislada en memoria, paga con la tarjeta del sandbox
+y recibe el webhook real. El JUnit de una suite completa optativa puede
+acreditar el caso junto con los demás resultados de backend. El job ordinario
+sin red de GitHub Actions deja el TC-195 omitido. El JUnit de una ejecución local
+se conserva como evidencia local.
+
+## Configuración inicial
+
+1. **Incorporar los cambios al repositorio.** Llevarlos por el flujo habitual
+   de PR hasta `main`. El publicador está integrado en `ci-cd.yml` y se ejecuta
+   solamente cuando el PR se cierra fusionado hacia `main`.
+
+2. **Crear la clave en Testiny.** En la organización del gimnasio, abrir
+   `Settings → API Keys` y crear una clave llamada `github-actions-gym`.
+   Seleccionar únicamente el proyecto del gimnasio (`SILVE`), activar
+   `Limit API key permissions` y elegir el rol `Automation Importer`. Copiarla
+   desde el diálogo de creación y elegir una caducidad que se pueda mantener.
+   Los permisos efectivos también dependen del usuario que crea la clave.
+   Referencia: [API keys de Testiny](https://www.testiny.io/docs/settings/api-keys/).
+
+3. **Guardar la clave en GitHub.** Abrir el repositorio
+   `KermitCortez8/AC-Silver-s-GYM`, entrar en
+   `Settings → Secrets and variables → Actions → Secrets → New repository secret`
+   y crear `TESTINY_API_KEY` con el valor copiado. La clave pertenece a GitHub
+   Secrets; no debe guardarse en código, documentación ni variables `VITE_*`.
+
+4. **Crear las variables del repositorio.** En la pestaña `Variables` de la
+   misma pantalla, añadir las dos filas siguientes. Activar `TESTINY_ENABLED`
+   después de guardar la clave.
+
+   | Nombre | Valor | Función |
+   | --- | --- | --- |
+   | `TESTINY_PROJECT` | `SILVE` | Proyecto de destino; también se admite su ID numérico. |
+   | `TESTINY_ENABLED` | `true` | Habilita el publicador. `false` lo desactiva. |
+
+5. **Comprobar una ejecución normal.** Después de un merge a `main`, abrir en
+   `Actions` el workflow `CI/CD Pipeline GYM`, job `Importar JUnit por módulo y tipo`. Sus logs deben
+   mostrar los recuentos y los identificadores de las ejecuciones importadas.
+   En Testiny, seleccionar `SILVE → Automation` y comprobar las fuentes anteriores.
+   El resumen de GitHub muestra una tabla de resultados por módulo y fuente
+   y al menos `178/222` casos documentados para publicar. `resumen.json` conserva esos recuentos
+   en el campo `modulos` de cada informe.
+   El importador crea cada fuente cuando recibe su primer informe; no hace falta
+   crear esas carpetas ni cargar un CSV a mano. Consultar el
+   [flujo oficial para GitHub Actions](https://www.testiny.io/docs/integrations/ci-cd/github-actions/).
+
+Si GitHub Actions está deshabilitado en el repositorio, habilitarlo en
+`Settings → Actions → General` y permitir las acciones utilizadas por los workflows.
+Los permisos de token necesarios ya están declarados en YAML: lectura del código
+y de los artefactos para publicar. No hace falta dar permiso de escritura general.
+
+## Comportamiento del pipeline
+
+Las suites generan `gym-junit-<suite>-<intento>` con XML, metadatos del checkout
+y huellas de los archivos de pruebas y soporte.
+Tras las pruebas del merge a `main`, el publicador descarga solamente los
+artefactos de esa ejecución e intento, valida los informes y los importa.
+También guarda `gym-testiny-normalized` con el resumen y los XML normalizados,
+`cobertura-documentada.json` y `trazabilidad-documentada.csv` (RF–CUS–TC–pruebas).
+Los artefactos de GitHub se conservan durante catorce días.
+
+Los resultados incluyen el repositorio, rama, URL de GitHub Actions, número de
+ejecución, intento y revisión exacta probada. `vc_commit` identifica el checkout
+que generó el informe; en un PR puede ser el merge provisional.
+`vc_source_commit` conserva el SHA de origen del evento. Se publica desde
+la propia ejecución de CI/CD del merge.
+
+Se publican informes disponibles aunque una prueba haya fallado. Los fallos,
+errores y omisiones conservan su estado; el job original continúa fallando.
+Una omisión de PostgreSQL en la suite general no acredita la prueba SQL; el
+resultado real está en su fuente específica cuando se ejecuta con contenedor.
+Si un job no alcanza a generar XML, no se inventan resultados para ese job.
+Sin ningún informe válido, el publicador falla y no crea una ejecución vacía.
+Con `--documented`, también falla antes de enviar si no alcanza el 80 % de casos
+completamente ejecutados o cambiaron las aserciones/soporte revisados. Se
+conserva el detalle de cobertura insuficiente en el artefacto. El catálogo es un
+snapshot versionado: debe actualizarse y revisarse cuando cambien los casos de
+Testiny. La revisión de confianza se obtiene de la rama predeterminada; un PR
+con cambios en pruebas revisadas puede requerir actualizar esa revisión allí.
+
+El job solo acepta PR cerrados y fusionados hacia `main`. No existe un disparador
+`workflow_run`: validar un PR o fusionar en `develop` no publica resultados.
+El importador se obtiene del commit fusionado y la clave solo se entrega al paso
+de publicación. Los adjuntos están habilitados únicamente para `gym-navegador`,
+con capturas PNG verificadas; las suites técnicas conservan `--no-attachments`.
+
+La publicación es independiente del despliegue existente en Vercel/Render.
+Importa los informes que generan las suites del merge, con las huellas del
+commit probado. Los recorridos usan la cuenta sintética de la API local de QA.
+
+## Revisión local sin publicar
+
+### Descripciones y capturas automáticas
+
+Todos los resultados técnicos incluyen un resumen con prueba, origen, estado y
+duración. Los casos documentados incluyen además sus pasos y resultados esperados.
+Se usa `--include-passed-details` para conservar mensajes también al aprobar.
+
+La suite [de navegador](../../.github/scripts/browser-tests/playwright.config.mjs)
+abre Chromium contra la interfaz Vue y una API FastAPI con rutas y autenticación
+reales. El repositorio se sustituye por memoria volátil con una cuenta sintética;
+Google es un doble explícito y se bloquean peticiones externas del navegador.
+No prueba Supabase, Google, Stripe o Resend productivos. No se modifica la API
+desplegada: el servidor QA solo existe en `backend/tests/soporte/browser_server.py`,
+exige activación y clave locales, y se enlaza a `127.0.0.1`.
+
+Cada recorrido guarda descripción, resultado esperado, pasos realmente ejecutados,
+capturas durante el flujo y pantalla final, incluso si falla. El manifiesto
+`browser.evidence.json` relaciona caso, estado y SHA-256 de sus imágenes con el
+JUnit. El publicador rechaza estados incoherentes, capturas ausentes o alteradas,
+rutas arbitrarias y archivos que no sean PNG. Los límites son ocho capturas por
+caso, 5 MiB por imagen, 50 MiB por informe y 200 casos visuales.
+
+Los PR guardan JUnit/capturas en `gym-junit-browser-<intento>` y las trazas de fallo
+en `gym-browser-diagnostics-<intento>`, por 14 días. No envían nada a Testiny.
+El merge a `main` vuelve a ejecutar los recorridos y publica sus propias capturas,
+en la fuente `gym-navegador`. Las trazas quedan solo en GitHub; no se publican.
+Estos recorridos también deben pasar antes de desplegar. Las imágenes no se
+reutilizan como evidencia de otras pruebas ni aumentan la cobertura documentada
+sin revisar explícitamente su correspondencia.
+
+Para ejecutar localmente, instalar las dependencias de `backend/requirements-dev.txt`
+(en Windows también `tzdata`), ejecutar `npm ci` en `frontend` y después:
+
+```bash
+cd .github/scripts/browser-tests
+npm ci
+npx playwright install chromium
+npm test
+```
+
+Se necesitan Python 3.12 y Node 22 en PATH. Los informes locales se guardan en
+`.artifacts/browser/`, ignorado por Git. En Linux, instalar dependencias de
+Chromium con `npx playwright install --with-deps chromium`, como hace CI.
+
+Preparación local de los informes visuales, sin clave ni envío:
+
+```bash
+python .github/scripts/testiny/publish.py --incoming .artifacts/browser --output .artifacts/browser-normalized
+```
+
+Las pruebas unitarias, de API o SQL no abren una pantalla. Sus resultados conservan
+su resumen técnico; únicamente los recorridos de navegador tienen capturas reales.
+
+### Descargar informes de GitHub
+
+Descargar los artefactos JUnit de un mismo intento y extraer sus XML y metadatos
+en una carpeta común fuera del repositorio, por ejemplo:
+
+```text
+incoming/
+  backend.xml
+  backend.metadata.json
+  frontend.xml
+  frontend.metadata.json
+  postgres.xml
+  postgres.metadata.json
+  schedule-emails.xml
+  schedule-emails.metadata.json
+```
+
+Solo son necesarios los archivos de las suites que se hayan ejecutado. Desde
+la raíz, con Python 3.12 o posterior:
+
+```bash
+python .github/scripts/testiny/publish.py --incoming /ruta/incoming --output /ruta/normalized --documented
+python -B -m unittest discover -s .specify/tests -p 'test_testiny*.py' -v
+```
+
+En Windows se puede sustituir `python` por `py -3.12`. El primer comando solo
+prepara XML, cobertura, CSV y `resumen.json`: no contacta a Testiny, incluso si existe una clave
+en el entorno. La publicación exige `--publish`, el evento original de GitHub,
+metadatos coherentes, la clave y el importador instalado.
+
+GitHub instala Python 3.12, Node 22 y `@testiny/cli` **1.43.1** mediante su lockfile.
+Para revisar la CLI localmente se necesita Node **22.17 o posterior**:
+
+```bash
+npm ci --prefix .github/scripts/testiny --ignore-scripts --no-audit --no-fund
+node .github/scripts/testiny/node_modules/@testiny/cli/testiny-importer.js automation --help
+```
+
+## Incidencias habituales
+
+| Síntoma | Comprobación |
+| --- | --- |
+| El publicador aparece omitido | Revisar `TESTINY_ENABLED=true`, origen del PR, conclusión y presencia del workflow en la rama predeterminada. |
+| `Falta TESTINY_API_KEY` | Crear el secret de repositorio con ese nombre exacto. |
+| Error 401/403 o proyecto inaccesible | Revisar caducidad, proyecto `SILVE`, rol de la clave y acceso del usuario que la creó. |
+| `isValidAutomationSourceName` / `API_INVALID_INPUT_DATA` en `AutomationResults.source` | Actualizar a las fuentes técnicas de esta guía. La versión inicial usó nombres con espacios que la API rechazó; no requiere cambiar la clave ni las variables. |
+| Una fuente no aparece | Revisar si su job produjo XML en el intento actual. PostgreSQL solo se ejecuta en la validación del PR. |
+| Informe vacío, duplicado o inválido | Revisar el artefacto original y el error del normalizador. No convertirlo en resultados aprobados. |
+| Cobertura documentada insuficiente | Consultar JSON/CSV del artefacto; ejecutar todas las suites del mismo intento, sin contar skips ni casos parciales. |
+| La ejecución no acredita las aserciones revisadas | Comparar los cambios con `automatizacion.json`; revisar pruebas y soporte. Artefactos antiguos requieren una nueva ejecución completa. |
+| Falla una suite | Corregir el fallo en el proyecto; publicar sus resultados no corrige ni oculta el error de CI. |
+| GitHub no muestra el log de `frontend-ci` | Consulta el XML de `gym-junit-frontend-<intento>`. El informe conserva el mensaje de cada prueba fallida. El error `ENOTEMPTY` en `node_modules/.vite/deps` se corrige usando el servidor SSR de pruebas con el optimizador del cliente deshabilitado. |
+| Se quiere detener el envío | Establecer `TESTINY_ENABLED=false`; las pruebas y los artefactos continúan funcionando. |
+
+No hay reintentos automáticos de importación. Si una publicación se interrumpe
+después de enviar alguna fuente, volver a lanzar el publicador puede crear
+ejecuciones adicionales de fuentes ya completadas. Revisar primero los logs y
+Testiny. Al repetir solo jobs fallidos del workflow de pruebas, se publican los
+informes de ese nuevo intento; para obtener todas las suites en un mismo intento,
+usar `Re-run all jobs` en el workflow de origen.
+
+## Archivos y evidencia
+
+- [Publicador de GitHub Actions](../../.github/workflows/ci-cd.yml).
+- [Validación de PR](../../.github/workflows/pr-validation.yml) y
+  [pipeline de merge y despliegue](../../.github/workflows/ci-cd.yml).
+- [Acción de pruebas Docker](../../.github/actions/test-with-report/action.yml) y
+  [conservación de informes](../../.github/actions/upload-junit/action.yml).
+- [Normalizador e importador](../../.github/scripts/testiny/publish.py),
+  [reporter de Node](../../.github/scripts/testiny/node-junit.mjs),
+  [dependencia fijada](../../.github/scripts/testiny/package.json) y
+  [lockfile](../../.github/scripts/testiny/package-lock.json).
+- [Pruebas de la integración](../tests/test_testiny_ci.py) y
+  [validación realizada](../base/validaciones/testiny-ci/validation.md).
+- [Catálogo y revisión por caso](../base/testiny/README.md) y
+  [pruebas del cálculo de cobertura](../tests/test_testiny_documented.py).
+
+Sobre la ejecución separada y su rama de confianza, consultar
+[workflow_run en GitHub](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run).

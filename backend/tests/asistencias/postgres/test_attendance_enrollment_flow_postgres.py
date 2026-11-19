@@ -148,6 +148,11 @@ def test_matricula_entrada_admin_y_salida_omitida(database, process):
     with pytest.raises(RuntimeError, match='entrada sin salida'):
         save(database, dict(id_cliente=95, id_membresia=100, servicio='gimnasio'),
              request_id='00000000-0000-0000-0000-000000000095')
+    # La RPC guarda segundos enteros; superar el límite con microsegundos no basta.
+    # Esperar al siguiente segundo completo evita registrar una salida aún inclusiva.
+    database.sql('''select pg_sleep(greatest(0, extract(epoch from
+        (date_trunc('second', limite_salida) + interval '1 second' - clock_timestamp()))))
+        from public."ASISTENCIA";''')
     closed = save(database, persisted, 1, 'salida')
     assert closed['hora_salida'] and closed['fecha_salida']
     assert closed['salida_tardia'] and closed['estado_asistencia'] == 'incompleta'

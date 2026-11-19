@@ -1,0 +1,35 @@
+{
+  "total_documentados": 222,
+  "minimo_requerido": 178,
+  "revisados": 179,
+  "ejecutados": 179,
+  "aprobados": 179,
+  "fallidos": 0,
+  "sin_ejecucion_completa": 0,
+  "pendientes_de_automatizar": 43,
+  "porcentaje_ejecutado": 80.63,
+  "fecha": "2026-11-19",
+  "modalidad": "Backend y frontend locales con Stripe sandbox optativo. Mínimo del 80 % superado en preparación local.",
+  "backend_aprobadas": 968,
+  "backend_omitidas": 60,
+  "frontend_aprobadas": 417,
+  "grupos_pruebas_revisadas": 313,
+  "pasos_revisados": 538,
+  "tipos_documentados": {
+    "Funcional": 116,
+    "Seguridad": 12,
+    "Regresión": 9,
+    "Integración": 21,
+    "Unitaria": 12,
+    "Rendimiento": 2,
+    "Compatibilidad": 1,
+    "Usabilidad": 2,
+    "Arquitectura": 2,
+    "Comprobación básica (Sanity)": 2
+  },
+  "ejecucion_habitual_sin_stripe_sandbox": {
+    "ejecutados": 178,
+    "aprobados": 178,
+    "porcentaje_ejecutado": 80.18
+  }
+}

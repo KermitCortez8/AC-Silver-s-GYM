@@ -53,7 +53,7 @@
 .plan-empty h3 { font-size: 1.15rem; font-weight: 800; }
 .plan-empty p { max-width: 360px; font-size: 0.9rem; line-height: 1.65; }
 .plan-dialog { margin: auto; max-height: 90dvh; overflow-y: auto; background: var(--ws-panel); color: var(--ws-text); border-color: var(--ws-border); }
-.plan-dialog::backdrop { background: rgb(2 6 23 / 70%); backdrop-filter: blur(4px); }
+.plan-dialog::backdrop { background: rgb(2 6 23 / 70%); }
 .field-input { width: 100%; min-width: 0; border: 1px solid var(--ws-border); border-radius: 0.85rem; background: var(--ws-inset); padding: 0.75rem 1rem; color: var(--ws-text); outline: none; }
 .field-input:focus-visible { border-color: var(--app-accent, #dc2626); outline: 2px solid var(--app-accent, #dc2626); outline-offset: 2px; }
 .field-input[aria-invalid='true'] { border-color: #e11d48; }

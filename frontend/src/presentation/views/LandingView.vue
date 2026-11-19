@@ -1,18 +1,18 @@
 <template>
   <div class="public-page landing-page min-h-screen bg-[#faf7f5] text-slate-950">
-    <header class="sticky top-0 z-40 border-b border-orange-200 bg-white/90 backdrop-blur">
+    <header class="sticky top-0 z-40 border-b border-red-200 bg-white/90 backdrop-blur">
       <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <router-link to="/" class="text-xl font-black italic tracking-tight text-orange-600">
+        <router-link to="/" class="text-xl font-black italic tracking-tight text-red-600">
           Silver Gym Surco
         </router-link>
 
         <LandingNavigation />
 
         <div class="flex items-center gap-2">
-          <router-link to="/registro" class="btn-cta rounded-full bg-orange-500 px-4 py-2 text-sm text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600">
+          <router-link to="/registro" class="btn-cta rounded-full bg-[var(--app-accent)] px-4 py-2 text-sm text-white shadow-lg shadow-red-500/20 transition hover:bg-[var(--app-accent-hover)]">
             Registrarse
           </router-link>
-          <router-link to="/login" class="btn-cta hidden rounded-full border border-orange-200 bg-transparent px-4 py-2 text-sm text-orange-700/80 transition hover:bg-orange-50 hover:text-orange-700 sm:inline-flex">
+          <router-link to="/login" class="btn-cta hidden rounded-full border border-red-200 bg-transparent px-4 py-2 text-sm text-red-700 transition hover:bg-red-50 hover:text-red-700 sm:inline-flex">
             Acceso a plataforma digital
           </router-link>
         </div>
@@ -66,19 +66,19 @@
 
         <div class="relative mx-auto flex max-w-[1600px] flex-col lg:min-h-[26rem] lg:justify-center">
           <div class="max-w-xl">
-            <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-500">
-              <span class="h-[2px] w-[18px] bg-orange-500"></span>
+            <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-red-300">
+              <span class="h-[2px] w-[18px] bg-red-300"></span>
               Gimnasio · Salud y disciplina
             </span>
             <h1 class="mt-5 text-4xl font-black leading-[1.05] text-white sm:text-5xl lg:text-[3.1rem]">
-              Entrena fuerte,<br /><span class="text-orange-500">cerca de casa.</span>
+              Entrena fuerte,<br /><span class="text-red-400">cerca de casa.</span>
             </h1>
             <p class="mt-6 max-w-[46ch] text-lg leading-8 text-white/75">
               En Silver Gym Surco ofrecemos entrenamiento funcional, musculación, cardio y clases grupales con horarios pensados para tu rutina diaria.
             </p>
 
             <div class="mt-8 flex flex-wrap gap-3">
-              <router-link to="/registro" class="btn-cta rounded-full bg-orange-500 px-6 py-3.5 text-center text-sm text-white shadow-xl shadow-orange-500/25 transition hover:-translate-y-0.5 hover:bg-orange-600">
+              <router-link to="/registro" class="btn-cta rounded-full bg-[var(--app-accent)] px-6 py-3.5 text-center text-sm text-white shadow-xl shadow-red-500/25 transition hover:-translate-y-0.5 hover:bg-[var(--app-accent-hover)]">
                 Registrarme ahora
               </router-link>
               <router-link to="/login" class="btn-cta rounded-full border border-white bg-white px-6 py-3.5 text-center text-sm text-slate-900 shadow-lg shadow-black/20 transition hover:bg-white/90">
@@ -88,7 +88,7 @@
 
             <div class="mt-10 flex flex-wrap justify-start gap-x-8 gap-y-4 divide-x divide-white/15 text-left">
               <div v-for="stat in stats" :key="stat.label" class="px-8 first:pl-0 last:pr-0">
-                <p class="text-xs font-bold uppercase tracking-[0.06em] text-orange-400">{{ stat.label }}</p>
+                <p class="text-xs font-bold uppercase tracking-[0.06em] text-red-300">{{ stat.label }}</p>
                 <p class="mt-1 text-base font-black tabular-nums text-white">{{ stat.value }}</p>
               </div>
             </div>
@@ -99,7 +99,7 @@
       <section id="servicios" class="mx-auto max-w-[1600px] px-4 pt-16 pb-8 sm:px-6 lg:px-8">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.08em] text-orange-500">Servicios</p>
+            <p class="text-xs font-black uppercase tracking-[0.08em] text-red-700">Servicios</p>
             <h2 class="mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">Todo lo que necesitas para entrenar mejor.</h2>
           </div>
           <p class="max-w-2xl text-base leading-7 text-slate-600">
@@ -108,7 +108,7 @@
         </div>
 
         <p class="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-500">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" /></svg>
           Selecciona un servicio para ver los horarios disponibles
         </p>
 
@@ -120,7 +120,7 @@
             :class="[
               'service-card group relative flex aspect-[3/4] cursor-pointer flex-col overflow-hidden rounded-2xl transition-all duration-300',
               selectedService === service.title
-                ? 'ring-2 ring-orange-500 -translate-y-1 shadow-[0_22px_50px_rgba(220,38,38,0.35)]'
+                ? 'ring-2 ring-red-500 -translate-y-1 shadow-[0_22px_50px_rgba(220,38,38,0.35)]'
                 : 'ring-1 ring-black/5 hover:-translate-y-1 hover:shadow-[0_22px_48px_rgba(220,38,38,0.20)]'
             ]"
           >
@@ -144,7 +144,7 @@
               ]"
               :style="selectedService === service.title ? { backgroundColor: '#dc2626' } : {}"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" :class="selectedService === service.title ? 'h-4 w-4 text-white' : 'h-4 w-4 text-orange-600'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" :class="selectedService === service.title ? 'h-4 w-4 text-white' : 'h-4 w-4 text-red-600'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -155,7 +155,7 @@
               <div
                 :class="[
                   'mt-1 flex items-center gap-1 text-xs font-black uppercase tracking-[0.06em] transition-colors duration-200',
-                  selectedService === service.title ? 'text-orange-400' : 'text-white/55 group-hover:text-orange-300'
+                  selectedService === service.title ? 'text-red-400' : 'text-white/55 group-hover:text-red-300'
                 ]"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,10 +169,10 @@
         <Transition name="schedule-panel">
           <div
             v-if="selectedService"
-            class="mt-6 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-[0_18px_40px_rgba(249,115,22,0.12)]"
+            class="mt-6 overflow-hidden rounded-2xl border border-red-200 bg-white shadow-[0_18px_40px_rgba(220,38,38,0.12)]"
           >
             <!-- Panel header -->
-            <div class="flex items-center justify-between bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
+            <div class="flex items-center justify-between bg-gradient-to-r from-[var(--app-accent)] to-[var(--app-accent-hover)] px-6 py-4">
               <div class="flex items-center gap-3">
                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -180,7 +180,7 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="text-xs font-bold uppercase tracking-[0.06em] text-orange-100">Horarios disponibles</p>
+                  <p class="text-xs font-bold uppercase tracking-[0.06em] text-red-100">Horarios disponibles</p>
                   <h3 class="text-xl font-black text-white">{{ selectedService }}</h3>
                 </div>
               </div>
@@ -203,10 +203,10 @@
                   <col class="w-[50%]" />
                 </colgroup>
                 <thead>
-                  <tr class="border-b border-orange-100 bg-orange-50">
-                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-orange-600">Día</th>
-                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-orange-600">Hora</th>
-                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-orange-600">Rutina</th>
+                  <tr class="border-b border-red-100 bg-red-50">
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-red-600">Día</th>
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-red-600">Hora</th>
+                    <th class="px-6 py-3 text-left text-xs font-black uppercase tracking-[0.06em] text-red-600">Rutina</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -216,11 +216,11 @@
                     :class="['sched-row border-b border-slate-50 transition-colors', index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40']"
                   >
                     <td class="px-6 py-4">
-                      <span class="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">{{ sched.dia }}</span>
+                      <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">{{ sched.dia }}</span>
                     </td>
                     <td class="px-6 py-4">
                       <span class="sched-hour flex items-center gap-1.5 whitespace-nowrap font-black text-slate-950">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="sched-icon h-3.5 w-3.5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="sched-icon h-3.5 w-3.5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         {{ sched.hora }}
@@ -228,7 +228,7 @@
                     </td>
                     <td class="px-6 py-4">
                       <div class="flex min-w-0 items-center gap-2">
-                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-xs font-black text-white">
+                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-red-600 to-red-700 text-xs font-black text-white">
                           {{ (sched.entrenador || 'I').charAt(0) }}
                         </div>
                         <span class="sched-name truncate font-semibold text-slate-700">{{ sched.entrenador }}</span>
@@ -244,8 +244,8 @@
               </table>
             </div>
 
-            <div class="border-t border-orange-100 bg-orange-50/50 px-6 py-3">
-              <p class="text-xs text-slate-500">{{ filteredSchedules.length }} sesiones semanales disponibles para <strong class="text-orange-600">{{ selectedService }}</strong></p>
+            <div class="border-t border-red-100 bg-red-50/50 px-6 py-3">
+              <p class="text-xs text-slate-500">{{ filteredSchedules.length }} sesiones semanales disponibles para <strong class="text-red-600">{{ selectedService }}</strong></p>
             </div>
           </div>
         </Transition>
@@ -255,8 +255,8 @@
         <div class="mx-auto max-w-[1600px]">
           <div class="rounded-[1.75rem] border border-white/10 bg-[#141110] p-6 text-white shadow-2xl shadow-red-950/20 lg:p-10">
             <div>
-              <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-300">
-                <span class="h-[2px] w-[18px] bg-orange-300"></span>
+              <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-red-300">
+                <span class="h-[2px] w-[18px] bg-red-300"></span>
                 Membresías
               </span>
               <h2 class="mt-3 text-3xl font-black uppercase leading-tight text-white">Elige el plan que acompañe tu ritmo.</h2>
@@ -284,12 +284,12 @@
                   </span>
                   <span
                     v-if="plan.id === '3 MESES'"
-                    class="rounded-full bg-orange-500 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.05em] text-white shadow"
+                    class="rounded-full bg-[var(--app-accent)] px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.05em] text-white shadow"
                   >
                     Más elegido
                   </span>
                 </div>
-                <p class="text-sm font-black uppercase tracking-[0.06em] text-orange-300">{{ plan.label }}</p>
+                <p class="text-sm font-black uppercase tracking-[0.06em] text-red-300">{{ plan.label }}</p>
                 <div class="flex items-baseline gap-2">
                   <span v-if="plan.hasPromo" class="text-xl font-bold line-through text-white/50 tabular-nums">
                     S/ {{ plan.originalPrice }}
@@ -304,7 +304,7 @@
                 <span
                   :class="[
                     'btn-cta mt-1 inline-flex w-fit items-center justify-center rounded-full px-4 py-2 text-xs',
-                    plan.id === '3 MESES' ? 'bg-orange-500 text-white' : 'border border-white/25 text-white'
+                    plan.id === '3 MESES' ? 'bg-[var(--app-accent)] text-white' : 'border border-white/25 text-white'
                   ]"
                 >
                   Elegir plan
@@ -321,14 +321,14 @@
       <section id="ubicacion" class="px-4 pt-8 pb-16 sm:px-6 lg:px-8">
         <div class="mx-auto grid max-w-[1600px] overflow-hidden rounded-[1.75rem] bg-[#141110] text-white shadow-2xl shadow-red-950/20 lg:grid-cols-[1fr_1.15fr]">
           <div class="flex flex-col justify-center gap-4 p-8 lg:p-10">
-            <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-300">
-              <span class="h-[2px] w-[18px] bg-orange-300"></span>
+            <span class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-red-300">
+              <span class="h-[2px] w-[18px] bg-red-300"></span>
               Ubicación
             </span>
             <h2 class="text-2xl font-black leading-tight sm:text-3xl">Ven a conocer el gym.</h2>
             <p class="text-sm leading-6 text-white/70">A pocos minutos del parque, con estacionamiento en la cuadra.</p>
             <p class="flex items-start gap-2 text-sm font-semibold text-white/90">
-              <svg class="mt-0.5 h-4 w-4 flex-none text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+              <svg class="mt-0.5 h-4 w-4 flex-none text-red-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
               {{ gymAddress }}
             </p>
             <a
@@ -363,7 +363,7 @@
           </div>
 
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.08em] text-orange-300">Explorar</p>
+            <p class="text-xs font-black uppercase tracking-[0.08em] text-red-300">Explorar</p>
             <nav class="mt-4 flex flex-col gap-2.5">
               <a href="#servicios" class="text-sm font-semibold text-white/65 transition hover:text-white">Servicios</a>
               <router-link to="/nosotros" class="text-sm font-semibold text-white/65 transition hover:text-white">Nosotros</router-link>
@@ -374,14 +374,14 @@
           </div>
 
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.08em] text-orange-300">Contacto</p>
+            <p class="text-xs font-black uppercase tracking-[0.08em] text-red-300">Contacto</p>
             <div class="mt-4 flex flex-col gap-2.5">
               <span class="flex items-start gap-2 text-sm font-semibold text-white/65">
-                <svg class="mt-0.5 h-3.5 w-3.5 flex-none text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                <svg class="mt-0.5 h-3.5 w-3.5 flex-none text-red-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
                 {{ gymAddress }}
               </span>
               <span class="flex items-center gap-2 text-sm font-semibold text-white/65">
-                <svg class="h-3.5 w-3.5 flex-none text-orange-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <svg class="h-3.5 w-3.5 flex-none text-red-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Lun a sab
               </span>
             </div>

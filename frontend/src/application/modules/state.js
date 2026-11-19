@@ -25,6 +25,9 @@ export const createGymState = () => {
 
   const inventoryMovements = ref(initialState.inventoryMovements || []);
 
+  // Unidades con N° de activo propio de equipos y accesorios (1008-MC-001).
+  const inventoryUnits = ref(initialState.inventoryUnits || []);
+
   const productos_tienda = ref(initialState.productos_tienda);
 
   // Productos eliminados (archivados) que se pueden restaurar desde la Papelera de Tienda.
@@ -82,6 +85,7 @@ export const createGymState = () => {
     attendancePasses,
     inventory,
     inventoryMovements,
+    inventoryUnits,
     productos_tienda,
     papelera_tienda,
     storeOrders,

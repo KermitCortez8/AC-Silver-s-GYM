@@ -260,7 +260,10 @@ y ejecuta Nginx como usuario `nginx` en el puerto 8080. Node y las pruebas no
 forman parte de esa imagen final.
 
 Los `.dockerignore` excluyen archivos de entorno, dependencias locales y otros
-artefactos del contexto de construcción. Los valores `VITE_*` se incorporan al
+artefactos del contexto de construcción. El backend conserva las suites bajo
+`tests/<módulo>/<tipo>/` y los dobles/fixtures de `tests/soporte/`; excluye
+`tests/**/manuales/`. Este contexto se utiliza tanto en la validación de PR como
+en el CI posterior al merge. Los valores `VITE_*` se incorporan al
 JavaScript al compilar: son configuración pública. Cambiarlos en Docker requiere
 reconstruir el frontend; las claves privadas se inyectan solo en el backend.
 
@@ -380,14 +383,21 @@ en un registro ni despliega esos contenedores en Vercel o Render.
 
 | Workflow | Disparador | Comprobaciones y resultado |
 | --- | --- | --- |
-| [pr-validation.yml](../../.github/workflows/pr-validation.yml) | PR a `develop` o `main`. | Targets Docker `test`, compilación frontend, Deno y PostgreSQL 16 desechable para contratos/concurrencia. |
-| [spec-docs.yml](../../.github/workflows/spec-docs.yml) | PR a `develop` o `main`; ejecución manual. | Validación de contexto/documentación y pruebas aisladas de Spec Driven. |
-| [ci-cd.yml](../../.github/workflows/ci-cd.yml) | PR fusionado a `main`. | Construcción/arranque/proxy con Compose, tests backend/frontend/Deno y despliegue condicionado al éxito. |
+| [pr-validation.yml](../../.github/workflows/pr-validation.yml) | PR a `develop` o `main`. | Targets Docker `test`, compilación frontend, Deno, PostgreSQL 16 desechable para contratos/concurrencia y validación documental/Spec Driven. |
+| [ci-cd.yml](../../.github/workflows/ci-cd.yml) | PR fusionado a `main`. | Validación documental, construcción/arranque/proxy con Compose, tests backend/frontend/Deno y despliegue condicionado al éxito. Publica en Testiny únicamente los resultados del merge a `main`; los PR y merges a `develop` no publican. |
 
 Los targets `test` se ejecutan con `--network none` y sin credenciales de
 producción. PostgreSQL real se valida en el job específico de PR; no forma parte
 del Compose de aplicación ni se repite como job independiente en el pipeline de
 merge. Cerrar un PR sin fusionarlo no ejecuta el pipeline de publicación.
+
+Ambos workflows añaden recorridos Chromium con Playwright mediante la acción
+[browser-tests](../../.github/actions/browser-tests/action.yml). Arrancan la
+interfaz y una API con autenticación real sobre memoria QA, sin servicios externos.
+Guardan JUnit, descripciones, PNG y trazas de fallo; solo el merge a `main` envía
+las PNG verificadas a `gym-navegador` en Testiny. Las pruebas técnicas mantienen
+sus fuentes y no reciben capturas ajenas. Los recorridos bloquean ambos
+despliegues si fallan. Véase [evidencia visual](../guias/testiny-ci.md).
 
 Tras las pruebas de merge, Vercel recupera variables de producción, compila y
 publica el resultado con su CLI. Render recibe un Deploy Hook con el mismo commit.

@@ -189,3 +189,35 @@ def test_cierre_general_y_salida_manual_concurrentes_conservan_primera_salida(da
     assert persisted['hora_salida'] == first['hora_salida']
     assert sum(e['accion'] in ('salida', 'cierre_automatico') for e in persisted['auditoria']) == 1
     assert save(database, row, 1, 'salida')['hora_salida'] == persisted['hora_salida']
+
+
+def test_nueva_entrada_reconcilia_general_vencida_y_permite_reingreso(database):
+    first = general_entry(database)
+    database.sql('''update public."ASISTENCIA" set "Fecha"=
+        ((clock_timestamp() at time zone 'America/Lima')::date-1)::text;''')
+    second = general_entry(database, '00000000-0000-0000-0000-000000000002')
+    rows = database.rows('ASISTENCIA')
+    closed = next(row for row in rows if row['id_asistencia'] == first['id_asistencia'])
+    assert closed['cierre_automatico'] and closed['estado_asistencia'] == 'incompleta'
+    assert closed['version'] == 2
+    assert sum(e['accion'] == 'cierre_automatico' for e in closed['auditoria']) == 1
+    assert second['id_asistencia'] != first['id_asistencia']
+    assert second['estado_asistencia'] == 'dentro' and not second['hora_salida']
+    assert general_entry(database)['id_asistencia'] == first['id_asistencia']
+
+
+def test_migracion_preserva_salida_real_historica_y_no_expone_rpc_auxiliar(database):
+    row = general_entry(database)
+    saved = save(database, row, 1, 'salida')
+    assert saved['estado_asistencia'] == 'completada' and not saved['cierre_automatico']
+    # Simula una visita ya cerrada antes de que existiera el plazo general.
+    database.sql('update public."ASISTENCIA" set limite_salida=null;')
+    before = database.rows('ASISTENCIA')[0]
+    for _ in range(2):
+        database.sql((MIGRATIONS / '023_general_attendance_three_hour_close.sql').read_text())
+    assert database.rows('ASISTENCIA')[0] == before
+    assert database.sql('select public.marcar_asistencias_incompletas();') == '0'
+    for role in ['anon', 'authenticated', 'service_role']:
+        with pytest.raises(RuntimeError, match='permission denied'):
+            database.sql(f'''set role {role}; select
+                public.guardar_asistencia_sin_cierre_general('{{}}',null,'{{}}');''')

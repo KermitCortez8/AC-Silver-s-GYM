@@ -1,0 +1,65 @@
+name: Conservar JUnit y revisión probada
+description: Guarda resultados y el commit exacto del checkout, incluido el merge provisional de un PR.
+inputs:
+  component:
+    required: true
+    description: Suite del informe
+  report:
+    required: true
+    description: Ruta absoluta al JUnit generado
+  evidence:
+    required: false
+    default: ''
+    description: Directorio de capturas de navegador
+  manifest:
+    required: false
+    default: ''
+    description: Manifiesto de evidencia visual
+runs:
+  using: composite
+  steps:
+    - name: Registrar la revisión y ejecución de origen
+      id: metadata
+      shell: bash
+      env:
+        REPORT_COMPONENT: ${{ inputs.component }}
+        REPORT_FILE: ${{ inputs.report }}
+      run: |
+        python3 - <<'PY'
+        import hashlib, json, os, pathlib, subprocess
+        report = pathlib.Path(os.environ['REPORT_FILE'])
+        destination = report.with_suffix('.metadata.json')
+        with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+            output.write(f'file={destination}\n')
+        if report.is_file():
+            component = os.environ['REPORT_COMPONENT']
+            test_root = {'backend': 'backend/tests', 'frontend': 'frontend/tests',
+                         'postgres': 'backend/tests', 'schedule-emails': 'supabase/tests',
+                         'browser': '.github/scripts/browser-tests'}[component]
+            sources = {path.as_posix(): hashlib.sha256(path.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+                       for path in pathlib.Path(test_root).rglob('*')
+                       if path.is_file() and path.suffix in {'.py', '.js', '.ts', '.mjs'}
+                       and 'node_modules' not in path.parts}
+            if component == 'browser':
+                fixture = pathlib.Path('backend/tests/soporte/browser_server.py')
+                sources[fixture.as_posix()] = hashlib.sha256(fixture.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+            metadata = {
+                'component': component,
+                'repository': os.environ['GITHUB_REPOSITORY'],
+                'run_id': os.environ['GITHUB_RUN_ID'],
+                'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+                'commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+                'sources': sources,
+            }
+            destination.write_text(json.dumps(metadata), encoding='utf-8')
+        PY
+    - uses: actions/upload-artifact@v4
+      with:
+        name: gym-junit-${{ inputs.component }}-${{ github.run_attempt }}
+        path: |
+          ${{ inputs.report }}
+          ${{ steps.metadata.outputs.file }}
+          ${{ inputs.evidence }}
+          ${{ inputs.manifest }}
+        if-no-files-found: warn
+        retention-days: 14

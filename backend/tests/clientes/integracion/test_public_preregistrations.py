@@ -89,6 +89,55 @@ def event(payments, checkout, kind='checkout.session.completed'):
     return payments.process_webhook({'type': kind, 'data': {'object': checkout}}, 'firma-local')
 
 
+def test_tc030_preregistro_revalida_el_plan_retirado_y_permite_elegirlo_al_restaurarlo(setup):
+    gym, _, gateway, payments, _ = setup
+    plan = gym.get_plan_membresia(1)
+    gym.upsert_plan_membresia({**plan, "activo": False})
+    with pytest.raises(ValueError, match="plan"):
+        payments.register_public(PAYLOAD)
+    assert gym.clientes_normalized() == [] and gym.membresias() == [] and gateway.created == []
+    gym.upsert_plan_membresia({**plan, "activo": True})
+    result = payments.register_public(PAYLOAD)
+    assert result["payment"]["amount"] == plan["precio"]
+    assert result["preregistro"]["estado"] == "PENDIENTE"
+    assert len(gateway.created) == 1 and gym.clientes_normalized() == []
+
+
+@pytest.mark.parametrize("changes", [
+    {"activo": False}, {"fecha_inicio": "2099-01-01", "fecha_fin": "2099-01-31"},
+    {"fecha_inicio": "2020-01-01", "fecha_fin": "2020-01-31"},
+])
+def test_tc046_no_aplica_ni_consume_una_promocion_invalida(setup, changes):
+    gym, _, gateway, payments, _ = setup
+    promo = gym.upsert_promocion({"nombre": "Oferta QA", "valor_descuento": 10,
+        "tipo_descuento": "monto", "planes_aplicables": [1], "activo": True, **changes})
+    result = payments.register_public(PAYLOAD)
+    assert result["payment"]["amount"] == gym.get_plan_membresia(1)["precio"]
+    assert payments.confirm_return(paid(gateway, result))["confirmed"] is True
+    [membership] = gym.membresias()
+    assert not membership.get("id_promocion") and membership["monto_pago"] == result["payment"]["amount"]
+    assert gym.promociones()[0]["id_promocion"] == promo["id_promocion"]
+    assert gym.promociones()[0].get("usos", 0) == 0
+
+
+def test_tc031_firma_invalida_y_fallo_temporal_no_acreditan_pago_y_reintento_si(setup):
+    gym, _, gateway, payments, notify = setup
+    result = payments.register_public(PAYLOAD)
+    sid = paid(gateway, result)
+    before = deepcopy(gym.repository.state)
+    with pytest.raises(ValueError, match="Firma"):
+        payments.process_webhook({"type": "checkout.session.completed"}, "firma-invalida")
+    gateway.fail_retrieve = True
+    with pytest.raises(RuntimeError, match="sin conexión"):
+        payments.confirm_return(sid)
+    assert gym.repository.state == before
+    notify.assert_not_called()
+    gateway.fail_retrieve = False
+    assert payments.confirm_return(sid)["confirmed"] is True
+    assert payments.confirm_return(sid)["confirmed"] is True
+    assert len(gateway.created) == len(gym.clientes_normalized()) == len(gym.membresias()) == 1
+
+
 def test_public_http_stores_only_a_private_temporary_request(setup):
     gym, _, _, payments, _ = setup
     app = FastAPI()
@@ -247,12 +296,25 @@ def test_webhook_before_checkout_attachment_and_parallel_confirmations_do_not_du
 
 def test_deleted_customer_is_not_resurrected_by_replayed_payment(setup):
     gym, clients, gateway, payments, _ = setup
+    control = {**PAYLOAD, 'correo': 'control@example.com', 'dni': '87654321'}
+    control_paid = payments.confirm_return(paid(gateway, payments.register_public(control)))
+    control_id = control_paid['id_cliente']
+    control_before = deepcopy(gym.get_cliente(control_id))
+    control_memberships = deepcopy(gym.membresias_por_cliente(control_id))
     sid = paid(gateway, payments.register_public(PAYLOAD))
     confirmed = payments.confirm_return(sid)
     clients.delete_client(f"SGCLI{confirmed['id_cliente']:03d}")
+    historical = next(row for row in gym.repository.state['preregistros'] if row['checkout_session_id'] == sid)
+    assert historical['estado'] == 'CONVERTIDO'
+    assert historical['id_cliente'] == confirmed['id_cliente']
+    assert gym.get_cliente(confirmed['id_cliente']) is None
     with pytest.raises(EntityNotFound):
         payments.confirm_return(sid)
-    assert gym.clientes_normalized() == gym.membresias() == []
+    assert gym.get_cliente_by_dni(PAYLOAD['dni']) is None
+    assert gym.authenticate_cliente_password(PAYLOAD['correo'], PAYLOAD['password']) is None
+    assert gym.membresias_por_cliente(confirmed['id_cliente']) == []
+    assert gym.get_cliente(control_id) == control_before
+    assert gym.membresias_por_cliente(control_id) == control_memberships
     # Una nueva alta tras el borrado es otro intento, sin reutilizar el comprobante antiguo.
     assert payments.register_public(PAYLOAD)['payment']['session_id'] != sid
 

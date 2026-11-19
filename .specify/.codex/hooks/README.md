@@ -19,3 +19,12 @@ se ejecuta directamente después de la revisión y registro de resultados.
 No hay un hook intermediario ni runner adicional. Son hooks del flujo Spec Kit,
 no interceptores de cada edición ni eventos nativos del runtime de Codex.
 El resultado valida documentos y trazabilidad, no sustituye las suites del producto.
+
+En Windows con `core.symlinks=false`, Git guarda los enlaces de `.agents/skills`
+como archivos de texto. El validador acepta únicamente la ruta relativa exacta
+de cada skill y exige que su `SKILL.md` exista en `.specify/.codex/skills`.
+No acepta directorios copiados ni destinos alternativos. En Linux se siguen
+exigiendo enlaces simbólicos reales. Esta compatibilidad valida el checkout;
+no convierte los archivos de texto en skills descubribles por Codex. Para ese
+descubrimiento se necesitan enlaces reales y permisos de Windows que permitan
+crearlos. Los archivos Git de los enlaces no se modifican.
