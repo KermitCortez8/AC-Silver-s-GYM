@@ -1,14 +1,17 @@
 {
   "version": 1,
   "proyecto": "SILVE",
-  "minimo_porcentaje": 50,
-  "catalogo_sha256": "2608391348842747f8bf42767f73118e6288060a14bbefa7de29214a0bef7a5a",
+  "minimo_porcentaje": 80,
+  "catalogo_sha256": "10acc1e15a72ea155b3b47d222d768573abc8272af0f73eefea06836b747efca",
   "alcance": "Automatización funcional por API/servicios/componentes con dobles externos explícitos. No es certificación E2E, accesibilidad ni producción.",
   "soporte": {
     "frontend/tests/soporte/servidor-ssr.js": "a06c5f0d5ece7b7d8ea25e7e33a80649045eb72b780294fee71aab53bdd7e2e0",
     "backend/tests/soporte/testiny_api.py": "6959efdadd58f47b46d9a6f4d2c16b3a414d43fece4bc085a205776bbf2d6d6c",
     "frontend/tests/soporte/entorno-formularios.js": "8aa6fd208c84864044be1a5e0d573d38d61d561909dab2cc29d6905ddf76ede1",
-    "frontend/tests/soporte/entorno-vistas.js": "92722dd8a6d22686075660caa096221fb417fd46794d966b15dd42659e199ef8"
+    "frontend/tests/soporte/entorno-vistas.js": "92722dd8a6d22686075660caa096221fb417fd46794d966b15dd42659e199ef8",
+    "backend/tests/soporte/tienda_checkout_stripe/api.py": "7b145d70b3d0b5cd6ec0d1093f4c8fc5045149f50f03c8a43e44c8531fc8d591",
+    "backend/tests/soporte/tienda_checkout_stripe/checkout.mjs": "1fbf905a87be252fe840d7c70a5bd370d35360f67718576335c47a68e956a3a8",
+    "backend/tests/soporte/browser_server.py": "f43eaa1d476f9ac887c00f14fa6c37f6160409631c560496948e8b121ff26345"
   },
   "pruebas": {
     "BE:asistencias/integracion/test_general_attendance.py::test_retries_do_not_duplicate_even_after_exit": {
@@ -17,7 +20,7 @@
       "clase": "tests.asistencias.integracion.test_general_attendance",
       "prueba": "test_retries_do_not_duplicate_even_after_exit",
       "minimo_variantes": 1,
-      "sha256": "3395919bfd6cee77764761626c381a5e98c2610ed3604083c224b96186af9cc5"
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
     },
     "BE:asistencias/integracion/test_general_attendance.py::test_schedule_retry_and_exit_still_work_after_class_end": {
       "componente": "backend",
@@ -25,7 +28,7 @@
       "clase": "tests.asistencias.integracion.test_general_attendance",
       "prueba": "test_schedule_retry_and_exit_still_work_after_class_end",
       "minimo_variantes": 1,
-      "sha256": "3395919bfd6cee77764761626c381a5e98c2610ed3604083c224b96186af9cc5"
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
     },
     "BE:asistencias/integracion/test_schedule_attendance.py::test_falta_de_salida_pasa_a_incompleta_sin_inventar_hora_ni_dejar_de_contar_aforo": {
       "componente": "backend",
@@ -81,7 +84,7 @@
       "clase": "tests.clientes.integracion.test_admin_client_payment",
       "prueba": "test_repeated_manual_confirmation_preserves_verified_stripe_payment",
       "minimo_variantes": 1,
-      "sha256": "de3066ffbee0f94a346869978fe6b61b4b09c1bf8f6f9c707c7ef854ed57afca"
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
     },
     "BE:clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment": {
       "componente": "backend",
@@ -89,7 +92,7 @@
       "clase": "tests.clientes.integracion.test_public_preregistrations",
       "prueba": "test_confirmation_rejects_unrelated_or_altered_payment",
       "minimo_variantes": 7,
-      "sha256": "09001666162e21a7430dade4c3b53f28ccc2e26a27a19a058f03c325a7bff238"
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
     },
     "BE:clientes/integracion/test_public_preregistrations.py::test_public_http_stores_only_a_private_temporary_request": {
       "componente": "backend",
@@ -97,7 +100,7 @@
       "clase": "tests.clientes.integracion.test_public_preregistrations",
       "prueba": "test_public_http_stores_only_a_private_temporary_request",
       "minimo_variantes": 1,
-      "sha256": "09001666162e21a7430dade4c3b53f28ccc2e26a27a19a058f03c325a7bff238"
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
     },
     "BE:clientes/integracion/test_public_preregistrations.py::test_verified_webhook_creates_paid_client_once_without_browser_return": {
       "componente": "backend",
@@ -105,7 +108,7 @@
       "clase": "tests.clientes.integracion.test_public_preregistrations",
       "prueba": "test_verified_webhook_creates_paid_client_once_without_browser_return",
       "minimo_variantes": 1,
-      "sha256": "09001666162e21a7430dade4c3b53f28ccc2e26a27a19a058f03c325a7bff238"
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
     },
     "BE:clientes/integracion/test_public_preregistrations.py::test_webhook_before_checkout_attachment_and_parallel_confirmations_do_not_duplicate": {
       "componente": "backend",
@@ -113,7 +116,7 @@
       "clase": "tests.clientes.integracion.test_public_preregistrations",
       "prueba": "test_webhook_before_checkout_attachment_and_parallel_confirmations_do_not_duplicate",
       "minimo_variantes": 1,
-      "sha256": "09001666162e21a7430dade4c3b53f28ccc2e26a27a19a058f03c325a7bff238"
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
     },
     "BE:horarios_matriculas/integracion/test_schedule_enrollment.py::test_client_can_only_cancel_own_enrollment": {
       "componente": "backend",
@@ -145,7 +148,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_cupos",
       "prueba": "test_tc135_limite_de_capacidad_compara_maximo_por_fecha",
       "minimo_variantes": 1,
-      "sha256": "d626918b2591923addb014dcd73a533af855a3e98184c87e5d7d8e2ae21c0d6b"
+      "sha256": "58da182aae4d2842f91cf7e80116d4f4177850bf929848b2ab2d907cba91156e"
     },
     "BE:identidad_acceso/integracion/test_testiny_cuentas.py::test_tc159_nueva_sesion_resuelve_rol_guardado_y_respuesta_no_expone_hash": {
       "componente": "backend",
@@ -353,7 +356,7 @@
       "clase": "tests.membresias_pagos.integracion.test_admin_membership_renewal",
       "prueba": "test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase",
       "minimo_variantes": 1,
-      "sha256": "4bbd0b0e6a7ec669fc9c8385f0f69b78b034cf87f8150debe173677eeed23e12"
+      "sha256": "a23526c2558b4dc07a86c6108869221f011a8a364fc4226d774d7e2e10001703"
     },
     "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction": {
       "componente": "backend",
@@ -361,7 +364,7 @@
       "clase": "tests.membresias_pagos.integracion.test_admin_membership_renewal",
       "prueba": "test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction",
       "minimo_variantes": 5,
-      "sha256": "4bbd0b0e6a7ec669fc9c8385f0f69b78b034cf87f8150debe173677eeed23e12"
+      "sha256": "a23526c2558b4dc07a86c6108869221f011a8a364fc4226d774d7e2e10001703"
     },
     "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_cash_requires_receipt_confirmation_and_current_price_without_partial_writes": {
       "componente": "backend",
@@ -369,7 +372,7 @@
       "clase": "tests.membresias_pagos.integracion.test_admin_membership_renewal",
       "prueba": "test_cash_requires_receipt_confirmation_and_current_price_without_partial_writes",
       "minimo_variantes": 1,
-      "sha256": "4bbd0b0e6a7ec669fc9c8385f0f69b78b034cf87f8150debe173677eeed23e12"
+      "sha256": "a23526c2558b4dc07a86c6108869221f011a8a364fc4226d774d7e2e10001703"
     },
     "BE:membresias_pagos/integracion/test_membership_expiration.py::test_access_includes_last_day_and_expiration_preserves_payment_history": {
       "componente": "backend",
@@ -1345,7 +1348,7 @@
       "clase": "tests/rutinas_progreso/interfaz/testiny-documentados.test.js",
       "prueba": "TC-110: supervisión vacía muestra el estado sin matrículas pendientes",
       "minimo_variantes": 1,
-      "sha256": "f3f883477b886badd166afea7afcf3778a60df5bc5db48d8c328fce26a28f3ea"
+      "sha256": "18e574831e6b5bbed6b5e16994cbb6eb5b1f524add72d35457152ff8d20a53a5"
     },
     "FE:rutinas_progreso/interfaz/testiny-documentados.test.js::TC-111: error de supervisión es visible y reintentar recupera la consulta": {
       "componente": "frontend",
@@ -1353,7 +1356,7 @@
       "clase": "tests/rutinas_progreso/interfaz/testiny-documentados.test.js",
       "prueba": "TC-111: error de supervisión es visible y reintentar recupera la consulta",
       "minimo_variantes": 1,
-      "sha256": "f3f883477b886badd166afea7afcf3778a60df5bc5db48d8c328fce26a28f3ea"
+      "sha256": "18e574831e6b5bbed6b5e16994cbb6eb5b1f524add72d35457152ff8d20a53a5"
     },
     "FE:rutinas_progreso/interfaz/testiny-documentados.test.js::TC-121: una búsqueda inexistente elimina la ficha anterior y permite corregir el DNI": {
       "componente": "frontend",
@@ -1361,7 +1364,7 @@
       "clase": "tests/rutinas_progreso/interfaz/testiny-documentados.test.js",
       "prueba": "TC-121: una búsqueda inexistente elimina la ficha anterior y permite corregir el DNI",
       "minimo_variantes": 1,
-      "sha256": "f3f883477b886badd166afea7afcf3778a60df5bc5db48d8c328fce26a28f3ea"
+      "sha256": "18e574831e6b5bbed6b5e16994cbb6eb5b1f524add72d35457152ff8d20a53a5"
     },
     "FE:rutinas_progreso/interfaz/testiny-documentados.test.js::TC-122: cliente sin matrículas conserva identidad y no muestra rutinas ajenas": {
       "componente": "frontend",
@@ -1369,7 +1372,7 @@
       "clase": "tests/rutinas_progreso/interfaz/testiny-documentados.test.js",
       "prueba": "TC-122: cliente sin matrículas conserva identidad y no muestra rutinas ajenas",
       "minimo_variantes": 1,
-      "sha256": "f3f883477b886badd166afea7afcf3778a60df5bc5db48d8c328fce26a28f3ea"
+      "sha256": "18e574831e6b5bbed6b5e16994cbb6eb5b1f524add72d35457152ff8d20a53a5"
     },
     "FE:tienda_pedidos/interfaz/formularios.test.js::la papelera conserva su pestaña y las acciones de restaurar y eliminar": {
       "componente": "frontend",
@@ -1546,9 +1549,1126 @@
       "prueba": "users finish loading while a previous section still has pending requests",
       "minimo_variantes": 1,
       "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_entry_requires_active_account_and_known_dni",
+      "minimo_variantes": 1,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_entry_requires_current_paid_membership",
+      "minimo_variantes": 4,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_general_corrections_and_annulment_remain_audited",
+      "minimo_variantes": 1,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "clase": "tests.asistencias.integracion.test_schedule_attendance",
+      "prueba": "test_aviso_cruzado_incluye_margen_de_treinta_minutos",
+      "minimo_variantes": 8,
+      "sha256": "6a0dea204ffaed0468cb8b4de49976dd76ff74242d71a4c3ad45f2d80447d30c"
+    },
+    "BE:asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "clase": "tests.asistencias.integracion.test_schedule_attendance",
+      "prueba": "test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin",
+      "minimo_variantes": 4,
+      "sha256": "6a0dea204ffaed0468cb8b4de49976dd76ff74242d71a4c3ad45f2d80447d30c"
+    },
+    "BE:asistencias/integracion/test_schedule_attendance.py::test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "clase": "tests.asistencias.integracion.test_schedule_attendance",
+      "prueba": "test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual",
+      "minimo_variantes": 1,
+      "sha256": "6a0dea204ffaed0468cb8b4de49976dd76ff74242d71a4c3ad45f2d80447d30c"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_stripe_failure_keeps_registration_available_for_retry": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_stripe_failure_keeps_registration_available_for_retry",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc033_activacion_y_cobros_invalidos_no_dejan_cambios": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc033_activacion_y_cobros_invalidos_no_dejan_cambios",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc034_activacion_protege_fechas_y_pago": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc034_activacion_protege_fechas_y_pago",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_public_preregistrations.py::test_deleted_customer_is_not_resurrected_by_replayed_payment": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "clase": "tests.clientes.integracion.test_public_preregistrations",
+      "prueba": "test_deleted_customer_is_not_resurrected_by_replayed_payment",
+      "minimo_variantes": 1,
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
+    },
+    "BE:clientes/integracion/test_public_preregistrations.py::test_expiration_archives_request_and_releases_promo_once_then_allows_new_attempt": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "clase": "tests.clientes.integracion.test_public_preregistrations",
+      "prueba": "test_expiration_archives_request_and_releases_promo_once_then_allows_new_attempt",
+      "minimo_variantes": 1,
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
+    },
+    "BE:clientes/integracion/test_public_preregistrations.py::test_periodic_reconciliation_expires_open_session_before_archiving": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "clase": "tests.clientes.integracion.test_public_preregistrations",
+      "prueba": "test_periodic_reconciliation_expires_open_session_before_archiving",
+      "minimo_variantes": 1,
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
+    },
+    "BE:clientes/integracion/test_public_preregistrations.py::test_periodic_reconciliation_preserves_uncertain_payment_and_confirms_late_paid_session": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "clase": "tests.clientes.integracion.test_public_preregistrations",
+      "prueba": "test_periodic_reconciliation_preserves_uncertain_payment_and_confirms_late_paid_session",
+      "minimo_variantes": 1,
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
+    },
+    "BE:horarios_matriculas/integracion/test_schedule_enrollment.py::test_enrollment_requires_atomic_rpc_before_writing": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_schedule_enrollment.py",
+      "clase": "tests.horarios_matriculas.integracion.test_schedule_enrollment.SupabaseScheduleCompatibilityTests",
+      "prueba": "test_enrollment_requires_atomic_rpc_before_writing",
+      "minimo_variantes": 1,
+      "sha256": "78d8bbb3b56541a200d9daddfc9890810740521180ddc7a474407b2f6b17c216"
+    },
+    "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc056_modificar_horario_conserva_sesiones_y_cupos": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_testiny_horarios.py",
+      "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
+      "prueba": "test_tc056_modificar_horario_conserva_sesiones_y_cupos",
+      "minimo_variantes": 1,
+      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+    },
+    "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc058_rechaza_horas_y_permite_corregir": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_testiny_horarios.py",
+      "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
+      "prueba": "test_tc058_rechaza_horas_y_permite_corregir",
+      "minimo_variantes": 5,
+      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+    },
+    "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc059_no_guarda_cupos_invalidos_y_acepta_enteros": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_testiny_horarios.py",
+      "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
+      "prueba": "test_tc059_no_guarda_cupos_invalidos_y_acepta_enteros",
+      "minimo_variantes": 4,
+      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+    },
+    "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc060_valida_rutina_y_dia_y_permite_coincidencias": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_testiny_horarios.py",
+      "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
+      "prueba": "test_tc060_valida_rutina_y_dia_y_permite_coincidencias",
+      "minimo_variantes": 4,
+      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_alta_de_equipo_crea_una_unidad_por_stock_inicial": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_alta_de_equipo_crea_una_unidad_por_stock_inicial",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_altas_y_entradas_anotan_en_mov_inv_los_codigos_creados": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_altas_y_entradas_anotan_en_mov_inv_los_codigos_creados",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_articulo_que_pasa_a_equipo_recibe_codigos_para_su_stock": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_articulo_que_pasa_a_equipo_recibe_codigos_para_su_stock",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_articulos_que_no_son_equipo_no_tienen_unidades": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_articulos_que_no_son_equipo_no_tienen_unidades",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_editar_unidad_valida_estado_y_bajas": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_editar_unidad_valida_estado_y_bajas",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_entrada_continua_el_correlativo": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_entrada_continua_el_correlativo",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_equipos_con_unidades_no_admiten_ajustes_ni_cambios_de_cantidad": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_equipos_con_unidades_no_admiten_ajustes_ni_cambios_de_cantidad",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_estado_del_articulo_resume_el_de_sus_unidades": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_estado_del_articulo_resume_el_de_sus_unidades",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_operar_desde_tienda_no_borra_el_stock_de_los_equipos": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_operar_desde_tienda_no_borra_el_stock_de_los_equipos",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_prefijo_usa_las_iniciales_de_las_palabras_significativas": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_prefijo_usa_las_iniciales_de_las_palabras_significativas",
+      "minimo_variantes": 6,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_renombrar_no_cambia_el_prefijo_ni_los_codigos": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_renombrar_no_cambia_el_prefijo_ni_los_codigos",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_salida_da_de_baja_las_unidades_elegidas_y_conserva_su_historial": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_salida_da_de_baja_las_unidades_elegidas_y_conserva_su_historial",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_salida_rechaza_unidades_invalidas": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_salida_rechaza_unidades_invalidas",
+      "minimo_variantes": 4,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:inventario/integracion/test_inventario_unidades.py::test_solo_equipos_y_accesorios_se_controlan_por_unidad": {
+      "componente": "backend",
+      "archivo": "backend/tests/inventario/integracion/test_inventario_unidades.py",
+      "clase": "tests.inventario.integracion.test_inventario_unidades",
+      "prueba": "test_solo_equipos_y_accesorios_se_controlan_por_unidad",
+      "minimo_variantes": 1,
+      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+    },
+    "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window": {
+      "componente": "backend",
+      "archivo": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "clase": "tests.membresias_pagos.integracion.test_admin_membership_renewal",
+      "prueba": "test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window",
+      "minimo_variantes": 1,
+      "sha256": "a23526c2558b4dc07a86c6108869221f011a8a364fc4226d774d7e2e10001703"
+    },
+    "BE:notificaciones/integracion/test_resend_email.py::test_schedule_cancelled_before_sending_when_enrollment_changes": {
+      "componente": "backend",
+      "archivo": "backend/tests/notificaciones/integracion/test_resend_email.py",
+      "clase": "tests.notificaciones.integracion.test_resend_email",
+      "prueba": "test_schedule_cancelled_before_sending_when_enrollment_changes",
+      "minimo_variantes": 1,
+      "sha256": "7ffb5c32457ea4ad464be6da9a6881ae5f2656f1126bd7bb123bc5453a0673d2"
+    },
+    "BE:notificaciones/integracion/test_schedule_calendar.py::test_enrollment_email_indica_una_sesion_con_su_fecha": {
+      "componente": "backend",
+      "archivo": "backend/tests/notificaciones/integracion/test_schedule_calendar.py",
+      "clase": "tests.notificaciones.integracion.test_schedule_calendar",
+      "prueba": "test_enrollment_email_indica_una_sesion_con_su_fecha",
+      "minimo_variantes": 1,
+      "sha256": "9a8a70f65b144decc2632c5add23f302ee2260339b73e049014b26116eadde06"
+    },
+    "BE:notificaciones/integracion/test_schedule_calendar.py::test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month": {
+      "componente": "backend",
+      "archivo": "backend/tests/notificaciones/integracion/test_schedule_calendar.py",
+      "clase": "tests.notificaciones.integracion.test_schedule_calendar",
+      "prueba": "test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month",
+      "minimo_variantes": 1,
+      "sha256": "9a8a70f65b144decc2632c5add23f302ee2260339b73e049014b26116eadde06"
+    },
+    "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc040_un_plan_vinculado_se_puede_desactivar_pero_no_borrar": {
+      "componente": "backend",
+      "archivo": "backend/tests/planes_promociones/integracion/test_testiny_planes.py",
+      "clase": "tests.planes_promociones.integracion.test_testiny_planes",
+      "prueba": "test_tc040_un_plan_vinculado_se_puede_desactivar_pero_no_borrar",
+      "minimo_variantes": 2,
+      "sha256": "773cba9859936b583de0e5ae95b08eb5142f15dd2d126e278c9ae29e12816e82"
+    },
+    "BE:planes_promociones/unitarias/test_promocion_cupos.py::test_promocion_limite_cupos_exhaustion": {
+      "componente": "backend",
+      "archivo": "backend/tests/planes_promociones/unitarias/test_promocion_cupos.py",
+      "clase": "tests.planes_promociones.unitarias.test_promocion_cupos",
+      "prueba": "test_promocion_limite_cupos_exhaustion",
+      "minimo_variantes": 1,
+      "sha256": "cc85cd02567caf4634c545ebabcef7d61cae4b1b5b6a1ae39a0c893c7c57686e"
+    },
+    "BE:transversales/integracion/test_module_error_control.py::test_domain_errors_keep_their_status_across_routes": {
+      "componente": "backend",
+      "archivo": "backend/tests/transversales/integracion/test_module_error_control.py",
+      "clase": "tests.transversales.integracion.test_module_error_control",
+      "prueba": "test_domain_errors_keep_their_status_across_routes",
+      "minimo_variantes": 15,
+      "sha256": "c2679d1f8c325abb3ca06bc8fa3a0f5e0aa842e9ea07ffbdbdc9a665bbf24f33"
+    },
+    "FE:asistencias/interfaz/flujos.test.js::asistencia separa fechas del mismo horario y descarta respuestas de otra semana": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "clase": "tests/asistencias/interfaz/flujos.test.js",
+      "prueba": "asistencia separa fechas del mismo horario y descarta respuestas de otra semana",
+      "minimo_variantes": 1,
+      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+    },
+    "FE:asistencias/interfaz/flujos.test.js::la lista descarta respuestas de otro horario y al desmontar": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "clase": "tests/asistencias/interfaz/flujos.test.js",
+      "prueba": "la lista descarta respuestas de otro horario y al desmontar",
+      "minimo_variantes": 1,
+      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+    },
+    "FE:asistencias/interfaz/flujos.test.js::un DNI incompleto no consulta y un DNI desconocido limpia la ficha anterior": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "clase": "tests/asistencias/interfaz/flujos.test.js",
+      "prueba": "un DNI incompleto no consulta y un DNI desconocido limpia la ficha anterior",
+      "minimo_variantes": 1,
+      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+    },
+    "FE:clientes/interfaz/client-catalog.test.js::carga fallida permite reintentar sin perder el borrador ni registrar con precios locales": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "clase": "tests/clientes/interfaz/client-catalog.test.js",
+      "prueba": "carga fallida permite reintentar sin perder el borrador ni registrar con precios locales",
+      "minimo_variantes": 1,
+      "sha256": "822315abe3a1be38d1388aca5acfe6ea2f0f4ef0647bf160dda8c02b90808ea9"
+    },
+    "FE:clientes/interfaz/client-directory.test.js::buscar por DNI abre la ficha correcta y limpiar recupera todo el directorio": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-directory.test.js",
+      "clase": "tests/clientes/interfaz/client-directory.test.js",
+      "prueba": "buscar por DNI abre la ficha correcta y limpiar recupera todo el directorio",
+      "minimo_variantes": 1,
+      "sha256": "0a9a246ad13503e689086081779e4b703b7180ce664efed6710a7c95a5336e41"
+    },
+    "FE:clientes/interfaz/client-directory.test.js::buscar por correo o código interno encuentra la ficha y permite limpiar": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-directory.test.js",
+      "clase": "tests/clientes/interfaz/client-directory.test.js",
+      "prueba": "buscar por correo o código interno encuentra la ficha y permite limpiar",
+      "minimo_variantes": 1,
+      "sha256": "0a9a246ad13503e689086081779e4b703b7180ce664efed6710a7c95a5336e41"
+    },
+    "FE:clientes/interfaz/client-directory.test.js::buscar por nombre completo o fragmento mantiene la identidad de la ficha elegida": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-directory.test.js",
+      "clase": "tests/clientes/interfaz/client-directory.test.js",
+      "prueba": "buscar por nombre completo o fragmento mantiene la identidad de la ficha elegida",
+      "minimo_variantes": 1,
+      "sha256": "0a9a246ad13503e689086081779e4b703b7180ce664efed6710a7c95a5336e41"
+    },
+    "FE:clientes/interfaz/client-directory.test.js::el buscador acepta texto libre, lo recorta a 30 caracteres y reinicia la página al limpiar": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-directory.test.js",
+      "clase": "tests/clientes/interfaz/client-directory.test.js",
+      "prueba": "el buscador acepta texto libre, lo recorta a 30 caracteres y reinicia la página al limpiar",
+      "minimo_variantes": 1,
+      "sha256": "0a9a246ad13503e689086081779e4b703b7180ce664efed6710a7c95a5336e41"
+    },
+    "FE:clientes/interfaz/client-directory.test.js::la búsqueda sin coincidencias informa el vacío y se recupera sin perder clientes": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-directory.test.js",
+      "clase": "tests/clientes/interfaz/client-directory.test.js",
+      "prueba": "la búsqueda sin coincidencias informa el vacío y se recupera sin perder clientes",
+      "minimo_variantes": 1,
+      "sha256": "0a9a246ad13503e689086081779e4b703b7180ce664efed6710a7c95a5336e41"
+    },
+    "FE:rutinas_progreso/interfaz/flujos.test.js::one rest timer supports pause, resume, completion and disposal without leaked intervals": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/rutinas_progreso/interfaz/flujos.test.js",
+      "clase": "tests/rutinas_progreso/interfaz/flujos.test.js",
+      "prueba": "one rest timer supports pause, resume, completion and disposal without leaked intervals",
+      "minimo_variantes": 1,
+      "sha256": "dfdf9c51f86d8fc1cc23335c771844aeac538bf4c5190c17cc9e79c1f992af52"
+    },
+    "FE:transversales/integracion/http-error-control.test.js::a write with stalled confirmation keeps the uncertain outcome and is not retried": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/transversales/integracion/http-error-control.test.js",
+      "clase": "tests/transversales/integracion/http-error-control.test.js",
+      "prueba": "a write with stalled confirmation keeps the uncertain outcome and is not retried",
+      "minimo_variantes": 1,
+      "sha256": "575bcd5e7e3cab6db474d9d740009963ac1ae8ce91aa1b8b10329a903904f6ad"
+    },
+    "FE:transversales/interfaz/table-pagination-views.test.js::ambas vistas renderizan el paginador con el campo de filas por página": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/transversales/interfaz/table-pagination-views.test.js",
+      "clase": "tests/transversales/interfaz/table-pagination-views.test.js",
+      "prueba": "ambas vistas renderizan el paginador con el campo de filas por página",
+      "minimo_variantes": 1,
+      "sha256": "07fc37137a2f6d31bb607ead36eea50214b29d931ef7e7786bd7d7b12f80b1a8"
+    },
+    "FE:transversales/interfaz/table-pagination-views.test.js::inventario muestra solo las filas escritas y la última página trae el resto": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/transversales/interfaz/table-pagination-views.test.js",
+      "clase": "tests/transversales/interfaz/table-pagination-views.test.js",
+      "prueba": "inventario muestra solo las filas escritas y la última página trae el resto",
+      "minimo_variantes": 1,
+      "sha256": "07fc37137a2f6d31bb607ead36eea50214b29d931ef7e7786bd7d7b12f80b1a8"
+    },
+    "FE:transversales/interfaz/table-pagination-views.test.js::tienda muestra solo las filas escritas y la última página trae el resto": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/transversales/interfaz/table-pagination-views.test.js",
+      "clase": "tests/transversales/interfaz/table-pagination-views.test.js",
+      "prueba": "tienda muestra solo las filas escritas y la última página trae el resto",
+      "minimo_variantes": 1,
+      "sha256": "07fc37137a2f6d31bb607ead36eea50214b29d931ef7e7786bd7d7b12f80b1a8"
+    },
+    "FE:clientes/interfaz/client-directory.test.js::el directorio permite reconocer y recuperar resultados sin recorrer páginas": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-directory.test.js",
+      "clase": "tests/clientes/interfaz/client-directory.test.js",
+      "prueba": "el directorio permite reconocer y recuperar resultados sin recorrer páginas",
+      "minimo_variantes": 1,
+      "sha256": "0a9a246ad13503e689086081779e4b703b7180ce664efed6710a7c95a5336e41"
+    },
+    "FE:clientes/interfaz/client-flow-control.test.js::el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "clase": "tests/clientes/interfaz/client-flow-control.test.js",
+      "prueba": "el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez",
+      "minimo_variantes": 1,
+      "sha256": "a3f031af16027a6527c584c6626d5029a8e86337550330c0a112e970e9c5a2bf"
+    },
+    "BE:tienda_pedidos/integracion/test_testiny_checkout_stripe.py::test_tc195_checkout_stripe_reserva_stock_confirma_pago_y_restaura_carrito": {
+      "componente": "backend",
+      "archivo": "backend/tests/tienda_pedidos/integracion/test_testiny_checkout_stripe.py",
+      "clase": "tests.tienda_pedidos.integracion.test_testiny_checkout_stripe",
+      "prueba": "test_tc195_checkout_stripe_reserva_stock_confirma_pago_y_restaura_carrito",
+      "minimo_variantes": 1,
+      "sha256": "cce6898ec84c75f4856e7741797ba6d659557b52257528bab82adf06d7a48676"
+    },
+    "FE:identidad_acceso/interfaz/login-testiny.test.js::TC-003: el acceso vacío se valida en el formulario y permite corregirlo": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/identidad_acceso/interfaz/login-testiny.test.js",
+      "clase": "tests/identidad_acceso/interfaz/login-testiny.test.js",
+      "prueba": "TC-003: el acceso vacío se valida en el formulario y permite corregirlo",
+      "minimo_variantes": 1,
+      "sha256": "c1a02be97601349d31440fd1ada71e0422cda6ee71ae851bdc8cad5aa49483fd"
+    },
+    "FE:identidad_acceso/interfaz/login-testiny.test.js::TC-186: inicio y acceso muestran los puntos de entrada públicos": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/identidad_acceso/interfaz/login-testiny.test.js",
+      "clase": "tests/identidad_acceso/interfaz/login-testiny.test.js",
+      "prueba": "TC-186: inicio y acceso muestran los puntos de entrada públicos",
+      "minimo_variantes": 1,
+      "sha256": "c1a02be97601349d31440fd1ada71e0422cda6ee71ae851bdc8cad5aa49483fd"
+    },
+    "FE:identidad_acceso/interfaz/directorio-testiny.test.js::TC-006: alta interna valida sus campos y confirma un único usuario con un solo rol": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/identidad_acceso/interfaz/directorio-testiny.test.js",
+      "clase": "tests/identidad_acceso/interfaz/directorio-testiny.test.js",
+      "prueba": "TC-006: alta interna valida sus campos y confirma un único usuario con un solo rol",
+      "minimo_variantes": 1,
+      "sha256": "92324cb4c0653d5a4072513f4c8dde572c5fbbe57da4cdde3f97e3125b87b73e"
+    },
+    "FE:identidad_acceso/interfaz/directorio-testiny.test.js::TC-008 y TC-009: cancelar descarta el borrador y la confirmación sin escribir": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/identidad_acceso/interfaz/directorio-testiny.test.js",
+      "clase": "tests/identidad_acceso/interfaz/directorio-testiny.test.js",
+      "prueba": "TC-008 y TC-009: cancelar descarta el borrador y la confirmación sin escribir",
+      "minimo_variantes": 1,
+      "sha256": "92324cb4c0653d5a4072513f4c8dde572c5fbbe57da4cdde3f97e3125b87b73e"
+    },
+    "FE:clientes/interfaz/editor-testiny.test.js::TC-013 y TC-014: el alta usa nombre completo y conserva el original ante DNI duplicado": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/editor-testiny.test.js",
+      "clase": "tests/clientes/interfaz/editor-testiny.test.js",
+      "prueba": "TC-013 y TC-014: el alta usa nombre completo y conserva el original ante DNI duplicado",
+      "minimo_variantes": 1,
+      "sha256": "45566fdff3da28ceb9dd48c55086cfac83f499d494b69110442b7806dcf25a57"
+    },
+    "FE:clientes/interfaz/editor-testiny.test.js::TC-015: validación y fallo de guardado permiten reintentar con el borrador": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/editor-testiny.test.js",
+      "clase": "tests/clientes/interfaz/editor-testiny.test.js",
+      "prueba": "TC-015: validación y fallo de guardado permiten reintentar con el borrador",
+      "minimo_variantes": 1,
+      "sha256": "45566fdff3da28ceb9dd48c55086cfac83f499d494b69110442b7806dcf25a57"
+    },
+    "FE:clientes/interfaz/editor-testiny.test.js::TC-016, TC-017 y TC-021: la ficha corresponde al cliente consultado y cancelar abandona solo el borrador": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/editor-testiny.test.js",
+      "clase": "tests/clientes/interfaz/editor-testiny.test.js",
+      "prueba": "TC-016, TC-017 y TC-021: la ficha corresponde al cliente consultado y cancelar abandona solo el borrador",
+      "minimo_variantes": 1,
+      "sha256": "45566fdff3da28ceb9dd48c55086cfac83f499d494b69110442b7806dcf25a57"
+    },
+    "FE:clientes/interfaz/formularios.test.js::extracted client dialogs render their real form and membership details": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/formularios.test.js",
+      "clase": "tests/clientes/interfaz/formularios.test.js",
+      "prueba": "extracted client dialogs render their real form and membership details",
+      "minimo_variantes": 1,
+      "sha256": "bc93adaa9015be66df33e266d4afd6d89a77d24575e174a05ea04c80629b43ca"
+    },
+    "FE:clientes/interfaz/formularios.test.js::client editor and membership actions preserve the actual view flow after extraction": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/formularios.test.js",
+      "clase": "tests/clientes/interfaz/formularios.test.js",
+      "prueba": "client editor and membership actions preserve the actual view flow after extraction",
+      "minimo_variantes": 1,
+      "sha256": "bc93adaa9015be66df33e266d4afd6d89a77d24575e174a05ea04c80629b43ca"
+    },
+    "FE:clientes/interfaz/client-flow-control.test.js::pago manual bloquea clics repetidos y publica la ficha guardada": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "clase": "tests/clientes/interfaz/client-flow-control.test.js",
+      "prueba": "pago manual bloquea clics repetidos y publica la ficha guardada",
+      "minimo_variantes": 1,
+      "sha256": "a3f031af16027a6527c584c6626d5029a8e86337550330c0a112e970e9c5a2bf"
+    },
+    "FE:clientes/interfaz/client-flow-control.test.js::activar sincroniza los detalles y cierra la confirmación": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-flow-control.test.js",
+      "clase": "tests/clientes/interfaz/client-flow-control.test.js",
+      "prueba": "activar sincroniza los detalles y cierra la confirmación",
+      "minimo_variantes": 1,
+      "sha256": "a3f031af16027a6527c584c6626d5029a8e86337550330c0a112e970e9c5a2bf"
+    },
+    "FE:clientes/interfaz/client-catalog.test.js::registro público no inventa planes cuando el catálogo está vacío o falla": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "clase": "tests/clientes/interfaz/client-catalog.test.js",
+      "prueba": "registro público no inventa planes cuando el catálogo está vacío o falla",
+      "minimo_variantes": 1,
+      "sha256": "822315abe3a1be38d1388aca5acfe6ea2f0f4ef0647bf160dda8c02b90808ea9"
+    },
+    "FE:clientes/interfaz/client-catalog.test.js::registro público calcula descuentos remotos y descarta promociones futuras, agotadas o ajenas": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/clientes/interfaz/client-catalog.test.js",
+      "clase": "tests/clientes/interfaz/client-catalog.test.js",
+      "prueba": "registro público calcula descuentos remotos y descarta promociones futuras, agotadas o ajenas",
+      "minimo_variantes": 1,
+      "sha256": "822315abe3a1be38d1388aca5acfe6ea2f0f4ef0647bf160dda8c02b90808ea9"
+    },
+    "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-036: filtros muestran datos del plan elegido y el catálogo vacío es explícito": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/planes_promociones/interfaz/catalogo-testiny.test.js",
+      "clase": "tests/planes_promociones/interfaz/catalogo-testiny.test.js",
+      "prueba": "TC-036: filtros muestran datos del plan elegido y el catálogo vacío es explícito",
+      "minimo_variantes": 1,
+      "sha256": "4a586c3c38f859f40c69f4c3a7bc101f8cca427e0c96af21d4432af1b9df635f"
+    },
+    "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-035 y TC-039: formulario rechaza variantes inválidas, admite cero y recupera un fallo al guardar": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/planes_promociones/interfaz/catalogo-testiny.test.js",
+      "clase": "tests/planes_promociones/interfaz/catalogo-testiny.test.js",
+      "prueba": "TC-035 y TC-039: formulario rechaza variantes inválidas, admite cero y recupera un fallo al guardar",
+      "minimo_variantes": 1,
+      "sha256": "4a586c3c38f859f40c69f4c3a7bc101f8cca427e0c96af21d4432af1b9df635f"
+    },
+    "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-037 y TC-038: cancelar edición o borrado conserva los planes": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/planes_promociones/interfaz/catalogo-testiny.test.js",
+      "clase": "tests/planes_promociones/interfaz/catalogo-testiny.test.js",
+      "prueba": "TC-037 y TC-038: cancelar edición o borrado conserva los planes",
+      "minimo_variantes": 1,
+      "sha256": "4a586c3c38f859f40c69f4c3a7bc101f8cca427e0c96af21d4432af1b9df635f"
+    },
+    "FE:membresias_pagos/interfaz/admin-membership-renewal.test.js::revisar detalles no cobra y efectivo exige confirmación de recibo": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "clase": "tests/membresias_pagos/interfaz/admin-membership-renewal.test.js",
+      "prueba": "revisar detalles no cobra y efectivo exige confirmación de recibo",
+      "minimo_variantes": 1,
+      "sha256": "15190c4952263cfc2dede6c9f7e6441138b398e37946b83e23c3593315da8418"
+    },
+    "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-054: el editor nuevo filtra rutinas por servicio y conserva el código del día": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
+      "clase": "tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
+      "prueba": "TC-054: el editor nuevo filtra rutinas por servicio y conserva el código del día",
+      "minimo_variantes": 1,
+      "sha256": "ea1bcf7a18a08434039e5d7cac6b17f51677722157ca055f162e26d367b73571"
+    },
+    "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-055: los filtros y la semana cambian lo visible sin escribir cupos": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
+      "clase": "tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
+      "prueba": "TC-055: los filtros y la semana cambian lo visible sin escribir cupos",
+      "minimo_variantes": 1,
+      "sha256": "ea1bcf7a18a08434039e5d7cac6b17f51677722157ca055f162e26d367b73571"
+    },
+    "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-057: cancelar la confirmación conserva el horario sin llamar al borrado": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
+      "clase": "tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
+      "prueba": "TC-057: cancelar la confirmación conserva el horario sin llamar al borrado",
+      "minimo_variantes": 1,
+      "sha256": "ea1bcf7a18a08434039e5d7cac6b17f51677722157ca055f162e26d367b73571"
+    },
+    "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-062: una clase llena deshabilita la acción y otra semana tiene cupo propio": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
+      "clase": "tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
+      "prueba": "TC-062: una clase llena deshabilita la acción y otra semana tiene cupo propio",
+      "minimo_variantes": 1,
+      "sha256": "ea1bcf7a18a08434039e5d7cac6b17f51677722157ca055f162e26d367b73571"
+    },
+    "FE:asistencias/interfaz/flujos.test.js::el calendario de asistencia filtra por día y selecciona la lista por id del horario": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "clase": "tests/asistencias/interfaz/flujos.test.js",
+      "prueba": "el calendario de asistencia filtra por día y selecciona la lista por id del horario",
+      "minimo_variantes": 1,
+      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+    },
+    "FE:asistencias/interfaz/flujos.test.js::registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "clase": "tests/asistencias/interfaz/flujos.test.js",
+      "prueba": "registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso",
+      "minimo_variantes": 1,
+      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+    },
+    "FE:asistencias/interfaz/flujos.test.js::attendance prevents duplicate writes and preserves the last summary when refresh fails": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/asistencias/interfaz/flujos.test.js",
+      "clase": "tests/asistencias/interfaz/flujos.test.js",
+      "prueba": "attendance prevents duplicate writes and preserves the last summary when refresh fails",
+      "minimo_variantes": 1,
+      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+    },
+    "FE:tienda_pedidos/interfaz/testiny-documentados.test.js::TC-104: carrito vacío no ofrece procesar compra y la pasarela no inventa productos": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/tienda_pedidos/interfaz/testiny-documentados.test.js",
+      "clase": "tests/tienda_pedidos/interfaz/testiny-documentados.test.js",
+      "prueba": "TC-104: carrito vacío no ofrece procesar compra y la pasarela no inventa productos",
+      "minimo_variantes": 1,
+      "sha256": "c49b5c465d3c04b8b48d46fc275e4a493743e1840b90c18bc1fcb1021aec7a49"
+    },
+    "FE:rutinas_progreso/interfaz/testiny-documentados.test.js::TC-119: una matrícula sin rutinas compatibles informa el motivo y no intenta guardar": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/rutinas_progreso/interfaz/testiny-documentados.test.js",
+      "clase": "tests/rutinas_progreso/interfaz/testiny-documentados.test.js",
+      "prueba": "TC-119: una matrícula sin rutinas compatibles informa el motivo y no intenta guardar",
+      "minimo_variantes": 1,
+      "sha256": "18e574831e6b5bbed6b5e16994cbb6eb5b1f524add72d35457152ff8d20a53a5"
+    },
+    "BE:transversales/integracion/test_browser_server.py::test_tc003_credenciales_invalidas_no_crean_sesion_y_se_puede_reintentar": {
+      "componente": "backend",
+      "archivo": "backend/tests/transversales/integracion/test_browser_server.py",
+      "clase": "tests.transversales.integracion.test_browser_server",
+      "prueba": "test_tc003_credenciales_invalidas_no_crean_sesion_y_se_puede_reintentar",
+      "minimo_variantes": 1,
+      "sha256": "ab9d000247c06dd7f377d245768fc648b8ae13ba9ad3801eecbea5f10d8d9c6f"
+    },
+    "BE:transversales/integracion/test_browser_server.py::test_tc006_tc007_alta_y_consulta_separan_personal_de_clientes": {
+      "componente": "backend",
+      "archivo": "backend/tests/transversales/integracion/test_browser_server.py",
+      "clase": "tests.transversales.integracion.test_browser_server",
+      "prueba": "test_tc006_tc007_alta_y_consulta_separan_personal_de_clientes",
+      "minimo_variantes": 1,
+      "sha256": "ab9d000247c06dd7f377d245768fc648b8ae13ba9ad3801eecbea5f10d8d9c6f"
+    },
+    "BE:transversales/integracion/test_browser_server.py::test_tc005_tc008_el_rol_guardado_gobierna_la_sesion_y_conserva_la_clave": {
+      "componente": "backend",
+      "archivo": "backend/tests/transversales/integracion/test_browser_server.py",
+      "clase": "tests.transversales.integracion.test_browser_server",
+      "prueba": "test_tc005_tc008_el_rol_guardado_gobierna_la_sesion_y_conserva_la_clave",
+      "minimo_variantes": 1,
+      "sha256": "ab9d000247c06dd7f377d245768fc648b8ae13ba9ad3801eecbea5f10d8d9c6f"
+    },
+    "BE:transversales/integracion/test_browser_server.py::test_tc009_borrar_personal_revoca_tambien_el_token_previo": {
+      "componente": "backend",
+      "archivo": "backend/tests/transversales/integracion/test_browser_server.py",
+      "clase": "tests.transversales.integracion.test_browser_server",
+      "prueba": "test_tc009_borrar_personal_revoca_tambien_el_token_previo",
+      "minimo_variantes": 1,
+      "sha256": "ab9d000247c06dd7f377d245768fc648b8ae13ba9ad3801eecbea5f10d8d9c6f"
+    },
+    "BE:transversales/integracion/test_browser_server.py::test_tc126_token_invalido_no_entrega_ni_modifica_datos": {
+      "componente": "backend",
+      "archivo": "backend/tests/transversales/integracion/test_browser_server.py",
+      "clase": "tests.transversales.integracion.test_browser_server",
+      "prueba": "test_tc126_token_invalido_no_entrega_ni_modifica_datos",
+      "minimo_variantes": 2,
+      "sha256": "ab9d000247c06dd7f377d245768fc648b8ae13ba9ad3801eecbea5f10d8d9c6f"
+    },
+    "BE:transversales/integracion/test_browser_server.py::test_tc186_backend_qa_saludable_y_catalogo_publico_de_solo_lectura": {
+      "componente": "backend",
+      "archivo": "backend/tests/transversales/integracion/test_browser_server.py",
+      "clase": "tests.transversales.integracion.test_browser_server",
+      "prueba": "test_tc186_backend_qa_saludable_y_catalogo_publico_de_solo_lectura",
+      "minimo_variantes": 1,
+      "sha256": "ab9d000247c06dd7f377d245768fc648b8ae13ba9ad3801eecbea5f10d8d9c6f"
+    },
+    "BE:transversales/integracion/test_review_regressions.py::test_disabled_account_is_denied_by_login_and_protected_http_routes": {
+      "componente": "backend",
+      "archivo": "backend/tests/transversales/integracion/test_review_regressions.py",
+      "clase": "tests.transversales.integracion.test_review_regressions",
+      "prueba": "test_disabled_account_is_denied_by_login_and_protected_http_routes",
+      "minimo_variantes": 1,
+      "sha256": "92f12e0b49b00a9998ac4930f3931fcd33ffbd0a435c81d02123b4942792db67"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc013_tc014_el_alta_persiste_identidad_e_importe_y_rechaza_dni_duplicado": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc013_tc014_el_alta_persiste_identidad_e_importe_y_rechaza_dni_duplicado",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc015_alta_invalida_no_escribe_y_permite_corregir": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc015_alta_invalida_no_escribe_y_permite_corregir",
+      "minimo_variantes": 6,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc016_tc017_consulta_y_edicion_conservan_historial_e_identidad": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc016_tc017_consulta_y_edicion_conservan_historial_e_identidad",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc021_edicion_invalida_preserva_ambos_clientes": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc021_edicion_invalida_preserva_ambos_clientes",
+      "minimo_variantes": 4,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc020_referencia_ajena_al_directorio_no_abre_ni_modifica_otro_cliente": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc020_referencia_ajena_al_directorio_no_abre_ni_modifica_otro_cliente",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_admin_client_payment.py::test_tc046_el_registro_admin_rechaza_promocion_inactiva_sin_consumirla": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_admin_client_payment.py",
+      "clase": "tests.clientes.integracion.test_admin_client_payment",
+      "prueba": "test_tc046_el_registro_admin_rechaza_promocion_inactiva_sin_consumirla",
+      "minimo_variantes": 1,
+      "sha256": "e1927b77589f451cd3ac4047e3af4050b1ea818dbc1f5653ba48c3c7b21699c4"
+    },
+    "BE:clientes/integracion/test_public_preregistrations.py::test_tc030_preregistro_revalida_el_plan_retirado_y_permite_elegirlo_al_restaurarlo": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "clase": "tests.clientes.integracion.test_public_preregistrations",
+      "prueba": "test_tc030_preregistro_revalida_el_plan_retirado_y_permite_elegirlo_al_restaurarlo",
+      "minimo_variantes": 1,
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
+    },
+    "BE:clientes/integracion/test_public_preregistrations.py::test_tc046_no_aplica_ni_consume_una_promocion_invalida": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "clase": "tests.clientes.integracion.test_public_preregistrations",
+      "prueba": "test_tc046_no_aplica_ni_consume_una_promocion_invalida",
+      "minimo_variantes": 3,
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
+    },
+    "BE:clientes/integracion/test_public_preregistrations.py::test_tc031_firma_invalida_y_fallo_temporal_no_acreditan_pago_y_reintento_si": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "clase": "tests.clientes.integracion.test_public_preregistrations",
+      "prueba": "test_tc031_firma_invalida_y_fallo_temporal_no_acreditan_pago_y_reintento_si",
+      "minimo_variantes": 1,
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
+    },
+    "BE:clientes/integracion/test_public_preregistrations.py::test_unpaid_complete_session_neither_creates_client_nor_expires_processing_payment": {
+      "componente": "backend",
+      "archivo": "backend/tests/clientes/integracion/test_public_preregistrations.py",
+      "clase": "tests.clientes.integracion.test_public_preregistrations",
+      "prueba": "test_unpaid_complete_session_neither_creates_client_nor_expires_processing_payment",
+      "minimo_variantes": 1,
+      "sha256": "d1db9ac79cce7f9453ce6995b4a293f407ad1c542e386022fc06b48a5894199e"
+    },
+    "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc035_duracion_guardada_y_precio_cero_en_catalogo": {
+      "componente": "backend",
+      "archivo": "backend/tests/planes_promociones/integracion/test_testiny_planes.py",
+      "clase": "tests.planes_promociones.integracion.test_testiny_planes",
+      "prueba": "test_tc035_duracion_guardada_y_precio_cero_en_catalogo",
+      "minimo_variantes": 3,
+      "sha256": "773cba9859936b583de0e5ae95b08eb5142f15dd2d126e278c9ae29e12816e82"
+    },
+    "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc036_tc037_editar_catalogo_no_recalcula_importe_previo": {
+      "componente": "backend",
+      "archivo": "backend/tests/planes_promociones/integracion/test_testiny_planes.py",
+      "clase": "tests.planes_promociones.integracion.test_testiny_planes",
+      "prueba": "test_tc036_tc037_editar_catalogo_no_recalcula_importe_previo",
+      "minimo_variantes": 1,
+      "sha256": "773cba9859936b583de0e5ae95b08eb5142f15dd2d126e278c9ae29e12816e82"
+    },
+    "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc038_eliminar_plan_no_utilizado_preserva_otros": {
+      "componente": "backend",
+      "archivo": "backend/tests/planes_promociones/integracion/test_testiny_planes.py",
+      "clase": "tests.planes_promociones.integracion.test_testiny_planes",
+      "prueba": "test_tc038_eliminar_plan_no_utilizado_preserva_otros",
+      "minimo_variantes": 1,
+      "sha256": "773cba9859936b583de0e5ae95b08eb5142f15dd2d126e278c9ae29e12816e82"
+    },
+    "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_stripe_reuses_pending_checkout_and_returns_to_admin": {
+      "componente": "backend",
+      "archivo": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "clase": "tests.membresias_pagos.integracion.test_admin_membership_renewal",
+      "prueba": "test_admin_stripe_reuses_pending_checkout_and_returns_to_admin",
+      "minimo_variantes": 1,
+      "sha256": "a23526c2558b4dc07a86c6108869221f011a8a364fc4226d774d7e2e10001703"
+    },
+    "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_staff_can_renew_long_expired_membership_without_email_token_or_stripe_config": {
+      "componente": "backend",
+      "archivo": "backend/tests/membresias_pagos/integracion/test_admin_membership_renewal.py",
+      "clase": "tests.membresias_pagos.integracion.test_admin_membership_renewal",
+      "prueba": "test_staff_can_renew_long_expired_membership_without_email_token_or_stripe_config",
+      "minimo_variantes": 1,
+      "sha256": "a23526c2558b4dc07a86c6108869221f011a8a364fc4226d774d7e2e10001703"
+    },
+    "BE:membresias_pagos/integracion/test_membership_states.py::test_new_membership_stays_in_progress_until_paid_and_activated": {
+      "componente": "backend",
+      "archivo": "backend/tests/membresias_pagos/integracion/test_membership_states.py",
+      "clase": "tests.membresias_pagos.integracion.test_membership_states",
+      "prueba": "test_new_membership_stays_in_progress_until_paid_and_activated",
+      "minimo_variantes": 1,
+      "sha256": "062862a91e6b32aa48b36ad2861ccbfa67b3b9ad300e7dc00dbc7c7c6559a488"
+    },
+    "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc054_horario_guardado_es_consultable_y_tiene_cupos_consistentes": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_testiny_horarios.py",
+      "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
+      "prueba": "test_tc054_horario_guardado_es_consultable_y_tiene_cupos_consistentes",
+      "minimo_variantes": 2,
+      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+    },
+    "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc057_borrar_horario_libre_y_pausar_el_reservado": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_testiny_horarios.py",
+      "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
+      "prueba": "test_tc057_borrar_horario_libre_y_pausar_el_reservado",
+      "minimo_variantes": 1,
+      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+    },
+    "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc062_cupo_lleno_rechaza_una_fecha_y_deja_reservar_otra": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_testiny_horarios.py",
+      "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
+      "prueba": "test_tc062_cupo_lleno_rechaza_una_fecha_y_deja_reservar_otra",
+      "minimo_variantes": 1,
+      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+    },
+    "BE:horarios_matriculas/integracion/test_testiny_cupos.py::test_tc051_tc052_capacidad_valida_se_aplica_al_aforo_y_rechaza_valores_invalidos": {
+      "componente": "backend",
+      "archivo": "backend/tests/horarios_matriculas/integracion/test_testiny_cupos.py",
+      "clase": "tests.horarios_matriculas.integracion.test_testiny_cupos",
+      "prueba": "test_tc051_tc052_capacidad_valida_se_aplica_al_aforo_y_rechaza_valores_invalidos",
+      "minimo_variantes": 4,
+      "sha256": "58da182aae4d2842f91cf7e80116d4f4177850bf929848b2ab2d907cba91156e"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_tc064_ingreso_salida_en_limite_y_reingreso_real": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_tc064_ingreso_salida_en_limite_y_reingreso_real",
+      "minimo_variantes": 1,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_tc065_entrada_y_salida_de_clase_conservan_fecha_y_limite": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_tc065_entrada_y_salida_de_clase_conservan_fecha_y_limite",
+      "minimo_variantes": 1,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_tc068_solo_permite_entrada_en_fecha_de_matricula_y_dentro_del_bloque": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_tc068_solo_permite_entrada_en_fecha_de_matricula_y_dentro_del_bloque",
+      "minimo_variantes": 5,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_tc068_staff_y_cliente_no_pueden_marcar_entrada_o_salida": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_tc068_staff_y_cliente_no_pueden_marcar_entrada_o_salida",
+      "minimo_variantes": 2,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_capacity_is_shared_by_general_and_schedule_entries": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_capacity_is_shared_by_general_and_schedule_entries",
+      "minimo_variantes": 1,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida",
+      "minimo_variantes": 2,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
+    },
+    "BE:asistencias/integracion/test_schedule_attendance.py::test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_schedule_attendance.py",
+      "clase": "tests.asistencias.integracion.test_schedule_attendance",
+      "prueba": "test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario",
+      "minimo_variantes": 1,
+      "sha256": "6a0dea204ffaed0468cb8b4de49976dd76ff74242d71a4c3ad45f2d80447d30c"
+    },
+    "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc104_carrito_vacio_rechaza_pedido_y_checkout_sin_guardar": {
+      "componente": "backend",
+      "archivo": "backend/tests/tienda_pedidos/integracion/test_testiny_tienda.py",
+      "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
+      "prueba": "test_tc104_carrito_vacio_rechaza_pedido_y_checkout_sin_guardar",
+      "minimo_variantes": 1,
+      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+    },
+    "FE:asistencias/interfaz/historial-testiny.test.js::TC-072: el historial vacío deshabilita exportar y limpiar restaura la primera página": {
+      "componente": "frontend",
+      "archivo": "frontend/tests/asistencias/interfaz/historial-testiny.test.js",
+      "clase": "tests/asistencias/interfaz/historial-testiny.test.js",
+      "prueba": "TC-072: el historial vacío deshabilita exportar y limpiar restaura la primera página",
+      "minimo_variantes": 1,
+      "sha256": "bafad0c5f1bf89c94f212fc672ac34ee8394f9f361e34b9b02681f76401eeb8b"
+    },
+    "BE:asistencias/integracion/test_general_attendance.py::test_tc072_filtro_vacio_y_referencia_ausente_conservan_historial": {
+      "componente": "backend",
+      "archivo": "backend/tests/asistencias/integracion/test_general_attendance.py",
+      "clase": "tests.asistencias.integracion.test_general_attendance",
+      "prueba": "test_tc072_filtro_vacio_y_referencia_ausente_conservan_historial",
+      "minimo_variantes": 1,
+      "sha256": "8f00c9891cf25c53920dafde8c8f4d0810459507e8c816083c6a5f14cd6c4716"
     }
   },
   "casos": [
+    {
+      "id": 3,
+      "huella": "5d849d16418af443daa793a7a4bbcd96641115b6e15e17d28b14da09a8b0c19c",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:identidad_acceso/interfaz/login-testiny.test.js::TC-003: el acceso vacío se valida en el formulario y permite corregirlo"
+          ],
+          "verificacion": "El formulario exige correo y contraseña y vuelve a habilitar el envío."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc003_credenciales_invalidas_no_crean_sesion_y_se_puede_reintentar"
+          ],
+          "verificacion": "La API rechaza contraseña equivocada y correo inexistente. No devuelve token y el perfil protegido sigue inaccesible."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc003_credenciales_invalidas_no_crean_sesion_y_se_puede_reintentar"
+          ],
+          "verificacion": "La misma API acepta las credenciales correctas después de los rechazos y devuelve el perfil QA autorizado."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "huella": "c02e539fbd21f476751c8ddba29d71fa1ac26176f1002bce832f85f4d702154c",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:transversales/integracion/test_review_regressions.py::test_disabled_account_is_denied_by_login_and_protected_http_routes"
+          ],
+          "verificacion": "Una cuenta interna deshabilitada recibe rechazo en el acceso por contraseña y con su token anterior."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:membresias_pagos/integracion/test_membership_expiration.py::test_active_flag_alone_does_not_allow_missing_unpaid_or_future_membership",
+            "BE:membresias_pagos/integracion/test_membership_expiration.py::test_access_includes_last_day_and_expiration_preserves_payment_history"
+          ],
+          "verificacion": "Compara membresías faltantes, impagas, sin activación, futuras y vencidas. El acceso solo se conserva hasta el último día de la vigencia."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc005_tc008_el_rol_guardado_gobierna_la_sesion_y_conserva_la_clave"
+          ],
+          "verificacion": "Una sesión habilitada de entrenador conserva su rol y la API rechaza el directorio administrativo con 403."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "huella": "323a8fa9693e754491d066cdbd03d6c992865480591ecb08c86e5b17609bd58c",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:identidad_acceso/interfaz/directorio-testiny.test.js::TC-006: alta interna valida sus campos y confirma un único usuario con un solo rol"
+          ],
+          "verificacion": "Abre el formulario interno, comprueba su validación y envía un solo valor de rol."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:identidad_acceso/interfaz/directorio-testiny.test.js::TC-006: alta interna valida sus campos y confirma un único usuario con un solo rol",
+            "BE:transversales/integracion/test_browser_server.py::test_tc006_tc007_alta_y_consulta_separan_personal_de_clientes"
+          ],
+          "verificacion": "Verifica que el doble clic emite un solo alta y que la API guarda una única identidad con los datos del personal."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc006_tc007_alta_y_consulta_separan_personal_de_clientes"
+          ],
+          "verificacion": "Reconsulta los usuarios, autentica la identidad creada y compara el directorio de clientes con el previo."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "huella": "f98f9520f9060c4f06b4e8ff23e33a019574b2463a7996a2947e09ac88d57262",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc005_tc008_el_rol_guardado_gobierna_la_sesion_y_conserva_la_clave"
+          ],
+          "verificacion": "Actualiza nombre y rol como admin y comprueba la fila persistida."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc005_tc008_el_rol_guardado_gobierna_la_sesion_y_conserva_la_clave"
+          ],
+          "verificacion": "La nueva sesión y la sesión anterior resuelven el rol guardado en el servidor."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:identidad_acceso/interfaz/directorio-testiny.test.js::TC-008 y TC-009: cancelar descarta el borrador y la confirmación sin escribir"
+          ],
+          "verificacion": "Cancelar el borrador descarta nombre y rol cambiados sin ejecutar escritura."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc005_tc008_el_rol_guardado_gobierna_la_sesion_y_conserva_la_clave"
+          ],
+          "verificacion": "Envía una contraseña vacía, inicia sesión con la clave original y comprueba que el hash no figura en la respuesta."
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "huella": "1ab595da5847addad8d998b0564e0f98f9f39ae71d60821a03b03d290df1c30b",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:identidad_acceso/interfaz/directorio-testiny.test.js::TC-008 y TC-009: cancelar descarta el borrador y la confirmación sin escribir"
+          ],
+          "verificacion": "Rechazar la confirmación impide llamar al borrado y conserva al usuario."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc009_borrar_personal_revoca_tambien_el_token_previo"
+          ],
+          "verificacion": "La API de borrado devuelve 204 y el usuario desaparece del listado."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc009_borrar_personal_revoca_tambien_el_token_previo"
+          ],
+          "verificacion": "Luego del borrado, rechaza las credenciales y deniega el token que antes accedía al directorio."
+        }
+      ]
+    },
     {
       "id": 10,
       "huella": "65da80e58d4093c393391ca06b774f4e2ec48d5d0de51c9b949c933be4a68100",
@@ -1604,6 +2724,765 @@
           "pruebas": [
             "BE:transversales/integracion/test_testiny_reglas.py::test_tc011_solo_admin_staff_gestionan_usuarios"
           ]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "huella": "2bba8c5c992c164ede74ed5ad50024e7b4b40a496f9f75f998d7fa015c285bc6",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-013 y TC-014: el alta usa nombre completo y conserva el original ante DNI duplicado"
+          ],
+          "verificacion": "El diálogo usa un campo de nombre con ejemplo de nombre y apellido y permite enviar sus datos asociados."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc013_tc014_el_alta_persiste_identidad_e_importe_y_rechaza_dni_duplicado"
+          ],
+          "verificacion": "La respuesta y la membresía confirman origen ADMIN, importe 79 y estado EN_TRAMITE con pago pendiente."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por DNI abre la ficha correcta y limpiar recupera todo el directorio",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc013_tc014_el_alta_persiste_identidad_e_importe_y_rechaza_dni_duplicado"
+          ],
+          "verificacion": "Busca el DNI en la vista y vuelve a leer la API para verificar identidad e importe únicos."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-013 y TC-014: el alta usa nombre completo y conserva el original ante DNI duplicado"
+          ],
+          "verificacion": "Cancela el intento inicial sin otra escritura y envía el DNI corregido en el nuevo alta."
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "huella": "c5a613ad86fdd0460b757ac7b9b0739e4b76568c4d65bcf9b4fee3c79dc00c3c",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-013 y TC-014: el alta usa nombre completo y conserva el original ante DNI duplicado"
+          ],
+          "verificacion": "Envía un registro nuevo con DNI ocupado sin incluir un identificador de edición."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-013 y TC-014: el alta usa nombre completo y conserva el original ante DNI duplicado",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc013_tc014_el_alta_persiste_identidad_e_importe_y_rechaza_dni_duplicado"
+          ],
+          "verificacion": "Se muestra el error y dos envíos a la API rechazan el DNI duplicado sin alterar el estado."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc013_tc014_el_alta_persiste_identidad_e_importe_y_rechaza_dni_duplicado"
+          ],
+          "verificacion": "Una sola identidad conserva el nombre, el DNI y el importe originales al recargar."
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "huella": "b382e7c841700543256ce04483e6564eda358adb172a55df6897618f95008293",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-015: validación y fallo de guardado permiten reintentar con el borrador",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc015_alta_invalida_no_escribe_y_permite_corregir"
+          ],
+          "verificacion": "La vista valida sin escribir y seis variantes inválidas de la API dejan el estado de negocio intacto."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc015_alta_invalida_no_escribe_y_permite_corregir"
+          ],
+          "verificacion": "Repetir el envío válido crea una única relación cliente y membresía."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-015: validación y fallo de guardado permiten reintentar con el borrador"
+          ],
+          "verificacion": "La vista conserva el error y el borrador ante un fallo, sin publicar éxito, y cierra al guardar correctamente."
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "huella": "206260c3d8096bdc3bb02d9c1f6504c50be6be0034f08d5525806196febb78fe",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-016, TC-017 y TC-021: la ficha corresponde al cliente consultado y cancelar abandona solo el borrador",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc016_tc017_consulta_y_edicion_conservan_historial_e_identidad"
+          ],
+          "verificacion": "Vista y relectura muestran nombre, DNI, teléfono, correo, plan y estados de membresía y pago."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-016, TC-017 y TC-021: la ficha corresponde al cliente consultado y cancelar abandona solo el borrador",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc016_tc017_consulta_y_edicion_conservan_historial_e_identidad"
+          ],
+          "verificacion": "Abre el detalle del socio elegido y compara el historial de su membresía y pago."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-016, TC-017 y TC-021: la ficha corresponde al cliente consultado y cancelar abandona solo el borrador",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc016_tc017_consulta_y_edicion_conservan_historial_e_identidad"
+          ],
+          "verificacion": "Cierra el detalle y verifica que consultar deja los datos de negocio intactos."
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "huella": "9a98b2e1d6e7bfb2560793165545a71068dc5e580ac17fe9e6342595fd2306fd",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/formularios.test.js::client editor and membership actions preserve the actual view flow after extraction",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc016_tc017_consulta_y_edicion_conservan_historial_e_identidad",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc021_edicion_invalida_preserva_ambos_clientes"
+          ],
+          "verificacion": "El editor envía la misma identidad. El servidor guarda la actualización válida y rechaza duplicados o formatos erróneos."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc016_tc017_consulta_y_edicion_conservan_historial_e_identidad"
+          ],
+          "verificacion": "Relee la identidad y los datos corregidos, y conserva el historial de membresía y los IDs de cobro."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-016, TC-017 y TC-021: la ficha corresponde al cliente consultado y cancelar abandona solo el borrador"
+          ],
+          "verificacion": "Cancela y reabre el editor con nombre y DNI originales."
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "huella": "571f30cab6afd57606817823948c9735162885cfb25e0aec8255db6bd5b9989a",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/formularios.test.js::extracted client dialogs render their real form and membership details",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso"
+          ],
+          "verificacion": "La acción visible es Activar Membresía y el registro ya tiene el pago confirmado."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso",
+            "FE:clientes/interfaz/client-flow-control.test.js::activar sincroniza los detalles y cierra la confirmación"
+          ],
+          "verificacion": "Verifica las fechas fijadas en Perú, la membresía activa y la ficha sincronizada."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso"
+          ],
+          "verificacion": "Un segundo envío conserva fechas y referencia del pago."
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "huella": "d9f31909fd442c6b98337e77d5afa16ad463a471e25305216c3114307b5a8fa9",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::la búsqueda sin coincidencias informa el vacío y se recupera sin perder clientes"
+          ],
+          "verificacion": "Una búsqueda sin coincidencias deja cero resultados y muestra el estado vacío."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc020_referencia_ajena_al_directorio_no_abre_ni_modifica_otro_cliente"
+          ],
+          "verificacion": "Una referencia inexistente no resuelve una ficha ni permite modificar otro cliente."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::la búsqueda sin coincidencias informa el vacío y se recupera sin perder clientes",
+            "FE:clientes/interfaz/client-directory.test.js::buscar por DNI abre la ficha correcta y limpiar recupera todo el directorio"
+          ],
+          "verificacion": "El directorio recupera la ficha válida y permite limpiar la búsqueda."
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "huella": "09e9887e3ea4e19f03e45050960db92db7f71055fb2f400229d272321a3b5ac9",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc021_edicion_invalida_preserva_ambos_clientes"
+          ],
+          "verificacion": "Enviar el DNI de otro cliente rechaza la actualización y conserva ambos registros."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-016, TC-017 y TC-021: la ficha corresponde al cliente consultado y cancelar abandona solo el borrador",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc021_edicion_invalida_preserva_ambos_clientes"
+          ],
+          "verificacion": "DNI vacío y campos inválidos muestran validación sin guardar datos parciales."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/editor-testiny.test.js::TC-016, TC-017 y TC-021: la ficha corresponde al cliente consultado y cancelar abandona solo el borrador"
+          ],
+          "verificacion": "Cancelar y reabrir conserva el nombre y DNI anteriores."
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "huella": "8321bdfa9c8120a71dbcbeda5a3a9b080f4a0fdb40321637884f1886d92bd107",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por DNI abre la ficha correcta y limpiar recupera todo el directorio"
+          ],
+          "verificacion": "Filtra por DNI un cliente fuera de la primera página."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por DNI abre la ficha correcta y limpiar recupera todo el directorio"
+          ],
+          "verificacion": "Abre la ficha y contrasta su ID y DNI."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por DNI abre la ficha correcta y limpiar recupera todo el directorio"
+          ],
+          "verificacion": "Restablece con el botón y con cadena vacía, y compara el directorio original."
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "huella": "0da6250a83b068e1d57af9ff713f557d9160640a63a1829a3e85077d800e4047",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por nombre completo o fragmento mantiene la identidad de la ficha elegida"
+          ],
+          "verificacion": "Contrasta el resultado exacto y dos coincidencias del fragmento."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por nombre completo o fragmento mantiene la identidad de la ficha elegida"
+          ],
+          "verificacion": "Selecciona la identidad correcta y comprueba ficha y datos sin cambios."
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "huella": "6e828c54580b7b64a494e1d827474b73545f68ca884ddcf9fd0ac4e73345e00f",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por correo o código interno encuentra la ficha y permite limpiar"
+          ],
+          "verificacion": "Prueba correo completo y fragmento contra el directorio real."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por correo o código interno encuentra la ficha y permite limpiar"
+          ],
+          "verificacion": "Lee y verifica la ficha, y comprueba el conjunto completo después de limpiar."
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "huella": "5235d2dc402aa2b4a493a71ad25f7bf1716932f30e138fd70cc7554317110bb0",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por correo o código interno encuentra la ficha y permite limpiar"
+          ],
+          "verificacion": "Prueba el código interno completo en el mismo buscador."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::buscar por correo o código interno encuentra la ficha y permite limpiar"
+          ],
+          "verificacion": "Verifica el código de la ficha y su DNI."
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "huella": "949976bde5fd9a7a011920e366249c0d7453bf51b0d9c0b8a9464a65642459de",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::la búsqueda sin coincidencias informa el vacío y se recupera sin perder clientes"
+          ],
+          "verificacion": "Renderiza el mensaje de búsqueda vacía sin eliminar clientes."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::la búsqueda sin coincidencias informa el vacío y se recupera sin perder clientes"
+          ],
+          "verificacion": "Recupera el cliente conocido y comprueba los datos del directorio."
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "huella": "f0eeadf294f60314ea3f34e59ecfcca1ac4859c3e41a5241365812634dc78824",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::el buscador acepta texto libre, lo recorta a 30 caracteres y reinicia la página al limpiar"
+          ],
+          "verificacion": "Introduce texto con nombre y verifica la coincidencia de texto libre."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::el buscador acepta texto libre, lo recorta a 30 caracteres y reinicia la página al limpiar"
+          ],
+          "verificacion": "Comprueba maxlength, recorte del input y vuelta a la primera página."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::el buscador acepta texto libre, lo recorta a 30 caracteres y reinicia la página al limpiar"
+          ],
+          "verificacion": "Con la búsqueda vacía se restablece el conjunto completo."
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "huella": "c36911e0f03e258f15ee9e9d0d05b87db927def6ed66a5d81efaf967a262dd44",
+      "revision": "Pasarela simulada. Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-catalog.test.js::registro público no inventa planes cuando el catálogo está vacío o falla"
+          ],
+          "verificacion": "Un catálogo vacío o indisponible deshabilita el registro y no genera checkout."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_tc030_preregistro_revalida_el_plan_retirado_y_permite_elegirlo_al_restaurarlo"
+          ],
+          "verificacion": "El servidor rechaza un plan retirado antes de crear clientes, membresías o iniciar un cobro."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_tc030_preregistro_revalida_el_plan_retirado_y_permite_elegirlo_al_restaurarlo",
+            "FE:clientes/interfaz/client-catalog.test.js::registro público calcula descuentos remotos y descarta promociones futuras, agotadas o ajenas"
+          ],
+          "verificacion": "El plan restaurado se puede elegir y la siguiente solicitud tiene precio vigente y estado pendiente."
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "huella": "e848549b473929eb605b107e5879776e9bd7473099e67c0e03b543753cf0680b",
+      "revision": "Pasarela y errores controlados. Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-flow-control.test.js::el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez",
+            "BE:clientes/integracion/test_public_preregistrations.py::test_unpaid_complete_session_neither_creates_client_nor_expires_processing_payment"
+          ],
+          "verificacion": "El retorno interrumpido no verifica ni cobra y un checkout impago conserva la preinscripción pendiente."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-flow-control.test.js::el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez",
+            "BE:clientes/integracion/test_public_preregistrations.py::test_unpaid_complete_session_neither_creates_client_nor_expires_processing_payment"
+          ],
+          "verificacion": "La URL de éxito con sesión impaga no acredita el cobro. La vista reconsulta el mismo identificador."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc033_activacion_y_cobros_invalidos_no_dejan_cambios",
+            "BE:clientes/integracion/test_public_preregistrations.py::test_confirmation_rejects_unrelated_or_altered_payment",
+            "BE:clientes/integracion/test_public_preregistrations.py::test_tc031_firma_invalida_y_fallo_temporal_no_acreditan_pago_y_reintento_si"
+          ],
+          "verificacion": "Se rechazan importe cero, moneda, referencia, metadatos, modo y firma inválidos sin habilitar acceso."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "FE:clientes/interfaz/client-flow-control.test.js::el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez",
+            "BE:clientes/integracion/test_public_preregistrations.py::test_tc031_firma_invalida_y_fallo_temporal_no_acreditan_pago_y_reintento_si"
+          ],
+          "verificacion": "Después de un fallo temporal la reconsulta válida confirma una vez y la vista usa el estado del servidor."
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "huella": "d44adcb1681c5464870310ad34380e1c79c978c9ee0e0147d183d44511852aaf",
+      "revision": "Fallo de correo simulado. Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-flow-control.test.js::pago manual bloquea clics repetidos y publica la ficha guardada",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso"
+          ],
+          "verificacion": "El envío de efectivo registra S/79 como pagado y conserva la primera membresía EN_TRAMITE."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/formularios.test.js::extracted client dialogs render their real form and membership details",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso",
+            "BE:membresias_pagos/integracion/test_membership_expiration.py::test_access_includes_last_day_and_expiration_preserves_payment_history"
+          ],
+          "verificacion": "La ficha ofrece la activación pagada. El servidor conserva inicio D0 y aplica el plazo con fin inclusivo."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/client-flow-control.test.js::activar sincroniza los detalles y cierra la confirmación",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc018_tc032_activacion_inicial_persistida_aunque_falle_el_aviso"
+          ],
+          "verificacion": "La ficha se sincroniza y el estado persiste aun si el aviso falla."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase"
+          ],
+          "verificacion": "La renovación de caja confirma y activa en una sola operación y conserva íntegra la compra anterior."
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "huella": "55b9571363d6f8b7af0899b508239745ca2f01712fd08057ef3a5dd90b08c345",
+      "revision": "Aserciones por API real y relectura del estado con fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc033_activacion_y_cobros_invalidos_no_dejan_cambios"
+          ],
+          "verificacion": "Activa por API con pago pendiente y verifica rechazo, estado en trámite y fechas ausentes."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc033_activacion_y_cobros_invalidos_no_dejan_cambios"
+          ],
+          "verificacion": "Intenta cobro por caja y Stripe con importe guardado en cero; ambas rutas rechazan y el proveedor no recibe solicitudes."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc033_activacion_y_cobros_invalidos_no_dejan_cambios"
+          ],
+          "verificacion": "Reconsulta cliente, lista de pagos y membresías; compara con el estado previo."
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "huella": "43ae1aae3bf5767d5b82f41a7f5fdb3e61352ce651fcc175483d4ff7a4c4e9f3",
+      "revision": "Aserciones por API real y relectura del estado con fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc034_activacion_protege_fechas_y_pago"
+          ],
+          "verificacion": "Un cliente inexistente se rechaza sin tocar la membresía de control."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc034_activacion_protege_fechas_y_pago"
+          ],
+          "verificacion": "Avanza el reloj, vence la compra y exige un rechazo con el estado persistido intacto."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc034_activacion_protege_fechas_y_pago"
+          ],
+          "verificacion": "Repite la activación de la compra vigente y compara todas sus fechas y datos de pago."
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "huella": "ef9b6d49d58dab267d9c1ed91b72fc13575e9314352bd29844ad5068a73e9d19",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-035 y TC-039: formulario rechaza variantes inválidas, admite cero y recupera un fallo al guardar",
+            "FE:planes_promociones/unitarias/membership-plan-form.test.js::las duraciones disponibles producen planes válidos sin texto libre"
+          ],
+          "verificacion": "La vista exige nombre y duración, ofrece unidades de días, meses y años y valida el precio."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc035_duracion_guardada_y_precio_cero_en_catalogo"
+          ],
+          "verificacion": "Guarda y relee las tres variantes con descripción y estado. Comprueba 15, 60 y 365 días con la regla de activación."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc035_duracion_guardada_y_precio_cero_en_catalogo",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc033_activacion_y_cobros_invalidos_no_dejan_cambios"
+          ],
+          "verificacion": "El catálogo conserva el cero y el flujo de pago/activación rechaza un importe pendiente de cero."
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "huella": "db2161e6ad6cac2ef9709a5f73eed8700b71884b2361dd743c6b939af0e1f27a",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-036: filtros muestran datos del plan elegido y el catálogo vacío es explícito"
+          ],
+          "verificacion": "La vista alterna todos, activos e inactivos con nombre, descripción, duración y precio."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-036: filtros muestran datos del plan elegido y el catálogo vacío es explícito",
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc036_tc037_editar_catalogo_no_recalcula_importe_previo"
+          ],
+          "verificacion": "Se abre la identidad del plan elegido y consultar la ficha no modifica su compra previa."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-036: filtros muestran datos del plan elegido y el catálogo vacío es explícito"
+          ],
+          "verificacion": "El catálogo sin filas muestra un estado vacío sin recuperar un plan anterior."
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "huella": "0347d8a6bfbad20d9c9a09de36bb6d74bc5ddae66ce8ae7836df38fe57a51e2b",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc036_tc037_editar_catalogo_no_recalcula_importe_previo"
+          ],
+          "verificacion": "Guarda nombre, descripción y precio actualizados y recarga el catálogo."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc036_tc037_editar_catalogo_no_recalcula_importe_previo"
+          ],
+          "verificacion": "La compra previa conserva S/72 y una compra nueva aplica el descuento de S/10 sobre S/120."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-037 y TC-038: cancelar edición o borrado conserva los planes",
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc040_un_plan_vinculado_se_puede_desactivar_pero_no_borrar"
+          ],
+          "verificacion": "Cancelar el editor no escribe. Desactivar el plan vinculado conserva las compras y bloquea nuevas contrataciones."
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "huella": "4840fcfccdb598f3b7d1eb38ecc6aaeb296d2be80744d8c507da4d263163786c",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-037 y TC-038: cancelar edición o borrado conserva los planes"
+          ],
+          "verificacion": "Cancelar la confirmación no invoca el borrado y preserva el catálogo."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc038_eliminar_plan_no_utilizado_preserva_otros"
+          ],
+          "verificacion": "Confirma el borrado del plan libre mediante la API y compara el resto del catálogo."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc040_un_plan_vinculado_se_puede_desactivar_pero_no_borrar"
+          ],
+          "verificacion": "Un plan vinculado sigue disponible en el historial después de desactivarlo y no acepta compras nuevas."
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "huella": "1447f07d465a2daad0355cc5715208df71f0152791d29ecbcc0722597a1bc7ad",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-035 y TC-039: formulario rechaza variantes inválidas, admite cero y recupera un fallo al guardar"
+          ],
+          "verificacion": "Prueba nombre vacío, duración inválida, precio negativo y precio ausente sin enviar el formulario."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-035 y TC-039: formulario rechaza variantes inválidas, admite cero y recupera un fallo al guardar",
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc035_duracion_guardada_y_precio_cero_en_catalogo"
+          ],
+          "verificacion": "Guarda duración positiva y un precio explícito de cero."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:planes_promociones/interfaz/catalogo-testiny.test.js::TC-035 y TC-039: formulario rechaza variantes inválidas, admite cero y recupera un fallo al guardar"
+          ],
+          "verificacion": "El fallo de guardado muestra un error, conserva borrador y tarifa persistida y permite reintentar."
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "huella": "c95bbf8b01b3dc57d90e472f559655e727eeb1d96ff3659bf3dff939b89db0dc",
+      "revision": "Aserciones por API real y relectura del estado con fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc040_un_plan_vinculado_se_puede_desactivar_pero_no_borrar"
+          ],
+          "verificacion": "El plan con membresía vigente o vencida rechaza el borrado por su vínculo."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc040_un_plan_vinculado_se_puede_desactivar_pero_no_borrar"
+          ],
+          "verificacion": "Relee el plan y la membresía histórica; el importe contratado queda en 72."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:planes_promociones/integracion/test_testiny_planes.py::test_tc040_un_plan_vinculado_se_puede_desactivar_pero_no_borrar"
+          ],
+          "verificacion": "Desactiva por API, rechaza una contratación nueva y comprueba que el historial se mantiene."
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "huella": "234811c5a27a3c89ad9224d85f6811ef59c75678b305440d9ef65a92c7bd0563",
+      "revision": "Pasarela simulada y renovación en memoria. Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:membresias_pagos/interfaz/admin-membership-renewal.test.js::revisar detalles no cobra y efectivo exige confirmación de recibo",
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase"
+          ],
+          "verificacion": "Muestra importe y duración, y la solicitud queda vinculada a la membresía que se renueva."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:membresias_pagos/integracion/test_membership_states.py::test_new_membership_stays_in_progress_until_paid_and_activated",
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase"
+          ],
+          "verificacion": "Compra pendiente exige confirmación previa para activar y la renovación de caja guarda pago y vigencia juntos."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase",
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_staff_can_renew_long_expired_membership_without_email_token_or_stripe_config"
+          ],
+          "verificacion": "La continuidad vigente empieza después del fin anterior y la vencida usa el día de pago."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_cash_renews_atomically_and_retries_do_not_create_another_purchase",
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_stripe_reuses_pending_checkout_and_returns_to_admin"
+          ],
+          "verificacion": "Repetir caja no duplica vigencia y repetir Stripe reutiliza la sesión pendiente sin habilitar cobro paralelo en caja."
         }
       ]
     },
@@ -1690,6 +3569,36 @@
       ]
     },
     {
+      "id": 46,
+      "huella": "4563f99b6c0a5c15c15dbc533a28f9048d5fc17fbfbca6ff4b636ee7fb45acf4",
+      "revision": "Pasarela simulada y estado persistido en memoria. Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-catalog.test.js::registro público calcula descuentos remotos y descarta promociones futuras, agotadas o ajenas",
+            "BE:clientes/integracion/test_public_preregistrations.py::test_tc046_no_aplica_ni_consume_una_promocion_invalida"
+          ],
+          "verificacion": "La selección pública descarta promociones no vigentes y usa la tarifa del plan."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc046_el_registro_admin_rechaza_promocion_inactiva_sin_consumirla"
+          ],
+          "verificacion": "La selección manual de una promoción inactiva se rechaza sin alta ni sustitución."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_tc046_no_aplica_ni_consume_una_promocion_invalida",
+            "BE:clientes/integracion/test_admin_client_payment.py::test_tc046_el_registro_admin_rechaza_promocion_inactiva_sin_consumirla"
+          ],
+          "verificacion": "La preinscripción confirmada conserva el precio regular sin vincular promoción ni consumir cupo."
+        }
+      ]
+    },
+    {
       "id": 49,
       "huella": "29b109e53de69d2ae1691cfbcb23b94e40c2c0485d2005135d9a9b8e92b6af4d",
       "modalidad": "Contratos reales y componentes aislados; datos y proveedores QA declarados",
@@ -1744,6 +3653,510 @@
           "pruebas": [
             "BE:transversales/integracion/test_testiny_reglas.py::test_tc050_fechas_invalidas_no_dan_acceso_y_corregirlas_conserva_pago"
           ]
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "huella": "09fab2dfc8a7938eb7f889627fe0a4526624aef43ef6146543e8647bef04f91a",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_cupos.py::test_tc051_tc052_capacidad_valida_se_aplica_al_aforo_y_rechaza_valores_invalidos"
+          ],
+          "verificacion": "Registra la configuración anterior y prueba cero, negativo, fracción y texto."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_cupos.py::test_tc051_tc052_capacidad_valida_se_aplica_al_aforo_y_rechaza_valores_invalidos"
+          ],
+          "verificacion": "La API devuelve un error de validación identificado con el campo de capacidad."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_cupos.py::test_tc051_tc052_capacidad_valida_se_aplica_al_aforo_y_rechaza_valores_invalidos"
+          ],
+          "verificacion": "Compara la configuración anterior y verifica la corrección en un nuevo envío válido."
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "huella": "f4963a48b30c0e50026c04cd3a7b7889650a161ab539d064442501a0034c32c5",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-054: el editor nuevo filtra rutinas por servicio y conserva el código del día"
+          ],
+          "verificacion": "El editor abre el nuevo horario y relaciona rutinas con el servicio y el código del día."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc054_horario_guardado_es_consultable_y_tiene_cupos_consistentes"
+          ],
+          "verificacion": "La API devuelve fecha semanal, rutina, bloque y cupos coherentes al reconsultar."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc054_horario_guardado_es_consultable_y_tiene_cupos_consistentes"
+          ],
+          "verificacion": "La segunda variante guarda de 18:00 a 20:00 y conserva sus horas en el catálogo público."
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "huella": "3004089c27c631351af683076922ecf7f7791b3df08696d427acf97b554726b5",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-055: los filtros y la semana cambian lo visible sin escribir cupos"
+          ],
+          "verificacion": "La vista muestra calendario y lista con rutinas, servicios y horas de la semana."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-055: los filtros y la semana cambian lo visible sin escribir cupos"
+          ],
+          "verificacion": "Filtra por texto, servicio, día y disponibilidad. Compara la ocupación de dos fechas del mismo horario."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-055: los filtros y la semana cambian lo visible sin escribir cupos"
+          ],
+          "verificacion": "Limpiar restaura ambas clases y deja intactos los cupos de la fecha original."
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "huella": "26f7918f61b21825fd4787bfa3c8b9eac66a0863f4ef24c002a1ab191acc42d8",
+      "revision": "Aserciones por API real y relectura del estado con fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc056_modificar_horario_conserva_sesiones_y_cupos"
+          ],
+          "verificacion": "Modifica la hora y confirma la disponibilidad y ocupación de las dos fechas."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc056_modificar_horario_conserva_sesiones_y_cupos"
+          ],
+          "verificacion": "Reduce al máximo de una reserva por fecha y reconsulta el cupo sin sumar semanas."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc056_modificar_horario_conserva_sesiones_y_cupos"
+          ],
+          "verificacion": "Rechaza el nuevo día y compara horarios y matrículas guardadas."
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "huella": "3c42065e7698982efb3a781e708af5a4ba7178bebe2967b00a18db72131acd0d",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-057: cancelar la confirmación conserva el horario sin llamar al borrado",
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc057_borrar_horario_libre_y_pausar_el_reservado"
+          ],
+          "verificacion": "Cancelar no escribe. La operación confirmada solo elimina el horario libre."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc057_borrar_horario_libre_y_pausar_el_reservado"
+          ],
+          "verificacion": "La API rechaza el borrado del horario ocupado e informa las matrículas activas."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc057_borrar_horario_libre_y_pausar_el_reservado"
+          ],
+          "verificacion": "Pausar conserva matrículas y retira el horario del catálogo activo."
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "huella": "4ddb97261bfc702304bf5b51f95b6ef33d11b7f52496a7fea6a6e690c7592d00",
+      "revision": "Aserciones por API real y relectura del estado con fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc058_rechaza_horas_y_permite_corregir"
+          ],
+          "verificacion": "Prueba inicio vacío y salida vacía; ninguna solicitud modifica el catálogo."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc058_rechaza_horas_y_permite_corregir"
+          ],
+          "verificacion": "Rechaza duraciones de 30 y 90 minutos y el fin anterior al inicio, con mensajes de regla adecuados."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc058_rechaza_horas_y_permite_corregir"
+          ],
+          "verificacion": "Guarda los intervalos de 60 y 120 minutos y lee horas HH:MM."
+        }
+      ]
+    },
+    {
+      "id": 59,
+      "huella": "639c9edbbc649aefa0be70d055b94163f4fabc6d07279d307967499b6bf72ca1",
+      "revision": "Aserciones por API real y relectura del estado con fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc059_no_guarda_cupos_invalidos_y_acepta_enteros"
+          ],
+          "verificacion": "Rechaza cero, negativo, fraccionario y texto y conserva el listado previo."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc059_no_guarda_cupos_invalidos_y_acepta_enteros"
+          ],
+          "verificacion": "Corrige con un entero, y observa cupo, uso y disponibilidad coherentes."
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "huella": "6bf2ab68fd79cba3a04eba756727b24ea856bcd09b85af1b639e614bd87fb3d1",
+      "revision": "Aserciones por API real y relectura del estado con fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc060_valida_rutina_y_dia_y_permite_coincidencias"
+          ],
+          "verificacion": "Rechaza identificador inválido y rutina de otro servicio sin guardar."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc060_valida_rutina_y_dia_y_permite_coincidencias"
+          ],
+          "verificacion": "Rechaza el día ausente o inválido y confirma que el catálogo sigue vacío."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc060_valida_rutina_y_dia_y_permite_coincidencias"
+          ],
+          "verificacion": "Acepta dos horarios válidos con la misma franja y conserva sus identidades separadas."
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "huella": "5ef6b9388d0d36e53c905e1e094314f7902c3b3e9f0a8e6f7089607c5c622c7d",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-062: una clase llena deshabilita la acción y otra semana tiene cupo propio"
+          ],
+          "verificacion": "Elegir una fecha llena deshabilita la acción y el texto explica la falta de cupo."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc062_cupo_lleno_rechaza_una_fecha_y_deja_reservar_otra"
+          ],
+          "verificacion": "La API rechaza la segunda reserva en la primera fecha y preserva las matrículas."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-062: una clase llena deshabilita la acción y otra semana tiene cupo propio",
+            "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc062_cupo_lleno_rechaza_una_fecha_y_deja_reservar_otra"
+          ],
+          "verificacion": "La semana siguiente muestra acción habilitada y la API guarda una matrícula para esa fecha."
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "huella": "9d7814c47c5f1f4266407a9237dbd81bab3f440cb687fc277c09ab3b15691c3e",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:asistencias/interfaz/flujos.test.js::un DNI incompleto no consulta y un DNI desconocido limpia la ficha anterior",
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc064_ingreso_salida_en_limite_y_reingreso_real"
+          ],
+          "verificacion": "La vista busca al octavo dígito y la consulta muestra al cliente activo con pago y vigencia."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc064_ingreso_salida_en_limite_y_reingreso_real",
+            "BE:asistencias/integracion/test_general_attendance.py::test_capacity_is_shared_by_general_and_schedule_entries"
+          ],
+          "verificacion": "La entrada guarda socio, membresía, administrador y hora de Perú, fija el límite de tres horas y ocupa un cupo."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc064_ingreso_salida_en_limite_y_reingreso_real"
+          ],
+          "verificacion": "La salida a las 13:00 exactas completa la visita y libera el cupo."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc064_ingreso_salida_en_limite_y_reingreso_real"
+          ],
+          "verificacion": "La nueva solicitud crea una segunda visita real y ocupa un cupo sin reabrir la primera."
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "huella": "fa6f127e763836726133ebeebc6c7b7de3f15948e376cb85a0d7f2af0571a888",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:asistencias/interfaz/flujos.test.js::el calendario de asistencia filtra por día y selecciona la lista por id del horario",
+            "BE:asistencias/integracion/test_schedule_attendance.py::test_tabla_y_lista_solo_incluyen_matriculas_activas_del_horario"
+          ],
+          "verificacion": "Seleccionar fecha y bloque carga solo su lista de inscritos y la consulta no crea registros."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc065_entrada_y_salida_de_clase_conservan_fecha_y_limite",
+            "FE:asistencias/interfaz/flujos.test.js::registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso"
+          ],
+          "verificacion": "Al marcar se guardan socio, matrícula, horario, membresía, administrador y hora. La fila ofrece la salida."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc065_entrada_y_salida_de_clase_conservan_fecha_y_limite"
+          ],
+          "verificacion": "La salida del mediodía completa la visita y preserva el límite y la liberación de ocupación."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc065_entrada_y_salida_de_clase_conservan_fecha_y_limite"
+          ],
+          "verificacion": "Repetir entrada de la misma matrícula y fecha conserva el identificador y un solo registro."
+        }
+      ]
+    },
+    {
+      "id": 66,
+      "huella": "ce14f866ed127f6d4aaf88c71fa54088b02aa284c0909d370ad9594ac62efd39",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:asistencias/interfaz/flujos.test.js::un DNI incompleto no consulta y un DNI desconocido limpia la ficha anterior"
+          ],
+          "verificacion": "Exige ocho dígitos y comprueba que no se consulta con siete."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:asistencias/interfaz/flujos.test.js::un DNI incompleto no consulta y un DNI desconocido limpia la ficha anterior",
+            "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni"
+          ],
+          "verificacion": "Compara error real del servicio y descarte de la ficha previa en interfaz."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni"
+          ],
+          "verificacion": "Comprueba rechazo de entrada, ninguna visita y aforo intacto."
+        }
+      ]
+    },
+    {
+      "id": 67,
+      "huella": "3789ca32d28fb67b99647ce947da51b246117140c9a684a838450559be29ff47",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership",
+            "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni"
+          ],
+          "verificacion": "Cubre cuenta inactiva, membresía inactiva, impaga, vencida y futura."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership",
+            "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni"
+          ],
+          "verificacion": "Reconsulta y comprueba cero registros y cero ocupación."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_current_paid_membership",
+            "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni"
+          ],
+          "verificacion": "Restaura cada condición y confirma una entrada habilitada."
+        }
+      ]
+    },
+    {
+      "id": 68,
+      "huella": "f59c58166354de835187b2988b65ed308f4029ca521c2729f033199ad516972c",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc068_solo_permite_entrada_en_fecha_de_matricula_y_dentro_del_bloque"
+          ],
+          "verificacion": "Prueba antes de 10:00, inicio incluido, fin excluido, otro día y otra semana."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc068_solo_permite_entrada_en_fecha_de_matricula_y_dentro_del_bloque",
+            "BE:asistencias/integracion/test_general_attendance.py::test_capacity_is_shared_by_general_and_schedule_entries",
+            "BE:asistencias/integracion/test_general_attendance.py::test_http_bloquea_otro_tipo_con_409_y_permite_entrada_tras_salida"
+          ],
+          "verificacion": "La fecha incorrecta, aforo lleno o visita abierta impiden escribir una asistencia duplicada."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc068_staff_y_cliente_no_pueden_marcar_entrada_o_salida"
+          ],
+          "verificacion": "Staff y cliente reciben 403 al intentar entrar o salir."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "FE:asistencias/interfaz/flujos.test.js::asistencia separa fechas del mismo horario y descarta respuestas de otra semana",
+            "FE:asistencias/interfaz/flujos.test.js::attendance prevents duplicate writes and preserves the last summary when refresh fails"
+          ],
+          "verificacion": "La vista descarta respuestas de otra semana y no publica éxito después de un guardado fallido."
+        }
+      ]
+    },
+    {
+      "id": 71,
+      "huella": "53d8a5b4944c058f2970d39ea906dd78471079746a3fb79d0f33d1ab12352b02",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited"
+          ],
+          "verificacion": "Anula con motivo válido y registra responsable."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited"
+          ],
+          "verificacion": "Relee historial administrativo, motivo y ocupación liberada."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited"
+          ],
+          "verificacion": "Consulta historial y extracción completa como el dueño y exige exclusión de la visita."
+        }
+      ]
+    },
+    {
+      "id": 72,
+      "huella": "d3498ff8c0d42b16fe5f943c79f6f41de2d4ffa45310e1fbf13414cfb62145fc",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:asistencias/interfaz/historial-testiny.test.js::TC-072: el historial vacío deshabilita exportar y limpiar restaura la primera página"
+          ],
+          "verificacion": "Aplica un filtro sin coincidencias y verifica el estado vacío con exportación deshabilitada."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc072_filtro_vacio_y_referencia_ausente_conservan_historial"
+          ],
+          "verificacion": "Corregir y anular un identificador inexistente devuelve un rechazo y conserva la asistencia original."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:asistencias/interfaz/historial-testiny.test.js::TC-072: el historial vacío deshabilita exportar y limpiar restaura la primera página",
+            "BE:asistencias/integracion/test_general_attendance.py::test_tc072_filtro_vacio_y_referencia_ausente_conservan_historial"
+          ],
+          "verificacion": "Limpiar los filtros vuelve a página 1 y restaura el único resultado válido."
+        }
+      ]
+    },
+    {
+      "id": 74,
+      "huella": "6fb1d33e0f833caf56a7285bfadaa348b52968709e5e2d287c6d08e2eb1ab1ea",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited"
+          ],
+          "verificacion": "Otro administrador usa versión anterior y el sistema conserva la hora confirmada."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited"
+          ],
+          "verificacion": "La relectura administrativa conserva visita, responsable, motivo y cambio previo."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:asistencias/integracion/test_general_attendance.py::test_general_corrections_and_annulment_remain_audited"
+          ],
+          "verificacion": "Rechaza repetir ambas acciones y comprueba la misma auditoría y ocupación."
         }
       ]
     },
@@ -2498,6 +4911,35 @@
       ]
     },
     {
+      "id": 104,
+      "huella": "57c73c1f385bc5d80a9c8d509b890fa1a82cd977b105e634d9e5022aa1a394e3",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:tienda_pedidos/interfaz/testiny-documentados.test.js::TC-104: carrito vacío no ofrece procesar compra y la pasarela no inventa productos"
+          ],
+          "verificacion": "La tienda muestra el carrito vacío sin acción de procesar compra."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:tienda_pedidos/interfaz/testiny-documentados.test.js::TC-104: carrito vacío no ofrece procesar compra y la pasarela no inventa productos",
+            "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc104_carrito_vacio_rechaza_pedido_y_checkout_sin_guardar"
+          ],
+          "verificacion": "La ruta de pago muestra que no hay productos y la API rechaza pedidos vacíos y checkout."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc104_carrito_vacio_rechaza_pedido_y_checkout_sin_guardar"
+          ],
+          "verificacion": "Reconsulta pedidos y confirma que el intento no dejó una solicitud."
+        }
+      ]
+    },
+    {
       "id": 105,
       "huella": "ed985b20f1c04bc25d2bbae91478eb6ec0313793b1bf5b5c3afd39580a313236",
       "modalidad": "Contratos reales y componentes aislados; datos y proveedores QA declarados",
@@ -2996,6 +5438,37 @@
       ]
     },
     {
+      "id": 119,
+      "huella": "97c5ce8e300aa4c8be35d5392e4e13a7e8874eb7de0ab92607127cec417f8d2e",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:rutinas_progreso/interfaz/testiny-documentados.test.js::TC-119: una matrícula sin rutinas compatibles informa el motivo y no intenta guardar",
+            "BE:rutinas_progreso/integracion/test_testiny_rutinas.py::test_tc119_rechaza_rutina_de_otro_servicio_y_conserva_matricula"
+          ],
+          "verificacion": "La matrícula de fitness solo tiene disponible una rutina de otro servicio."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:rutinas_progreso/interfaz/testiny-documentados.test.js::TC-119: una matrícula sin rutinas compatibles informa el motivo y no intenta guardar",
+            "BE:rutinas_progreso/integracion/test_testiny_rutinas.py::test_tc119_rechaza_rutina_de_otro_servicio_y_conserva_matricula"
+          ],
+          "verificacion": "La vista informa que no hay opciones compatibles y el servidor rechaza la asignación incorrecta."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:rutinas_progreso/interfaz/testiny-documentados.test.js::TC-119: una matrícula sin rutinas compatibles informa el motivo y no intenta guardar",
+            "BE:rutinas_progreso/integracion/test_testiny_rutinas.py::test_tc119_rechaza_rutina_de_otro_servicio_y_conserva_matricula"
+          ],
+          "verificacion": "La matrícula conserva el estado anterior y no aparece una asignación nueva."
+        }
+      ]
+    },
+    {
       "id": 120,
       "huella": "ad98d83bad51cfe20facac56b2b6187dc01a205620170b93506fcfae279f4fd5",
       "modalidad": "Contratos reales y componentes aislados; datos y proveedores QA declarados",
@@ -3228,6 +5701,34 @@
           "pruebas": [
             "BE:rutinas_progreso/integracion/test_testiny_rutinas.py::test_tc125_datos_invalidos_de_progreso_no_se_guardan"
           ]
+        }
+      ]
+    },
+    {
+      "id": 126,
+      "huella": "29c0d5f848bfccc080b15ac4b1f289f6a4ced7778102d7405ebada8aed9e5e26",
+      "revision": "Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc126_token_invalido_no_entrega_ni_modifica_datos"
+          ],
+          "verificacion": "En ambas variantes la lectura protegida devuelve 401 y omite los datos privados."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc126_token_invalido_no_entrega_ni_modifica_datos"
+          ],
+          "verificacion": "El mismo token rechazado no puede eliminar una cuenta interna."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc126_token_invalido_no_entrega_ni_modifica_datos"
+          ],
+          "verificacion": "El administrador autorizado relee el directorio y obtiene exactamente las mismas cuentas."
         }
       ]
     },
@@ -4456,6 +6957,34 @@
       ]
     },
     {
+      "id": 174,
+      "huella": "cfe579d7da8c60e863434800333e1f1d22dcbc9c92017a7c5aad51224dd6fc12",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_deleted_customer_is_not_resurrected_by_replayed_payment"
+          ],
+          "verificacion": "Confirma el pago, elimina el cliente y comprueba la referencia histórica conservada."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_deleted_customer_is_not_resurrected_by_replayed_payment"
+          ],
+          "verificacion": "Reintenta la confirmación y verifica ausencia de cliente, autenticación y membresía."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_deleted_customer_is_not_resurrected_by_replayed_payment"
+          ],
+          "verificacion": "Compara la ficha y membresías de una segunda identidad con el estado anterior."
+        }
+      ]
+    },
+    {
       "id": 175,
       "huella": "b8f0bc4d0e2916567e1829a165a29cedb30b60856a0cd499dec51f73b34193da",
       "modalidad": "Contratos reales y componentes aislados; datos y proveedores QA declarados",
@@ -4620,6 +7149,62 @@
       ]
     },
     {
+      "id": 182,
+      "huella": "13c7da203c566c080a17bfe602bbb9f7b12ff823c482f01f819a341420d0dcc3",
+      "revision": "Recorrido funcional de la interfaz en Vue con datos sintéticos y pasarela simulada cuando aplica.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::el directorio permite reconocer y recuperar resultados sin recorrer páginas"
+          ],
+          "verificacion": "Renderiza la coincidencia por nombre sin tilde y comprueba nombre/DNI e identidad por código."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::el directorio permite reconocer y recuperar resultados sin recorrer páginas"
+          ],
+          "verificacion": "El resultado vacío muestra mensaje, permite limpiar y carece de ficha seleccionada."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/client-directory.test.js::el directorio permite reconocer y recuperar resultados sin recorrer páginas"
+          ],
+          "verificacion": "Limpiar restaura la primera página y no altera el conjunto de 23 clientes."
+        }
+      ]
+    },
+    {
+      "id": 183,
+      "huella": "2e1fe7d9a1450c80de7a33e2afa62fd0d808a4812bd25495692bf9e2730887df",
+      "revision": "Recorrido funcional de la interfaz en Vue con datos sintéticos y pasarela simulada cuando aplica.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-flow-control.test.js::el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez"
+          ],
+          "verificacion": "Comprueba texto de pago pendiente y botón de reintento habilitado."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-flow-control.test.js::el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez"
+          ],
+          "verificacion": "Fuerza un error recuperable, lo compara con el retorno interrumpido y verifica una misma sesión en cada reconsulta."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:clientes/interfaz/client-flow-control.test.js::el retorno distingue pendiente, error recuperable y pago interrumpido sin cobrar otra vez"
+          ],
+          "verificacion": "Resuelve la renovación confirmada y contrasta estado final y fin de los reintentos."
+        }
+      ]
+    },
+    {
       "id": 184,
       "huella": "cf8659d3ac2cb5dbfb7f3f802f8d8857591763f7c8e0114cbe6773c4e0b709e1",
       "modalidad": "Contratos reales y componentes aislados; datos y proveedores QA declarados",
@@ -4693,6 +7278,34 @@
             "FE:paneles_configuracion/integracion/application-context.test.js::two gym stores synchronize through their own transports after both applications are installed",
             "FE:paneles_configuracion/integracion/scoped-gym-modules.test.js::independent module assemblies keep state isolated and do not mount operations on shared state"
           ]
+        }
+      ]
+    },
+    {
+      "id": 186,
+      "huella": "08254c14dbab9505fb2dce1d3c66c960bae45560ad9d561ee64bc7657fe8d175",
+      "revision": "Entorno local QA sin proveedores reales. Se contrastaron los pasos con las aserciones de las pruebas enlazadas.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:identidad_acceso/interfaz/login-testiny.test.js::TC-186: inicio y acceso muestran los puntos de entrada públicos"
+          ],
+          "verificacion": "La portada muestra Silver Gym Surco, enlaza a login y la vista ofrece correo y Google."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc186_backend_qa_saludable_y_catalogo_publico_de_solo_lectura"
+          ],
+          "verificacion": "La API local responde a la salud de QA y publica un catálogo con un plan activo y precio legible."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:transversales/integracion/test_browser_server.py::test_tc186_backend_qa_saludable_y_catalogo_publico_de_solo_lectura"
+          ],
+          "verificacion": "Relee clientes y cobros y comprueba que la consulta pública no produjo operaciones de negocio."
         }
       ]
     },
@@ -4824,6 +7437,41 @@
       ]
     },
     {
+      "id": 195,
+      "huella": "9d63b8d092c33f02359943904b600e54aca8deff5b3eed3d99756e886f06e36d",
+      "revision": "Stripe sandbox y webhook real reenviado por Stripe CLI, con frontend real y persistencia de QA en memoria.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:tienda_pedidos/integracion/test_testiny_checkout_stripe.py::test_tc195_checkout_stripe_reserva_stock_confirma_pago_y_restaura_carrito"
+          ],
+          "verificacion": "El checkout de Stripe es de prueba, reserva dos unidades y guarda un pedido pendiente por S/ 35,40."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:tienda_pedidos/integracion/test_testiny_checkout_stripe.py::test_tc195_checkout_stripe_reserva_stock_confirma_pago_y_restaura_carrito"
+          ],
+          "verificacion": "La API del administrador rechaza confirmar antes del cobro y conserva el saldo en tres."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:tienda_pedidos/integracion/test_testiny_checkout_stripe.py::test_tc195_checkout_stripe_reserva_stock_confirma_pago_y_restaura_carrito"
+          ],
+          "verificacion": "Paga con la tarjeta del sandbox y comprueba que el webhook completo marca el pago como PAGADO sin descontar de nuevo."
+        },
+        {
+          "paso": 4,
+          "pruebas": [
+            "BE:tienda_pedidos/integracion/test_testiny_checkout_stripe.py::test_tc195_checkout_stripe_reserva_stock_confirma_pago_y_restaura_carrito"
+          ],
+          "verificacion": "Vuelve desde Atrás en Checkout, confirma la cancelación, el saldo restaurado y el mensaje del carrito rearmado."
+        }
+      ]
+    },
+    {
       "id": 196,
       "huella": "098d6559d38ead49d491765eacde5e5c3a62bd253cd4409d6d95df9aaff02c2b",
       "modalidad": "Contratos reales y componentes aislados; datos y proveedores QA declarados",
@@ -4923,83 +7571,516 @@
           ]
         }
       ]
+    },
+    {
+      "id": 200,
+      "huella": "f5d0b548b13ad68747c8745a5488259c23588a80d24c189b356dcca71cb8ccb0",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_expiration_archives_request_and_releases_promo_once_then_allows_new_attempt"
+          ],
+          "verificacion": "Verifica liberación única del cupo, token conservado y que el evento viejo no toca el nuevo checkout."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_periodic_reconciliation_expires_open_session_before_archiving"
+          ],
+          "verificacion": "Contrasta corte anterior y posterior, expiración de checkout y ausencia de cliente."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:clientes/integracion/test_public_preregistrations.py::test_periodic_reconciliation_preserves_uncertain_payment_and_confirms_late_paid_session"
+          ],
+          "verificacion": "Simula indisponibilidad y luego confirma pago tardío con un solo cliente convertido."
+        }
+      ]
+    },
+    {
+      "id": 201,
+      "huella": "eaf07b8525d918f0e7fe31f9986b1b32339c3738e9ca3fd5108e5d86d7e17baf",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_stripe_failure_keeps_registration_available_for_retry"
+          ],
+          "verificacion": "La API devuelve el mensaje de recuperación y conserva una membresía pendiente única."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:clientes/integracion/test_admin_client_payment.py::test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration"
+          ],
+          "verificacion": "Prueba dos reintentos luego del cambio de precio y compara importe, clave e identidades guardadas."
+        }
+      ]
+    },
+    {
+      "id": 202,
+      "huella": "2d0f77c6c30c7dddbd61b6458961ffb2a4931cd6efda8257171ffc5a18208480",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:clientes/interfaz/client-catalog.test.js::carga fallida permite reintentar sin perder el borrador ni registrar con precios locales"
+          ],
+          "verificacion": "El error del catálogo queda visible y se comprueba cero escrituras y guardado inhabilitado."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:clientes/interfaz/client-catalog.test.js::carga fallida permite reintentar sin perder el borrador ni registrar con precios locales"
+          ],
+          "verificacion": "Reconsulta los dos catálogos, mantiene el borrador y habilita el guardado."
+        }
+      ]
+    },
+    {
+      "id": 203,
+      "huella": "a8c11424858c15e836a8e3b24c73df74acfad421eddc49c02a78fbab5602b619",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction"
+          ],
+          "verificacion": "La variante de ocho días verifica motivo en ambas respuestas, indicador y una sola membresía."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_admin_renewal_window_is_enforced_in_preview_and_cash_transaction"
+          ],
+          "verificacion": "Las cuatro variantes admitidas comprueban vista previa, disponibilidad, efectivo y fechas de la compra anterior."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window"
+          ],
+          "verificacion": "La ruta Stripe y la creación genérica rechazan la compra anticipada, sin llamadas al proveedor."
+        }
+      ]
+    },
+    {
+      "id": 204,
+      "huella": "35fe08a2c0c4ea3c19f93da2dd0bcbf195c4da83c7dc807296b6988d8e6bfb2f",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:planes_promociones/unitarias/test_promocion_cupos.py::test_promocion_limite_cupos_exhaustion"
+          ],
+          "verificacion": "Encuentra la promoción para el plan con un uso restante."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:planes_promociones/unitarias/test_promocion_cupos.py::test_promocion_limite_cupos_exhaustion"
+          ],
+          "verificacion": "Agotar el contador la excluye de la consulta."
+        }
+      ]
+    },
+    {
+      "id": 205,
+      "huella": "ff15ddabd54ae43c666d6de53f96e3ff566a7fa1000fc848c4f7293fe0c2fbb4",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:horarios_matriculas/integracion/test_schedule_enrollment.py::test_enrollment_requires_atomic_rpc_before_writing"
+          ],
+          "verificacion": "Comprueba el nombre de la migración y que el repositorio no ejecuta INSERT alternativo."
+        }
+      ]
+    },
+    {
+      "id": 206,
+      "huella": "3462b0e64feded7ba4b861ead2f4b3e72ccd10886f7d417867b13865815aa3d2",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:asistencias/integracion/test_schedule_attendance.py::test_aviso_cruzado_incluye_margen_de_treinta_minutos"
+          ],
+          "verificacion": "Cubre antes, dentro y después de los bordes y comprueba el ID del registro abierto."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:asistencias/integracion/test_schedule_attendance.py::test_general_solo_marca_coincidencia_con_clase_hasta_treinta_minutos_del_fin"
+          ],
+          "verificacion": "Edita el fin del catálogo, aplica la franja persistida y conserva el registro abierto y el bloqueo."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:asistencias/integracion/test_schedule_attendance.py::test_horario_de_otra_semana_no_muestra_salida_pendiente_de_la_visita_actual"
+          ],
+          "verificacion": "Consulta otra fecha para el mismo horario y exige el motivo temporal sin una salida ajena."
+        }
+      ]
+    },
+    {
+      "id": 207,
+      "huella": "76b689932c23eb286f198c72c45fb5538e464eaee660ff471e9c0c24a21fc817",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:asistencias/interfaz/flujos.test.js::la lista descarta respuestas de otro horario y al desmontar"
+          ],
+          "verificacion": "Resuelve respuestas en orden inverso y comprueba la identidad del horario que permanece."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:asistencias/interfaz/flujos.test.js::asistencia separa fechas del mismo horario y descarta respuestas de otra semana"
+          ],
+          "verificacion": "Conserva fecha y lista de la semana seleccionada tras la respuesta tardía."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:asistencias/interfaz/flujos.test.js::asistencia separa fechas del mismo horario y descarta respuestas de otra semana"
+          ],
+          "verificacion": "Una fecha devuelta incorrecta limpia la lista y produce el mensaje de fecha seleccionada."
+        }
+      ]
+    },
+    {
+      "id": 208,
+      "huella": "9312c77996e13d8581c08b548b134394203d0cadb5724f0b1343cddcce23698f",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:transversales/integracion/test_module_error_control.py::test_all_modules_report_unavailable_services_without_leaking_details"
+          ],
+          "verificacion": "Exige 503, texto legible y ausencia del marcador privado en 56 variantes."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:transversales/integracion/test_module_error_control.py::test_domain_errors_keep_their_status_across_routes"
+          ],
+          "verificacion": "Contrasta los códigos de dominio en tres operaciones y cinco variantes de error."
+        }
+      ]
+    },
+    {
+      "id": 209,
+      "huella": "80a6393ea74a16291b796289b4bb9d6208cf25cf9482b1023a98e78ff4e40fb1",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:rutinas_progreso/interfaz/flujos.test.js::progress keeps its draft on failure and clears it only after a confirmed save"
+          ],
+          "verificacion": "Fuerza fallo y verifica modal, tres series, observación y peso cero en la solicitud."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:rutinas_progreso/interfaz/flujos.test.js::progress keeps its draft on failure and clears it only after a confirmed save"
+          ],
+          "verificacion": "Confirma el segundo intento y comprueba el cierre y la limpieza del borrador."
+        }
+      ]
+    },
+    {
+      "id": 210,
+      "huella": "cece0b2f175007987e573b3ac528334b0ab7e49d8fa7db76c83581b64e6c6387",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:rutinas_progreso/interfaz/flujos.test.js::one rest timer supports pause, resume, completion and disposal without leaked intervals"
+          ],
+          "verificacion": "El reloj simulado avanza y luego mantiene dos segundos en pausa."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:rutinas_progreso/interfaz/flujos.test.js::one rest timer supports pause, resume, completion and disposal without leaked intervals"
+          ],
+          "verificacion": "Comprueba finalización, inicio de otro descanso e intervalo detenido al desmontar."
+        }
+      ]
+    },
+    {
+      "id": 211,
+      "huella": "bad46a30c1cc60ae19c812e0eaf18950375e9b1698ecf3e1300acbd78c430e3a",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:notificaciones/integracion/test_schedule_calendar.py::test_reminder_opens_the_class_date_in_peru_even_when_utc_is_next_month"
+          ],
+          "verificacion": "Comprueba el día peruano, enlaces HTML y texto, y zona horaria del aviso."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:notificaciones/integracion/test_schedule_calendar.py::test_enrollment_email_indica_una_sesion_con_su_fecha"
+          ],
+          "verificacion": "Comprueba el 2 de noviembre en texto y enlace sin anunciar recurrencia."
+        }
+      ]
+    },
+    {
+      "id": 212,
+      "huella": "45974bf8ae3bc4cfae8cc8f6bfe5a37444950b3ecca24ceb83d87749f355f356",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:notificaciones/integracion/test_resend_email.py::test_schedule_cancelled_before_sending_when_enrollment_changes"
+          ],
+          "verificacion": "El contexto retirado cancela el evento persistido y un remitente que no debe invocarse protege la prueba."
+        }
+      ]
+    },
+    {
+      "id": 213,
+      "huella": "6b83aa82c04d3c4ca07bf3e5332a2e46f3a3263285b7053def3207d16318290f",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:transversales/integracion/http-error-control.test.js::a write with stalled confirmation keeps the uncertain outcome and is not retried"
+          ],
+          "verificacion": "Detiene el cuerpo de la respuesta, exige tiempo agotado y resultado incierto, y cuenta un solo envío."
+        }
+      ]
+    },
+    {
+      "id": 214,
+      "huella": "c2adbf1b20fce71c98d68d3af322d35bb77d2161d92f2189fcbebbd0fbc8636e",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "FE:transversales/interfaz/table-pagination-views.test.js::inventario muestra solo las filas escritas y la última página trae el resto"
+          ],
+          "verificacion": "Comprueba 27 artículos divididos en seis páginas, con cinco y dos filas en los extremos."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "FE:transversales/interfaz/table-pagination-views.test.js::tienda muestra solo las filas escritas y la última página trae el resto"
+          ],
+          "verificacion": "Verifica cinco productos en la primera y dos en la última página."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "FE:transversales/interfaz/table-pagination-views.test.js::ambas vistas renderizan el paginador con el campo de filas por página"
+          ],
+          "verificacion": "Renderiza ambas vistas y comprueba campo, acción y texto del rango."
+        }
+      ]
+    },
+    {
+      "id": 216,
+      "huella": "e582d825741a78124ee59e4caa3ab0409fde80e38b54d2e63b951b5b4976bf7d",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_alta_de_equipo_crea_una_unidad_por_stock_inicial"
+          ],
+          "verificacion": "Lee las tres unidades, ubicación, estado, stock y movimiento inicial persistido."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_prefijo_usa_las_iniciales_de_las_palabras_significativas",
+            "BE:inventario/integracion/test_inventario_unidades.py::test_solo_equipos_y_accesorios_se_controlan_por_unidad",
+            "BE:inventario/integracion/test_inventario_unidades.py::test_articulos_que_no_son_equipo_no_tienen_unidades"
+          ],
+          "verificacion": "Verifica prefijos parametrizados, categorías por unidad y ausencia de unidades en limpieza y tienda."
+        }
+      ]
+    },
+    {
+      "id": 217,
+      "huella": "b0afc3c89f6c8a8384da1e6f3b9c9e3c5da7d500d1767264da5ef89c5e713220",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_entrada_continua_el_correlativo"
+          ],
+          "verificacion": "Verifica correlativos 1 a 4 y nuevo stock cuatro."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_altas_y_entradas_anotan_en_mov_inv_los_codigos_creados"
+          ],
+          "verificacion": "Contrasta descripciones persistidas del rango inicial y del código de la nueva unidad."
+        }
+      ]
+    },
+    {
+      "id": 218,
+      "huella": "5ec5083a99e2416602b0a0b4c160751415762225670362145a3b3c4066c35129",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_salida_da_de_baja_las_unidades_elegidas_y_conserva_su_historial"
+          ],
+          "verificacion": "Lee cantidad y código del movimiento, fecha de baja y saldo dos."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_salida_da_de_baja_las_unidades_elegidas_y_conserva_su_historial"
+          ],
+          "verificacion": "Ingresa otra unidad y comprueba que el contador avanzó al 004 tras la baja."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_salida_rechaza_unidades_invalidas"
+          ],
+          "verificacion": "Las cuatro selecciones inválidas se rechazan y se preservan las unidades activas."
+        }
+      ]
+    },
+    {
+      "id": 219,
+      "huella": "d032fd130abe7b172c239e9b47d57bbd3fb498fe62bc38333bac3bd59f9aabc6",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_estado_del_articulo_resume_el_de_sus_unidades"
+          ],
+          "verificacion": "Comprueba Operativo y luego En mantenimiento en el artículo."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_estado_del_articulo_resume_el_de_sus_unidades"
+          ],
+          "verificacion": "Procesa las dos bajas y comprueba saldo cero y Agotado."
+        },
+        {
+          "paso": 3,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_editar_unidad_valida_estado_y_bajas"
+          ],
+          "verificacion": "Protege la baja directa y su reactivación, y permite guardar una observación válida."
+        }
+      ]
+    },
+    {
+      "id": 220,
+      "huella": "b8392aa840f78c49422558652c82e4f7f9ab1e6daa9cd96b6a98f6684c87316c",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_articulo_que_pasa_a_equipo_recibe_codigos_para_su_stock"
+          ],
+          "verificacion": "Reconsulta las dos unidades BP-001 y BP-002, manteniendo el stock dos."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_renombrar_no_cambia_el_prefijo_ni_los_codigos"
+          ],
+          "verificacion": "Cambia el nombre y compara el prefijo y el código emitido."
+        }
+      ]
+    },
+    {
+      "id": 221,
+      "huella": "653f308e520ae1ad015625ae0636aa295eb22eb4cd4e98ff71236baf3bb380b8",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_equipos_con_unidades_no_admiten_ajustes_ni_cambios_de_cantidad"
+          ],
+          "verificacion": "El servicio rechaza el ajuste directo."
+        },
+        {
+          "paso": 2,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_equipos_con_unidades_no_admiten_ajustes_ni_cambios_de_cantidad"
+          ],
+          "verificacion": "Rechaza cambiar la cantidad y permite guardar otra descripción."
+        }
+      ]
+    },
+    {
+      "id": 222,
+      "huella": "1f14674c802971a6017c069832407e42316b7bbbb36e5f65b40d01fb3ec775ad",
+      "revision": "Resultados contrastados con aserciones de API, servicio o interfaz y fixtures de QA.",
+      "pasos": [
+        {
+          "paso": 1,
+          "pruebas": [
+            "BE:inventario/integracion/test_inventario_unidades.py::test_operar_desde_tienda_no_borra_el_stock_de_los_equipos"
+          ],
+          "verificacion": "La API guarda el producto y la relectura del equipo conserva cuatro unidades y su estado."
+        }
+      ]
     }
   ],
   "sin_automatizacion_revisada": [
     1,
     2,
-    3,
     4,
-    5,
-    6,
     7,
-    8,
-    9,
     12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
     19,
-    20,
-    21,
     22,
-    23,
-    24,
-    25,
-    26,
-    27,
-    28,
     29,
-    30,
-    31,
-    32,
-    33,
-    34,
-    35,
-    36,
-    37,
-    38,
-    39,
-    40,
-    41,
     45,
-    46,
     47,
     48,
     51,
-    52,
     53,
-    54,
-    55,
-    56,
-    57,
-    58,
-    59,
-    60,
     61,
-    62,
     63,
-    64,
-    65,
-    66,
-    67,
-    68,
     69,
     70,
-    71,
-    72,
     73,
-    74,
     75,
     78,
     101,
     102,
-    104,
-    119,
-    126,
     127,
     132,
     133,
@@ -5012,18 +8093,14 @@
     147,
     163,
     164,
-    174,
     177,
     180,
-    182,
-    183,
-    186,
     188,
     189,
     190,
     191,
     194,
-    195,
-    199
+    199,
+    215
   ]
 }

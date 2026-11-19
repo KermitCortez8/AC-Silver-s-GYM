@@ -8,6 +8,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { clientMembershipGroup, filterClientDirectory, paginateClients } from '../../../domain/utils/clientDirectory.js';
+import { FORM_LIMITS } from '../../../domain/utils/formLimits.js';
 
 /** Coordina los filtros del directorio y sus acciones de edición y membresía. */
 export const useClientDirectory = () => {
@@ -18,7 +19,7 @@ export const useClientDirectory = () => {
 
   const clients = computed(() => gymStore.members);
 
-  const search = ref(typeof route.query.search === 'string' ? route.query.search.slice(0, 30) : '');
+  const search = ref(typeof route.query.search === 'string' ? route.query.search.slice(0, FORM_LIMITS.clientSearch) : '');
   const statusFilter = ref(
     ['active', 'pending', 'expired'].includes(route.query.status)
       ? route.query.status

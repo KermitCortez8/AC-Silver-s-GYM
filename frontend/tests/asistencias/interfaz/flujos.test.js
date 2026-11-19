@@ -4,6 +4,36 @@ import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { server, view, client, summary, enrollment } from '../../soporte/entorno-vistas.js';
 
+test('un DNI incompleto no consulta y un DNI desconocido limpia la ficha anterior', async () => {
+  const consulted = [];
+  const harness = await view('AttendanceView', {
+    attendance: {
+      attendanceGet: async (_path, { dni }) => {
+        consulted.push(dni);
+        if (dni === '99999999') throw new Error('No se encontró un cliente con ese DNI.');
+        return client(dni);
+      },
+    },
+  });
+  try {
+    const s = harness.setup;
+    s.dni = '1234567';
+    await s.lookupClient();
+    assert.match(s.lookupError, /8 dígitos/);
+    assert.deepEqual(consulted, []);
+    s.dni = '12345678';
+    await s.lookupClient();
+    assert.equal(s.clientData.cliente.dni, '12345678');
+    s.dni = '99999999';
+    await s.lookupClient();
+    assert.match(s.lookupError, /No se encontró/);
+    assert.equal(s.clientData, null);
+    assert.deepEqual(consulted, ['12345678', '99999999']);
+  } finally {
+    harness.dispose();
+  }
+});
+
 test('attendance ignores replaced searches and responses received after disposal', async () => {
   const pending = new Map();
   const harness = await view('AttendanceView', {

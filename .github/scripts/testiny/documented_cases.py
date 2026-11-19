@@ -5,13 +5,13 @@ from collections import Counter
 import csv
 import hashlib
 import json
-import math
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
 COMPONENT = "casos-documentados"
 COMPONENTS = {"backend", "frontend", "postgres", "schedule-emails"}
+MINIMUM_COVERAGE_PERCENT = 80
 
 
 def fingerprint(value: dict) -> str:
@@ -31,8 +31,9 @@ def load_review(root: Path):
     if (catalog.get("proyecto") != "SILVE" or catalog.get("total") != len(cases)
             or len(cases) != len(catalog["casos"]) or not cases):
         raise ValueError("Catálogo Testiny inconsistente")
-    if review.get("catalogo_sha256") != fingerprint(catalog) or review.get("minimo_porcentaje") != 50:
-        raise ValueError("Revisar el catálogo actualizado y mantener el mínimo del 50 %")
+    if (review.get("catalogo_sha256") != fingerprint(catalog)
+            or review.get("minimo_porcentaje") != MINIMUM_COVERAGE_PERCENT):
+        raise ValueError(f"Revisar el catálogo actualizado y mantener el mínimo del {MINIMUM_COVERAGE_PERCENT} %")
     proofs = review["pruebas"]
     for key, proof in proofs.items():
         source = (root / proof["archivo"]).resolve()
@@ -69,9 +70,6 @@ def load_review(root: Path):
             if any(key not in proofs for key in step["pruebas"]):
                 raise ValueError(f"TC-{identity}: referencia de prueba inexistente")
         selected[identity] = entry
-    minimum = math.ceil(len(cases) / 2)
-    if len(selected) < minimum:
-        raise ValueError(f"Solo hay {len(selected)} casos revisados; se necesitan {minimum}/{len(cases)}")
     return cases, proofs, selected
 
 
@@ -145,7 +143,8 @@ def build_report(root: Path, output: Path, records: list[dict], reports: list[di
     counts = Counter(result["estado"] for result in reviewed_results)
     total = len(cases)
     executed = counts["passed"] + counts["failure"]
-    summary = {"total_documentados": total, "minimo_requerido": math.ceil(total / 2),
+    minimum = (total * MINIMUM_COVERAGE_PERCENT + 99) // 100
+    summary = {"total_documentados": total, "minimo_requerido": minimum,
                "revisados": len(selected), "ejecutados": executed,
                "aprobados": counts["passed"], "fallidos": counts["failure"],
                "sin_ejecucion_completa": counts["skipped"], "pendientes_de_automatizar": total - len(selected),
@@ -158,9 +157,10 @@ def build_report(root: Path, output: Path, records: list[dict], reports: list[di
         writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows({**row, "rf": ", ".join(row["rf"]), "pruebas": " | ".join(row["pruebas"])} for row in results)
-    xml = ET.Element("testsuites", tests=str(len(selected)), failures=str(counts["failure"]), errors="0", skipped=str(counts["skipped"]))
+    skipped = total - executed
+    xml = ET.Element("testsuites", tests=str(total), failures=str(counts["failure"]), errors="0", skipped=str(skipped))
     suites = {}
-    for result in reviewed_results:
+    for result in results:
         case = cases[result["id"]]
         folder = f"{case['modulo']} - {case['nombre_modulo']}.{case['tipo']}.{case['rf'][0]}"
         if folder not in suites:
@@ -177,7 +177,7 @@ def build_report(root: Path, output: Path, records: list[dict], reports: list[di
                           for number, step in enumerate(case["pasos"], 1))
         ET.SubElement(node, "system-out").text = (
             f"Caso: {case['titulo']}\n{steps}\nResultado obtenido: {result['estado']}\n"
-            "Derivado de los selectores obligatorios revisados; no acredita un recorrido visual.\n"
+            "El alcance acreditado se describe en la revisión del catálogo.\n"
             "Pruebas: " + ", ".join(result["pruebas"]))
         if result["estado"] == "skipped":
             message = "Automatización completa pendiente de revisión" if not result["revisado"] else "Pruebas obligatorias ausentes u omitidas: " + ", ".join(result["pendientes"])
@@ -192,8 +192,8 @@ def build_report(root: Path, output: Path, records: list[dict], reports: list[di
         suite.set("errors", "0")
     destination = output / f"{COMPONENT}.xml"
     ET.ElementTree(xml).write(destination, encoding="utf-8", xml_declaration=True)
-    report = {"component": COMPONENT, "file": str(destination), "tests": len(selected),
-              "failures": counts["failure"], "errors": 0, "skipped": counts["skipped"]}
+    report = {"component": COMPONENT, "file": str(destination), "tests": total,
+              "failures": counts["failure"], "errors": 0, "skipped": skipped}
     if metadata:
         report["metadata"] = metadata
     if executed < summary["minimo_requerido"]:

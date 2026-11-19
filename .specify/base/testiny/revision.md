@@ -1,10 +1,39 @@
 # Revisión de casos documentados
 
-Fecha: 2026-11-15. Catálogo actual: **199**. Mínimo: **100**.
+El catálogo se sincronizó el **2026-11-19** con una exportación de **222 casos** de
+SILVE. Se verificaron IDs, títulos, tipos, módulos, precondiciones y pasos de los
+199 casos previos. Se añadieron los TC-200 a TC-222 con sus 48 pasos y resultados
+esperados.
 
-Resultado local: **100 aprobados / 199 (50,25 %)**, sin fallos ni omisiones entre los seleccionados. Se verificaron los oráculos antes de activar `--documented` en el publicador.
+La ejecución local del 15 de noviembre registró **100 aprobados / 199 (50,25 %)**,
+sin fallos ni omisiones entre los seleccionados. El catálogo de 222 conserva esas
+100 revisiones. La primera ejecución del 19 de noviembre confirmó **100 aprobados
+de 222 (45,05 %)**. Después de ampliar la revisión, el informe local acredita
+**142 aprobados de 222 (63,96 %)**. La repetición automatizada del TC-195 en
+Stripe sandbox eleva el resultado local a **143 de 222 (64,41 %)**.
+La siguiente ampliación acredita **179 de 222 (80,63 %)**. La corrida habitual
+sin Stripe sandbox acredita **178 de 222 (80,18 %)** y alcanza el mínimo.
 
-La [revisión técnica](automatizacion.json) contiene la evidencia exigida para cada paso. El [CSV completo](trazabilidad.csv) incluye también los 99 pendientes. La modalidad es API/servicios/componentes con dobles declarados, según el [alcance](README.md#alcance-comprobado).
+La [revisión técnica](automatizacion.json) contiene la evidencia exigida para cada paso. El [CSV completo](trazabilidad.csv) incluye también los 43 pendientes. La modalidad de cada prueba se indica en su revisión y en el [alcance](README.md#alcance-comprobado).
+
+La ampliación incorpora 36 casos de acceso, clientes, planes, pagos, horarios,
+asistencia, tienda, rutinas y disponibilidad pública. Para completar TC-007
+falta que la ficha del directorio presente el estado de habilitación de la cuenta.
+
+## Ampliación de la cobertura · 2026-11-19
+
+- Se revisaron y ejecutaron 22 casos de los TC-200 a TC-222. TC-215 conserva su
+  prueba de transacción PostgreSQL pendiente de ejecución en un contenedor
+  desechable y de un informe de esa suite en el flujo del merge.
+- Se completaron otros 20 casos con comprobaciones de directorio de clientes,
+  pagos y activación, protección de planes históricos, horarios y asistencia.
+  El buscador del directorio aplica el límite documentado de 30 caracteres.
+- TC-142 conserva cobertura parcial. El servicio rechaza rutinas de otro
+  servicio, pero no verifica la vigencia al asignar una rutina a una matrícula.
+  TC-194 conserva la diferencia de redirección del control de rutas.
+- TC-180 requiere una matriz Chromium, Firefox y WebKit. TC-188 y TC-189 requieren revisión del
+  responsable funcional. Los demás resultados incompletos permanecen pendientes
+  en la trazabilidad.
 
 ## Hallazgos y exclusiones
 
@@ -18,7 +47,7 @@ La [revisión técnica](automatizacion.json) contiene la evidencia exigida para 
 
 Los hallazgos no cambian los casos/runs manuales en Testiny. Los demás casos pendientes no se declaran incorrectos por carecer de esta automatización.
 
-## Casos con revisión y ejecución completa
+## Casos de la ejecución original del 15 de noviembre
 
 | TC | RF | CUS | Tipo documentado | Módulo | Resultado |
 | --- | --- | --- | --- | --- | --- |

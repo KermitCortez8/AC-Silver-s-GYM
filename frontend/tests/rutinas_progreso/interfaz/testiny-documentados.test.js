@@ -2,6 +2,21 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { view, enrollment, routines } from '../../soporte/entorno-vistas.js';
 
+test('TC-119: una matrícula sin rutinas compatibles informa el motivo y no intenta guardar', async () => {
+  const harness = await view('TrainerRoutineMonitorView', {
+    prepare: (setup, gym) => {
+      gym.trainerOverview = { routines: routines.filter(item => item.servicio === 'baile') };
+      setup.clientData = { cliente: { nombre: 'Cliente QA' }, matriculas: [{ ...enrollment, id_rutina: 0 }] };
+      setup.openAssignModal();
+    },
+  });
+  try {
+    assert.match(harness.dialogs, /No hay rutinas compatibles/);
+    assert.doesNotMatch(harness.dialogs, /Salsa/);
+    assert.equal(harness.setup.clientData.matriculas[0].id_rutina, 0);
+  } finally { harness.dispose(); }
+});
+
 test('TC-110: supervisión vacía muestra el estado sin matrículas pendientes', async () => {
   const harness = await view('TrainerOverviewView');
   try {

@@ -101,6 +101,7 @@
           <Search :size="18" aria-hidden="true" />
           <SearchInput
             v-model="search"
+            :maxlength="FORM_LIMITS.clientSearch"
             class="ws-input"
             placeholder="Nombre, DNI, correo o ID…"
           />
@@ -450,6 +451,7 @@ import ClientEditorDialog from '../components/clients/ClientEditorDialog.vue';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import { canPayClientWithStripe, canRenewClientMembership } from '../../domain/utils/adminClientPayment.js';
 import { clientMembershipGroup, clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
+import { FORM_LIMITS } from '../../domain/utils/formLimits.js';
 import {
   BadgeCheck,
   ChevronLeft,

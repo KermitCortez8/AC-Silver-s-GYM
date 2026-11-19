@@ -3,7 +3,7 @@
 La integración publica únicamente después de fusionar un PR en `main`.
 Los PR y los merges a `develop` validan y conservan artefactos sin publicar.
 La publicación exige ejecutar al menos
-el **50 % de los casos documentados revisados** antes de publicar sus informes
+el **80 % del catálogo completo de casos documentados** antes de publicar sus informes
 JUnit en **Automation** del proyecto `SILVE`. La activación requiere una
 API key y dos variables de GitHub; los archivos por sí solos no habilitan envíos.
 
@@ -16,7 +16,7 @@ API key y dos variables de GitHub; los archivos por sí solos no habilitan enví
 | `gym-postgres` | Ocho suites de contratos, transacciones y concurrencia con base desechable | PR a `develop`/`main` |
 | `gym-notificaciones-deno` | Pruebas de recordatorios de la Edge Function | PR a `develop`/`main` y merge a `main` |
 | `gym-navegador` | Chromium: acceso válido/inválido, alta de inventario y salida de stock, con capturas de la misma ejecución | PR a `develop`/`main` y merge a `main`; solo el merge a `main` publica |
-| `gym-casos-documentados` | Un resultado por caso documentado revisado, derivado de sus pruebas obligatorias | Después de las suites, si se alcanza el mínimo del 50 % |
+| `gym-casos-documentados` | Un resultado por caso documentado. Los pendientes figuran como omitidos | Después de las suites, si se alcanza el mínimo del 80 % |
 
 En `SILVE → Automation`, abre una fuente y consulta sus carpetas
 `módulo → tipo → archivo`. En `gym-casos-documentados`, el tercer nivel es el RF.
@@ -39,12 +39,30 @@ conservan las pruebas técnicas individuales. Testiny mantiene separados los
 casos automatizados y manuales, y actualmente no ofrece su vinculación automática.
 Véase la [guía oficial de Automation](https://www.testiny.io/docs/automation/importing-results/#test-cases).
 
-La [revisión del catálogo](../base/testiny/README.md) incluye **199 casos** y
-**100 automatizados y verificados (50,25 %)** por API, servicios y componentes.
-No equivale a 100 recorridos E2E en navegador ni certifica proveedores externos.
-Los otros 99 siguen en el denominador. Pruebas ausentes/omitidas no acreditan un
-caso; el cálculo exige todos sus resultados esperados y variantes obligatorias.
+El [catálogo sincronizado](../base/testiny/README.md) incluye **222 casos** y
+**179 con ejecución local verificada (80,63 %)**, incluido el TC-195 en el
+sandbox de Stripe. La corrida habitual sin Stripe sandbox acredita **178 (80,18 %)**.
+El denominador sigue siendo 222. Se deben acreditar al menos
+**178 casos ejecutados** para publicar. El cálculo exige todos los resultados
+esperados y variantes obligatorias de cada caso.
 Los fallidos se publican como fallidos y cuentan como ejecutados, no aprobados.
+
+**SG-RF23-IT01 · Pago con tarjeta reserva stock y deja el pedido pendiente hasta
+confirmar en Stripe** (TC-195) requiere una ejecución optativa con acceso a Stripe sandbox.
+Con las dependencias del frontend y Playwright instaladas, definir
+`GYM_TEST_STRIPE_CLI` con la ruta al ejecutable de Stripe CLI y cargar una clave
+`sk_test_` en el entorno del backend con `STRIPE_MODE=test`. Ejecutar desde
+`backend`:
+
+```bash
+python -m pytest tests/tienda_pedidos/integracion/test_testiny_checkout_stripe.py -q --junitxml=../.artifacts/testiny-stripe/backend.xml
+```
+
+La prueba arranca una API aislada en memoria, paga con la tarjeta del sandbox
+y recibe el webhook real. El JUnit de una suite completa optativa puede
+acreditar el caso junto con los demás resultados de backend. El job ordinario
+sin red de GitHub Actions deja el TC-195 omitido. El JUnit de una ejecución local
+se conserva como evidencia local.
 
 ## Configuración inicial
 
@@ -80,7 +98,7 @@ Los fallidos se publican como fallidos y cuentan como ejecutados, no aprobados.
    mostrar los recuentos y los identificadores de las ejecuciones importadas.
    En Testiny, seleccionar `SILVE → Automation` y comprobar las fuentes anteriores.
    El resumen de GitHub muestra una tabla de resultados por módulo y fuente
-   y al menos `100/199` casos documentados. `resumen.json` conserva esos recuentos
+   y al menos `178/222` casos documentados para publicar. `resumen.json` conserva esos recuentos
    en el campo `modulos` de cada informe.
    El importador crea cada fuente cuando recibe su primer informe; no hace falta
    crear esas carpetas ni cargar un CSV a mano. Consultar el
@@ -113,7 +131,7 @@ Una omisión de PostgreSQL en la suite general no acredita la prueba SQL; el
 resultado real está en su fuente específica cuando se ejecuta con contenedor.
 Si un job no alcanza a generar XML, no se inventan resultados para ese job.
 Sin ningún informe válido, el publicador falla y no crea una ejecución vacía.
-Con `--documented`, también falla antes de enviar si no alcanza el 50 % de casos
+Con `--documented`, también falla antes de enviar si no alcanza el 80 % de casos
 completamente ejecutados o cambiaron las aserciones/soporte revisados. Se
 conserva el detalle de cobertura insuficiente en el artefacto. El catálogo es un
 snapshot versionado: debe actualizarse y revisarse cuando cambien los casos de
