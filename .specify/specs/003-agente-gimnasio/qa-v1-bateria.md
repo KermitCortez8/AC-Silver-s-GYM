@@ -49,6 +49,19 @@ El proveedor de IA **elige una herramienta** cuando hace falta; el backend valid
 
 Los casos F1-01/02 forman un flujo compartido: la misma persona pregunta por un plan y luego por horarios, con el mismo chat. El test usa un proceso FastAPI real y el proxy de Vite; sustituye únicamente el proveedor y el catálogo. F1-03 comprueba por separado la lectura del catálogo real de Supabase a través de la API pública. No prueba escrituras, pagos ni correos.
 
+## Conversaciones encadenadas · ampliación del 2026-11-19
+
+Cada fila representa un recorrido completo: se conserva el identificador de la conversación y se comprueba lo que ocurre después de cada mensaje. Los datos de catálogo y la selección del proveedor se controlan en las pruebas; se ejecutan el servicio y la ruta reales. El objetivo es comprobar las promesas de la v1, sin convertir cada pregunta imaginable en un caso nuevo.
+
+| Caso | Criterios | Mensajes del visitante, en orden | Resultado esperado y fuente | Riesgo / prioridad | Ejecución |
+| --- | --- | --- | --- | --- | --- |
+| CONV-01 · Elegir cómo empezar | CA-01, CA-02, CA-03, CA-10, CA-12 | «Hola» → «¿Cuánto cuesta el plan?» → «¿Qué horarios tiene Baile?» → «¿Cómo me registro?» → «Inscríbeme a Baile» → «Gracias». | Cortesía; precio y horario del catálogo controlado; guía y enlace a Registro; la orden de inscripción no crea matrícula; cierre natural. Solo la consulta de plan necesita seleccionar herramienta. | Datos inventados o una operación privada ejecutada · alta | `backend/tests/agente/test_agent_conversations.py`; `frontend/e2e-integration/agent-conversations.spec.js` |
+| CONV-02 · Actividad y seguimiento | CA-02, CA-03, CA-09 | «¿Qué tipos de ejercicios hay?» → «¿Y los horarios?» → «¿Hay cupo en Baile el lunes?» | Ficha pública de actividades; el seguimiento consulta horarios actuales; la respuesta sobre cupos solo comunica la regla general y no afirma disponibilidad ni reserva. | Confundir horario publicado con cupo libre · alta | Los mismos archivos |
+| CONV-03 · Recuperar sin exponer datos | CA-05, CA-11 | «Quiero recuperar mi cuenta» → completar el formulario con datos sintéticos → escribir un correo en el chat. | Formulario local; el backend solo recibe la pregunta inicial; el correo escrito en el chat se bloquea antes de la API. No se promete envío al dueño. | Filtración de datos personales · alta | Los mismos archivos y la regresión UI existente |
+| CONV-04 · Volver al negocio | CA-07, CA-10 | Pregunta ambigua → pregunta ajena → repetir pregunta ajena → preguntar por un plan. | Pedir detalle; redirigir con cortesía y después con mayor claridad; volver a consultar el catálogo sin perder el control del diálogo. | Respuestas genéricas repetidas o tema ajeno persistente · media | Los mismos archivos |
+
+**Decisión pendiente, fuera de v1:** «¿Está lleno el horario de Baile del lunes?» exige consultar cupos actuales y distinguir clases sin espacio. El agente de esta rama solo lee horarios publicados y una ficha general sobre cupos; esta batería comprueba que no afirme «hay espacio» ni «está lleno» sin ese dato. Añadir disponibilidad o reserva requiere un criterio nuevo del SPEC, contrato de lectura y pruebas propios.
+
 ## Antes y después
 
 | Momento | Referencia | Resultado |
@@ -57,6 +70,15 @@ Los casos F1-01/02 forman un flujo compartido: la misma persona pregunta por un 
 | Después de añadir casos | `levano/agenteAgente.v1-pruebas` | Backend: 100 aprobadas; frontend: 373 aprobadas; Playwright UI: 27 aprobadas; Playwright integrado: 6 aprobadas (2 casos × 3 motores); Playwright con Supabase público: 1 aprobada en Chromium; compilación aprobada; flake8 crítico: 0 errores. |
 
 En la primera ejecución de F1-03 falló la comparación literal de «Musculación»: el catálogo usa otra acentuación que la respuesta presentada. Se corrigió la aserción para comparar el nombre normalizado; el horario y la respuesta del producto ya coincidían. No se modificó código productivo.
+
+### Ampliación conversacional del 2026-11-19
+
+| Momento | Batería ejecutada | Resultado |
+| --- | --- | --- |
+| Antes de CONV-01 a CONV-04 | `pytest tests/agente tests/planes_promociones tests/horarios_matriculas/integracion`; `npm test`; Playwright UI; Playwright integrado | Backend 100/100, frontend 373/373, UI 27/27 e integración 6/6. |
+| Después de añadir los recorridos | Los mismos comandos, con cuatro casos de servicio y cuatro casos integrados nuevos (estos últimos en Chromium, Firefox y WebKit) | Backend 104/104, frontend 373/373, UI 27/27 e integración 18/18. `flake8` crítico: 0 errores. |
+
+Los 12 resultados nuevos de Playwright corresponden a **cuatro flujos completos × tres motores**, no a 12 flujos distintos. El servidor de QA usa catálogo y proveedor controlados, sin llamadas externas; su límite de mensajes se amplía solo en ese proceso para que los tres motores no compartan una cuota agotada. El límite de producto se comprueba en las pruebas de backend. El caso de Supabase en vivo no se volvió a ejecutar en esta ampliación. No se modificó el código productivo.
 
 ## Repetición y límites
 
