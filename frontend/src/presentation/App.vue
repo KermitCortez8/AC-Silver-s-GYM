@@ -15,6 +15,7 @@
     </div>
 
     <router-view />
+    <AgentChat v-if="publicAgentPage" />
     <div
       v-if="authStore.isAuthenticated && gymStore.syncError"
       role="alert"
@@ -40,14 +41,17 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import AgentChat from './components/AgentChat.vue';
 import { useAuthStore } from '../application/stores/authStore';
 import { useGymStore } from '../application/stores/gymStore';
 
 const authStore = useAuthStore();
 const gymStore = useGymStore();
 const router = useRouter();
+const route = useRoute();
+const publicAgentPage = computed(() => ['/', '/registro', '/nosotros', '/preguntas-frecuentes'].includes(route.path));
 let sessionInterval;
 const revalidateClientSession = () => {
   if (

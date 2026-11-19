@@ -19,6 +19,7 @@ from application.services.gym_service import GymService
 from app.bootstrap import process_pending_emails, process_pending_preregistrations, process_membership_expiration_reminders
 from presentation.routes.attendance_routes import router as attendance_router
 from presentation.routes.auth_routes import router as auth_router
+from presentation.routes.agent_routes import router as agent_router
 from presentation.routes.clients_routes import router as clients_router
 from presentation.routes.gym_routes import router as gym_router
 from presentation.routes.inventory_routes import router as inventory_router
@@ -97,6 +98,7 @@ def health(_gym_service: GymService = Depends(get_gym_service)) -> dict[str, str
 
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(agent_router, prefix="/api")
 app.include_router(gym_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(clients_router, prefix="/api")

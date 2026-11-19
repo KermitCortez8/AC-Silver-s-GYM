@@ -12,6 +12,7 @@ import logging
 from fastapi import Depends, Header, HTTPException, Request, status
 
 from infrastructure.config import Settings, get_settings
+from infrastructure.services.groq_agent_provider import GroqAgentProvider
 from domain.models.auth import UserProfile
 from application.services.auth_service import AuthService, ClientActivationRequired
 from application.services.clients_service import ClientsService
@@ -22,6 +23,10 @@ from application.services.users_service import UsersService
 from infrastructure.security import verify_session_token
 
 logger = logging.getLogger(__name__)
+
+
+def get_agent_provider() -> GroqAgentProvider:
+    return GroqAgentProvider(get_settings().groq_api_key)
 
 @lru_cache(maxsize=1)
 # Obtiene los datos necesarios.

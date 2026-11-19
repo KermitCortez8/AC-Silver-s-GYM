@@ -493,3 +493,16 @@ trazabilidad. La corrida habitual del backend registró 967 aprobadas y 61
 omitidas. Con el JUnit vigente del frontend, el publicador local confirmó
 178 de 222 casos (80,18 %). Los informes están en
 `.artifacts/testiny-checkout-stripe/`.
+
+## Huellas de las pruebas de arquitectura del PR 136 · 2026-11-19
+
+El job `documentation` detectó que la huella de `test_layer_boundaries.py`
+había cambiado al declarar UTF-8 en dos lecturas de archivos Python. Se
+compararon las aserciones con los resultados esperados de TC-184 y TC-185 y se
+actualizaron las huellas SHA-256 de sus cuatro selectores en `automatizacion.json`.
+
+En Docker Linux con Python 3.12 y Node 22 pasaron el validador documental, las
+62 pruebas de `.specify/tests` y las 7 pruebas de `test_layer_boundaries.py`.
+En Windows pasaron las 18 pruebas de `test_testiny_documented.py`. La suite
+completa en Windows registró 13 errores y una omisión por permisos de enlaces
+simbólicos (WinError 1314).

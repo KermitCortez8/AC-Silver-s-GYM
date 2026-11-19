@@ -844,7 +844,7 @@
       "clase": "tests.transversales.arquitectura.test_layer_boundaries",
       "prueba": "test_client_registration_uses_injected_repository_and_hasher",
       "minimo_variantes": 1,
-      "sha256": "b426ba823068f9b4bb4f96c0e9d8ba1db5d4f98f7bca584b4474ee39e2f698e3"
+      "sha256": "3b84e11e8c61c173591a73efce27079377cac24ba193587b7105f59296bbbd05"
     },
     "BE:transversales/arquitectura/test_layer_boundaries.py::test_imports_respect_layer_boundaries": {
       "componente": "backend",
@@ -852,7 +852,7 @@
       "clase": "tests.transversales.arquitectura.test_layer_boundaries",
       "prueba": "test_imports_respect_layer_boundaries",
       "minimo_variantes": 3,
-      "sha256": "b426ba823068f9b4bb4f96c0e9d8ba1db5d4f98f7bca584b4474ee39e2f698e3"
+      "sha256": "3b84e11e8c61c173591a73efce27079377cac24ba193587b7105f59296bbbd05"
     },
     "BE:transversales/arquitectura/test_layer_boundaries.py::test_persistence_does_not_inherit_domain_rules": {
       "componente": "backend",
@@ -860,7 +860,7 @@
       "clase": "tests.transversales.arquitectura.test_layer_boundaries",
       "prueba": "test_persistence_does_not_inherit_domain_rules",
       "minimo_variantes": 1,
-      "sha256": "b426ba823068f9b4bb4f96c0e9d8ba1db5d4f98f7bca584b4474ee39e2f698e3"
+      "sha256": "3b84e11e8c61c173591a73efce27079377cac24ba193587b7105f59296bbbd05"
     },
     "BE:transversales/arquitectura/test_layer_boundaries.py::test_read_results_cannot_mutate_persisted_state_and_failed_commit_propagates": {
       "componente": "backend",
@@ -868,7 +868,7 @@
       "clase": "tests.transversales.arquitectura.test_layer_boundaries",
       "prueba": "test_read_results_cannot_mutate_persisted_state_and_failed_commit_propagates",
       "minimo_variantes": 1,
-      "sha256": "b426ba823068f9b4bb4f96c0e9d8ba1db5d4f98f7bca584b4474ee39e2f698e3"
+      "sha256": "3b84e11e8c61c173591a73efce27079377cac24ba193587b7105f59296bbbd05"
     },
     "BE:transversales/integracion/test_client_flow_control.py::test_confirmed_membership_cannot_be_replaced": {
       "componente": "backend",
