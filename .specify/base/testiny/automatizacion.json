@@ -1201,7 +1201,7 @@
       "clase": "tests/paneles_configuracion/integracion/module-navigation.test.js",
       "prueba": "a mounted view is immediately available while its data is still loading",
       "minimo_variantes": 1,
-      "sha256": "7e2df46564a59f6ab44b55204450e4d62344dffa65392f7427697bc0dcb6f84c"
+      "sha256": "49c29e0c83a64669c65961fba990070483eee7192d88d048e96eb5627825a30d"
     },
     "FE:paneles_configuracion/integracion/module-navigation.test.js::old navigation completion cannot close a newer transition": {
       "componente": "frontend",
@@ -1209,7 +1209,7 @@
       "clase": "tests/paneles_configuracion/integracion/module-navigation.test.js",
       "prueba": "old navigation completion cannot close a newer transition",
       "minimo_variantes": 1,
-      "sha256": "7e2df46564a59f6ab44b55204450e4d62344dffa65392f7427697bc0dcb6f84c"
+      "sha256": "49c29e0c83a64669c65961fba990070483eee7192d88d048e96eb5627825a30d"
     },
     "FE:paneles_configuracion/integracion/scoped-gym-modules.test.js::independent module assemblies keep state isolated and do not mount operations on shared state": {
       "componente": "frontend",

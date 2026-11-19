@@ -1,5 +1,5 @@
 export const MAX_MODULE_WAIT_MS = 3_000;
-const MODULE_FADE_OUT_MS = 220;
+const MODULE_FADE_OUT_MS = 100;
 
 // La navegación termina al montar la vista. Sus datos tienen indicadores propios;
 // una consulta pendiente en otra sección no debe bloquear la pantalla actual.

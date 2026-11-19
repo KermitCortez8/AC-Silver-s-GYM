@@ -7,13 +7,13 @@
       <div
         class="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
       >
-        <router-link to="/" class="text-xl font-black italic text-orange-600">
+        <router-link to="/" class="text-xl font-black italic text-red-600">
           Silver Gym Surco
         </router-link>
 
         <router-link
           to="/login"
-          class="btn-cta rounded-full border border-slate-300 bg-transparent px-4 py-2 text-sm text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+          class="btn-cta rounded-full border border-slate-300 bg-transparent px-4 py-2 text-sm text-slate-700 transition hover:border-red-300 hover:text-red-600"
         >
           Acceso a plataforma digital
         </router-link>
@@ -29,7 +29,7 @@
         class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/10 sm:p-8 lg:p-10"
       >
         <p
-          class="text-xs font-black uppercase tracking-[0.08em] text-orange-500"
+          class="text-xs font-black uppercase tracking-[0.08em] text-red-700"
         >
           Registro
         </p>
@@ -102,7 +102,7 @@
               @blur="validateField('nombre')" @input="revalidateField('nombre')"
               required
               autocomplete="name"
-              class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+              class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
               placeholder="Jose Perez"
             />
             <FieldError id="register-nombre-error" :message="fieldErrors.nombre" />
@@ -133,7 +133,7 @@
               required
               type="email"
               autocomplete="email"
-              class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 transition focus:border-orange-400 read-only:cursor-not-allowed read-only:bg-slate-100 read-only:text-slate-600"
+              class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 transition focus:border-red-500 focus:ring-2 focus:ring-red-500/15 read-only:cursor-not-allowed read-only:bg-slate-100 read-only:text-slate-600"
               placeholder="nombre@gmail.com"
             />
             <FieldError id="register-correo-error" :message="fieldErrors.correo" />
@@ -155,7 +155,7 @@
               minlength="6"
               type="password"
               autocomplete="new-password"
-              class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+              class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
               placeholder="Mínimo 6 caracteres"
             />
             <FieldError id="register-password-error" :message="fieldErrors.password" />
@@ -174,7 +174,7 @@
                 required
                 inputmode="numeric"
                 pattern="[0-9]{8}"
-                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
                 placeholder="12345678"
               />
               <FieldError id="register-dni-error" :message="fieldErrors.dni" />
@@ -196,7 +196,7 @@
                 inputmode="numeric"
                 pattern="[0-9]{9}"
                 autocomplete="tel"
-                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
                 placeholder="999111222"
               />
               <FieldError id="register-telefono-error" :message="fieldErrors.telefono" />
@@ -206,7 +206,7 @@
           <!-- BOTON STRIPE -->
           <button
             type="submit"
-            class="btn-cta w-full rounded-full bg-orange-500 px-5 py-4 text-sm text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            class="btn-cta w-full rounded-full bg-[var(--app-accent)] px-5 py-4 text-sm text-white shadow-lg shadow-red-500/25 transition hover:bg-[var(--app-accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="isSubmitting || googleProcessing || !canRegister"
           >
             {{
@@ -247,9 +247,9 @@
           class="rounded-[1.75rem] border border-white/10 bg-[#141110] p-6 text-white shadow-2xl shadow-red-950/20"
         >
           <span
-            class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-orange-300"
+            class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.08em] text-red-300"
           >
-            <span class="h-[2px] w-[18px] bg-orange-300"></span>
+            <span class="h-[2px] w-[18px] bg-red-300"></span>
             Membresía
           </span>
 
@@ -283,8 +283,8 @@
           class="cursor-pointer rounded-2xl border bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5"
           :class="
             form.plan === plan.id
-              ? 'border-orange-500 ring-2 ring-orange-500/20'
-              : 'border-slate-200 hover:border-orange-300'
+              ? 'border-red-500 ring-2 ring-red-500/20'
+              : 'border-slate-200 hover:border-red-300'
           "
           @click="form.plan = plan.id"
         >
@@ -299,7 +299,7 @@
               </p>
             </div>
 
-            <p class="text-2xl font-black tabular-nums text-orange-600">
+            <p class="text-2xl font-black tabular-nums text-red-600">
               S/ {{ plan.price }}
             </p>
           </div>
@@ -323,7 +323,7 @@
         <!-- CLIENTE REGISTRADO -->
         <div
           v-if="registeredPreregistration"
-          class="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-5 text-sm text-orange-900"
+          class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-900"
           role="status"
         >
           <p class="font-bold">Solicitud pendiente de pago</p>

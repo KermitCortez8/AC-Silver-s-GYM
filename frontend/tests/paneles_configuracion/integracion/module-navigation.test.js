@@ -13,11 +13,11 @@ test('a slow route download stops blocking navigation after three seconds', t =>
   let visible = false;
   const loader = createModuleLoader({ onChange: value => { visible = value; } });
   const navigation = loader.start();
-  t.mock.timers.tick(2779);
+  t.mock.timers.tick(2899);
   assert.equal(visible, true);
   t.mock.timers.tick(1);
   assert.equal(visible, false);
-  t.mock.timers.tick(220);
+  t.mock.timers.tick(100);
   assert.equal(visible, false);
   loader.complete(navigation);
   t.mock.timers.tick(7000);
