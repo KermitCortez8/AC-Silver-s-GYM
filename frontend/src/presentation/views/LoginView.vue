@@ -9,14 +9,14 @@
       >
         <router-link
           to="/"
-          class="text-xl font-black italic text-orange-600"
+          class="text-xl font-black italic text-red-600"
         >
           Silver Gym Surco
         </router-link>
 
         <router-link
           to="/registro"
-          class="btn-cta rounded-full bg-orange-500 px-4 py-2 text-sm text-white transition hover:bg-orange-600"
+          class="btn-cta rounded-full bg-[var(--app-accent)] px-4 py-2 text-sm text-white transition hover:bg-[var(--app-accent-hover)]"
         >
           Registrarse
         </router-link>
@@ -87,7 +87,7 @@
       >
         <div class="mb-6">
           <p
-            class="text-xs font-black uppercase tracking-[0.08em] text-orange-500"
+            class="text-xs font-black uppercase tracking-[0.08em] text-red-700"
           >
             Acceso
           </p>
@@ -132,7 +132,7 @@
                 type="email"
                 required
                 autocomplete="email"
-                class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+                class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-slate-950 outline-none placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
                 placeholder="cliente@correo.com"
               />
             </div>
@@ -163,7 +163,7 @@
                 type="password"
                 required
                 autocomplete="current-password"
-                class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-slate-950 outline-none placeholder:text-slate-400 focus:border-orange-400"
+                class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-slate-950 outline-none placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
                 placeholder="Tu contraseña"
               />
             </div>
@@ -171,7 +171,7 @@
 
           <button
             type="submit"
-            class="btn-cta w-full rounded-full bg-orange-500 px-4 py-3 text-sm text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            class="btn-cta w-full rounded-full bg-[var(--app-accent)] px-4 py-3 text-sm text-white shadow-lg shadow-red-500/25 transition hover:bg-[var(--app-accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="processing"
           >
             {{ processing ? 'Validando...' : 'Entrar con correo' }}
@@ -210,7 +210,7 @@
           "
         >
           <div
-            class="rounded-2xl border border-orange-200 bg-orange-50 p-4"
+            class="rounded-2xl border border-red-200 bg-red-50 p-4"
           >
             <p class="text-sm text-slate-700">
               Esta cuenta todavía no está vinculada con Google.
@@ -228,14 +228,14 @@
               required
               type="password"
               autocomplete="current-password"
-              class="w-full rounded-2xl border border-orange-100 px-4 py-3 outline-none focus:border-orange-400"
+              class="w-full rounded-2xl border border-red-100 px-4 py-3 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
             />
           </label>
 
           <button
             type="submit"
             :disabled="processing"
-            class="w-full rounded-2xl bg-orange-500 px-4 py-3 font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            class="w-full rounded-2xl bg-[var(--app-accent)] px-4 py-3 font-bold text-white transition hover:bg-[var(--app-accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {{ processing ? 'Vinculando...' : 'Vincular Google y entrar' }}
           </button>
@@ -256,7 +256,7 @@
 
           <router-link
             to="/registro"
-            class="font-black text-orange-600 hover:text-orange-700"
+            class="font-black text-red-600 hover:text-red-700"
           >
             Regístrate aquí
           </router-link>
