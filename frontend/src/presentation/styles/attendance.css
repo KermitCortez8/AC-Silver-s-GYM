@@ -736,7 +736,6 @@
 }
 .att-dialog::backdrop {
   background: #0009;
-  backdrop-filter: blur(3px);
 }
 .att-dialog-body {
   padding: 27px;

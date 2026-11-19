@@ -38,7 +38,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .schedule-modal { margin: auto; width: min(480px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 0; overflow-y: auto; border: 1px solid var(--app-border); border-radius: 20px; background: var(--app-canvas); color: var(--app-text); box-shadow: 0 24px 80px #0006; }
 .schedule-modal--wide { width: min(680px, calc(100% - 32px)); }
-.schedule-modal::backdrop { background: #080b14b8; backdrop-filter: blur(5px); }
+.schedule-modal::backdrop { background: #080b14b8; }
 header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 24px; border-bottom: 1px solid var(--app-border); background: var(--app-surface); }
 h2 { margin: 5px 0 0; font-size: 23px; font-weight: 750; letter-spacing: -.025em; }
 .modal-eyebrow { margin: 0; font-size: 11px; font-weight: 700; color: var(--app-accent-text); letter-spacing: .08em; text-transform: uppercase; }

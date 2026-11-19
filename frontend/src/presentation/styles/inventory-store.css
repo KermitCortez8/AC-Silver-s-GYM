@@ -59,7 +59,6 @@
   justify-content: center;
   padding: 1rem;
   background: var(--rm-backdrop);
-  backdrop-filter: blur(6px);
 }
 
 .rm-panel {
@@ -93,7 +92,6 @@
   border-bottom: 1px solid var(--rm-panel-border);
   background: var(--rm-header);
   padding: 1.1rem 1.5rem;
-  backdrop-filter: blur(8px);
 }
 
 .rm-header-icon {
@@ -254,14 +252,12 @@
 [data-theme="light"] .inv-store-theme .rm-choice--ajuste.is-active { background: #ecfeff; color: #0e7490; }
 
 /* Animación de apertura y cierre */
-.rm-fade-enter-active,
-.rm-fade-leave-active {
-  transition: opacity 0.2s ease;
+.rm-fade-enter-active {
+  transition: opacity 100ms ease-out;
 }
 
-.rm-fade-enter-active .rm-panel,
-.rm-fade-leave-active .rm-panel {
-  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
+.rm-fade-leave-active {
+  transition: opacity 75ms ease-in;
 }
 
 .rm-fade-enter-from,
@@ -269,17 +265,9 @@
   opacity: 0;
 }
 
-.rm-fade-enter-from .rm-panel,
-.rm-fade-leave-to .rm-panel {
-  opacity: 0;
-  transform: translateY(12px) scale(0.97);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .rm-fade-enter-active,
-  .rm-fade-leave-active,
-  .rm-fade-enter-active .rm-panel,
-  .rm-fade-leave-active .rm-panel {
+  .rm-fade-leave-active {
     transition: none;
   }
 }
@@ -317,11 +305,6 @@
   .rm-footer > :last-child {
     order: -1;
     min-width: 0;
-  }
-
-  .rm-fade-enter-from .rm-panel,
-  .rm-fade-leave-to .rm-panel {
-    transform: translateY(32px);
   }
 }
 
