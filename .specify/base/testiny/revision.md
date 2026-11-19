@@ -157,3 +157,11 @@ revisaron los cambios en los selectores de frontend y sus fixtures. Las
 aserciones, los datos y los resultados esperados permanecen iguales. Las
 huellas de las fuentes afectadas y del nuevo soporte se registran en
 `automatizacion.json`.
+
+## Navegación entre módulos · 2026-11-19
+
+La prueba del límite de tres segundos ajusta el punto en que empieza a
+desaparecer la pantalla de carga, cuya salida ahora dura 100 ms. Las dos
+pruebas del mismo archivo vinculadas a casos documentados conservan sus
+aserciones sobre disponibilidad de la vista y navegación concurrente.
+Se actualizó su huella para que el importador acepte el JUnit de la nueva revisión.
