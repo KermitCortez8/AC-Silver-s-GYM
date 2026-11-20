@@ -449,7 +449,7 @@
 <script setup>
 import QuantityInput from '../components/QuantityInput.vue';
 import { AlertCircle, Boxes, ChevronDown, ClipboardCheck, Eye, History, Info, Package } from 'lucide-vue-next';
-import { computed, defineAsyncComponent, ref, watch } from 'vue';
+import { defineAsyncComponent } from 'vue';
 import InventoryUnitsPanel from '../components/inventory/InventoryUnitsPanel.vue';
 import ResourceModal from '../components/ResourceModal.vue';
 import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
@@ -465,7 +465,7 @@ import { useInventoryWorkspace } from '../composables/inventory/useInventoryWork
 const InventoryMovementsPanel = defineAsyncComponent(() => import('../components/inventory/InventoryMovementsPanel.vue'));
 
 const {
-  route, router, gymStore, tabs, activeTab,
+  tabs, activeTab, articlesVisited, movementsVisited, inventoryEmptyMessage,
   inventory, searchQuery, selectedCategory, selectedLocation, selectedStatus,
   locationOptions, locationChoices, filteredInventory, sortKey, sortDir,
   SORT_COLUMNS, toggleSort, sortedInventory, paginaActual, porPagina,
@@ -476,27 +476,10 @@ const {
   statusPreview, feedbackToneClass, isLowStock, categoryDotPalette, categoryDotColor,
   inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,
   resetForm, openNewItem, closeEditor, editItem, requiredFields,
-  handleSubmit, deleteItem, detailItem, itemNumber, detailMovements, isLoadingDetailMovements, detailMovementsError,
+  handleSubmit, deleteItem, detailItem, unitsOpen, itemNumber, detailMovements, isLoadingDetailMovements, detailMovementsError,
   movementClass, signedQuantity, movementTime, openDetails, editFromDetails,
   limitObservations, handleTabsKeydown,
 } = useInventoryWorkspace();
-
-const movementsVisited = ref(activeTab.value === 'movimientos');
-const articlesVisited = ref(activeTab.value === 'articulos');
-watch(activeTab, (tab) => {
-  if (tab === 'movimientos') movementsVisited.value = true;
-  if (tab === 'articulos') articlesVisited.value = true;
-});
-const inventoryEmptyMessage = computed(() => {
-  if (inventory.value.length) return 'Ningún artículo coincide con los filtros aplicados.';
-  if (gymStore.isSectionSyncing('inventoryItems')) return 'Cargando artículos…';
-  return 'No hay artículos en inventario. Usa "Ingresar Nuevo Artículo" para registrar el primero.';
-});
-
-// Lista desplegable de unidades del N° de activo; se cierra al cambiar de artículo.
-const unitsOpen = ref(false);
-watch(detailItem, () => { unitsOpen.value = false; });
-
 </script>
 
 <style scoped>

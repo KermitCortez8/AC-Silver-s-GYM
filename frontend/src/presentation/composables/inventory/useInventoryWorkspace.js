@@ -27,7 +27,14 @@ export const useInventoryWorkspace = () => {
       if (tab !== activeTab.value) router.replace({ query: { ...route.query, tab } });
     },
   });
+  const articlesVisited = ref(activeTab.value === 'articulos');
+  const movementsVisited = ref(activeTab.value === 'movimientos');
   const inventory = computed(() => gymStore.inventory.filter((item) => !item.archived));
+  const inventoryEmptyMessage = computed(() => {
+    if (inventory.value.length) return 'Ningún artículo coincide con los filtros aplicados.';
+    if (gymStore.isSectionSyncing('inventoryItems')) return 'Cargando artículos…';
+    return 'No hay artículos en inventario. Usa "Ingresar Nuevo Artículo" para registrar el primero.';
+  });
 
   // Filtros de la tabla (solo lectura, no afectan el store).
   const searchQuery = ref('');
@@ -318,6 +325,8 @@ export const useInventoryWorkspace = () => {
 
   // Detalles: datos del articulo y sus ultimos movimientos, solo lectura.
   const detailItem = ref(null);
+  const unitsOpen = ref(false);
+  watch(detailItem, () => { unitsOpen.value = false; });
   const isLoadingDetailMovements = computed(() => gymStore.isSectionSyncing('inventoryMovements'));
   const detailMovementsError = ref('');
   const itemNumber = (item) => Number(String(item?.id ?? '').replace('item-', ''));
@@ -384,12 +393,14 @@ export const useInventoryWorkspace = () => {
     gymStore.fetchFromBackend({ section }).catch((error) => console.warn('No se pudo refrescar inventario:', error));
   };
   onMounted(loadInventoryTab);
-  watch(activeTab, () => {
+  watch(activeTab, (tab) => {
+    if (tab === 'articulos') articlesVisited.value = true;
+    if (tab === 'movimientos') movementsVisited.value = true;
     if (route.name === 'Inventory') loadInventoryTab();
   });
 
   return {
-    route, router, gymStore, tabs, activeTab,
+    route, router, gymStore, tabs, activeTab, articlesVisited, movementsVisited, inventoryEmptyMessage,
     inventory, searchQuery, selectedCategory, selectedLocation, selectedStatus,
     locationOptions, locationChoices, filteredInventory, sortKey, sortDir,
     SORT_COLUMNS, toggleSort, sortedInventory, paginaActual, porPagina,
@@ -400,7 +411,7 @@ export const useInventoryWorkspace = () => {
     statusPreview, feedbackToneClass, isLowStock, categoryDotPalette, categoryDotColor,
     inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,
     resetForm, openNewItem, closeEditor, editItem, requiredFields,
-    handleSubmit, deleteItem, detailItem, itemNumber, detailMovements, isLoadingDetailMovements, detailMovementsError,
+    handleSubmit, deleteItem, detailItem, unitsOpen, itemNumber, detailMovements, isLoadingDetailMovements, detailMovementsError,
     movementClass, signedQuantity, movementTime, openDetails, editFromDetails,
     limitObservations, handleTabsKeydown,
   };

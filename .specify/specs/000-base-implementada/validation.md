@@ -56,6 +56,12 @@ oficial están en [el flujo de trabajo](../../guias/spec-driven.md).
 - En el primer cambio se hizo una revisión estática y se omitieron las pruebas por indicación del usuario. La revisión posterior reprodujo que la pestaña Movimientos montaba una tabla que no solicitaba el historial. La vista que antes pedía esos datos había dejado de usarse.
 - En la compilación de producción se comprobó en un navegador con sesión y datos simulados que Productos y Ventas cargan sus recursos, que Movimientos pide el historial y que su editor consulta las unidades al abrirse. Alternar Artículos y Movimientos dentro de la vigencia de la caché no generó peticiones nuevas ni descargas de JavaScript. El catálogo del contenedor local respondió HTTP 200.
 
+### Validación de frontend del PR 141
+
+- GitHub Actions reportó tres fallos en `34d3726`. El editor abierto antes del primer render no aparecía en el HTML de prueba, `InventoryView.vue` tenía 516 líneas y el caso de navegación esperaba cinco peticiones al abrir Productos.
+- La vista de Inventario quedó en 499 líneas y el editor mantiene la carga diferida. El caso de navegación verifica las peticiones de cada pestaña y la reutilización de la caché. Se actualizó la huella del archivo de pruebas para conservar su trazabilidad en Testiny.
+- El contenedor de pruebas de frontend aprobó los 422 casos y la imagen de producción compiló. En Chromium se comprobó la apertura del editor y la carga de Artículos y Movimientos con una sesión simulada.
+
 ## Revisión de pruebas por módulo y batería de casos de uso · 2026-11-10
 
 Petición: revisar las pruebas existentes, ordenarlas primero por módulo y luego

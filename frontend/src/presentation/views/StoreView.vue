@@ -259,7 +259,7 @@
     </ResourceModal>
 
     <ProductEditorDialog
-      v-if="editorVisited"
+      v-if="isProductEditorOpen || editorVisited"
       :category-options="productCategoryOptions"
       :unit-options="productUnitOptions"
       :form-errors="productFormErrors"
