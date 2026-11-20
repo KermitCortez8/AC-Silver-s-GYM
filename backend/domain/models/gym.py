@@ -183,6 +183,7 @@ class RegistrarClienteMembresiaInput(ValidatedInput):
 
 
 class RegistroAdminClienteInput(ClienteInput):
+    plan: ShortText = Field(default="MENSUAL", min_length=1)
     id_promocion: int | None = Field(default=None, gt=0)
     pagar_con_stripe: bool = False
 

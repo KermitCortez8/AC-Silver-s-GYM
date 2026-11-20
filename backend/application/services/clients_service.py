@@ -52,6 +52,7 @@ class ClientsService:
                 "correo": client.get("correo") or "",
                 "dni": client.get("dni") or "",
                 "plan": plan.get("nombre_plan") or "Plan no disponible",
+                "id_promocion": membership.get("id_promocion"),
                 "monto_pago": float(membership.get("monto_pago", 0) or 0),
                 "estado_pago": str(membership.get("estado_pago") or "SIN_REGISTRO").upper(),
                 "metodo_pago": str(membership.get("metodo_pago") or "").lower(),

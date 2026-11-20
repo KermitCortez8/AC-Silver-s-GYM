@@ -1516,7 +1516,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "a failed users request clears only its section loading status",
       "minimo_variantes": 1,
-      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
+      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
     },
     "FE:transversales/integracion/navigation-stores.test.js::each admin section loads only its resources and shares them with the dashboard": {
       "componente": "frontend",
@@ -1524,7 +1524,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "each admin section loads only its resources and shares them with the dashboard",
       "minimo_variantes": 1,
-      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
+      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
     },
     "FE:transversales/integracion/navigation-stores.test.js::failed forced refresh is not cached and a later navigation retries it": {
       "componente": "frontend",
@@ -1532,7 +1532,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "failed forced refresh is not cached and a later navigation retries it",
       "minimo_variantes": 1,
-      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
+      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
     },
     "FE:transversales/integracion/navigation-stores.test.js::switching to users is not delayed by a pending client list": {
       "componente": "frontend",
@@ -1540,7 +1540,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "switching to users is not delayed by a pending client list",
       "minimo_variantes": 1,
-      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
+      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
     },
     "FE:transversales/integracion/navigation-stores.test.js::users finish loading while a previous section still has pending requests": {
       "componente": "frontend",
@@ -1548,7 +1548,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "users finish loading while a previous section still has pending requests",
       "minimo_variantes": 1,
-      "sha256": "59a58413ecd72b528c9db5dcfab8bc04c61eaa9560b45cdb8ca11327400a4cc5"
+      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
     },
     "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni": {
       "componente": "backend",

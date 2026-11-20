@@ -33,6 +33,7 @@ identificador/DNI, editarla y comprobar que conserva origen y fecha de alta.
 6. **CA-06.** Al abrir el alta o edición administrativa se consultan los planes
    y promociones del backend; el registro público consulta planes y promociones
    vigentes. Las altas solo ofrecen planes activos y promociones aplicables.
+   El alta administrativa acepta el nombre de cualquier plan activo del catálogo.
    Un error muestra reintento y conserva el borrador, sin sustituir el catálogo
    por planes locales. La edición personal conserva la membresía contratada.
 7. **CA-07.** El alta pública guarda una solicitud temporal privada durante 24
@@ -48,7 +49,7 @@ identificador/DNI, editarla y comprobar que conserva origen y fecha de alta.
 | CA-03 | [test_clients_lookup.py](../../../backend/tests/clientes/unitarias/test_clients_lookup.py). |
 | CA-04 | [test_admin_client_payment.py](../../../backend/tests/clientes/integracion/test_admin_client_payment.py): `test_retry_checkout_uses_saved_amount_and_does_not_duplicate_registration`. |
 | CA-05 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_client_deletion_removes_enrollments_progress_and_releases_capacity`; [test_scoped_operations.py](../../../backend/tests/transversales/integracion/test_scoped_operations.py): `test_client_deletion_keeps_the_whole_cascade_inside_one_command`. |
-| CA-06 | [client-catalog.test.js](../../../frontend/tests/clientes/interfaz/client-catalog.test.js) y [validación del catálogo](../validaciones/catalogo-clientes/validation.md). |
+| CA-06 | [client-catalog.test.js](../../../frontend/tests/clientes/interfaz/client-catalog.test.js), [test_admin_catalog_registration.py](../../../backend/tests/clientes/integracion/test_admin_catalog_registration.py) y [validación del catálogo](../validaciones/catalogo-clientes/validation.md). |
 | CA-07 | [test_public_preregistrations.py](../../../backend/tests/clientes/integracion/test_public_preregistrations.py), [integración SQL](../../../backend/tests/clientes/postgres/test_public_preregistrations_postgres.py) y [validación](../validaciones/preregistros-separados/validation.md). |
 
 ## 4. Technical Constraints

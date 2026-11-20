@@ -1,12 +1,13 @@
 import { feedbackClass as noticeClassFor } from '../../utils/feedback.js';
 import { useProductEditor } from './useProductEditor.js';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useStoreFavorites } from './useStoreFavorites.js';
 import { blockNonInteger } from '../../utils/inputGuards.js';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { cleanInteger, DEFAULT_PAGE_SIZE, matchesSearch, sortRows, uniqueOptions } from '../../../domain/utils/inputRules.js';
 import { useRoute, useRouter } from 'vue-router';
 import { useGymStore } from '../../../application/stores/gymStore';
+import { sectionForPath } from '../../../application/services/moduleNavigation.js';
 
 /** Coordina el catálogo, las cantidades del carrito y la edición de productos. */
 export const useStoreCatalog = () => {
@@ -26,7 +27,9 @@ export const useStoreCatalog = () => {
       if (['ventas', 'movimientos'].includes(route.query.tab)) return 'ventas';
       return route.query.tab === 'papelera' ? 'papelera' : 'productos';
     },
-    set: (tab) => router.replace({ query: { ...route.query, tab } }),
+    set: (tab) => {
+      if (tab !== activeTab.value) router.replace({ query: { ...route.query, tab } });
+    },
   });
   const productos = computed(() => gymStore.productos_tienda);
   const productSearch = ref('');
@@ -74,7 +77,8 @@ export const useStoreCatalog = () => {
 
   // Cantidades: solo enteros entre 1 y lo que queda disponible (stock menos lo que ya esta en el carrito).
   const blockQuantityChars = blockNonInteger();
-  const inCart = (producto) => Number(gymStore.cart.find((item) => item.id_producto === producto?.id_producto)?.cantidad || 0);
+  const cartQuantities = computed(() => new Map(gymStore.cart.map((item) => [item.id_producto, item.cantidad])));
+  const inCart = (producto) => Number(cartQuantities.value.get(producto?.id_producto) || 0);
   const availableFor = (producto) => Math.max(0, Number(producto?.cantidad || 0) - inCart(producto));
   const clampQuantity = (value, producto) => Math.max(1, Math.min(Number(value) || 1, availableFor(producto) || 1));
   const stockWarning = ref({});
@@ -196,6 +200,11 @@ export const useStoreCatalog = () => {
 
   // Detalles de solo lectura del producto.
   const detailProduct = ref(null);
+  const openProductDetails = (producto) => {
+    detailProduct.value = producto;
+    if (!producto.id_item) return;
+    gymStore.fetchFromBackend({ section: 'inventoryItems' }).catch((error) => console.warn('No se pudo cargar el artículo vinculado:', error));
+  };
   const linkedItemName = (idItem) => {
     const item = findItem(idItem);
     return item ? `${item.inventoryCode} - ${item.name}` : `Item #${idItem}`;
@@ -302,15 +311,24 @@ export const useStoreCatalog = () => {
 
   const { isSaving, editingId, isProductEditorOpen, form, formErrors: productFormErrors, currentProductCode, findItem, stockEditable, stockMostrado, resetForm, openNewProducto, closeProductEditor, editProducto, handleSubmit, imageFeedback, imageFeedbackTone, isUploadingImage, isBucketPickerOpen, isLoadingBucketImages, bucketImages, loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage, handleLocalImageUpload } = useProductEditor({ gymStore, productos, inventario, feedbackMessage, feedbackTone, productCode });
 
-  onMounted(() => {
-    gymStore
-      .fetchFromBackend?.({ section: 'store' })
-      .catch((error) => console.warn('No se pudo refrescar tienda:', error));
+  const storeSection = computed(() => sectionForPath(route.path, route.query.tab));
+  const isLoadingEmptyTab = computed(() => {
+    if (!gymStore.isSectionSyncing(storeSection.value)) return false;
+    if (storeSection.value === 'orders') return !gymStore.storeOrders.length;
+    if (isAdmin.value && activeTab.value === 'papelera') return !gymStore.papelera_tienda.length;
+    return !productos.value.length;
+  });
+  const loadStoreSection = () => {
+    gymStore.fetchFromBackend({ section: storeSection.value }).catch((error) => console.warn('No se pudo refrescar tienda:', error));
+  };
+  onMounted(loadStoreSection);
+  watch(storeSection, () => {
+    if (route.name === 'Store') loadStoreSection();
   });
 
   return {
     route, router, gymStore, isAdmin, tabs,
-    activeTab, productos, productSearch, categoryFilter, catalogProducts,
+    activeTab, isLoadingEmptyTab, productos, productSearch, categoryFilter, catalogProducts,
     categories, filteredProducts, authStore, favoriteOwner, favoriteIds,
     isFavorite, toggleFavorite, onlyFavorites, clientSort, canBuy,
     CLIENT_SORTS, visibleProducts, hasClientFilters, clearClientFilters, blockQuantityChars,
@@ -320,7 +338,7 @@ export const useStoreCatalog = () => {
     cartTotal, busqueda, categoriaActiva, filtroEstado, categoriasUnicas,
     CATEGORY_COLORS, categoriaDotColor, soloStockBajo, sortKey, sortDir,
     SORT_COLUMNS, toggleSort, toggleStockBajo, productosFiltrados, paginaActual,
-    porPagina, productosPaginados, detailProduct, linkedItemName, productCategoryOptions,
+    porPagina, productosPaginados, detailProduct, openProductDetails, linkedItemName, productCategoryOptions,
     productUnitOptions, editFromDetails, cantidadInput, feedbackMessage, feedbackTone,
     feedbackToneClass, productCode, isProductLowStock, productStatusClass, productStatusDot,
     stockBarColor, deleteProducto, cartError, updateCart, agregarAlCarrito,

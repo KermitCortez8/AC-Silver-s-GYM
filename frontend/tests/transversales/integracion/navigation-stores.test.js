@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, test } from 'node:test';
 import { createPinia } from 'pinia';
 import { crearServidorSsr } from '../../soporte/servidor-ssr.js';
+import { sectionForPath } from '../../../src/application/services/moduleNavigation.js';
 
 let server;
 let useAuthStore;
@@ -792,20 +793,27 @@ test('admin store shares its resources with inventory and orders', async () => {
     return json([]);
   };
 
-  await gym.fetchFromBackend({ section: 'store' });
+  const loadTab = (path, tab) => gym.fetchFromBackend({ section: sectionForPath(path, tab) });
+  const expectRequests = (expected) => assert.deepEqual(paths.splice(0).sort(), expected);
 
-  assert.deepEqual(paths.sort(), [
-    '/api/clientes',
-    '/api/inventario',
-    '/api/inventario/unidades',
-    '/api/tienda',
-    '/api/tienda/pedidos',
-  ]);
+  await loadTab('/admin/store');
+  expectRequests(['/api/tienda']);
 
-  paths.length = 0;
-  await gym.fetchFromBackend({ section: 'orders' });
+  await loadTab('/admin/inventory');
+  expectRequests(['/api/inventario']);
 
-  assert.deepEqual(paths, []);
+  await loadTab('/admin/inventory', 'movimientos');
+  expectRequests(['/api/inventario/movimientos']);
+
+  await gym.fetchFromBackend({ section: 'inventoryMovementEditor' });
+  expectRequests(['/api/inventario/unidades']);
+
+  await loadTab('/admin/store', 'ventas');
+  expectRequests(['/api/clientes', '/api/tienda/pedidos']);
+
+  await loadTab('/admin/orders');
+  await loadTab('/admin/store');
+  expectRequests([]);
 });
 
 test('trainer views share the pending overview and refresh explicitly after navigation', async () => {

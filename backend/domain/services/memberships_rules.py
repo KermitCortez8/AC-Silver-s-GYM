@@ -684,6 +684,8 @@ class MembershipsRules:
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
             plan = self._ensure_plan_for_client(state, plan_name)
+            if origen_registro == "ADMIN" and not plan.get("activo", True):
+                raise ValueError("El plan seleccionado ya no está disponible")
             id_cliente = self.context.next_int_id_in_state(state, "clientes", "id_cliente")
             id_pm = int(plan.get("id_pm"))
 

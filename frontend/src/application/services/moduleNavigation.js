@@ -61,8 +61,15 @@ export const prepareNavigationSession = async (auth, to, from) => {
   }
 };
 
-export const sectionForPath = (path) => {
-  const [, panel, section] = path.split('/');
+export const sectionForPath = (path, tab) => {
+  const [, panel, section, subpage] = path.split('/');
+  if (section === 'store' && !subpage) {
+    if (panel === 'user') return 'store';
+    if (panel === 'admin' && ['ventas', 'movimientos'].includes(tab)) return 'orders';
+  }
+  if (panel === 'admin' && section === 'inventory' && !subpage) {
+    return tab === 'movimientos' ? 'inventoryHistory' : 'inventoryItems';
+  }
   if (panel === 'trainer') return 'trainer';
   if (panel === 'admin') return ({
     dashboard: 'dashboard', clients: 'clients', users: 'users',

@@ -52,6 +52,8 @@
                   v-if="producto.imagen_url"
                   :src="producto.imagen_url"
                   :alt="producto.nombre"
+                  loading="lazy"
+                  decoding="async"
                   class="h-14 w-14 rounded-xl border border-white/10 bg-slate-950/60 object-contain p-1 opacity-70"
                 />
                 <span v-else class="text-xs text-slate-500">Sin imagen</span>

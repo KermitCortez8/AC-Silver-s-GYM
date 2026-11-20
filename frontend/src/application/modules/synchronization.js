@@ -71,8 +71,10 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
           archived: Boolean(i.archivado),
           byUnit: Boolean(i.prefijo_activo) && isUnitCategory(i.tipo),
         }));
-        ctx.inventoryUnits.value = requireList(await getList('/inventario/unidades'), 'id_unidad');
       }],
+        ['Unidades de inventario', async () => {
+          ctx.inventoryUnits.value = requireList(await getList('/inventario/unidades'), 'id_unidad');
+        }],
         ['Movimientos', ctx.refreshInventoryMovementsFromBackend]);
       tasks.push(['Productos', ctx.refreshStoreProductsFromBackend],
         ['Pedidos', ctx.refreshStoreOrdersFromBackend],
@@ -105,15 +107,23 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
         await ctx.refreshAttendanceFromBackend();
       }]);
 
+      const inventoryResources = ['Inventario', 'Unidades de inventario', 'Movimientos'];
       const sectionResources = {
         clients: ['Clientes', 'Mi perfil', 'Planes', 'Promociones'],
         users: ['Usuarios'],
         plans: ['Planes'],
         schedules: ['Horarios por servicio', 'Rutinas'],
-        inventory: ['Inventario', 'Movimientos'],
-        store: ['Productos', 'Inventario', 'Pedidos', 'Clientes'],
+        inventory: inventoryResources,
+        inventoryItems: ['Inventario'],
+        inventoryUnits: ['Unidades de inventario'],
+        inventoryMovements: ['Movimientos'],
+        inventoryHistory: ['Inventario', 'Movimientos'],
+        inventoryMovementEditor: ['Inventario', 'Unidades de inventario', 'Productos'],
+        inventoryStore: [...inventoryResources, 'Productos'],
+        store: ['Productos'],
+        stockCatalog: ['Inventario', 'Productos'],
         orders: ['Pedidos', 'Clientes'],
-        promotions: ['Promociones', 'Planes', 'Clientes'],
+        promotions: ['Promociones', 'Planes'],
         payments: ['Pagos de membresías'],
         enrollment: ['Clientes', 'Mi perfil', 'Horarios por servicio', 'Matrículas'],
         attendance: ['Clientes', 'Matrículas', 'Asistencias'],
@@ -122,8 +132,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
       };
       const labels = sectionResources[section];
       if (section !== 'all' && !labels) throw new Error('Sección de datos desconocida.');
-      const selectedTasks = labels ? tasks.filter(([label]) => labels.includes(label) &&
-        !(['dashboard', 'store'].includes(section) && label === 'Inventario' && !internal)) : tasks;
+      const selectedTasks = labels ? tasks.filter(([label]) => labels.includes(label)) : tasks;
       await syncResources(selectedTasks.map(([label, load]) => [label, async () => {
         try {
           assertCurrent();

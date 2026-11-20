@@ -9,6 +9,7 @@ import { parseQuantity } from '../../domain/utils/quantities.js';
 
 export const createStoreModule = (ctx, repository) => {
   const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
+  const refreshCatalogStock = () => ctx.fetchFromBackend({ section: 'stockCatalog', force: true });
   const orderLines = (items) => requireList(items, 'id_producto').map(item => ({
     id_producto: Number(item.id_producto),
     cantidad: parseQuantity(item.cantidad === undefined ? 1 : item.cantidad, { min: 1 }),
@@ -46,8 +47,9 @@ export const createStoreModule = (ctx, repository) => {
         ctx.productos_tienda.value.unshift(normalized);
       }
 
-      // Un producto nuevo puede crear su reserva (vacia) en Inventario.
-      await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+      // El alta con stock inicial también registra movimientos de inventario.
+      const section = !producto.id_producto && producto.cantidad_stock > 0 ? 'inventoryStore' : 'stockCatalog';
+      await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ section, force: true }));
       return normalized;
     }
 
@@ -84,7 +86,7 @@ export const createStoreModule = (ctx, repository) => {
     ctx.productos_tienda.value = ctx.productos_tienda.value.filter((p) => p.id_producto !== id_producto);
     if (removed) ctx.papelera_tienda.value = [{ ...removed, estado: 'Descatalogado' }, ...ctx.papelera_tienda.value];
     // Su articulo de Inventario tambien queda archivado.
-    if (ctx.apiBase) await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    if (ctx.apiBase) await refreshAfterMutation(ctx, refreshCatalogStock);
     return result;
   };
 
@@ -92,7 +94,7 @@ export const createStoreModule = (ctx, repository) => {
   const restoreProductoTienda = async (id_producto) => {
     if (ctx.apiBase) {
       await remote.restoreProductoTienda(id_producto);
-      await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+      await refreshAfterMutation(ctx, refreshCatalogStock);
       return;
     }
     const restored = ctx.papelera_tienda.value.find((p) => p.id_producto === id_producto);
@@ -103,7 +105,7 @@ export const createStoreModule = (ctx, repository) => {
   const purgeProductoTienda = async (id_producto) => {
     const result = ctx.apiBase ? await remote.purgeProductoTienda(id_producto) : { producto: 'borrado' };
     ctx.papelera_tienda.value = ctx.papelera_tienda.value.filter((p) => p.id_producto !== id_producto);
-    if (ctx.apiBase) await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    if (ctx.apiBase) await refreshAfterMutation(ctx, refreshCatalogStock);
     return result;
   };
 

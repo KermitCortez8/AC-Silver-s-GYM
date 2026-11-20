@@ -32,9 +32,11 @@
       </nav>
     </section>
 
-    <InventoryMovementsPanel v-if="activeTab === 'movimientos'" />
+    <div v-if="movementsVisited" v-show="activeTab === 'movimientos'">
+      <InventoryMovementsPanel :active="activeTab === 'movimientos'" />
+    </div>
 
-    <section v-else class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section v-if="articlesVisited" v-show="activeTab === 'articulos'" class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
@@ -161,8 +163,8 @@
         item-label="articulos"
       />
 
-      <p v-if="!filteredInventory.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">
-        {{ inventory.length ? 'Ningún artículo coincide con los filtros aplicados.' : 'No hay artículos en inventario. Usa "Ingresar Nuevo Artículo" para registrar el primero.' }}
+      <p v-if="!filteredInventory.length" class="mt-6 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400" role="status">
+        {{ inventoryEmptyMessage }}
       </p>
     </section>
 
@@ -428,7 +430,9 @@
               <span class="hidden min-w-0 flex-1 truncate text-xs text-slate-400 sm:block">{{ movement.descripcion || 'Sin descripción' }}</span>
             </li>
           </ul>
-          <p v-else class="text-sm text-slate-400">Este artículo aún no tiene movimientos.</p>
+          <p v-else class="text-sm text-slate-400" role="status">
+            {{ isLoadingDetailMovements ? 'Cargando movimientos…' : detailMovementsError || 'Este artículo aún no tiene movimientos.' }}
+          </p>
         </div>
       </template>
 
@@ -445,9 +449,8 @@
 <script setup>
 import QuantityInput from '../components/QuantityInput.vue';
 import { AlertCircle, Boxes, ChevronDown, ClipboardCheck, Eye, History, Info, Package } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { defineAsyncComponent } from 'vue';
 import InventoryUnitsPanel from '../components/inventory/InventoryUnitsPanel.vue';
-import InventoryMovementsPanel from '../components/inventory/InventoryMovementsPanel.vue';
 import ResourceModal from '../components/ResourceModal.vue';
 import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
 import SortableTh from '../components/common/SortableTh.vue';
@@ -459,8 +462,10 @@ import FieldError from '../components/FieldError.vue';
 import { INVENTORY_NAME_MAX_LENGTH, missingFieldsMessage, NOTES_MAX_LENGTH } from '../../domain/utils/inputRules.js';
 import { useInventoryWorkspace } from '../composables/inventory/useInventoryWorkspace.js';
 
+const InventoryMovementsPanel = defineAsyncComponent(() => import('../components/inventory/InventoryMovementsPanel.vue'));
+
 const {
-  route, router, gymStore, tabs, activeTab,
+  tabs, activeTab, articlesVisited, movementsVisited, inventoryEmptyMessage,
   inventory, searchQuery, selectedCategory, selectedLocation, selectedStatus,
   locationOptions, locationChoices, filteredInventory, sortKey, sortDir,
   SORT_COLUMNS, toggleSort, sortedInventory, paginaActual, porPagina,
@@ -471,15 +476,10 @@ const {
   statusPreview, feedbackToneClass, isLowStock, categoryDotPalette, categoryDotColor,
   inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,
   resetForm, openNewItem, closeEditor, editItem, requiredFields,
-  handleSubmit, deleteItem, detailItem, itemNumber, detailMovements,
+  handleSubmit, deleteItem, detailItem, unitsOpen, itemNumber, detailMovements, isLoadingDetailMovements, detailMovementsError,
   movementClass, signedQuantity, movementTime, openDetails, editFromDetails,
   limitObservations, handleTabsKeydown,
 } = useInventoryWorkspace();
-
-// Lista desplegable de unidades del N° de activo; se cierra al cambiar de artículo.
-const unitsOpen = ref(false);
-watch(detailItem, () => { unitsOpen.value = false; });
-
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+  <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
@@ -118,12 +118,12 @@
       :total="filteredMovements.length"
       item-label="movimientos"
     />
-    <p v-if="!filteredMovements.length" class="mt-5 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">
-      {{ movements.length ? 'Ningún movimiento coincide con los filtros.' : 'Sin movimientos registrados.' }}
+    <p v-if="!filteredMovements.length" class="mt-5 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400" role="status">
+      {{ historyMessage }}
     </p>
 
     <ResourceModal
-      :open="isModalOpen"
+      :open="active && isModalOpen"
       :icon="ArrowLeftRight"
       :eyebrow="editingMovement ? 'Inventario · Edición' : 'Inventario · Registro'"
       :title="editingMovement ? `Editar movimiento #${editingMovement.id_mov}` : 'Nuevo movimiento'"
@@ -250,11 +250,16 @@
         <p v-if="projectedStoreStock < 0" class="font-bold text-rose-200">La Tienda ya vendió esas unidades; no puedes reducir la reposición.</p>
       </div>
 
+      <p v-if="isLoadingEditor" class="text-sm text-slate-400" role="status">Cargando datos del artículo…</p>
+      <p v-if="editorLoadError" role="alert" class="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-50">
+        No se pudieron cargar los datos del movimiento.
+        <button type="button" class="ml-1 font-bold underline" @click="loadEditor">Reintentar</button>
+      </p>
       <p v-if="modalError" role="alert" class="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-50">{{ modalError }}</p>
 
       <template #footer>
         <button type="button" class="rm-btn-secondary" :disabled="isSaving" @click="closeModal">Cancelar</button>
-        <button type="submit" class="rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 disabled:opacity-60" :disabled="isSaving">
+        <button type="submit" class="rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:bg-amber-300 disabled:opacity-60" :disabled="isSaving || isLoadingEditor || editorLoadError">
           {{ isSaving ? 'Guardando...' : editingMovement ? 'Guardar cambios' : 'Registrar movimiento' }}
         </button>
       </template>
@@ -283,6 +288,8 @@ import { useGymStore } from '../../../application/stores/gymStore';
 import { isActiveUnit } from '../../../domain/utils/inventoryUnits.js';
 import { movementSortKey, movementTime, signedQuantity } from '../../../domain/utils/inventoryMovements.js';
 
+const props = defineProps({ active: { type: Boolean, default: true } });
+
 const movementTypes = [
   { value: 'entrada', label: 'Entrada', icon: ArrowDownToLine },
   { value: 'salida', label: 'Salida', icon: ArrowUpFromLine },
@@ -296,6 +303,14 @@ const ORDER_MOVEMENT = /^(?:Venta pedido|Devolución por cancelación del pedido
 
 const authStore = useAuthStore();
 const gymStore = useGymStore();
+const isLoadingEditor = computed(() => gymStore.isSectionSyncing('inventoryMovementEditor'));
+const editorLoadError = ref(false);
+const loadEditor = () => {
+  editorLoadError.value = false;
+  gymStore.fetchFromBackend({ section: 'inventoryMovementEditor' }).catch(() => {
+    editorLoadError.value = true;
+  });
+};
 const feedback = ref('');
 const feedbackTone = ref('success');
 const modalError = ref('');
@@ -311,17 +326,22 @@ const inventory = computed(() => gymStore.inventory);
 const activeInventory = computed(() => inventory.value.filter((item) => !item.archived));
 const products = computed(() => gymStore.productos_tienda || []);
 const movements = computed(() => gymStore.inventoryMovements || []);
+const historyMessage = computed(() => {
+  if (gymStore.isSectionSyncing('inventoryHistory') && !movements.value.length) return 'Cargando movimientos…';
+  return movements.value.length ? 'Ningún movimiento coincide con los filtros.' : 'Sin movimientos registrados.';
+});
 const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 const today = () => limaDate();
 const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, destino: '', fecha_movimiento: today(), descripcion: '', unidades: [] });
 const form = reactive(emptyForm());
 
 const itemNumber = (item) => Number(String(item.id).replace('item-', ''));
+const itemsByNumber = computed(() => new Map(inventory.value.map((item) => [itemNumber(item), item])));
 const orderNumber = (movement) => String(movement?.descripcion || '').match(ORDER_MOVEMENT)?.[1] || '';
 // Los movimientos de pedidos de la etapa de stock compartido tienen destino VENTA.
 const destinationOf = (movement) => String(movement?.destino || '').toUpperCase() || (orderNumber(movement) ? 'VENTA' : '');
 const lockedByOrder = computed(() => Boolean(editingMovement.value && destinationOf(editingMovement.value) === 'VENTA'));
-const selectedItem = computed(() => inventory.value.find((item) => itemNumber(item) === Number(form.id_item)) || null);
+const selectedItem = computed(() => itemsByNumber.value.get(Number(form.id_item)) || null);
 // Equipos y accesorios con N° de activo por unidad: la salida elige unidades y no hay ajustes.
 const unitItem = computed(() => Boolean(selectedItem.value?.byUnit));
 const lockedByUnits = computed(() => Boolean(editingMovement.value) && unitItem.value);
@@ -367,7 +387,7 @@ const projectedStoreStock = computed(() => {
 /**
  * Gestiona esta acción de la vista.
  */
-const itemName = (idItem) => inventory.value.find((item) => itemNumber(item) === Number(idItem))?.name || `Item #${idItem}`;
+const itemName = (idItem) => itemsByNumber.value.get(Number(idItem))?.name || `Item #${idItem}`;
 const movementClass = (type) => {
   if (type === 'entrada') return 'bg-emerald-400/15 text-emerald-200';
   if (type === 'salida') return 'bg-rose-400/15 text-rose-200';
@@ -468,6 +488,7 @@ const openNew = () => {
   formErrors.value = [];
   resetWarnings();
   isModalOpen.value = true;
+  loadEditor();
 };
 
 /**
@@ -488,6 +509,7 @@ const openEdit = (movement) => {
   formErrors.value = [];
   resetWarnings();
   isModalOpen.value = true;
+  loadEditor();
 };
 
 const closeModal = () => {
@@ -495,12 +517,15 @@ const closeModal = () => {
   isModalOpen.value = false;
   editingMovement.value = null;
 };
+watch(() => props.active, (active) => {
+  if (!active) closeModal();
+});
 
 /**
  * Gestiona esta acción de la vista.
  */
 const save = async () => {
-  if (isSaving.value) return;
+  if (isSaving.value || isLoadingEditor.value || editorLoadError.value) return;
   modalError.value = '';
   touchAll();
   formErrors.value = missingFields(form, requiredMovementFields);

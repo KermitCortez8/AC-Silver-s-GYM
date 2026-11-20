@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
-    <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-opacity">
-      <form class="w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto max-h-[92vh]" novalidate @submit.prevent="$emit('save')">
+    <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80">
+      <form class="w-full max-w-6xl rounded-3xl border border-white/10 bg-slate-950 p-0 shadow-2xl overflow-y-auto overscroll-contain max-h-[92vh]" role="dialog" aria-modal="true" aria-labelledby="promotion-editor-title" novalidate @submit.prevent="$emit('save')">
         <!-- Top gradient border -->
         <div class="h-1 w-full bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 rounded-t-3xl"></div>
         
@@ -13,10 +13,10 @@
               </div>
               <div>
                 <p class="text-xs uppercase tracking-widest text-slate-400 font-bold">{{ form.id_promocion ? 'EDITAR' : 'CREAR' }}</p>
-                <h2 class="mt-1 text-2xl font-black text-white">Regla comercial</h2>
+                <h2 id="promotion-editor-title" class="mt-1 text-2xl font-black text-white">Regla comercial</h2>
               </div>
             </div>
-            <button type="button" class="text-slate-400 hover:text-white text-xl transition cursor-pointer" @click="$emit('close')">
+            <button type="button" aria-label="Cerrar editor" class="text-slate-400 hover:text-white text-xl transition-colors cursor-pointer" @click="$emit('close')">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -138,7 +138,7 @@
                     :key="plan.id"
                     @click="$emit('select-plan', plan.id)"
                     :class="form.appliesTo.includes(plan.id) ? 'border-rose-500 bg-rose-500/10 ring-1 ring-rose-500/50' : 'border-white/5 hover:border-slate-700 bg-slate-950/60'"
-                    class="relative flex cursor-pointer items-center justify-between rounded-2xl border p-3.5 transition-all"
+                    class="relative flex cursor-pointer items-center justify-between rounded-2xl border p-3.5 transition-colors"
                   >
                     <div class="flex items-center gap-3">
                       <div :class="form.appliesTo.includes(plan.id) ? 'bg-rose-500 border-rose-400 text-white' : 'bg-slate-900 border-slate-700 text-transparent'" class="h-5 w-5 rounded-full border flex items-center justify-center text-xs transition">
@@ -159,8 +159,6 @@
 
               <!-- LIVE PREVIEW CARD (CLIENTE FINAL) -->
               <div class="rounded-3xl border border-rose-500/30 bg-slate-950 p-6 shadow-2xl space-y-4 relative overflow-hidden card-preview">
-                <div class="absolute -top-12 -right-12 h-32 w-32 bg-rose-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
                 <div class="flex items-center justify-between pb-3 border-b border-white/10">
                   <div class="flex items-center gap-2">
                     <i class="fa-solid fa-eye text-rose-400 text-xs"></i>

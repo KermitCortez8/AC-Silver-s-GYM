@@ -1,6 +1,6 @@
 <template>
   <div class="unit-panel" aria-label="Unidades del artículo">
-    <div class="flex items-center justify-between gap-2">
+    <div v-if="units.length || (!isLoadingUnits && !loadError)" class="flex items-center justify-between gap-2">
       <span class="unit-muted text-xs">{{ activeCount }} activas</span>
       <label v-if="retiredCount" class="unit-muted flex items-center gap-1.5 text-xs">
         <input v-model="showRetired" type="checkbox" class="h-3.5 w-3.5 accent-amber-400" />
@@ -133,14 +133,14 @@
         </form>
       </li>
     </ul>
-    <p v-else class="unit-muted mt-2 text-xs">
-      Sin unidades activas. Registra una entrada en Movimientos para agregarlas.
+    <p v-else class="unit-muted mt-2 text-xs" role="status">
+      {{ isLoadingUnits ? 'Cargando unidades…' : loadError || 'Sin unidades activas. Registra una entrada en Movimientos para agregarlas.' }}
     </p>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { Check, Eye, Pencil, RotateCcw, Trash2, X } from 'lucide-vue-next';
 import ExtensibleSelect from '../common/ExtensibleSelect.vue';
 import { useGymStore } from '../../../application/stores/gymStore';
@@ -150,6 +150,13 @@ import { INVENTORY_LOCATIONS, inventoryOptions } from '../../utils/inventoryOpti
 const props = defineProps({ item: { type: Object, required: true } });
 
 const gymStore = useGymStore();
+const isLoadingUnits = computed(() => gymStore.isSectionSyncing('inventoryUnits'));
+const loadError = ref('');
+onMounted(() => {
+  gymStore.fetchFromBackend({ section: 'inventoryUnits' }).catch(() => {
+    loadError.value = 'No se pudieron cargar las unidades.';
+  });
+});
 const showRetired = ref(false);
 const openUnit = ref({ id: null, mode: '' });
 const draft = reactive({ estado: 'Operativo', ubicacion: '', observaciones: '', motivo: '' });

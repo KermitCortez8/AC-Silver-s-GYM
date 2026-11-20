@@ -81,3 +81,12 @@ En otra terminal:
 ```bash
 GYM_PLAYWRIGHT_MODULE=/ruta/a/playwright node .specify/base/validaciones/catalogo-clientes/evidence/browser-review.cjs
 ```
+
+## Alta administrativa con un plan de un día
+
+Se reprodujo HTTP 422 con el plan activo `CLASE` porque el esquema de alta
+limitaba los nombres a tres opciones. El endpoint ahora acepta el nombre
+del plan y comprueba su disponibilidad en el catálogo antes de guardar.
+Pasaron las 44 pruebas de alta y pago inicial. La regresión verificó HTTP 201
+para `CLASE` con y sin Stripe simulado, un importe de S/ 12 y el rechazo de
+planes inactivos o inexistentes antes de escribir.
