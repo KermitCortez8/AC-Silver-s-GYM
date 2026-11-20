@@ -15,7 +15,7 @@
 
     <!-- Modal de Notificación / Alerta -->
     <Teleport to="body">
-      <div v-if="feedback" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all">
+      <div v-if="feedback" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80">
         <div class="w-full max-w-md rounded-3xl border bg-slate-900 p-6 shadow-2xl space-y-5" :class="feedbackTone === 'error' ? 'border-rose-500/40' : 'border-blue-500/40'">
           <div class="flex items-start justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -51,7 +51,7 @@
 
     <!-- Modal de Confirmación de Eliminación -->
     <Teleport to="body">
-      <div v-if="promoToDelete" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all">
+      <div v-if="promoToDelete" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80">
         <div class="w-full max-w-md rounded-3xl border border-rose-500/30 bg-slate-900 p-6 shadow-2xl space-y-6">
           <div class="flex items-start justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -100,35 +100,38 @@
       </div>
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
         <div class="flex justify-between items-start">
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Descuentos Aplicados</p>
+          <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Ingresos con promoción</p>
           <i class="fa-solid fa-dollar-sign text-orange-500 bg-orange-400/10 p-2 rounded-full text-xs px-3"></i>
         </div>
-        <p class="mt-4 text-3xl font-black text-white">S/. {{ totalAhorrado.toFixed(2) }}</p>
-        <p class="mt-2 text-xs text-slate-400">Ahorrados a clientes este mes</p>
+        <p class="mt-4 text-3xl font-black text-white">{{ paymentsReady ? `S/. ${paymentMetrics.collected.toFixed(2)}` : '—' }}</p>
+        <p class="mt-2 text-xs text-slate-400">Membresías cobradas con promoción este mes</p>
       </div>
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
         <div class="flex justify-between items-start">
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Conversión en Caja</p>
+          <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Cobros con promoción</p>
           <i class="fa-solid fa-arrow-trend-up text-rose-400 bg-rose-400/10 p-2 rounded-full text-xs"></i>
         </div>
-        <p class="mt-4 text-3xl font-black text-white">{{ porcentajeVentasConPromo.toFixed(1) }}%</p>
-        <p class="mt-2 text-xs text-slate-400">Ventas con cupón o promo</p>
+        <p class="mt-4 text-3xl font-black text-white">{{ paymentsReady ? `${paymentMetrics.share.toFixed(1)}%` : '—' }}</p>
+        <p class="mt-2 text-xs text-slate-400">Proporción de cobros de membresías del mes</p>
       </div>
       <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-5 relative overflow-hidden">
         <div class="flex justify-between items-start">
           <p class="text-xs uppercase tracking-[0.2em] text-slate-400 w-3/4">Ticket Promedio</p>
           <i class="fa-solid fa-lock text-cyan-400 bg-cyan-400/10 p-2 rounded-full text-xs"></i>
         </div>
-        <p class="mt-4 text-3xl font-black text-white">S/. {{ ticketMedioConDescuento.toFixed(2) }}</p>
-        <p class="mt-2 text-xs text-slate-400">Ticket medio con descuento</p>
+        <p class="mt-4 text-3xl font-black text-white">{{ paymentsReady ? `S/. ${paymentMetrics.average.toFixed(2)}` : '—' }}</p>
+        <p class="mt-2 text-xs text-slate-400">Promedio por cobro con promoción este mes</p>
       </div>
     </section>
 
     <!-- Chart Section -->
     <section class="rounded-2xl border border-white/10 bg-slate-950/70 p-6">
-      <h2 class="text-lg font-bold text-white mb-4">Impacto en Caja Semanal</h2>
+      <h2 class="text-lg font-bold text-white mb-4">Cobros de membresías por semana</h2>
       <div class="h-64 w-full">
-        <Bar :data="chartData" :options="chartOptions" />
+        <Bar v-if="paymentsReady" :data="chartData" :options="chartOptions" />
+        <p v-else class="text-sm text-slate-400" role="status">
+          {{ gymStore.isSectionSyncing('payments') ? 'Cargando cobros…' : 'Historial de cobros no disponible.' }}
+        </p>
       </div>
     </section>
 
@@ -256,8 +259,8 @@ import { usePromotionsWorkspace } from '../composables/promotions/usePromotionsW
 
 const {
   gymStore, feedback, feedbackTone, plans, promotions,
-  form, activePromotionsCount, activeClients, totalAhorrado, porcentajeVentasConPromo,
-  ticketMedioConDescuento, selectSinglePlan, selectedPlan, previewCalculatedPrice, previewSavings,
+  form, activePromotionsCount, paymentMetrics, paymentsReady,
+  selectSinglePlan, selectedPlan, previewCalculatedPrice, previewSavings,
   getPromoStatus, isModalOpen, saving, modalError, deleting,
   deleteError, openNewModal, closeModal, editModal, chartData,
   isDarkTheme, chartOptions, reset, planNames, edit,

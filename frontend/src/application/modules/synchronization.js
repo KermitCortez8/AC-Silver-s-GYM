@@ -113,7 +113,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
         inventory: ['Inventario', 'Movimientos'],
         store: ['Productos', 'Inventario', 'Pedidos', 'Clientes'],
         orders: ['Pedidos', 'Clientes'],
-        promotions: ['Promociones', 'Planes', 'Clientes'],
+        promotions: ['Promociones', 'Planes'],
         payments: ['Pagos de membresías'],
         enrollment: ['Clientes', 'Mi perfil', 'Horarios por servicio', 'Matrículas'],
         attendance: ['Clientes', 'Matrículas', 'Asistencias'],

@@ -80,7 +80,7 @@ def test_history_keeps_older_payments_and_saved_discounted_amount(api):
     client, _, gym, service = api
     result = register(service)
     membership = next(row for row in gym.state["membresia"] if row["id_membresia"] == result["membresia"]["id_membresia"])
-    membership.update(monto_pago=69, estado_pago="PAGADO", metodo_pago="stripe",
+    membership.update(id_promocion=7, monto_pago=69, estado_pago="PAGADO", metodo_pago="stripe",
                       referencia_pago="cs_old", fecha_pago="2026-09-01", estado="VENCIDA")
     gym.state["membresia"].append({
         "id_membresia": 2, "id_cliente": result["cliente"]["id_cliente"], "id_pm": 2,
@@ -91,7 +91,9 @@ def test_history_keeps_older_payments_and_saved_discounted_amount(api):
     assert [row["id_membresia"] for row in rows] == [2, 1]
     assert rows[0]["plan"] == "3 MESES"
     assert rows[0]["estado_pago"] == "PENDIENTE"
+    assert rows[0]["id_promocion"] is None
     assert rows[1]["monto_pago"] == 69
+    assert rows[1]["id_promocion"] == 7
     assert rows[1]["referencia_pago"] == "cs_old"
     assert rows[1]["estado_pago"] == "PAGADO"
 

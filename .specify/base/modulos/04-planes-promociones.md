@@ -99,6 +99,20 @@ límites silenciosos de 50/150 caracteres y el bloqueo durante el guardado.
 
 Evidencia: [validación del formulario](../validaciones/formulario-planes/validation.md).
 
+### Indicadores y modal de promociones
+
+La tabla y el contador usan la misma vigencia en la fecha de Lima. Una
+promoción vigente está habilitada, dentro del plazo inclusive y con cupo.
+El tablero calcula los ingresos, la proporción de cobros con promoción y el
+ticket promedio con las membresías pagadas durante el mes. Usa el importe y
+la promoción guardados en cada cobro. El gráfico agrupa los mismos importes
+por tramo del mes.
+
+En Chromium se verificó que cinco promociones vencidas muestran cero activas,
+que el gráfico y los indicadores excluyen pagos pendientes y que el modal
+se desplaza de forma independiente. Pasaron las cuatro pruebas de formulario
+e indicadores y las ocho pruebas del historial de pagos.
+
 ### Gestión visual del catálogo
 
 La pantalla administrativa utiliza tarjetas adaptables con estado, precio, duración,

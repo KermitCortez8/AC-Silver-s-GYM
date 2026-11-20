@@ -1,10 +1,19 @@
 import { promotionErrors } from '../../../domain/utils/formValidation.js';
 import { limaDate } from '../../../domain/utils/dates.js';
-import { discountedPrice } from '../../../domain/utils/money.js';
-import { computed, onMounted, reactive, ref } from 'vue';
+import { discountedPrice, toCents } from '../../../domain/utils/money.js';
+import { promotionStatus } from '../../../domain/utils/membershipCatalog.js';
+import { filterMembershipPayments } from '../../../domain/utils/membershipPayments.js';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { useTheme } from '../useTheme';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
+
+const promotionStatuses = {
+  current: { label: 'Activa', tone: 'emerald', icon: 'fa-solid fa-circle-check' },
+  ended: { label: 'Terminada', tone: 'amber', icon: 'fa-solid fa-flag-checkered' },
+  scheduled: { label: 'Programada', tone: 'rose', icon: 'fa-solid fa-clock' },
+  paused: { label: 'Pausada', tone: 'slate', icon: 'fa-solid fa-pause' },
+};
 
 /** Gestiona promociones, sus indicadores y el borrador de la regla comercial. */
 export const usePromotionsWorkspace = () => {
@@ -14,23 +23,11 @@ export const usePromotionsWorkspace = () => {
   const feedback = ref('');
   const feedbackTone = ref('success');
   const plans = computed(() => gymStore.planCatalog);
-  const promotions = computed(() => {
-    return gymStore.promotions.map((promo) => {
-      const usesInStore = gymStore.members.filter((m) => {
-        if (!m || m.status === 'INACTIVO') return false;
-        const mPromoId = Number(
-          m.id_promocion || (m.promocion && String(m.promocion).startsWith('promo-') ? String(m.promocion).replace('promo-', '') : 0)
-        );
-        return mPromoId === Number(promo.id_promocion);
-      }).length;
-
-      const usosActuales = Number(promo.usos_actuales ?? usesInStore);
-      return {
-        ...promo,
-        usos_actuales: usosActuales,
-      };
-    });
-  });
+  const today = ref(limaDate());
+  const promotions = computed(() => gymStore.promotions.map(promo => ({
+    ...promo,
+    status: promotionStatus(promo, today.value),
+  })));
 
   const form = reactive({
     id_promocion: null,
@@ -48,37 +45,30 @@ export const usePromotionsWorkspace = () => {
     active: true,
   });
 
-  const activePromotionsCount = computed(() => promotions.value.filter(p => p.active).length);
-
-  const activeClients = computed(() => gymStore.members.filter(m => m.status === 'ACTIVO' && m.membershipPrice > 0));
-
-  const totalAhorrado = computed(() => {
-    return activeClients.value.reduce((acc, client) => {
-      const plan = plans.value.find(p => p.name === client.plan);
-      if (plan && client.membershipPrice < plan.price) {
-        return acc + (plan.price - client.membershipPrice);
-      }
-      return acc;
-    }, 0);
-  });
-
-  const porcentajeVentasConPromo = computed(() => {
-    if (activeClients.value.length === 0) return 0;
-    const withPromo = activeClients.value.filter(client => {
-      const plan = plans.value.find(p => p.name === client.plan);
-      return plan && client.membershipPrice < plan.price;
+  const activePromotionsCount = computed(() => promotions.value.filter(promo => promo.status === 'current').length);
+  const paymentsReady = ref(false);
+  const paymentMetrics = computed(() => {
+    const payments = filterMembershipPayments(gymStore.membershipPayments, {
+      status: 'PAGADO', from: `${today.value.slice(0, 7)}-01`, to: today.value,
     });
-    return (withPromo.length / activeClients.value.length) * 100;
-  });
-
-  const ticketMedioConDescuento = computed(() => {
-    const withPromo = activeClients.value.filter(client => {
-      const plan = plans.value.find(p => p.name === client.plan);
-      return plan && client.membershipPrice < plan.price;
-    });
-    if (withPromo.length === 0) return 0;
-    const totalPagado = withPromo.reduce((acc, client) => acc + client.membershipPrice, 0);
-    return totalPagado / withPromo.length;
+    const withPromotion = [0, 0, 0, 0];
+    const withoutPromotion = [0, 0, 0, 0];
+    let promotionCount = 0;
+    for (const payment of payments) {
+      const index = Math.min(3, Math.floor((Number(payment.fecha_pago.slice(8, 10)) - 1) / 7));
+      const hasPromotion = Number(payment.id_promocion) > 0;
+      const series = hasPromotion ? withPromotion : withoutPromotion;
+      series[index] += toCents(payment.monto_pago);
+      if (hasPromotion) promotionCount++;
+    }
+    const collected = withPromotion.reduce((sum, amount) => sum + amount, 0) / 100;
+    return {
+      collected,
+      share: payments.length ? 100 * promotionCount / payments.length : 0,
+      average: promotionCount ? collected / promotionCount : 0,
+      withPromotion: withPromotion.map(amount => amount / 100),
+      withoutPromotion: withoutPromotion.map(amount => amount / 100),
+    };
   });
 
   // Selección de Plan Único
@@ -104,16 +94,7 @@ export const usePromotionsWorkspace = () => {
     return Math.max(0, basePrice - previewCalculatedPrice.value);
   });
 
-  const getPromoStatus = (promo) => {
-    if (!promo.active) return { label: 'Pausada', tone: 'slate', icon: 'fa-solid fa-pause' };
-    const today = limaDate();
-    const isCupoCumplido = promo.limite_cupos && promo.usos_actuales >= promo.limite_cupos;
-    const isExpirada = promo.validUntil && promo.validUntil < today;
-    if (isCupoCumplido || isExpirada) {
-      return { label: 'Terminada', tone: 'amber', icon: 'fa-solid fa-flag-checkered' };
-    }
-    return { label: 'Activa', tone: 'emerald', icon: 'fa-solid fa-circle-check' };
-  };
+  const getPromoStatus = (promo) => promotionStatuses[promo.status ?? promotionStatus(promo, today.value)];
 
   const isModalOpen = ref(false);
   const saving = ref(false);
@@ -140,62 +121,28 @@ export const usePromotionsWorkspace = () => {
     isModalOpen.value = true;
   };
 
-  const chartData = computed(() => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-
-    const withPromoThisMonth = activeClients.value.filter(client => {
-      const plan = plans.value.find(p => p.name === client.plan);
-      const hasPromo = plan && client.membershipPrice < plan.price;
-      if (!hasPromo) return false;
-      
-      const startDate = client.membershipStart ? new Date(`${client.membershipStart}T00:00:00`) : new Date();
-      return startDate.getMonth() === currentMonth && startDate.getFullYear() === currentYear;
-    });
-    
-    const baseValuesNeto = [0, 0, 0, 0];
-    const baseValuesDesc = [0, 0, 0, 0];
-
-    withPromoThisMonth.forEach((client) => {
-      const plan = plans.value.find(p => p.name === client.plan);
-      const neto = client.membershipPrice;
-      const desc = plan.price - client.membershipPrice;
-      
-      const startDate = client.membershipStart ? new Date(`${client.membershipStart}T00:00:00`) : new Date();
-      const day = startDate.getDate();
-      
-      let weekIndex = 0;
-      if (day <= 7) weekIndex = 0;
-      else if (day <= 14) weekIndex = 1;
-      else if (day <= 21) weekIndex = 2;
-      else weekIndex = 3;
-
-      baseValuesNeto[weekIndex] += neto;
-      baseValuesDesc[weekIndex] += desc;
-    });
-    
-    return {
-      labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+  const chartData = computed(() => ({
+      labels: ['1–7', '8–14', '15–21', '22–fin'],
       datasets: [
         {
-          label: 'Descuento Otorgado (S/.)',
+          label: 'Con promoción (S/)',
           backgroundColor: '#a855f7',
-          data: baseValuesDesc,
+          data: paymentMetrics.value.withPromotion,
           borderRadius: 4,
         },
         {
-          label: 'Ingreso Neto Caja (S/.)',
+          label: 'Sin promoción (S/)',
           backgroundColor: '#f43f5e',
-          data: baseValuesNeto,
+          data: paymentMetrics.value.withoutPromotion,
           borderRadius: 4,
         }
       ]
-    };
-  });
+  }));
 
   const { isDarkTheme } = useTheme();
 
   const chartOptions = computed(() => ({
+    animation: false,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -293,12 +240,19 @@ export const usePromotionsWorkspace = () => {
     } finally { deleting.value = false; }
   };
 
-  onMounted(() => gymStore.fetchFromBackend?.({ section: 'promotions' }).catch(() => {}));
+  let dateTimer;
+  onMounted(() => {
+    dateTimer = setInterval(() => { today.value = limaDate(); }, 60_000);
+    gymStore.fetchFromBackend({ section: 'promotions' }).catch(() => {});
+    gymStore.fetchFromBackend({ section: 'payments' })
+      .then(() => { paymentsReady.value = true; }).catch(() => {});
+  });
+  onBeforeUnmount(() => clearInterval(dateTimer));
 
   return {
     gymStore, feedback, feedbackTone, plans, promotions,
-    form, activePromotionsCount, activeClients, totalAhorrado, porcentajeVentasConPromo,
-    ticketMedioConDescuento, selectSinglePlan, selectedPlan, previewCalculatedPrice, previewSavings,
+    form, activePromotionsCount, paymentMetrics, paymentsReady,
+    selectSinglePlan, selectedPlan, previewCalculatedPrice, previewSavings,
     getPromoStatus, isModalOpen, saving, modalError, deleting,
     deleteError, openNewModal, closeModal, editModal, chartData,
     isDarkTheme, chartOptions, reset, planNames, edit,
