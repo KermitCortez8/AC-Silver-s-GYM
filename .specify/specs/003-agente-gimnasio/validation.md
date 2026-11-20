@@ -121,3 +121,9 @@ llamada HTTP simulada con una clave sintética y la recuperación ante tiempo
 de espera agotado. Después de actualizar Docker Compose, Chromium comprobó
 que el chat local devuelve 23 horarios y 4 planes de Supabase. El entorno local
 carece de una clave real de Groq, por lo que la llamada real quedó sin verificar.
+
+## Preguntas sobre la primera visita · 2026-11-19
+
+En `https://acsilvergym.live/`, la pregunta «¿Qué necesito llevar el primer día al gimnasio?» devolvió la respuesta genérica «Te sigo», aunque la ficha pública `primer_dia` ya contenía una lista aprobada. El proveedor no seleccionó una herramienta en ese turno. Antes de la corrección, tres variantes del caso fallaron con un proveedor de prueba que no elige herramienta. Después, las preguntas sobre qué llevar en la primera visita usan directamente esa ficha y enlazan a preguntas frecuentes, sin consumir cuota ni depender de Groq. Una consulta ajena al gimnasio y otra sobre dinero no se confunden con esta ficha.
+
+Comprobaciones: cinco casos nuevos de servicio aprobados, una prueba HTTP nueva aprobada, `backend/tests/agente` 97 aprobadas, suite completa del backend 1063 aprobadas y 61 omitidas, `flake8` crítico 0 errores y validador documental aprobado. La prueba del dominio público describe el problema previo; la corrección en la rama requiere merge y despliegue antes de comprobarla allí.

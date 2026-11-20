@@ -9,7 +9,8 @@ from uuid import uuid4
 from application.errors import ProviderUnavailable
 from application.services.agent_budget import RateLimitExceeded
 from domain.services.agent_policy import (
-    asks_for_account_recovery, asks_for_public_plans, asks_for_public_schedules,
+    asks_for_account_recovery, asks_for_first_visit_essentials,
+    asks_for_public_plans, asks_for_public_schedules,
     asks_for_registration_guidance, contains_sensitive,
     requests_private_action,
     SOCIAL_REPLIES, social_reply, validate_message, validate_tool,
@@ -99,6 +100,8 @@ class AgentService:
             return {**base, "estado": "respondida", "texto": courtesy}
         if registration_guidance:
             selection = ("consultar_informacion_publica", '{"tema":"registro"}')
+        elif asks_for_first_visit_essentials(text):
+            selection = ("consultar_informacion_publica", '{"tema":"primer_dia"}')
         else:
             selection = self._select_tool(text, last_topic)
         if not selection:

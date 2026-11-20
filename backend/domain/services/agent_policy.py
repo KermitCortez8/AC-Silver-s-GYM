@@ -94,6 +94,22 @@ def asks_for_registration_guidance(text: str) -> bool:
     )
 
 
+def asks_for_first_visit_essentials(text: str) -> bool:
+    """Reconoce consultas sobre qué llevar en la primera visita al gimnasio."""
+    plain = "".join(
+        char for char in unicodedata.normalize("NFD", text.casefold())
+        if unicodedata.category(char) != "Mn"
+    )
+    return bool(
+        re.search(r"\b(?:llev\w*|necesit\w*|prepar\w*)\b", plain)
+        and re.search(
+            r"\b(?:primer dia|primera visita|primera vez|"
+            r"(?:al|para el) (?:gimnasio|gym))\b", plain,
+        )
+        and not re.search(r"\b(?:dinero|pago|pagar|precio|cuanto|cuesta)\b", plain)
+    )
+
+
 def social_reply(text: str) -> str | None:
     """Responde cortesías breves sin enviar contenido al proveedor externo."""
     plain = "".join(

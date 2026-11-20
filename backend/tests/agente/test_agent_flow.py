@@ -341,6 +341,39 @@ def test_public_faq_answer_keeps_its_source_link():
     assert catalog.calls == []
 
 
+@pytest.mark.parametrize("message", [
+    "¿Qué necesito llevar el primer día al gimnasio?",
+    "¿Qué llevo el primer día?",
+    "¿Qué necesito para mi primera visita?",
+])
+def test_first_visit_essentials_use_approved_faq_without_provider(message):
+    service, catalog, provider = make_service(None)
+    service._budget = AgentBudget(per_minute=1, per_day=1)
+
+    result = service.respond(message)
+
+    assert "botella de agua" in result["texto"]
+    assert result["enlaces"] == [
+        {"texto": "Ver preguntas frecuentes", "ruta": "/preguntas-frecuentes"}
+    ]
+    assert provider.calls == []
+    assert catalog.calls == []
+
+
+@pytest.mark.parametrize("message", [
+    "¿Qué debo llevar a la universidad?",
+    "¿Cuánto dinero necesito llevar el primer día al gimnasio?",
+])
+def test_other_what_to_bring_questions_do_not_use_gym_faq(message):
+    service, catalog, provider = make_service(None)
+
+    result = service.respond(message)
+
+    assert "botella de agua" not in result["texto"]
+    assert provider.calls
+    assert catalog.calls == []
+
+
 def test_empty_catalog_does_not_invent_a_price():
     service, catalog, _provider = make_service()
     catalog.planes_membresia = lambda: []

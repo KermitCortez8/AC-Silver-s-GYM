@@ -78,6 +78,25 @@ def test_public_schedule_requests_work_without_provider_key(mensaje):
     assert "Fitness:\n• Lunes 08:00–09:00" in result.json()["texto"]
 
 
+def test_first_visit_question_uses_faq_without_provider_key():
+    app = FastAPI()
+    app.include_router(agent_routes.router, prefix="/api")
+    app.dependency_overrides[get_gym_service] = FakeGym
+    app.dependency_overrides[get_agent_provider] = lambda: GroqAgentProvider("")
+
+    with TestClient(app) as client:
+        result = client.post(
+            "/api/agente/mensajes",
+            json={"mensaje": "¿Qué necesito llevar el primer día al gimnasio?"},
+        )
+
+    assert result.status_code == 200
+    assert "botella de agua" in result.json()["texto"]
+    assert result.json()["enlaces"] == [
+        {"texto": "Ver preguntas frecuentes", "ruta": "/preguntas-frecuentes"}
+    ]
+
+
 @pytest.mark.parametrize("provider_times_out", [False, True], ids=["groq", "catalogo-de-respaldo"])
 def test_public_schedule_prefers_configured_provider_and_recovers_from_timeout(monkeypatch, provider_times_out):
     monkeypatch.setattr(agent_routes, "_budget", AgentBudget())
