@@ -49,6 +49,13 @@ oficial están en [el flujo de trabajo](../../guias/spec-driven.md).
   un caso que todavía esperaba el rechazo de un subdominio `.com`; se actualizó
   el caso y se aprobaron las 49 pruebas dirigidas. No se certifica la suite completa.
 
+### Carga inicial de Inventario y Tienda
+
+- Las vistas iniciales consultaban unidades, movimientos o pedidos antes de abrir las pestañas y detalles correspondientes.
+- El criterio de regresión es abrir Artículos o Productos con una consulta de datos por vista. Las pestañas y detalles cargan sus datos al abrirse. Las ediciones actualizan los recursos afectados.
+- En el primer cambio se hizo una revisión estática y se omitieron las pruebas por indicación del usuario. La revisión posterior reprodujo que la pestaña Movimientos montaba una tabla que no solicitaba el historial. La vista que antes pedía esos datos había dejado de usarse.
+- En la compilación de producción se comprobó en un navegador con sesión y datos simulados que Productos y Ventas cargan sus recursos, que Movimientos pide el historial y que su editor consulta las unidades al abrirse. Alternar Artículos y Movimientos dentro de la vigencia de la caché no generó peticiones nuevas ni descargas de JavaScript. El catálogo del contenedor local respondió HTTP 200.
+
 ## Revisión de pruebas por módulo y batería de casos de uso · 2026-11-10
 
 Petición: revisar las pruebas existentes, ordenarlas primero por módulo y luego

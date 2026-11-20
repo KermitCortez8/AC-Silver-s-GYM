@@ -8,6 +8,7 @@ import { computed } from 'vue';
 
 export const createInventoryModule = (ctx, repository) => {
   const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
+  const refreshInventoryStock = () => ctx.fetchFromBackend({ section: 'inventoryStore', force: true });
   const lowStockInventory = computed(() =>
     ctx.inventory.value.filter((item) => !item.archived && item.quantity <= item.minQuantity),
   );
@@ -49,7 +50,7 @@ export const createInventoryModule = (ctx, repository) => {
         const index = ctx.inventory.value.findIndex((entry) => entry.id === item.id);
         if (index >= 0) ctx.inventory.value[index] = item; else ctx.inventory.value.unshift(item);
         // El alta registra su entrada en MOV_INV y un item Tipo Tienda crea su producto.
-        return refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true })).then(() => item);
+        return refreshAfterMutation(ctx, refreshInventoryStock).then(() => item);
       });
     }
 
@@ -87,7 +88,7 @@ export const createInventoryModule = (ctx, repository) => {
       if (result?.accion === 'archivado') {
         const item = ctx.inventory.value.find((entry) => entry.id === id);
         if (item) Object.assign(item, { archived: true, status: result.item?.estado || item.status });
-        await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+        await refreshAfterMutation(ctx, refreshInventoryStock);
         return result;
       }
     }
@@ -114,7 +115,7 @@ export const createInventoryModule = (ctx, repository) => {
     requireRecord(saved);
     requireRecord(saved.movimiento, 'id_mov');
     ctx.inventoryMovements.value.unshift(saved.movimiento);
-    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    await refreshAfterMutation(ctx, refreshInventoryStock);
     return saved;
   };
 
@@ -124,14 +125,14 @@ export const createInventoryModule = (ctx, repository) => {
     const saved = await remote.updateInventoryMovement(idMov, body);
     requireRecord(saved);
     requireRecord(saved.movimiento, 'id_mov');
-    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    await refreshAfterMutation(ctx, refreshInventoryStock);
     return saved;
   };
 
   const updateInventoryUnit = async (idUnidad, payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const saved = requireRecord(await remote.updateInventoryUnit(idUnidad, payload), 'id_unidad');
-    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    await refreshAfterMutation(ctx, refreshInventoryStock);
     return saved;
   };
 
@@ -141,7 +142,7 @@ export const createInventoryModule = (ctx, repository) => {
     const saved = await remote.retireInventoryUnit(idUnidad, { motivo });
     requireRecord(saved);
     requireRecord(saved.movimiento, 'id_mov');
-    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    await refreshAfterMutation(ctx, refreshInventoryStock);
     return saved;
   };
 
@@ -151,7 +152,7 @@ export const createInventoryModule = (ctx, repository) => {
     const saved = await remote.restoreInventoryUnit(idUnidad, { motivo });
     requireRecord(saved);
     requireRecord(saved.movimiento, 'id_mov');
-    await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+    await refreshAfterMutation(ctx, refreshInventoryStock);
     return saved;
   };
 

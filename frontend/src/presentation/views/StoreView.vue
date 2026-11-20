@@ -96,7 +96,9 @@
     >
       {{ feedbackMessage }}
     </p>
-    <StoreMovementsPanel v-if="isAdmin && activeTab === 'ventas'" />
+    <p v-if="isLoadingEmptyTab" role="status" class="px-4 py-6 text-sm text-slate-400">Cargando tienda…</p>
+
+    <StoreMovementsPanel v-else-if="isAdmin && activeTab === 'ventas'" />
 
     <StoreTrashPanel v-else-if="isAdmin && activeTab === 'papelera'" :product-code="productCode" />
 
@@ -106,7 +108,7 @@
       :solo-stock-bajo="soloStockBajo" :sort-key="sortKey" :sort-dir="sortDir" :productos-filtrados="productosFiltrados"
       :productos-paginados="productosPaginados" :feedback-message="feedbackMessage" :feedback-tone-class="feedbackToneClass"
       :product-code="productCode" :is-product-low-stock="isProductLowStock" :product-status-class="productStatusClass"
-      @toggle-stock="toggleStockBajo" @sort="toggleSort" @detail="detailProduct = $event" @edit="editProducto" @delete="deleteProducto" />
+      @toggle-stock="toggleStockBajo" @sort="toggleSort" @detail="openProductDetails" @edit="editProducto" @delete="deleteProducto" />
 
     <!-- ═══════════════════════════════════════════════
          CLIENTE — VISTA DE TIENDA (CARRITO)
@@ -257,6 +259,7 @@
     </ResourceModal>
 
     <ProductEditorDialog
+      v-if="editorVisited"
       :category-options="productCategoryOptions"
       :unit-options="productUnitOptions"
       :form-errors="productFormErrors"
@@ -288,10 +291,10 @@
 </template>
 
 <script setup>
+import { defineAsyncComponent, ref, watch } from 'vue';
 import StoreProductTable from '../components/store/StoreProductTable.vue';
 import StoreClientCatalog from '../components/store/StoreClientCatalog.vue';
 
-import ProductEditorDialog from '../components/store/ProductEditorDialog.vue';
 import {
   Eye,
   Heart,
@@ -301,13 +304,15 @@ import {
 import ResourceModal from '../components/ResourceModal.vue';
 
 import TableSearch from '../components/common/TableSearch.vue';
-import StoreMovementsPanel from '../components/store/StoreMovementsPanel.vue';
 import StoreTrashPanel from '../components/store/StoreTrashPanel.vue';
 import { useStoreCatalog } from '../composables/store/useStoreCatalog.js';
 
+const ProductEditorDialog = defineAsyncComponent(() => import('../components/store/ProductEditorDialog.vue'));
+const StoreMovementsPanel = defineAsyncComponent(() => import('../components/store/StoreMovementsPanel.vue'));
+
 const {
   route, router, gymStore, isAdmin, tabs,
-  activeTab, productos, productSearch, categoryFilter, catalogProducts,
+  activeTab, isLoadingEmptyTab, productos, productSearch, categoryFilter, catalogProducts,
   categories, filteredProducts, authStore, favoriteOwner, favoriteIds,
   isFavorite, toggleFavorite, onlyFavorites, clientSort, canBuy,
   CLIENT_SORTS, visibleProducts, hasClientFilters, clearClientFilters, blockQuantityChars,
@@ -317,7 +322,7 @@ const {
   cartTotal, busqueda, categoriaActiva, filtroEstado, categoriasUnicas,
   CATEGORY_COLORS, categoriaDotColor, soloStockBajo, sortKey, sortDir,
   SORT_COLUMNS, toggleSort, toggleStockBajo, productosFiltrados, paginaActual,
-  porPagina, productosPaginados, detailProduct, linkedItemName, productCategoryOptions,
+  porPagina, productosPaginados, detailProduct, openProductDetails, linkedItemName, productCategoryOptions,
   productUnitOptions, editFromDetails, cantidadInput, feedbackMessage, feedbackTone,
   feedbackToneClass, productCode, isProductLowStock, productStatusClass, productStatusDot,
   stockBarColor, deleteProducto, cartError, updateCart, agregarAlCarrito,
@@ -328,6 +333,11 @@ const {
   loadBucketImages, openBucketPicker, closeBucketPicker, selectBucketImage, clearSelectedImage,
   handleLocalImageUpload,
 } = useStoreCatalog();
+
+const editorVisited = ref(false);
+watch(isProductEditorOpen, (open) => {
+  if (open) editorVisited.value = true;
+});
 </script>
 
 <style scoped src="../styles/store-view.css"></style>

@@ -493,7 +493,8 @@ const revealActiveMobileLink = async () => {
 };
 // Transición de Carga al Cambiar de Módulo
 const gymStore = useGymStore();
-const isActiveSectionSyncing = computed(() => gymStore.isSectionSyncing(sectionForPath(route.path)));
+const activeSection = computed(() => sectionForPath(route.path, route.query.tab));
+const isActiveSectionSyncing = computed(() => gymStore.isSectionSyncing(activeSection.value));
 const isNavigatingModule = ref(false);
 const targetModuleName = ref('');
 const moduleLoader = createModuleLoader({ onChange: (active) => { isNavigatingModule.value = active; } });
@@ -527,7 +528,7 @@ const moduleNamesMap = {
 
 const loadActiveSection = (force = false) => gymStore.fetchFromBackend({
   force,
-  section: sectionForPath(route.path),
+  section: activeSection.value,
 });
 
 let lastInactiveTimestamp = Date.now();

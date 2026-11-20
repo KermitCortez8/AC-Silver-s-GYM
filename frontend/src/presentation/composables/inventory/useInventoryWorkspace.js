@@ -8,6 +8,7 @@ import { quantityError, requiredTextError } from '../../../domain/utils/formVali
 import { blockSpecialChars } from '../../utils/inputGuards.js';
 import { cleanText, clampText, DEFAULT_PAGE_SIZE, INVENTORY_NAME_MAX_LENGTH, matchesSearch, missingFields, NOTES_MAX_LENGTH, sortRows, SPECIAL_CHARS_MESSAGE } from '../../../domain/utils/inputRules.js';
 import { useGymStore } from '../../../application/stores/gymStore';
+import { sectionForPath } from '../../../application/services/moduleNavigation.js';
 import { parseQuantity, MAX_QUANTITY } from '../../../domain/utils/quantities.js';
 import { INVENTORY_CATEGORIES, INVENTORY_LOCATIONS, INVENTORY_UNITS, inventoryOptions } from '../../utils/inventoryOptions.js';
 
@@ -22,7 +23,9 @@ export const useInventoryWorkspace = () => {
   ];
   const activeTab = computed({
     get: () => (tabs.some((tab) => tab.value === route.query.tab) ? route.query.tab : 'articulos'),
-    set: (tab) => router.replace({ query: { ...route.query, tab } }),
+    set: (tab) => {
+      if (tab !== activeTab.value) router.replace({ query: { ...route.query, tab } });
+    },
   });
   const inventory = computed(() => gymStore.inventory.filter((item) => !item.archived));
 
@@ -315,6 +318,8 @@ export const useInventoryWorkspace = () => {
 
   // Detalles: datos del articulo y sus ultimos movimientos, solo lectura.
   const detailItem = ref(null);
+  const isLoadingDetailMovements = computed(() => gymStore.isSectionSyncing('inventoryMovements'));
+  const detailMovementsError = ref('');
   const itemNumber = (item) => Number(String(item?.id ?? '').replace('item-', ''));
   const detailMovements = computed(() => {
     if (!detailItem.value) return [];
@@ -332,6 +337,10 @@ export const useInventoryWorkspace = () => {
   };
   const openDetails = (item) => {
     detailItem.value = item;
+    detailMovementsError.value = '';
+    gymStore.fetchFromBackend({ section: 'inventoryMovements' }).catch(() => {
+      detailMovementsError.value = 'No se pudieron cargar los últimos movimientos.';
+    });
   };
   const editFromDetails = () => {
     const item = detailItem.value;
@@ -370,8 +379,13 @@ export const useInventoryWorkspace = () => {
     document.querySelector('.rm-panel .is-invalid')?.focus();
   });
 
-  onMounted(() => {
-    gymStore.fetchFromBackend?.({ section: 'inventory' }).catch((error) => console.warn('No se pudo refrescar inventario:', error));
+  const loadInventoryTab = () => {
+    const section = sectionForPath(route.path, route.query.tab);
+    gymStore.fetchFromBackend({ section }).catch((error) => console.warn('No se pudo refrescar inventario:', error));
+  };
+  onMounted(loadInventoryTab);
+  watch(activeTab, () => {
+    if (route.name === 'Inventory') loadInventoryTab();
   });
 
   return {
@@ -386,7 +400,7 @@ export const useInventoryWorkspace = () => {
     statusPreview, feedbackToneClass, isLowStock, categoryDotPalette, categoryDotColor,
     inventoryStatusClass, currentInventoryCode, blockNameChars, cleanNameField, clearFormWarnings,
     resetForm, openNewItem, closeEditor, editItem, requiredFields,
-    handleSubmit, deleteItem, detailItem, itemNumber, detailMovements,
+    handleSubmit, deleteItem, detailItem, itemNumber, detailMovements, isLoadingDetailMovements, detailMovementsError,
     movementClass, signedQuantity, movementTime, openDetails, editFromDetails,
     limitObservations, handleTabsKeydown,
   };

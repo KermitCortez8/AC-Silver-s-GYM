@@ -296,6 +296,8 @@
                 <img
                   :src="image.url"
                   :alt="image.name"
+                  loading="lazy"
+                  decoding="async"
                   class="aspect-square h-full w-full object-contain p-1"
                 />
                 <p class="truncate px-2 py-1 text-[10px] text-slate-400">

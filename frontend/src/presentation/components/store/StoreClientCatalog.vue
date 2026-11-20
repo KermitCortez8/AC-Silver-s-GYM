@@ -43,7 +43,14 @@
               @click="$emit('detail', producto)"
             >
               <span class="store-product-image store-card-image">
-                <img v-if="producto.imagen_url" :src="producto.imagen_url" :alt="producto.nombre" class="h-full w-full object-contain p-3" />
+                <img
+                  v-if="producto.imagen_url"
+                  :src="producto.imagen_url"
+                  :alt="producto.nombre"
+                  loading="lazy"
+                  decoding="async"
+                  class="h-full w-full object-contain p-3"
+                />
                 <Package v-else :size="48" class="ws-muted" aria-hidden="true" />
                 <span v-if="!canBuy(producto)" class="store-card-badge">{{ producto.estado !== 'Disponible' ? producto.estado : 'Agotado' }}</span>
               </span>
