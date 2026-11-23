@@ -134,3 +134,33 @@ def test_recordatorios_solo_se_generan_en_la_fecha_reservada(database):
     assert len(jobs) == 1
     with pytest.raises(RuntimeError, match="fecha de clase.*no se puede cambiar"):
         database.sql('update public."MATRICULAS_HORARIO" set fecha_clase=fecha_clase+7;')
+
+
+def test_migracion_029_retira_horarios_fuera_de_atencion_y_conserva_historial(database):
+    database.sql((BACKEND / "migrations/015_atomic_gym_transactions.sql").read_text(encoding="utf-8"))
+    enroll(database)
+    database.sql('''insert into public."HORARIOS_SERVICIO"
+      (id_horario_servicio,servicio,dia,hora_inicio,hora_fin,cupos,activo) values
+        (2,'fitness','lunes','9 p. m.','10 p. m.',4,true),
+        (3,'fitness','domingo','17:15','18:15',4,true),
+        (4,'fitness','sabado','06:00','07:00',4,true),
+        (5,'fitness','sabado','7 a. m.','08:00',4,true),
+        (6,'fitness','lunes','hora invalida','08:00',4,true);
+      insert into public."ASISTENCIA" ("Fecha","Hora","Validación",id_cliente,id_horario_servicio,servicio)
+      values ('2026-01-03','06:00',true,2,4,'fitness');''')
+    matriculas = database.rows("MATRICULAS_HORARIO")
+    asistencias = database.rows("ASISTENCIA")
+    migracion = (BACKEND / "migrations/029_horario_atencion.sql").read_text(encoding="utf-8")
+    try:
+        database.sql(migracion)
+        database.sql(migracion)
+        horarios = {item["id_horario_servicio"]: item["activo"] for item in database.rows("HORARIOS_SERVICIO")}
+        assert horarios == {1: False, 2: True, 4: False, 5: True}
+        assert database.rows("MATRICULAS_HORARIO") == matriculas
+        assert database.rows("ASISTENCIA") == asistencias
+        assert database.sql("select last_id from public.gym_identity_counters where table_name = 'HORARIOS_SERVICIO'") == "6"
+        with pytest.raises(RuntimeError, match="horario_servicio_dentro_de_atencion"):
+            database.sql('set role service_role; update public."HORARIOS_SERVICIO" set activo = true where id_horario_servicio = 4;')
+    finally:
+        database.sql('''alter table public."HORARIOS_SERVICIO" drop constraint if exists horario_servicio_dentro_de_atencion;
+          drop function if exists public.horario_servicio_en_atencion(text, text, text);''')

@@ -2,6 +2,19 @@
 from datetime import date, timedelta
 
 DAYS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
+SALAS_HORARIO = ("Sala de Fuerza 1", "Sala de Fuerza 2", "Sala de cardio")
+HORAS_ATENCION = dict.fromkeys(DAYS[:5], (6 * 60, 22 * 60)) | dict.fromkeys(DAYS[5:], (7 * 60, 18 * 60))
+
+
+def dentro_de_atencion(dia: str, inicio: int, fin: int) -> bool:
+    franja = HORAS_ATENCION.get(dia)
+    return bool(franja and franja[0] <= inicio < fin <= franja[1])
+
+
+def validar_horas_atencion(dia: str, inicio: int, fin: int) -> None:
+    if not dentro_de_atencion(dia, inicio, fin):
+        apertura, cierre = HORAS_ATENCION[dia]
+        raise ValueError(f"El horario del {dia} debe estar entre {apertura // 60:02d}:00 y {cierre // 60:02d}:00.")
 
 
 def next_session(schedule, reference):

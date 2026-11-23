@@ -225,6 +225,7 @@
                         </svg>
                         {{ sched.hora }}
                       </span>
+                      <span v-if="sched.sala" class="mt-1 block text-xs font-semibold text-slate-600">{{ sched.sala }}</span>
                     </td>
                     <td class="px-6 py-4">
                       <div class="flex min-w-0 items-center gap-2">

@@ -1,6 +1,9 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { limaDate } from '../../utils/attendance.js';
 import { monthWeeks, scheduleOccurrences, weekStart } from '../../../domain/utils/scheduleCalendar.js';
+import {
+  INITIAL_SCHEDULE_SETTINGS, SALAS_HORARIO, SCHEDULE_DURATIONS, dentroDeAtencion, franjaDeAtencion, horasParaDia, timeToMinutes,
+} from '../../../domain/utils/scheduleSettings.js';
 import { useGymStore } from '../../../application/stores/gymStore';
 
 /** Gestiona filtros, disponibilidad y edición de la programación semanal. */
@@ -10,6 +13,15 @@ export const useServiceSchedules = () => {
   const routines = computed(() => gymStore.routines || []);
   const showFilters = ref(false);
   const showList = ref(false);
+  const showSettings = ref(false);
+  const scheduleSettings = ref(null);
+  const settingsDraft = reactive({ ...INITIAL_SCHEDULE_SETTINGS });
+  const settingsLoading = ref(false);
+  const settingsSaving = ref(false);
+  const settingsError = ref('');
+  const settingsSaved = ref(false);
+  const settingsDirty = computed(() => scheduleSettings.value &&
+    Object.keys(settingsDraft).some((key) => settingsDraft[key] !== scheduleSettings.value[key]));
   const extraFilterCount = computed(() => Number(filters.dia !== 'todos') + Number(filters.estado !== 'todos') + Number(filters.sortBy !== 'servicio-dia-hora'));
   const isSaving = ref(false);
   const isRefreshing = ref(false);
@@ -20,6 +32,12 @@ export const useServiceSchedules = () => {
     return filteredSchedules.value.flatMap((item) => occurrences.has(item.id_horario_servicio) ? [occurrences.get(item.id_horario_servicio)] : []);
   });
   const isEditorOpen = ref(false);
+  const editorError = ref('');
+  const routinesLoading = ref(false);
+  const routinesError = ref('');
+  let routinesLoaded = false;
+  let hoursEdited = false;
+  let slotsEdited = false;
   const feedback = ref('');
   const pendingDelete = ref(null);
   const isDeleting = ref(false);
@@ -73,19 +91,23 @@ export const useServiceSchedules = () => {
   /**
    * Gestiona esta acción de la vista.
    */
-  const defaultForm = () => ({
-    id_horario_servicio: null,
-    servicio: 'fitness',
-    id_rutina: 0,
-    dia: 'lunes',
-    codigo_dia: 'LUN',
-    hora_inicio: '06:00',
-    hora_fin: '07:00',
-    cupos: 10,
-    activo: true,
-  });
+  const defaultForm = () => {
+    const settings = scheduleSettings.value ?? INITIAL_SCHEDULE_SETTINGS;
+    return {
+      id_horario_servicio: null,
+      servicio: 'fitness',
+      id_rutina: 0,
+      dia: 'lunes',
+      codigo_dia: 'LUN',
+      sala: '',
+      ...horasParaDia('lunes', settings),
+      cupos: settings.cupos,
+      activo: true,
+    };
+  };
 
   const form = reactive(defaultForm());
+  const franjaDelEditor = computed(() => franjaDeAtencion(form.dia));
 
   /**
    * Normaliza el valor recibido.
@@ -107,20 +129,6 @@ export const useServiceSchedules = () => {
    * Gestiona esta acción de la vista.
    */
   const serviceOrder = (service) => Math.max(0, serviceFilters.findIndex((entry) => entry.value === service) - 1);
-  const routineById = computed(() =>
-    routines.value.reduce((result, routine) => {
-      result[Number(routine.id_rutina)] = routine;
-      return result;
-    }, {}),
-  );
-  /**
-   * Gestiona esta acción de la vista.
-   */
-  const routineName = (idRutina) => routineById.value[Number(idRutina)]?.nombre_rutina || 'Sin rutina';
-  /**
-   * Gestiona esta acción de la vista.
-   */
-  const routineZones = (idRutina) => routineById.value[Number(idRutina)]?.zonas_musculares || 'Rutina pendiente';
   const routinesForSelectedService = computed(() =>
     routines.value.filter((routine) => String(routine.servicio || '').toLowerCase() === String(form.servicio || '').toLowerCase()),
   );
@@ -131,14 +139,6 @@ export const useServiceSchedules = () => {
   const activeSchedules = computed(() => schedules.value.filter((item) => item.activo !== false).length);
   const totalSlots = computed(() => schedules.value.reduce((sum, item) => sum + Number(item.cupos || 0), 0));
   const usedSlots = computed(() => schedules.value.reduce((sum, item) => sum + Number(item.cupos_usados || 0), 0));
-
-  /**
-   * Gestiona esta acción de la vista.
-   */
-  const timeToMinutes = (value) => {
-    const [hour = 0, minute = 0] = String(value || '').split(':').map(Number);
-    return hour * 60 + minute;
-  };
 
   /**
    * Gestiona esta acción de la vista.
@@ -208,10 +208,11 @@ export const useServiceSchedules = () => {
     normalizeText(
       [
         serviceLabel(schedule.servicio),
-        routineName(schedule.id_rutina),
-        routineZones(schedule.id_rutina),
+        schedule.rutina_nombre,
+        schedule.zonas_musculares,
         dayLabel(schedule.dia),
         schedule.codigo_dia,
+        schedule.sala,
         schedule.hora_inicio,
         schedule.hora_fin,
         schedule.cupos,
@@ -274,12 +275,7 @@ export const useServiceSchedules = () => {
         }
 
         return compareBase(a, b);
-      })
-      .map((schedule) => ({
-        ...schedule,
-        rutina_nombre: routineName(schedule.id_rutina),
-        zonas_musculares: routineZones(schedule.id_rutina),
-      }));
+      });
   });
 
   /**
@@ -287,7 +283,68 @@ export const useServiceSchedules = () => {
    */
   const hasValidShortDuration = () => {
     const duration = timeToMinutes(form.hora_fin) - timeToMinutes(form.hora_inicio);
-    return duration === 60 || duration === 120;
+    return SCHEDULE_DURATIONS.includes(duration);
+  };
+
+  const resetSettingsDraft = () => {
+    Object.assign(settingsDraft, scheduleSettings.value ?? INITIAL_SCHEDULE_SETTINGS);
+    settingsSaved.value = false;
+    settingsError.value = '';
+  };
+
+  const loadSettings = async () => {
+    if (settingsLoading.value) return;
+    settingsLoading.value = true;
+    settingsError.value = '';
+    settingsSaved.value = false;
+    try {
+      const primeraCarga = !scheduleSettings.value;
+      scheduleSettings.value = await gymStore.loadScheduleSettings();
+      resetSettingsDraft();
+      if (primeraCarga && isEditorOpen.value && !form.id_horario_servicio && !isSaving.value) {
+        if (!hoursEdited) Object.assign(form, horasParaDia(form.dia, scheduleSettings.value));
+        if (!slotsEdited) form.cupos = scheduleSettings.value.cupos;
+      }
+    } catch (error) {
+      settingsError.value = error.message || 'No se pudieron cargar los parámetros.';
+    } finally {
+      settingsLoading.value = false;
+    }
+  };
+
+  const toggleSettings = () => {
+    showSettings.value = !showSettings.value;
+    if (showSettings.value && !scheduleSettings.value) void loadSettings();
+  };
+
+  const loadEditorRoutines = async () => {
+    if (routinesLoading.value) return;
+    routinesLoading.value = true;
+    routinesError.value = '';
+    try {
+      await gymStore.refreshRoutinesFromBackend();
+      routinesLoaded = true;
+    } catch (error) {
+      routinesError.value = error.message || 'No se pudieron cargar las rutinas.';
+    } finally {
+      routinesLoading.value = false;
+    }
+  };
+
+  const saveSettings = async () => {
+    if (settingsLoading.value || settingsSaving.value || !settingsDirty.value) return;
+    settingsSaving.value = true;
+    settingsSaved.value = false;
+    settingsError.value = '';
+    try {
+      scheduleSettings.value = await gymStore.saveScheduleSettings({ ...settingsDraft });
+      resetSettingsDraft();
+      settingsSaved.value = true;
+    } catch (error) {
+      settingsError.value = error.message || 'No se pudieron guardar los parámetros.';
+    } finally {
+      settingsSaving.value = false;
+    }
   };
 
   watch(
@@ -295,15 +352,13 @@ export const useServiceSchedules = () => {
     (day) => {
       if (!form.id_horario_servicio) {
         form.codigo_dia = days.find((entry) => entry.value === day)?.code || form.codigo_dia;
-      }
-    },
-  );
-
-  watch(
-    () => form.servicio,
-    () => {
-      if (!routinesForSelectedService.value.some((routine) => Number(routine.id_rutina) === Number(form.id_rutina))) {
-        form.id_rutina = 0;
+        if (!dentroDeAtencion(day, form.hora_inicio, form.hora_fin)) {
+          const duracion = timeToMinutes(form.hora_fin) - timeToMinutes(form.hora_inicio);
+          const settings = scheduleSettings.value ?? INITIAL_SCHEDULE_SETTINGS;
+          Object.assign(form, horasParaDia(day, SCHEDULE_DURATIONS.includes(duracion)
+            ? { hora_inicio: form.hora_inicio, duracion_minutos: duracion }
+            : settings));
+        }
       }
     },
   );
@@ -313,7 +368,12 @@ export const useServiceSchedules = () => {
    */
   const resetForm = () => {
     Object.assign(form, defaultForm());
+    editorError.value = '';
+    hoursEdited = false;
+    slotsEdited = false;
   };
+  const markHoursEdited = () => { hoursEdited = true; };
+  const markSlotsEdited = () => { slotsEdited = true; };
 
   /**
    * Gestiona esta acción de la vista.
@@ -322,6 +382,8 @@ export const useServiceSchedules = () => {
     resetForm();
     feedback.value = '';
     isEditorOpen.value = true;
+    if (!scheduleSettings.value) void loadSettings();
+    if (!routinesLoaded) void loadEditorRoutines();
   };
 
   /**
@@ -356,13 +418,16 @@ export const useServiceSchedules = () => {
       id_rutina: Number(schedule.id_rutina || 0),
       dia: schedule.dia || 'lunes',
       codigo_dia: schedule.codigo_dia || 'LUN',
+      sala: SALAS_HORARIO.includes(schedule.sala) ? schedule.sala : '',
       hora_inicio: String(schedule.hora_inicio || '06:00').slice(0, 5),
       hora_fin: String(schedule.hora_fin || '07:00').slice(0, 5),
       cupos: Number(schedule.cupos || 10),
       activo: schedule.activo !== false,
     });
     feedback.value = '';
+    editorError.value = '';
     isEditorOpen.value = true;
+    if (!routinesLoaded) void loadEditorRoutines();
   };
 
   /**
@@ -371,9 +436,13 @@ export const useServiceSchedules = () => {
   const refreshAll = async (notify = false) => {
     if (isRefreshing.value) return;
     isRefreshing.value = true;
+    if (notify && (showSettings.value || scheduleSettings.value) && !settingsDirty.value && !settingsSaving.value) {
+      void loadSettings();
+    }
+    if (notify && routinesLoaded) void loadEditorRoutines();
     try {
       await gymStore.fetchFromBackend({ section: 'schedules', force: notify });
-      if (notify) showNotification({ tone: 'success', message: 'Los horarios y las rutinas están actualizados.' });
+      if (notify) showNotification({ tone: 'success', message: 'Los horarios están actualizados.' });
     } catch (error) {
       feedbackTone.value = 'error';
       feedback.value = error.message || 'No se pudieron cargar los horarios.';
@@ -386,15 +455,20 @@ export const useServiceSchedules = () => {
   const saveSchedule = async () => {
     if (isSaving.value) return;
     isSaving.value = true;
-    feedback.value = '';
+    editorError.value = '';
     try {
       if (!form.hora_inicio || !form.hora_fin) throw new Error('Completa la hora de inicio y la hora de salida.');
+      const { apertura, cierre } = franjaDelEditor.value;
+      if (form.hora_inicio < apertura || form.hora_inicio >= cierre || form.hora_fin <= apertura || form.hora_fin > cierre) {
+        throw new Error(`El gimnasio atiende el ${dayLabel(form.dia).toLowerCase()} de ${apertura} a ${cierre}. El horario solicitado de ${form.hora_inicio} a ${form.hora_fin} queda fuera de esa franja.`);
+      }
       if (!hasValidShortDuration()) {
         throw new Error('El horario debe durar exactamente 1 o 2 horas.');
       }
       if (!Number(form.id_rutina || 0)) {
         throw new Error('Selecciona una rutina para este servicio.');
       }
+      if (!SALAS_HORARIO.includes(form.sala)) throw new Error('Selecciona una sala para el horario.');
       if (!Number.isInteger(form.cupos) || form.cupos < 1) throw new Error('Ingresa un número entero de cupos mayor que cero.');
       if (!form.codigo_dia.trim()) throw new Error('Ingresa el código del día.');
       await gymStore.upsertServiceSchedule({ ...form });
@@ -403,8 +477,7 @@ export const useServiceSchedules = () => {
       isEditorOpen.value = false;
       resetForm();
     } catch (error) {
-      feedbackTone.value = 'error';
-      feedback.value = error instanceof Error ? error.message : 'No se pudo guardar el horario.';
+      editorError.value = error instanceof Error ? error.message : 'No se pudo guardar el horario.';
     } finally {
       isSaving.value = false;
     }
@@ -435,12 +508,15 @@ export const useServiceSchedules = () => {
 
   return {
     gymStore, schedules, routines, showFilters, showList,
+    showSettings, scheduleSettings, settingsDraft, settingsLoading, settingsSaving, franjaDelEditor,
+    settingsError, settingsSaved, settingsDirty, resetSettingsDraft, loadSettings, saveSettings,
+    toggleSettings, editorError, routinesLoading, routinesError, loadEditorRoutines, markHoursEdited, markSlotsEdited,
     extraFilterCount, isSaving, isRefreshing, today, visibleRange,
     weeklySchedules, isEditorOpen, feedback, pendingDelete, isDeleting,
     feedbackTone, showNotification, filters, days, serviceFilters,
     statusFilters, sortOptions, defaultForm, form, normalizeService,
-    serviceLabel, dayLabel, dayOrder, serviceOrder, routineById,
-    routineName, routineZones, routinesForSelectedService, isScheduleActive, activeSchedules,
+    serviceLabel, dayLabel, dayOrder, serviceOrder,
+    routinesForSelectedService, isScheduleActive, activeSchedules,
     totalSlots, usedSlots, timeToMinutes, availableSlots, durationLabel,
     slotsPercent, servicePalette, serviceStyle, statusClass, normalizeText,
     searchableScheduleText, matchesStatus, compareBase, filteredSchedules, hasValidShortDuration,

@@ -20,6 +20,9 @@ from domain.models.gym import (
     HorarioPublico,
     HorarioServicioInput,
     MatriculaHorarioInput,
+    PARAMETROS_HORARIO_INICIALES,
+    ParametrosHorarioServicio,
+    ParametrosHorarioServicioInput,
     SummaryResponse,
     TicketAtencionInput,
 )
@@ -63,7 +66,7 @@ def summary(
     return gym_service.summary()
 
 
-@router.get("/configuracion")
+@router.get("/configuracion", response_model=ConfiguracionGimnasioInput)
 # Obtiene los datos necesarios.
 def get_configuracion(
     gym_service: GymService = Depends(get_gym_service),
@@ -72,7 +75,7 @@ def get_configuracion(
     return gym_service.configuracion_gimnasio()
 
 
-@router.post("/configuracion")
+@router.post("/configuracion", response_model=ConfiguracionGimnasioInput)
 # Actualiza el registro correspondiente.
 def update_configuracion(
     payload: ConfiguracionGimnasioInput,
@@ -81,6 +84,27 @@ def update_configuracion(
 ):
     try:
         return gym_service.actualizar_configuracion_gimnasio(payload.model_dump())
+    except ValueError as error:
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
+
+
+@router.get("/horarios-servicio/configuracion", response_model=ParametrosHorarioServicio)
+def get_parametros_horarios(
+    gym_service: GymService = Depends(get_gym_service),
+    _current_user=Depends(require_admin_or_staff),
+):
+    return gym_service.configuracion_gimnasio().get("parametros_horarios", PARAMETROS_HORARIO_INICIALES)
+
+
+@router.put("/horarios-servicio/configuracion", response_model=ParametrosHorarioServicio)
+def update_parametros_horarios(
+    payload: ParametrosHorarioServicioInput,
+    gym_service: GymService = Depends(get_gym_service),
+    _current_user=Depends(require_admin_or_staff),
+):
+    try:
+        settings = gym_service.actualizar_configuracion_gimnasio({"parametros_horarios": payload.model_dump()})
+        return settings["parametros_horarios"]
     except ValueError as error:
         raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 

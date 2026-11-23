@@ -93,6 +93,8 @@ export const useGymStore = defineStore('gym', () => {
     updateStoreOrderStatus: modules.store.updateStoreOrderStatus,
     refreshAttendanceFromBackend: modules.attendance.refreshAttendanceFromBackend,
     refreshServiceSchedulesFromBackend: modules.schedules.refreshServiceSchedulesFromBackend,
+    loadScheduleSettings: modules.schedules.loadScheduleSettings,
+    saveScheduleSettings: modules.schedules.saveScheduleSettings,
     refreshRoutinesFromBackend: modules.schedules.refreshRoutinesFromBackend,
     refreshPromotionsFromBackend: modules.memberships.refreshPromotionsFromBackend,
     refreshGymSettingsFromBackend: modules.dashboard.refreshGymSettingsFromBackend,

@@ -7,10 +7,73 @@
         <button type="button" class="schedule-primary" @click="openNewSchedule"><Plus :size="17" />Nuevo horario</button>
       </div>
     </header>
+
+    <section class="schedule-list-section" aria-labelledby="schedule-settings-heading">
+      <h2 id="schedule-settings-heading">
+        <button type="button" class="schedule-list-toggle" :aria-expanded="showSettings" aria-controls="schedule-settings" @click="toggleSettings">
+          <span><Settings2 :size="17" aria-hidden="true" /><strong>Configuración y parámetros</strong></span>
+          <ChevronDown :size="18" aria-hidden="true" :class="{ 'rotate-180': showSettings }" />
+        </button>
+      </h2>
+      <div v-if="showSettings" id="schedule-settings" class="pb-4">
+        <table class="schedule-settings-table mb-4 w-full table-fixed text-left text-sm">
+          <caption class="mb-2 text-left font-bold">Horario de atención · Lima</caption>
+          <thead class="schedule-inset schedule-muted">
+            <tr><th scope="col">Días</th><th scope="col">Atención</th></tr>
+          </thead>
+          <tbody class="divide-y schedule-dividers">
+            <tr v-for="franja in HORARIO_ATENCION" :key="franja.dias">
+              <th scope="row">{{ franja.dias }}</th>
+              <td>{{ franja.apertura }}–{{ franja.cierre }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="mb-3 text-sm schedule-muted">Valores iniciales para las nuevas clases. La hora se ajusta al día seleccionado.</p>
+        <p v-if="settingsLoading" role="status" class="text-sm schedule-muted">Cargando parámetros…</p>
+        <p v-if="settingsError" role="alert" class="mb-3 text-sm schedule-danger">{{ settingsError }}</p>
+        <button v-if="settingsError && !scheduleSettings && !settingsLoading" type="button" class="schedule-secondary" @click="loadSettings">
+          Reintentar carga
+        </button>
+        <form v-if="scheduleSettings" novalidate @submit.prevent="saveSettings">
+          <table class="schedule-settings-table w-full table-fixed text-left text-sm">
+            <thead class="schedule-inset schedule-muted">
+              <tr><th scope="col">Parámetro</th><th scope="col">Valor inicial</th></tr>
+            </thead>
+            <tbody class="divide-y schedule-dividers">
+              <tr>
+                <th scope="row"><label for="schedule-default-start">Hora de inicio</label></th>
+                <td><input id="schedule-default-start" v-model="settingsDraft.hora_inicio" class="field-input" :disabled="settingsLoading || settingsSaving" type="time" required /></td>
+              </tr>
+              <tr>
+                <th scope="row"><label for="schedule-default-duration">Duración</label></th>
+                <td>
+                  <select id="schedule-default-duration" v-model.number="settingsDraft.duracion_minutos" class="field-input" :disabled="settingsLoading || settingsSaving">
+                    <option :value="60">1 hora</option>
+                    <option :value="120">2 horas</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row"><label for="schedule-default-slots">Cupos por clase</label></th>
+                <td><input id="schedule-default-slots" v-model.number="settingsDraft.cupos" class="field-input" :disabled="settingsLoading || settingsSaving" type="number" min="1" step="1" required /></td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-if="settingsSaved && !settingsDirty" role="status" class="mt-3 text-sm schedule-soft">Parámetros guardados.</p>
+          <div class="mt-3 flex flex-wrap justify-end gap-2">
+            <button v-if="settingsDirty" type="button" class="schedule-secondary" :disabled="settingsLoading || settingsSaving" @click="resetSettingsDraft">Descartar cambios</button>
+            <button type="submit" class="schedule-primary" :disabled="settingsLoading || settingsSaving || !settingsDirty">
+              {{ settingsSaving ? 'Guardando…' : 'Guardar parámetros' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
     <section class="schedule-workspace" aria-label="Calendario de clases">
       <div class="schedule-toolbar">
         <div class="schedule-metrics"><span><strong>{{ activeSchedules }}</strong> horarios activos</span><span><strong>{{ usedSlots }} / {{ totalSlots }}</strong> cupos ocupados</span></div>
-        <div class="schedule-search-actions"><label class="schedule-search"><Search :size="16" aria-hidden="true" /><SearchInput v-model="filters.search" placeholder="Servicio, rutina, día u hora…" aria-label="Buscar horario" /></label><button type="button" class="schedule-secondary" :aria-expanded="showFilters" aria-controls="schedule-filters" @click="showFilters = !showFilters"><SlidersHorizontal :size="15" />Filtros<span v-if="extraFilterCount" class="filter-count">{{ extraFilterCount }}</span></button></div>
+        <div class="schedule-search-actions"><label class="schedule-search"><Search :size="16" aria-hidden="true" /><SearchInput v-model="filters.search" placeholder="Servicio, sala, día u hora…" aria-label="Buscar horario" /></label><button type="button" class="schedule-secondary" :aria-expanded="showFilters" aria-controls="schedule-filters" @click="showFilters = !showFilters"><SlidersHorizontal :size="15" />Filtros<span v-if="extraFilterCount" class="filter-count">{{ extraFilterCount }}</span></button></div>
       </div>
       <nav class="service-tabs" aria-label="Filtrar por servicio">
         <button v-for="service in serviceFilters" :key="service.value" type="button" :aria-pressed="filters.servicio === service.value" @click="filters.servicio = service.value">
@@ -23,11 +86,11 @@
         <label>Ordenar<select v-model="filters.sortBy"><option v-for="option in sortOptions" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
         <button type="button" class="schedule-secondary" @click="resetFilters">Limpiar filtros</button>
       </div>
-      <ExcelScheduleGrid title="Calendario de clases" subtitle="Elige tu semana y selecciona una clase para editarla."
+      <ExcelScheduleGrid v-memo="[filteredSchedules]" title="Calendario de clases" subtitle="Elige tu semana y selecciona una clase para editarla."
         interactive modal-feedback @notification="showNotification" @select="editSchedule" @range-change="visibleRange = $event" :items="filteredSchedules" file-name="horarios-servicio.xlsx" />
     </section>
 
-    <section class="schedule-list-section">
+    <section v-memo="[showList, weeklySchedules]" class="schedule-list-section">
       <button type="button" class="schedule-list-toggle" :aria-expanded="showList" aria-controls="schedule-list" @click="showList = !showList"><span><List :size="17" /><strong>Gestionar lista de horarios</strong><span>{{ weeklySchedules.length }} sesiones esta semana</span></span><ChevronDown :size="18" :class="{ 'rotate-180': showList }" /></button>
       <div id="schedule-list" v-if="showList">
       <div v-if="weeklySchedules.length" class="mt-5 overflow-hidden rounded-2xl border schedule-border schedule-surface shadow-xl shadow-black/10">
@@ -39,6 +102,7 @@
                 <th class="px-5 py-4">Rutina</th>
                 <th class="px-5 py-4">Fecha</th>
                 <th class="px-5 py-4">Horario</th>
+                <th class="px-5 py-4">Sala</th>
                 <th class="px-5 py-4">Cupos</th>
                 <th class="px-5 py-4">Estado</th>
                 <th class="px-5 py-4 text-right">Acciones</th>
@@ -61,8 +125,8 @@
                   </div>
                 </td>
                 <td class="px-5 py-4">
-                  <p class="font-bold schedule-text">{{ routineName(schedule.id_rutina) }}</p>
-                  <p class="mt-1 text-xs schedule-muted">{{ routineZones(schedule.id_rutina) }}</p>
+                  <p class="font-bold schedule-text">{{ schedule.rutina_nombre || 'Sin rutina' }}</p>
+                  <p class="mt-1 text-xs schedule-muted">{{ schedule.zonas_musculares || 'Rutina pendiente' }}</p>
                 </td>
                 <td class="px-5 py-4">
                   <p class="font-bold schedule-text">{{ dateLabel(schedule.fecha, { weekday: 'long' }) }}</p>
@@ -74,6 +138,7 @@
                   <p class="font-black schedule-text">{{ schedule.hora_inicio }} - {{ schedule.hora_fin }}</p>
                   <p class="mt-1 text-xs schedule-muted">{{ durationLabel(schedule) }}</p>
                 </td>
+                <td class="px-5 py-4 font-bold schedule-text">{{ schedule.sala || 'Por asignar' }}</td>
                 <td class="px-5 py-4">
                   <div class="max-w-[220px]">
                     <div class="flex items-center justify-between gap-3 text-xs">
@@ -132,13 +197,17 @@
               </div>
               <div>
                 <p class="text-xs uppercase tracking-[0.18em] schedule-muted">Rutina</p>
-                <p class="mt-1 font-black schedule-text">{{ routineName(schedule.id_rutina) }}</p>
-                <p class="text-xs schedule-muted">{{ routineZones(schedule.id_rutina) }}</p>
+                <p class="mt-1 font-black schedule-text">{{ schedule.rutina_nombre || 'Sin rutina' }}</p>
+                <p class="text-xs schedule-muted">{{ schedule.zonas_musculares || 'Rutina pendiente' }}</p>
               </div>
               <div>
                 <p class="text-xs uppercase tracking-[0.18em] schedule-muted">Cupos</p>
                 <p class="mt-1 font-black schedule-text">{{ schedule.cupos_usados || 0 }} / {{ schedule.cupos }}</p>
                 <p class="text-xs schedule-muted">{{ availableSlots(schedule) }} libres</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-[0.18em] schedule-muted">Sala</p>
+                <p class="mt-1 font-black schedule-text">{{ schedule.sala || 'Por asignar' }}</p>
               </div>
             </div>
 
@@ -162,11 +231,11 @@
 
     <ScheduleModal v-if="isEditorOpen" wide :title="form.id_horario_servicio ? 'Editar horario' : 'Nuevo horario'" :busy="isSaving" @close="closeEditor">
         <form class="schedule-editor" novalidate @submit.prevent="saveSchedule">
-          <p class="editor-intro">Define el servicio, la rutina y los cupos de tu clase semanal.</p>
+          <p class="editor-intro">Define el servicio, la rutina, la sala y los cupos de tu clase semanal.</p>
           <div class="mt-6 grid gap-4 sm:grid-cols-2">
             <label class="space-y-2">
               <span class="text-sm schedule-soft">Servicio</span>
-              <select autofocus v-model="form.servicio" class="field-input">
+              <select autofocus v-model="form.servicio" class="field-input" @change="form.id_rutina = 0">
                 <option value="fitness">Fitness</option>
                 <option value="musculacion">Musculación</option>
                 <option value="cardio">Cardio</option>
@@ -176,8 +245,8 @@
 
             <label class="space-y-2">
               <span class="text-sm schedule-soft">Rutina específica</span>
-              <select v-model.number="form.id_rutina" class="field-input">
-                <option :value="0">Selecciona una rutina</option>
+              <select v-model.number="form.id_rutina" class="field-input" :disabled="routinesLoading" :aria-busy="routinesLoading">
+                <option :value="0">{{ routinesLoading ? 'Cargando rutinas…' : 'Selecciona una rutina' }}</option>
                 <option v-for="routine in routinesForSelectedService" :key="routine.id_rutina" :value="routine.id_rutina">
                   {{ routine.nombre_rutina }} - {{ routine.zonas_musculares || 'Sin zonas' }}
                 </option>
@@ -198,21 +267,33 @@
 
             <label class="space-y-2">
               <span class="text-sm schedule-soft">Hora de inicio</span>
-              <input v-model="form.hora_inicio" type="time" class="field-input" />
+              <input v-model="form.hora_inicio" :min="franjaDelEditor.apertura" :max="franjaDelEditor.cierre" type="time" class="field-input" @input="markHoursEdited" />
             </label>
 
             <label class="space-y-2">
               <span class="text-sm schedule-soft">Hora de salida</span>
-              <input v-model="form.hora_fin" type="time" class="field-input" />
+              <input v-model="form.hora_fin" :min="franjaDelEditor.apertura" :max="franjaDelEditor.cierre" type="time" class="field-input" @input="markHoursEdited" />
             </label>
             <label class="space-y-2">
               <span class="text-sm schedule-soft">Cupos</span>
-              <input v-model.number="form.cupos" type="number" min="1" class="field-input" />
+              <input v-model.number="form.cupos" type="number" min="1" class="field-input" @input="markSlotsEdited" />
             </label>
+            <div class="space-y-2">
+              <label for="schedule-room" class="text-sm schedule-soft">Sala</label>
+              <select id="schedule-room" v-model="form.sala" class="field-input" required @change="editorError = ''">
+                <option value="" disabled>Selecciona una sala</option>
+                <option v-for="sala in SALAS_HORARIO" :key="sala" :value="sala">{{ sala }}</option>
+              </select>
+            </div>
           </div>
 
+          <div v-if="routinesError" class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <p role="alert" class="schedule-danger">{{ routinesError }}</p>
+            <button type="button" class="schedule-secondary" @click="loadEditorRoutines">Reintentar rutinas</button>
+          </div>
           <p class="mt-3 rounded-2xl border border-orange-400/20 bg-orange-400/10 px-4 py-3 text-sm schedule-soft">
-            Este horario se repite cada semana. Al editarlo, el cambio se aplica a las próximas clases y sus recordatorios. La duración debe ser de 1 o 2 horas.
+            Atención del {{ dayLabel(form.dia).toLowerCase() }} de {{ franjaDelEditor.apertura }} a {{ franjaDelEditor.cierre }}.
+            La clase se repite cada semana y debe durar 1 o 2 horas.
           </p>
 
           <label class="mt-5 flex items-center gap-3 text-sm font-bold schedule-text">
@@ -220,6 +301,9 @@
             Disponible para matrícula
           </label>
 
+          <p v-if="editorError" role="alert" class="mt-4 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm schedule-danger">
+            {{ editorError }}
+          </p>
           <footer class="editor-actions">
             <button type="button" class="schedule-secondary" :disabled="isSaving" @click="closeEditor">Cancelar</button>
             <button type="submit" class="schedule-primary" :disabled="isSaving">{{ isSaving ? 'Guardando…' : 'Guardar horario' }}</button>
@@ -245,6 +329,7 @@
 
 <script setup>
 import { FORM_LIMITS } from "../../domain/utils/formLimits.js";
+import { HORARIO_ATENCION, SALAS_HORARIO } from '../../domain/utils/scheduleSettings.js';
 
 import SearchInput from '../components/SearchInput.vue';
 import {
@@ -255,6 +340,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Settings2,
   SlidersHorizontal,
   Trash2,
 } from 'lucide-vue-next';
@@ -265,12 +351,15 @@ import { useServiceSchedules } from '../composables/schedules/useServiceSchedule
 
 const {
   gymStore, schedules, routines, showFilters, showList,
+  showSettings, scheduleSettings, settingsDraft, settingsLoading, settingsSaving, franjaDelEditor,
+  settingsError, settingsSaved, settingsDirty, resetSettingsDraft, loadSettings, saveSettings,
+  toggleSettings, editorError, routinesLoading, routinesError, loadEditorRoutines, markHoursEdited, markSlotsEdited,
   extraFilterCount, isSaving, isRefreshing, today, visibleRange,
   weeklySchedules, isEditorOpen, feedback, pendingDelete, isDeleting,
   feedbackTone, showNotification, filters, days, serviceFilters,
   statusFilters, sortOptions, defaultForm, form, normalizeService,
-  serviceLabel, dayLabel, dayOrder, serviceOrder, routineById,
-  routineName, routineZones, routinesForSelectedService, isScheduleActive, activeSchedules,
+  serviceLabel, dayLabel, dayOrder, serviceOrder,
+  routinesForSelectedService, isScheduleActive, activeSchedules,
   totalSlots, usedSlots, timeToMinutes, availableSlots, durationLabel,
   slotsPercent, servicePalette, serviceStyle, statusClass, normalizeText,
   searchableScheduleText, matchesStatus, compareBase, filteredSchedules, hasValidShortDuration,
@@ -313,6 +402,10 @@ const {
 .schedule-list-toggle > span { display: flex; align-items: center; gap: 10px; }
 .schedule-list-toggle strong { font-size: 12px; font-weight: 650; }
 .schedule-list-toggle span span { color: var(--app-text-muted); font-size: 12px; }
+.schedule-settings-table th, .schedule-settings-table td { padding: 8px 12px; }
+.schedule-settings-table th { font-weight: 650; }
+.schedule-settings-table .field-input { min-height: 44px; min-width: 0; max-width: 240px; }
+.schedule-primary:disabled, .schedule-secondary:disabled { opacity: .6; cursor: default; }
 #schedule-list { padding-bottom: 16px; }
 button:focus-visible, .schedule-search:focus-within { outline: 2px solid var(--app-accent); outline-offset: 3px; }
 @media (max-width: 1000px) { .schedule-page-header { align-items: flex-start; flex-direction: column; gap: 16px; } .schedule-toolbar { flex-wrap: wrap; } }

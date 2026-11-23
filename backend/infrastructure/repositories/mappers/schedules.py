@@ -69,6 +69,7 @@ def _map_service_schedule(row: dict[str, Any]) -> dict[str, Any]:
         "dia": str(row.get("dia") or "lunes"),
         "hora_inicio": str(row.get("hora_inicio") or "06:00"),
         "hora_fin": str(row.get("hora_fin") or "07:00"),
+        "sala": row.get("sala"),
         "cupos": max(1, int(row.get("cupos", 10) or 10)),
         "cupos_usados": 0,
         "activo": bool(row.get("activo", True)),
@@ -84,6 +85,7 @@ def _service_schedule_to_remote(row: dict[str, Any]) -> dict[str, Any]:
         "dia": GymDomainService().normalize_schedule_day(row.get("dia")) or "lunes",
         "hora_inicio": str(row.get("hora_inicio") or "06:00"),
         "hora_fin": str(row.get("hora_fin") or "07:00"),
+        **({"sala": row["sala"]} if row.get("sala") is not None else {}),
         "cupos": max(1, int(row.get("cupos", 10) or 10)),
         "activo": bool(row.get("activo", True)),
     }

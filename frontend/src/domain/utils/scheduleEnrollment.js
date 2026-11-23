@@ -142,6 +142,7 @@ export const enrollmentsForClient = (enrollments = [], schedules = [], clientId 
         dia: enrollment.dia || schedule.dia || '',
         hora_inicio: enrollment.hora_inicio || schedule.hora_inicio || '',
         hora_fin: enrollment.hora_fin || schedule.hora_fin || '',
+        sala: enrollment.sala || schedule.sala || '',
         servicio: enrollment.servicio || schedule.servicio || '',
       };
     });

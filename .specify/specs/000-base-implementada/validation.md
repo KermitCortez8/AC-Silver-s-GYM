@@ -62,6 +62,77 @@ oficial están en [el flujo de trabajo](../../guias/spec-driven.md).
 - La vista de Inventario quedó en 499 líneas y el editor mantiene la carga diferida. El caso de navegación verifica las peticiones de cada pestaña y la reutilización de la caché. Se actualizó la huella del archivo de pruebas para conservar su trazabilidad en Testiny.
 - El contenedor de pruebas de frontend aprobó los 422 casos y la imagen de producción compiló. En Chromium se comprobó la apertura del editor y la carga de Artículos y Movimientos con una sesión simulada.
 
+### Configuración y parámetros de horarios
+
+- Criterio de regresión. Los parámetros compartidos se cargan al abrir un horario
+  nuevo. El editor de horarios existentes conserva las horas y los cupos guardados.
+- La compilación de producción y las 422 pruebas del frontend aprobaron con
+  Node 22.23.5.
+- En Chromium, con sesión y API simuladas, se verificaron la carga y su reintento,
+  el rechazo de una hora de salida a medianoche, el reintento de guardado, la
+  conservación de cambios pendientes al actualizar, la recarga de los valores
+  y los recorridos de escritorio en tema oscuro y móvil en tema claro.
+- El backend aprobó 1.070 pruebas, incluidas las ocho de esta configuración.
+  Se omitieron 61 casos que requieren PostgreSQL en Docker o Stripe CLI.
+  La migración 028 se ejecutó en PostgreSQL aislado con PGlite. Se comprobaron
+  los valores iniciales de filas existentes, la escritura mediante la RPC,
+  el rechazo de una instantánea desactualizada y la conservación del aforo.
+- La versión inicial de 028 fallaba con `42P01` en esquemas sin la tabla
+  `CONFIGURACION_GIMNASIO`. Se comprobó la corrección en PostgreSQL 16 desechable,
+  con tabla previa y sin ella, guardando con la RPC como `service_role` y
+  ejecutando de nuevo la migración para comprobar la conservación de los datos.
+  También se verificaron los permisos de la tabla y su secuencia cuando 028 las crea.
+
+### Franjas de atención y retiro de horarios
+
+- Horarios por servicio usa 06:00–22:00 de lunes a viernes y 07:00–18:00 el fin
+  de semana. La API acepta una clase que termina al cierre y rechaza las
+  que empiezan antes de la apertura o terminan después del cierre.
+- En PostgreSQL 16 desechable, 72 pruebas del módulo aprobaron. La prueba
+  de 029 ejecutó la migración dos veces y verificó el borrado de horarios
+  sin vínculos, la desactivación de los vinculados, sus matrículas y
+  asistencias intactas y el rechazo al intentar reactivar uno fuera de franja.
+- El backend aprobó 1.080 pruebas en la ejecución general. Esa ejecución
+  omitió 64 pruebas optativas de PostgreSQL o Stripe CLI. La compilación y
+  422 pruebas de frontend aprobaron. En Chromium con API simulada se revisaron
+  la tabla en escritorio y móvil, el ajuste a la apertura del domingo, el
+  aviso fuera de franja y el guardado de una clase que termina a las 18:00.
+
+### Apertura y validación del editor de horarios
+
+- Con la respuesta de configuración retenida en Chromium, el botón **Nuevo
+  horario** quedaba deshabilitado. La ruta pedía también el catálogo de rutinas
+  al entrar. La traza de scripts correspondía a Horarios y sus dependencias.
+- La vista carga sus horarios al entrar. El editor consulta parámetros y
+  rutinas bajo demanda y abre con ambas respuestas pendientes. El calendario
+  y la lista reutilizan su renderizado mientras sus datos sigan iguales.
+- Una clase fuera de atención muestra el día, la franja permitida y el
+  intervalo solicitado en el propio formulario. Conserva la edición y
+  evita el envío, incluso cuando la duración tampoco es válida.
+- Pasaron la compilación de producción, 425 pruebas de frontend y 18 pruebas
+  del control documental de Testiny. En Chromium se verificaron escritorio y
+  móvil, la apertura con las consultas demoradas, los valores editados, el
+  rechazo sin petición y el guardado tras corregir el intervalo.
+
+### Asignación de sala a los horarios
+
+- El formulario y la API exigen elegir una sala del listado fijo. Las clases
+  anteriores se pueden asignar desde **Editar horario**. Las consultas de
+  matrícula reflejan la sala actual sin cambiar las reservas existentes.
+- En Chromium se verificaron el selector fijo, el aviso al guardar sin sala,
+  la creación, la edición, la recarga y la lista móvil. Pasaron la compilación
+  y 426 pruebas de frontend.
+- Pasaron 1.085 pruebas generales de backend, con 65 casos optativos de
+  PostgreSQL o Stripe CLI omitidos en esa ejecución. La prueba dirigida de
+  la migración 030 pasó en PostgreSQL 16 desechable. Verificó la sala nula
+  de un horario previo y su asignación mediante la RPC, incluso al reejecutar
+  la migración y recargar el catálogo.
+- Se incorporaron los nombres **Sala de Fuerza 1** y **Sala de Fuerza 2**
+  al listado fijo. Pasaron 72 pruebas de horarios y matrículas del backend,
+  16 pruebas dirigidas de frontend y la compilación. En Chromium se verificó
+  el listado actualizado, la creación y edición, y la selección vacía al abrir
+  un horario guardado con el nombre anterior `Sala 1`.
+
 ## Revisión de pruebas por módulo y batería de casos de uso · 2026-11-10
 
 Petición: revisar las pruebas existentes, ordenarlas primero por módulo y luego

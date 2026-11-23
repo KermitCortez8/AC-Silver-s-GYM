@@ -1,12 +1,14 @@
 import { requireList, requireRecord } from '../services/responseValidation.js';
 import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
+import { validateScheduleSettings } from '../../domain/utils/scheduleSettings.js';
 /** Estado y operaciones del módulo schedules. */
 import { nowISO, normalizeBackendClientToMember, todayISO, getCurrentRegistrarId } from '../../domain/utils/gymRules.js';
 
 export const createSchedulesModule = (ctx, repository) => {
   const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
   let enrollmentRevision = 0;
+  let scheduleWriteRevision = 0;
   const upsertRutina = async (payload) => {
     const rutina = {
       id_rutina: payload.id_rutina || payload.id || null,
@@ -161,11 +163,22 @@ export const createSchedulesModule = (ctx, repository) => {
   const refreshServiceSchedulesFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
 
-    const response = await remote.refreshServiceSchedulesFromBackend();
-
-    ctx.serviceSchedules.value = requireList(response, 'id_horario_servicio');
+    let writeRevision;
+    let schedules;
+    // El editor puede guardar mientras la primera lectura del calendario sigue pendiente.
+    do {
+      writeRevision = scheduleWriteRevision;
+      schedules = requireList(await remote.refreshServiceSchedulesFromBackend(), 'id_horario_servicio');
+    } while (writeRevision !== scheduleWriteRevision);
+    ctx.serviceSchedules.value = schedules;
     return ctx.serviceSchedules.value;
   };
+
+  const loadScheduleSettings = async () =>
+    validateScheduleSettings(requireRecord(await remote.loadScheduleSettings()));
+
+  const saveScheduleSettings = async (settings) =>
+    validateScheduleSettings(requireRecord(await remote.saveScheduleSettings(validateScheduleSettings(settings))));
 
   const refreshRoutinesFromBackend = async () => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
@@ -189,6 +202,7 @@ export const createSchedulesModule = (ctx, repository) => {
       hora_inicio: payload.hora_inicio || '06:00',
       hora_fin: payload.hora_fin || '07:00',
       codigo_dia: payload.codigo_dia || '',
+      sala: payload.sala,
       dia: payload.dia || (Array.isArray(payload.dias) ? payload.dias[0] : 'lunes'),
       cupos: Number(payload.cupos ?? 10),
       activo: payload.activo !== false,
@@ -197,29 +211,28 @@ export const createSchedulesModule = (ctx, repository) => {
       throw new Error('Selecciona una rutina para el servicio');
     }
 
+    let saved = body;
     if (ctx.apiBase) {
-      const saved = await remote.upsertServiceSchedule(body);
+      saved = await remote.upsertServiceSchedule(body);
       requireRecord(saved, 'id_horario_servicio');
-      const index = ctx.serviceSchedules.value.findIndex((entry) => Number(entry.id_horario_servicio) === Number(saved.id_horario_servicio));
-      if (index >= 0) {
-        ctx.serviceSchedules.value[index] = saved;
-      } else {
-        ctx.serviceSchedules.value.push(saved);
-      }
-      return saved;
+    } else if (!body.id_horario_servicio) {
+      saved = { ...body, id_horario_servicio: Date.now(), cupos_usados: 0 };
     }
-
-    if (!body.id_horario_servicio) {
-      body.id_horario_servicio = Date.now();
-      body.cupos_usados = 0;
-    }
-    const index = ctx.serviceSchedules.value.findIndex((entry) => Number(entry.id_horario_servicio) === Number(body.id_horario_servicio));
+    const routine = ctx.routines.value.find((entry) => Number(entry.id_rutina) === Number(saved.id_rutina ?? body.id_rutina));
+    const schedule = {
+      rutina_nombre: routine?.nombre_rutina || '',
+      zonas_musculares: routine?.zonas_musculares || '',
+      sala: body.sala,
+      ...saved,
+    };
+    const index = ctx.serviceSchedules.value.findIndex((entry) => Number(entry.id_horario_servicio) === Number(saved.id_horario_servicio));
     if (index >= 0) {
-      ctx.serviceSchedules.value[index] = body;
+      ctx.serviceSchedules.value[index] = schedule;
     } else {
-      ctx.serviceSchedules.value.push(body);
+      ctx.serviceSchedules.value.push(schedule);
     }
-    return body;
+    scheduleWriteRevision++;
+    return saved;
   };
 
   const deleteServiceSchedule = async (idHorarioServicio) => {
@@ -228,6 +241,7 @@ export const createSchedulesModule = (ctx, repository) => {
     }
 
     ctx.serviceSchedules.value = ctx.serviceSchedules.value.filter((entry) => Number(entry.id_horario_servicio) !== Number(idHorarioServicio));
+    scheduleWriteRevision++;
   };
 
   const refreshScheduleClientsFromBackend = async () => {
@@ -380,5 +394,10 @@ export const createSchedulesModule = (ctx, repository) => {
     await refreshAfterMutation(ctx, () => refreshServiceSchedulesFromBackend());
   };
 
-  return { upsertRutina, upsertHorario, memberSchedules, assignMemberSchedule, refreshServiceSchedulesFromBackend, refreshRoutinesFromBackend, upsertServiceSchedule, deleteServiceSchedule, refreshScheduleClientsFromBackend, refreshEnrollmentsFromBackend, fetchTrainerOverview, upsertTrainerRoutine, assignTrainerRoutine, fetchTrainerClientRoutines, markTrainerRoutineProgress, enrollSchedule, deleteEnrollment };
+  return {
+    upsertRutina, upsertHorario, memberSchedules, assignMemberSchedule, refreshServiceSchedulesFromBackend,
+    loadScheduleSettings, saveScheduleSettings, refreshRoutinesFromBackend, upsertServiceSchedule, deleteServiceSchedule,
+    refreshScheduleClientsFromBackend, refreshEnrollmentsFromBackend, fetchTrainerOverview, upsertTrainerRoutine,
+    assignTrainerRoutine, fetchTrainerClientRoutines, markTrainerRoutineProgress, enrollSchedule, deleteEnrollment,
+  };
 };
