@@ -165,25 +165,40 @@ test('unassigning another enrollment keeps the exercise draft and preserves conf
 });
 
 test('one rest timer supports pause, resume, completion and disposal without leaked intervals', (t) => {
-  t.mock.timers.enable({ apis: ['setInterval'] });
+  // El reloj de Node 22.14 puede volver a programar un intervalo cancelado desde su callback.
+  const intervalos = new Set();
+  t.mock.method(globalThis, 'setInterval', (avanzar, milisegundos) => {
+    assert.equal(milisegundos, 1000);
+    intervalos.add(avanzar);
+    return avanzar;
+  });
+  t.mock.method(globalThis, 'clearInterval', (intervalo) => intervalos.delete(intervalo));
+  const avanzarUnSegundo = () => {
+    for (const avanzar of [...intervalos]) avanzar();
+  };
+
   const scope = effectScope();
   const timer = scope.run(() => reactive(useRestTimer()));
   try {
     timer.start(3);
-    t.mock.timers.tick(1000);
+    avanzarUnSegundo();
     assert.equal(timer.seconds, 2);
     timer.pause();
-    t.mock.timers.tick(5000);
+    assert.equal(intervalos.size, 0);
+    avanzarUnSegundo();
     assert.equal(timer.seconds, 2);
     timer.resume();
-    t.mock.timers.tick(2000);
+    avanzarUnSegundo();
+    avanzarUnSegundo();
     assert.equal(timer.seconds, 0);
     assert.equal(timer.finished, true);
     assert.equal(timer.active, false);
+    assert.equal(intervalos.size, 0);
     timer.resume();
     assert.equal(timer.seconds, 3);
     scope.stop();
-    t.mock.timers.tick(5000);
+    assert.equal(intervalos.size, 0);
+    avanzarUnSegundo();
     assert.equal(timer.seconds, 3);
     assert.equal(timer.active, false);
   } finally {
