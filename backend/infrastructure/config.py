@@ -44,6 +44,8 @@ class Settings(BaseModel):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_mode: str = "test"
+    pagos_yape_qr_url: str = ""
+    pagos_mercado_pago_enlaces: str = ""
     frontend_public_url: str = "http://localhost:5173"
     google_client_id: str = ""
     auth_secret_key: str = ""
@@ -90,6 +92,8 @@ def get_settings() -> Settings:
         stripe_secret_key=(os.getenv("STRIPE_SECRET_KEY") or "").strip(),
         stripe_webhook_secret=(os.getenv("STRIPE_WEBHOOK_SECRET") or "").strip(),
         stripe_mode=(os.getenv("STRIPE_MODE") or "test").strip().lower(),
+        pagos_yape_qr_url=(os.getenv("PAGOS_YAPE_QR_URL") or "").strip(),
+        pagos_mercado_pago_enlaces=(os.getenv("PAGOS_MERCADO_PAGO_ENLACES") or "").strip(),
         frontend_public_url=(os.getenv("FRONTEND_PUBLIC_URL") or "http://localhost:5173").strip().rstrip("/"),
         google_client_id=(os.getenv("GOOGLE_CLIENT_ID") or "").strip(),
         auth_secret_key=(os.getenv("AUTH_SECRET_KEY") or "").strip(),

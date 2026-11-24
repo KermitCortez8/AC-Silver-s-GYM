@@ -39,6 +39,17 @@ nueva cotización. Las altas administrativas siguen permitiendo clientes impagos
 Los clientes históricos y sus referencias Stripe conservan compatibilidad; no
 se migran ni eliminan automáticamente porque podrían tener pagos en curso.
 
+## Verificación de las altas con QR o enlace de pago
+
+La API se probó con Yape o Plin y Mercado Pago simulados. Las pruebas cubren
+la consulta del personal, el rechazo de importes incorrectos, la repetición de
+una confirmación y el rechazo de una operación registrada para otro cliente.
+Chromium verificó el QR y la redirección Stripe en Registro, la confirmación
+de una solicitud pública y el enlace de Mercado Pago en Nuevo cliente.
+La migración 031 se aplicó dos veces en una base temporal con PGlite y se
+comprobó la escritura del medio de pago con la RPC de 020. La habilitación
+del QR y los enlaces reales del gimnasio se gestiona en su entorno.
+
 ## Esquema y aplicación
 
 [020_public_preregistrations.sql](../../../../backend/migrations/020_public_preregistrations.sql)

@@ -6,6 +6,8 @@ from application.services.store_checkout_service import cancelar_por_sesion_expi
 from domain.errors import EntityNotFound
 from domain.services.gym_domain_service import PedidoCanceladoConPagoError
 from application.services.public_preregistration_service import PublicPreregistrationService
+from application.services.registro_pagos_externos import RegistroPagosExternos
+from domain.services.registro_pago_externo import MEDIOS_EXTERNOS
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +16,7 @@ class ClientPaymentsService:
     def __init__(self, clients, gym, settings, *, gateway_factory, notify):
         self.clients, self.gym, self.settings = clients, gym, settings
         self.gateway_factory, self.notify = gateway_factory, notify
+        self.registro_externo = RegistroPagosExternos(clients, settings, notify)
 
     def gateway(self):
         return self.gateway_factory(self.settings)
@@ -39,6 +42,8 @@ class ClientPaymentsService:
     def register_public(self, payload):
         if not self.settings.has_supabase_credentials:
             raise RuntimeError("Supabase debe estar configurado para registrar pagos de membresía")
+        if payload.get('medio_pago'):
+            return self.registro_externo.registrar(payload)
         gateway = self.gateway()
         if not gateway.configured:
             raise RuntimeError("Stripe no está configurado en backend/.env")
@@ -49,6 +54,12 @@ class ClientPaymentsService:
         return PublicPreregistrationService(self.clients, self.gateway(), self.settings).archive_due(self.confirm_membership, now)
 
     def register_admin(self, payload):
+        if payload.get('medio_pago'):
+            if payload.get('pagar_con_stripe'):
+                raise ValueError('Elige un solo medio de pago.')
+            if not self.settings.has_supabase_credentials:
+                raise RuntimeError('Supabase debe estar configurado para registrar pagos de membresía.')
+            return self.registro_externo.registrar(payload, admin=True)
         gateway = self.gateway()
         pay = payload.get("pagar_con_stripe", False)
         if pay:
@@ -65,6 +76,8 @@ class ClientPaymentsService:
 
     def start_admin_checkout(self, client_id):
         result = self.clients.get_admin_payment_registration(client_id)
+        if result['membresia'].get('metodo_pago') in MEDIOS_EXTERNOS:
+            raise ValueError('La membresía tiene un pago por QR o enlace pendiente de verificar.')
         gateway = self.gateway()
         gateway.validate_configuration()
         return gateway.create_membership_checkout(result, admin=True)

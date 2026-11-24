@@ -70,6 +70,31 @@ por el navegador. No recalcular compras antiguas con el precio actual del plan.
 No usar un valor por defecto cuando el precio guardado sea cero. No reactivar
 una membresía vencida mediante edición o evento Stripe duplicado.
 
+### QR de Yape o Plin y enlace de Mercado Pago en las altas
+
+Las altas aceptan `medio_pago` con `yape_plin` o `mercado_pago`. El QR muestra
+el importe reservado. El enlace de Mercado Pago se elige por el importe exacto
+y se abre en una pestaña externa. Recepción verifica el abono en la aplicación
+del proveedor y registra el número completo de operación y el importe recibido.
+Cada operación se registra una sola vez por medio. La primera membresía queda
+en trámite con pago confirmado, pendiente de activación administrativa.
+
+Aplica en Supabase [031_pagos_externos_registro.sql](../../../backend/migrations/031_pagos_externos_registro.sql).
+En el backend, `PAGOS_YAPE_QR_URL` apunta a la imagen del QR exportado de Yape,
+por HTTPS o con una ruta pública del frontend. Para `/pagos/yape.png`, guarda
+la imagen en `frontend/public/pagos/yape.png`. `PAGOS_MERCADO_PAGO_ENLACES` es
+un objeto JSON que asigna un enlace reutilizable de monto fijo a cada importe
+final en soles, incluidos los que resultan de promociones. Ejemplo con valores
+de muestra:
+
+```dotenv
+PAGOS_YAPE_QR_URL=/pagos/yape.png
+PAGOS_MERCADO_PAGO_ENLACES='{"79.00":"https://mpago.la/TU_ENLACE_DE_79"}'
+```
+
+La reserva de promoción de una solicitud externa se libera al vencer. La
+solicitud conserva su cotización y sigue disponible para verificar abonos tardíos.
+
 ## 6. Edge Cases
 
 - Compra con plan inexistente o inactivo: `/api/membresias` rechaza antes de

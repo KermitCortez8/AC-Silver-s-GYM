@@ -20,7 +20,8 @@ MIGRATIONS = {"fecha_clase": "019_schedule_sessions.sql",
               "prefijo_activo": "026_inventario_unidades.sql",
               "id_unidad": "027_mov_inv_unidad_hora.sql",
               "hora_movimiento": "027_mov_inv_unidad_hora.sql",
-              "sala": "030_sala_horario_servicio.sql"}
+              "sala": "030_sala_horario_servicio.sql",
+              "medio_pago": "031_pagos_externos_registro.sql"}
 
 
 def missing_column(error):
@@ -35,7 +36,7 @@ def prepare_write(table, body, remote_columns, validate):
         for alias, other in (("Correo", "Email"), ("Email", "Correo")):
             if alias not in columns and other in columns:
                 body.pop(alias, None)
-    for field in ("origen_registro", "google_sub", "sala"):
+    for field in ("origen_registro", "google_sub", "sala", "medio_pago"):
         if field not in body or (columns is not None and field in columns):
             continue
         if body[field] is None or body[field] == "":

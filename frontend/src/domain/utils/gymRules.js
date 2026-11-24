@@ -214,6 +214,7 @@ export const normalizeBackendClientToMember = (client = {}, previous = {}) => {
     origen_registro: previous.registrationOrigin, payment_status: previous.paymentStatus,
     renewal_allowed: previous.canRenewMembership,
     payment_reference: previous.paymentReference, has_password: previous.hasPassword,
+    metodo_pago: previous.paymentMethod,
     monto_pago: previous.membershipPrice, estado: previous.status, fecha_registro: previous.joinedAt,
     ...Object.fromEntries(Object.entries(client).filter(([, value]) => value !== undefined)),
   };
@@ -239,6 +240,7 @@ export const normalizeBackendClientToMember = (client = {}, previous = {}) => {
   canRenewMembership: typeof client.renewal_allowed === 'boolean' ? client.renewal_allowed : undefined,
   paymentStatus: client.payment_status || client.estado_pago || '',
   paymentReference: client.payment_reference || client.referencia_pago || '',
+  paymentMethod: client.metodo_pago || '',
   hasPassword: Boolean(client.has_password ?? client.hasPassword),
   membershipPrice: Number(client.monto_pago ?? 0),
   status,

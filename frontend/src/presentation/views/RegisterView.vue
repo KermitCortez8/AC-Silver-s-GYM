@@ -88,7 +88,7 @@
         </div>
 
         <!-- FORMULARIO -->
-        <form novalidate class="mt-6 space-y-4" @submit.prevent="submitRegistration">
+        <form novalidate class="mt-6 space-y-4" @submit.prevent="submitRegistration(paymentMethod)">
           <!-- NOMBRE -->
           <label class="block space-y-2">
             <span class="text-sm font-semibold text-slate-700">
@@ -203,18 +203,26 @@
             </label>
           </div>
 
-          <!-- BOTON STRIPE -->
+          <MembershipPaymentMethods
+            v-model="paymentMethod"
+            class="register-payment-methods"
+            :options="ONLINE_PAYMENT_OPTIONS"
+            :disabled="isSubmitting"
+          />
+
           <button
             type="submit"
             class="btn-cta w-full rounded-full bg-[var(--app-accent)] px-5 py-4 text-sm text-white shadow-lg shadow-red-500/25 transition hover:bg-[var(--app-accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="isSubmitting || googleProcessing || !canRegister"
           >
             {{
-              isSubmitting ? 'Preparando pago seguro...' : 'Pagar con Stripe'
+              isSubmitting ? 'Preparando el pago...' : paymentMethod === 'stripe' ? 'Pagar con Stripe' : 'Ver instrucciones de pago'
             }}
           </button>
 
-          <p class="text-center text-xs leading-5 text-slate-500">
+          <ExternalPaymentInstructions v-if="pagoExterno" :payment="pagoExterno" class="register-payment-methods" />
+
+          <p v-if="paymentMethod === 'stripe'" class="text-center text-xs leading-5 text-slate-500">
             Serás redirigido a Stripe Checkout. Silver Gym no recibe ni almacena
             los datos de tu tarjeta.
           </p>
@@ -322,7 +330,7 @@
 
         <!-- CLIENTE REGISTRADO -->
         <div
-          v-if="registeredPreregistration"
+          v-if="registeredPreregistration && !pagoExterno"
           class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-900"
           role="status"
         >
@@ -356,13 +364,19 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import { FORM_LIMITS } from "../../domain/utils/formLimits.js";
 import { vDigits } from "../directives/digits.js";
 
 import FieldError from '../components/FieldError.vue';
+import ExternalPaymentInstructions from '../components/clients/ExternalPaymentInstructions.vue';
+import MembershipPaymentMethods from '../components/clients/MembershipPaymentMethods.vue';
+import { ONLINE_PAYMENT_OPTIONS } from '../../domain/utils/membershipPaymentMethods.js';
 import { clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
 import GoogleSignInButton from '../components/GoogleSignInButton.vue';
 import { useRegistrationForm } from '../composables/auth/useRegistrationForm.js';
+
+const paymentMethod = ref('stripe');
 
 const {
   getVerifiedGoogleProfile, route, catalogLoading, catalogReady, catalogError, canRegister,
@@ -371,13 +385,21 @@ const {
   normalizePlanName, formatPlanLabel, activePromotions, planOptions, form,
   fieldErrors, validateField, revalidateField, validateForm, updateTelefono,
   syncSelectedPlan, loadPlans, clearGoogleAccount, selectGoogleAccount, submitRegistration,
-  loadPromotions,
+  loadPromotions, pagoExterno,
 } = useRegistrationForm();
 </script>
 
 <style scoped>
 .register-page {
   font-family: 'Manrope', 'Segoe UI', 'Trebuchet MS', sans-serif;
+}
+
+.register-payment-methods {
+  color-scheme: light;
+  --app-text: #0f172a;
+  --app-text-muted: #475569;
+  --app-input: #f8fafc;
+  --app-border: #e2e8f0;
 }
 
 .register-page h1,

@@ -188,9 +188,11 @@ class RegistroAdminClienteInput(ClienteInput):
     plan: ShortText = Field(default="MENSUAL", min_length=1)
     id_promocion: int | None = Field(default=None, gt=0)
     pagar_con_stripe: bool = False
+    medio_pago: Literal['yape_plin', 'mercado_pago'] | None = None
 
 
 class RegistroPublicoClienteInput(ValidatedInput):
+    medio_pago: Literal['yape_plin', 'mercado_pago'] | None = None
     nombre: ShortText
     correo: ShortText
     telefono: str = ""

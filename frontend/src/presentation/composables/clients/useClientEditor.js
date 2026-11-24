@@ -4,6 +4,7 @@ import { computed, reactive, ref, watch } from "vue";
 import { useClientMembershipCatalog } from "./useClientMembershipCatalog.js";
 import { normalizePlanName, promotionAvailableForPlan } from "../../../domain/utils/membershipCatalog.js";
 import { discountedPrice } from "../../../domain/utils/money.js";
+import { esPagoExterno } from '../../../domain/utils/membershipPaymentMethods.js';
 import {
   clientMembershipGroup,
   clientMembershipLabel,
@@ -61,7 +62,7 @@ export const useClientEditor = ({
     plan: "",
     id_promocion: 0,
     estado: "EN_TRAMITE",
-    pagar_con_stripe: false,
+    metodo_pago: 'pendiente',
   });
 
   const { fieldErrors, validateField, revalidateField, validateForm, resetValidation } = useFormValidation(form,
@@ -116,7 +117,7 @@ export const useClientEditor = ({
     form.plan = "";
     form.id_promocion = 0;
     form.estado = "EN_TRAMITE";
-    form.pagar_con_stripe = false;
+    form.metodo_pago = 'pendiente';
     submitError.value = "";
   };
 
@@ -181,7 +182,8 @@ export const useClientEditor = ({
         id_promocion: editingId.value ? editingClient.value?.id_promocion || undefined : form.id_promocion || undefined,
 
         estado: form.estado,
-        pagar_con_stripe: !editingId.value && form.pagar_con_stripe,
+        pagar_con_stripe: isNewClient && form.metodo_pago === 'stripe',
+        medio_pago: isNewClient && esPagoExterno(form.metodo_pago) ? form.metodo_pago : undefined,
       });
 
       if (isNewClient) {
@@ -196,6 +198,8 @@ export const useClientEditor = ({
       feedbackMessage.value = `Cliente ${saved.id} guardado con estado ${saved.status || form.estado}.`;
       if (saved.payment?.checkout_url) {
         window.location.assign(saved.payment.checkout_url);
+      } else if (saved.payment?.revision_pendiente) {
+        openDetails(saved);
       } else if (saved.payment?.message) {
         feedbackTone.value = "info";
         feedbackMessage.value = `Cliente ${saved.id} registrado. ${saved.payment.message}. Puedes retomar el pago desde sus detalles.`;

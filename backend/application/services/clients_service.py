@@ -164,6 +164,8 @@ class ClientsService:
         verified, claims = self._verified_registration_payload(payload)
         # Compatibilidad: sesiones de Stripe creadas antes de la separación.
         if self.gym.get_cliente_by_email(verified['correo']):
+            if payload.get('medio_pago'):
+                raise ValueError('Ya existe una cuenta con ese correo. Ve a Acceso o consulta con recepción.')
             return self._register_verified_legacy(verified, claims)
         row = self.gym.executor.execute(PreparePreregistrationCommand(verified, str(uuid4()), utc_now()))
         return {'preregistro': row}

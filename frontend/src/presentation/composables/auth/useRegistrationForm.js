@@ -33,6 +33,7 @@ export const useRegistrationForm = () => {
   const googleError = ref('');
 
   const feedback = ref('');
+  const pagoExterno = ref(null);
 
   const feedbackTone = ref('success');
 
@@ -243,7 +244,7 @@ export const useRegistrationForm = () => {
   /* ENVIAR REGISTRO                                                           */
   /* -------------------------------------------------------------------------- */
 
-  const submitRegistration = async () => {
+  const submitRegistration = async (medioPago = 'stripe') => {
     if (isSubmitting.value || googleProcessing.value) {
       return;
     }
@@ -251,6 +252,7 @@ export const useRegistrationForm = () => {
     isSubmitting.value = true;
 
     feedback.value = '';
+    pagoExterno.value = null;
 
     registeredClient.value = null;
     registeredPreregistration.value = null;
@@ -272,6 +274,7 @@ export const useRegistrationForm = () => {
        */
       const result = await gymStore.registerPublicClient({
         ...form,
+        ...(medioPago !== 'stripe' ? { medio_pago: medioPago } : {}),
         correo: form.correo.trim().toLowerCase(),
         google_credential: googleCredential.value,
       });
@@ -280,6 +283,10 @@ export const useRegistrationForm = () => {
 
       registeredClient.value = client;
       registeredPreregistration.value = result.preregistration || null;
+      if (payment?.revision_pendiente) {
+        pagoExterno.value = payment;
+        return;
+      }
 
       /*
        * Verificar que Stripe haya generado
@@ -330,6 +337,6 @@ export const useRegistrationForm = () => {
     normalizePlanName, formatPlanLabel, activePromotions, planOptions, form,
     fieldErrors, validateField, revalidateField, validateForm, updateTelefono,
     syncSelectedPlan, loadPlans, clearGoogleAccount, selectGoogleAccount, submitRegistration,
-    loadPromotions,
+    loadPromotions, pagoExterno,
   };
 };
