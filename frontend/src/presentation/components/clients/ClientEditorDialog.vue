@@ -85,10 +85,11 @@
 
         <label class="space-y-2">
           <span class="text-sm ws-soft">DNI</span>
-          <input v-digits :maxlength="FORM_LIMITS.dni"
-            v-model="form.dni"
+          <input :maxlength="FORM_LIMITS.dni"
+            v-model.trim="form.dni"
             type="text"
             inputmode="numeric"
+            :pattern="DNI_PATTERN"
             :aria-invalid="Boolean(fieldErrors.dni)"
             :aria-describedby="fieldErrors.dni ? 'client-dni-error' : undefined"
             @blur="validateField('dni')" @input="revalidateField('dni')"
@@ -151,18 +152,10 @@
           </p>
         </label>
 
-        <label v-if="!editingId" class="space-y-2 sm:col-span-2">
-          <span class="flex items-center gap-3 text-sm ws-text">
-            <input v-model="form.pagar_con_stripe" type="checkbox" />
-            Realizar el pago con Stripe al registrar
-          </span>
-          <p class="text-xs ws-muted">
-            El cliente quedará en trámite, con pago pendiente. Puedes pagar
-            ahora o después desde sus detalles. La membresía se activa después
-            de confirmar el pago.
-          </p>
-        </label>
       </fieldset>
+
+      <MembershipPaymentMethods v-if="!editingId" v-model="form.metodo_pago" class="mt-4"
+        :options="ADMIN_PAYMENT_OPTIONS" :disabled="savingClient" />
 
       <p v-if="submitError" role="alert" class="app-notice app-notice--error mt-4 rounded-xl border px-4 py-3 text-sm">
         {{ submitError }}
@@ -178,9 +171,9 @@
             ? "Guardando..."
             : editingId
               ? "Guardar cambios"
-              : form.pagar_con_stripe
+              : form.metodo_pago === 'stripe'
                 ? "Registrar y pagar con Stripe"
-                : "Registrar cliente"
+                : form.metodo_pago === 'pendiente' ? "Registrar cliente" : "Registrar y ver instrucciones"
         }}
       </button>
     </form>
@@ -189,9 +182,12 @@
 
 <script setup>
 import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+import { DNI_PATTERN } from "../../../domain/utils/formValidation.js";
 import { vDigits } from "../../directives/digits.js";
 
 import FieldError from "../FieldError.vue";
+import MembershipPaymentMethods from './MembershipPaymentMethods.vue';
+import { ADMIN_PAYMENT_OPTIONS } from '../../../domain/utils/membershipPaymentMethods.js';
 import WorkspaceDialog from "../WorkspaceDialog.vue";
 defineProps([
   "fieldErrors",

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from domain.errors import EntityNotFound
 from domain.money import cents
+from domain.services.registro_pago_externo import validar_importe_enlace
 from domain.validation import required_text
 
 
@@ -26,6 +27,7 @@ class PreregistrationRules:
 
     def prepare(self, payload, token, now):
         state = self.context.state
+        medio = payload.get('medio_pago')
         correo, dni = payload['correo'], payload['dni']
         if (self.accounts.get_cliente_by_email(correo) or self.accounts.get_cliente_by_dni(dni)
                 or self.accounts.get_usuario_by_email(correo)
@@ -41,7 +43,17 @@ class PreregistrationRules:
                 raise ValueError('Ya existe una solicitud con esos datos. Utiliza las mismas credenciales.')
             if row['estado'] == 'CONVERTIDO':
                 raise ValueError('El registro ya se completó. Ve a Acceso.')
+            if row.get('medio_pago'):
+                if medio != row['medio_pago']:
+                    raise ValueError('Esta solicitud ya tiene otro medio de pago. Retoma la misma operación o consulta con recepción.')
+                validar_importe_enlace(payload, row['monto_pago'])
+                return row
             if row['estado'] == 'PENDIENTE':
+                if medio:
+                    if row['checkout_session_id']:
+                        raise ValueError('Esta solicitud ya tiene un pago iniciado con Stripe.')
+                    validar_importe_enlace(payload, row['monto_pago'])
+                    row['medio_pago'] = medio
                 return row
         if any(r['dni'] == dni and r['correo'] != correo for r in state.get('preregistros', [])):
             raise ValueError('Ya existe una solicitud con ese DNI y otro correo.')
@@ -51,6 +63,7 @@ class PreregistrationRules:
         if not subject and len(password) < 6:
             raise ValueError('La contraseña debe tener al menos 6 caracteres')
         plan, promo_id, amount = self.memberships.reserve_public_quote(payload.get('plan') or 'MENSUAL')
+        validar_importe_enlace(payload, amount)
         prepared = {
             'id_preregistro': row['id_preregistro'] if row else self.context.next_int_id('preregistros', 'id_preregistro'),
             'token': row['token'] if row else token,
@@ -61,6 +74,8 @@ class PreregistrationRules:
             'estado': 'PENDIENTE', 'creado_en': now, 'expira_en': deadline(now),
             'checkout_session_id': '', 'checkout_url': '', 'id_cliente': None, 'id_membresia': None,
         }
+        if medio:
+            prepared['medio_pago'] = medio
         if row:
             row.update(prepared)
         else:
@@ -69,6 +84,8 @@ class PreregistrationRules:
 
     def attach(self, token, attempt, session_id, checkout_url):
         row = self.get(token)
+        if row.get('medio_pago'):
+            raise ValueError('Esta solicitud ya tiene un pago externo pendiente.')
         if int(row['intento']) != attempt or row['estado'] == 'EXPIRADO':
             raise ValueError('El intento de pago ya no está vigente')
         if row['checkout_session_id'] and row['checkout_session_id'] != session_id:
@@ -89,8 +106,10 @@ class PreregistrationRules:
             promo['usos_actuales'] = max(0, int(promo.get('usos_actuales') or 0) - 1)
         return row
 
-    def convert(self, token, attempt, session_id, amount):
+    def convert(self, token, attempt, session_id, amount, metodo_pago='stripe'):
         row = self.get(token)
+        if metodo_pago != (row.get('medio_pago') or 'stripe'):
+            raise ValueError('El medio de pago no corresponde al registro.')
         if int(row['intento']) != attempt or (row['checkout_session_id'] and row['checkout_session_id'] != session_id):
             raise ValueError('La sesión no corresponde al preregistro')
         if cents(amount) != cents(row['monto_pago']) or cents(amount) <= 0:
@@ -115,7 +134,7 @@ class PreregistrationRules:
                       estado='EN_TRAMITE', origen_registro='PUBLICO', fecha_registro=self.context.today())
         membership = dict(id_membresia=mid, id_cliente=cid, id_pm=row['id_pm'], id_promocion=row['id_promocion'],
                           monto_pago=row['monto_pago'], estado='EN_TRAMITE', estado_pago='PAGADO',
-                          fecha_inicio='', fecha_fin='', metodo_pago='stripe', referencia_pago=session_id,
+                          fecha_inicio='', fecha_fin='', metodo_pago=metodo_pago, referencia_pago=session_id,
                           fecha_pago=self.context.today())
         state['clientes'].insert(0, client)
         state['membresia'].insert(0, membership)

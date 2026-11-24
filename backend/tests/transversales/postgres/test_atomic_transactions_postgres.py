@@ -9,6 +9,7 @@ import threading
 import pytest
 
 from application.services.gym_service import GymService
+from domain.services.schedule_sessions import SALAS_HORARIO
 from infrastructure.repositories.atomic_changes import SnapshotConflict, commit_snapshot
 from infrastructure.repositories.gym_repository import SupabaseGymRepository
 from tests.transversales.integracion.test_priority_fixes import Passwords
@@ -81,6 +82,67 @@ def clear(database):
 def service(database, monkeypatch):
     monkeypatch.setattr('infrastructure.repositories.gym_repository.SupabaseRestClient', lambda *_args: database)
     return GymService(SupabaseGymRepository('local', 'unused'), Passwords())
+
+
+def test_migracion_030_permita_asignar_sala_sin_alterar_el_horario_existente(database, monkeypatch):
+    gym = service(database, monkeypatch)
+    rutina = gym.upsert_rutina({"servicio": "fitness", "nombre_rutina": "Circuito"})
+    rutina_id = rutina["id_rutina"]
+    database.sql(f'''insert into public."HORARIOS_SERVICIO"
+      (id_horario_servicio, servicio, id_rutina, dia, codigo_dia, hora_inicio, hora_fin, cupos, activo)
+      values (1,'fitness',{rutina_id},'lunes','LUN','10:00','11:00',8,true);''')
+    migracion = (BACKEND / "migrations/030_sala_horario_servicio.sql").read_text(encoding="utf-8")
+    try:
+        database.sql(migracion)
+        gym.repository.cache.invalidate()
+        [previo] = gym.horarios_servicio()
+        assert previo["sala"] is None
+        assert gym.upsert_horario_servicio({**previo, "sala": SALAS_HORARIO[0]})["sala"] == SALAS_HORARIO[0]
+        database.sql(migracion)
+        gym.repository.cache.invalidate()
+        assert gym.horarios_servicio() == [{**previo, "sala": SALAS_HORARIO[0]}]
+    finally:
+        database.sql('alter table public."HORARIOS_SERVICIO" drop column if exists sala;')
+
+
+@pytest.mark.parametrize("tabla_existente", [False, True])
+def test_migracion_028_permite_guardar_parametros_con_o_sin_tabla_previa(database, monkeypatch, tabla_existente):
+    tabla = 'public."CONFIGURACION_GIMNASIO"'
+    migracion = (BACKEND / 'migrations/028_parametros_horarios.sql').read_text(encoding='utf-8')
+    if tabla_existente:
+        aforo = {"capacidad_total": 48, "capacidad_por_hora": 12}
+        database.sql(f"insert into {tabla} (capacidad_total, capacidad_por_hora) values (48, 12)")
+    else:
+        aforo = {"capacidad_total": 30, "capacidad_por_hora": 10}
+        database.sql(f"alter table {tabla} rename to configuracion_gimnasio_fixture")
+
+    try:
+        database.sql(migracion)
+        gym = service(database, monkeypatch)
+        iniciales = {"hora_inicio": "06:00", "duracion_minutos": 60, "cupos": 10}
+        guardados = {"hora_inicio": "08:30", "duracion_minutos": 120, "cupos": 16}
+        leidos = gym.configuracion_gimnasio()
+        assert {campo: leidos[campo] for campo in aforo} == aforo
+        if tabla_existente:
+            assert leidos["parametros_horarios"] == iniciales
+        else:
+            assert database.rows("CONFIGURACION_GIMNASIO") == []
+            assert database.sql(f"select relrowsecurity from pg_class where oid = '{tabla}'::regclass") == "t"
+            secuencia = database.sql(f"select pg_get_serial_sequence('{tabla}', 'id_config')")
+            for rol in ("anon", "authenticated"):
+                assert database.sql(f"select has_table_privilege('{rol}', '{tabla}', 'SELECT, INSERT, UPDATE')") == "f"
+                assert database.sql(f"select has_sequence_privilege('{rol}', '{secuencia}', 'USAGE, SELECT, UPDATE')") == "f"
+
+        final = {**aforo, "parametros_horarios": guardados}
+        assert gym.actualizar_configuracion_gimnasio({"parametros_horarios": guardados}) == final
+        database.sql(migracion)
+        assert database.rows("CONFIGURACION_GIMNASIO") == [{"id_config": 1, **final}]
+    finally:
+        if tabla_existente:
+            database.sql(f"alter table {tabla} drop column if exists parametros_horarios")
+        else:
+            database.sql(f'drop table if exists {tabla}; '
+                         'alter table public.configuracion_gimnasio_fixture rename to "CONFIGURACION_GIMNASIO"')
 
 
 def test_sequence_permission_migration_repairs_real_insert_failure_without_granting_other_roles(database, monkeypatch):

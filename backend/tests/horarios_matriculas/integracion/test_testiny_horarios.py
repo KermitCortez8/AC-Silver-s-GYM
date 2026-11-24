@@ -3,12 +3,13 @@ from copy import deepcopy
 
 import pytest
 
+from domain.services.schedule_sessions import SALAS_HORARIO
 from tests.soporte.testiny_api import documented_api  # noqa: F401
 
 
 URL = "/api/gym/horarios-servicio"
 SCHEDULE = dict(servicio="fitness", id_rutina=7, codigo_dia="LUN", dia="lunes",
-                hora_inicio="10:00", hora_fin="11:00", cupos=4, activo=True)
+                hora_inicio="10:00", hora_fin="11:00", cupos=4, activo=True, sala=SALAS_HORARIO[0])
 
 
 @pytest.fixture

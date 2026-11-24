@@ -13,10 +13,10 @@ export const validationIssue = (issue) => {
   const field = (issue.loc || []).filter(part => !['body', 'query', 'path'].includes(part)).at(-1) || '';
   const type = issue.type || '';
   let message = String(issue.msg || 'El valor ingresado no es válido.').replace(/^Value error,\s*/i, '');
-  if (type === 'missing' || message === 'Field required') message = 'Este campo es obligatorio.';
+  if (type === 'missing' || message === 'Field required') message = field === 'dni' ? 'El DNI es obligatorio.' : 'Este campo es obligatorio.';
   else if (type.startsWith('int_')) message = 'Ingresa un número entero válido.';
   else if (type.startsWith('float_') || type === 'finite_number') message = 'Ingresa un número válido y finito.';
-  else if (type === 'string_type') message = 'Ingresa texto válido.';
+  else if (type === 'string_type') message = field === 'dni' ? 'El DNI debe tener exactamente 8 dígitos.' : 'Ingresa texto válido.';
   else if (type === 'literal_error') message = 'Selecciona una opción válida.';
   else if (type === 'string_pattern_mismatch') message = field === 'dni' ? 'El DNI debe tener exactamente 8 dígitos.' : 'El formato ingresado no es válido.';
   else if (type.startsWith('date_')) message = 'Ingresa una fecha válida.';

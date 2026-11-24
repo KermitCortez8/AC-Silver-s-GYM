@@ -231,6 +231,10 @@
                         <dt class="text-xs text-slate-400">Hora</dt>
                         <dd class="text-sm font-bold text-white">{{ formatScheduleHours(selectedSchedule) }}</dd>
                       </div>
+                      <div v-if="selectedSchedule.sala" class="flex items-center justify-between gap-3 py-3">
+                        <dt class="text-xs text-slate-400">Sala</dt>
+                        <dd class="text-sm font-bold text-white">{{ selectedSchedule.sala }}</dd>
+                      </div>
                       <div class="flex items-center justify-between gap-3 py-3">
                         <dt class="text-xs text-slate-400">Cupos libres</dt>
                         <dd class="text-sm font-bold" :class="isScheduleFull(selectedSchedule) ? 'text-rose-300' : 'text-emerald-300'">

@@ -70,6 +70,57 @@ por el navegador. No recalcular compras antiguas con el precio actual del plan.
 No usar un valor por defecto cuando el precio guardado sea cero. No reactivar
 una membresía vencida mediante edición o evento Stripe duplicado.
 
+### QR de Yape o Plin y enlace de Mercado Pago en las altas
+
+Las altas aceptan `medio_pago` con `yape_plin` o `mercado_pago`. El QR muestra
+el importe reservado. El enlace de Mercado Pago se elige por el importe exacto.
+El registro público abre Mercado Pago en la misma pestaña al pulsar **Pagar
+con POS**. Recepción verifica el abono en la aplicación
+del proveedor y registra el número completo de operación y el importe recibido.
+Cada operación se registra una sola vez por medio. La primera membresía queda
+en trámite con pago confirmado, pendiente de activación administrativa.
+
+Aplica en Supabase [031_pagos_externos_registro.sql](../../../backend/migrations/031_pagos_externos_registro.sql).
+En el backend, `PAGOS_YAPE_QR_URL` apunta a la imagen del QR exportado de Yape,
+por HTTPS o con una ruta pública del frontend. Para `/pagos/yape.png`, guarda
+la imagen en `frontend/public/pagos/yape.png`. `PAGOS_MERCADO_PAGO_ENLACES` es
+un objeto JSON que asigna un enlace reutilizable de monto fijo a cada importe
+final en soles, incluidos los que resultan de promociones. Ejemplo con valores
+de muestra:
+
+```dotenv
+PAGOS_YAPE_QR_URL=/pagos/yape.png
+PAGOS_MERCADO_PAGO_ENLACES='{"79.00":"https://mpago.la/TU_ENLACE_DE_79"}'
+```
+
+Si falta el QR o los enlaces, la API devuelve HTTP 503 con el aviso del medio
+seleccionado antes de crear la solicitud.
+
+La reserva de promoción de una solicitud externa se libera al vencer. La
+solicitud conserva su cotización y sigue disponible para verificar abonos tardíos.
+
+### Checkout Pro de prueba en el registro público
+
+En [Tus integraciones](https://www.mercadopago.com.pe/developers/panel/app),
+crea una aplicación de Checkout Pro en Perú y copia el **Access Token** de
+la sección **Credenciales de prueba**. Configura estas variables en
+`backend/.env` y reinicia el backend:
+
+```dotenv
+PAGOS_MERCADO_PAGO_MODO=prueba
+MERCADO_PAGO_ACCESS_TOKEN_PRUEBA=TU_ACCESS_TOKEN_DE_PRUEBA
+```
+
+En el registro, selecciona **POS virtual** y pulsa **Pagar con POS** para
+abrir Checkout Pro de prueba directamente.
+El importe se cotiza con el catálogo y las promociones vigentes. Completa
+el checkout con la cuenta compradora de prueba y las tarjetas de la
+[guía de Mercado Pago](https://www.mercadopago.com.pe/developers/es/docs/checkout-pro-preferences/integration-test/test-purchases).
+La prueba abre el enlace de Checkout Pro tras verificar que el vendedor
+sea una cuenta de prueba de Perú. No guarda solicitudes, clientes ni pagos.
+Para volver a los enlaces de cobro del alta pública, usa
+`PAGOS_MERCADO_PAGO_MODO=enlaces` y reinicia el backend.
+
 ## 6. Edge Cases
 
 - Compra con plan inexistente o inactivo: `/api/membresias` rechaza antes de

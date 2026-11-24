@@ -71,4 +71,4 @@ El recorrido de consulta no modifica tablas de negocio. Si la cuota compartida n
 
 ## Complexity Tracking
 
-La suite Playwright ya se ubica en `frontend/e2e/`. El cupo local por proceso se implementó para limitar pruebas y uso de una instancia; **no sustituye un límite compartido entre servidores**. Antes de exponer el proveedor real a tráfico público se requiere un cupo distribuido, revisión más amplia de datos personales y una prueba controlada de acceso a Groq. No se declara esa fase como aprobada.
+La suite Playwright ya se ubica en `frontend/tests/e2e/`. El cupo local por proceso se implementó para limitar pruebas y uso de una instancia; **no sustituye un límite compartido entre servidores**. Antes de exponer el proveedor real a tráfico público se requiere un cupo distribuido, revisión más amplia de datos personales y una prueba controlada de acceso a Groq. No se declara esa fase como aprobada.

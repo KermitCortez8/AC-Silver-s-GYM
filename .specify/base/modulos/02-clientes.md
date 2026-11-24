@@ -33,7 +33,9 @@ identificador/DNI, editarla y comprobar que conserva origen y fecha de alta.
 6. **CA-06.** Al abrir el alta o edición administrativa se consultan los planes
    y promociones del backend; el registro público consulta planes y promociones
    vigentes. Las altas solo ofrecen planes activos y promociones aplicables.
-   El alta administrativa acepta el nombre de cualquier plan activo del catálogo.
+   Las altas pública y administrativa aceptan el nombre de cualquier plan activo
+   del catálogo.
+   Ambas requieren un DNI de ocho dígitos y muestran el error junto al campo.
    Un error muestra reintento y conserva el borrador, sin sustituir el catálogo
    por planes locales. La edición personal conserva la membresía contratada.
 7. **CA-07.** El alta pública guarda una solicitud temporal privada durante 24
@@ -41,6 +43,10 @@ identificador/DNI, editarla y comprobar que conserva origen y fecha de alta.
    conversión confirma las tres entidades en una transacción y tolera webhooks
    y retornos duplicados. La caducidad archiva únicamente después de reconciliar
    Stripe; un pago en proceso o una respuesta incierta conserva la solicitud.
+8. **CA-08.** Si el alta elige Yape o Plin por QR o tarjeta mediante un enlace
+   de Mercado Pago, recepción comprueba el abono antes de registrar el pago.
+   En el alta pública, la solicitud se convierte a cliente desde «Solicitudes
+   de pago». En «Nuevo cliente», el abono se verifica desde sus detalles.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -51,6 +57,7 @@ identificador/DNI, editarla y comprobar que conserva origen y fecha de alta.
 | CA-05 | [test_review_regressions.py](../../../backend/tests/transversales/integracion/test_review_regressions.py): `test_client_deletion_removes_enrollments_progress_and_releases_capacity`; [test_scoped_operations.py](../../../backend/tests/transversales/integracion/test_scoped_operations.py): `test_client_deletion_keeps_the_whole_cascade_inside_one_command`. |
 | CA-06 | [client-catalog.test.js](../../../frontend/tests/clientes/interfaz/client-catalog.test.js), [test_admin_catalog_registration.py](../../../backend/tests/clientes/integracion/test_admin_catalog_registration.py) y [validación del catálogo](../validaciones/catalogo-clientes/validation.md). |
 | CA-07 | [test_public_preregistrations.py](../../../backend/tests/clientes/integracion/test_public_preregistrations.py), [integración SQL](../../../backend/tests/clientes/postgres/test_public_preregistrations_postgres.py) y [validación](../validaciones/preregistros-separados/validation.md). |
+| CA-08 | [test_registro_pagos_externos.py](../../../backend/tests/membresias_pagos/integracion/test_registro_pagos_externos.py). |
 
 ## 4. Technical Constraints
 

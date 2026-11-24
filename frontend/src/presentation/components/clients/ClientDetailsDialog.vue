@@ -142,8 +142,13 @@
               : `Pagar S/. ${Number(viewingClient.membershipPrice || 0).toFixed(2)} con Stripe`
           }}
         </button>
+        <ClientExternalPayment
+          v-if="viewingClient.paymentStatus === 'PENDIENTE' && esPagoExterno(viewingClient.paymentMethod)"
+          :key="viewingClient.id_membresia" :client="viewingClient" :token="token"
+          @confirmado="$emit('pago-confirmado', $event)"
+        />
         <button
-          v-if="viewingClient.paymentStatus === 'PENDIENTE'"
+          v-else-if="viewingClient.paymentStatus === 'PENDIENTE'"
           type="button"
           class="w-full rounded-xl border ws-border-warning ws-tint-warning px-4 py-3 font-bold ws-warning transition ws-hover"
           :disabled="Boolean(confirmingPaymentClientId || payingClientId)"
@@ -170,7 +175,10 @@
 
 <script setup>
 import WorkspaceDialog from "../WorkspaceDialog.vue";
+import ClientExternalPayment from './ClientExternalPayment.vue';
+import { esPagoExterno } from '../../../domain/utils/membershipPaymentMethods.js';
 import { Mail, RefreshCw } from "lucide-vue-next";
+defineEmits(['pago-confirmado']);
 defineProps([
   "canRenewClientMembership", "requestRenewal", "renewingClientId", "renewalLoading",
   "canPayClientWithStripe",
@@ -190,6 +198,7 @@ defineProps([
   "requestActivation",
   "retryActivationEmail",
   "viewingClient",
+  'token',
 ]);
 </script>
 

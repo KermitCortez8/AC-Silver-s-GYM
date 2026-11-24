@@ -148,7 +148,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_cupos",
       "prueba": "test_tc135_limite_de_capacidad_compara_maximo_por_fecha",
       "minimo_variantes": 1,
-      "sha256": "58da182aae4d2842f91cf7e80116d4f4177850bf929848b2ab2d907cba91156e"
+      "sha256": "ac7ebcaeceae4b057fa268e7d94e875a27f6319ddbcfed4fbde2d9a352912e07"
     },
     "BE:identidad_acceso/integracion/test_testiny_cuentas.py::test_tc159_nueva_sesion_resuelve_rol_guardado_y_respuesta_no_expone_hash": {
       "componente": "backend",
@@ -876,7 +876,7 @@
       "clase": "tests.transversales.integracion.test_client_flow_control",
       "prueba": "test_confirmed_membership_cannot_be_replaced",
       "minimo_variantes": 4,
-      "sha256": "35f44ecfcd5ba08912b4ea4b759c10355f00ea22298ad401c89edce543865640"
+      "sha256": "7ca3bed8a2dd0787016d26532e24ff99eae78320b95f9a044862c44b2a7485c8"
     },
     "BE:transversales/integracion/test_client_flow_control.py::test_membership_cannot_be_transferred_to_another_client": {
       "componente": "backend",
@@ -884,7 +884,7 @@
       "clase": "tests.transversales.integracion.test_client_flow_control",
       "prueba": "test_membership_cannot_be_transferred_to_another_client",
       "minimo_variantes": 1,
-      "sha256": "35f44ecfcd5ba08912b4ea4b759c10355f00ea22298ad401c89edce543865640"
+      "sha256": "7ca3bed8a2dd0787016d26532e24ff99eae78320b95f9a044862c44b2a7485c8"
     },
     "BE:transversales/integracion/test_client_flow_control.py::test_pending_edit_cannot_set_activation_dates_or_state": {
       "componente": "backend",
@@ -892,7 +892,7 @@
       "clase": "tests.transversales.integracion.test_client_flow_control",
       "prueba": "test_pending_edit_cannot_set_activation_dates_or_state",
       "minimo_variantes": 1,
-      "sha256": "35f44ecfcd5ba08912b4ea4b759c10355f00ea22298ad401c89edce543865640"
+      "sha256": "7ca3bed8a2dd0787016d26532e24ff99eae78320b95f9a044862c44b2a7485c8"
     },
     "BE:transversales/integracion/test_module_error_control.py::test_all_modules_report_unavailable_services_without_leaking_details": {
       "componente": "backend",
@@ -1324,7 +1324,7 @@
       "clase": "tests/rutinas_progreso/interfaz/flujos.test.js",
       "prueba": "direct assignment and assignment dialog use the same validated save flow",
       "minimo_variantes": 1,
-      "sha256": "dfdf9c51f86d8fc1cc23335c771844aeac538bf4c5190c17cc9e79c1f992af52"
+      "sha256": "6942fc53299c6459b11d70440c39476ec418a947ff95407d1031bd98ca81c6ec"
     },
     "FE:rutinas_progreso/interfaz/flujos.test.js::progress keeps its draft on failure and clears it only after a confirmed save": {
       "componente": "frontend",
@@ -1332,7 +1332,7 @@
       "clase": "tests/rutinas_progreso/interfaz/flujos.test.js",
       "prueba": "progress keeps its draft on failure and clears it only after a confirmed save",
       "minimo_variantes": 1,
-      "sha256": "dfdf9c51f86d8fc1cc23335c771844aeac538bf4c5190c17cc9e79c1f992af52"
+      "sha256": "6942fc53299c6459b11d70440c39476ec418a947ff95407d1031bd98ca81c6ec"
     },
     "FE:rutinas_progreso/interfaz/flujos.test.js::trainer renders extracted dialogs, exercises and progress history with working form models": {
       "componente": "frontend",
@@ -1340,7 +1340,7 @@
       "clase": "tests/rutinas_progreso/interfaz/flujos.test.js",
       "prueba": "trainer renders extracted dialogs, exercises and progress history with working form models",
       "minimo_variantes": 1,
-      "sha256": "dfdf9c51f86d8fc1cc23335c771844aeac538bf4c5190c17cc9e79c1f992af52"
+      "sha256": "6942fc53299c6459b11d70440c39476ec418a947ff95407d1031bd98ca81c6ec"
     },
     "FE:rutinas_progreso/interfaz/testiny-documentados.test.js::TC-110: supervisión vacía muestra el estado sin matrículas pendientes": {
       "componente": "frontend",
@@ -1516,7 +1516,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "a failed users request clears only its section loading status",
       "minimo_variantes": 1,
-      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
+      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
     },
     "FE:transversales/integracion/navigation-stores.test.js::each admin section loads only its resources and shares them with the dashboard": {
       "componente": "frontend",
@@ -1524,7 +1524,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "each admin section loads only its resources and shares them with the dashboard",
       "minimo_variantes": 1,
-      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
+      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
     },
     "FE:transversales/integracion/navigation-stores.test.js::failed forced refresh is not cached and a later navigation retries it": {
       "componente": "frontend",
@@ -1532,7 +1532,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "failed forced refresh is not cached and a later navigation retries it",
       "minimo_variantes": 1,
-      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
+      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
     },
     "FE:transversales/integracion/navigation-stores.test.js::switching to users is not delayed by a pending client list": {
       "componente": "frontend",
@@ -1540,7 +1540,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "switching to users is not delayed by a pending client list",
       "minimo_variantes": 1,
-      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
+      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
     },
     "FE:transversales/integracion/navigation-stores.test.js::users finish loading while a previous section still has pending requests": {
       "componente": "frontend",
@@ -1548,7 +1548,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "users finish loading while a previous section still has pending requests",
       "minimo_variantes": 1,
-      "sha256": "56870f2e95dff95518167e9c5ffd8a412c6a731a108d33d54f7cc537ec47cbc5"
+      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
     },
     "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni": {
       "componente": "backend",
@@ -1676,7 +1676,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
       "prueba": "test_tc056_modificar_horario_conserva_sesiones_y_cupos",
       "minimo_variantes": 1,
-      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+      "sha256": "e516ff29e4fc1d1b5dbfc1f564699f8954ec829d9950ab27d796735420ebdd55"
     },
     "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc058_rechaza_horas_y_permite_corregir": {
       "componente": "backend",
@@ -1684,7 +1684,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
       "prueba": "test_tc058_rechaza_horas_y_permite_corregir",
       "minimo_variantes": 5,
-      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+      "sha256": "e516ff29e4fc1d1b5dbfc1f564699f8954ec829d9950ab27d796735420ebdd55"
     },
     "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc059_no_guarda_cupos_invalidos_y_acepta_enteros": {
       "componente": "backend",
@@ -1692,7 +1692,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
       "prueba": "test_tc059_no_guarda_cupos_invalidos_y_acepta_enteros",
       "minimo_variantes": 4,
-      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+      "sha256": "e516ff29e4fc1d1b5dbfc1f564699f8954ec829d9950ab27d796735420ebdd55"
     },
     "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc060_valida_rutina_y_dia_y_permite_coincidencias": {
       "componente": "backend",
@@ -1700,7 +1700,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
       "prueba": "test_tc060_valida_rutina_y_dia_y_permite_coincidencias",
       "minimo_variantes": 4,
-      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+      "sha256": "e516ff29e4fc1d1b5dbfc1f564699f8954ec829d9950ab27d796735420ebdd55"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_alta_de_equipo_crea_una_unidad_por_stock_inicial": {
       "componente": "backend",
@@ -1948,7 +1948,7 @@
       "clase": "tests/rutinas_progreso/interfaz/flujos.test.js",
       "prueba": "one rest timer supports pause, resume, completion and disposal without leaked intervals",
       "minimo_variantes": 1,
-      "sha256": "dfdf9c51f86d8fc1cc23335c771844aeac538bf4c5190c17cc9e79c1f992af52"
+      "sha256": "6942fc53299c6459b11d70440c39476ec418a947ff95407d1031bd98ca81c6ec"
     },
     "FE:transversales/integracion/http-error-control.test.js::a write with stalled confirmation keeps the uncertain outcome and is not retried": {
       "componente": "frontend",
@@ -2412,7 +2412,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
       "prueba": "test_tc054_horario_guardado_es_consultable_y_tiene_cupos_consistentes",
       "minimo_variantes": 2,
-      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+      "sha256": "e516ff29e4fc1d1b5dbfc1f564699f8954ec829d9950ab27d796735420ebdd55"
     },
     "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc057_borrar_horario_libre_y_pausar_el_reservado": {
       "componente": "backend",
@@ -2420,7 +2420,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
       "prueba": "test_tc057_borrar_horario_libre_y_pausar_el_reservado",
       "minimo_variantes": 1,
-      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+      "sha256": "e516ff29e4fc1d1b5dbfc1f564699f8954ec829d9950ab27d796735420ebdd55"
     },
     "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc062_cupo_lleno_rechaza_una_fecha_y_deja_reservar_otra": {
       "componente": "backend",
@@ -2428,7 +2428,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_horarios",
       "prueba": "test_tc062_cupo_lleno_rechaza_una_fecha_y_deja_reservar_otra",
       "minimo_variantes": 1,
-      "sha256": "4de749d5b14a013cedc47f5d59359de7e2bec30775d4df5fe21a25d3ce966197"
+      "sha256": "e516ff29e4fc1d1b5dbfc1f564699f8954ec829d9950ab27d796735420ebdd55"
     },
     "BE:horarios_matriculas/integracion/test_testiny_cupos.py::test_tc051_tc052_capacidad_valida_se_aplica_al_aforo_y_rechaza_valores_invalidos": {
       "componente": "backend",
@@ -2436,7 +2436,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_testiny_cupos",
       "prueba": "test_tc051_tc052_capacidad_valida_se_aplica_al_aforo_y_rechaza_valores_invalidos",
       "minimo_variantes": 4,
-      "sha256": "58da182aae4d2842f91cf7e80116d4f4177850bf929848b2ab2d907cba91156e"
+      "sha256": "ac7ebcaeceae4b057fa268e7d94e875a27f6319ddbcfed4fbde2d9a352912e07"
     },
     "BE:asistencias/integracion/test_general_attendance.py::test_tc064_ingreso_salida_en_limite_y_reingreso_real": {
       "componente": "backend",

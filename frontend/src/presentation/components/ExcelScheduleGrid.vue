@@ -41,7 +41,7 @@
           :class="{ 'agenda-selected': itemId(item) === String(selectedItemId) }"
           :style="{ '--service-color': eventBorderColor(item.servicio) }" @click="selectCalendarItem(item)">
           <span class="agenda-time"><strong>{{ displayTime(item.hora_inicio) }}</strong><span v-if="item.hora_fin">{{ displayTime(item.hora_fin) }}</span></span>
-          <span class="agenda-content"><span class="agenda-service">{{ serviceLabel(item.servicio) }}</span><strong>{{ item.rutina_nombre || 'Clase de ' + serviceLabel(item.servicio) }}</strong><span v-if="!fixedDates || item.checkLabel" class="agenda-meta">{{ agendaMeta(item) }}</span></span>
+          <span class="agenda-content"><span class="agenda-service">{{ serviceLabel(item.servicio) }}</span><strong>{{ item.rutina_nombre || 'Clase de ' + serviceLabel(item.servicio) }}</strong><span v-if="!fixedDates || item.checkLabel || item.sala" class="agenda-meta">{{ agendaMeta(item) }}</span></span>
           <span class="agenda-availability"><span class="availability-badge" :class="badgeTone(item)">{{ activityLabel(item) }}</span><span v-if="item.cupos && !item.is_enrolled" class="capacity-track"><span :style="{ width: `${Math.min(100, 100 * Number(item.cupos_usados || 0) / Number(item.cupos))}%` }"></span></span></span>
           <ChevronRight v-if="interactive" :size="17" class="agenda-chevron" aria-hidden="true" />
         </component>
@@ -228,7 +228,7 @@ const eventBorderColor = (service) =>
   })[String(service || '').trim().toLowerCase()] || '#94a3b8';
 
 const duration = (item) => `${timeToMinutes(item.hora_fin) - timeToMinutes(item.hora_inicio)} min`;
-const agendaMeta = (item) => props.fixedDates ? item.checkLabel : [duration(item), item.checkLabel].filter(Boolean).join(' · ');
+const agendaMeta = (item) => [item.sala, props.fixedDates ? '' : duration(item), item.checkLabel].filter(Boolean).join(' · ');
 const activityLabel = (item) => {
   if (item.statusLabel) return item.statusLabel;
   if (item.activo === false) return 'Pausado';
@@ -386,7 +386,7 @@ const calendarOptions = computed(() => ({
             <span class="excel-event-service">${escapeHtml(service)}</span>
           </div>
           <span class="excel-event-exercise">${escapeHtml(routine)}</span>
-          <span class="excel-event-time">${escapeHtml(eventTime(item))}</span>
+          <span class="excel-event-time">${escapeHtml([eventTime(item), item.sala].filter(Boolean).join(' · '))}</span>
           ${badgeHtml}
           ${item.checkLabel ? `<span class="excel-event-time">${escapeHtml(item.checkLabel)}</span>` : ''}
         </div>
@@ -401,6 +401,7 @@ const calendarOptions = computed(() => ({
       serviceLabel(item.servicio),
       dateLabel(item.fecha, { weekday: 'long' }),
       eventTime(item),
+      item.sala,
       item.statusLabel,
       props.fixedDates ? item.checkLabel : '',
       item.cupos !== undefined ? `Cupos: ${availableSlots(item)} libres de ${item.cupos}` : '',
@@ -440,6 +441,7 @@ const exportExcel = async () => {
       Zonas: item.zonas_musculares || '',
       Inicio: item.hora_inicio || '',
       Salida: item.hora_fin || '',
+      Sala: item.sala || '',
       Cupos: item.cupos ?? '',
       Matriculados: item.cupos_usados ?? '',
       Cliente: item.cliente_nombre || '',

@@ -14,14 +14,14 @@ La batería agrupada y el antes/después posteriores a esta primera validación 
 | AG-04 | CA-06 | Dominio; unitarias | Herramienta ajena al catálogo; rechazada. | Alta | `backend/tests/agente/test_agent_flow.py` |
 | AG-05 | CA-07 | Aplicación; unitarias | Dos conversaciones; contexto separado. | Media | `backend/tests/agente/test_agent_flow.py` |
 | AG-06 | CA-04, CA-08 | Ruta HTTP; integración aislada | Solicitud válida y mensaje demasiado largo; respuesta y 422. | Alta | `backend/tests/agente/test_agent_http.py` |
-| AG-07 | CA-01, CA-04, CA-08 | UI; funcional | Plan, clase, error y acción privada; panel y navegación visibles. | Alta | `frontend/e2e/agent.spec.js` en 3 motores |
+| AG-07 | CA-01, CA-04, CA-08 | UI; funcional | Plan, clase, error y acción privada; panel y navegación visibles. | Alta | `frontend/tests/e2e/simuladas/agent.spec.js` en 3 motores |
 | AG-08 | CA-08, CA-13 | Aplicación; concurrencia | Diez reservas simultáneas con cupo 3; exactamente 3 permitidas. | Alta | `backend/tests/agente/test_agent_flow.py` |
-| AG-09 | CA-09 | Dominio, aplicación y UI | Pregunta por ejercicios o primer día; ficha pública pertinente y enlace. Tema malformado o ajeno rechazado. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/e2e/agent.spec.js` |
+| AG-09 | CA-09 | Dominio, aplicación y UI | Pregunta por ejercicios o primer día; ficha pública pertinente y enlace. Tema malformado o ajeno rechazado. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/tests/e2e/simuladas/agent.spec.js` |
 | AG-10 | CA-02 | Aplicación; regresión | 23 horarios de cuatro actividades se muestran completos; una consulta concreta filtra las demás y no inventa horarios para otra actividad. | Alta | `backend/tests/agente/test_agent_flow.py` y comprobación manual con Supabase |
 | AG-11 | CA-01, CA-02 | HTTP; aislamiento | La API de demostración solo expone el chat y tres consultas públicas GET; no publica rutas de escritura. | Alta | `backend/tests/agente/test_agent_http.py` |
 | AG-12 | CA-10 | Dominio y aplicación; regresión | Saludos, agradecimientos y despedidas breves reciben respuesta sin proveedor, presupuesto ni catálogo; una pregunta de negocio con saludo conserva su intención. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
 | AG-13 | CA-06, CA-07, CA-10 | Aplicación; regresión | La IA solo puede elegir una intención social aprobada o marcar un tema claramente ajeno. Una pregunta ambigua mantiene la conversación; una segunda pregunta ajena recibe una redirección más directa. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
-| AG-14 | CA-05, CA-11 | Dominio, aplicación y UI; regresión | Recuperar cuenta u olvidar contraseña abre el formulario local para correo, DNI y teléfono. Estos datos no salen a la API ni se muestran en el historial; un mensaje con correo o clave real se bloquea antes de cualquier proveedor. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/e2e/agent.spec.js` y navegador local |
+| AG-14 | CA-05, CA-11 | Dominio, aplicación y UI; regresión | Recuperar cuenta u olvidar contraseña abre el formulario local para correo, DNI y teléfono. Estos datos no salen a la API ni se muestran en el historial; un mensaje con correo o clave real se bloquea antes de cualquier proveedor. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/tests/e2e/simuladas/agent.spec.js` y navegador local |
 | AG-15 | CA-03, CA-10, CA-12 | Dominio y aplicación; regresión | Frases de cierre después de una consulta de horarios reciben una respuesta natural sin repetir la pregunta genérica. Pedir ayuda paso a paso para registrarse devuelve el flujo publicado y el enlace a Registro; una orden de inscripción directa conserva su bloqueo. | Media | `backend/tests/agente/test_agent_flow.py` y API local |
 
 ## Resultados
@@ -52,13 +52,13 @@ Una ejecución paralela de la batería frontend informó un fallo de archivo en 
 
 ## Ajuste visual del acceso al chat · 2026-11-19
 
-Se reemplazó el botón flotante de texto por un acceso circular rojo con un ícono de asistente dibujado en SVG. Conserva la etiqueta accesible «Abrir asistente del gimnasio» y muestra «Pregúntale a Silver» al pasar el cursor o enfocar con teclado en escritorio. Se revisó visualmente a 390 × 844 y 1440 × 900 píxeles. `npm run build` terminó correctamente y los 27 casos de `frontend/e2e/agent.spec.js` pasaron en Chromium, Firefox y WebKit. Es un cambio de presentación; no se modificaron el servicio, la API ni las respuestas del agente.
+Se reemplazó el botón flotante de texto por un acceso circular rojo con un ícono de asistente dibujado en SVG. Conserva la etiqueta accesible «Abrir asistente del gimnasio» y muestra «Pregúntale a Silver» al pasar el cursor o enfocar con teclado en escritorio. Se revisó visualmente a 390 × 844 y 1440 × 900 píxeles. `npm run build` terminó correctamente y los 27 casos de `frontend/tests/e2e/simuladas/agent.spec.js` pasaron en Chromium, Firefox y WebKit. Es un cambio de presentación; no se modificaron el servicio, la API ni las respuestas del agente.
 
 ## Panel y campo multilínea · 2026-11-19
 
 Se mejoraron la cabecera, la bienvenida, las burbujas y los enlaces del panel. La entrada del mensaje ahora es un área de texto que envuelve palabras largas, crece hasta un límite y permite seguir desplazándose sin mostrar una barra gruesa. Enter envía y Shift + Enter inserta una línea. Se revisó visualmente el chat abierto en una ventana estrecha, con un mensaje de 100 caracteres sin espacios: el texto pasó a varias líneas y el botón Enviar siguió visible. La prueba nueva verifica crecimiento, ausencia de desplazamiento horizontal y ambas teclas en los tres motores.
 
-Comprobaciones: `npm test -- --test-concurrency=1`: 373/373; `npm run build`: aprobado; `frontend/e2e/agent.spec.js`: 30/30; Playwright integrado: 18/18. No se modificaron las respuestas ni la API. La demo local volvió a responder HTTP 200 en los puertos 4173 y 8765 después de la integración.
+Comprobaciones: `npm test -- --test-concurrency=1`: 373/373; `npm run build`: aprobado; `frontend/tests/e2e/simuladas/agent.spec.js`: 30/30; Playwright integrado: 18/18. No se modificaron las respuestas ni la API. La demo local volvió a responder HTTP 200 en los puertos 4173 y 8765 después de la integración.
 
 ## Límite de mensajes · 2026-11-19
 
@@ -121,3 +121,27 @@ llamada HTTP simulada con una clave sintética y la recuperación ante tiempo
 de espera agotado. Después de actualizar Docker Compose, Chromium comprobó
 que el chat local devuelve 23 horarios y 4 planes de Supabase. El entorno local
 carece de una clave real de Groq, por lo que la llamada real quedó sin verificar.
+
+## Organización de las pruebas del frontend
+
+Los casos de Playwright se agruparon en `frontend/tests/e2e/`. Los informes y
+resultados de cada suite se guardan en `frontend/.artifacts/playwright/`.
+En la prueba del temporizador de descanso se controlaron los intervalos con
+dobles explícitos, tras reproducir en Node 22.14 que el reloj experimental
+reprogramaba un intervalo cancelado desde su callback. Se verificaron la pausa,
+el reinicio y la liberación del intervalo, y se actualizaron las cuatro huellas
+de Testiny asociadas con el archivo de pruebas.
+
+| Comprobación | Resultado |
+| --- | --- |
+| `npm test` en Windows y en el target `test` de Docker sin red | 426 de 426 en ambos entornos. |
+| `npm run build` | Compilación de producción aprobada. |
+| `npm run test:e2e -- --workers=3` | 30 de 30 en Chromium, Firefox y WebKit. |
+| `npm run test:e2e:integracion` | 18 de 18 en los tres motores con el backend de QA. |
+| `npm run test:e2e:catalogo -- --list` | Un caso detectado. La consulta real a Supabase quedó sin ejecutar. |
+| Validador documental y suite `.specify/tests` en Docker Linux | Validador aprobado y 62 pruebas aprobadas, incluidas las de revisión de Testiny. |
+
+El primer intento de Playwright detectó que faltaba la versión local de Chromium
+requerida. Un caso de WebKit agotó su tiempo de espera en integración. Tras
+instalar el navegador correspondiente, el caso de WebKit pasó al repetirlo de
+forma aislada y ambas suites completas terminaron aprobadas.

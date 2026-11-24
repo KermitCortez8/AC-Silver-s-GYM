@@ -13,6 +13,7 @@ from application.errors import PersistenceUnavailable
 from application.services.attendance_service import AttendanceService, LIMA
 from application.services.auth_service import AuthService, ClientMembershipExpired
 from application.services.clients_service import ClientsService
+from domain.services.schedule_sessions import SALAS_HORARIO
 from infrastructure.services.local_gym_service import LocalGymService
 from presentation import dependencies as deps
 from presentation.error_handlers import install_error_handlers
@@ -146,7 +147,7 @@ def test_zero_saved_amount_is_not_repriced_during_confirmation(flow):
 def schedule_payload(gym, **changes):
     gym.state['catalogo_rutina'] = [dict(id_rutina=7, servicio='fitness', nombre_rutina='Control')]
     return dict(servicio='fitness', id_rutina=7, dia='miercoles', hora_inicio='10:00',
-                hora_fin='11:00', cupos=1, **changes)
+                hora_fin='11:00', cupos=1, sala=SALAS_HORARIO[0], **changes)
 
 
 @pytest.mark.parametrize('changes', [dict(dia='feriado'), dict(hora_inicio='basura10:00'),

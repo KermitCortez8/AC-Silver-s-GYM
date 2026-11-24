@@ -54,13 +54,13 @@ Como visitante, quiero saber cómo registrarme y qué hacer si no puedo entrar a
 | CA-02 | Horarios y lectura pública en [batería](qa-v1-bateria.md). |
 | CA-03 | Operaciones privadas en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
 | CA-04 | Fallos y estados visibles en [pruebas HTTP](../../../backend/tests/agente/test_agent_http.py). |
-| CA-05 | Datos sensibles en [pruebas de interfaz](../../../frontend/e2e/agent.spec.js). |
+| CA-05 | Datos sensibles en [pruebas de interfaz](../../../frontend/tests/e2e/simuladas/agent.spec.js). |
 | CA-06 | Herramientas cerradas en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
 | CA-07 | Aislamiento y expiración en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
 | CA-08 | Casos aislados y lectura real en [matriz y resultados](qa-v1-bateria.md). |
 | CA-09 | Fichas públicas en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
 | CA-10 | Cortesías y redirección en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
-| CA-11 | Recuperación local en [pruebas de interfaz](../../../frontend/e2e/agent.spec.js) y [recorrido conectado](../../../frontend/e2e-integration/agent-flow.spec.js). |
+| CA-11 | Recuperación local en [pruebas de interfaz](../../../frontend/tests/e2e/simuladas/agent.spec.js) y [recorrido conectado](../../../frontend/tests/e2e/integracion/agent-flow.spec.js). |
 | CA-12 | Guía de registro en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
 | CA-13 | Cuota por proceso en [pruebas HTTP](../../../backend/tests/agente/test_agent_http.py). |
 

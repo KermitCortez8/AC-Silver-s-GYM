@@ -4,7 +4,9 @@
 # Protege las operaciones internas con permisos de usuario.
 
 from __future__ import annotations
+from decimal import Decimal
 from typing import Literal
+from uuid import UUID
 
 from presentation.error_handlers import http_error
 
@@ -44,6 +46,15 @@ class AdminRenewalInput(BaseModel):
     monto_pago: float = Field(gt=0, allow_inf_nan=False)
     metodo_pago: Literal['efectivo', 'stripe']
     pago_recibido: bool = False
+
+
+class ComprobanteExternoInput(BaseModel):
+    operacion: str = Field(min_length=5, max_length=80)
+    monto_recibido: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+
+
+class ComprobanteMembresiaInput(ComprobanteExternoInput):
+    id_membresia: int = Field(gt=0)
 
 
 router = APIRouter(tags=["clientes"])
@@ -125,6 +136,29 @@ def registro_admin(payload: RegistroAdminClienteInput, payments=Depends(get_clie
 @router.post("/clientes/{id_cliente}/pago-stripe")
 def pago_stripe_admin(id_cliente: int, payments=Depends(get_client_payments_service), _current_user=Depends(require_admin_or_staff)):
     return _payment_response(lambda: payments.start_admin_checkout(id_cliente))
+
+
+@router.get('/clientes/{id_cliente}/instrucciones-pago')
+def instrucciones_pago_externo(id_cliente: int, payments=Depends(get_client_payments_service),
+                               _current_user=Depends(require_admin_or_staff)):
+    return _payment_response(lambda: payments.registro_externo.retomar(id_cliente))
+
+
+@router.get('/preregistros/pagos-pendientes')
+def solicitudes_pago_externo(payments=Depends(get_client_payments_service), _current_user=Depends(require_admin_or_staff)):
+    return _payment_response(payments.registro_externo.solicitudes)
+
+
+@router.post('/preregistros/{token}/confirmar-pago-externo')
+def confirmar_pago_solicitud(token: UUID, payload: ComprobanteExternoInput,
+                             payments=Depends(get_client_payments_service), _current_user=Depends(require_admin_or_staff)):
+    return _payment_response(lambda: payments.registro_externo.confirmar(payload.model_dump(), token=str(token)))
+
+
+@router.post('/clientes/{id_cliente}/confirmar-pago-externo')
+def confirmar_pago_externo(id_cliente: int, payload: ComprobanteMembresiaInput,
+                           payments=Depends(get_client_payments_service), _current_user=Depends(require_admin_or_staff)):
+    return _payment_response(lambda: payments.registro_externo.confirmar(payload.model_dump(), id_cliente=id_cliente))
 
 
 @router.post(

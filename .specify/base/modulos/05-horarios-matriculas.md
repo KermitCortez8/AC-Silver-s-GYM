@@ -56,6 +56,9 @@ sintéticos, comprobar ocupación y cancelar una matrícula propia.
 
 - API: [gym_routes.py](../../../backend/presentation/routes/gym_routes.py),
   `/api/gym/horarios-publicos`, `/horarios-servicio` y `/matriculas` bajo `/api/gym`.
+- `GET` y `PUT /api/gym/horarios-servicio/configuracion` requieren `admin` o
+  `staff`. El cuerpo contiene `hora_inicio` (HH:MM de Lima),
+  `duracion_minutos` (60 o 120) y `cupos` (entero positivo).
 - Reglas: [schedules_rules.py](../../../backend/domain/services/schedules_rules.py).
   Datos `HORARIOS_SERVICIO`, `MATRICULAS_HORARIO`, clientes, membresías y catálogo.
 - Repositorio especializado:
@@ -117,3 +120,62 @@ La entrada adicional se bloquea sin avisos ni contadores de longitud. Horas,
 fechas, cupos y opciones del catálogo conservan su validación específica.
 
 Evidencia: [validación de límites](../validaciones/limites-formularios/validation.md).
+
+### Configuración y parámetros
+
+En Horarios por servicio, la tabla guarda los valores iniciales compartidos de
+hora de inicio, duración y cupos. La atención es de lunes a viernes de 06:00 a
+22:00, y sábado y domingo de 07:00 a 18:00, en hora de Lima. Las clases nuevas o
+editadas deben empezar y terminar dentro de la franja de su día. El formulario
+**Nuevo horario** adapta la hora inicial al día elegido manteniendo la duración.
+El valor compartido de inicio y duración debe caber en una jornada de lunes a
+viernes.
+
+La vista consulta primero el catálogo de horarios. El editor abre de inmediato
+y consulta las rutinas y los parámetros que necesita. Si llegan parámetros
+mientras el usuario edita, solo completan los valores iniciales que todavía no
+haya modificado. Ante una hora fuera de atención, el editor muestra la franja
+del día y el intervalo solicitado, conserva el formulario y evita el envío.
+
+La [migración 028](../../../backend/migrations/028_parametros_horarios.sql)
+añade los parámetros a `CONFIGURACION_GIMNASIO` y crea la tabla si falta.
+Se aplica en el esquema del gimnasio con `commit_gym_transaction` ya instalada
+y se puede reejecutar. Los valores iniciales son 06:00, 60 minutos y 10 cupos.
+Si la tabla se acaba de crear, el primer guardado conserva los valores de
+aforo predeterminados de 30 personas en total y 10 por hora. Si se revierte el
+código, se pueden conservar la tabla y sus datos para un despliegue posterior.
+
+Evidencia en [test_schedule_settings.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_settings.py).
+Persistencia y permisos en [test_atomic_transactions_postgres.py](../../../backend/tests/transversales/postgres/test_atomic_transactions_postgres.py).
+Editor y errores en [editor-horario.test.js](../../../frontend/tests/horarios_matriculas/interfaz/editor-horario.test.js).
+
+### Retiro de horarios fuera de atención
+
+La [migración 029](../../../backend/migrations/029_horario_atencion.sql) se aplica
+después de `019_schedule_sessions.sql` y de instalar `commit_gym_transaction`
+y `gym_identity_counters`. Elimina de `HORARIOS_SERVICIO` las filas fuera de
+la franja que carecen de matrículas y asistencias, y mantiene inactivas las filas
+vinculadas. Ante referencias adicionales declaradas por el esquema, usa la
+desactivación. El catálogo omite los horarios retirados y el historial conserva
+sus referencias. El respaldo previo de `HORARIOS_SERVICIO` permite recuperar
+filas eliminadas si se revierte el cambio. La migración es transaccional y
+repetible. Se verifica en
+[test_schedule_sessions_postgres.py](../../../backend/tests/horarios_matriculas/postgres/test_schedule_sessions_postgres.py).
+
+### Sala de cada clase
+
+El editor exige elegir una sala del listado fijo al crear un horario o
+completar uno pendiente. La sala se guarda con el horario semanal y se muestra
+en el calendario, la selección de clases para matrícula y la exportación.
+La lista ofrece `Sala de Fuerza 1`, `Sala de Fuerza 2` y `Sala de cardio`.
+En la lista administrativa, los horarios previos sin sala figuran como
+**Por asignar**. Una actualización de la API que omite la sala conserva la que
+ya está asignada. Si su nombre quedó fuera del listado, el editor abre con
+la selección vacía para que el personal elija la sala correspondiente.
+
+La [migración 030](../../../backend/migrations/030_sala_horario_servicio.sql)
+añade `sala` a `HORARIOS_SERVICIO` en el esquema con el RPC
+`commit_gym_transaction` instalado. Se puede ejecutar de nuevo y la columna
+se puede conservar si se revierte la versión de la aplicación. La API devuelve
+`sala` en horarios públicos, horarios por servicio y matrículas. Se verifica
+en [test_schedule_rooms.py](../../../backend/tests/horarios_matriculas/integracion/test_schedule_rooms.py).

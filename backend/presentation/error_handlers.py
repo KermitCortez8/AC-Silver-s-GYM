@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from application.errors import PersistenceUnavailable, SchemaNotReady
+from application.errors import ConfiguracionPagoExternoError, PersistenceUnavailable, SchemaNotReady
 from domain.errors import AttendanceConflict, EnrollmentConflict, EntityNotFound, MembershipRequired
 from domain.services.gym_values import PedidoCanceladoConPagoError
 
@@ -18,7 +18,7 @@ def http_error(error, *, validation_status=400):
     if isinstance(error, ValidationError):
         logger.warning("Datos internos inválidos (%s)", type(error).__name__)
         return HTTPException(500, "No se pudo completar la operación. Contacta con administración.")
-    if isinstance(error, SchemaNotReady):
+    if isinstance(error, (ConfiguracionPagoExternoError, SchemaNotReady)):
         return HTTPException(503, str(error))
     if isinstance(error, PersistenceUnavailable) and getattr(error, "code", None) == "23503":
         # Llave foránea: el registro tiene historial que lo referencia; no es un fallo de conexión.

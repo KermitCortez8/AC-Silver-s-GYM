@@ -1,17 +1,6 @@
 <template>
   <div class="workspace-view clients-view space-y-5">
-    <header class="ws-panel ws-hero ws-toolbar">
-      <div>
-        <p class="ws-eyebrow">Administración · Clientes</p>
-        <h1 class="ws-title">Tu comunidad, en un solo lugar</h1>
-        <p class="ws-description">
-          Encuentra a cada cliente y gestiona sus pagos y membresías.
-        </p>
-      </div>
-      <button type="button" class="ws-btn ws-primary" @click="openNewClient">
-        <Plus :size="18" aria-hidden="true" /> Nuevo cliente
-      </button>
-    </header>
+    <ClientDirectoryHeader :token="authStore.token" @nuevo="openNewClient" @pago-confirmado="paymentConfirmed" />
 
     <section class="client-metrics" aria-label="Resumen de clientes">
       <article class="ws-metric">
@@ -429,6 +418,8 @@
       :request-activation="requestActivation"
       :retry-activation-email="retryActivationEmail"
       :viewing-client="viewingClient"
+      :token="authStore.token"
+      @pago-confirmado="paymentConfirmed"
     />
     <ConfirmDialog
       v-if="pendingActivation"
@@ -445,6 +436,7 @@
 
 <script setup>
 import SearchInput from '../components/SearchInput.vue';
+import ClientDirectoryHeader from '../components/clients/ClientDirectoryHeader.vue';
 import ClientDetailsDialog from '../components/clients/ClientDetailsDialog.vue';
 import ClientRenewalDialog from '../components/clients/ClientRenewalDialog.vue';
 import ClientEditorDialog from '../components/clients/ClientEditorDialog.vue';
@@ -462,7 +454,6 @@ import {
   Info,
   LoaderCircle,
   Pencil,
-  Plus,
   RefreshCw,
   Search,
   SearchX,
@@ -491,6 +482,13 @@ const {
   estimatedCharge, resetForm, openNewClient, closeEditor, editClient,
   handleSubmit, clientEditorProps,
 } = useClientDirectory();
+
+async function paymentConfirmed() {
+  closeDetails();
+  await refreshClients(true);
+  feedbackTone.value = 'success';
+  feedbackMessage.value = 'Pago confirmado. La primera membresía queda pendiente de activación.';
+}
 </script>
 
 <style scoped src="../styles/clients-view.css"></style>

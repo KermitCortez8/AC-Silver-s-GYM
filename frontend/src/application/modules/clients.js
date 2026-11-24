@@ -182,6 +182,7 @@ export const createClientsModule = (ctx, repository) => {
           ...clientPayload,
           id_promocion: Number(payload.id_promocion) || null,
           pagar_con_stripe: Boolean(payload.pagar_con_stripe),
+          ...(payload.medio_pago ? { medio_pago: payload.medio_pago } : {}),
         });
         requireRecord(result);
         requireRecord(result.cliente);
@@ -195,6 +196,7 @@ export const createClientsModule = (ctx, repository) => {
           membership_end: membership.fecha_fin,
           payment_status: membership.estado_pago,
           payment_reference: membership.referencia_pago,
+          metodo_pago: membership.metodo_pago,
           monto_pago: membership.monto_pago,
         });
         return { ...client, payment: result.payment };
@@ -281,10 +283,14 @@ export const createClientsModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const saved = await remote.registerPublicClient(payload);
     requireRecord(saved);
+    if (saved.payment?.modo_prueba === true && saved.payment.medio_pago === 'mercado_pago') {
+      return { payment: saved.payment };
+    }
     if (saved.preregistro) {
       const request = requireRecord(saved.preregistro);
+      const estados = saved.payment?.revision_pendiente ? ['PENDIENTE', 'EXPIRADO'] : ['PENDIENTE', 'CONVERTIDO'];
       if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(String(request.token || ''))
-        || !['PENDIENTE', 'CONVERTIDO'].includes(request.estado) || !(Number(request.monto_pago) > 0)) {
+        || !estados.includes(request.estado) || !(Number(request.monto_pago) > 0)) {
         throw new Error('El servidor no devolvió un preregistro pendiente válido.');
       }
       return { preregistration: request, payment: saved.payment || null };
