@@ -281,6 +281,14 @@ export const useRegistrationForm = () => {
 
       const { client, payment } = result;
 
+      if (medioPago === 'mercado_pago') {
+        if (payment?.medio_pago !== 'mercado_pago' || !payment.enlace) {
+          throw new Error('No se recibió el enlace de Mercado Pago.');
+        }
+        window.location.assign(payment.enlace);
+        return;
+      }
+
       registeredClient.value = client;
       registeredPreregistration.value = result.preregistration || null;
       if (payment?.revision_pendiente) {

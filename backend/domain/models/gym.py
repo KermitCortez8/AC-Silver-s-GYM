@@ -4,9 +4,10 @@
 # Sirve como contrato entre las rutas y los servicios.
 from __future__ import annotations
 
+from functools import partial
 from typing import Annotated, Any, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, StringConstraints, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, Field, ConfigDict, StringConstraints, field_validator, model_validator
 from domain.validation import account_email, dni_number, email_address, integer_quantity, phone_number
 from domain.validation import required_text, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
 from domain.services.schedule_sessions import validar_horas_atencion
@@ -15,6 +16,7 @@ from domain.form_limits import SHORT_TEXT_LIMIT, LONG_TEXT_LIMIT, INVENTORY_TEXT
 
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=SHORT_TEXT_LIMIT)]
 LongText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=LONG_TEXT_LIMIT)]
+DniRegistro = Annotated[str, AfterValidator(partial(dni_number, required=True))]
 
 
 class ValidatedInput(BaseModel):
@@ -185,6 +187,7 @@ class RegistrarClienteMembresiaInput(ValidatedInput):
 
 
 class RegistroAdminClienteInput(ClienteInput):
+    dni: DniRegistro
     plan: ShortText = Field(default="MENSUAL", min_length=1)
     id_promocion: int | None = Field(default=None, gt=0)
     pagar_con_stripe: bool = False
@@ -196,16 +199,15 @@ class RegistroPublicoClienteInput(ValidatedInput):
     nombre: ShortText
     correo: ShortText
     telefono: str = ""
-    dni: str = ""
+    dni: DniRegistro
     password: str = ""
     contrasena: str = ""
-    plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
+    plan: ShortText = Field(default="MENSUAL", min_length=1)
     promocion: ShortText = "SIN PROMOCION"
     google_credential: str = ""
 
     @model_validator(mode="after")
     def complete_registration(self):
-        dni_number(self.dni, required=True)
         phone_number(self.telefono, required=True)
         if not self.google_credential and len((self.password or self.contrasena).strip()) < 6:
             raise ValueError("La contraseña debe tener al menos 6 caracteres.")

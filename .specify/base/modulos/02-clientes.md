@@ -33,7 +33,9 @@ identificador/DNI, editarla y comprobar que conserva origen y fecha de alta.
 6. **CA-06.** Al abrir el alta o edición administrativa se consultan los planes
    y promociones del backend; el registro público consulta planes y promociones
    vigentes. Las altas solo ofrecen planes activos y promociones aplicables.
-   El alta administrativa acepta el nombre de cualquier plan activo del catálogo.
+   Las altas pública y administrativa aceptan el nombre de cualquier plan activo
+   del catálogo.
+   Ambas requieren un DNI de ocho dígitos y muestran el error junto al campo.
    Un error muestra reintento y conserva el borrador, sin sustituir el catálogo
    por planes locales. La edición personal conserva la membresía contratada.
 7. **CA-07.** El alta pública guarda una solicitud temporal privada durante 24

@@ -7,16 +7,18 @@ from domain.errors import EntityNotFound
 from domain.services.gym_domain_service import PedidoCanceladoConPagoError
 from application.services.public_preregistration_service import PublicPreregistrationService
 from application.services.registro_pagos_externos import RegistroPagosExternos
+from application.operations.preregistrations import PublicMembershipQuoteQuery
 from domain.services.registro_pago_externo import MEDIOS_EXTERNOS
 
 logger = logging.getLogger(__name__)
 
 
 class ClientPaymentsService:
-    def __init__(self, clients, gym, settings, *, gateway_factory, notify):
+    def __init__(self, clients, gym, settings, *, gateway_factory, notify, checkout_prueba=None):
         self.clients, self.gym, self.settings = clients, gym, settings
         self.gateway_factory, self.notify = gateway_factory, notify
         self.registro_externo = RegistroPagosExternos(clients, settings, notify)
+        self.checkout_prueba = checkout_prueba
 
     def gateway(self):
         return self.gateway_factory(self.settings)
@@ -42,6 +44,10 @@ class ClientPaymentsService:
     def register_public(self, payload):
         if not self.settings.has_supabase_credentials:
             raise RuntimeError("Supabase debe estar configurado para registrar pagos de membresía")
+        if payload.get('medio_pago') == 'mercado_pago' and self.checkout_prueba is not None:
+            plan, _, amount = self.gym.executor.query(PublicMembershipQuoteQuery(payload['plan']))
+            enlace = self.checkout_prueba(plan['nombre_plan'], amount)
+            return {'payment': {'modo_prueba': True, 'medio_pago': 'mercado_pago', 'amount': amount, 'enlace': enlace}}
         if payload.get('medio_pago'):
             return self.registro_externo.registrar(payload)
         gateway = self.gateway()

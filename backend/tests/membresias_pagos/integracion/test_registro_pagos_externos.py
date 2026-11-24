@@ -1,5 +1,7 @@
 from types import SimpleNamespace
+from unittest.mock import Mock
 
+import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -9,6 +11,7 @@ from application.services.clients_service import ClientsService
 from domain.models.auth import UserProfile
 from infrastructure.config import Settings
 from infrastructure.services.local_gym_service import LocalGymService
+from infrastructure.services.mercado_pago_checkout import MercadoPagoCheckoutPrueba
 from presentation.dependencies import get_client_payments_service, get_clients_service, get_current_user, get_settings
 from presentation.routes.clients_routes import router
 
@@ -21,7 +24,7 @@ REGISTRO = dict(nombre='Cliente de prueba', correo='pago@example.com', dni='1234
 def entorno():
     settings = Settings(supabase_url='https://gym.example.test', supabase_key='solo-local',
                         pagos_yape_qr_url='/pagos/yape.png',
-                        pagos_mercado_pago_enlaces='{"79.00":"https://mpago.la/enlace-prueba"}')
+                        pagos_mercado_pago_enlaces='{"79.00":"https://mpago.la/enlace-prueba","12.00":"https://mpago.la/clase-prueba"}')
     gym = LocalGymService()
     clients = ClientsService(gym)
     payments = ClientPaymentsService(clients, gym, settings, gateway_factory=lambda _: None,
@@ -36,6 +39,82 @@ def entorno():
         id='CUENTA1', name='Personal', email='staff@example.com', role=usuario.role,
     )
     return TestClient(app), gym, payments, usuario
+
+
+@pytest.mark.parametrize('activo', [True, False, None], ids=['activo', 'inactivo', 'inexistente'])
+def test_registro_publico_usa_el_catalogo_para_el_enlace_de_mercado_pago(entorno, activo):
+    api, gym, *_ = entorno
+    if activo is not None:
+        gym.upsert_plan_membresia({
+            'nombre_plan': 'CLASE', 'duracion': '1 día', 'precio': 12, 'activo': activo,
+        })
+
+    respuesta = api.post('/registro-publico', json={**REGISTRO, 'plan': 'CLASE', 'medio_pago': 'mercado_pago'})
+
+    if activo:
+        assert respuesta.status_code == 200
+        assert respuesta.json()['payment'] == {
+            'revision_pendiente': True, 'medio_pago': 'mercado_pago',
+            'amount': 12, 'enlace': 'https://mpago.la/clase-prueba',
+        }
+    else:
+        assert respuesta.status_code == 400
+        assert api.get('/preregistros/pagos-pendientes').json() == []
+
+
+@pytest.mark.parametrize(('medio', 'configuracion', 'valor', 'mensaje'), [
+    ('yape_plin', 'pagos_yape_qr_url', '', 'Recepción aún debe configurar el QR de Yape y Plin.'),
+    ('mercado_pago', 'pagos_mercado_pago_enlaces', '', 'Recepción aún debe configurar los enlaces de Mercado Pago.'),
+    ('mercado_pago', 'pagos_mercado_pago_enlaces', 'inválido',
+     'Recepción debe revisar la configuración de los enlaces de Mercado Pago.'),
+])
+def test_registro_publico_informa_configuracion_de_pago_incompleta(entorno, medio, configuracion, valor, mensaje):
+    api, _, pagos, _ = entorno
+    setattr(pagos.settings, configuracion, valor)
+
+    respuesta = api.post('/registro-publico', json={**REGISTRO, 'medio_pago': medio})
+
+    assert respuesta.status_code == 503
+    assert respuesta.json() == {'detail': mensaje}
+    assert api.get('/preregistros/pagos-pendientes').json() == []
+
+
+@pytest.mark.parametrize(('es_prueba', 'collector_id', 'url', 'estado'), [
+    (True, 101, 'https://www.mercadopago.com.pe/checkout/pay', 200),
+    (True, 102, 'https://www.mercadopago.com.pe/checkout/pay', 503),
+    (True, 101, 'https://mpago.la/external', 503),
+    (False, 101, 'https://www.mercadopago.com.pe/checkout/pay', 503),
+])
+def test_checkout_pro_exige_vendedor_de_prueba_y_no_guarda_el_registro(
+    entorno, monkeypatch, es_prueba, collector_id, url, estado,
+):
+    api, gym, pagos, _ = entorno
+    pagos.checkout_prueba = MercadoPagoCheckoutPrueba('token-de-prueba').crear_enlace
+    cuenta = httpx.Response(
+        200, json={'id': 101, 'site_id': 'MPE', 'tags': ['test_user'] if es_prueba else []},
+        request=httpx.Request('GET', 'https://api.mercadopago.com/users/me'),
+    )
+    monkeypatch.setattr(httpx, 'get', Mock(return_value=cuenta))
+    proveedor = Mock(return_value=httpx.Response(
+        201, json={'init_point': url, 'collector_id': collector_id},
+        request=httpx.Request('POST', 'https://api.mercadopago.com/checkout/preferences'),
+    ))
+    monkeypatch.setattr(httpx, 'post', proveedor)
+
+    respuesta = api.post('/registro-publico', json={**REGISTRO, 'medio_pago': 'mercado_pago', 'amount': 1})
+    assert respuesta.status_code == estado
+    if estado == 200:
+        assert respuesta.json() == {'payment': {
+            'medio_pago': 'mercado_pago', 'modo_prueba': True, 'amount': 79, 'enlace': url,
+        }}
+
+    if es_prueba:
+        items = proveedor.call_args.kwargs['json']['items']
+        assert items == [{'title': 'Membresía de prueba · MENSUAL', 'quantity': 1, 'currency_id': 'PEN', 'unit_price': 79}]
+    else:
+        proveedor.assert_not_called()
+    assert api.get('/preregistros/pagos-pendientes').json() == []
+    assert gym.clientes_normalized() == gym.membresias() == []
 
 
 def test_qr_publico_reserva_el_precio_y_requiere_verificacion_de_recepcion(entorno):

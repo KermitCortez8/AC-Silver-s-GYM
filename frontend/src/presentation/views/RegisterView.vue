@@ -166,14 +166,14 @@
             <label class="block space-y-2">
               <span class="text-sm font-semibold text-slate-700"> DNI </span>
 
-              <input v-digits :maxlength="FORM_LIMITS.dni"
+              <input
                 v-model.trim="form.dni"
                 :aria-invalid="Boolean(fieldErrors.dni)"
                 :aria-describedby="fieldErrors.dni ? 'register-dni-error' : undefined"
                 @blur="validateField('dni')" @input="revalidateField('dni')"
                 required
                 inputmode="numeric"
-                pattern="[0-9]{8}"
+                :pattern="DNI_PATTERN"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
                 placeholder="12345678"
               />
@@ -216,7 +216,7 @@
             :disabled="isSubmitting || googleProcessing || !canRegister"
           >
             {{
-              isSubmitting ? 'Preparando el pago...' : paymentMethod === 'stripe' ? 'Pagar con Stripe' : 'Ver instrucciones de pago'
+              isSubmitting ? 'Preparando el pago...' : paymentButtonLabels[paymentMethod]
             }}
           </button>
 
@@ -366,6 +366,7 @@
 <script setup>
 import { ref } from 'vue';
 import { FORM_LIMITS } from "../../domain/utils/formLimits.js";
+import { DNI_PATTERN } from "../../domain/utils/formValidation.js";
 import { vDigits } from "../directives/digits.js";
 
 import FieldError from '../components/FieldError.vue';
@@ -377,6 +378,11 @@ import GoogleSignInButton from '../components/GoogleSignInButton.vue';
 import { useRegistrationForm } from '../composables/auth/useRegistrationForm.js';
 
 const paymentMethod = ref('stripe');
+const paymentButtonLabels = {
+  stripe: 'Pagar con Stripe',
+  yape_plin: 'Ver instrucciones de pago',
+  mercado_pago: 'Pagar con POS',
+};
 
 const {
   getVerifiedGoogleProfile, route, catalogLoading, catalogReady, catalogError, canRegister,

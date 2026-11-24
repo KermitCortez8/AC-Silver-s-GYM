@@ -786,8 +786,8 @@ class MembershipsRules:
 
         return self.context.change(_fn)
 
-    def reserve_public_quote(self, plan_name):
-        """Reserva una promoción temporalmente sin crear un cliente ni una membresía."""
+    def public_quote(self, plan_name):
+        """Calcula el importe vigente sin reservar cupos."""
         state = self.context.state
         plan = self._ensure_plan_for_client(state, plan_name)
         if not plan.get("activo", True):
@@ -797,8 +797,13 @@ class MembershipsRules:
         amount = self._apply_promocion_discount(state, int(plan['id_pm']), promo_id)
         if cents(amount) <= 0:
             raise ValueError("El importe del preregistro debe ser mayor que cero")
-        self._increment_promocion_usos(state, promo_id)
         return dict(plan), promo_id, amount
+
+    def reserve_public_quote(self, plan_name):
+        """Reserva una promoción temporalmente sin crear un cliente ni una membresía."""
+        plan, promo_id, amount = self.public_quote(plan_name)
+        self._increment_promocion_usos(self.context.state, promo_id)
+        return plan, promo_id, amount
 
     def _activate_paid_renewal(self, state, client, membership):
         """Solo una cuenta con una membresía activada anteriormente renueva al pagar."""

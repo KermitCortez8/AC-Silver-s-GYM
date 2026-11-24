@@ -135,5 +135,34 @@ En otra terminal:
 GYM_PLAYWRIGHT_MODULE=/ruta/a/playwright node .specify/base/validaciones/preregistros-separados/evidence/browser-review.cjs
 ```
 
+## Configuración de pagos externos
+
+La API devuelve HTTP 503 con el aviso específico cuando falta el QR de Yape
+o Plin, faltan enlaces de Mercado Pago o el JSON de enlaces es inválido.
+Las pruebas comprueban que en estos casos no se crean solicitudes. Las suites
+de clientes y membresías y pagos completaron 184 pruebas con 8 omisiones de
+PostgreSQL. La consulta de solo lectura a Supabase confirmó la columna
+`medio_pago`.
+
+Checkout Pro de prueba usa la cotización del plan sin crear una solicitud.
+Con el proveedor simulado se verificó que el servidor devuelve solo la URL
+de sandbox y rechaza una URL de cobro real. Chromium en modo sin ventana
+comprobó el botón y el importe en el registro con la respuesta simulada.
+Pasaron 187 pruebas de clientes y pagos, con 8 omisiones de PostgreSQL,
+y 426 de frontend. Vite compiló la aplicación. Quedó pendiente una compra
+en el sandbox de Mercado Pago con las credenciales de la cuenta.
+
+El prerregistro abre Mercado Pago en la misma pestaña al pulsar **Pagar con
+POS**. Chromium sin ventana verificó la redirección directa tanto para
+Checkout Pro de prueba como para los enlaces de cobro, con destinos
+interceptados. También verificó que Yape o Plin muestre el QR en el registro.
+
+Ante el error genérico del dominio sandbox, se cambió la apertura a
+`init_point`. La API verifica la cuenta vendedora de prueba de Perú y su
+coincidencia con el vendedor de la preferencia. Pasaron 12 pruebas de pagos
+externos. El registro local devolvió HTTP 200 y una URL de Checkout Pro
+en modo de prueba con las credenciales configuradas. La aprobación de una
+compra de prueba quedó pendiente.
+
 Referencias del proveedor consultadas: [idempotencia de Stripe](https://docs.stripe.com/api/idempotent_requests)
 (las claves pueden retirarse tras 24 horas) y [consulta paginada de sesiones](https://docs.stripe.com/api/checkout/sessions/list).

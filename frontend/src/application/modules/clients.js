@@ -283,6 +283,9 @@ export const createClientsModule = (ctx, repository) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const saved = await remote.registerPublicClient(payload);
     requireRecord(saved);
+    if (saved.payment?.modo_prueba === true && saved.payment.medio_pago === 'mercado_pago') {
+      return { payment: saved.payment };
+    }
     if (saved.preregistro) {
       const request = requireRecord(saved.preregistro);
       const estados = saved.payment?.revision_pendiente ? ['PENDIENTE', 'EXPIRADO'] : ['PENDIENTE', 'CONVERTIDO'];

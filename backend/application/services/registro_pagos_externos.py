@@ -3,6 +3,7 @@ import json
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlsplit
 
+from application.errors import ConfiguracionPagoExternoError
 from application.operations.registro_pagos_externos import (
     ConfirmarMembresiaPagoExternoCommand, ConfirmarSolicitudPagoExternoCommand, SolicitudesPagoExternoQuery,
 )
@@ -23,7 +24,7 @@ class RegistroPagosExternos:
             parsed = urlsplit(url)
             if '\\' in url or not ((parsed.scheme == 'https' and parsed.hostname and not parsed.username)
                                    or (url.startswith('/') and not url.startswith('//'))):
-                raise RuntimeError('Recepción aún debe configurar el QR de Yape y Plin.')
+                raise ConfiguracionPagoExternoError('Recepción aún debe configurar el QR de Yape y Plin.')
             return {'qr_url': url}
         try:
             enlaces = json.loads(self.settings.pagos_mercado_pago_enlaces or '{}')
@@ -38,9 +39,9 @@ class RegistroPagosExternos:
                     raise ValueError('Enlace o importe inválido')
                 importes[centavos] = url
         except (InvalidOperation, TypeError, ValueError, AttributeError, OverflowError) as error:
-            raise RuntimeError('Revisa la configuración de los enlaces de Mercado Pago.') from error
+            raise ConfiguracionPagoExternoError('Recepción debe revisar la configuración de los enlaces de Mercado Pago.') from error
         if not importes:
-            raise RuntimeError('Recepción aún debe configurar los enlaces de Mercado Pago.')
+            raise ConfiguracionPagoExternoError('Recepción aún debe configurar los enlaces de Mercado Pago.')
         return {'enlaces': importes}
 
     def pago(self, medio, monto, instrucciones):

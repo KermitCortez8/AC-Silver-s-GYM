@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from application.services.clients_service import ClientsService
 from domain.models.auth import UserProfile
-from domain.models.gym import ClienteInput, PlanMembresiaInput, RegistroPublicoClienteInput, UsuarioInput
+from domain.models.gym import ClienteInput, PlanMembresiaInput, RegistroAdminClienteInput, RegistroPublicoClienteInput, UsuarioInput
 from domain.validation import account_email
 from infrastructure.services.local_gym_service import LocalGymService
 from presentation import dependencies as deps
@@ -73,6 +73,17 @@ def test_invalid_account_requests_do_not_reach_writes_or_checkout(path, field, v
     assert response.json()['detail'][0]['loc'] == ['body', field]
     assert 'input' not in response.json()['detail'][0]
     assert calls == []
+
+
+@pytest.mark.parametrize('model', [RegistroPublicoClienteInput, RegistroAdminClienteInput])
+def test_registros_reportan_dni_obligatorio_y_formato_sobre_el_campo(model):
+    assert model.model_validate({**VALID, 'dni': ' 01234567 '}).dni == '01234567'
+    datos = {campo: valor for campo, valor in VALID.items() if campo != 'dni'}
+    for payload in (datos, {**datos, 'dni': ''}, {**datos, 'dni': '012345678'},
+                    {**datos, 'dni': '01.234.567'}, {**datos, 'dni': '０１２３４５６７'}):
+        with pytest.raises(ValidationError) as error:
+            model.model_validate(payload)
+        assert error.value.errors()[0]['loc'] == ('dni',)
 
 
 @pytest.mark.parametrize('method', ['upsert_usuario', 'upsert_cliente', 'registrar_cliente_publico'])

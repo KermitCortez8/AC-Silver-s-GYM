@@ -9,6 +9,10 @@ class ProviderUnavailable(Exception):
     """El proveedor de IA no pudo completar la consulta."""
 
 
+class ConfiguracionPagoExternoError(RuntimeError):
+    """El medio de pago externo requiere una configuración válida."""
+
+
 class SchemaNotReady(PersistenceUnavailable):
     def __init__(self, migration):
         self.migration = migration

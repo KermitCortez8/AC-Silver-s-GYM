@@ -85,10 +85,11 @@
 
         <label class="space-y-2">
           <span class="text-sm ws-soft">DNI</span>
-          <input v-digits :maxlength="FORM_LIMITS.dni"
-            v-model="form.dni"
+          <input
+            v-model.trim="form.dni"
             type="text"
             inputmode="numeric"
+            :pattern="DNI_PATTERN"
             :aria-invalid="Boolean(fieldErrors.dni)"
             :aria-describedby="fieldErrors.dni ? 'client-dni-error' : undefined"
             @blur="validateField('dni')" @input="revalidateField('dni')"
@@ -181,6 +182,7 @@
 
 <script setup>
 import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+import { DNI_PATTERN } from "../../../domain/utils/formValidation.js";
 import { vDigits } from "../../directives/digits.js";
 
 import FieldError from "../FieldError.vue";
