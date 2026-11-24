@@ -105,9 +105,8 @@ a través del proxy de Vite y el esquema actualizado en OpenAPI.
 
 ## DNI en las altas pública y administrativa
 
-Los formularios conservan la entrada para mostrar un error junto al DNI si
-tiene separadores o más de ocho dígitos. Chromium verificó ambos formularios
-y confirmó que el aviso desaparece al corregir el valor a ocho dígitos con
-cero inicial. El servidor devuelve la validación de DNI en su propio campo.
+Los formularios limitan el campo DNI a ocho caracteres y muestran un error
+si contiene separadores o no tiene ocho dígitos. El servidor devuelve la
+validación de DNI en su propio campo. Se conservan los ceros iniciales.
 Pasaron 255 pruebas del backend, con 8 omisiones de PostgreSQL. Pasaron la
 suite de frontend y la compilación de Vite.

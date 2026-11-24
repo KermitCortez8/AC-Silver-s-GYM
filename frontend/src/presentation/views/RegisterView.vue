@@ -166,7 +166,7 @@
             <label class="block space-y-2">
               <span class="text-sm font-semibold text-slate-700"> DNI </span>
 
-              <input
+              <input :maxlength="FORM_LIMITS.dni"
                 v-model.trim="form.dni"
                 :aria-invalid="Boolean(fieldErrors.dni)"
                 :aria-describedby="fieldErrors.dni ? 'register-dni-error' : undefined"

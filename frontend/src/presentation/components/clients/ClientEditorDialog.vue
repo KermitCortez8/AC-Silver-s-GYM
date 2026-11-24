@@ -85,7 +85,7 @@
 
         <label class="space-y-2">
           <span class="text-sm ws-soft">DNI</span>
-          <input
+          <input :maxlength="FORM_LIMITS.dni"
             v-model.trim="form.dni"
             type="text"
             inputmode="numeric"
