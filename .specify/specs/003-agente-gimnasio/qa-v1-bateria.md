@@ -40,11 +40,11 @@ El proveedor de IA **elige una herramienta** cuando hace falta; el backend valid
 
 | Flujo / caso | Criterio | Capa y herramienta | Datos y pasos | Resultado esperado | Prioridad | Evidencia |
 | --- | --- | --- | --- | --- | --- | --- |
-| F1-01 Plan | CA-01, CA-08 | Vue → API → servicio → catálogo controlado; Playwright | Abrir chat y preguntar precio de un plan de prueba. | El texto refleja S/ 91 y 31 días del catálogo controlado; ofrece Registro; HTTP 200. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
-| F1-02 Horario | CA-02, CA-08 | Vue → API → servicio → catálogo controlado; Playwright | En la misma conversación, preguntar horario de Baile. | Muestra lunes 07:00–08:00, valor leído del catálogo controlado; HTTP 200. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
-| F1-03 Fuente actual | CA-02 | Vue → API → servicio → repositorio → Supabase; Playwright de solo lectura | Leer horarios públicos y pedir todos los horarios en el chat. | Al menos un horario real y su actividad aparecen en la respuesta; no hay escrituras. | Alta | `frontend/e2e-live/agent-catalog.spec.js` |
-| F2-01 Recuperación | CA-05, CA-08, CA-11 | Vue → API → servicio; Playwright | Pedir recuperación y completar correo, DNI y teléfono sintéticos. | Se abre el formulario; solo sale a la API la pregunta inicial; no sale ningún dato del formulario. | Alta | `frontend/e2e-integration/agent-flow.spec.js` |
-| R-01 Regresión UI | CA-01, CA-02, CA-03, CA-04, CA-05, CA-08, CA-09, CA-11, CA-13 | Interfaz; Playwright con API simulada | Planes, clases, lista larga, caída, límite, acción privada, recuperación y PII. | Los nueve escenarios pasan en Chromium, Firefox y WebKit. | Alta | `frontend/e2e/agent.spec.js` |
+| F1-01 Plan | CA-01, CA-08 | Vue → API → servicio → catálogo controlado; Playwright | Abrir chat y preguntar precio de un plan de prueba. | El texto refleja S/ 91 y 31 días del catálogo controlado; ofrece Registro; HTTP 200. | Alta | `frontend/tests/e2e/integracion/agent-flow.spec.js` |
+| F1-02 Horario | CA-02, CA-08 | Vue → API → servicio → catálogo controlado; Playwright | En la misma conversación, preguntar horario de Baile. | Muestra lunes 07:00–08:00, valor leído del catálogo controlado; HTTP 200. | Alta | `frontend/tests/e2e/integracion/agent-flow.spec.js` |
+| F1-03 Fuente actual | CA-02 | Vue → API → servicio → repositorio → Supabase; Playwright de solo lectura | Leer horarios públicos y pedir todos los horarios en el chat. | Al menos un horario real y su actividad aparecen en la respuesta; no hay escrituras. | Alta | `frontend/tests/e2e/catalogo/agent-catalog.spec.js` |
+| F2-01 Recuperación | CA-05, CA-08, CA-11 | Vue → API → servicio; Playwright | Pedir recuperación y completar correo, DNI y teléfono sintéticos. | Se abre el formulario; solo sale a la API la pregunta inicial; no sale ningún dato del formulario. | Alta | `frontend/tests/e2e/integracion/agent-flow.spec.js` |
+| R-01 Regresión UI | CA-01, CA-02, CA-03, CA-04, CA-05, CA-08, CA-09, CA-11, CA-13 | Interfaz; Playwright con API simulada | Planes, clases, lista larga, caída, límite, acción privada, recuperación y PII. | Los nueve escenarios pasan en Chromium, Firefox y WebKit. | Alta | `frontend/tests/e2e/simuladas/agent.spec.js` |
 | R-02 Regresión backend | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07, CA-08, CA-09, CA-10, CA-11, CA-12, CA-13 (componente backend) | Servicio, dominio y ruta; pytest | Datos sintéticos y proveedor falso. | Casos de permisos, catálogos, conversación y HTTP pasan sin servicios externos. La privacidad del formulario se comprueba en F2-01/R-01. | Alta | `backend/tests/agente/` |
 
 Los casos F1-01/02 forman un flujo compartido: la misma persona pregunta por un plan y luego por horarios, con el mismo chat. El test usa un proceso FastAPI real y el proxy de Vite; sustituye únicamente el proveedor y el catálogo. F1-03 comprueba por separado la lectura del catálogo real de Supabase a través de la API pública. No prueba escrituras, pagos ni correos.
@@ -55,7 +55,7 @@ Cada fila representa un recorrido completo: se conserva el identificador de la c
 
 | Caso | Criterios | Mensajes del visitante, en orden | Resultado esperado y fuente | Riesgo / prioridad | Ejecución |
 | --- | --- | --- | --- | --- | --- |
-| CONV-01 · Elegir cómo empezar | CA-01, CA-02, CA-03, CA-10, CA-12 | «Hola» → «¿Cuánto cuesta el plan?» → «¿Qué horarios tiene Baile?» → «¿Cómo me registro?» → «Inscríbeme a Baile» → «Gracias». | Cortesía; precio y horario del catálogo controlado; guía y enlace a Registro; la orden de inscripción no crea matrícula; cierre natural. Solo la consulta de plan necesita seleccionar herramienta. | Datos inventados o una operación privada ejecutada · alta | `backend/tests/agente/test_agent_conversations.py`; `frontend/e2e-integration/agent-conversations.spec.js` |
+| CONV-01 · Elegir cómo empezar | CA-01, CA-02, CA-03, CA-10, CA-12 | «Hola» → «¿Cuánto cuesta el plan?» → «¿Qué horarios tiene Baile?» → «¿Cómo me registro?» → «Inscríbeme a Baile» → «Gracias». | Cortesía; precio y horario del catálogo controlado; guía y enlace a Registro; la orden de inscripción no crea matrícula; cierre natural. Solo la consulta de plan necesita seleccionar herramienta. | Datos inventados o una operación privada ejecutada · alta | `backend/tests/agente/test_agent_conversations.py`; `frontend/tests/e2e/integracion/agent-conversations.spec.js` |
 | CONV-02 · Actividad y seguimiento | CA-02, CA-03, CA-09 | «¿Qué tipos de ejercicios hay?» → «¿Y los horarios?» → «¿Hay cupo en Baile el lunes?» | Ficha pública de actividades; el seguimiento consulta horarios actuales; la respuesta sobre cupos solo comunica la regla general y no afirma disponibilidad ni reserva. | Confundir horario publicado con cupo libre · alta | Los mismos archivos |
 | CONV-03 · Recuperar sin exponer datos | CA-05, CA-11 | «Quiero recuperar mi cuenta» → completar el formulario con datos sintéticos → escribir un correo en el chat. | Formulario local; el backend solo recibe la pregunta inicial; el correo escrito en el chat se bloquea antes de la API. No se promete envío al dueño. | Filtración de datos personales · alta | Los mismos archivos y la regresión UI existente |
 | CONV-04 · Volver al negocio | CA-07, CA-10 | Pregunta ambigua → pregunta ajena → repetir pregunta ajena → preguntar por un plan. | Pedir detalle; redirigir con cortesía y después con mayor claridad; volver a consultar el catálogo sin perder el control del diálogo. | Respuestas genéricas repetidas o tema ajeno persistente · media | Los mismos archivos |
@@ -85,11 +85,11 @@ Los 12 resultados nuevos de Playwright corresponden a **cuatro flujos completos 
 Desde `frontend`:
 
 ```powershell
-npx playwright test e2e/agent.spec.js
-npx playwright test --config=playwright.agent-integration.config.js
-npx playwright test --config=playwright.agent-live.config.js
-npx playwright show-report playwright-agent-integration-report
-npx playwright show-report playwright-agent-live-report
+npm run test:e2e
+npm run test:e2e:integracion
+npm run test:e2e:catalogo
+npx playwright show-report .artifacts/playwright/integracion/informe
+npx playwright show-report .artifacts/playwright/catalogo/informe
 ```
 
 Desde `backend`:

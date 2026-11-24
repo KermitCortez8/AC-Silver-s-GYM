@@ -90,3 +90,23 @@ del plan y comprueba su disponibilidad en el catálogo antes de guardar.
 Pasaron las 44 pruebas de alta y pago inicial. La regresión verificó HTTP 201
 para `CLASE` con y sin Stripe simulado, un importe de S/ 12 y el rechazo de
 planes inactivos o inexistentes antes de escribir.
+
+## Alta pública con un plan de un día
+
+El registro público también devolvía HTTP 422 para el plan activo `CLASE`.
+El esquema acepta el nombre y la reserva de la cotización verifica que el
+plan exista y esté activo. La prueba de Mercado Pago confirmó el enlace del
+importe reservado con persistencia en memoria y comprobó que los planes
+inactivos o inexistentes no crean solicitudes.
+
+Las suites de clientes y membresías y pagos completaron 181 pruebas y omitieron
+8 que requieren PostgreSQL. Tras reiniciar la API local, se comprobó la salud
+a través del proxy de Vite y el esquema actualizado en OpenAPI.
+
+## DNI en las altas pública y administrativa
+
+Los formularios limitan el campo DNI a ocho caracteres y muestran un error
+si contiene separadores o no tiene ocho dígitos. El servidor devuelve la
+validación de DNI en su propio campo. Se conservan los ceros iniciales.
+Pasaron 255 pruebas del backend, con 8 omisiones de PostgreSQL. Pasaron la
+suite de frontend y la compilación de Vite.

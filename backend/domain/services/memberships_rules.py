@@ -1,5 +1,6 @@
 """Reglas de memberships sobre el agregado en memoria."""
 from __future__ import annotations
+from domain.services.registro_pago_externo import MEDIOS_EXTERNOS, validar_importe_enlace
 from domain.validation import account_email, dni_number, phone_number
 from domain.form_limits import SHORT_TEXT_LIMIT, LONG_TEXT_LIMIT
 from domain.validation import nonnegative, required_text, date_range, bounded_text
@@ -570,6 +571,8 @@ class MembershipsRules:
                 if (str(existing.get("estado_pago") or "").strip().upper() == "PAGADO"
                         or normalize_membership_status(existing.get("estado")) != "EN_TRAMITE"):
                     raise ValueError("No puedes editar una membresía confirmada; registra una nueva para renovar")
+                if existing.get('metodo_pago') in MEDIOS_EXTERNOS:
+                    raise ValueError('La membresía tiene un pago externo pendiente y conserva el importe contratado.')
 
             if not existing:
                 previous = max((m for m in state['membresia']
@@ -726,6 +729,10 @@ class MembershipsRules:
                 id_pm,
                 id_promocion,
             )
+            if origen_registro == 'ADMIN':
+                validar_importe_enlace(payload, monto_final)
+                if payload.get('medio_pago') and cents(monto_final) <= 0:
+                    raise ValueError('El importe del pago debe ser mayor que cero.')
 
             cliente = {
                 "id_cliente": id_cliente,
@@ -761,7 +768,7 @@ class MembershipsRules:
                 "id_promocion": id_promocion,
                 "monto_pago": monto_final,
                 "estado_pago": "PENDIENTE",
-                "metodo_pago": "stripe",
+                "metodo_pago": (payload.get('medio_pago') if origen_registro == 'ADMIN' else None) or 'stripe',
                 "referencia_pago": "",
             }
 
@@ -779,8 +786,8 @@ class MembershipsRules:
 
         return self.context.change(_fn)
 
-    def reserve_public_quote(self, plan_name):
-        """Reserva una promoción temporalmente sin crear un cliente ni una membresía."""
+    def public_quote(self, plan_name):
+        """Calcula el importe vigente sin reservar cupos."""
         state = self.context.state
         plan = self._ensure_plan_for_client(state, plan_name)
         if not plan.get("activo", True):
@@ -790,8 +797,13 @@ class MembershipsRules:
         amount = self._apply_promocion_discount(state, int(plan['id_pm']), promo_id)
         if cents(amount) <= 0:
             raise ValueError("El importe del preregistro debe ser mayor que cero")
-        self._increment_promocion_usos(state, promo_id)
         return dict(plan), promo_id, amount
+
+    def reserve_public_quote(self, plan_name):
+        """Reserva una promoción temporalmente sin crear un cliente ni una membresía."""
+        plan, promo_id, amount = self.public_quote(plan_name)
+        self._increment_promocion_usos(self.context.state, promo_id)
+        return plan, promo_id, amount
 
     def _activate_paid_renewal(self, state, client, membership):
         """Solo una cuenta con una membresía activada anteriormente renueva al pagar."""
@@ -848,6 +860,11 @@ class MembershipsRules:
             )
             if not membresia:
                 raise ValueError("Membresia no encontrada")
+
+            medio_guardado = membresia.get('metodo_pago')
+            medio_recibido = payload.get('metodo_pago')
+            if (medio_guardado in MEDIOS_EXTERNOS or medio_recibido in MEDIOS_EXTERNOS) and medio_guardado != medio_recibido:
+                raise ValueError('El medio de pago no coincide con la membresía.')
 
             saved_amount = membresia.get("monto_pago")
             if saved_amount is None:
@@ -911,6 +928,8 @@ class MembershipsRules:
             if str(membresia.get("estado_pago") or "").strip().upper() == "PAGADO":
                 self._activate_paid_renewal(state, cliente, membresia)
                 return {"cliente": cliente, "membresia": membresia}
+            if membresia.get('metodo_pago') in MEDIOS_EXTERNOS:
+                raise ValueError('Confirma este pago con el número de operación del abono recibido.')
             amount = float(membresia.get("monto_pago", 0) or 0)
             if amount <= 0:
                 raise ValueError("El importe del pago debe ser mayor que cero")

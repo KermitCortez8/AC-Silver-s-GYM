@@ -467,5 +467,18 @@ npm test
 npm run build
 ```
 
+Las pruebas de Node se agrupan por módulo en `frontend/tests/`. Las suites de
+Playwright del agente se ubican en `frontend/tests/e2e/` y se ejecutan desde
+`frontend` con estos comandos.
+
+| Comando | Entorno de prueba |
+| --- | --- |
+| `npm run test:e2e` | Navegador con respuestas de API simuladas. |
+| `npm run test:e2e:integracion` | Navegador y backend de QA con catálogo controlado. |
+| `npm run test:e2e:catalogo` | Navegador y backend de solo lectura con acceso al catálogo real de Supabase. |
+
+Playwright guarda los informes y resultados en `frontend/.artifacts/playwright/`,
+en una carpeta por suite.
+
 Los Dockerfiles incluyen los cuatro paquetes y los módulos nuevos. Los targets
 `test` permiten ejecutar las mismas comprobaciones sin credenciales de producción.

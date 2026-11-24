@@ -533,7 +533,7 @@ test('each admin section loads only its resources and shares them with the dashb
 
   paths.length = 0;
   await gym.fetchFromBackend({ section: 'schedules' });
-  assert.equal(paths.length, 2);
+  assert.deepEqual(paths, ['/api/gym/horarios-servicio']);
 
   paths.length = 0;
   await gym.fetchFromBackend({ section: 'dashboard' });

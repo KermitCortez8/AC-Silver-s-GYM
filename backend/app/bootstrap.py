@@ -65,7 +65,14 @@ async def process_pending_emails(settings):
 
 def create_client_payments_service(clients, gym, settings):
     from application.services.client_payments_service import ClientPaymentsService
-    return ClientPaymentsService(clients, gym, settings, gateway_factory=create_payment_gateway, notify=notify_membership)
+    from infrastructure.services.mercado_pago_checkout import MercadoPagoCheckoutPrueba
+    checkout_prueba = None
+    if settings.pagos_mercado_pago_modo == 'prueba':
+        checkout_prueba = MercadoPagoCheckoutPrueba(settings.mercado_pago_access_token_prueba).crear_enlace
+    return ClientPaymentsService(
+        clients, gym, settings, gateway_factory=create_payment_gateway,
+        notify=notify_membership, checkout_prueba=checkout_prueba,
+    )
 
 
 async def process_pending_preregistrations(settings):

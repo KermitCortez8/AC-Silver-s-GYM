@@ -285,6 +285,7 @@ class AccountsRules:
                     "membership_end": membership.get("fecha_fin", ""),
                     "payment_status": membership.get("estado_pago", ""),
                     "payment_reference": membership.get("referencia_pago", ""),
+                    "metodo_pago": membership.get("metodo_pago", ""),
                     "monto_pago": membership.get("monto_pago"),
                     "origen_registro": row.get("origen_registro", ""),
                     "has_password": bool(row.get("password_hash")),

@@ -10,6 +10,16 @@ REGISTRATION_RESOURCES = (Resource.PREREGISTROS, Resource.CLIENTES, Resource.MEM
 
 
 @dataclass(frozen=True)
+class PublicMembershipQuoteQuery:
+    operation_kind: ClassVar[str] = 'query'
+    resources: ClassVar[tuple] = (Resource.PLANES_MEMBRESIA, Resource.PROMOCIONES)
+    plan: str
+
+    def run(self, rules):
+        return rules.memberships.public_quote(self.plan)
+
+
+@dataclass(frozen=True)
 class PreparePreregistrationCommand:
     operation_kind: ClassVar[str] = 'command'
     resources: ClassVar[tuple] = REGISTRATION_RESOURCES

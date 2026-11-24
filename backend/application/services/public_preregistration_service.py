@@ -25,6 +25,8 @@ class PublicPreregistrationService:
         self.frontend_url = str(getattr(settings, 'frontend_public_url', '') or '').rstrip('/')
 
     def checkout(self, row):
+        if row.get('medio_pago'):
+            raise ValueError('Retoma la solicitud con el medio de pago que elegiste.')
         if row['checkout_session_id']:
             return {'configured': True, 'session_id': row['checkout_session_id'],
                     'checkout_url': row['checkout_url'], 'amount': row['monto_pago'], 'currency': 'PEN'}
@@ -95,6 +97,10 @@ class PublicPreregistrationService:
         processed = 0
         for row in due:
             try:
+                if row.get('medio_pago'):
+                    self.executor.execute(ExpirePreregistrationCommand(row['token'], int(row['intento']), ''))
+                    processed += 1
+                    continue
                 if not row['checkout_session_id']:
                     payment = self.checkout(row)
                     if payment is None:

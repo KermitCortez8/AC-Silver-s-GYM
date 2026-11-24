@@ -1,8 +1,11 @@
 """Reglas de schedules sobre el agregado en memoria."""
 from __future__ import annotations
 from domain.form_limits import SHORT_TEXT_LIMIT
+from domain.models.gym import ParametrosHorarioServicioInput
 from domain.validation import bounded_text
-from domain.services.schedule_sessions import enrollment_session, next_session, validate_session
+from domain.services.schedule_sessions import (
+    DAYS, SALAS_HORARIO, dentro_de_atencion, enrollment_session, next_session, validar_horas_atencion, validate_session,
+)
 from domain.validation import integer_quantity, validate_exercises
 from domain.errors import EntityNotFound, MembershipRequired, EnrollmentConflict
 
@@ -148,6 +151,7 @@ class SchedulesRules:
                         "dia": day,
                         "hora_inicio": hora_inicio,
                         "hora_fin": hora_fin,
+                        "sala": row.get("sala"),
                         "cupos": cupos,
                         "cupos_usados": max(0, int(row.get("cupos_usados") or 0)),
                         "activo": bool(row.get("activo", True)),
@@ -351,6 +355,8 @@ class SchedulesRules:
             cfg = state.setdefault("configuracion_gimnasio", {})
             total = integer_quantity(payload.get("capacidad_total", cfg.get("capacidad_total", 30)), "Capacidad total", minimum=1)
             hourly = integer_quantity(payload.get("capacidad_por_hora", cfg.get("capacidad_por_hora", 10)), "Capacidad por hora", minimum=1)
+            if "parametros_horarios" in payload:
+                cfg["parametros_horarios"] = ParametrosHorarioServicioInput.model_validate(payload["parametros_horarios"]).model_dump()
             cfg.update(capacidad_total=total, capacidad_por_hora=hourly)
             return cfg
 
@@ -366,6 +372,14 @@ class SchedulesRules:
         for schedule in self.context.state.get("horarios_servicio", []):
             if solo_activos and not bool(schedule.get("activo", True)):
                 continue
+            dia = self._normalize_day(schedule.get("dia"))
+            try:
+                inicio = self._time_to_minutes(schedule.get("hora_inicio"))
+                fin = self._time_to_minutes(schedule.get("hora_fin"))
+            except ValueError:
+                continue
+            if not dentro_de_atencion(dia, inicio, fin):
+                continue
             routine = routines_by_id.get(int(schedule.get("id_rutina", 0) or 0), {})
             cupos = max(1, int(schedule.get("cupos", 1) or 1))
             cupos_usados = max(0, int(schedule.get("cupos_usados", 0) or 0))
@@ -373,6 +387,10 @@ class SchedulesRules:
             result.append(
                 {
                     **schedule,
+                    "dia": dia,
+                    "hora_inicio": self._minutes_to_time(inicio),
+                    "hora_fin": self._minutes_to_time(fin),
+                    "sala": schedule.get("sala"),
                     "cupos": cupos,
                     "cupos_usados": cupos_usados,
                     "cupos_disponibles": cupos_disponibles,
@@ -405,8 +423,9 @@ class SchedulesRules:
         start, end = self._validate_short_service_schedule_range(hora_inicio, hora_fin)
         hora_inicio, hora_fin = self._minutes_to_time(start), self._minutes_to_time(end)
         dia = self._normalize_day(payload.get("dia") or (payload.get("dias") or [""])[0])
-        if dia not in {"lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"}:
+        if dia not in DAYS:
             raise ValueError("Selecciona un dia valido de la semana")
+        validar_horas_atencion(dia, start, end)
         id_rutina = int(payload.get("id_rutina", 0) or 0)
         routine = next((r for r in self.context.state["catalogo_rutina"] if int(r.get("id_rutina", 0) or 0) == id_rutina), None)
         if not routine:
@@ -430,7 +449,7 @@ class SchedulesRules:
 
         # Procesa esta operación.
         def _fn(state: dict[str, Any]):
-            state["horarios_servicio"] = self._normalize_horarios_servicio(state.get("horarios_servicio", []))
+            state.setdefault("horarios_servicio", [])
             if item["id_horario_servicio"] <= 0:
                 item["id_horario_servicio"] = self.context.next_int_id_in_state(state, "horarios_servicio", "id_horario_servicio")
             idx = next(
@@ -441,13 +460,23 @@ class SchedulesRules:
                 ),
                 -1,
             )
-            self._recount_schedule_cupos(state)
             current = state["horarios_servicio"][idx] if idx >= 0 else {}
+            sala = payload.get("sala")
+            if sala is None:
+                sala = current.get("sala")
+            else:
+                sala = str(sala).strip()
+                if sala and sala not in SALAS_HORARIO:
+                    raise ValueError("La sala seleccionada no está disponible.")
+            if not sala:
+                raise ValueError("Selecciona una sala para el horario.")
+            item["sala"] = sala
+            self._recount_schedule_cupos(state)
             current_used = max((count for day, count in current.get("ocupacion_por_fecha", {}).items()
                                 if day >= self.context.today()), default=0)
             if current_used > item["cupos"]:
                 raise ValueError("No puedes reducir cupos por debajo de los matriculados")
-            if idx >= 0 and current.get("dia") != item["dia"] and current_used:
+            if idx >= 0 and self._normalize_day(current.get("dia")) != item["dia"] and current_used:
                 raise ValueError("No puedes cambiar el día de un horario con matrículas pendientes.")
             item["cupos_usados"] = current_used
             if idx >= 0:
@@ -524,6 +553,7 @@ class SchedulesRules:
                     "dia": schedule.get("dia", ""),
                     "hora_inicio": schedule.get("hora_inicio", ""),
                     "hora_fin": schedule.get("hora_fin", ""),
+                    "sala": schedule.get("sala"),
                     "asistencias": [
                         asistencia
                         for asistencia in self.context.state.get("asistencia", [])

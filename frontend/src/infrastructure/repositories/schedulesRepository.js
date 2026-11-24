@@ -11,6 +11,11 @@ export const createSchedulesRepository = (http, apiBase) => ({
     body: JSON.stringify(scheduleItem)
   }, token),
   refreshServiceSchedulesFromBackend: token => dataRequest(http, `${apiBase}/gym/horarios-servicio`, {}, token),
+  loadScheduleSettings: token => dataRequest(http, `${apiBase}/gym/horarios-servicio/configuracion`, {}, token),
+  saveScheduleSettings: (settings, token) => dataRequest(http, `${apiBase}/gym/horarios-servicio/configuracion`, {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+  }, token),
   refreshRoutinesFromBackend: token => dataRequest(http, `${apiBase}/gym/rutinas`, {}, token),
   upsertServiceSchedule: (body, token) => dataRequest(http, `${apiBase}/gym/horarios-servicio`, {
     method: 'POST',

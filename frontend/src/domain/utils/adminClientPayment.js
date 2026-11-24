@@ -1,7 +1,9 @@
 import { limaDate, addDays } from './dates.js';
+import { esPagoExterno } from './membershipPaymentMethods.js';
 
 export const canPayClientWithStripe = (client) =>
   client?.registrationOrigin === 'ADMIN' &&
+  !esPagoExterno(client.paymentMethod) &&
   String(client.paymentStatus || '').trim().toUpperCase() === 'PENDIENTE' &&
   Number(client.id_membresia) > 0;
 

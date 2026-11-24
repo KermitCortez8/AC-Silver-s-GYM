@@ -4,16 +4,19 @@
 # Sirve como contrato entre las rutas y los servicios.
 from __future__ import annotations
 
+from functools import partial
 from typing import Annotated, Any, Literal, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, StringConstraints, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, Field, ConfigDict, StringConstraints, field_validator, model_validator
 from domain.validation import account_email, dni_number, email_address, integer_quantity, phone_number
 from domain.validation import required_text, nonnegative, civil_date, clock_time, date_range, time_range, identifier, validate_exercises
+from domain.services.schedule_sessions import validar_horas_atencion
 
 from domain.form_limits import SHORT_TEXT_LIMIT, LONG_TEXT_LIMIT, INVENTORY_TEXT_LIMIT, INVENTORY_NOTE_LIMIT
 
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=SHORT_TEXT_LIMIT)]
 LongText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=LONG_TEXT_LIMIT)]
+DniRegistro = Annotated[str, AfterValidator(partial(dni_number, required=True))]
 
 
 class ValidatedInput(BaseModel):
@@ -101,6 +104,7 @@ class HorarioPublico(BaseModel):
     dia: str
     hora_inicio: str
     hora_fin: str
+    sala: str | None = None
     rutina_nombre: str = ""
     entrenador: str = ""
     cupos: int
@@ -183,25 +187,27 @@ class RegistrarClienteMembresiaInput(ValidatedInput):
 
 
 class RegistroAdminClienteInput(ClienteInput):
+    dni: DniRegistro
     plan: ShortText = Field(default="MENSUAL", min_length=1)
     id_promocion: int | None = Field(default=None, gt=0)
     pagar_con_stripe: bool = False
+    medio_pago: Literal['yape_plin', 'mercado_pago'] | None = None
 
 
 class RegistroPublicoClienteInput(ValidatedInput):
+    medio_pago: Literal['yape_plin', 'mercado_pago'] | None = None
     nombre: ShortText
     correo: ShortText
     telefono: str = ""
-    dni: str = ""
+    dni: DniRegistro
     password: str = ""
     contrasena: str = ""
-    plan: Literal["MENSUAL", "3 MESES", "ANUAL"] = "MENSUAL"
+    plan: ShortText = Field(default="MENSUAL", min_length=1)
     promocion: ShortText = "SIN PROMOCION"
     google_credential: str = ""
 
     @model_validator(mode="after")
     def complete_registration(self):
-        dni_number(self.dni, required=True)
         phone_number(self.telefono, required=True)
         if not self.google_credential and len((self.password or self.contrasena).strip()) < 6:
             raise ValueError("La contraseña debe tener al menos 6 caracteres.")
@@ -363,6 +369,7 @@ class HorarioServicioInput(ValidatedInput):
     id_rutina: int
     hora_inicio: str = "06:00"
     hora_fin: str = "07:00"
+    sala: ShortText | None = None
     codigo_dia: ShortText = "LUN"
     dia: ShortText = "lunes"
     dias: list[str] = Field(default_factory=list)
@@ -457,6 +464,36 @@ class AsistenciaSalidaInput(ValidatedInput):
 class ConfiguracionGimnasioInput(ValidatedInput):
     capacidad_total: int = Field(default=30, ge=1)
     capacidad_por_hora: int = Field(default=10, ge=1)
+
+
+class ParametrosHorarioServicio(BaseModel):
+    hora_inicio: str = Field(pattern=r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
+    duracion_minutos: Literal[60, 120]
+    cupos: int
+
+    @field_validator("cupos", mode="before")
+    @classmethod
+    def validar_cupos(cls, value):
+        return integer_quantity(value, "Cupos", minimum=1)
+
+    @model_validator(mode="after")
+    def validar_hora_fin(self):
+        hora, minuto = map(int, self.hora_inicio.split(":"))
+        if hora * 60 + minuto + self.duracion_minutos >= 24 * 60:
+            raise ValueError("La clase debe terminar antes de medianoche")
+        return self
+
+
+PARAMETROS_HORARIO_INICIALES = {"hora_inicio": "06:00", "duracion_minutos": 60, "cupos": 10}
+
+
+class ParametrosHorarioServicioInput(ParametrosHorarioServicio):
+    @model_validator(mode="after")
+    def validar_franja_habitual(self):
+        hora, minuto = map(int, self.hora_inicio.split(":"))
+        inicio = hora * 60 + minuto
+        validar_horas_atencion("lunes", inicio, inicio + self.duracion_minutos)
+        return self
 
 
 class SummaryResponse(BaseModel):

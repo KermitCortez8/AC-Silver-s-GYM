@@ -25,10 +25,13 @@ export const requiredTextError = (value, label = 'El nombre', max = FORM_LIMITS.
   return '';
 };
 
+export const DNI_PATTERN = `[0-9]{${FORM_LIMITS.dni}}`;
+const dniRegex = new RegExp(`^${DNI_PATTERN}$`);
+
 export const dniError = (value, required = true) => {
   const text = String(value ?? '').trim();
   if (!text) return required ? 'El DNI es obligatorio.' : '';
-  return /^[0-9]{8}$/.test(text) ? '' : 'El DNI debe tener exactamente 8 dígitos.';
+  return dniRegex.test(text) ? '' : 'El DNI debe tener exactamente 8 dígitos.';
 };
 
 export const phoneError = (value, required = false) => {
