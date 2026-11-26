@@ -33,7 +33,7 @@
 - [ ] T016 Actualizar los contratos vivos MOD-04/MOD-05 y completar `validation.md`, incluyendo condiciones de una eventual prueba con proveedor real y datos controlados (CA-01–CA-08).
 - [ ] T017 Revisar alcance, privacidad, arquitectura y evidencia del Definition of Done; ejecutar los validadores documentales y anotar sus resultados (CA-01–CA-08).
 - [x] T018 [US2] Probar saludos, cortesías, redirección de temas ajenos y preguntas ambiguas en `backend/tests/agente/test_agent_flow.py` y `frontend/tests/e2e/simuladas/agent.spec.js` (CA-10).
-- [x] T019 [US3] Probar que el formulario de recuperación mantiene los datos solo en el navegador en `frontend/tests/e2e/simuladas/agent.spec.js` (CA-11).
+- [x] T019 [US3] Probar que el diálogo envía solo el correo a autenticación y lo mantiene fuera del chat en `frontend/tests/e2e/simuladas/agent.spec.js` (CA-11).
 - [x] T020 [US3] Probar la guía pública de registro y su enlace sin iniciar una matrícula en `backend/tests/agente/test_agent_flow.py` (CA-12).
 
 ## Dependencias y secuencia

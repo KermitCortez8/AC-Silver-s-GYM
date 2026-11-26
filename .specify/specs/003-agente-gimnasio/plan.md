@@ -66,7 +66,7 @@ El recorrido de consulta no modifica tablas de negocio. Si la cuota compartida n
 | CA-08 | backend/frontend/Playwright | suites aisladas con fakes | Ejecución repetible sin efectos externos. |
 | CA-09, CA-12 | `public_gym_knowledge.py`, `agent_service.py` | pytest de fichas y guía de registro | Texto revisado y enlace público; sin registro ejecutado. |
 | CA-10 | `agent_policy.py`, `agent_service.py` | pytest de cortesías, ambigüedad y desvío | Respuesta natural y redirección sin acceso a datos privados. |
-| CA-11 | `AgentChat.vue`, servicio | Playwright de recuperación con API simulada y conectada | Correo, DNI y teléfono del formulario no salen a la API. |
+| CA-11 | `AgentChat.vue`, diálogo compartido, autenticación | Playwright de recuperación con API simulada y conectada | El correo llega solo a la API de autenticación. El diálogo informa la recepción y permite reintentar. |
 | CA-13 | `agent_budget.py`, ruta | pytest de límite y concurrencia; Playwright del estado 429 | Límite por proceso observable; cuota distribuida pendiente. |
 
 ## Complexity Tracking

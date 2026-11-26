@@ -49,23 +49,28 @@ test('CONV-02: actividad, seguimiento y pregunta de cupos sin inventar disponibi
   expect(text).not.toContain('está lleno')
 })
 
-test('CONV-03: datos de recuperación permanecen en el navegador', async ({ page }) => {
+test('CONV-03: descartar la recuperación borra el formulario y el chat bloquea el correo', async ({ page }) => {
   const payloads = []
+  const recoveryRequests = []
   page.on('request', request => {
     if (request.url().endsWith('/api/agente/mensajes')) payloads.push(request.postData() || '')
+    if (request.url().endsWith('/api/auth/recuperar-contrasena')) recoveryRequests.push(request.postDataJSON())
   })
   await openChat(page)
-  await ask(page, 'Quiero recuperar mi cuenta', 'Completa tu correo, DNI y número telefónico')
-  await page.getByLabel('Correo', { exact: true }).fill('qa@example.com')
-  await page.getByLabel('DNI', { exact: true }).fill('12345678')
-  await page.getByLabel('Número telefónico').fill('900000001')
-  await page.getByRole('button', { name: 'Dejar datos listos' }).click()
-  await expect(page.getByRole('log')).toContainText('La solicitud aún no se ha enviado al gimnasio')
+  await ask(page, 'Quiero recuperar mi cuenta', 'solicitar un enlace de recuperación')
+  const dialog = page.getByRole('dialog', { name: 'Recuperar contraseña' })
+  const email = dialog.getByRole('textbox', { name: 'Correo' })
+  await email.fill('qa@example.com')
+  await dialog.getByRole('button', { name: 'Cerrar recuperación' }).click()
 
   await ask(page, 'qa@example.com', 'no escribas datos personales')
-  expect(payloads).toHaveLength(1)
+  await ask(page, 'Olvidé mi contraseña', 'solicitar un enlace de recuperación')
+  await expect(email).toHaveValue('')
+  await dialog.getByRole('button', { name: 'Cerrar recuperación' }).click()
+  expect(recoveryRequests).toEqual([])
+  expect(payloads).toHaveLength(2)
   expect(payloads[0]).toContain('Quiero recuperar mi cuenta')
-  expect(payloads[0]).not.toMatch(/qa@example\.com|12345678|900000001/)
+  expect(payloads.join(' ')).not.toContain('qa@example.com')
   await expect(page.getByRole('log')).not.toContainText('qa@example.com')
 })
 

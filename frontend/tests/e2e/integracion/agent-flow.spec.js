@@ -31,21 +31,24 @@ test('flujo público: visitante consulta plan y horario a través del backend', 
   expect(calls).toEqual([200, 200])
 })
 
-test('flujo de privacidad: recuperar cuenta no envía datos personales', async ({ page }) => {
-  const payloads = []
+test('el diálogo del agente solicita el enlace a la ruta de autenticación', async ({ page }) => {
+  const messages = []
   page.on('request', request => {
-    if (request.url().endsWith('/api/agente/mensajes')) payloads.push(request.postData() || '')
+    if (request.url().endsWith('/api/agente/mensajes')) messages.push(request.postDataJSON())
   })
   await openChat(page)
 
   await ask(page, 'quiero recuperar mi cuenta')
-  await expect(page.getByLabel('Correo', { exact: true })).toBeVisible()
-  await page.getByLabel('Correo', { exact: true }).fill('qa@example.com')
-  await page.getByLabel('DNI', { exact: true }).fill('12345678')
-  await page.getByLabel('Número telefónico').fill('900000001')
-  await page.getByRole('button', { name: 'Dejar datos listos' }).click()
-  await expect(page.getByRole('log')).toContainText('La solicitud aún no se ha enviado al gimnasio')
-  expect(payloads).toHaveLength(1)
-  expect(payloads[0]).toContain('quiero recuperar mi cuenta')
-  expect(payloads[0]).not.toMatch(/qa@example\.com|12345678|900000001/)
+  const dialog = page.getByRole('dialog', { name: 'Recuperar contraseña' })
+  await dialog.getByRole('textbox', { name: 'Correo' }).fill('qa@example.com')
+  const [response] = await Promise.all([
+    page.waitForResponse(response => response.url().endsWith('/api/auth/recuperar-contrasena')),
+    dialog.getByRole('button', { name: 'Enviar enlace de recuperación' }).click(),
+  ])
+  expect(response.status()).toBe(202)
+  expect(response.request().postDataJSON()).toEqual({ correo: 'qa@example.com' })
+  await expect(dialog.getByRole('status')).toContainText('Si el correo está registrado, recibirás un enlace')
+  await dialog.getByRole('button', { name: 'Entendido' }).click()
+  await expect(page.getByRole('log')).not.toContainText('qa@example.com')
+  expect(messages).toEqual([{ mensaje: 'quiero recuperar mi cuenta', id_conversacion: null }])
 })

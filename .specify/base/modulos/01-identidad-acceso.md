@@ -48,6 +48,9 @@ desactivar una cuenta y comprobar que su sesión deja de dar acceso.
    Si identifica una cuenta, el sistema envía un enlace temporal al correo.
    Un enlace vigente permite guardar una contraseña nueva una vez y volver
    al inicio de sesión.
+   Preguntar por recuperación en el asistente abre el mismo diálogo. El correo
+   se envía a la API de autenticación y queda fuera del historial y las
+   solicitudes del chat.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -58,7 +61,7 @@ desactivar una cuenta y comprobar que su sesión deja de dar acceso.
 | CA-05 | [session-validation.test.js](../../../frontend/tests/identidad_acceso/integracion/session-validation.test.js) y [application-context.test.js](../../../frontend/tests/paneles_configuracion/integracion/application-context.test.js). |
 | CA-06 | [public-navigation.test.js](../../../frontend/tests/identidad_acceso/integracion/public-navigation.test.js), [module-navigation.test.js](../../../frontend/tests/paneles_configuracion/integracion/module-navigation.test.js) y [validación en navegador](../validaciones/navegacion-publica/validation.md). |
 | CA-07 | [test_perfil_propio.py](../../../backend/tests/identidad_acceso/integracion/test_perfil_propio.py), [perfil-propio.test.js](../../../frontend/tests/identidad_acceso/integracion/perfil-propio.test.js) y [validación de Configuración](../validaciones/perfil-propio/validation.md). |
-| CA-08 | [test_recuperar_password.py](../../../backend/tests/identidad_acceso/integracion/test_recuperar_password.py) y [validación de recuperación](../validaciones/recuperar-password/validation.md). |
+| CA-08 | [test_recuperar_password.py](../../../backend/tests/identidad_acceso/integracion/test_recuperar_password.py), [validación de recuperación](../validaciones/recuperar-password/validation.md) y [recorrido desde el agente](../../../frontend/tests/e2e/integracion/agent-flow.spec.js). |
 
 ## 4. Technical Constraints
 

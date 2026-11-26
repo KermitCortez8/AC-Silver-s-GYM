@@ -124,33 +124,46 @@ test('operación privada se orienta a controles de la plataforma', async ({ page
   await expect(page.getByRole('link', { name: 'Ir al acceso' })).toHaveAttribute('href', '/login');
 });
 
-test('recuperación reúne datos solo en el navegador sin enviarlos a la API', async ({ page }) => {
+test('recuperación valida el correo y permite reintentar la solicitud al servicio de autenticación', async ({ page }) => {
   await setup(page, { body: {
     id_conversacion: 'synthetic-conversation', estado: 'respondida',
-    texto: 'Completa tu correo, DNI y número telefónico en el formulario de abajo.',
+    texto: 'Ingresa el correo asociado a tu cuenta en el formulario para solicitar un enlace de recuperación.',
     accion: 'recuperacion_local', enlaces: [],
   } });
-  const requests = [];
+  const messages = [];
+  const recoveryRequests = [];
   page.on('request', request => {
-    if (request.url().endsWith('/agente/mensajes')) requests.push(request.postData());
+    if (request.url().endsWith('/agente/mensajes')) messages.push(request.postDataJSON());
+  });
+  await page.route('**/api/auth/recuperar-contrasena', route => {
+    recoveryRequests.push(route.request().postDataJSON());
+    return recoveryRequests.length === 1
+      ? route.fulfill({ status: 503, json: { detail: 'Recuperación temporalmente indisponible.' } })
+      : route.fulfill({ status: 202, json: {} });
   });
 
   await ask(page, 'quiero recuperar mi cuenta');
-  await page.getByLabel('Correo', { exact: true }).fill('prueba@example.com');
-  await page.getByLabel('DNI', { exact: true }).fill('12345678');
-  await page.getByLabel('Número telefónico').fill('900000001');
-  await expect(page.getByText('Tu solicitud aún no se enviará al gimnasio.')).toBeVisible();
-  await page.getByRole('button', { name: 'Dejar datos listos' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Recuperar contraseña' });
+  const email = dialog.getByRole('textbox', { name: 'Correo' });
+  const submit = dialog.getByRole('button', { name: 'Enviar enlace de recuperación' });
+  await expect(dialog.getByRole('textbox')).toHaveCount(1);
+  await email.fill('correo-invalido');
+  await submit.click();
+  await expect(email).toHaveAttribute('aria-invalid', 'true');
+  expect(recoveryRequests).toEqual([]);
 
-  await expect(page.getByRole('log')).toContainText('La solicitud aún no se ha enviado al gimnasio');
+  await email.fill('prueba@example.com');
+  await submit.click();
+  await expect(dialog.getByRole('alert')).toHaveText('Recuperación temporalmente indisponible.');
+  await expect(email).toHaveValue('prueba@example.com');
+  await submit.click();
+  await expect(dialog.getByRole('status')).toContainText('Si el correo está registrado, recibirás un enlace');
+  await dialog.getByRole('button', { name: 'Entendido' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByLabel('Tu pregunta para Silver')).toBeFocused();
   await expect(page.getByRole('log')).not.toContainText('prueba@example.com');
-  expect(requests).toHaveLength(1);
-  expect(requests[0]).toContain('quiero recuperar mi cuenta');
-  expect(requests[0]).not.toContain('prueba@example.com');
-  expect(requests[0]).not.toContain('12345678');
-  await page.getByRole('button', { name: 'Cerrar asistente' }).click();
-  await page.getByRole('button', { name: 'Abrir asistente del gimnasio' }).click();
-  await expect(page.getByRole('log')).not.toContainText('tus datos quedaron preparados');
+  expect(messages).toEqual([{ mensaje: 'quiero recuperar mi cuenta', id_conversacion: null }]);
+  expect(recoveryRequests).toEqual([{ correo: 'prueba@example.com' }, { correo: 'prueba@example.com' }]);
 });
 
 test('dato personal escrito en el chat se bloquea antes de llamar a la API', async ({ page }) => {

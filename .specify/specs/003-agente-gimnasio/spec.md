@@ -1,7 +1,7 @@
 # Agente de atención del gimnasio · alcance verificable de v1
 
 **ID:** `003-agente-gimnasio` · **Implementación:** `levano/agenteAgente.v1` · **Pruebas:** `levano/agenteAgente.v1-pruebas` · **Revisión:** 2026-11-19.
-**Estado:** implementado en estas ramas, todavía no integrado en `develop`. La batería automatizada usa dobles de prueba; hay una prueba Playwright de lectura del catálogo real de Supabase y una comprobación manual previa de Groq. No se ha certificado un despliegue público.
+**Estado:** implementado en `develop`. La batería automatizada usa dobles de prueba. La prueba Playwright de lectura del catálogo real de Supabase y la comprobación manual de Groq corresponden a verificaciones anteriores, registradas en validación.
 **Fuentes:** [contexto](context.md), [contrato HTTP](contracts/agente-publico.md), [batería](qa-v1-bateria.md) y [validación](validation.md).
 
 ## 1. Sprint Goal
@@ -26,11 +26,11 @@ Como visitante, quiero recibir orientación sin que el agente revele datos priva
 
 **Prueba independiente:** pedir una matrícula, un cobro o datos de otro cliente; comprobar que no hay escritura ni revelación de información privada. Saludar, agradecer y preguntar algo claramente ajeno al gimnasio; comprobar la respuesta y el límite de la conversación.
 
-### US3 · Entender el registro y preparar una recuperación (P1)
+### US3 · Entender el registro y solicitar un enlace de recuperación (P1)
 
 Como visitante, quiero saber cómo registrarme y qué hacer si no puedo entrar a mi cuenta, sin compartir mis datos personales en el chat público.
 
-**Prueba independiente:** pedir instrucciones de registro y verificar el enlace a `/registro`; pedir recuperación y comprobar que correo, DNI y teléfono quedan solo en el navegador y no se envían al backend ni al dueño.
+**Prueba independiente:** pedir instrucciones de registro y verificar el enlace a `/registro`. Pedir recuperación, usar el formulario de correo y comprobar que la solicitud se envía solo a la API de autenticación.
 
 ## 3. Acceptance Criteria
 
@@ -38,13 +38,13 @@ Como visitante, quiero saber cómo registrarme y qué hacer si no puedo entrar a
 2. **CA-02.** Horarios y hechos. Una pregunta explícita por horarios del gimnasio consulta las clases públicas activas, sin depender de que Groq elija una herramienta. Se muestran los horarios actuales por actividad; si se pide una actividad concreta, se filtran las demás. Si no hay horarios para ella, no se inventan. El modelo no aporta cifras ni redacta la respuesta factual: el backend la arma desde el resultado consultado.
 3. **CA-03.** Operaciones privadas. Pedir matrícula, cobro, cancelación, activación o datos de otra persona no ejecuta la operación ni consulta datos privados; se orienta al visitante hacia los controles de la plataforma.
 4. **CA-04.** Fallos y ausencia de datos. Si Groq falla o no selecciona una herramienta, el agente consulta el catálogo público para preguntas reconocibles sobre planes u horarios. Un catálogo vacío devuelve una respuesta sin cifras inventadas. La API informa indisponibilidad cuando falla el catálogo o falta una consulta de respaldo.
-5. **CA-05.** Datos sensibles. El chat intercepta los patrones probados de correo, DNI, teléfono, contraseña y tarjeta antes de llamar al proveedor; el formulario de recuperación no incorpora esos datos al historial ni al mensaje HTTP. Esta protección requiere una revisión adicional para datos personales no cubiertos por los patrones actuales.
+5. **CA-05.** Datos sensibles. El chat intercepta los patrones probados de correo, DNI, teléfono, contraseña y tarjeta antes de llamar al proveedor. El correo del formulario de recuperación queda fuera del historial y de las peticiones al agente. Esta protección requiere una revisión adicional para datos personales no cubiertos por los patrones actuales.
 6. **CA-06.** Herramientas cerradas. Un mensaje del usuario no puede cambiar permisos. El backend valida nombre y argumentos de la herramienta elegida por el modelo; rechaza una operación, tema o intención no permitidos sin ejecutarlos.
 7. **CA-07.** Contexto mínimo. Cada conversación recibe un identificador opaco y conserva solo el tema público reciente durante 30 minutos en memoria del proceso. Dos identificadores no comparten ese tema; no se guarda el texto completo de la conversación en el backend.
 8. **CA-08.** Prueba repetible. Los casos normales, de error y de abuso se ejecutan con proveedor y catálogo controlados sin pagos, correos ni llamadas reales. Una prueba opcional y separada compara el horario mostrado con la lectura pública actual de Supabase.
 9. **CA-09.** Información pública revisada. Preguntas sobre actividades, primera visita, principiantes, ubicación, registro, acceso o cupos devuelven la ficha pública aprobada y su enlace. Un tema desconocido o argumentos adicionales se rechazan.
 10. **CA-10.** Conversación acotada. Saludos y cortesías breves reciben respuestas naturales sin llamada al proveedor; una pregunta de negocio que contiene un saludo conserva su intención. Ante un tema claramente ajeno, el agente redirige con cortesía; una segunda pregunta ajena recibe una invitación más directa a volver al gimnasio. Una pregunta ambigua pide más detalle.
-11. **CA-11.** Recuperación local. Pedir recuperación abre un formulario para correo, DNI y teléfono. Completarlo no envía una solicitud al backend ni al dueño, no restablece la cuenta y no muestra esos datos en el historial. Al cerrar el chat se borra el borrador local.
+11. **CA-11.** Recuperación de contraseña. Pedir recuperación abre el diálogo de Inicio de sesión, que pide solo el correo y solicita un enlace a la API de autenticación. La confirmación es genérica. Si falla la solicitud, el diálogo conserva el correo y permite reintentar. Al cerrar el diálogo se descarta su estado.
 12. **CA-12.** Guía de registro. Preguntar cómo registrarse devuelve pasos basados en la página de Registro y un enlace a ella. La instrucción directa de inscribir o pagar no inicia ese flujo.
 13. **CA-13.** Cuota actual. El proveedor tiene una cuota global por proceso de 10 selecciones por minuto y 100 por día UTC. Cuando se agota, el catálogo atiende las consultas reconocibles y las demás reciben HTTP 429. La cuota se contabiliza por instancia.
 
@@ -60,7 +60,7 @@ Como visitante, quiero saber cómo registrarme y qué hacer si no puedo entrar a
 | CA-08 | Casos aislados y lectura real en [matriz y resultados](qa-v1-bateria.md). |
 | CA-09 | Fichas públicas en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
 | CA-10 | Cortesías y redirección en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
-| CA-11 | Recuperación local en [pruebas de interfaz](../../../frontend/tests/e2e/simuladas/agent.spec.js) y [recorrido conectado](../../../frontend/tests/e2e/integracion/agent-flow.spec.js). |
+| CA-11 | Solicitud de enlace en [pruebas de interfaz](../../../frontend/tests/e2e/simuladas/agent.spec.js), [recorrido conectado](../../../frontend/tests/e2e/integracion/agent-flow.spec.js) y [pruebas de autenticación](../../../backend/tests/identidad_acceso/integracion/test_recuperar_password.py). |
 | CA-12 | Guía de registro en [pruebas de flujo](../../../backend/tests/agente/test_agent_flow.py). |
 | CA-13 | Cuota por proceso en [pruebas HTTP](../../../backend/tests/agente/test_agent_http.py). |
 
@@ -77,7 +77,7 @@ Como visitante, quiero saber cómo registrarme y qué hacer si no puedo entrar a
 Turno de conversación, selección de herramienta, tema temporal y respuesta basada en datos públicos. No se crean entidades de cliente, matrícula, recuperación o pago en esta entrega.
 
 - **SC-001:** En los casos con catálogo controlado, cada importe y horario afirmado coincide con el dato de entrada; el caso de lectura real coteja al menos un horario actual con Supabase.
-- **SC-002:** En los casos automatizados de privacidad y abuso se observan cero llamadas al proveedor con datos sensibles y cero escrituras de negocio; la recuperación no envía los datos del formulario.
+- **SC-002:** En los casos automatizados de privacidad y abuso se observan cero llamadas al proveedor con datos sensibles y cero escrituras de negocio desde el chat. La solicitud de recuperación envía solo el correo al endpoint de autenticación.
 - **SC-003:** Los recorridos de interfaz se pueden repetir en Chromium, Firefox y WebKit, con resultados y límites registrados en [validación](validation.md) y [batería](qa-v1-bateria.md).
 
 ## 4. Technical Constraints
@@ -86,7 +86,7 @@ Turno de conversación, selección de herramienta, tema temporal y respuesta bas
 - Reutilizar `GymService` para planes y horarios públicos. El modelo selecciona una herramienta permitida y el backend lee los datos. Las consultas reconocibles de planes y horarios tienen un respaldo directo en el catálogo. La guía de registro se entrega desde una ficha revisada.
 - La información general proviene de fichas públicas revisadas en `public_gym_knowledge.py`. Revisarlas cuando cambien Landing o las preguntas frecuentes; no hay indexación del repositorio ni RAG en v1.
 - Groq se usa en el backend como **selector de herramientas**, con modelo `openai/gpt-oss-120b`. Su clave no se expone en `VITE_*`. Este SPEC no crea ni modifica variables de entorno.
-- El endpoint público recibe un mensaje de 1 a 500 caracteres y un identificador de conversación opcional de hasta 64. El backend conserva solo el tema reciente durante 30 minutos en memoria. El formulario de recuperación mantiene un borrador solo en el navegador.
+- El endpoint del agente recibe un mensaje de 1 a 500 caracteres y un identificador de conversación opcional de hasta 64. El backend conserva solo el tema reciente durante 30 minutos en memoria. El diálogo compartido envía el correo a `POST /api/auth/recuperar-contrasena`.
 - La cuota de 10 llamadas por minuto y 100 por día UTC es atómica solo dentro de un proceso. Una cuota distribuida y una revisión adicional de privacidad son necesarias antes de tráfico público real.
 - Las operaciones de cuenta, pagos, matrículas y datos de terceros siguen en las rutas privadas con sus permisos existentes. La app local `agent_readonly_app.py` expone únicamente el chat y tres lecturas públicas para demostrar el flujo sin arrancar trabajos de fondo.
 - El [SPEC anterior](../002-chatbot-clientes/spec.md) y los prototipos de Rodrigo son referencias de experiencia; no prueban esta integración ni se fusionaron a la rama.
@@ -110,14 +110,14 @@ Turno de conversación, selección de herramienta, tema temporal y respuesta bas
 | Conversaciones simultáneas | Cada una conserva su contexto aislado. | CA-07 |
 | Tema público desconocido o argumento malformado | Se rechaza sin consultar otras fuentes. | CA-09 |
 | Pregunta ambigua o claramente ajena | La primera pide detalle; la segunda redirige al gimnasio sin inventar hechos. | CA-10 |
-| Recuperación de cuenta con datos de prueba | El formulario queda local; no se promete contacto ni restablecimiento. | CA-11 |
+| Recuperación de cuenta con correo de prueba | El diálogo confirma la recepción con el mismo mensaje genérico y permite reintentar ante un fallo de la API. | CA-11 |
 | Pregunta «¿cómo me registro?» frente a «inscríbeme» | La primera explica el proceso; la segunda no ejecuta matrícula. | CA-03, CA-12 |
 | Cuota del proceso agotada | Lectura del catálogo para preguntas reconocibles y HTTP 429 para las demás. | CA-13 |
 
 ### Decisiones de alcance
 
 - V1 orienta sobre información pública y conserva una conversación breve. No es un agente entrenado con toda la base, no hace búsquedas semánticas y no consulta tablas por instrucciones libres del modelo.
-- Matrículas, cancelaciones, compras, consultas privadas y el envío de solicitudes de recuperación requieren criterios y permisos de otra entrega.
+- Matrículas, cancelaciones, compras y consultas privadas requieren criterios y permisos de otra entrega. La solicitud de recuperación reutiliza el flujo de autenticación del gimnasio.
 - El trabajo de Rodrigo se usa como referencia, según indicó el usuario; no se fusionó en esta rama.
 
 ## 7. Definition of Done
