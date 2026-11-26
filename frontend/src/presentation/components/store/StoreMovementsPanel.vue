@@ -169,8 +169,10 @@ const monthKey = (value) => (value ? limaDate(new Date(value)).slice(0, 7) : '')
 const monthLabel = (key) => new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' })
   .format(new Date(`${key}-15T12:00:00Z`));
 
+// Solo es venta lo cobrado: un Yape por confirmar o una tarjeta sin pagar no cuentan.
 const movements = computed(() =>
   (gymStore.storeOrders || [])
+    .filter((order) => String(order.estado_pago || 'PAGADO').toUpperCase() === 'PAGADO')
     .flatMap((order) => {
       const client = orderClient(order);
       return (order.items || []).map((item, index) => ({

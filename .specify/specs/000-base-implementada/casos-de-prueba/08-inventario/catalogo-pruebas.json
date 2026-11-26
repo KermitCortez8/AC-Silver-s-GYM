@@ -1104,8 +1104,8 @@
       "type": "integracion",
       "path": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
       "line": 179,
-      "name": "test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
-      "source_function": "test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+      "name": "test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final",
+      "source_function": "test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final",
       "variant": null,
       "parameter_names": [],
       "fixtures": [],
@@ -1116,8 +1116,8 @@
         "pytest.raises(ValueError, match=\"cancelado\")"
       ],
       "checks_in_source": 3,
-      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
-      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final -q",
+      "selector": "tests/inventario/integracion/test_inventario_tienda_stock.py::test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final",
+      "command": "python -m pytest tests/inventario/integracion/test_inventario_tienda_stock.py::test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final -q",
       "id": "CT-M08-I-BE-009"
     },
     {

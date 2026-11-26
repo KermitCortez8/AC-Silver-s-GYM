@@ -36,13 +36,10 @@
       <InventoryMovementsPanel :active="activeTab === 'movimientos'" />
     </div>
 
+    <InventoryRetirementsPanel v-if="retirementsVisited" v-show="activeTab === 'bajas'" />
+
     <section v-if="articlesVisited" v-show="activeTab === 'articulos'" class="rounded-2xl border border-white/10 bg-white/5 p-6">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
-          <h2 class="mt-2 text-2xl font-black text-white">Listado de inventario</h2>
-        </div>
-      </div>
+      <InventoryListHeader :items="sortedInventory" />
 
       <div class="mt-5 flex flex-wrap gap-2.5">
         <button
@@ -145,8 +142,8 @@
                     <button class="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/5" @click="editItem(item)">
                       Editar
                     </button>
-                    <button class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 transition hover:bg-rose-400/10" @click="deleteItem(item.id)">
-                      Eliminar
+                    <button class="inline-flex items-center gap-1.5 rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-100 transition hover:bg-rose-400/10" :title="`Dar de baja ${item.name}`" @click="deleteItem(item.id)">
+                      <Archive :size="15" aria-hidden="true" /> Dar de baja
                     </button>
                   </div>
                 </td>
@@ -448,9 +445,10 @@
 
 <script setup>
 import QuantityInput from '../components/QuantityInput.vue';
-import { AlertCircle, Boxes, ChevronDown, ClipboardCheck, Eye, History, Info, Package } from 'lucide-vue-next';
+import { AlertCircle, Archive, Boxes, ChevronDown, ClipboardCheck, Eye, History, Info, Package } from 'lucide-vue-next';
 import { defineAsyncComponent } from 'vue';
 import InventoryUnitsPanel from '../components/inventory/InventoryUnitsPanel.vue';
+import InventoryListHeader from '../components/inventory/InventoryListHeader.vue';
 import ResourceModal from '../components/ResourceModal.vue';
 import ExtensibleSelect from '../components/common/ExtensibleSelect.vue';
 import SortableTh from '../components/common/SortableTh.vue';
@@ -463,9 +461,10 @@ import { INVENTORY_NAME_MAX_LENGTH, missingFieldsMessage, NOTES_MAX_LENGTH } fro
 import { useInventoryWorkspace } from '../composables/inventory/useInventoryWorkspace.js';
 
 const InventoryMovementsPanel = defineAsyncComponent(() => import('../components/inventory/InventoryMovementsPanel.vue'));
+const InventoryRetirementsPanel = defineAsyncComponent(() => import('../components/inventory/InventoryRetirementsPanel.vue'));
 
 const {
-  tabs, activeTab, articlesVisited, movementsVisited, inventoryEmptyMessage,
+  tabs, activeTab, articlesVisited, movementsVisited, retirementsVisited, inventoryEmptyMessage,
   inventory, searchQuery, selectedCategory, selectedLocation, selectedStatus,
   locationOptions, locationChoices, filteredInventory, sortKey, sortDir,
   SORT_COLUMNS, toggleSort, sortedInventory, paginaActual, porPagina,

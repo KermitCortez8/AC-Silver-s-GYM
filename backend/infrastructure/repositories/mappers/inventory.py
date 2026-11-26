@@ -20,6 +20,8 @@ def _map_inventory(row: dict[str, Any]) -> dict[str, Any]:
         "archivado": bool(row.get("archivado") or False),
         "eliminado": bool(row.get("eliminado") or False),
         "prefijo_activo": str(row.get("prefijo_activo") or ""),
+        # La fecha de baja solo existe con la migración 032.
+        **({"fecha_baja": str(row.get("fecha_baja") or "")[:10] or None} if "fecha_baja" in row else {}),
     }
 
 
@@ -34,6 +36,7 @@ def _inventory_to_remote(row: dict[str, Any]) -> dict[str, Any]:
         **_archived_field(row),
         # El prefijo solo viaja cuando existe: sin la migración 026 los demás artículos se siguen guardando.
         **({"prefijo_activo": str(row["prefijo_activo"])} if row.get("prefijo_activo") else {}),
+        **({"fecha_baja": _date_or_none(row["fecha_baja"])} if "fecha_baja" in row else {}),
         "id_item": int(row.get("id_item", 0) or 0),
         "Nombre_item": str(row.get("nombre_item") or ""),
         "Tipo": str(row.get("tipo") or "General"),

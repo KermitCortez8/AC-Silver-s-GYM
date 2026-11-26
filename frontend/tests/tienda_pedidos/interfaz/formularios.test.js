@@ -124,7 +124,7 @@ test('failed gallery refresh preserves previously loaded images', async (t) => {
 test('checkout validates customer data and prevents duplicate payments while preserving failed drafts', async () => {
   const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
   gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
-  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@', dni: '12345678', method: 'plin', reference: 'PAY-1' });
   let calls = 0;
   let rejectSave;
   gym.createStoreOrder = () => { calls++; return new Promise((_resolve, reject) => { rejectSave = reject; }); };
@@ -156,7 +156,7 @@ test('checkout validates customer data and prevents duplicate payments while pre
 test('checkout accepts the contact email of a client account outside the sign-up domains', async () => {
   const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
   gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
-  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'socio@outlook.com', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'socio@outlook.com', dni: '12345678', method: 'plin', reference: 'PAY-1' });
   const sent = [];
   gym.createStoreOrder = async (order) => { sent.push(order); throw new Error('Servicio no disponible'); };
   await setup.submitPayment();

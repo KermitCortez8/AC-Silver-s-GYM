@@ -20,6 +20,7 @@ export const useInventoryWorkspace = () => {
   const tabs = [
     { value: 'articulos', label: 'Artículos' },
     { value: 'movimientos', label: 'Movimientos' },
+    { value: 'bajas', label: 'Bajas' },
   ];
   const activeTab = computed({
     get: () => (tabs.some((tab) => tab.value === route.query.tab) ? route.query.tab : 'articulos'),
@@ -29,6 +30,7 @@ export const useInventoryWorkspace = () => {
   });
   const articlesVisited = ref(activeTab.value === 'articulos');
   const movementsVisited = ref(activeTab.value === 'movimientos');
+  const retirementsVisited = ref(activeTab.value === 'bajas');
   const inventory = computed(() => gymStore.inventory.filter((item) => !item.archived));
   const inventoryEmptyMessage = computed(() => {
     if (inventory.value.length) return 'Ningún artículo coincide con los filtros aplicados.';
@@ -310,7 +312,7 @@ export const useInventoryWorkspace = () => {
    * Elimina el registro indicado.
    */
   const deleteItem = async (id) => {
-    if (!window.confirm('¿Eliminar este artículo?\n\nSi ya tiene movimientos o se vende en Tienda no se borrará: se archivará (deja de mostrarse) y su historial se conserva.')) return;
+    if (!window.confirm('¿Dar de baja este artículo?\n\nSi ya tiene movimientos o se vende en Tienda no se borra: queda en la pestaña Bajas y su historial se conserva.')) return;
     try {
       const result = await gymStore.deleteInventoryItem(id);
       feedbackTone.value = 'success';
@@ -396,11 +398,12 @@ export const useInventoryWorkspace = () => {
   watch(activeTab, (tab) => {
     if (tab === 'articulos') articlesVisited.value = true;
     if (tab === 'movimientos') movementsVisited.value = true;
+    if (tab === 'bajas') retirementsVisited.value = true;
     if (route.name === 'Inventory') loadInventoryTab();
   });
 
   return {
-    route, router, gymStore, tabs, activeTab, articlesVisited, movementsVisited, inventoryEmptyMessage,
+    route, router, gymStore, tabs, activeTab, articlesVisited, movementsVisited, retirementsVisited, inventoryEmptyMessage,
     inventory, searchQuery, selectedCategory, selectedLocation, selectedStatus,
     locationOptions, locationChoices, filteredInventory, sortKey, sortDir,
     SORT_COLUMNS, toggleSort, sortedInventory, paginaActual, porPagina,

@@ -4,6 +4,38 @@ import { requireList, requireRecord } from '../services/responseValidation.js';
 import { normalizeBackendClientToMember, normalizeUser, normalizePlanFromBackend } from '../../domain/utils/gymRules.js';
 import { syncResources } from '../services/syncResources.js';
 
+const INVENTORY_RESOURCES = ['Inventario', 'Unidades de inventario', 'Movimientos'];
+
+/** Recursos que carga cada sección; las recargas tras guardar piden solo lo que cambió. */
+export const SYNC_SECTIONS = Object.freeze({
+  clients: ['Clientes', 'Mi perfil', 'Planes', 'Promociones'],
+  users: ['Usuarios'],
+  plans: ['Planes'],
+  schedules: ['Horarios por servicio'],
+  inventory: INVENTORY_RESOURCES,
+  inventoryItems: ['Inventario'],
+  inventoryUnits: ['Unidades de inventario'],
+  // Estado de una unidad: cambia la unidad y el estado resumido de su artículo.
+  inventoryUnitState: ['Inventario', 'Unidades de inventario'],
+  // Traslado: cambia la ubicación de las unidades y agrega movimientos; el stock no cambia.
+  inventoryUnitsHistory: ['Unidades de inventario', 'Movimientos'],
+  inventoryMovements: ['Movimientos'],
+  inventoryHistory: ['Inventario', 'Movimientos'],
+  inventoryMovementEditor: ['Inventario', 'Unidades de inventario', 'Productos'],
+  inventoryStore: [...INVENTORY_RESOURCES, 'Productos'],
+  store: ['Productos'],
+  stockCatalog: ['Inventario', 'Productos'],
+  orders: ['Pedidos', 'Clientes'],
+  // Cancelar un pedido devuelve stock a la Tienda: pedidos y productos, sin recargar todo el sistema.
+  ordersStock: ['Pedidos', 'Productos'],
+  promotions: ['Promociones', 'Planes'],
+  payments: ['Pagos de membresías'],
+  enrollment: ['Clientes', 'Mi perfil', 'Horarios por servicio', 'Matrículas'],
+  attendance: ['Clientes', 'Matrículas', 'Asistencias'],
+  trainer: ['Supervisión'],
+  dashboard: ['Clientes', 'Mi perfil', 'Inventario', 'Productos', 'Horarios por servicio', 'Matrículas', 'Asistencias'],
+});
+
 export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiGet }) => {
   const apiBase = ctx.apiBase || '/api';
 
@@ -69,6 +101,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
           status: i.estado || '',
           observations: i.observaciones || '',
           archived: Boolean(i.archivado),
+          retiredAt: i.fecha_baja || '',
           byUnit: Boolean(i.prefijo_activo) && isUnitCategory(i.tipo),
         }));
       }],
@@ -107,30 +140,7 @@ export const createSynchronizationModule = (ctx, { authHeaders, parseError, apiG
         await ctx.refreshAttendanceFromBackend();
       }]);
 
-      const inventoryResources = ['Inventario', 'Unidades de inventario', 'Movimientos'];
-      const sectionResources = {
-        clients: ['Clientes', 'Mi perfil', 'Planes', 'Promociones'],
-        users: ['Usuarios'],
-        plans: ['Planes'],
-        schedules: ['Horarios por servicio'],
-        inventory: inventoryResources,
-        inventoryItems: ['Inventario'],
-        inventoryUnits: ['Unidades de inventario'],
-        inventoryMovements: ['Movimientos'],
-        inventoryHistory: ['Inventario', 'Movimientos'],
-        inventoryMovementEditor: ['Inventario', 'Unidades de inventario', 'Productos'],
-        inventoryStore: [...inventoryResources, 'Productos'],
-        store: ['Productos'],
-        stockCatalog: ['Inventario', 'Productos'],
-        orders: ['Pedidos', 'Clientes'],
-        promotions: ['Promociones', 'Planes'],
-        payments: ['Pagos de membresías'],
-        enrollment: ['Clientes', 'Mi perfil', 'Horarios por servicio', 'Matrículas'],
-        attendance: ['Clientes', 'Matrículas', 'Asistencias'],
-        trainer: ['Supervisión'],
-        dashboard: ['Clientes', 'Mi perfil', 'Inventario', 'Productos', 'Horarios por servicio', 'Matrículas', 'Asistencias'],
-      };
-      const labels = sectionResources[section];
+      const labels = SYNC_SECTIONS[section];
       if (section !== 'all' && !labels) throw new Error('Sección de datos desconocida.');
       const selectedTasks = labels ? tasks.filter(([label]) => labels.includes(label)) : tasks;
       await syncResources(selectedTasks.map(([label, load]) => [label, async () => {

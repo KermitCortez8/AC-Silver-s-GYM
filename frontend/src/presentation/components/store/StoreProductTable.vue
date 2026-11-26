@@ -144,10 +144,11 @@
                     Editar
                   </button>
                   <button
-                    class="rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-300 transition hover:bg-rose-400/10"
+                    class="inline-flex items-center gap-1.5 rounded-xl border border-rose-400/30 px-3 py-2 text-sm font-bold text-rose-300 transition hover:bg-rose-400/10"
+                    :title="`Dar de baja ${producto.nombre || 'producto'}`"
                     @click="$emit('delete', producto.id_producto)"
                   >
-                    Eliminar
+                    <Archive :size="15" aria-hidden="true" /> Dar de baja
                   </button>
                 </div>
               </td>
@@ -181,7 +182,7 @@
 import SortableTh from '../common/SortableTh.vue';
 import TablePager from '../common/TablePager.vue';
 import TableSearch from '../common/TableSearch.vue';
-import { Eye, X } from 'lucide-vue-next';
+import { Archive, Eye, X } from 'lucide-vue-next';
 const busqueda = defineModel('busqueda', { type: String });
 const categoriaActiva = defineModel('categoriaActiva', { type: String });
 const filtroEstado = defineModel('filtroEstado', { type: String });

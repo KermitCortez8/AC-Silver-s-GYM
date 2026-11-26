@@ -19,7 +19,7 @@ def product(api, **changes):
 def order(api, item, quantity=2, **changes):
     return api.client.post("/api/tienda/pedidos", json={
         "id_cliente": 1, "cliente_nombre": "Cliente QA 1", "cliente_correo": "cliente1@example.com",
-        "cliente_dni": "11111111", "metodo_pago": "Yape", "referencia_pago": "QA-no-cobro-real",
+        "cliente_dni": "11111111", "metodo_pago": "Plin", "referencia_pago": "QA-no-cobro-real",
         "items": [{"id_producto": item["id_producto"], "cantidad": quantity}], **changes,
     })
 
@@ -111,7 +111,7 @@ def test_tc102_compra_calcula_igv_reserva_stock_y_conserva_lineas(documented_api
     assert response.status_code == 201, response.text
     bought = response.json()
     assert (bought["subtotal"], bought["igv"], bought["total"]) == (30, 5.40, 35.40)
-    assert (bought["estado_pago"], bought["estado_pedido"]) == ("PAGADO", "PENDIENTE")
+    assert (bought["estado_pago"], bought["estado_pedido"]) == ("PAGADO", "CONFIRMADO")
     assert bought["items"][0]["cantidad"] == 2 and bought["items"][0]["precio_unitario"] == 15
     assert api.gym.get_producto_tienda(saved["id_producto"])["cantidad_stock"] == 8
     api.login("admin")

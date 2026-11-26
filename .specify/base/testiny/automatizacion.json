@@ -7,7 +7,7 @@
   "soporte": {
     "frontend/tests/soporte/servidor-ssr.js": "a06c5f0d5ece7b7d8ea25e7e33a80649045eb72b780294fee71aab53bdd7e2e0",
     "backend/tests/soporte/testiny_api.py": "6959efdadd58f47b46d9a6f4d2c16b3a414d43fece4bc085a205776bbf2d6d6c",
-    "frontend/tests/soporte/entorno-formularios.js": "8aa6fd208c84864044be1a5e0d573d38d61d561909dab2cc29d6905ddf76ede1",
+    "frontend/tests/soporte/entorno-formularios.js": "821d6b565d08602a0723d3ef03258edd6e00bfb4041838ae53b178f360e85e49",
     "frontend/tests/soporte/entorno-vistas.js": "92722dd8a6d22686075660caa096221fb417fd46794d966b15dd42659e199ef8",
     "backend/tests/soporte/tienda_checkout_stripe/api.py": "7b145d70b3d0b5cd6ec0d1093f4c8fc5045149f50f03c8a43e44c8531fc8d591",
     "backend/tests/soporte/tienda_checkout_stripe/checkout.mjs": "1fbf905a87be252fe840d7c70a5bd370d35360f67718576335c47a68e956a3a8",
@@ -172,7 +172,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_alta_de_item_tienda_registra_entrada_y_crea_producto_vacio",
       "minimo_variantes": 1,
-      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
+      "sha256": "360b504e252340a2ad2d4d7abdf92f127dc869d81a2fe42bb038770b5dcebcce"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_editar_item_no_modifica_el_stock": {
       "componente": "backend",
@@ -180,7 +180,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_editar_item_no_modifica_el_stock",
       "minimo_variantes": 1,
-      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
+      "sha256": "360b504e252340a2ad2d4d7abdf92f127dc869d81a2fe42bb038770b5dcebcce"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos": {
       "componente": "backend",
@@ -188,7 +188,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_eliminar_definitivo_con_historial_lo_oculta_y_conserva_ventas_y_movimientos",
       "minimo_variantes": 1,
-      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
+      "sha256": "360b504e252340a2ad2d4d7abdf92f127dc869d81a2fe42bb038770b5dcebcce"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_movimientos_de_pedido_solo_editan_fecha_y_descripcion": {
       "componente": "backend",
@@ -196,7 +196,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_movimientos_de_pedido_solo_editan_fecha_y_descripcion",
       "minimo_variantes": 1,
-      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
+      "sha256": "360b504e252340a2ad2d4d7abdf92f127dc869d81a2fe42bb038770b5dcebcce"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto": {
       "componente": "backend",
@@ -204,7 +204,7 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_reponer_tienda_pasa_unidades_de_la_reserva_al_producto",
       "minimo_variantes": 1,
-      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
+      "sha256": "360b504e252340a2ad2d4d7abdf92f127dc869d81a2fe42bb038770b5dcebcce"
     },
     "BE:inventario/integracion/test_inventario_tienda_stock.py::test_restaurar_producto_lo_devuelve_con_su_item": {
       "componente": "backend",
@@ -212,15 +212,15 @@
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
       "prueba": "test_restaurar_producto_lo_devuelve_con_su_item",
       "minimo_variantes": 1,
-      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
+      "sha256": "360b504e252340a2ad2d4d7abdf92f127dc869d81a2fe42bb038770b5dcebcce"
     },
-    "BE:inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final": {
+    "BE:inventario/integracion/test_inventario_tienda_stock.py::test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final": {
       "componente": "backend",
       "archivo": "backend/tests/inventario/integracion/test_inventario_tienda_stock.py",
       "clase": "tests.inventario.integracion.test_inventario_tienda_stock",
-      "prueba": "test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+      "prueba": "test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final",
       "minimo_variantes": 1,
-      "sha256": "3d04a794a1cc89fe011630ce3ea2045344ef912f2afd9bedf3660227d3016cc1"
+      "sha256": "360b504e252340a2ad2d4d7abdf92f127dc869d81a2fe42bb038770b5dcebcce"
     },
     "BE:inventario/integracion/test_testiny_inventario.py::test_tc081_tc082_crea_y_consulta_todos_los_datos_sin_mutar_stock": {
       "componente": "backend",
@@ -732,7 +732,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc092_tc093_catalogo_persiste_campos_y_consultar_no_cambia_stock",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc094_actualizar_precio_no_recalcula_pedido_historico": {
       "componente": "backend",
@@ -740,7 +740,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc094_actualizar_precio_no_recalcula_pedido_historico",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc095_producto_retirado_no_admite_compras": {
       "componente": "backend",
@@ -748,7 +748,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc095_producto_retirado_no_admite_compras",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc096_campos_requeridos_no_crean_producto_ni_reserva": {
       "componente": "backend",
@@ -756,7 +756,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc096_campos_requeridos_no_crean_producto_ni_reserva",
       "minimo_variantes": 2,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc097_precio_y_stock_invalidos_no_escriben": {
       "componente": "backend",
@@ -764,7 +764,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc097_precio_y_stock_invalidos_no_escriben",
       "minimo_variantes": 5,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc098_archivar_conserva_venta_y_oculta_producto_e_inventario": {
       "componente": "backend",
@@ -772,7 +772,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc098_archivar_conserva_venta_y_oculta_producto_e_inventario",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc103_stock_insuficiente_no_crea_pedido": {
       "componente": "backend",
@@ -780,7 +780,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc103_stock_insuficiente_no_crea_pedido",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc105_cantidad_invalida_no_crea_pedidos_ni_mueve_stock": {
       "componente": "backend",
@@ -788,7 +788,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc105_cantidad_invalida_no_crea_pedidos_ni_mueve_stock",
       "minimo_variantes": 4,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc107_confirmacion_no_exige_stock_ya_reservado": {
       "componente": "backend",
@@ -796,7 +796,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc107_confirmacion_no_exige_stock_ya_reservado",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc141_total_del_navegador_no_reemplaza_precio_autorizado": {
       "componente": "backend",
@@ -804,7 +804,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc141_total_del_navegador_no_reemplaza_precio_autorizado",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc196_compras_concurrentes_no_sobrevenden": {
       "componente": "backend",
@@ -812,7 +812,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc196_compras_concurrentes_no_sobrevenden",
       "minimo_variantes": 2,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc197_ciclo_entregado_y_cancelado_inmutable": {
       "componente": "backend",
@@ -820,7 +820,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc197_ciclo_entregado_y_cancelado_inmutable",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc198_cliente_no_administra_catalogo_ni_pedido_ajeno": {
       "componente": "backend",
@@ -828,7 +828,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc198_cliente_no_administra_catalogo_ni_pedido_ajeno",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "BE:tienda_pedidos/unitarias/test_testiny_lineas.py::test_tc156_linea_valida_cantidad_dos_y_rechazos_antes_de_comprar": {
       "componente": "backend",
@@ -1380,7 +1380,7 @@
       "clase": "tests/tienda_pedidos/interfaz/formularios.test.js",
       "prueba": "la papelera conserva su pestaña y las acciones de restaurar y eliminar",
       "minimo_variantes": 1,
-      "sha256": "ba115c8e22947212e49845ab22170e2692b68486c3649a066d40a3ac40c2c9dc"
+      "sha256": "0abe255b01c750af00ffa50b1093c5196f9cd50555f64d41aed2c967263166b3"
     },
     "FE:tienda_pedidos/interfaz/formularios.test.js::order status saves cannot overlap and retain their draft after failure": {
       "componente": "frontend",
@@ -1388,7 +1388,7 @@
       "clase": "tests/tienda_pedidos/interfaz/formularios.test.js",
       "prueba": "order status saves cannot overlap and retain their draft after failure",
       "minimo_variantes": 1,
-      "sha256": "ba115c8e22947212e49845ab22170e2692b68486c3649a066d40a3ac40c2c9dc"
+      "sha256": "0abe255b01c750af00ffa50b1093c5196f9cd50555f64d41aed2c967263166b3"
     },
     "FE:tienda_pedidos/interfaz/testiny-documentados.test.js::TC-096: producto incompleto muestra campos requeridos y no llama al servidor": {
       "componente": "frontend",
@@ -1444,7 +1444,7 @@
       "clase": "tests/tienda_pedidos/interfaz/testiny-pedidos.test.js",
       "prueba": "TC-106 y TC-108: pedidos cobrados muestran líneas y excluyen impagos de ventas",
       "minimo_variantes": 1,
-      "sha256": "b2e127449dd3eddcf1631e75535688d744800ddc4afd8f05f0e4c3f1d1cde5be"
+      "sha256": "0c38c27a254654bdf81b9077484826b7614d49576735534a1ae81fed464d3dce"
     },
     "FE:tienda_pedidos/interfaz/testiny-pedidos.test.js::TC-106: confirmar y entregar usan la observación guardada y actualizar reconsulta el módulo": {
       "componente": "frontend",
@@ -1452,7 +1452,7 @@
       "clase": "tests/tienda_pedidos/interfaz/testiny-pedidos.test.js",
       "prueba": "TC-106: confirmar y entregar usan la observación guardada y actualizar reconsulta el módulo",
       "minimo_variantes": 1,
-      "sha256": "b2e127449dd3eddcf1631e75535688d744800ddc4afd8f05f0e4c3f1d1cde5be"
+      "sha256": "0c38c27a254654bdf81b9077484826b7614d49576735534a1ae81fed464d3dce"
     },
     "FE:transversales/arquitectura/layer-boundaries.test.js::catalog and payments work with injected backend adapters": {
       "componente": "frontend",
@@ -1708,7 +1708,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_alta_de_equipo_crea_una_unidad_por_stock_inicial",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_altas_y_entradas_anotan_en_mov_inv_los_codigos_creados": {
       "componente": "backend",
@@ -1716,7 +1716,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_altas_y_entradas_anotan_en_mov_inv_los_codigos_creados",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_articulo_que_pasa_a_equipo_recibe_codigos_para_su_stock": {
       "componente": "backend",
@@ -1724,7 +1724,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_articulo_que_pasa_a_equipo_recibe_codigos_para_su_stock",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_articulos_que_no_son_equipo_no_tienen_unidades": {
       "componente": "backend",
@@ -1732,7 +1732,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_articulos_que_no_son_equipo_no_tienen_unidades",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_editar_unidad_valida_estado_y_bajas": {
       "componente": "backend",
@@ -1740,7 +1740,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_editar_unidad_valida_estado_y_bajas",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_entrada_continua_el_correlativo": {
       "componente": "backend",
@@ -1748,7 +1748,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_entrada_continua_el_correlativo",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_equipos_con_unidades_no_admiten_ajustes_ni_cambios_de_cantidad": {
       "componente": "backend",
@@ -1756,7 +1756,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_equipos_con_unidades_no_admiten_ajustes_ni_cambios_de_cantidad",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_estado_del_articulo_resume_el_de_sus_unidades": {
       "componente": "backend",
@@ -1764,7 +1764,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_estado_del_articulo_resume_el_de_sus_unidades",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_operar_desde_tienda_no_borra_el_stock_de_los_equipos": {
       "componente": "backend",
@@ -1772,7 +1772,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_operar_desde_tienda_no_borra_el_stock_de_los_equipos",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_prefijo_usa_las_iniciales_de_las_palabras_significativas": {
       "componente": "backend",
@@ -1780,7 +1780,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_prefijo_usa_las_iniciales_de_las_palabras_significativas",
       "minimo_variantes": 6,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_renombrar_no_cambia_el_prefijo_ni_los_codigos": {
       "componente": "backend",
@@ -1788,7 +1788,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_renombrar_no_cambia_el_prefijo_ni_los_codigos",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_salida_da_de_baja_las_unidades_elegidas_y_conserva_su_historial": {
       "componente": "backend",
@@ -1796,7 +1796,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_salida_da_de_baja_las_unidades_elegidas_y_conserva_su_historial",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_salida_rechaza_unidades_invalidas": {
       "componente": "backend",
@@ -1804,7 +1804,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_salida_rechaza_unidades_invalidas",
       "minimo_variantes": 4,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:inventario/integracion/test_inventario_unidades.py::test_solo_equipos_y_accesorios_se_controlan_por_unidad": {
       "componente": "backend",
@@ -1812,7 +1812,7 @@
       "clase": "tests.inventario.integracion.test_inventario_unidades",
       "prueba": "test_solo_equipos_y_accesorios_se_controlan_por_unidad",
       "minimo_variantes": 1,
-      "sha256": "b5a62294942ea806b82ee5fc901b841cd27b1c02693a96ba69a3edede4a02c6f"
+      "sha256": "d8ff783e9aded6407a5ba99f882f245558f53d4a61e611696edbbc81b2ac9120"
     },
     "BE:membresias_pagos/integracion/test_admin_membership_renewal.py::test_early_stripe_and_generic_membership_creation_cannot_bypass_the_window": {
       "componente": "backend",
@@ -2500,7 +2500,7 @@
       "clase": "tests.tienda_pedidos.integracion.test_testiny_tienda",
       "prueba": "test_tc104_carrito_vacio_rechaza_pedido_y_checkout_sin_guardar",
       "minimo_variantes": 1,
-      "sha256": "b34fc5778f0709a261dd85d88d908840940863fce200aa90810ca3e4517c0b84"
+      "sha256": "5e259480ecb0fd0a867c625a36826bf5470da3afd20b6e4a95275a9d7d2587fd"
     },
     "FE:asistencias/interfaz/historial-testiny.test.js::TC-072: el historial vacío deshabilita exportar y limpiar restaura la primera página": {
       "componente": "frontend",
@@ -5054,7 +5054,7 @@
           "paso": 1,
           "verificacion": "La primera cancelación restaura sus unidades e historial una vez; el reintento no repone otra vez. Cancelar no acredita reembolso. Revisión: Transiciones y cancelación idempotentes, rechazo de impagos y permiso/ámbito de pedidos, más exclusión de impagos/cancelados del resumen UI.",
           "pruebas": [
-            "BE:inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+            "BE:inventario/integracion/test_inventario_tienda_stock.py::test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final",
             "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc197_ciclo_entregado_y_cancelado_inmutable",
             "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc198_cliente_no_administra_catalogo_ni_pedido_ajeno",
             "FE:tienda_pedidos/interfaz/testiny-pedidos.test.js::TC-106 y TC-108: pedidos cobrados muestran líneas y excluyen impagos de ventas"
@@ -5064,7 +5064,7 @@
           "paso": 2,
           "verificacion": "Rechaza las transiciones no permitidas; conserva estado y stock. Revisión: Transiciones y cancelación idempotentes, rechazo de impagos y permiso/ámbito de pedidos, más exclusión de impagos/cancelados del resumen UI.",
           "pruebas": [
-            "BE:inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+            "BE:inventario/integracion/test_inventario_tienda_stock.py::test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final",
             "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc197_ciclo_entregado_y_cancelado_inmutable",
             "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc198_cliente_no_administra_catalogo_ni_pedido_ajeno",
             "FE:tienda_pedidos/interfaz/testiny-pedidos.test.js::TC-106 y TC-108: pedidos cobrados muestran líneas y excluyen impagos de ventas"
@@ -5074,7 +5074,7 @@
           "paso": 3,
           "verificacion": "El impago no aparece ni suma a ventas, y no se procesa; pedido ajeno no se revela. Revisión: Transiciones y cancelación idempotentes, rechazo de impagos y permiso/ámbito de pedidos, más exclusión de impagos/cancelados del resumen UI.",
           "pruebas": [
-            "BE:inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+            "BE:inventario/integracion/test_inventario_tienda_stock.py::test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final",
             "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc197_ciclo_entregado_y_cancelado_inmutable",
             "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc198_cliente_no_administra_catalogo_ni_pedido_ajeno",
             "FE:tienda_pedidos/interfaz/testiny-pedidos.test.js::TC-106 y TC-108: pedidos cobrados muestran líneas y excluyen impagos de ventas"
@@ -5084,7 +5084,7 @@
           "paso": 4,
           "verificacion": "La lectura devuelve solo pedidos propios y sus líneas; PUT se deniega. No se inventa una pantalla /user/orders. La cancelación de checkout propio impago es un flujo distinto permitido por su endpoint específico. Revisión: Transiciones y cancelación idempotentes, rechazo de impagos y permiso/ámbito de pedidos, más exclusión de impagos/cancelados del resumen UI.",
           "pruebas": [
-            "BE:inventario/integracion/test_inventario_tienda_stock.py::test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final",
+            "BE:inventario/integracion/test_inventario_tienda_stock.py::test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final",
             "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc197_ciclo_entregado_y_cancelado_inmutable",
             "BE:tienda_pedidos/integracion/test_testiny_tienda.py::test_tc198_cliente_no_administra_catalogo_ni_pedido_ajeno",
             "FE:tienda_pedidos/interfaz/testiny-pedidos.test.js::TC-106 y TC-108: pedidos cobrados muestran líneas y excluyen impagos de ventas"

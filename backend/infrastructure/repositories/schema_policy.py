@@ -21,7 +21,8 @@ MIGRATIONS = {"fecha_clase": "019_schedule_sessions.sql",
               "id_unidad": "027_mov_inv_unidad_hora.sql",
               "hora_movimiento": "027_mov_inv_unidad_hora.sql",
               "sala": "030_sala_horario_servicio.sql",
-              "medio_pago": "031_pagos_externos_registro.sql"}
+              "medio_pago": "031_pagos_externos_registro.sql",
+              "fecha_baja": "032_bajas_y_pedidos_confirmados.sql"}
 
 
 def missing_column(error):

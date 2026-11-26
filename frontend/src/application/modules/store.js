@@ -196,8 +196,8 @@ export const createStoreModule = (ctx, repository) => {
       const response = await remote.updateStoreOrderStatus(idPedido, body);
 
       const saved = mergeStoreOrder(response);
-      // Cancelar devuelve el stock a la Tienda.
-      if (body.estado_pedido === 'CANCELADO') await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+      // Cancelar devuelve el stock: basta recargar pedidos y productos, no todo el sistema.
+      if (body.estado_pedido === 'CANCELADO') await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ section: 'ordersStock', force: true }));
       return saved;
     }
     const order = ctx.storeOrders.value.find((entry) => Number(entry.id_pedido) === Number(idPedido));

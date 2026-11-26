@@ -4,11 +4,21 @@ import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
 /** Estado y operaciones del módulo inventory. */
 import { generateInventoryCode, requireNumericId } from '../../domain/utils/gymRules.js';
+import { isUnitCategory } from '../../domain/utils/inventoryUnits.js';
 import { computed } from 'vue';
 
 export const createInventoryModule = (ctx, repository) => {
   const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
-  const refreshInventoryStock = () => ctx.fetchFromBackend({ section: 'inventoryStore', force: true });
+  // Después de guardar se recarga solo lo que la operación pudo cambiar (ver SYNC_SECTIONS).
+  const refreshSection = (section) => () => ctx.fetchFromBackend({ section, force: true });
+  const isStoreCategory = (category) => String(category || '').trim().toLowerCase() === 'tienda';
+  const itemById = (idItem) => ctx.inventory.value.find((entry) => entry.id === `item-${idItem}`);
+  // Sección para un movimiento: Tienda toca productos; equipos con unidades tocan unidades.
+  const movementSection = ({ tipo, destino, idItem }) => {
+    if (String(destino || '').toUpperCase() === 'TIENDA') return 'inventoryStore';
+    if (tipo === 'traslado') return 'inventoryUnitsHistory';
+    return itemById(idItem)?.byUnit ? 'inventory' : 'inventoryHistory';
+  };
   const lowStockInventory = computed(() =>
     ctx.inventory.value.filter((item) => !item.archived && item.quantity <= item.minQuantity),
   );
@@ -49,8 +59,9 @@ export const createInventoryModule = (ctx, repository) => {
         };
         const index = ctx.inventory.value.findIndex((entry) => entry.id === item.id);
         if (index >= 0) ctx.inventory.value[index] = item; else ctx.inventory.value.unshift(item);
-        // El alta registra su entrada en MOV_INV y un item Tipo Tienda crea su producto.
-        return refreshAfterMutation(ctx, refreshInventoryStock).then(() => item);
+        // El alta registra su entrada en MOV_INV; un ítem Tienda crea su producto y un equipo sus unidades.
+        const section = isStoreCategory(item.category) ? 'inventoryStore' : isUnitCategory(item.category) ? 'inventory' : 'inventoryHistory';
+        return refreshAfterMutation(ctx, refreshSection(section)).then(() => item);
       });
     }
 
@@ -88,7 +99,8 @@ export const createInventoryModule = (ctx, repository) => {
       if (result?.accion === 'archivado') {
         const item = ctx.inventory.value.find((entry) => entry.id === id);
         if (item) Object.assign(item, { archived: true, status: result.item?.estado || item.status });
-        await refreshAfterMutation(ctx, refreshInventoryStock);
+        // Archivar un ítem Tienda también archiva su producto.
+        await refreshAfterMutation(ctx, refreshSection(isStoreCategory(item?.category) ? 'stockCatalog' : 'inventoryItems'));
         return result;
       }
     }
@@ -114,25 +126,32 @@ export const createInventoryModule = (ctx, repository) => {
     const saved = await remote.registrarMovimientoToServer({ ...payload, cantidad: parseQuantity(payload.cantidad ?? 1, { min: 1 }) });
     requireRecord(saved);
     requireRecord(saved.movimiento, 'id_mov');
-    ctx.inventoryMovements.value.unshift(saved.movimiento);
-    await refreshAfterMutation(ctx, refreshInventoryStock);
+    // Un traslado de varias unidades devuelve un movimiento por unidad.
+    ctx.inventoryMovements.value.unshift(...(Array.isArray(saved.movimientos) ? saved.movimientos : [saved.movimiento]));
+    await refreshAfterMutation(ctx, refreshSection(movementSection({ tipo: payload.tipo_movimiento, destino: payload.destino, idItem: payload.id_item })));
     return saved;
   };
 
   const updateInventoryMovement = async (idMov, payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
     const body = payload.cantidad === undefined ? payload : { ...payload, cantidad: parseQuantity(payload.cantidad, { min: 1 }) };
+    const previous = ctx.inventoryMovements.value.find((entry) => Number(entry.id_mov) === Number(idMov));
     const saved = await remote.updateInventoryMovement(idMov, body);
     requireRecord(saved);
     requireRecord(saved.movimiento, 'id_mov');
-    await refreshAfterMutation(ctx, refreshInventoryStock);
+    // Si antes o después era una reposición, también cambió el stock de la Tienda.
+    const touchedStore = [previous?.destino, saved.movimiento.destino, body.destino].some((value) => String(value || '').toUpperCase() === 'TIENDA');
+    await refreshAfterMutation(ctx, refreshSection(touchedStore ? 'inventoryStore' : movementSection({ idItem: saved.movimiento.id_item })));
     return saved;
   };
 
   const updateInventoryUnit = async (idUnidad, payload) => {
     if (!ctx.apiBase) throw new Error('No hay backend configurado');
+    const previous = (ctx.inventoryUnits?.value || []).find((entry) => Number(entry.id_unidad) === Number(idUnidad));
     const saved = requireRecord(await remote.updateInventoryUnit(idUnidad, payload), 'id_unidad');
-    await refreshAfterMutation(ctx, refreshInventoryStock);
+    // Cambiar la ubicación registra un traslado; el estado solo cambia la unidad y su artículo.
+    const moved = !previous || (payload.ubicacion !== undefined && payload.ubicacion !== previous.ubicacion);
+    await refreshAfterMutation(ctx, refreshSection(moved ? 'inventory' : 'inventoryUnitState'));
     return saved;
   };
 
@@ -142,7 +161,7 @@ export const createInventoryModule = (ctx, repository) => {
     const saved = await remote.retireInventoryUnit(idUnidad, { motivo });
     requireRecord(saved);
     requireRecord(saved.movimiento, 'id_mov');
-    await refreshAfterMutation(ctx, refreshInventoryStock);
+    await refreshAfterMutation(ctx, refreshSection('inventory'));
     return saved;
   };
 
@@ -152,7 +171,7 @@ export const createInventoryModule = (ctx, repository) => {
     const saved = await remote.restoreInventoryUnit(idUnidad, { motivo });
     requireRecord(saved);
     requireRecord(saved.movimiento, 'id_mov');
-    await refreshAfterMutation(ctx, refreshInventoryStock);
+    await refreshAfterMutation(ctx, refreshSection('inventory'));
     return saved;
   };
 

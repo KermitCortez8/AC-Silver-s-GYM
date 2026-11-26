@@ -9,7 +9,7 @@ const paid = { id_pedido: 1, id_cliente: 1, cliente_nombre: 'Cliente QA', client
 
 test('TC-106 y TC-108: pedidos cobrados muestran líneas y excluyen impagos de ventas', async () => {
   const { setup: s, html } = await setupView('OrdersView', '/admin/orders', (_s, gym) => {
-    gym.storeOrders = [paid, { ...paid, id_pedido: 2, estado_pago: 'PENDIENTE', total: 900 },
+    gym.storeOrders = [paid, { ...paid, id_pedido: 2, estado_pago: 'PENDIENTE', metodo_pago: 'tarjeta', total: 900 },
       { ...paid, id_pedido: 3, cliente_nombre: 'Control QA', cliente_dni: '22222222', total: 1000,
         items: [{ nombre_producto: 'Control', cantidad: 1 }], estado_pedido: 'CANCELADO' }];
   });
