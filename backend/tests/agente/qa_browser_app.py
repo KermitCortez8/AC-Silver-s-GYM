@@ -6,8 +6,9 @@ Se inicia solo desde Playwright. No lee .env ni registra pagos, correo o BD.
 from fastapi import FastAPI
 
 from application.services.agent_budget import AgentBudget
-from presentation.dependencies import get_agent_provider, get_gym_service
-from presentation.routes import agent_routes
+from domain.validation import email_address
+from presentation.dependencies import get_agent_provider, get_gym_service, get_password_recovery
+from presentation.routes import agent_routes, auth_routes
 
 
 class ControlledGym:
@@ -36,10 +37,20 @@ class ControlledProvider:
         return None
 
 
+class ControlledRecovery:
+    def validate_request(self, email):
+        return email_address(email)
+
+    def send(self, _email):
+        """Simula la entrega en la prueba de navegador."""
+
+
 # La cuota de producto se prueba en pytest; aquí se aíslan recorridos entre navegadores.
 agent_routes._budget = AgentBudget(per_minute=1000, per_day=10000)
 
 app = FastAPI(title="Agente QA aislado")
 app.include_router(agent_routes.router, prefix="/api")
+app.include_router(auth_routes.router, prefix="/api")
 app.dependency_overrides[get_gym_service] = ControlledGym
 app.dependency_overrides[get_agent_provider] = lambda: ControlledProvider("local-qa")
+app.dependency_overrides[get_password_recovery] = ControlledRecovery

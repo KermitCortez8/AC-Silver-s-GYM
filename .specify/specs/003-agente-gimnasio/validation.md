@@ -1,5 +1,27 @@
 # Validación de la primera versión del agente
 
+## Recuperación de contraseña desde el agente · 2026-11-26
+
+En `develop`, «Olvidé mi contraseña» abre el diálogo de Inicio de sesión. Se
+verificó que el formulario solicita solo el correo a la API de autenticación,
+que el chat conserva únicamente la consulta y que un fallo permite reintentar.
+Cerrar el diálogo descarta su borrador. El backend de autenticación mantiene la
+confirmación genérica y genera el enlace para una cuenta identificada.
+
+| Comprobación | Resultado |
+| --- | --- |
+| `pytest tests/ -q -p no:cacheprovider` en una copia aislada de backend | 1.144 aprobadas, 68 omitidas, 0 fallos. La ejecución se hizo sin PostgreSQL desechable y sin Stripe sandbox. |
+| Suites de agente y autenticación de recuperación | 98 aprobadas, incluida la comprobación del enlace con correo simulado. |
+| `npm test -- --test-concurrency=8` y `npm run build` | 459 aprobadas y compilación correcta tras instalar las dependencias del lockfile. |
+| Playwright con API simulada y conectada | 48 aprobadas en Chromium, Firefox y WebKit. La ruta de autenticación de QA recibió el correo de prueba con un doble de envío. |
+| Revisión visual en Chromium | Formulario y confirmación revisados a 390 × 844 y 1440 × 900. Capturas locales en `.artifacts/recuperacion-agente/`. |
+| Validador documental, pruebas de Testiny y flake8 | 149 documentos y 15 contratos válidos, 36 pruebas de Testiny aprobadas con una omisión por enlaces simbólicos en Windows y 0 errores de flake8. |
+
+El envío se verificó con correo simulado. La entrega a un buzón real depende
+de la configuración del servicio de recuperación.
+
+## Verificaciones de la primera versión
+
 La batería agrupada y el antes/después posteriores a esta primera validación están en [qa-v1-bateria.md](qa-v1-bateria.md). La relación entre casos y criterios se revisó el 2026-11-19; los resultados de ejecución indicados abajo conservan sus fechas originales.
 
 **Fecha:** 2026-11-12. **Rama:** `levano/agenteAgente.v1`. La batería automatizada usa datos sintéticos y no llama a Groq, Supabase, Stripe ni correo. La comprobación manual posterior conectó la API local de solo lectura al catálogo real de Supabase; otras preguntas públicas usan Groq para elegir una herramienta permitida.
@@ -21,7 +43,7 @@ La batería agrupada y el antes/después posteriores a esta primera validación 
 | AG-11 | CA-01, CA-02 | HTTP; aislamiento | La API de demostración solo expone el chat y tres consultas públicas GET; no publica rutas de escritura. | Alta | `backend/tests/agente/test_agent_http.py` |
 | AG-12 | CA-10 | Dominio y aplicación; regresión | Saludos, agradecimientos y despedidas breves reciben respuesta sin proveedor, presupuesto ni catálogo; una pregunta de negocio con saludo conserva su intención. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
 | AG-13 | CA-06, CA-07, CA-10 | Aplicación; regresión | La IA solo puede elegir una intención social aprobada o marcar un tema claramente ajeno. Una pregunta ambigua mantiene la conversación; una segunda pregunta ajena recibe una redirección más directa. | Media | `backend/tests/agente/test_agent_flow.py` y navegador local |
-| AG-14 | CA-05, CA-11 | Dominio, aplicación y UI; regresión | Recuperar cuenta u olvidar contraseña abre el formulario local para correo, DNI y teléfono. Estos datos no salen a la API ni se muestran en el historial; un mensaje con correo o clave real se bloquea antes de cualquier proveedor. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/tests/e2e/simuladas/agent.spec.js` y navegador local |
+| AG-14 | CA-05, CA-11 | Dominio, aplicación y UI; regresión | Recuperar cuenta u olvidar contraseña abre el diálogo de autenticación. El formulario envía solo el correo a esa API. El historial del chat y las peticiones al agente quedan libres de ese dato. | Alta | `backend/tests/agente/test_agent_flow.py`, `frontend/tests/e2e/simuladas/agent.spec.js` y navegador local |
 | AG-15 | CA-03, CA-10, CA-12 | Dominio y aplicación; regresión | Frases de cierre después de una consulta de horarios reciben una respuesta natural sin repetir la pregunta genérica. Pedir ayuda paso a paso para registrarse devuelve el flujo publicado y el enlace a Registro; una orden de inscripción directa conserva su bloqueo. | Media | `backend/tests/agente/test_agent_flow.py` y API local |
 
 ## Resultados
@@ -43,7 +65,7 @@ Una ejecución paralela de la batería frontend informó un fallo de archivo en 
 - Ante «dime los horarios de cada ejercicios que hay», el proveedor podía no elegir herramienta y el backend devolvía fuera de alcance. Las preguntas explícitas de horarios del gimnasio ahora consultan directamente el servicio real, sin depender de que Groq elija herramienta. Una actividad concreta filtra la respuesta; una actividad sin horarios activos recibe un mensaje sin inventar clases. La interfaz distingue el límite temporal (429) de una indisponibilidad del servidor.
 - Las respuestas con varios planes, horarios o tipos de entrenamiento se presentan en líneas con viñetas. Se comprobó visualmente en el chat local que la lista completa de actividades queda visible; la prueba funcional verifica también el desplazamiento automático de una lista larga en tres motores.
 - Se comprobó en el navegador local una conversación breve: «Hola, ¿cómo estás?», «Bien, ¿y tú?», «¿Cómo te llamas?» y «Gracias por la información». También se verificó «como estás silver» seguido de dos preguntas ajenas; la primera redirigió con suavidad y la segunda de manera más directa. «Hola, ¿qué planes tienen?» sigue consultando el catálogo. Las pruebas automatizadas confirman que las cortesías comunes no invocan al proveedor, no gastan cuota y no borran el tema previo. El proveedor solo puede seleccionar intenciones sociales de una lista validada.
-- Se comprobó en el navegador local «hola» → «qué tal todo» sin repetir la presentación. La recuperación abre un formulario local que indica de forma breve que la solicitud todavía no se envía al gimnasio. Se verificó con el frontend y backend reales que, al reunir correo, DNI y teléfono de prueba, la única petición saliente contenía la pregunta inicial, sin esos datos. El formulario borra sus datos al cerrar el chat. La app no implementa restablecimiento automático de contraseña.
+- Se comprobó en el navegador local «hola» → «qué tal todo» sin repetir la presentación. En la demostración de noviembre, la recuperación usaba un borrador local de correo, DNI y teléfono. La comprobación de esa versión observó solamente la consulta inicial en la red.
 - Tras una consulta de horarios, «vale, todo bien creo yo» y «no tranquilo, quería consultar, muchas gracias» reciben respuestas sociales distintas, sin repetir «Te sigo». «¿Puedes ayudarme paso a paso a registrarme?» devuelve cuatro pasos basados en la pantalla de Registro y enlaza a `/registro`. Se verificó la secuencia contra la API local.
 - Los `.env` locales ignorados por Git contienen la configuración recibida para backend y frontend. La demo usa únicamente la API pública de solo lectura y las imágenes públicas del frontend; no se ha habilitado el backend completo con sus tareas de pagos, correos o escritura.
 - El límite de llamadas es atómico **dentro de un proceso**, no entre varias instancias. Se necesita cuota distribuida antes de exposición pública real.

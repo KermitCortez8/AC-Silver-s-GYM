@@ -6,6 +6,8 @@ Implementado en `develop`.
 
 Respuesta satisfactoria: `id_conversacion`, `estado: "respondida"`, `texto` y `enlaces` de una lista permitida (`/registro`, `/`, `/login`, `/#servicios`, `/#ubicacion` o `/preguntas-frecuentes`). Sin datos confirmados se devuelve `estado: "sin_datos"`; una acción privada se devuelve como `fuera_de_alcance` y un mensaje sensible como `bloqueado`.
 
+Para una consulta de recuperación, `accion: "recuperacion_local"` indica al navegador que abra el diálogo compartido con Inicio de sesión. El formulario envía solo `correo` a `POST /api/auth/recuperar-contrasena`. La conversación y su endpoint quedan fuera del envío. [Contrato de identidad](../../../base/modulos/01-identidad-acceso.md)
+
 Los mensajes vacíos o demasiado largos reciben HTTP 422. Si el agente carece de una consulta de respaldo, el cupo agotado devuelve HTTP 429 y la indisponibilidad técnica devuelve HTTP 503. Los errores no incluyen prompts, claves, datos personales ni respuestas crudas del proveedor.
 
 Herramientas internas permitidas: `consultar_planes()`, `consultar_horarios_publicos()` y `consultar_informacion_publica(tema)`. Las dos primeras usan los servicios existentes del backend. La tercera consulta fichas revisadas de actividades, primer día, principiantes, ubicación, registro, acceso y cupos, basadas en la web pública. El backend valida el tema contra una lista cerrada y devuelve el texto de la ficha; el modelo no redacta cifras ni hechos adicionales. Una herramienta o argumento desconocido se rechaza. El proveedor no recibe credenciales ni controla la URL o consulta de datos.

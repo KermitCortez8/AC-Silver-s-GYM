@@ -83,8 +83,8 @@ class AgentService:
         if asks_for_account_recovery(text):
             self._conversations.put(identifier, last_topic or "")
             return {**base, "estado": "respondida", "texto": (
-                "Claro, te ayudo a preparar la recuperación de tu cuenta. "
-                "Completa tu correo, DNI y número telefónico en el formulario de abajo."
+                "Ingresa el correo asociado a tu cuenta en el formulario "
+                "para solicitar un enlace de recuperación."
             ), "enlaces": [
                 {"texto": "Ir al acceso", "ruta": "/login"},
                 {"texto": "Ver ubicación", "ruta": "/#ubicacion"},

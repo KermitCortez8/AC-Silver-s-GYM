@@ -152,10 +152,10 @@ def test_account_recovery_question_gives_real_next_step_without_external_calls(q
 
     assert asks_for_account_recovery(question)
     assert result["estado"] == "respondida"
-    assert "correo, DNI y número telefónico" in result["texto"]
-    assert "preparar la recuperación" in result["texto"]
-    assert "demostración" not in result["texto"]
-    assert "dueño" not in result["texto"]
+    assert "correo asociado a tu cuenta" in result["texto"]
+    assert "solicitar un enlace de recuperación" in result["texto"]
+    assert "DNI" not in result["texto"]
+    assert "teléfono" not in result["texto"]
     assert result["accion"] == "recuperacion_local"
     assert result["enlaces"] == [
         {"texto": "Ir al acceso", "ruta": "/login"},

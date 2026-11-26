@@ -48,26 +48,7 @@
         </div>
         <p v-if="busy" class="pl-9 text-xs text-slate-500">Silver está escribiendo…</p>
       </div>
-      <form v-if="recoveryActive" class="space-y-2 border-t border-slate-200 p-3" @submit.prevent="collectRecovery">
-        <p class="text-xs text-slate-600">Tu solicitud aún no se enviará al gimnasio.</p>
-        <label class="block text-xs font-semibold text-slate-700" for="recovery-email">Correo</label>
-        <input id="recovery-email" v-model.trim="recoveryDraft.correo" type="email" required autocomplete="off" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700" for="recovery-dni">DNI</label>
-            <input id="recovery-dni" v-model.trim="recoveryDraft.dni" type="text" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" required autocomplete="off" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700" for="recovery-phone">Número telefónico</label>
-            <input id="recovery-phone" v-model.trim="recoveryDraft.telefono" type="tel" inputmode="numeric" pattern="[0-9]{9}" maxlength="9" required autocomplete="off" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <button type="submit" class="flex-1 rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white">Dejar datos listos</button>
-          <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" @click="cancelRecovery">Cancelar</button>
-        </div>
-      </form>
-      <form v-else class="border-t border-slate-200 bg-white p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.04)]" @submit.prevent="send">
+      <form class="border-t border-slate-200 bg-white p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.04)]" @submit.prevent="send">
         <label for="agent-message" class="sr-only">Tu pregunta para Silver</label>
         <div class="flex items-end gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 transition-colors focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100">
           <textarea id="agent-message" ref="composerRef" v-model="draft" rows="1" wrap="soft" maxlength="500" autocomplete="off" class="agent-composer block min-h-11 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border-0 bg-transparent px-2.5 py-2.5 text-sm leading-5 text-slate-900 placeholder:text-slate-400 focus:outline-none" placeholder="Escribe tu pregunta…" :disabled="busy" @keydown="handleComposerKeydown" />
@@ -75,6 +56,7 @@
         </div>
         <p class="mt-1.5 hidden px-2 text-[11px] text-slate-400 sm:block">Enter para enviar · Shift + Enter para otra línea</p>
       </form>
+      <PasswordRecoveryDialog v-if="recoveryActive" @close="closeRecovery" />
     </section>
   </div>
 </template>
@@ -83,6 +65,7 @@
 import { nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { createAgentService } from '../../application/services/agentService.js';
+import PasswordRecoveryDialog from './PasswordRecoveryDialog.vue';
 
 const route = useRoute();
 const open = ref(false);
@@ -93,31 +76,23 @@ const conversationId = ref(null);
 const logRef = ref(null);
 const composerRef = ref(null);
 const recoveryActive = ref(false);
-const recoveryDraft = ref({ correo: '', dni: '', telefono: '' });
-const pendingRecovery = ref(null);
+let chatRevision = 0;
 const privateText = /[\w.+-]+@[\w.-]+\.[a-z]{2,}|\b\d{8,9}\b|\b(?:contrase(?:ñ|n)a|password|clave)\s*(?:es|:|=)/i;
 
-function cancelRecovery() {
+function closeRecovery() {
   recoveryActive.value = false;
-  recoveryDraft.value = { correo: '', dni: '', telefono: '' };
+  composerRef.value?.focus();
 }
 
 function closeChat() {
+  chatRevision += 1;
   open.value = false;
-  cancelRecovery();
-  pendingRecovery.value = null;
+  busy.value = false;
+  recoveryActive.value = false;
   messages.value = [];
   conversationId.value = null;
 }
 
-function collectRecovery() {
-  pendingRecovery.value = { ...recoveryDraft.value };
-  cancelRecovery();
-  messages.value.push({
-    from: 'agent',
-    text: 'Listo, tus datos quedaron preparados en esta sesión. La solicitud aún no se ha enviado al gimnasio.',
-  });
-}
 function resizeComposer() {
   const composer = composerRef.value;
   if (!composer) return;
@@ -146,24 +121,27 @@ async function send() {
   if (!text || busy.value) return;
   if (privateText.test(text)) {
     draft.value = '';
-    messages.value.push({ from: 'agent', text: 'Por seguridad, no escribas datos personales o claves en el chat. Usa el formulario de recuperación si aparece.' });
+    messages.value.push({ from: 'agent', text: 'Por seguridad, no escribas datos personales o claves en el chat. Si olvidaste tu contraseña, pide ayuda sin incluir tu correo.' });
     return;
   }
   messages.value.push({ from: 'user', text });
   draft.value = '';
   busy.value = true;
+  const revision = chatRevision;
   try {
     const response = await createAgentService().send(text, conversationId.value);
+    if (revision !== chatRevision) return;
     conversationId.value = response.id_conversacion;
     messages.value.push({ from: 'agent', text: response.texto, links: response.enlaces || [] });
     if (response.accion === 'recuperacion_local') recoveryActive.value = true;
   } catch (error) {
+    if (revision !== chatRevision) return;
     const text = error?.status === 429
       ? 'Se alcanzó el límite temporal de consultas. Inténtalo de nuevo en un minuto.'
       : 'No pude consultar el servidor ahora. Inténtalo de nuevo o revisa la información pública en la página.';
     messages.value.push({ from: 'agent', text });
   } finally {
-    busy.value = false;
+    if (revision === chatRevision) busy.value = false;
   }
 }
 </script>
