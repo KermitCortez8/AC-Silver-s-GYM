@@ -21,16 +21,14 @@ export const states = {
   anulada: 'Anulada',
 };
 export const shortTime = (value) => (value ? value.slice(0, 5) : '—');
-export const dateLabel = (value, options = {}) =>
-  value
-    ? new Intl.DateTimeFormat('es-PE', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        timeZone: 'UTC',
-        ...options,
-      }).format(new Date(`${value.slice(0, 10)}T12:00:00Z`))
-    : '—';
+const dateFormatters = new Map();
+export const dateLabel = (value, options = {}) => {
+  if (!value) return '—';
+  const fields = { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC', ...options };
+  const key = JSON.stringify(Object.entries(fields));
+  if (!dateFormatters.has(key)) dateFormatters.set(key, new Intl.DateTimeFormat('es-PE', fields));
+  return dateFormatters.get(key).format(new Date(`${value.slice(0, 10)}T12:00:00Z`));
+};
 export { limaDate, addDays } from '../../domain/utils/dates.js';
 export const initials = (name) =>
   String(name || 'Cliente')

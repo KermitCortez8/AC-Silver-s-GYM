@@ -511,6 +511,7 @@ class SchedulesRules:
         id_cliente: int | None = None,
         dni: str | None = None,
         solo_activas: bool = False,
+        incluir_asistencias: bool = True,
     ) -> list[dict[str, Any]]:
         resolved_id = int(id_cliente or 0)
         if dni:
@@ -554,13 +555,13 @@ class SchedulesRules:
                     "hora_inicio": schedule.get("hora_inicio", ""),
                     "hora_fin": schedule.get("hora_fin", ""),
                     "sala": schedule.get("sala"),
-                    "asistencias": [
+                    **({"asistencias": [
                         asistencia
                         for asistencia in self.context.state.get("asistencia", [])
                         if int(asistencia.get("id_matricula", 0) or 0) == int(enrollment.get("id_matricula", 0) or 0)
                         and parse_client_id(asistencia.get("id_cliente_num") or asistencia.get("id_cliente")) == int(enrollment.get("id_cliente", 0) or 0)
                         and not asistencia.get("anulado")
-                    ],
+                    ]} if incluir_asistencias else {}),
                 }
             )
         return sorted(result, key=lambda row: (str(row.get("dia")), str(row.get("hora_inicio"))))

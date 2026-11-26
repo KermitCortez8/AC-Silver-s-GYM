@@ -73,6 +73,10 @@ class MemoryGymRepository:
     def validate_admin_registration_schema(self):
         pass
 
+    def enrollment_client_by_dni(self, dni):
+        with self.lock:
+            return deepcopy(next((row for row in self.state['clientes'] if row.get('dni') == dni), None))
+
     def enroll(self, payload):
         return None
 

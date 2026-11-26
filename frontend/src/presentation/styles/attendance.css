@@ -24,13 +24,12 @@
   white-space: normal;
 }
 .attendance-page .att-roster {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--app-border);
+  width: min(960px, calc(100% - 32px));
+}
+.attendance-page .att-roster-content {
   display: grid;
   gap: 14px;
   min-width: 0;
-  scroll-margin-top: 24px;
 }
 .attendance-page .att-day-filter {
   display: grid;

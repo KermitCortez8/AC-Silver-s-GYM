@@ -256,18 +256,26 @@
 
           <router-link
             to="/registro"
-            class="font-black text-red-600 hover:text-red-700"
+            class="account-access-link text-red-600 hover:text-red-700"
           >
             Regístrate aquí
           </router-link>
         </p>
+        <p class="mt-3 text-center text-sm text-slate-500">
+          ¿Perdiste tu contraseña?
+          <button type="button" class="account-access-link text-red-600 hover:text-red-700"
+            aria-haspopup="dialog" @click="showRecovery = true">
+            Recupera tu cuenta
+          </button>
+        </p>
       </section>
     </main>
+    <PasswordRecoveryDialog v-if="showRecovery" @close="showRecovery = false" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { defineAsyncComponent, ref } from 'vue';
 import { useLoginForm } from '../composables/auth/useLoginForm.js';
 
 const {
@@ -277,12 +285,16 @@ const {
   googleReady, googleButtonRef, passwordForm, panelImage, handlePanelImageError,
   navigateByRole, cancelLink, completeLogin, handlePasswordLogin, initializeGoogleSignIn,
 } = useLoginForm();
+const PasswordRecoveryDialog = defineAsyncComponent(() => import('../components/PasswordRecoveryDialog.vue'));
+const showRecovery = ref(route.query.recuperar === '1');
 </script>
 
 <style scoped>
 .auth-page {
   font-family: 'Manrope', 'Segoe UI', 'Trebuchet MS', sans-serif;
 }
+
+.account-access-link { font-weight: 900; }
 
 .auth-page h1,
 .auth-page h2,

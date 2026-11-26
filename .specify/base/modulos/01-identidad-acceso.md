@@ -33,6 +33,21 @@ desactivar una cuenta y comprobar que su sesión deja de dar acceso.
    Volver desde el panel o recargar la landing no cierra la sesión ni redirige al
    panel/login. Acceder explícitamente a `/login` con sesión válida recupera el
    panel del rol. La caducidad bloquea las rutas privadas y conserva su motivo.
+7. **CA-07.** Configuración abre la ficha de consulta de la cuenta, con datos
+   personales, código, rol, estado y métodos de acceso. Para clientes incluye
+   la fecha de registro y la membresía que habilita su sesión. El botón «Editar
+   datos» abre un diálogo con los campos para cambiar nombre, teléfono, correo,
+   DNI y contraseña. Los datos de consulta se muestran en la ficha. El
+   formulario guarda los cambios con la sesión vigente. La ficha muestra
+   puntos fijos cuando existe una contraseña y el diálogo ofrece un solo campo
+   para escribir la nueva.
+   El servidor identifica la cuenta por la sesión verificada y aplica únicamente
+   los campos enviados. El rol se administra desde Usuarios.
+8. **CA-08.** En Inicio de sesión, «¿Perdiste tu contraseña? Recupera tu cuenta»
+   aparece debajo de «Regístrate aquí». El modal pide el correo registrado.
+   Si identifica una cuenta, el sistema envía un enlace temporal al correo.
+   Un enlace vigente permite guardar una contraseña nueva una vez y volver
+   al inicio de sesión.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -42,12 +57,25 @@ desactivar una cuenta y comprobar que su sesión deja de dar acceso.
 | CA-04 | [test_priority_fixes.py](../../../backend/tests/transversales/integracion/test_priority_fixes.py): `test_user_identity_is_unique_across_roles_and_stable_after_role_change`; concurrencia en [PostgreSQL](../../../backend/tests/transversales/postgres/test_atomic_transactions_postgres.py). |
 | CA-05 | [session-validation.test.js](../../../frontend/tests/identidad_acceso/integracion/session-validation.test.js) y [application-context.test.js](../../../frontend/tests/paneles_configuracion/integracion/application-context.test.js). |
 | CA-06 | [public-navigation.test.js](../../../frontend/tests/identidad_acceso/integracion/public-navigation.test.js), [module-navigation.test.js](../../../frontend/tests/paneles_configuracion/integracion/module-navigation.test.js) y [validación en navegador](../validaciones/navegacion-publica/validation.md). |
+| CA-07 | [test_perfil_propio.py](../../../backend/tests/identidad_acceso/integracion/test_perfil_propio.py), [perfil-propio.test.js](../../../frontend/tests/identidad_acceso/integracion/perfil-propio.test.js) y [validación de Configuración](../validaciones/perfil-propio/validation.md). |
+| CA-08 | [test_recuperar_password.py](../../../backend/tests/identidad_acceso/integracion/test_recuperar_password.py) y [validación de recuperación](../validaciones/recuperar-password/validation.md). |
 
 ## 4. Technical Constraints
 
 - API: [auth_routes.py](../../../backend/presentation/routes/auth_routes.py),
   [users_routes.py](../../../backend/presentation/routes/users_routes.py) y
   [dependencies.py](../../../backend/presentation/dependencies.py).
+  `GET /api/auth/me` obtiene el perfil verificado y resume la membresía vigente
+  del cliente usando la misma comprobación de acceso. `PATCH /api/auth/me` acepta
+  `nombre`, `telefono`, `correo`, `dni` y `password_nueva` y devuelve el perfil
+  actualizado. El servidor autoriza el cambio con la sesión firmada vigente.
+  Las solicitudes que incluyen `password_actual` o `google_credential` usan la
+  comprobación de esa credencial. La transacción comprueba correo y DNI frente
+  a las cuentas internas, clientes y preregistros pendientes.
+- Recuperación usa `POST /api/auth/recuperar-contrasena` y
+  `POST /api/auth/restablecer-contrasena`. El enlace usa una firma y vigencia
+  propias. Al guardar, la transacción comprueba el estado de la cuenta antes
+  de actualizar el hash. Se reutiliza la persistencia existente.
 - Casos de uso: [auth_service.py](../../../backend/application/services/auth_service.py),
   [identity_service.py](../../../backend/application/services/identity_service.py),
   [users_service.py](../../../backend/application/services/users_service.py).

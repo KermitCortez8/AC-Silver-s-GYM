@@ -124,7 +124,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_schedule_enrollment.ScheduleEnrollmentDomainTests",
       "prueba": "test_client_can_only_cancel_own_enrollment",
       "minimo_variantes": 1,
-      "sha256": "78d8bbb3b56541a200d9daddfc9890810740521180ddc7a474407b2f6b17c216"
+      "sha256": "b99b28d7eade5fa667ec5ce19d1f0957dc67b842a6482a5512cfb18df2307163"
     },
     "BE:horarios_matriculas/integracion/test_schedule_enrollment.py::test_user_routes_always_use_client_from_authenticated_session": {
       "componente": "backend",
@@ -132,7 +132,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_schedule_enrollment.ScheduleEnrollmentRouteTests",
       "prueba": "test_user_routes_always_use_client_from_authenticated_session",
       "minimo_variantes": 1,
-      "sha256": "78d8bbb3b56541a200d9daddfc9890810740521180ddc7a474407b2f6b17c216"
+      "sha256": "b99b28d7eade5fa667ec5ce19d1f0957dc67b842a6482a5512cfb18df2307163"
     },
     "BE:horarios_matriculas/integracion/test_schedule_sessions.py::test_mismo_cliente_puede_reservar_dos_semanas_sin_compartir_cupos_ni_cancelacion": {
       "componente": "backend",
@@ -1116,7 +1116,7 @@
       "clase": "tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
       "prueba": "attendance belongs to the exact client, enrollment and session date",
       "minimo_variantes": 1,
-      "sha256": "b1b2a0395602f76cb0092bd2671b393168c15cefa206614c0a0b4fba2d49aae5"
+      "sha256": "808224e64a06aed6613e56089d4386e75531721a370495f6df2df4dbec65e695"
     },
     "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::cada fecha tiene sus propios cupos y matrículas aunque se repita el horario": {
       "componente": "frontend",
@@ -1124,15 +1124,15 @@
       "clase": "tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
       "prueba": "cada fecha tiene sus propios cupos y matrículas aunque se repita el horario",
       "minimo_variantes": 1,
-      "sha256": "b1b2a0395602f76cb0092bd2671b393168c15cefa206614c0a0b4fba2d49aae5"
+      "sha256": "808224e64a06aed6613e56089d4386e75531721a370495f6df2df4dbec65e695"
     },
-    "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::month weeks include partial weeks, leap day and year boundaries": {
+    "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::las semanas conservan sus siete días en los cruces de mes, bisiesto y año": {
       "componente": "frontend",
       "archivo": "frontend/tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
       "clase": "tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
-      "prueba": "month weeks include partial weeks, leap day and year boundaries",
+      "prueba": "las semanas conservan sus siete días en los cruces de mes, bisiesto y año",
       "minimo_variantes": 1,
-      "sha256": "b1b2a0395602f76cb0092bd2671b393168c15cefa206614c0a0b4fba2d49aae5"
+      "sha256": "808224e64a06aed6613e56089d4386e75531721a370495f6df2df4dbec65e695"
     },
     "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::recurring schedules have a different concrete date in each week": {
       "componente": "frontend",
@@ -1140,7 +1140,7 @@
       "clase": "tests/horarios_matriculas/unitarias/schedule-calendar.test.js",
       "prueba": "recurring schedules have a different concrete date in each week",
       "minimo_variantes": 1,
-      "sha256": "b1b2a0395602f76cb0092bd2671b393168c15cefa206614c0a0b4fba2d49aae5"
+      "sha256": "808224e64a06aed6613e56089d4386e75531721a370495f6df2df4dbec65e695"
     },
     "FE:membresias_pagos/unitarias/membership-payments.test.js::combined payment filters apply to the summary and keep dates inclusive": {
       "componente": "frontend",
@@ -1380,7 +1380,7 @@
       "clase": "tests/tienda_pedidos/interfaz/formularios.test.js",
       "prueba": "la papelera conserva su pestaña y las acciones de restaurar y eliminar",
       "minimo_variantes": 1,
-      "sha256": "0abe255b01c750af00ffa50b1093c5196f9cd50555f64d41aed2c967263166b3"
+      "sha256": "6f59bd48c38db7b797a755855d53ad0f738c494d4139849ab3ba3878efb79e19"
     },
     "FE:tienda_pedidos/interfaz/formularios.test.js::order status saves cannot overlap and retain their draft after failure": {
       "componente": "frontend",
@@ -1388,7 +1388,7 @@
       "clase": "tests/tienda_pedidos/interfaz/formularios.test.js",
       "prueba": "order status saves cannot overlap and retain their draft after failure",
       "minimo_variantes": 1,
-      "sha256": "0abe255b01c750af00ffa50b1093c5196f9cd50555f64d41aed2c967263166b3"
+      "sha256": "6f59bd48c38db7b797a755855d53ad0f738c494d4139849ab3ba3878efb79e19"
     },
     "FE:tienda_pedidos/interfaz/testiny-documentados.test.js::TC-096: producto incompleto muestra campos requeridos y no llama al servidor": {
       "componente": "frontend",
@@ -1516,7 +1516,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "a failed users request clears only its section loading status",
       "minimo_variantes": 1,
-      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
+      "sha256": "6012f5e9aced2023e1b2ff5624135298beecfbee60bdcfc7b87d6bc10ec9f6d9"
     },
     "FE:transversales/integracion/navigation-stores.test.js::each admin section loads only its resources and shares them with the dashboard": {
       "componente": "frontend",
@@ -1524,7 +1524,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "each admin section loads only its resources and shares them with the dashboard",
       "minimo_variantes": 1,
-      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
+      "sha256": "6012f5e9aced2023e1b2ff5624135298beecfbee60bdcfc7b87d6bc10ec9f6d9"
     },
     "FE:transversales/integracion/navigation-stores.test.js::failed forced refresh is not cached and a later navigation retries it": {
       "componente": "frontend",
@@ -1532,7 +1532,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "failed forced refresh is not cached and a later navigation retries it",
       "minimo_variantes": 1,
-      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
+      "sha256": "6012f5e9aced2023e1b2ff5624135298beecfbee60bdcfc7b87d6bc10ec9f6d9"
     },
     "FE:transversales/integracion/navigation-stores.test.js::switching to users is not delayed by a pending client list": {
       "componente": "frontend",
@@ -1540,7 +1540,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "switching to users is not delayed by a pending client list",
       "minimo_variantes": 1,
-      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
+      "sha256": "6012f5e9aced2023e1b2ff5624135298beecfbee60bdcfc7b87d6bc10ec9f6d9"
     },
     "FE:transversales/integracion/navigation-stores.test.js::users finish loading while a previous section still has pending requests": {
       "componente": "frontend",
@@ -1548,7 +1548,7 @@
       "clase": "tests/transversales/integracion/navigation-stores.test.js",
       "prueba": "users finish loading while a previous section still has pending requests",
       "minimo_variantes": 1,
-      "sha256": "2650c4cac63bcae9ab49c78d2ba6eaf7ac34c567cc439786d4cd73a08e22af9a"
+      "sha256": "6012f5e9aced2023e1b2ff5624135298beecfbee60bdcfc7b87d6bc10ec9f6d9"
     },
     "BE:asistencias/integracion/test_general_attendance.py::test_entry_requires_active_account_and_known_dni": {
       "componente": "backend",
@@ -1668,7 +1668,7 @@
       "clase": "tests.horarios_matriculas.integracion.test_schedule_enrollment.SupabaseScheduleCompatibilityTests",
       "prueba": "test_enrollment_requires_atomic_rpc_before_writing",
       "minimo_variantes": 1,
-      "sha256": "78d8bbb3b56541a200d9daddfc9890810740521180ddc7a474407b2f6b17c216"
+      "sha256": "b99b28d7eade5fa667ec5ce19d1f0957dc67b842a6482a5512cfb18df2307163"
     },
     "BE:horarios_matriculas/integracion/test_testiny_horarios.py::test_tc056_modificar_horario_conserva_sesiones_y_cupos": {
       "componente": "backend",
@@ -1876,7 +1876,7 @@
       "clase": "tests/asistencias/interfaz/flujos.test.js",
       "prueba": "asistencia separa fechas del mismo horario y descarta respuestas de otra semana",
       "minimo_variantes": 1,
-      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+      "sha256": "bf45101a7dee93bd69d4b3089385cce779295276da0b0769dda03ebf0b103be5"
     },
     "FE:asistencias/interfaz/flujos.test.js::la lista descarta respuestas de otro horario y al desmontar": {
       "componente": "frontend",
@@ -1884,7 +1884,7 @@
       "clase": "tests/asistencias/interfaz/flujos.test.js",
       "prueba": "la lista descarta respuestas de otro horario y al desmontar",
       "minimo_variantes": 1,
-      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+      "sha256": "bf45101a7dee93bd69d4b3089385cce779295276da0b0769dda03ebf0b103be5"
     },
     "FE:asistencias/interfaz/flujos.test.js::un DNI incompleto no consulta y un DNI desconocido limpia la ficha anterior": {
       "componente": "frontend",
@@ -1892,7 +1892,7 @@
       "clase": "tests/asistencias/interfaz/flujos.test.js",
       "prueba": "un DNI incompleto no consulta y un DNI desconocido limpia la ficha anterior",
       "minimo_variantes": 1,
-      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+      "sha256": "bf45101a7dee93bd69d4b3089385cce779295276da0b0769dda03ebf0b103be5"
     },
     "FE:clientes/interfaz/client-catalog.test.js::carga fallida permite reintentar sin perder el borrador ni registrar con precios locales": {
       "componente": "frontend",
@@ -2068,7 +2068,7 @@
       "clase": "tests/clientes/interfaz/formularios.test.js",
       "prueba": "extracted client dialogs render their real form and membership details",
       "minimo_variantes": 1,
-      "sha256": "bc93adaa9015be66df33e266d4afd6d89a77d24575e174a05ea04c80629b43ca"
+      "sha256": "c12c84885d8e272bba9604195c1f3fb658dac7075755398e691b346f411f9e6c"
     },
     "FE:clientes/interfaz/formularios.test.js::client editor and membership actions preserve the actual view flow after extraction": {
       "componente": "frontend",
@@ -2076,7 +2076,7 @@
       "clase": "tests/clientes/interfaz/formularios.test.js",
       "prueba": "client editor and membership actions preserve the actual view flow after extraction",
       "minimo_variantes": 1,
-      "sha256": "bc93adaa9015be66df33e266d4afd6d89a77d24575e174a05ea04c80629b43ca"
+      "sha256": "c12c84885d8e272bba9604195c1f3fb658dac7075755398e691b346f411f9e6c"
     },
     "FE:clientes/interfaz/client-flow-control.test.js::pago manual bloquea clics repetidos y publica la ficha guardada": {
       "componente": "frontend",
@@ -2148,7 +2148,7 @@
       "clase": "tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
       "prueba": "TC-054: el editor nuevo filtra rutinas por servicio y conserva el código del día",
       "minimo_variantes": 1,
-      "sha256": "ea1bcf7a18a08434039e5d7cac6b17f51677722157ca055f162e26d367b73571"
+      "sha256": "8324d35871b8f05186041a81735cf445afd1afd85998d3bcdc68148f65b82a0d"
     },
     "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-055: los filtros y la semana cambian lo visible sin escribir cupos": {
       "componente": "frontend",
@@ -2156,7 +2156,7 @@
       "clase": "tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
       "prueba": "TC-055: los filtros y la semana cambian lo visible sin escribir cupos",
       "minimo_variantes": 1,
-      "sha256": "ea1bcf7a18a08434039e5d7cac6b17f51677722157ca055f162e26d367b73571"
+      "sha256": "8324d35871b8f05186041a81735cf445afd1afd85998d3bcdc68148f65b82a0d"
     },
     "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-057: cancelar la confirmación conserva el horario sin llamar al borrado": {
       "componente": "frontend",
@@ -2164,7 +2164,7 @@
       "clase": "tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
       "prueba": "TC-057: cancelar la confirmación conserva el horario sin llamar al borrado",
       "minimo_variantes": 1,
-      "sha256": "ea1bcf7a18a08434039e5d7cac6b17f51677722157ca055f162e26d367b73571"
+      "sha256": "8324d35871b8f05186041a81735cf445afd1afd85998d3bcdc68148f65b82a0d"
     },
     "FE:horarios_matriculas/interfaz/horarios-testiny.test.js::TC-062: una clase llena deshabilita la acción y otra semana tiene cupo propio": {
       "componente": "frontend",
@@ -2172,7 +2172,7 @@
       "clase": "tests/horarios_matriculas/interfaz/horarios-testiny.test.js",
       "prueba": "TC-062: una clase llena deshabilita la acción y otra semana tiene cupo propio",
       "minimo_variantes": 1,
-      "sha256": "ea1bcf7a18a08434039e5d7cac6b17f51677722157ca055f162e26d367b73571"
+      "sha256": "8324d35871b8f05186041a81735cf445afd1afd85998d3bcdc68148f65b82a0d"
     },
     "FE:asistencias/interfaz/flujos.test.js::el calendario de asistencia filtra por día y selecciona la lista por id del horario": {
       "componente": "frontend",
@@ -2180,7 +2180,7 @@
       "clase": "tests/asistencias/interfaz/flujos.test.js",
       "prueba": "el calendario de asistencia filtra por día y selecciona la lista por id del horario",
       "minimo_variantes": 1,
-      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+      "sha256": "bf45101a7dee93bd69d4b3089385cce779295276da0b0769dda03ebf0b103be5"
     },
     "FE:asistencias/interfaz/flujos.test.js::registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso": {
       "componente": "frontend",
@@ -2188,7 +2188,7 @@
       "clase": "tests/asistencias/interfaz/flujos.test.js",
       "prueba": "registrar entrada desde la lista actualiza la misma clase y la salida tardía muestra aviso",
       "minimo_variantes": 1,
-      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+      "sha256": "bf45101a7dee93bd69d4b3089385cce779295276da0b0769dda03ebf0b103be5"
     },
     "FE:asistencias/interfaz/flujos.test.js::attendance prevents duplicate writes and preserves the last summary when refresh fails": {
       "componente": "frontend",
@@ -2196,7 +2196,7 @@
       "clase": "tests/asistencias/interfaz/flujos.test.js",
       "prueba": "attendance prevents duplicate writes and preserves the last summary when refresh fails",
       "minimo_variantes": 1,
-      "sha256": "50900cad79f02ef2fcd1805f8a7b30686ca40198efe96ac16ca13eba1f02e000"
+      "sha256": "bf45101a7dee93bd69d4b3089385cce779295276da0b0769dda03ebf0b103be5"
     },
     "FE:tienda_pedidos/interfaz/testiny-documentados.test.js::TC-104: carrito vacío no ofrece procesar compra y la pasarela no inventa productos": {
       "componente": "frontend",
@@ -6284,35 +6284,35 @@
       "id": 152,
       "huella": "9a8884013a0a6f4284ad9e6a9b830b55df249834afa23d0d751f9b3651c11239",
       "modalidad": "Contratos reales y componentes aislados; datos y proveedores QA declarados",
-      "revision": "Semanas civiles, año bisiesto y ocupación independiente 5/2 por fecha se prueban sin red.",
+      "revision": "Semanas completas en los cruces de mes y año, día bisiesto válido y ocupación independiente 5/2 por fecha.",
       "pasos": [
         {
           "paso": 1,
-          "verificacion": "Conserva fechas distintas; cupos usados 5 y 2; no copia matrícula ni ocupación entre fechas. Revisión: Semanas civiles, año bisiesto y ocupación independiente 5/2 por fecha se prueban sin red.",
+          "verificacion": "Conserva fechas distintas; cupos usados 5 y 2; no copia matrícula ni ocupación entre fechas. Revisión: Semanas completas en los cruces de mes y año, día bisiesto válido y ocupación independiente 5/2 por fecha.",
           "pruebas": [
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::attendance belongs to the exact client, enrollment and session date",
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::cada fecha tiene sus propios cupos y matrículas aunque se repita el horario",
-            "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::month weeks include partial weeks, leap day and year boundaries",
+            "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::las semanas conservan sus siete días en los cruces de mes, bisiesto y año",
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::recurring schedules have a different concrete date in each week"
           ]
         },
         {
           "paso": 2,
-          "verificacion": "Inicio 2026-12-28 y último día 2024-02-29. Revisión: Semanas civiles, año bisiesto y ocupación independiente 5/2 por fecha se prueban sin red.",
+          "verificacion": "La semana del 2027-01-01 empieza el 2026-12-28. El 2024-02-29 es un día válido de la última semana de febrero, que abarca del 2024-02-26 al 2024-03-03.",
           "pruebas": [
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::attendance belongs to the exact client, enrollment and session date",
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::cada fecha tiene sus propios cupos y matrículas aunque se repita el horario",
-            "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::month weeks include partial weeks, leap day and year boundaries",
+            "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::las semanas conservan sus siete días en los cruces de mes, bisiesto y año",
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::recurring schedules have a different concrete date in each week"
           ]
         },
         {
           "paso": 3,
-          "verificacion": "No se asignan a la sesión propia; una sesión sin entrada no se convierte en falta. Revisión: Semanas civiles, año bisiesto y ocupación independiente 5/2 por fecha se prueban sin red.",
+          "verificacion": "No se asignan a la sesión propia; una sesión sin entrada no se convierte en falta. Revisión: Semanas completas en los cruces de mes y año, día bisiesto válido y ocupación independiente 5/2 por fecha.",
           "pruebas": [
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::attendance belongs to the exact client, enrollment and session date",
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::cada fecha tiene sus propios cupos y matrículas aunque se repita el horario",
-            "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::month weeks include partial weeks, leap day and year boundaries",
+            "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::las semanas conservan sus siete días en los cruces de mes, bisiesto y año",
             "FE:horarios_matriculas/unitarias/schedule-calendar.test.js::recurring schedules have a different concrete date in each week"
           ]
         }

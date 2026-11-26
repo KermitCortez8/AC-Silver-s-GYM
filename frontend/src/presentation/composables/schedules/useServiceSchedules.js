@@ -1,6 +1,6 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { limaDate } from '../../utils/attendance.js';
-import { monthWeeks, scheduleOccurrences, weekStart } from '../../../domain/utils/scheduleCalendar.js';
+import { scheduleOccurrences, weekRange } from '../../../domain/utils/scheduleCalendar.js';
 import {
   INITIAL_SCHEDULE_SETTINGS, SALAS_HORARIO, SCHEDULE_DURATIONS, dentroDeAtencion, franjaDeAtencion, horasParaDia, timeToMinutes,
 } from '../../../domain/utils/scheduleSettings.js';
@@ -26,9 +26,9 @@ export const useServiceSchedules = () => {
   const isSaving = ref(false);
   const isRefreshing = ref(false);
   const today = limaDate();
-  const visibleRange = ref({ ...monthWeeks(today.slice(0, 7)).find((week) => week.start === weekStart(today)), month: today.slice(0, 7) });
+  const visibleRange = ref(weekRange(today));
   const weeklySchedules = computed(() => {
-    const occurrences = new Map(scheduleOccurrences(filteredSchedules.value, visibleRange.value.start, visibleRange.value.month).map((item) => [item.id_horario_servicio, item]));
+    const occurrences = new Map(scheduleOccurrences(filteredSchedules.value, visibleRange.value.start).map((item) => [item.id_horario_servicio, item]));
     return filteredSchedules.value.flatMap((item) => occurrences.has(item.id_horario_servicio) ? [occurrences.get(item.id_horario_servicio)] : []);
   });
   const isEditorOpen = ref(false);
@@ -137,6 +137,11 @@ export const useServiceSchedules = () => {
    */
   const isScheduleActive = (schedule) => schedule.activo !== false;
   const activeSchedules = computed(() => schedules.value.filter((item) => item.activo !== false).length);
+  const scheduleCounts = computed(() => {
+    const counts = { todos: schedules.value.length };
+    for (const schedule of schedules.value) counts[schedule.servicio] = (counts[schedule.servicio] || 0) + 1;
+    return counts;
+  });
   const totalSlots = computed(() => schedules.value.reduce((sum, item) => sum + Number(item.cupos || 0), 0));
   const usedSlots = computed(() => schedules.value.reduce((sum, item) => sum + Number(item.cupos_usados || 0), 0));
 
@@ -516,7 +521,7 @@ export const useServiceSchedules = () => {
     feedbackTone, showNotification, filters, days, serviceFilters,
     statusFilters, sortOptions, defaultForm, form, normalizeService,
     serviceLabel, dayLabel, dayOrder, serviceOrder,
-    routinesForSelectedService, isScheduleActive, activeSchedules,
+    routinesForSelectedService, isScheduleActive, activeSchedules, scheduleCounts,
     totalSlots, usedSlots, timeToMinutes, availableSlots, durationLabel,
     slotsPercent, servicePalette, serviceStyle, statusClass, normalizeText,
     searchableScheduleText, matchesStatus, compareBase, filteredSchedules, hasValidShortDuration,

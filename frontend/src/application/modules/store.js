@@ -170,12 +170,14 @@ export const createStoreModule = (ctx, repository) => {
 
     const list = requireList(await remote.refreshStoreProductsFromBackend(), 'id_producto');
     // Los archivados van a la Papelera: no se muestran ni se venden; los pedidos guardan su propio nombre.
-    ctx.productos_tienda.value = list
-      .filter((product) => !product.archivado)
-      .map((product) => normalizeStoreProductFromBackend(product));
-    ctx.papelera_tienda.value = list
-      .filter((product) => product.archivado && !product.eliminado)
-      .map((product) => normalizeStoreProductFromBackend(product));
+    const products = [];
+    const trash = [];
+    for (const product of list) {
+      if (!product.archivado) products.push(normalizeStoreProductFromBackend(product));
+      else if (!product.eliminado) trash.push(normalizeStoreProductFromBackend(product));
+    }
+    ctx.productos_tienda.value = products;
+    ctx.papelera_tienda.value = trash;
     return ctx.productos_tienda.value;
   };
 

@@ -6,7 +6,7 @@
       <button type="button" class="ws-btn" @click="loadRequests">Reintentar</button>
     </div>
     <template v-else>
-      <p v-if="feedback" class="ws-success mb-3" role="status">{{ feedback }}</p>
+      <FloatingNotice in-dialog :message="feedback" tone="success" @dismiss="feedback = ''" />
       <p v-if="!requests.length" class="ws-muted">No hay solicitudes de pago pendientes.</p>
       <ul v-else class="space-y-3">
         <li v-for="request in requests" :key="request.token" class="space-y-3 rounded-xl border ws-border p-3">
@@ -29,6 +29,7 @@ import { onMounted, ref } from 'vue';
 import { useClientPayments } from '../../../application/services/clientPayments.js';
 import { etiquetaPagoExterno } from '../../../domain/utils/membershipPaymentMethods.js';
 import WorkspaceDialog from '../WorkspaceDialog.vue';
+import FloatingNotice from '../FloatingNotice.vue';
 import ExternalPaymentReceipt from './ExternalPaymentReceipt.vue';
 
 const props = defineProps({ token: String });

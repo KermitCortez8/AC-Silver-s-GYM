@@ -17,7 +17,7 @@ const appUrl = process.env.GYM_FRONTEND_URL || 'http://127.0.0.1:5173';
     estado_membresia: 'ACTIVA', fecha_fin: '2026-12-31' }));
   const enrollment = (id, client, fecha) => ({ ...schedule, id_matricula: id,
     id_cliente: client, fecha_clase: fecha, fecha_matricula: first, estado: 'ACTIVA', asistencias: [] });
-  let enrollments = [enrollment(1, 1, first)], failRoster = false;
+  let enrollments = [enrollment(1, 1, first)], failRoster = false, emptyRoster = false;
   const catalog = () => [{ ...schedule, cupos_usados: 1, ocupacion_por_fecha: Object.fromEntries(
     [first, second].map((fecha) => [fecha, enrollments.filter((e) => e.estado === 'ACTIVA' && e.fecha_clase === fecha).length])) }];
   const open = async (role, target) => {
@@ -60,7 +60,7 @@ const appUrl = process.env.GYM_FRONTEND_URL || 'http://127.0.0.1:5173';
         const fecha = url.searchParams.get('fecha');
         requests.push(fecha);
         if (failRoster) { status = 503; data = { detail: 'Consulta temporalmente no disponible.' }; }
-        else data = { horario: schedule, fecha, clientes: enrollments.filter((e) => e.estado === 'ACTIVA' && e.fecha_clase === fecha)
+        else data = { horario: schedule, fecha, clientes: enrollments.filter((e) => !emptyRoster && e.estado === 'ACTIVA' && e.fecha_clase === fecha)
           .map((e) => ({ id_matricula: e.id_matricula, cliente: clients.find((c) => c.id_cliente === e.id_cliente),
             asistencia: null, puede_entrar: fecha === first,
             motivo: fecha === first ? '' : 'La entrada se habilita el día de esta sesión (hora de Perú).' })) };
@@ -96,32 +96,45 @@ const appUrl = process.env.GYM_FRONTEND_URL || 'http://127.0.0.1:5173';
   enrollments.push(enrollment(3, 2, second));
   const adminPage = await open('admin', '/admin/attendance');
   await adminPage.getByRole('button', { name: /Fuerza por sesión.*Seleccionar horario/ }).click();
-  await adminPage.locator('.att-roster').getByText('Ana Torres', { exact: true }).waitFor();
+  const rosterDialog = adminPage.getByRole('dialog', { name: 'Clientes matriculados' });
+  await rosterDialog.getByText('Ana Torres', { exact: true }).waitFor();
   assert.equal(await adminPage.locator('.att-roster').getByText('Luis Gómez', { exact: true }).count(), 0);
   await shot(adminPage, 'asistencia-fecha-original.png');
+  await adminPage.keyboard.press('Escape');
+  await rosterDialog.waitFor({ state: 'hidden' });
   await adminPage.getByRole('button', { name: /Semana 3/ }).click();
-  await adminPage.getByText('Selecciona un horario para ver sus matriculados.', { exact: true }).waitFor();
   await adminPage.getByRole('button', { name: /Fuerza por sesión.*Seleccionar horario/ }).click();
   await adminPage.locator('.att-roster').getByText('Luis Gómez', { exact: true }).waitFor();
   assert.equal(await adminPage.locator('.att-roster').getByText('Ana Torres', { exact: true }).count(), 0);
   assert(await adminPage.getByRole('button', { name: 'Registrar entrada de Luis Gómez', exact: true }).isDisabled());
   await shot(adminPage, 'asistencia-otra-semana.png');
+  await rosterDialog.getByRole('button', { name: 'Cerrar matriculados' }).click();
   await adminPage.setViewportSize({ width: 390, height: 844 });
   await adminPage.getByRole('button', { name: 'Cambiar a tema claro', exact: true }).click();
   await adminPage.locator('.agenda-event').waitFor();
   await adminPage.evaluate(() => scrollTo(0, 0));
+  await adminPage.locator('.agenda-event').click();
+  await rosterDialog.getByText('Luis Gómez', { exact: true }).waitFor();
   await shot(adminPage, 'asistencia-fecha-movil.png');
+  await rosterDialog.getByRole('button', { name: 'Cerrar matriculados' }).click();
   assert(await adminPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   failRoster = true;
   await adminPage.locator('.agenda-event').click();
-  await adminPage.getByRole('alert').filter({ hasText: 'Consulta temporalmente no disponible.' }).waitFor();
+  const rosterNotice = rosterDialog.locator('.floating-notice');
+  await rosterNotice.getByRole('alert').filter({ hasText: 'Consulta temporalmente no disponible.' }).waitFor();
   assert.equal(await adminPage.locator('.att-roster').getByText('Luis Gómez', { exact: true }).count(), 0);
+  failRoster = false;
+  emptyRoster = true;
+  await rosterNotice.getByRole('button', { name: 'Reintentar', exact: true }).click();
+  await rosterNotice.waitFor({ state: 'hidden' });
+  await rosterDialog.getByText('Este horario todavía no tiene clientes matriculados.').waitFor();
   assert(requests.includes(first) && requests.includes(second));
   assert.deepEqual(errors, []);
   fs.writeFileSync(path.join(__dirname, 'browser-results.json'), JSON.stringify({ creates, cancellations,
     rosterDates: requests, pageErrors: errors, horizontalOverflow: false,
     checked: ['matrícula solo en su fecha', 'alta explícita de otra sesión', 'cancelación aislada',
-      'lista distinta entre semanas', 'entrada futura bloqueada', 'fallo de consulta sin mostrar clientes anteriores'],
+      'lista distinta entre semanas', 'entrada futura bloqueada', 'fallo de consulta sin mostrar clientes anteriores',
+      'modal en escritorio y móvil', 'cierre con Escape y botón', 'estado vacío después de reintentar'],
     api: 'Sintética local; reglas y RPC comprobadas por separado.' }, null, 2));
   await browser.close();
   console.log('Matrículas y asistencia separadas por fecha, cancelación y errores comprobados en navegador.');

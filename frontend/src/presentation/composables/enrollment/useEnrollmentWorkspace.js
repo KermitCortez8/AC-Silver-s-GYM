@@ -1,8 +1,7 @@
-import { feedbackClass as noticeClassFor } from '../../utils/feedback.js';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { limaDate } from '../../utils/attendance.js';
-import { calendarDate, scheduleOccurrences } from '../../../domain/utils/scheduleCalendar.js';
+import { calendarDate, scheduleOccurrences, weekStart } from '../../../domain/utils/scheduleCalendar.js';
 import { useAuth } from '../../../application/composables/useAuth';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { useVisibleRefresh } from '../useVisibleRefresh.js';
@@ -17,11 +16,6 @@ export const useEnrollmentWorkspace = () => {
   const selectedDate = ref(calendarDate(route.query.fecha));
   const selectedOccurrenceDate = ref('');
   watch(() => route.query.fecha, (value) => { selectedDate.value = calendarDate(value); });
-  const changeWeek = (range) => {
-    selectedDate.value = range.from;
-    selectedScheduleId.value = '';
-    selectedOccurrenceDate.value = '';
-  };
 
   const dniSearch = ref('');
   const selectedClient = ref(null);
@@ -79,7 +73,7 @@ export const useEnrollmentWorkspace = () => {
       currentClientId.value,
     ),
   );
-  const visibleEnrollments = computed(() => scheduleOccurrences(clientEnrollments.value, selectedDate.value, selectedDate.value.slice(0, 7)));
+  const visibleEnrollments = computed(() => scheduleOccurrences(clientEnrollments.value, selectedDate.value));
   const enrichedEnrollments = computed(() =>
     visibleEnrollments.value.map((item) => ({ ...item, is_enrolled: true })),
   );
@@ -109,22 +103,30 @@ export const useEnrollmentWorkspace = () => {
     return manageableSchedules.value.filter((schedule) => {
       const matchesDay = selectedDayFilter.value === 'todos' || normalizeText(schedule.dia) === selectedDayFilter.value;
       const matchesService = selectedServiceFilter.value === 'todos' || normalizeText(schedule.servicio) === selectedServiceFilter.value;
-      const searchableText = normalizeText([
+      return matchesDay && matchesService && (!query || normalizeText([
         exerciseName(schedule),
         serviceLabel(schedule.servicio),
         dayLabel(schedule.dia),
         schedule.hora_inicio,
         schedule.hora_fin,
-      ].join(' '));
-      return matchesDay && matchesService && (!query || searchableText.includes(query));
+      ].join(' ')).includes(query));
     });
   });
 
+  const datesBySchedule = computed(() => {
+    const dates = new Map();
+    for (const enrollment of clientEnrollments.value) {
+      const id = Number(enrollment.id_horario_servicio);
+      if (!dates.has(id)) dates.set(id, []);
+      dates.get(id).push(enrollment.fecha_clase);
+    }
+    return dates;
+  });
   const enrichedFilteredSchedules = computed(() =>
     filteredSchedules.value.map((schedule) => ({
       ...schedule,
       is_enrolled: isEnrolledIn(schedule.id_horario_servicio),
-      fechas_matriculadas: clientEnrollments.value.filter((item) => Number(item.id_horario_servicio) === Number(schedule.id_horario_servicio)).map((item) => item.fecha_clase),
+      fechas_matriculadas: datesBySchedule.value.get(Number(schedule.id_horario_servicio)) || [],
     })),
   );
 
@@ -164,7 +166,6 @@ export const useEnrollmentWorkspace = () => {
     if (isAdminUser.value && !selectedClient.value) return 'Horario del cliente';
     return currentClient.value?.name ? `Horario de ${currentClient.value.name}` : 'Mi horario';
   });
-  const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 
   const setFeedback = (message, tone = 'success') => {
     feedback.value = message;
@@ -204,9 +205,11 @@ export const useEnrollmentWorkspace = () => {
     isRefreshing.value = true;
 
     try {
-      const tasks = [gymStore.refreshServiceSchedulesFromBackend(), gymStore.refreshScheduleClientsFromBackend()];
+      const tasks = [gymStore.fetchFromBackend({ section: 'enrollment', force: announce || !isAdminUser.value })];
       if (!isAdminUser.value || currentClientId.value) {
-        tasks.push(gymStore.refreshEnrollmentsFromBackend(currentClientId.value ? { id_cliente: currentClientId.value } : {}));
+        tasks.push(gymStore.refreshEnrollmentsFromBackend({
+          ...(isAdminUser.value ? { id_cliente: currentClientId.value } : {}), incluir_asistencias: false,
+        }));
       }
       const results = await Promise.allSettled(tasks);
       const failure = results.find((result) => result.status === 'rejected');
@@ -220,6 +223,7 @@ export const useEnrollmentWorkspace = () => {
   };
 
   const loadAdminClient = async () => {
+    if (isSearchingClient.value) return;
     const dni = normalizeDni(dniSearch.value);
     if (!dni) {
       selectedClient.value = null;
@@ -229,16 +233,9 @@ export const useEnrollmentWorkspace = () => {
 
     isSearchingClient.value = true;
     try {
-      await gymStore.refreshScheduleClientsFromBackend();
-      const client = gymStore.members.find((member) => normalizeDni(member.dni) === dni) || null;
-      if (!client) {
-        selectedClient.value = null;
-        setFeedback('Cliente no encontrado por DNI.', 'error');
-        return;
-      }
-
+      const client = await gymStore.findEnrollmentClientByDni(dni);
+      await gymStore.refreshEnrollmentsFromBackend({ id_cliente: client.id_cliente, incluir_asistencias: false });
       selectedClient.value = client;
-      await gymStore.refreshEnrollmentsFromBackend?.({ id_cliente: client.id_cliente });
       setFeedback(`Horario de ${client.name} cargado.`);
     } catch (error) {
       selectedClient.value = null;
@@ -303,6 +300,11 @@ export const useEnrollmentWorkspace = () => {
     if (event.key === 'Escape' && isPickerOpen.value) closeSchedulePicker();
   };
 
+  watch(() => weekStart(selectedDate.value), () => {
+    selectedScheduleId.value = '';
+    selectedOccurrenceDate.value = '';
+  });
+
   watch(currentClientId, () => {
     selectedScheduleId.value = '';
     if (isPickerOpen.value) closeSchedulePicker();
@@ -342,14 +344,14 @@ export const useEnrollmentWorkspace = () => {
 
   return {
     user, isAdmin, gymStore, route, selectedDate,
-    selectedOccurrenceDate, changeWeek, dniSearch, selectedClient, selectedScheduleId,
+    selectedOccurrenceDate, dniSearch, selectedClient, selectedScheduleId,
     selectedDayFilter, selectedServiceFilter, searchQuery, feedback, feedbackTone,
     actionBusy, isRefreshing, isSearchingClient, isPickerOpen, previousBodyOverflow,
     dayFilterOptions, serviceFilterOptions, isAdminUser, authUser, authClient,
     authClientId, currentClient, currentClientId, schedules, clientEnrollments,
     visibleEnrollments, enrichedEnrollments, manageableSchedules, normalizeText, enrolledIds,
     isEnrolledIn, filteredSchedules, enrichedFilteredSchedules, selectedSchedule, selectedIsEnrolled,
-    canEnrollSelected, selectedActionDisabled, selectedActionLabel, ownCalendarTitle, feedbackClass,
+    canEnrollSelected, selectedActionDisabled, selectedActionLabel, ownCalendarTitle,
     setFeedback, resetFilters, openSchedulePicker, closeSchedulePicker, selectAvailableSchedule,
     refreshAll, loadAdminClient, enrollSelected, cancelSelected, manageSelectedSchedule,
     handleEscape,

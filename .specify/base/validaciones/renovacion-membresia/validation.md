@@ -208,3 +208,15 @@ Validación final:
 - Comprobación de solo lectura en la cuenta de prueba previamente renovada:
   el listado niega renovar mientras su vigencia supera la última semana y el
   servicio administrativo rechaza el resumen por la misma condición.
+
+## Aviso de pago único con Stripe · 2026-11-26
+
+La renovación cobra en PEN. La pantalla pública indica el pago único con
+tarjeta antes de abrir Stripe y el diálogo de caja lo indica en el método de
+pago. Chromium con datos ficticios verificó ambos textos a 375 px y que la
+renovación pagada oculta el aviso y el botón de pago en la vista compilada.
+
+`npm test` aprobó 452 pruebas y `npm run build` completó la compilación.
+La revisión de navegador usó respuestas simuladas y no realizó cobros.
+El validador documental pasó. Las pruebas de integración documental quedaron
+bloqueadas por el permiso de Windows para crear enlaces simbólicos (`WinError 1314`).

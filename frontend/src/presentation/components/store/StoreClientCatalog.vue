@@ -10,7 +10,7 @@
           <div class="flex gap-2">
             <div class="rounded-2xl ws-inset px-4 py-3 text-right">
               <p class="text-xs ws-muted">Productos</p>
-              <p class="text-xl font-black ws-text">{{ visibleProducts.length }}</p>
+              <p class="text-xl font-black ws-text">{{ totalProducts }}</p>
             </div>
             <div class="rounded-2xl ws-inset px-4 py-3 text-right">
               <p class="text-xs ws-muted">Favoritos</p>
@@ -96,6 +96,11 @@
           </article>
         </div>
 
+        <div v-if="visibleProducts.length < totalProducts" class="flex items-center justify-center gap-3 py-2">
+          <span class="text-sm ws-muted">{{ visibleProducts.length }} de {{ totalProducts }}</span>
+          <button type="button" class="ws-btn" @click="$emit('show-more')">Ver más productos</button>
+        </div>
+
         <p
           v-if="!visibleProducts.length"
           class="rounded-2xl border border-dashed ws-border p-10 text-center text-sm ws-muted"
@@ -125,6 +130,8 @@
                 v-if="item.imagen_url"
                 :src="item.imagen_url"
                 :alt="item.nombre"
+                loading="lazy"
+                decoding="async"
                 class="h-12 w-12 rounded-xl border ws-border ws-surface object-contain p-1"
               />
               <div class="min-w-0 flex-1">
@@ -244,9 +251,9 @@ import QuantityInput from '../QuantityInput.vue';
 import { Heart, Package } from 'lucide-vue-next';
 defineProps({
   favoriteIds: Array, isFavorite: Function, onlyFavorites: Boolean, canBuy: Function,
-  visibleProducts: Array, hasClientFilters: Boolean, availableFor: Function, stockWarning: Object,
+  visibleProducts: Array, totalProducts: Number, hasClientFilters: Boolean, availableFor: Function, stockWarning: Object,
   cart: Array, cartItemStock: Function, cartTotal: Object, cantidadInput: Object,
 });
-defineEmits(['favorite', 'detail', 'quantity-guard', 'quantity-change', 'add', 'remove', 'clear', 'update-cart', 'checkout']);
+defineEmits(['favorite', 'detail', 'quantity-guard', 'quantity-change', 'add', 'remove', 'clear', 'update-cart', 'checkout', 'show-more']);
 </script>
 <style scoped src="../../styles/store-view.css"></style>

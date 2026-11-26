@@ -1,7 +1,7 @@
 /** Operaciones de schedules: devuelve datos y mantiene HTTP en infraestructura. */
 import { dataRequest } from './dataRequest.js';
 export const createSchedulesRepository = (http, apiBase) => ({
-  loadClients: (isClient, token) => dataRequest(http, `${apiBase}${isClient ? '/clientes/me' : '/clientes'}`, {}, token),
+  findEnrollmentClientByDni: (dni, token) => dataRequest(http, `${apiBase}/gym/matriculas/cliente?${new URLSearchParams({ dni })}`, {}, token),
   upsertRutina: (rutina, token) => dataRequest(http, `${apiBase}/gym/rutinas`, {
     method: 'POST',
     body: JSON.stringify(rutina)
@@ -28,6 +28,7 @@ export const createSchedulesRepository = (http, apiBase) => ({
     const params = new URLSearchParams();
     if (filters.id_cliente) params.set('id_cliente', filters.id_cliente);
     if (filters.dni) params.set('dni', filters.dni);
+    if (filters.incluir_asistencias === false) params.set('incluir_asistencias', 'false');
     const query = params.toString();
     return dataRequest(http, `${apiBase}/gym/matriculas${query ? `?${query}` : ''}`, {}, token);
   },

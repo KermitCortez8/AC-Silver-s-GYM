@@ -1,5 +1,5 @@
 <template>
-  <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+  <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
     <div>
       <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Eliminados</p>
       <h2 class="mt-2 text-2xl font-black text-white">Papelera</h2>
@@ -53,6 +53,7 @@
                   :src="producto.imagen_url"
                   :alt="producto.nombre"
                   loading="lazy"
+                  fetchpriority="low"
                   decoding="async"
                   class="h-14 w-14 rounded-xl border border-white/10 bg-slate-950/60 object-contain p-1 opacity-70"
                 />
@@ -124,8 +125,11 @@ const feedback = ref('');
 const feedbackTone = ref('info');
 const busyId = ref(null);
 
-const filtrados = computed(() => gymStore.papelera_tienda
-  .filter((p) => matchesSearch(busqueda.value, [props.productCode(p.id_producto), p.nombre])));
+const filtrados = computed(() => {
+  const query = busqueda.value.trim();
+  return query ? gymStore.papelera_tienda.filter((p) => matchesSearch(query, [props.productCode(p.id_producto), p.nombre]))
+    : gymStore.papelera_tienda;
+});
 const paginados = computed(() => filtrados.value.slice((pagina.value - 1) * porPagina.value, pagina.value * porPagina.value));
 
 const ejecutar = async (producto, accion, mensaje) => {

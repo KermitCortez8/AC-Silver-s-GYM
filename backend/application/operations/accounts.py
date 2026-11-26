@@ -1,6 +1,6 @@
 """Consultas y comandos concretos; cada operación declara su unidad de datos."""
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar
 from domain.models.resources import Resource
 from domain.services.domain_components import DomainComponents
@@ -53,6 +53,47 @@ class UpsertUsuarioCommand:
 
     def run(self, rules: DomainComponents) -> Record:
         return rules.accounts.upsert_usuario(self.payload)
+
+
+@dataclass(frozen=True)
+class UpdateOwnProfileCommand:
+    operation_kind: ClassVar[str] = 'command'
+    account_id: str
+    client_id: int | None
+    changes: Record = field(repr=False)
+    verify_credentials: bool = False
+    password_actual: str = field(default="", repr=False)
+    google_subject: str = field(default="", repr=False)
+
+    @property
+    def resources(self) -> tuple[Resource, ...]:
+        if self.changes.keys() & {"correo", "dni"}:
+            return (Resource.USUARIO, Resource.CLIENTES, Resource.PREREGISTROS)
+        if self.client_id is None:
+            return (Resource.USUARIO,)
+        return (Resource.CLIENTES,)
+
+    def run(self, rules: DomainComponents) -> Record:
+        return rules.accounts.update_own_profile(
+            self.account_id, self.client_id, self.changes,
+            verify_credentials=self.verify_credentials, password_actual=self.password_actual, google_subject=self.google_subject,
+        )
+
+
+@dataclass(frozen=True)
+class ResetPasswordCommand:
+    operation_kind: ClassVar[str] = 'command'
+    account_id: str
+    client_id: int | None
+    expected_state: tuple[str, ...] = field(repr=False)
+    password: str = field(repr=False)
+
+    @property
+    def resources(self) -> tuple[Resource, ...]:
+        return (Resource.CLIENTES,) if self.client_id is not None else (Resource.USUARIO,)
+
+    def run(self, rules: DomainComponents) -> None:
+        rules.accounts.reset_password(self.account_id, self.client_id, self.expected_state, self.password)
 
 
 @dataclass(frozen=True)

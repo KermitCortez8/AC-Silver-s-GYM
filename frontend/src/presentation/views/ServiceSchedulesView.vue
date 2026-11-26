@@ -77,7 +77,7 @@
       </div>
       <nav class="service-tabs" aria-label="Filtrar por servicio">
         <button v-for="service in serviceFilters" :key="service.value" type="button" :aria-pressed="filters.servicio === service.value" @click="filters.servicio = service.value">
-          <span v-if="service.value !== 'todos'" class="service-tab-dot" :style="{ background: servicePalette[service.value].border }"></span>{{ service.value === 'todos' ? 'Todas las clases' : service.label }}<span class="service-tab-count">{{ service.value === 'todos' ? schedules.length : schedules.filter((item) => item.servicio === service.value).length }}</span>
+          <span v-if="service.value !== 'todos'" class="service-tab-dot" :style="{ background: servicePalette[service.value].border }"></span>{{ service.value === 'todos' ? 'Todas las clases' : service.label }}<span class="service-tab-count">{{ scheduleCounts[service.value] || 0 }}</span>
         </button>
       </nav>
       <div v-if="showFilters" id="schedule-filters" class="schedule-extra-filters">
@@ -359,7 +359,7 @@ const {
   feedbackTone, showNotification, filters, days, serviceFilters,
   statusFilters, sortOptions, defaultForm, form, normalizeService,
   serviceLabel, dayLabel, dayOrder, serviceOrder,
-  routinesForSelectedService, isScheduleActive, activeSchedules,
+  routinesForSelectedService, isScheduleActive, activeSchedules, scheduleCounts,
   totalSlots, usedSlots, timeToMinutes, availableSlots, durationLabel,
   slotsPercent, servicePalette, serviceStyle, statusClass, normalizeText,
   searchableScheduleText, matchesStatus, compareBase, filteredSchedules, hasValidShortDuration,

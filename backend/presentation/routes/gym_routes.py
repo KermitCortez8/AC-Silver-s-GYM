@@ -6,10 +6,11 @@ from __future__ import annotations
 
 from presentation.error_handlers import http_error
 
-from domain.errors import EnrollmentConflict, MembershipRequired
+from domain.errors import EnrollmentConflict, EntityNotFound, MembershipRequired
+from domain.validation import dni_number
 from application.errors import SchemaNotReady
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
 from presentation.dependencies import get_settings
 from presentation.dependencies import get_gym_service, require_admin_or_staff, require_internal_viewer, require_roles
@@ -157,14 +158,31 @@ def list_matriculas(
     dni: str | None = None,
     gym_service: GymService = Depends(get_gym_service),
     current_user=Depends(require_roles("admin", "staff", "user")),
+    incluir_asistencias: bool = True,
 ):
     try:
         if current_user.role == "user":
             return gym_service.matriculas_horario(
                 id_cliente=_require_session_cliente_id(current_user),
                 solo_activas=True,
+                incluir_asistencias=incluir_asistencias,
             )
-        return gym_service.matriculas_horario(id_cliente=id_cliente, dni=dni)
+        return gym_service.matriculas_horario(id_cliente=id_cliente, dni=dni, incluir_asistencias=incluir_asistencias)
+    except ValueError as error:
+        raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
+
+
+@router.get("/matriculas/cliente")
+def get_cliente_para_matricula(
+    dni: str,
+    gym_service: GymService = Depends(get_gym_service),
+    _current_user=Depends(require_admin_or_staff),
+):
+    try:
+        cliente = gym_service.enrollment_client_by_dni(dni_number(dni, required=True))
+        if not cliente:
+            raise EntityNotFound("Cliente no encontrado por DNI.")
+        return {"id_cliente": cliente["id_cliente"], "nombre": cliente["nombre"], "dni": cliente["dni"]}
     except ValueError as error:
         raise http_error(error, validation_status=status.HTTP_400_BAD_REQUEST) from error
 
@@ -173,6 +191,7 @@ def list_matriculas(
 # Crea el registro correspondiente.
 def create_matricula(
     payload: MatriculaHorarioInput,
+    background_tasks: BackgroundTasks,
     gym_service: GymService = Depends(get_gym_service),
     current_user=Depends(require_roles("admin", "staff", "user")),
 ):
@@ -185,7 +204,8 @@ def create_matricula(
             enrollment["_admin_id"] = str(current_user.id_usuario or current_user.id)
         saved = gym_service.matricular_cliente_horario(enrollment)
         if saved.pop("_email_notification_queued", False):
-            saved["email_notification"] = notify_schedule_enrollment(get_settings(), int(saved["id_matricula"]))
+            background_tasks.add_task(notify_schedule_enrollment, get_settings(), int(saved["id_matricula"]))
+            saved["email_notification"] = {"status": "queued", "message": "La confirmación quedó en cola para su envío."}
         return saved
     except ValueError as error:
         raise http_error(error, validation_status=_enrollment_error_status(error)) from error

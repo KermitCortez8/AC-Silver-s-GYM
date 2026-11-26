@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calendarDate, monthWeeks, scheduleOccurrences, weekStart } from '../../../src/domain/utils/scheduleCalendar.js';
 
-test('month weeks include partial weeks, leap day and year boundaries', () => {
+test('las semanas conservan sus siete días en los cruces de mes, bisiesto y año', () => {
   const weeks = monthWeeks('2026-03');
   assert.equal(weeks.length, 6);
-  assert.deepEqual(weeks[0], { start: '2026-02-23', end: '2026-03-01', from: '2026-03-01', to: '2026-03-01' });
-  assert.equal(weeks.at(-1).to, '2026-03-31');
-  assert.equal(monthWeeks('2024-02').at(-1).to, '2024-02-29');
+  assert.deepEqual(weeks[0], { start: '2026-02-23', end: '2026-03-01' });
+  assert.equal(weeks.at(-1).end, '2026-04-05');
+  assert.deepEqual(monthWeeks('2024-02').at(-1), { start: '2024-02-26', end: '2024-03-03' });
   assert.equal(weekStart('2027-01-01'), '2026-12-28');
+  assert.deepEqual(monthWeeks('2026-12').at(-1), monthWeeks('2027-01')[0]);
   assert.deepEqual(monthWeeks('2026-13'), []);
   assert.equal(calendarDate('2024-02-29'), '2024-02-29');
   assert.notEqual(calendarDate('2026-02-30'), '2026-02-30');
@@ -16,9 +17,9 @@ test('month weeks include partial weeks, leap day and year boundaries', () => {
 
 const monday = { id_horario_servicio: 10, dia: 'lunes', hora_inicio: '08:00', hora_fin: '09:00' };
 test('recurring schedules have a different concrete date in each week', () => {
-  assert.equal(scheduleOccurrences([monday], '2026-09-01', '2026-09').length, 0);
-  assert.equal(scheduleOccurrences([monday], '2026-09-07', '2026-09')[0].fecha, '2026-09-07');
-  assert.equal(scheduleOccurrences([monday], '2026-09-14', '2026-09')[0].fecha, '2026-09-14');
+  assert.equal(scheduleOccurrences([monday], '2026-09-01')[0].fecha, '2026-08-31');
+  assert.equal(scheduleOccurrences([monday], '2026-09-07')[0].fecha, '2026-09-07');
+  assert.equal(scheduleOccurrences([monday], '2026-09-14')[0].fecha, '2026-09-14');
 });
 
 test('attendance belongs to the exact client, enrollment and session date', () => {

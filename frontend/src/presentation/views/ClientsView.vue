@@ -37,20 +37,8 @@
       </article>
     </section>
 
-    <p
-      v-if="feedbackMessage && !isEditorOpen"
-      role="status"
-      class="ws-notice"
-      :class="feedbackToneClass"
-    >
-      <CircleCheck
-        v-if="feedbackTone === 'success'"
-        :size="18"
-        aria-hidden="true"
-      />
-      <Info v-else :size="18" aria-hidden="true" />
-      {{ feedbackMessage }}
-    </p>
+    <FloatingNotice v-if="!isEditorOpen && !isDetailsOpen && !pendingActivation"
+      :message="feedbackMessage" :tone="feedbackTone" @dismiss="dismissFeedback" />
 
     <section class="ws-panel client-directory" :aria-busy="isLoading">
       <div class="ws-toolbar">
@@ -415,10 +403,13 @@
       :pay-with-stripe="payWithStripe"
       :paying-client-id="payingClientId"
       :payment-error="paymentError"
+      :notice-message="!isEditorOpen && !pendingActivation ? feedbackMessage : ''"
+      :notice-tone="feedbackTone"
       :request-activation="requestActivation"
       :retry-activation-email="retryActivationEmail"
       :viewing-client="viewingClient"
       :token="authStore.token"
+      @dismiss-notice="dismissFeedback"
       @pago-confirmado="paymentConfirmed"
     />
     <ConfirmDialog
@@ -441,6 +432,7 @@ import ClientDetailsDialog from '../components/clients/ClientDetailsDialog.vue';
 import ClientRenewalDialog from '../components/clients/ClientRenewalDialog.vue';
 import ClientEditorDialog from '../components/clients/ClientEditorDialog.vue';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
+import FloatingNotice from '../components/FloatingNotice.vue';
 import { canPayClientWithStripe, canRenewClientMembership } from '../../domain/utils/adminClientPayment.js';
 import { clientMembershipGroup, clientMembershipLabel } from '../../domain/utils/clientDirectory.js';
 import { FORM_LIMITS } from '../../domain/utils/formLimits.js';
@@ -472,7 +464,7 @@ const {
   feedbackTone, normalizeStatus, displayMembershipStatus, isActiveStatus, isPendingMembership,
   getPlanPrice, filteredClients, pagination, hasFilters, planOptions,
   activeClients, readyToActivateClients, unpaidClients, statusFilters, resetFilters,
-  membershipBadgeClass, initials, feedbackToneClass, refreshClients, openDetails,
+  membershipBadgeClass, initials, refreshClients, openDetails,
   closeDetails, confirmDelete, activatingClientId, pendingActivation, activationError,
   notifyingClientId, payingClientId, confirmingPaymentClientId, paymentError, requestActivation,
   cancelActivation, notificationMessage, retryActivationEmail, markAsPaidManual, activateMembership,
@@ -483,9 +475,15 @@ const {
   handleSubmit, clientEditorProps,
 } = useClientDirectory();
 
-async function paymentConfirmed() {
+function dismissFeedback() {
+  if (paymentError.value === feedbackMessage.value) paymentError.value = '';
+  feedbackMessage.value = '';
+}
+
+async function paymentConfirmed(_result, inRequests = false) {
   closeDetails();
   await refreshClients(true);
+  if (inRequests) return;
   feedbackTone.value = 'success';
   feedbackMessage.value = 'Pago confirmado. La primera membresía queda pendiente de activación.';
 }

@@ -21,7 +21,7 @@
     <div class="calendar-summary">
       <p>
         <slot name="summary"><strong>{{ occurrences.length }} {{ occurrences.length === 1 ? 'sesión' : 'sesiones' }}</strong></slot>
-        <span>{{ dateLabel(visibleWeek.from) }} – {{ dateLabel(visibleWeek.to) }}</span>
+        <span>{{ dateLabel(visibleWeek.start) }} – {{ dateLabel(visibleWeek.end) }}</span>
       </p>
       <div class="service-legend" aria-label="Servicios visibles">
         <span v-for="service in visibleServices" :key="service"><i :style="{ background: eventBorderColor(service) }"></i>{{ serviceLabel(service) }}</span>
@@ -48,7 +48,7 @@
       </section>
     </div>
     <div v-else-if="occurrences.length" class="excel-calendar">
-      <ScheduleTimeGrid :options="calendarOptions" />
+      <ScheduleTimeGrid :options="calendarOptions" :selected-event-id="String(selectedItemId)" />
     </div>
     <div v-else class="calendar-empty" role="status"><CalendarDays :size="32" /><h3>{{ emptyTitle }}</h3><p>{{ items.length && !fixedDates ? 'No hay sesiones en esta semana con los filtros actuales.' : emptyMessage }}</p></div>
     <footer v-if="!fixedDates" class="calendar-footer"><span><span class="status-dot"></span> {{ interactive ? 'Selecciona una clase para gestionarla' : 'Tu horario y asistencia, semana a semana' }}</span><span>Horarios semanales · Perú</span></footer>
@@ -60,7 +60,7 @@ import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch 
 import { CalendarDays, ChevronRight, Download, List } from 'lucide-vue-next';
 import ScheduleWeekPicker from './ScheduleWeekPicker.vue';
 import { dateLabel, limaDate } from '../utils/attendance.js';
-import { calendarDate, monthWeeks, scheduleOccurrences, weekStart } from '../../domain/utils/scheduleCalendar.js';
+import { calendarDate, scheduleOccurrences, weekRange } from '../../domain/utils/scheduleCalendar.js';
 const ScheduleTimeGrid = defineAsyncComponent(() => import('./ScheduleTimeGrid.vue'));
 
 const props = defineProps({
@@ -106,12 +106,12 @@ const selectDate = (date) => {
   selectedDate.value = calendarDate(date);
   emit('update:date', selectedDate.value);
 };
-const visibleWeek = computed(() => monthWeeks(selectedDate.value.slice(0, 7)).find((week) => week.start === weekStart(selectedDate.value)));
-watch(visibleWeek, (week) => emit('range-change', { ...week, month: selectedDate.value.slice(0, 7) }), { immediate: true });
+const visibleWeek = computed(() => weekRange(selectedDate.value));
+watch(visibleWeek, (week) => emit('range-change', week), { immediate: true });
 const occurrences = computed(() => {
-  if (!props.fixedDates) return scheduleOccurrences(props.items, selectedDate.value, selectedDate.value.slice(0, 7));
-  const { from, to } = visibleWeek.value;
-  return props.items.filter((item) => item.fecha >= from && item.fecha <= to)
+  const { start, end } = visibleWeek.value;
+  if (!props.fixedDates) return scheduleOccurrences(props.items, start);
+  return props.items.filter((item) => item.fecha >= start && item.fecha <= end)
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora_inicio.localeCompare(b.hora_inicio));
 });
 const agendaDays = computed(() => {
@@ -325,19 +325,6 @@ const calendarEvents = computed(() =>
     .filter(Boolean),
 );
 
-// FullCalendar vuelve a calcular las clases al cambiar la selección o el bloqueo.
-const eventClassNames = computed(() => {
-  const selected = String(props.selectedItemId || '');
-  const interactive = props.interactive;
-  return ({ event }) => {
-    const classes = [];
-    if (interactive) classes.push('excel-event-selectable');
-    if (itemId(event.extendedProps) === selected) classes.push('excel-event-selected');
-    if (event.extendedProps?.is_enrolled) classes.push('excel-event-is-enrolled');
-    return classes;
-  };
-});
-
 const calendarOptions = computed(() => ({
   initialView: 'timeGridWeek',
   initialDate: visibleWeek.value.start,
@@ -360,7 +347,10 @@ const calendarOptions = computed(() => ({
   eventMinHeight: props.fixedDates ? 108 : 78,
   eventOrder: 'start,servicio,title',
   events: calendarEvents.value,
-  eventClassNames: eventClassNames.value,
+  eventClassNames: ({ event }) => [
+    props.interactive ? 'excel-event-selectable' : '',
+    event.extendedProps?.is_enrolled ? 'excel-event-is-enrolled' : '',
+  ].filter(Boolean),
   eventClick: ({ event }) => selectCalendarItem(event.extendedProps || {}),
   dayHeaderContent: (arg) => {
     const dayKey = dayByIndex[arg.date.getDay()];
@@ -434,7 +424,7 @@ const exportExcel = async () => {
     const rows = occurrences.value.map((item) => ({
       Servicio: serviceLabel(item.servicio),
       Fecha: item.fecha,
-      Semana: `${visibleWeek.value.from} – ${visibleWeek.value.to}`,
+      Semana: `${visibleWeek.value.start} – ${visibleWeek.value.end}`,
       Dia: item.dia || '',
       Codigo: item.codigo_dia || '',
       Rutina: item.rutina_nombre || '',
@@ -453,7 +443,7 @@ const exportExcel = async () => {
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Horario');
-    XLSX.writeFile(workbook, `${props.fileName.replace(/\.xlsx$/, '')}-${visibleWeek.value.from}.xlsx`);
+    XLSX.writeFile(workbook, `${props.fileName.replace(/\.xlsx$/, '')}-${visibleWeek.value.start}.xlsx`);
     if (props.modalFeedback) emit('notification', { tone: 'success', message: 'La descarga del horario de esta semana se ha iniciado.' });
   } catch {
     exportError.value = 'No se pudo exportar. Inténtalo de nuevo.';

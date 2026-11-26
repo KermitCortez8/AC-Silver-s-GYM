@@ -297,6 +297,7 @@
                   :src="image.url"
                   :alt="image.name"
                   loading="lazy"
+                  fetchpriority="low"
                   decoding="async"
                   class="aspect-square h-full w-full object-contain p-1"
                 />

@@ -30,6 +30,9 @@ simular timeout y luego respuesta con ID; comprobar el estado persistido.
    Los recordatorios no se vuelven a generar para otra semana de esa matrícula.
 5. **CA-05.** Dado un error HTTP de Resend, la respuesta/log seguro no expone
    el cuerpo sensible ni las credenciales; una respuesta sin ID no es entrega exitosa.
+6. **CA-06.** El correo de recuperación usa el destinatario registrado y un
+   enlace temporal para crear una contraseña nueva. La confirmación pública
+   indica que se recibió la solicitud.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -38,6 +41,7 @@ simular timeout y luego respuesta con ID; comprobar el estado persistido.
 | CA-03 | [test_resend_email.py](../../../backend/tests/notificaciones/integracion/test_resend_email.py): `test_schedule_cancelled_before_sending_when_enrollment_changes`. |
 | CA-04 | [test_schedule_calendar.py](../../../backend/tests/notificaciones/integracion/test_schedule_calendar.py). |
 | CA-05 | [test_resend_email.py](../../../backend/tests/notificaciones/integracion/test_resend_email.py): `test_provider_errors_are_safe_for_queue_and_logs`; [resend_email_test.ts](../../../supabase/tests/resend_email_test.ts). |
+| CA-06 | [test_recuperar_password.py](../../../backend/tests/identidad_acceso/integracion/test_recuperar_password.py) y [validación del recorrido](../validaciones/recuperar-password/validation.md). |
 
 ## 4. Technical Constraints
 
@@ -57,6 +61,10 @@ simular timeout y luego respuesta con ID; comprobar el estado persistido.
 - Configuración de servidor: `RESEND_API_KEY`, `EMAIL_FROM`, nombre de remitente,
   URL pública frontend y Supabase; la función usa además su secreto de Cron.
   No copiar valores reales a documentación o al frontend.
+- Recuperación usa Resend en segundo plano con el remitente configurado. El
+  enlace apunta a `FRONTEND_PUBLIC_URL`. Las solicitudes repetidas para el
+  mismo estado de cuenta comparten clave de idempotencia durante la ventana
+  de diez minutos. Los errores de envío se registran por tipo.
 
 ## 5. Guardrails
 

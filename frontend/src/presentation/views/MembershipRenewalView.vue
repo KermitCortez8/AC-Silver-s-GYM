@@ -27,10 +27,12 @@
           </dl>
           <p class="mt-6 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">{{ details.activacion }} La compra conserva tu historial y no cambia las fechas de tu membresía anterior.</p>
           <p v-if="details.renovada" role="status" class="mt-6 rounded-xl bg-emerald-50 p-4 text-emerald-800">Ya tienes una renovación pagada. No necesitas pagar nuevamente. Puedes ingresar a tu cuenta para revisar su vigencia.</p>
-          <button v-else type="button" class="mt-6 w-full rounded-full bg-orange-600 px-6 py-4 font-bold text-white hover:bg-orange-700 disabled:opacity-50" :disabled="paying || loading || Number(details.monto_pago) <= 0" @click="pay">
-            {{ paying ? 'Preparando el pago…' : 'Continuar a Stripe' }}
-          </button>
-          <p class="mt-4 text-center text-xs leading-5 text-slate-500">Revisa y confirma el pago en Stripe. La membresía se registra como pagada cuando Stripe confirma la operación.</p>
+          <template v-else>
+            <p class="mt-6 text-sm leading-5 text-slate-600">Stripe cobra el total en soles en un solo pago con tarjeta. La renovación se registra como pagada cuando Stripe confirma la operación.</p>
+            <button type="button" class="mt-4 w-full rounded-full bg-orange-600 px-6 py-4 font-bold text-white hover:bg-orange-700 disabled:opacity-50" :disabled="paying || loading || Number(details.monto_pago) <= 0" @click="pay">
+              {{ paying ? 'Preparando el pago…' : 'Continuar a Stripe' }}
+            </button>
+          </template>
         </template>
         <button v-if="error" type="button" class="mt-4 font-bold text-orange-700 underline" :disabled="loading || paying" @click="load">Volver a cargar los detalles</button>
       </section>

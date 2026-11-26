@@ -55,7 +55,7 @@
     </div>
 
     <div v-show="showHistory" id="attendance-history">
-      <AttendanceHistory v-if="historyOpened && token" :key="token" />
+      <AttendanceHistory v-if="historyOpened && token" :key="token" :visible="showHistory" />
     </div>
   </div>
 </template>
@@ -163,7 +163,7 @@ const calendarItems = computed(() => {
 });
 const visibleVisits = computed(() => {
   const range = visibleRange.value;
-  return range ? calendarItems.value.filter((item) => item.recorded && item.fecha >= range.from && item.fecha <= range.to).length : 0;
+  return range ? calendarItems.value.filter((item) => item.recorded && item.fecha >= range.start && item.fecha <= range.end).length : 0;
 });
 
 const load = async () => {

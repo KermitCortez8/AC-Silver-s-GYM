@@ -1,5 +1,5 @@
 <template>
-  <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+  <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Estado</p>
@@ -91,6 +91,7 @@
                   :alt="producto.nombre"
                   loading="lazy"
                   decoding="async"
+                  fetchpriority="low"
                   class="h-14 w-14 rounded-xl border border-white/10 bg-slate-950/60 object-contain p-1"
                 />
                 <span v-else class="text-xs text-slate-500">Sin imagen</span>

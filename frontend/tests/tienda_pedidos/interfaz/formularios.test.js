@@ -110,6 +110,19 @@ test('store quantity errors are visible and do not change the cart', async () =>
   assert.equal(gym.cart[0].cantidad, 3);
 });
 
+test('el catálogo del cliente muestra nueve productos y busca también en los que aún no se muestran', async () => {
+  const { setup, gym } = await setupView('StoreView', '/user/store');
+  gym.productos_tienda = Array.from({ length: 21 }, (_, index) => ({
+    id_producto: index + 1, nombre: `Producto ${index + 1}`, precio: 3, cantidad: 1, estado: 'Disponible',
+  }));
+  assert.equal(setup.visibleProducts.length, 21);
+  assert.equal(setup.displayedProducts.length, 9);
+  setup.showMoreProducts();
+  assert.equal(setup.displayedProducts.length, 18);
+  setup.productSearch = 'Producto 21';
+  assert.deepEqual(setup.displayedProducts.map(p => p.id_producto), [21]);
+});
+
 test('failed gallery refresh preserves previously loaded images', async (t) => {
   const { setup } = await setupView('StoreView', '/admin/store');
   setup.bucketImages = [{ name: 'agua.png', url: '/agua.png' }];

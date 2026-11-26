@@ -29,6 +29,10 @@ vigencias y navegar entre secciones mientras una carga ajena permanece pendiente
    y respuestas de una instancia no publican datos en otra sesión.
 5. **CA-05.** Dada navegación dentro del panel, el indicador de módulo no espera
    indefinidamente una consulta pendiente de otra sección.
+6. **CA-06.** Configuración de la cuenta está disponible en los paneles de
+   cliente, administrador y entrenador. La ficha se abre en modo consulta y el
+   formulario aparece al seleccionar «Editar datos». El perfil se obtiene de la
+   sesión y el tema claro u oscuro se guarda como preferencia del navegador.
 
 | Criterio | Evidencia existente |
 | --- | --- |
@@ -37,6 +41,7 @@ vigencias y navegar entre secciones mientras una carga ajena permanece pendiente
 | CA-03 | [test_supabase_refresh.py](../../../backend/tests/paneles_configuracion/integracion/test_supabase_refresh.py): `test_sections_load_only_needed_tables_and_preserve_other_sections`, `test_health_check_does_not_refresh_admin_histories`; [scoped-gym-modules.test.js](../../../frontend/tests/paneles_configuracion/integracion/scoped-gym-modules.test.js). |
 | CA-04 | [application-context.test.js](../../../frontend/tests/paneles_configuracion/integracion/application-context.test.js) y [sync-resources.test.js](../../../frontend/tests/paneles_configuracion/integracion/sync-resources.test.js). |
 | CA-05 | [module-navigation.test.js](../../../frontend/tests/paneles_configuracion/integracion/module-navigation.test.js). |
+| CA-06 | [Validación de Configuración](../validaciones/perfil-propio/validation.md). |
 
 ## 4. Technical Constraints
 
@@ -52,6 +57,10 @@ vigencias y navegar entre secciones mientras una carga ajena permanece pendiente
   personas dentro que calcula el resumen especializado de asistencia.
 - UI: [HomeView.vue](../../../frontend/src/presentation/views/HomeView.vue), paneles
   por rol y [TrainerOverviewView.vue](../../../frontend/src/presentation/views/TrainerOverviewView.vue).
+  [AccountSettingsView.vue](../../../frontend/src/presentation/views/AccountSettingsView.vue)
+  se monta en `/admin/account`, `/trainer/account` y `/user/account` y usa el
+  [contrato de identidad](01-identidad-acceso.md). `/admin/settings` conserva
+  su redirección histórica a Pagos.
 - Coordinación: [gymModules.js](../../../frontend/src/application/services/gymModules.js),
   [moduleNavigation.js](../../../frontend/src/application/services/moduleNavigation.js),
   [bootstrap.js](../../../frontend/src/bootstrap.js), cachés y generación de sesión.

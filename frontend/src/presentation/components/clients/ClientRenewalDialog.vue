@@ -17,7 +17,7 @@
       <fieldset class="mt-5 space-y-3" :disabled="busy || loading">
         <legend class="mb-3 font-bold ws-text">Método de pago</legend>
         <label class="flex items-center gap-3 ws-text"><input type="radio" name="renewal-method" value="efectivo" :checked="method === 'efectivo'" :disabled="details.renovacion_pendiente" @change="$emit('update:method', 'efectivo')"> Efectivo / caja</label>
-        <label class="flex items-center gap-3 ws-text"><input type="radio" name="renewal-method" value="stripe" :checked="method === 'stripe'" @change="$emit('update:method', 'stripe')"> Stripe</label>
+        <label class="flex items-center gap-3 ws-text"><input type="radio" name="renewal-method" value="stripe" :checked="method === 'stripe'" @change="$emit('update:method', 'stripe')"> Stripe (pago único con tarjeta)</label>
         <label v-if="method === 'efectivo'" class="mt-4 flex items-start gap-3 rounded-xl ws-tint-warning p-4 text-sm ws-text">
           <input type="checkbox" class="mt-1 h-4 w-4 shrink-0" :checked="cashReceived" @change="$emit('update:cash-received', $event.target.checked)">
           Confirmo que recibí {{ money(details.monto_pago) }} en efectivo para esta renovación.

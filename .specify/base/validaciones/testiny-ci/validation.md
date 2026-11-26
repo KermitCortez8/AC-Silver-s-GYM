@@ -506,3 +506,18 @@ En Docker Linux con Python 3.12 y Node 22 pasaron el validador documental, las
 En Windows pasaron las 18 pruebas de `test_testiny_documented.py`. La suite
 completa en Windows registró 13 errores y una omisión por permisos de enlaces
 simbólicos (WinError 1314).
+
+## Huellas y selector de calendario del PR 146 · 2026-11-26
+
+El job [`documentation`](https://github.com/KermitCortez8/AC-Silver-s-GYM/actions/runs/45905433682/job/140200913038)
+falló al comparar las huellas de las pruebas con la revisión de Testiny. Se
+contrastaron 26 selectores de siete archivos con los pasos de los casos que
+los usan y se actualizaron sus huellas. El TC-152 apunta al nombre actual
+de la prueba de calendario en la revisión y en el CSV. La prueba comprueba
+que el 29 de febrero de 2024 es válido y que su semana va del 26 de febrero
+al 3 de marzo. El mínimo de publicación sigue siendo 178 de 222 casos.
+
+El hook documental validó 149 archivos y 15 contratos. En Windows,
+`py -3.12 -B -m unittest discover -s .specify/tests -p 'test_testiny*.py' -v`
+registró 36 aprobaciones y una omisión por permisos de enlaces simbólicos.
+La validación del PR ejecuta la suite completa en Linux.

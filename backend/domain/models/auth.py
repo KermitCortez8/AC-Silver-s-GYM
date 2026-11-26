@@ -6,7 +6,16 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
+
+from domain.form_limits import DNI_LENGTH, SHORT_TEXT_LIMIT, PHONE_LENGTH
+
+
+class MembershipProfile(BaseModel):
+    plan: str = ""
+    fecha_inicio: str
+    fecha_fin: str
+    estado_pago: str
 
 
 class UserProfile(BaseModel):
@@ -21,6 +30,23 @@ class UserProfile(BaseModel):
     givenName: str = ""
     familyName: str = ""
     role: Literal["admin", "user", "trainer", "staff"] = "user"
+    estado: str = ""
+    fecha_registro: str = ""
+    google_vinculado: bool = False
+    tiene_contrasena: bool = False
+    membresia: MembershipProfile | None = None
+
+
+class UpdateProfileRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nombre: str = Field(default="", max_length=SHORT_TEXT_LIMIT)
+    telefono: str = Field(default="", max_length=PHONE_LENGTH)
+    correo: str = Field(default="", max_length=SHORT_TEXT_LIMIT)
+    dni: str = Field(default="", max_length=DNI_LENGTH)
+    password_nueva: SecretStr = Field(default=SecretStr(""), max_length=256)
+    password_actual: SecretStr = Field(default=SecretStr(""), max_length=16384)
+    google_credential: SecretStr = Field(default=SecretStr(""), max_length=16384)
 
 
 class AuthGoogleRequest(BaseModel):
@@ -37,6 +63,19 @@ class GoogleProfile(BaseModel):
 class AuthPasswordRequest(BaseModel):
     correo: str = ""
     password: str = ""
+
+
+class PasswordRecoveryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    correo: str = Field(max_length=SHORT_TEXT_LIMIT)
+
+
+class PasswordResetRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    token: SecretStr = Field(max_length=2048)
+    password_nueva: SecretStr = Field(max_length=256)
 
 
 class AuthResponse(BaseModel):

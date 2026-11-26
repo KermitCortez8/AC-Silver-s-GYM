@@ -3,7 +3,7 @@ import { refreshAfterMutation } from '../services/refreshAfterMutation.js';
 import { bindSessionRepository } from '../services/sessionBoundary.js';
 import { validateScheduleSettings } from '../../domain/utils/scheduleSettings.js';
 /** Estado y operaciones del módulo schedules. */
-import { nowISO, normalizeBackendClientToMember, todayISO, getCurrentRegistrarId } from '../../domain/utils/gymRules.js';
+import { nowISO, todayISO, getCurrentRegistrarId } from '../../domain/utils/gymRules.js';
 
 export const createSchedulesModule = (ctx, repository) => {
   const remote = bindSessionRepository(repository, () => ctx.authStore.token, ctx.pinia);
@@ -244,11 +244,9 @@ export const createSchedulesModule = (ctx, repository) => {
     scheduleWriteRevision++;
   };
 
-  const refreshScheduleClientsFromBackend = async () => {
-    const isClient = (ctx.authStore.userRole || ctx.authStore.user?.role) === 'user';
-    const data = await remote.loadClients(isClient);
-    ctx.members.value = requireList(isClient ? [data] : data).map(normalizeBackendClientToMember);
-    return ctx.members.value;
+  const findEnrollmentClientByDni = async (dni) => {
+    const client = requireRecord(await remote.findEnrollmentClientByDni(dni), 'id_cliente');
+    return { id_cliente: client.id_cliente, name: client.nombre, dni: client.dni };
   };
 
   const refreshEnrollmentsFromBackend = async (filters = {}) => {
@@ -397,7 +395,7 @@ export const createSchedulesModule = (ctx, repository) => {
   return {
     upsertRutina, upsertHorario, memberSchedules, assignMemberSchedule, refreshServiceSchedulesFromBackend,
     loadScheduleSettings, saveScheduleSettings, refreshRoutinesFromBackend, upsertServiceSchedule, deleteServiceSchedule,
-    refreshScheduleClientsFromBackend, refreshEnrollmentsFromBackend, fetchTrainerOverview, upsertTrainerRoutine,
+    findEnrollmentClientByDni, refreshEnrollmentsFromBackend, fetchTrainerOverview, upsertTrainerRoutine,
     assignTrainerRoutine, fetchTrainerClientRoutines, markTrainerRoutineProgress, enrollSchedule, deleteEnrollment,
   };
 };
