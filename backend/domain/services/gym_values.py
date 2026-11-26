@@ -24,6 +24,8 @@ ESTADO_AGOTADO = "Agotado"
 # Destino de las salidas de MOV_INV. VENTA solo aparece en los movimientos de pedidos registrados
 # durante la etapa histórica de stock compartido; ya no se generan.
 DESTINO_TIENDA = "TIENDA"
+# Pago de Tienda que confirma el recepcionista (QR de Yape).
+METODO_YAPE = "yape"
 DESTINO_VENTA = "VENTA"
 # Movimientos de pedidos de esa etapa, reconocidos por el inicio de su descripción.
 _MOVIMIENTO_PEDIDO = re.compile(r"^(?:Venta pedido|Devolución por cancelación del pedido) #\d+")

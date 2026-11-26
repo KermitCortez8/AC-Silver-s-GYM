@@ -6,9 +6,20 @@
         <h2 class="mt-2 text-2xl font-black text-white">Movimientos de inventario</h2>
         <p class="mt-1 text-sm text-slate-400">Entradas, salidas, ajustes y traslados de cada artículo.</p>
       </div>
-      <button type="button" class="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.02] hover:bg-orange-300" @click="openNew">
-        + Registrar movimiento
-      </button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-2xl border border-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="!filteredMovements.length || isExporting"
+          @click="downloadMovements"
+        >
+          <FileDown :size="16" aria-hidden="true" />
+          {{ isExporting ? 'Generando…' : 'Descargar Excel' }}
+        </button>
+        <button type="button" class="rounded-2xl bg-orange-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:scale-[1.02] hover:bg-orange-300" @click="openNew">
+          + Registrar movimiento
+        </button>
+      </div>
     </div>
 
     <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -102,7 +113,10 @@
                 <span v-else class="text-xs text-slate-400">-</span>
               </td>
               <td class="max-w-md px-4 py-3 text-slate-400">{{ movement.descripcion || 'Sin descripción' }}</td>
-              <td class="px-4 py-3 text-right">
+              <td class="whitespace-nowrap px-4 py-3 text-right">
+                <button type="button" class="mr-2 inline-flex items-center gap-1 rounded-xl border border-sky-400/30 bg-sky-400/10 px-3 py-1.5 text-xs font-bold text-sky-200 transition hover:bg-sky-400/20" @click="detailMovement = movement">
+                  <Eye :size="13" aria-hidden="true" /> Detalles
+                </button>
                 <button type="button" class="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10" @click="openEdit(movement)">
                   Editar
                 </button>
@@ -121,6 +135,13 @@
     <p v-if="!filteredMovements.length" class="mt-5 rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400" role="status">
       {{ historyMessage }}
     </p>
+
+    <MovementDetailsModal
+      :movement="active ? detailMovement : null"
+      :item="detailMovement ? itemsByNumber.get(Number(detailMovement.id_item)) || null : null"
+      :destination="detailMovement && destinationOf(detailMovement) ? destinationLabel(destinationOf(detailMovement)) : ''"
+      @close="detailMovement = null"
+    />
 
     <ResourceModal
       :open="active && isModalOpen"
@@ -157,7 +178,7 @@
             <span class="inv-label">Tipo</span>
             <div class="flex gap-2">
               <label
-                v-for="option in movementTypes"
+                v-for="option in availableMovementTypes"
                 :key="option.value"
                 class="rm-choice"
                 :class="[`rm-choice--${option.value}`, { 'is-active': form.tipo_movimiento === option.value }]"
@@ -168,16 +189,16 @@
               </label>
             </div>
             <p v-if="unitItem && !isLocked" class="text-xs text-slate-400">
-              Equipo con N° de activo por unidad: cada entrada crea códigos nuevos ({{ selectedItem.n_activo }}-...-001) y no admite ajustes.
+              Equipo con N° de activo por unidad: cada entrada crea códigos nuevos ({{ selectedItem.n_activo }}-...-001), el traslado cambia de ubicación sin restar stock y no admite ajustes.
             </p>
           </div>
           <div v-if="needsUnitPick" class="space-y-2">
-            <span class="inv-label inv-required">Unidades que salen</span>
+            <span class="inv-label inv-required">{{ isTransfer ? 'Unidades que se trasladan' : 'Unidades que salen' }}</span>
             <div v-if="selectableUnits.length" class="grid max-h-48 gap-1 overflow-y-auto rounded-2xl border border-white/10 p-2 sm:grid-cols-2">
               <label v-for="unit in selectableUnits" :key="unit.id_unidad" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-white/5">
                 <input v-model="form.unidades" type="checkbox" :value="unit.id_unidad" class="h-4 w-4 accent-amber-400" />
                 <span class="font-mono font-bold">{{ unit.codigo }}</span>
-                <span class="truncate text-xs text-slate-400">{{ unit.estado }}</span>
+                <span class="truncate text-xs text-slate-400">{{ isTransfer ? unit.ubicacion : unit.estado }}</span>
               </label>
             </div>
             <p v-else class="text-xs text-slate-400">Este artículo no tiene unidades activas.</p>
@@ -205,7 +226,19 @@
             <span class="inv-label">Fecha</span>
             <input v-model="form.fecha_movimiento" type="date" class="field-input" />
           </label>
-          <label v-if="form.tipo_movimiento === 'salida'" class="space-y-2 sm:col-span-2">
+          <div v-if="isTransfer" class="space-y-2 sm:col-span-2">
+            <label for="movement-transfer-location" class="inv-label inv-required">Ubicación de destino</label>
+            <ExtensibleSelect
+              id="movement-transfer-location"
+              v-model="form.ubicacion_destino"
+              :options="transferLocationOptions"
+              placeholder="Selecciona una ubicación"
+              add-label="Agregar nueva ubicación"
+              add-placeholder="Ej. Sala 3"
+            />
+            <FieldError class="inv-field-error" :message="transferWarning" />
+          </div>
+          <label v-if="form.tipo_movimiento === 'salida' && !unitItem" class="space-y-2 sm:col-span-2">
             <span class="inv-label">Destino</span>
             <select v-if="!isLocked" v-model="form.destino" class="field-input">
               <option value="">Sin destino (uso interno, merma, baja...)</option>
@@ -274,19 +307,23 @@ import { parseQuantity } from '../../../domain/utils/quantities.js';
 import { limaDate } from '../../../domain/utils/dates.js';
 import { quantityError } from '../../../domain/utils/formValidation.js';
 import { computed, reactive, ref, watch } from 'vue';
-import { AlertCircle, ArrowDownToLine, ArrowLeftRight, ArrowRight, ArrowUpFromLine, CalendarDays, Equal, Info, MapPin, Package, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
+import { AlertCircle, ArrowDownToLine, ArrowLeftRight, ArrowRight, ArrowUpFromLine, CalendarDays, Equal, Eye, FileDown, Info, MapPin, Package, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
 import ResourceModal from '../ResourceModal.vue';
 import SortableTh from '../common/SortableTh.vue';
 import TablePager from '../common/TablePager.vue';
 import TableSearch from '../common/TableSearch.vue';
 import CharCounter from '../common/CharCounter.vue';
+import ExtensibleSelect from '../common/ExtensibleSelect.vue';
+import { INVENTORY_LOCATIONS, inventoryOptions } from '../../utils/inventoryOptions.js';
 import FieldError from '../FieldError.vue';
 import { useLiveWarnings } from '../../composables/useLiveWarnings.js';
 import { clampText, DEFAULT_PAGE_SIZE, matchesSearch, missingFields, missingFieldsMessage, NOTES_MAX_LENGTH, sortRows } from '../../../domain/utils/inputRules.js';
 import { useAuthStore } from '../../../application/stores/authStore';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { isActiveUnit } from '../../../domain/utils/inventoryUnits.js';
-import { movementSortKey, movementTime, signedQuantity } from '../../../domain/utils/inventoryMovements.js';
+import { movementAuthor, movementSortKey, movementTime, movementTypeLabel, signedQuantity } from '../../../domain/utils/inventoryMovements.js';
+import { exportToExcel, MOVEMENTS_EXCEL_COLUMNS, movementExcelRows } from '../../utils/excelExport.js';
+import MovementDetailsModal from './MovementDetailsModal.vue';
 
 const props = defineProps({ active: { type: Boolean, default: true } });
 
@@ -295,7 +332,8 @@ const movementTypes = [
   { value: 'salida', label: 'Salida', icon: ArrowUpFromLine },
   { value: 'ajuste', label: 'Ajuste exacto', icon: Equal },
 ];
-// Los traslados los genera el cambio de ubicación de una unidad; no se registran a mano.
+// Traslado: solo equipos con N° de activo; cambia la ubicación de las unidades sin restar stock.
+const transferType = { value: 'traslado', label: 'Traslado', icon: MapPin };
 const typeIcons = { entrada: ArrowDownToLine, salida: ArrowUpFromLine, ajuste: Equal, traslado: MapPin };
 
 // Mismo criterio que el backend para reconocer los movimientos generados por pedidos.
@@ -332,7 +370,7 @@ const historyMessage = computed(() => {
 });
 const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 const today = () => limaDate();
-const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, destino: '', fecha_movimiento: today(), descripcion: '', unidades: [] });
+const emptyForm = () => ({ id_item: 0, tipo_movimiento: 'entrada', cantidad: 1, destino: '', fecha_movimiento: today(), descripcion: '', unidades: [], ubicacion_destino: '' });
 const form = reactive(emptyForm());
 
 const itemNumber = (item) => Number(String(item.id).replace('item-', ''));
@@ -346,13 +384,27 @@ const selectedItem = computed(() => itemsByNumber.value.get(Number(form.id_item)
 const unitItem = computed(() => Boolean(selectedItem.value?.byUnit));
 const lockedByUnits = computed(() => Boolean(editingMovement.value) && unitItem.value);
 const isLocked = computed(() => lockedByOrder.value || lockedByUnits.value);
-const needsUnitPick = computed(() => !editingMovement.value && unitItem.value && form.tipo_movimiento === 'salida');
+const isTransfer = computed(() => !editingMovement.value && unitItem.value && form.tipo_movimiento === 'traslado');
+const needsUnitPick = computed(() => !editingMovement.value && unitItem.value && ['salida', 'traslado'].includes(form.tipo_movimiento));
+const availableMovementTypes = computed(() => (unitItem.value && !editingMovement.value ? [...movementTypes, transferType] : movementTypes));
+const transferWarning = ref('');
+const transferLocationOptions = computed(() => inventoryOptions(
+  INVENTORY_LOCATIONS,
+  [...inventory.value.map((item) => item.location), ...(gymStore.inventoryUnits || []).map((unit) => unit.ubicacion)],
+  form.ubicacion_destino,
+));
 const selectableUnits = computed(() => (gymStore.inventoryUnits || [])
   .filter((unit) => Number(unit.id_item) === Number(form.id_item) && isActiveUnit(unit))
   .sort((a, b) => Number(a.correlativo) - Number(b.correlativo)));
 const unitsWarning = ref('');
 watch(() => form.id_item, () => { form.unidades = []; });
-watch(unitItem, (byUnit) => { if (byUnit && form.tipo_movimiento === 'ajuste' && !editingMovement.value) form.tipo_movimiento = 'entrada'; });
+watch(unitItem, (byUnit) => {
+  if (editingMovement.value) return;
+  if (byUnit && form.tipo_movimiento === 'ajuste') form.tipo_movimiento = 'entrada';
+  if (!byUnit && form.tipo_movimiento === 'traslado') form.tipo_movimiento = 'entrada';
+});
+watch(() => form.tipo_movimiento, (tipo) => { if (tipo === 'traslado') form.destino = ''; });
+watch(() => form.ubicacion_destino, (value) => { if (value) transferWarning.value = ''; });
 watch(() => form.unidades.length, (count) => {
   if (needsUnitPick.value) form.cantidad = Math.max(1, count);
   if (count) unitsWarning.value = '';
@@ -365,11 +417,12 @@ const wasRestockOfSelected = computed(() => {
   return Boolean(original && Number(original.id_item) === Number(form.id_item) && original.tipo_movimiento === 'salida' && destinationOf(original) === 'TIENDA');
 });
 
-const effect = (tipo, cantidad) => (tipo === 'entrada' ? cantidad : -cantidad);
+const effect = (tipo, cantidad) => (tipo === 'entrada' ? cantidad : tipo === 'traslado' ? 0 : -cantidad);
 const projectedStock = computed(() => {
   const actual = Number(selectedItem.value?.quantity || 0);
   const cantidad = Math.max(1, Number(form.cantidad || 1));
   if (form.tipo_movimiento === 'ajuste') return cantidad;
+  if (form.tipo_movimiento === 'traslado') return actual;
   const original = editingMovement.value;
   // Al editar sobre el mismo articulo primero se revierte el efecto del movimiento original.
   const base = original && Number(original.id_item) === Number(form.id_item) && original.tipo_movimiento !== 'ajuste'
@@ -445,11 +498,41 @@ const toggleSort = (column) => {
 };
 const page = ref(1);
 const pageSize = ref(DEFAULT_PAGE_SIZE);
-const pagedMovements = computed(() => {
+const sortedMovements = computed(() => {
   const column = SORT_COLUMNS[sortKey.value];
-  const rows = column ? sortRows(filteredMovements.value, column.accessor, sortDir.value, column.type) : filteredMovements.value;
-  return rows.slice((page.value - 1) * pageSize.value, page.value * pageSize.value);
+  return column ? sortRows(filteredMovements.value, column.accessor, sortDir.value, column.type) : filteredMovements.value;
 });
+const pagedMovements = computed(() => sortedMovements.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value));
+
+// Detalles: datos del movimiento y el historial de su artículo (o de su unidad).
+const detailMovement = ref(null);
+
+// Excel con lo que se ve: los filtros y el orden actuales.
+const isExporting = ref(false);
+const downloadMovements = async () => {
+  if (isExporting.value || !sortedMovements.value.length) return;
+  isExporting.value = true;
+  try {
+    await exportToExcel({
+      sheetName: 'Movimientos',
+      title: 'Movimientos de inventario',
+      columns: MOVEMENTS_EXCEL_COLUMNS,
+      rows: movementExcelRows(sortedMovements.value, {
+        itemName,
+        author: (movement) => movementAuthor(movement, gymStore.users || []),
+        destination: (movement) => (destinationOf(movement) ? destinationLabel(destinationOf(movement)) : ''),
+        typeLabel: movementTypeLabel,
+        signed: signedQuantity,
+        time: movementTime,
+      }),
+    }, 'movimientos_inventario');
+  } catch {
+    feedback.value = 'No se pudo generar el Excel de movimientos. Vuelve a intentarlo.';
+    feedbackTone.value = 'error';
+  } finally {
+    isExporting.value = false;
+  }
+};
 
 // Validacion del formulario: campos obligatorios y cantidad entera.
 const formErrors = ref([]);
@@ -535,8 +618,13 @@ const save = async () => {
   }
   try {
     if (needsUnitPick.value && !form.unidades.length) {
-      unitsWarning.value = 'Elige las unidades que salen.';
-      throw new Error('Elige las unidades que salen.');
+      const message = isTransfer.value ? 'Elige las unidades que se trasladan.' : 'Elige las unidades que salen.';
+      unitsWarning.value = message;
+      throw new Error(message);
+    }
+    if (isTransfer.value && !String(form.ubicacion_destino || '').trim()) {
+      transferWarning.value = 'Elige la ubicación de destino.';
+      throw new Error('Elige la ubicación de destino.');
     }
     const cantidad = isLocked.value ? undefined : needsUnitPick.value ? form.unidades.length : parseQuantity(form.cantidad, { min: 1 });
     if (!form.id_item) throw new Error('Selecciona un artículo de inventario.');
@@ -556,15 +644,20 @@ const save = async () => {
     } else {
       const fields = { ...form };
       delete fields.unidades;
+      delete fields.ubicacion_destino;
+      const transfer = isTransfer.value;
       await gymStore.registrarMovimientoToServer({
         ...fields,
         ...(needsUnitPick.value ? { unidades: [...form.unidades] } : {}),
+        ...(transfer ? { ubicacion_destino: String(form.ubicacion_destino).trim() } : {}),
         cantidad,
         descripcion,
         destino: destino || null,
         id_usuario: authStore.user?.id_usuario || authStore.user?.id || 1,
       });
-      feedback.value = destino === 'TIENDA' ? 'Reposición registrada: el stock pasó de Inventario a Tienda.' : 'Movimiento registrado y stock actualizado.';
+      feedback.value = transfer
+        ? `Traslado registrado: ${cantidad} ${cantidad === 1 ? 'unidad' : 'unidades'} a ${String(form.ubicacion_destino).trim()}. El stock no cambia.`
+        : destino === 'TIENDA' ? 'Reposición registrada: el stock pasó de Inventario a Tienda.' : 'Movimiento registrado y stock actualizado.';
     }
     feedbackTone.value = 'success';
     isSaving.value = false;

@@ -61,7 +61,7 @@
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <h3 class="ord-card-title">Pedido #{{ order.id_pedido }}</h3>
-                <span class="ord-pill ord-pill--paid">{{ order.estado_pago }}</span>
+                <span class="ord-pill" :class="isPaid(order) ? 'ord-pill--paid' : 'ord-pill--pending'">{{ isYapeToConfirm(order) ? 'YAPE POR CONFIRMAR' : order.estado_pago }}</span>
                 <span class="ord-pill" :class="statusPillClass(order.estado_pedido)">{{ order.estado_pedido }}</span>
               </div>
               <p class="ord-client">{{ clientOf(order).name || 'Sin registrar' }} &middot; {{ clientOf(order).email || 'Sin correo' }}</p>
@@ -98,7 +98,7 @@
                 <option :disabled="!canCancel(order)">CANCELADO</option>
               </select>
               <span v-if="isCancelled(order)" class="ord-hint">Pedido cancelado: su stock ya fue devuelto.</span>
-              <span v-else-if="!canCancel(order)" class="ord-hint">Solo se cancelan pedidos PENDIENTE.</span>
+              <span v-else-if="!canCancel(order)" class="ord-hint">Solo se cancelan pedidos PENDIENTE o CONFIRMADO.</span>
             </label>
             <label class="space-y-1.5">
               <span class="ord-field-label">Observación</span>
@@ -145,12 +145,14 @@ const orderDrafts = reactive({});
 
 const orderStatus = (order) => String(order.estado_pedido || '').toUpperCase();
 const isCancelled = (order) => orderStatus(order) === 'CANCELADO';
-const canCancel = (order) => ['PENDIENTE', 'CANCELADO'].includes(orderStatus(order));
+const canCancel = (order) => ['PENDIENTE', 'CONFIRMADO', 'CANCELADO'].includes(orderStatus(order));
 
 /**
  * Un pedido con tarjeta que aún no se cobró (o se abandonó) no se muestra: solo cuentan los pagados.
  */
 const isPaid = (order) => String(order.estado_pago || 'PAGADO').toUpperCase() === 'PAGADO';
+// Yape por QR: el pedido se ve mientras recepción no confirma el cobro.
+const isYapeToConfirm = (order) => String(order.metodo_pago || '').toLowerCase() === 'yape' && !isPaid(order);
 
 /**
  * Obtiene el cliente del pedido por su id_cliente (o DNI), con los datos del pedido como respaldo.
@@ -168,12 +170,12 @@ const clientOf = (order) => {
 };
 
 const orders = computed(() => (gymStore.storeOrders || [])
-  .filter(isPaid)
+  .filter((order) => isPaid(order) || isYapeToConfirm(order))
   .sort((a, b) => String(b.fecha_pedido || '').localeCompare(String(a.fecha_pedido || ''))));
 const pendingOrders = computed(() => orders.value.filter((order) => orderStatus(order) === 'PENDIENTE'));
 // Las ventas son los pedidos cobrados que no se cancelaron.
 const totalSales = computed(() => orders.value
-  .filter((order) => !isCancelled(order))
+  .filter((order) => isPaid(order) && !isCancelled(order))
   .reduce((sum, order) => sum + Number(order.total || 0), 0));
 
 const normalizedSearch = computed(() => search.value.trim().toLowerCase());

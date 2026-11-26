@@ -65,7 +65,8 @@ def database():
     for filename in ['014_preserve_business_fields.sql', '015_atomic_gym_transactions.sql',
                      '016_transaction_sequence_permissions.sql', '018_archivar_inventario_tienda.sql',
                      '019_papelera_tienda.sql', '020_public_preregistrations.sql',
-                     '026_inventario_unidades.sql', '027_mov_inv_unidad_hora.sql']:
+                     '026_inventario_unidades.sql', '027_mov_inv_unidad_hora.sql',
+                     '032_bajas_y_pedidos_confirmados.sql']:
         migration = (BACKEND / 'migrations' / filename).read_text()
         database.sql(migration)
         database.sql(migration)  # El despliegue repetido no debe borrar ni duplicar datos.
@@ -449,3 +450,44 @@ def test_unit_transfer_and_restore_are_stored_with_unit_and_time(database, monke
     assert (unit['estado'], unit['ubicacion'], unit['fecha_baja']) == ('Operativo', 'Sala de fuerza', None)
     item = database.rows('INVENTARIO')[0]
     assert item['Cantidad_Stock_E'] == 2
+
+
+
+def test_p05_migration_032_confirms_paid_pending_orders_once(database):
+    database.sql('''insert into public."VENTAS" (id_venta, estado_pago, estado_pedido) values
+                    (901, 'PAGADO', 'PENDIENTE'), (902, 'PENDIENTE', 'PENDIENTE'),
+                    (903, 'PAGADO', 'ENTREGADO'), (904, 'pagado', 'pendiente');''')
+    migration = (BACKEND / 'migrations/032_bajas_y_pedidos_confirmados.sql').read_text()
+    database.sql(migration)
+    database.sql(migration)  # Repetirla no cambia nada.
+    states = {row['id_venta']: row['estado_pedido'] for row in database.rows('VENTAS') if row['id_venta'] >= 901}
+    assert states == {901: 'CONFIRMADO', 902: 'PENDIENTE', 903: 'ENTREGADO', 904: 'CONFIRMADO'}
+    database.sql('delete from public."VENTAS" where id_venta >= 901;')
+
+
+def test_r02_archiving_and_unit_transfer_are_committed_together(database, monkeypatch):
+    gym = service(database, monkeypatch)
+    admin = gym.upsert_usuario(dict(nombre='Admin', correo='admin2@gmail.com', rol='admin', password='secret123'))
+    item = gym.upsert_inventario(dict(nombre_item='Rack sentadilla', tipo='Equipo de fuerza', cantidad_stock=2,
+                                      estado='Operativo', ubicacion='Almacén'))
+    units = sorted((u for u in gym.unidades_inventario() if u['id_item'] == item['id_item']), key=lambda u: u['correlativo'])
+    gym.registrar_movimiento_inventario({'id_item': item['id_item'], 'id_usuario': admin['id_usuario'],
+                                         'tipo_movimiento': 'traslado', 'cantidad': 2,
+                                         'unidades': [u['id_unidad'] for u in units], 'ubicacion_destino': 'Sala 2'})
+    gym.delete_inventario(item['id_item'])
+    row = next(r for r in database.rows('INVENTARIO') if r['id_item'] == item['id_item'])
+    assert row['archivado'] is True and row['fecha_baja'] is not None
+    moved = [r for r in database.rows('MOV_INV') if r['tipo_movimiento'] == 'traslado' and r['id_item'] == item['id_item']]
+    assert sorted(r['id_unidad'] for r in moved) == sorted(u['id_unidad'] for u in units)
+
+
+def test_y10_yape_order_is_stored_pending_until_reception_confirms(database, monkeypatch):
+    database.sql('''insert into public."TIENDA_PRODUCTOS" (id_producto,"nombre_Producto","precio_Venta",cantidad_stock)
+                   values (77,'Agua Yape',10,5);''')
+    gym = service(database, monkeypatch)
+    created = gym.crear_pedido_tienda({'metodo_pago': 'Yape', 'items': [{'id_producto': 77, 'cantidad': 2}]})
+    row = next(r for r in database.rows('VENTAS') if r['id_venta'] == created['id_pedido'])
+    assert (row['metodo_Pago'], row['estado_pago'], row['estado_pedido']) == ('yape', 'PENDIENTE', 'PENDIENTE')
+    gym.actualizar_pedido_tienda(created['id_pedido'], {'estado_pedido': 'CONFIRMADO'})
+    row = next(r for r in database.rows('VENTAS') if r['id_venta'] == created['id_pedido'])
+    assert (row['estado_pago'], row['estado_pedido']) == ('PAGADO', 'CONFIRMADO')

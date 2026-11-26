@@ -46,4 +46,25 @@ const setupView = async (filename, path, prepare, query = {}) => {
   return { setup, gym: useGymStore(pinia), html, dialogs: Object.values(context.teleports || {}).join('') };
 };
 
-export { setupView };
+// Monta un componente de presentation/components con sus props; prepare recibe su setup y el store
+// antes del render, para dejar datos listos.
+const setupComponent = async (filename, props = {}, prepare) => {
+  const { default: Component } = await server.ssrLoadModule(`/src/presentation/components/${filename}.vue`);
+  const pinia = createPinia();
+  installServices(pinia, { http: { apiGet: async () => [] } });
+  let setup;
+  const app = createSSRApp({ render: () => h(Component, props) });
+  app.use(pinia);
+  app.use(createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { render: () => null } }] }));
+  app.mixin({ created() {
+    if (this.$.type === Component) {
+      setup = this.$.setupState;
+      prepare?.(setup, useGymStore(pinia));
+    }
+  } });
+  const html = await renderToString(app);
+  assert.ok(setup, 'Se debe ejecutar el setup real del componente');
+  return { setup, gym: useGymStore(pinia), html };
+};
+
+export { setupComponent, setupView };

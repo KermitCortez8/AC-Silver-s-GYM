@@ -68,6 +68,7 @@ export const sectionForPath = (path, tab) => {
     if (panel === 'admin' && ['ventas', 'movimientos'].includes(tab)) return 'orders';
   }
   if (panel === 'admin' && section === 'inventory' && !subpage) {
+    if (tab === 'bajas') return 'inventory';
     return tab === 'movimientos' ? 'inventoryHistory' : 'inventoryItems';
   }
   if (panel === 'trainer') return 'trainer';

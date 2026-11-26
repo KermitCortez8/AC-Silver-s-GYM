@@ -6,7 +6,7 @@ from domain.errors import EntityNotFound
 from datetime import datetime, timezone
 from typing import Any
 from domain.money import cents, order_totals
-from domain.services.gym_values import TIPO_TIENDA, DESTINO_TIENDA, ESTADO_PAGO_PAGADO, ESTADO_PAGO_PENDIENTE, ESTADO_PEDIDO_CANCELADO, _pedido_pagado, _parse_utc, PedidoCanceladoConPagoError
+from domain.services.gym_values import TIPO_TIENDA, DESTINO_TIENDA, METODO_YAPE, ESTADO_PAGO_PAGADO, ESTADO_PAGO_PENDIENTE, ESTADO_PEDIDO_CANCELADO, _pedido_pagado, _parse_utc, PedidoCanceladoConPagoError
 
 
 from dataclasses import dataclass
@@ -177,6 +177,7 @@ class StoreRules:
         item = self.dependencies.find_item_in_state(state, producto.get("id_item"))
         if item:
             item["archivado"] = en_papelera
+            item["fecha_baja"] = self.context.today() if en_papelera else None
         self.dependencies.actualizar_estados_tienda(state)
 
     def delete_producto_tienda(self, id_producto: int) -> dict[str, Any] | None:
@@ -252,6 +253,9 @@ class StoreRules:
 
     def _crear_pedido_tienda(self, payload: dict[str, Any], pago_pendiente: bool) -> dict[str, Any]:
         raw_items = payload.get("items") or []
+        metodo = "tarjeta" if pago_pendiente else str(payload.get("metodo_pago") or "tarjeta").strip().lower()
+        # Yape: el cliente paga con el QR y el recepcionista confirma el cobro en Pedidos.
+        por_confirmar = metodo == METODO_YAPE
         if not raw_items:
             raise ValueError("El pedido no tiene productos")
 
@@ -321,11 +325,15 @@ class StoreRules:
                 "cliente_dni": str(payload.get("cliente_dni") or ""),
                 "fecha_pedido": ahora,
                 "creado_en": ahora,
-                "metodo_pago": "tarjeta" if pago_pendiente else str(payload.get("metodo_pago") or "tarjeta"),
+                "metodo_pago": metodo,
                 # Con tarjeta la referencia es el session_id de Stripe: se registra después de crear la sesión.
-                "referencia_pago": "" if pago_pendiente else str(payload.get("referencia_pago") or f"PED-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"),
-                "estado_pago": ESTADO_PAGO_PENDIENTE if pago_pendiente else ESTADO_PAGO_PAGADO,
-                "estado_pedido": "PENDIENTE",
+                # Con Yape el número de operación es opcional: ayuda a recepción a ubicar el pago.
+                "referencia_pago": "" if pago_pendiente else (
+                    str(payload.get("referencia_pago") or "").strip() if por_confirmar
+                    else str(payload.get("referencia_pago") or f"PED-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}")),
+                "estado_pago": ESTADO_PAGO_PENDIENTE if pago_pendiente or por_confirmar else ESTADO_PAGO_PAGADO,
+                # Pagado al registrarse (Plin, transferencia): nace confirmado. Tarjeta y Yape esperan el cobro.
+                "estado_pedido": "PENDIENTE" if pago_pendiente or por_confirmar else "CONFIRMADO",
                 "observacion_admin": "",
                 "fecha_actualizacion": ahora,
                 **totals,
@@ -366,6 +374,8 @@ class StoreRules:
             for pedido in self.context.state.get("pedidos_tienda", [])
             if not _pedido_pagado(pedido)
             and str(pedido.get("estado_pedido") or "").strip().upper() != ESTADO_PEDIDO_CANCELADO
+            # Los pedidos con Yape los confirma recepción: Stripe no los revisa ni los cancela.
+            and str(pedido.get("metodo_pago") or "tarjeta").strip().lower() != METODO_YAPE
         ]
 
     @staticmethod
@@ -427,6 +437,8 @@ class StoreRules:
                 )
 
             pedido["estado_pago"] = ESTADO_PAGO_PAGADO
+            if str(pedido.get("estado_pedido") or "").strip().upper() == "PENDIENTE":
+                pedido["estado_pedido"] = "CONFIRMADO"
             pedido["metodo_pago"] = str(payload.get("metodo_pago") or "tarjeta")
             pedido["referencia_pago"] = payment_reference
             pedido["fecha_actualizacion"] = self.context.now()
@@ -462,14 +474,19 @@ class StoreRules:
             pedido = next((row for row in state.get("pedidos_tienda", []) if int(row.get("id_pedido", 0) or 0) == int(id_pedido)), None)
             if not pedido:
                 raise EntityNotFound("Pedido no encontrado")
-            if estado in {"CONFIRMADO", "ENTREGADO"} and not _pedido_pagado(pedido):
-                raise ValueError("No se puede confirmar ni entregar un pedido sin pago confirmado")
             actual = str(pedido.get("estado_pedido") or "").strip().upper()
+            yape_por_confirmar = (str(pedido.get("metodo_pago") or "").strip().lower() == METODO_YAPE
+                                  and not _pedido_pagado(pedido) and actual == "PENDIENTE")
+            if estado == "CONFIRMADO" and yape_por_confirmar:
+                # Recepción verificó el pago con Yape.
+                pedido["estado_pago"] = ESTADO_PAGO_PAGADO
+            elif estado in {"CONFIRMADO", "ENTREGADO"} and not _pedido_pagado(pedido):
+                raise ValueError("No se puede confirmar ni entregar un pedido sin pago confirmado")
             if actual == "CANCELADO" and estado != "CANCELADO":
                 raise ValueError("Un pedido cancelado no puede cambiar de estado")
             if estado == "CANCELADO" and actual != "CANCELADO":
-                if actual != "PENDIENTE":
-                    raise ValueError("Solo se pueden cancelar pedidos en estado PENDIENTE")
+                if actual not in {"PENDIENTE", "CONFIRMADO"}:
+                    raise ValueError("Solo se pueden cancelar pedidos en estado PENDIENTE o CONFIRMADO")
                 self._devolver_stock_pedido(state, pedido)
             pedido["estado_pedido"] = estado
             pedido["observacion_admin"] = str(payload.get("observacion_admin") or "")
