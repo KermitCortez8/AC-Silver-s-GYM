@@ -27,6 +27,21 @@ def email_sender(settings) -> tuple[str, str]:
         raise ValueError("Nombre del remitente inválido")
     return address, f"{name} <{address}>"
 
+
+def password_recovery_email(settings, email: str, token: str) -> dict:
+    _, sender = email_sender(settings)
+    url = f"{settings.frontend_public_url.rstrip('/')}/restablecer-contrasena#token={token}"
+    title = "Recupera tu contraseña de AC Silver's GYM"
+    description = "Usa el enlace temporal para crear una contraseña nueva. El enlace es de un solo uso."
+    follow_up = "Si no solicitaste este cambio, puedes ignorar este correo."
+    return {
+        "from": sender, "to": [_email(email)], "subject": title,
+        "html": (f"<h1>{escape(title)}</h1><p>{escape(description)}</p>"
+                 f'<p><a href="{escape(url, quote=True)}">Crear contraseña nueva</a></p>'
+                 f"<p>{escape(follow_up)}</p>"),
+        "text": f"{title}\n\n{description}\n{url}\n\n{follow_up}",
+    }
+
 def membership_email(settings, event: str, saved: dict, plan: dict) -> dict:
     client, membership = saved["cliente"], saved["membresia"]
     recipient = _email(str(client.get("correo") or client.get("email") or ""))

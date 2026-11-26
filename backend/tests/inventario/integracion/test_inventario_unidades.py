@@ -285,11 +285,16 @@ def test_un_traslado_solo_cambia_fecha_y_descripcion() -> None:
     assert service.get_item_inventario(item["id_item"])["cantidad_stock"] == 2
 
 
-def test_no_se_registran_traslados_a_mano() -> None:
+def test_t02_traslado_exige_unidades_y_destino() -> None:
     service = _service()
     item = _equipo(service, stock=1)
-    with pytest.raises(ValueError, match="Tipo de movimiento"):
-        _movimiento(service, item["id_item"], "traslado", cantidad=1)
+    antes = len(service.movimientos_inventario())
+    with pytest.raises(ValueError, match="Elige las unidades que se trasladan"):
+        _movimiento(service, item["id_item"], "traslado", cantidad=1, ubicacion_destino="Sala 2")
+    unidad = _unidades(service, item["id_item"])[0]
+    with pytest.raises(ValueError, match="ubicación de destino"):
+        _movimiento(service, item["id_item"], "traslado", unidades=[unidad["id_unidad"]])
+    assert len(service.movimientos_inventario()) == antes
 
 
 def test_restablecer_devuelve_la_misma_unidad_y_suma_stock() -> None:
@@ -328,3 +333,93 @@ def test_los_movimientos_guardan_la_hora_de_lima(monkeypatch) -> None:
     service = _service()
     _equipo(service, stock=1)
     assert _ultimo_mov(service)["hora_movimiento"] == "15:05:09"
+
+
+
+# ---- Batería T: traslados desde Movimientos y B: fecha de baja de artículos ----------------------
+
+def test_t01_trasladar_varias_unidades_registra_un_traslado_por_unidad() -> None:
+    service = _service()
+    item = _equipo(service, stock=3)
+    n = item["n_activo"]
+    u1, u2 = _unidad(service, f"{n}-MC-001"), _unidad(service, f"{n}-MC-002")
+    antes = len(service.movimientos_inventario())
+
+    resultado = _movimiento(service, item["id_item"], "traslado", unidades=[u1["id_unidad"], u2["id_unidad"]],
+                            ubicacion_destino="Sala de fuerza", descripcion="Reordenamiento")
+
+    nuevos = sorted((m for m in service.movimientos_inventario() if m["tipo_movimiento"] == "traslado"), key=lambda m: m["id_mov"])
+    assert len(service.movimientos_inventario()) == antes + 2
+    assert [m["id_unidad"] for m in nuevos] == [u1["id_unidad"], u2["id_unidad"]]
+    assert nuevos[0]["descripcion"] == f"Traslado {n}-MC-001: Sala de cardio → Sala de fuerza · Reordenamiento"
+    assert all(m["id_usuario"] == ADMIN and m["cantidad"] == 1 for m in nuevos)
+    assert len(resultado["movimientos"]) == 2 and resultado["stock_actual"] == 3
+    assert {_unidad(service, f"{n}-MC-00{i}")["ubicacion"] for i in (1, 2)} == {"Sala de fuerza"}
+    assert _unidad(service, f"{n}-MC-003")["ubicacion"] == "Sala de cardio"
+
+
+def test_t03_no_se_traslada_a_la_misma_ubicacion_ni_una_unidad_de_baja() -> None:
+    service = _service()
+    item = _equipo(service, stock=2)
+    n = item["n_activo"]
+    u1, u2 = _unidad(service, f"{n}-MC-001"), _unidad(service, f"{n}-MC-002")
+    with pytest.raises(ValueError, match="ya está en Sala de cardio"):
+        _movimiento(service, item["id_item"], "traslado", unidades=[u1["id_unidad"]], ubicacion_destino="Sala de cardio")
+    service.dar_de_baja_unidad_inventario(u2["id_unidad"], {"id_usuario": ADMIN})
+    with pytest.raises(ValueError, match="ya no está activa"):
+        _movimiento(service, item["id_item"], "traslado", unidades=[u2["id_unidad"]], ubicacion_destino="Sala 2")
+
+
+@pytest.mark.parametrize("tipo", ["Tienda", "Limpieza"])
+def test_t04_solo_los_equipos_con_n_activo_se_trasladan(tipo) -> None:
+    service = _service()
+    item = service.upsert_inventario({"nombre_item": "Agua", "tipo": tipo, "cantidad_stock": 5}, actor=ADMIN)
+    antes = len(service.movimientos_inventario())
+    with pytest.raises(ValueError, match="Solo los equipos"):
+        _movimiento(service, item["id_item"], "traslado", unidades=[1], ubicacion_destino="Sala 2")
+    assert len(service.movimientos_inventario()) == antes
+
+
+def test_t05_traslado_por_api_usa_el_usuario_de_la_sesion(documented_api) -> None:
+    api = documented_api
+    equipo = api.client.post("/api/inventario", json={"nombre_item": "Banco plano", "tipo": "Equipo de fuerza",
+                                                      "cantidad_stock": 2, "ubicacion": "Almacén"}).json()
+    unidades = [u for u in api.client.get("/api/inventario/unidades").json() if u["id_item"] == equipo["id_item"]]
+    respuesta = api.client.post("/api/inventario/movimientos", json={
+        "id_item": equipo["id_item"], "id_usuario": ADMIN, "tipo_movimiento": "traslado", "cantidad": 2,
+        "unidades": [u["id_unidad"] for u in unidades], "ubicacion_destino": "Sala de fuerza",
+    })
+    assert respuesta.status_code == 200, respuesta.text
+    cuerpo = respuesta.json()
+    assert [m["tipo_movimiento"] for m in cuerpo["movimientos"]] == ["traslado", "traslado"]
+    assert {m["id_usuario"] for m in cuerpo["movimientos"]} == {ADMIN}
+    assert api.gym.get_item_inventario(equipo["id_item"])["cantidad_stock"] == 2
+
+
+def test_b01_archivar_un_articulo_guarda_su_fecha_de_baja(monkeypatch) -> None:
+    monkeypatch.setattr("domain.services.gym_domain_service._today_iso", lambda: "2026-11-24")
+    service = _service()
+    item = _equipo(service, stock=1)
+    service.delete_inventario(item["id_item"])  # Tiene movimientos: se archiva.
+    archivado = service.get_item_inventario(item["id_item"])
+    assert (archivado["archivado"], archivado["estado"], archivado["fecha_baja"]) == (True, "Descontinuado", "2026-11-24")
+
+
+def test_b02_restaurar_desde_la_papelera_borra_la_fecha_de_baja() -> None:
+    service = _service()
+    producto = service.upsert_producto_tienda({"nombre_producto": "Toalla", "precio_venta": 12, "cantidad_stock": 0})
+    service.delete_producto_tienda(producto["id_producto"])
+    assert service.get_item_inventario(producto["id_item"])["fecha_baja"]
+    service.restaurar_producto_tienda(producto["id_producto"])
+    item = service.get_item_inventario(producto["id_item"])
+    assert (item["archivado"], item["fecha_baja"]) == (False, None)
+
+
+def test_b03_el_mapeo_conserva_la_fecha_de_baja_solo_si_la_columna_existe() -> None:
+    from infrastructure.repositories.mappers.inventory import _inventory_to_remote, _map_inventory
+    con = _map_inventory({"id_item": 1, "Nombre_item": "Pesa", "fecha_baja": "2026-11-24"})
+    sin = _map_inventory({"id_item": 1, "Nombre_item": "Pesa"})
+    assert con["fecha_baja"] == "2026-11-24" and "fecha_baja" not in sin
+    assert _inventory_to_remote(con)["fecha_baja"] == "2026-11-24"
+    assert "fecha_baja" not in _inventory_to_remote(sin)
+    assert _inventory_to_remote({**con, "fecha_baja": None})["fecha_baja"] is None

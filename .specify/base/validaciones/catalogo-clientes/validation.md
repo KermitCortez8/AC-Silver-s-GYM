@@ -110,3 +110,16 @@ si contiene separadores o no tiene ocho dígitos. El servidor devuelve la
 validación de DNI en su propio campo. Se conservan los ceros iniciales.
 Pasaron 255 pruebas del backend, con 8 omisiones de PostgreSQL. Pasaron la
 suite de frontend y la compilación de Vite.
+
+## Avisos superpuestos en Clientes · 2026-11-26
+
+El aviso del directorio se mostraba como un bloque que movía el contenido de la
+página y quedaba detrás de los diálogos. Ahora se muestra superpuesto con un
+botón de cierre. Detalles y Solicitudes de pago muestran el aviso dentro del
+diálogo cuando corresponde. Las validaciones de formularios siguen visibles
+junto a la acción que se debe corregir.
+
+Chromium con API simulada verificó a 1440 y 390 px el error de borrado sin
+desplazar el directorio, la confirmación manual y la confirmación de una solicitud
+sin duplicar el aviso al cerrar el diálogo. Pasaron las 456 pruebas del frontend,
+la compilación y el validador documental.

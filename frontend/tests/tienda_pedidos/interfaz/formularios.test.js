@@ -110,6 +110,19 @@ test('store quantity errors are visible and do not change the cart', async () =>
   assert.equal(gym.cart[0].cantidad, 3);
 });
 
+test('el catálogo del cliente muestra nueve productos y busca también en los que aún no se muestran', async () => {
+  const { setup, gym } = await setupView('StoreView', '/user/store');
+  gym.productos_tienda = Array.from({ length: 21 }, (_, index) => ({
+    id_producto: index + 1, nombre: `Producto ${index + 1}`, precio: 3, cantidad: 1, estado: 'Disponible',
+  }));
+  assert.equal(setup.visibleProducts.length, 21);
+  assert.equal(setup.displayedProducts.length, 9);
+  setup.showMoreProducts();
+  assert.equal(setup.displayedProducts.length, 18);
+  setup.productSearch = 'Producto 21';
+  assert.deepEqual(setup.displayedProducts.map(p => p.id_producto), [21]);
+});
+
 test('failed gallery refresh preserves previously loaded images', async (t) => {
   const { setup } = await setupView('StoreView', '/admin/store');
   setup.bucketImages = [{ name: 'agua.png', url: '/agua.png' }];
@@ -124,7 +137,7 @@ test('failed gallery refresh preserves previously loaded images', async (t) => {
 test('checkout validates customer data and prevents duplicate payments while preserving failed drafts', async () => {
   const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
   gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
-  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'ana@', dni: '12345678', method: 'plin', reference: 'PAY-1' });
   let calls = 0;
   let rejectSave;
   gym.createStoreOrder = () => { calls++; return new Promise((_resolve, reject) => { rejectSave = reject; }); };
@@ -156,7 +169,7 @@ test('checkout validates customer data and prevents duplicate payments while pre
 test('checkout accepts the contact email of a client account outside the sign-up domains', async () => {
   const { setup, gym } = await setupView('StorePaymentView', '/tienda/pago');
   gym.cart = [{ id_producto: 1, nombre: 'Agua', precio: 3, cantidad: 1 }];
-  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'socio@outlook.com', dni: '12345678', method: 'yape', reference: 'PAY-1' });
+  Object.assign(setup.payment, { customerName: 'Ana', customerEmail: 'socio@outlook.com', dni: '12345678', method: 'plin', reference: 'PAY-1' });
   const sent = [];
   gym.createStoreOrder = async (order) => { sent.push(order); throw new Error('Servicio no disponible'); };
   await setup.submitPayment();

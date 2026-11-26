@@ -170,12 +170,14 @@ export const createStoreModule = (ctx, repository) => {
 
     const list = requireList(await remote.refreshStoreProductsFromBackend(), 'id_producto');
     // Los archivados van a la Papelera: no se muestran ni se venden; los pedidos guardan su propio nombre.
-    ctx.productos_tienda.value = list
-      .filter((product) => !product.archivado)
-      .map((product) => normalizeStoreProductFromBackend(product));
-    ctx.papelera_tienda.value = list
-      .filter((product) => product.archivado && !product.eliminado)
-      .map((product) => normalizeStoreProductFromBackend(product));
+    const products = [];
+    const trash = [];
+    for (const product of list) {
+      if (!product.archivado) products.push(normalizeStoreProductFromBackend(product));
+      else if (!product.eliminado) trash.push(normalizeStoreProductFromBackend(product));
+    }
+    ctx.productos_tienda.value = products;
+    ctx.papelera_tienda.value = trash;
     return ctx.productos_tienda.value;
   };
 
@@ -196,8 +198,8 @@ export const createStoreModule = (ctx, repository) => {
       const response = await remote.updateStoreOrderStatus(idPedido, body);
 
       const saved = mergeStoreOrder(response);
-      // Cancelar devuelve el stock a la Tienda.
-      if (body.estado_pedido === 'CANCELADO') await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ force: true }));
+      // Cancelar devuelve el stock: basta recargar pedidos y productos, no todo el sistema.
+      if (body.estado_pedido === 'CANCELADO') await refreshAfterMutation(ctx, () => ctx.fetchFromBackend({ section: 'ordersStock', force: true }));
       return saved;
     }
     const order = ctx.storeOrders.value.find((entry) => Number(entry.id_pedido) === Number(idPedido));

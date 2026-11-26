@@ -71,6 +71,7 @@ export const createGymModules = (state, repositories, services = getApplicationS
     get generation() { return state.generation; },
     inventory: state.inventory,
     inventoryMovements: state.inventoryMovements,
+    inventoryUnits: state.inventoryUnits,
     resourceErrors: state.resourceErrors,
     syncError: state.syncError
   }), repositories.inventory);

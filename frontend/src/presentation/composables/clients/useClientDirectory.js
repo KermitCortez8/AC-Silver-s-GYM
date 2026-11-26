@@ -1,4 +1,3 @@
-import { feedbackClass as noticeClassFor } from '../../utils/feedback.js';
 import { useClientRenewal } from './useClientRenewal.js';
 import { useVisibleRefresh } from '../useVisibleRefresh.js';
 import { useClientMembershipActions } from './useClientMembershipActions.js';
@@ -160,7 +159,6 @@ export const useClientDirectory = () => {
       .map((part) => part[0])
       .join('')
       .toUpperCase() || '?';
-  const feedbackToneClass = computed(() => noticeClassFor(feedbackTone.value));
   const refreshClients = async (force = false) => {
     isLoading.value = true;
     try {
@@ -228,7 +226,7 @@ export const useClientDirectory = () => {
     feedbackTone, normalizeStatus, displayMembershipStatus, isActiveStatus, isPendingMembership,
     getPlanPrice, filteredClients, pagination, hasFilters, planOptions,
     activeClients, readyToActivateClients, unpaidClients, statusFilters, resetFilters,
-    membershipBadgeClass, initials, feedbackToneClass, refreshClients, openDetails,
+    membershipBadgeClass, initials, refreshClients, openDetails,
     closeDetails, confirmDelete, activatingClientId, pendingActivation, activationError,
     notifyingClientId, payingClientId, confirmingPaymentClientId, paymentError, requestActivation,
     cancelActivation, notificationMessage, retryActivationEmail, markAsPaidManual, activateMembership,

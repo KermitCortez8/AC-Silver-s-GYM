@@ -103,7 +103,7 @@ export const useGymStore = defineStore('gym', () => {
     upsertServiceSchedule: modules.schedules.upsertServiceSchedule,
     deleteServiceSchedule: modules.schedules.deleteServiceSchedule,
     refreshEnrollmentsFromBackend: modules.schedules.refreshEnrollmentsFromBackend,
-    refreshScheduleClientsFromBackend: modules.schedules.refreshScheduleClientsFromBackend,
+    findEnrollmentClientByDni: modules.schedules.findEnrollmentClientByDni,
     fetchTrainerOverview: modules.schedules.fetchTrainerOverview,
     upsertTrainerRoutine: modules.schedules.upsertTrainerRoutine,
     assignTrainerRoutine: modules.schedules.assignTrainerRoutine,

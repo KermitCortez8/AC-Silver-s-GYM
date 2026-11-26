@@ -56,6 +56,10 @@ sintéticos, comprobar ocupación y cancelar una matrícula propia.
 
 - API: [gym_routes.py](../../../backend/presentation/routes/gym_routes.py),
   `/api/gym/horarios-publicos`, `/horarios-servicio` y `/matriculas` bajo `/api/gym`.
+- `GET /api/gym/matriculas/cliente?dni=…` busca un DNI exacto para `admin` o
+  `staff` y devuelve solo ID, nombre y DNI. El selector usa `GET /matriculas`
+  con `incluir_asistencias=false`. La API conserva la respuesta con asistencia
+  por defecto y mantiene el alcance de la sesión del cliente.
 - `GET` y `PUT /api/gym/horarios-servicio/configuracion` requieren `admin` o
   `staff`. El cuerpo contiene `hora_inicio` (HH:MM de Lima),
   `duracion_minutos` (60 o 120) y `cupos` (entero positivo).
@@ -86,11 +90,15 @@ reducir cupos valida la mayor ocupación de sus sesiones futuras, sin sumarlas.
 
 - Horario inactivo, cliente sin membresía admitida, duplicado o aforo lleno:
   rechazar conforme a la regla y conservar el significado del error HTTP.
-- Cruce de semana, mes o fecha UTC: representar la fecha de Perú en calendario y correo.
+- Calendario, agenda, lista semanal y exportación abarcan el lunes a domingo
+  completo, aunque haya fechas de otro mes o año. El selector de mes muestra
+  cada semana que toca ese mes. Se usa la fecha de Perú en calendario y correo.
 - Matrículas históricas: asignar una sola fecha desde `fecha_matricula` y el día
   configurado, nunca desde el día de despliegue. Sin fecha fiable, no autorizar
   entrada ni trasladar el cliente a una semana nueva. Las visitas guardadas se conservan.
 - Correo fallido tras matrícula confirmada: conservar matrícula y aviso pendiente.
+  La confirmación se guarda en la cola transaccional y su envío se intenta
+  en segundo plano después de responder al navegador.
 - Eliminación de cliente: liberar capacidad junto con sus dependencias; ver MOD-02.
 - La actualización automática se detiene al ocultar o desmontar la vista y no
   interrumpe una operación de matrícula ni el selector abierto. Si falla una consulta,
@@ -136,6 +144,15 @@ y consulta las rutinas y los parámetros que necesita. Si llegan parámetros
 mientras el usuario edita, solo completan los valores iniciales que todavía no
 haya modificado. Ante una hora fuera de atención, el editor muestra la franja
 del día y el intervalo solicitado, conserva el formulario y evita el envío.
+
+Matrículas carga el catálogo al entrar. En el panel interno, la búsqueda añade
+una consulta por DNI y otra para las matrículas de ese cliente. «Mis horarios»
+carga el catálogo y las matrículas de la sesión. Su propia actualización de foco
+y visibilidad se suspende mientras el selector está abierto. En escritorio,
+seleccionar otra clase actualiza el resaltado sin reconstruir la cuadrícula.
+Los avisos de Matrículas y «Mis horarios» se superponen al calendario y se
+pueden cerrar. Dentro del selector, los avisos de alta, cancelación, error o
+exportación aparecen sobre el modal activo.
 
 La [migración 028](../../../backend/migrations/028_parametros_horarios.sql)
 añade los parámetros a `CONFIGURACION_GIMNASIO` y crea la tabla si falta.

@@ -6,7 +6,13 @@ import threading
 import unittest
 
 from domain.models.gym import MatriculaHorarioInput
-from presentation.routes.gym_routes import create_matricula, delete_matricula, list_matriculas
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.testclient import TestClient
+
+from application.operations.schedules import MatriculasHorarioQuery
+from domain.models.resources import Resource
+from presentation.dependencies import get_current_user, get_gym_service
+from presentation.routes.gym_routes import create_matricula, delete_matricula, list_matriculas, router
 from infrastructure.services.local_gym_service import LocalGymService
 from infrastructure.services.supabase_gym_service import SupabaseGymService
 
@@ -198,7 +204,7 @@ class ScheduleEnrollmentRouteTests(unittest.TestCase):
             current_user=current_user,
         )
         self.assertEqual(
-            service.last_list, {"id_cliente": 1, "solo_activas": True}
+            service.last_list, {"id_cliente": 1, "solo_activas": True, "incluir_asistencias": True}
         )
 
         created = create_matricula(
@@ -207,6 +213,7 @@ class ScheduleEnrollmentRouteTests(unittest.TestCase):
                 dni="99999999",
                 id_horario_servicio=10,
             ),
+            background_tasks=BackgroundTasks(),
             gym_service=service,
             current_user=current_user,
         )
@@ -215,6 +222,40 @@ class ScheduleEnrollmentRouteTests(unittest.TestCase):
 
         delete_matricula(50, gym_service=service, current_user=current_user)
         self.assertEqual(service.last_cancel, (50, 1))
+
+
+def test_matriculas_scope_and_client_lookup():
+    service = _schedule_service()
+    service.state['clientes'][0]['password_hash'] = 'hash-privado'
+    service.state['matriculas_horario'] = [
+        {'id_matricula': client, 'id_cliente': client, 'id_horario_servicio': 10,
+         'estado': 'ACTIVA', 'fecha_clase': '2026-11-30'} for client in (1, 2)
+    ]
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[get_gym_service] = lambda: service
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role='staff')
+    http = TestClient(app)
+    response = http.get('/gym/matriculas/cliente', params={'dni': '11111111'})
+    assert response.json() == {'id_cliente': 1, 'nombre': 'Cliente Uno', 'dni': '11111111'}
+    assert http.get('/gym/matriculas/cliente', params={'dni': '99999999'}).status_code == 404
+    assert http.get('/gym/matriculas/cliente', params={'dni': '123'}).status_code == 400
+
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role='user', id_cliente=1)
+    assert http.get('/gym/matriculas/cliente', params={'dni': '22222222'}).status_code == 403
+    rows = http.get('/gym/matriculas', params={'id_cliente': 2, 'incluir_asistencias': 'false'}).json()
+    assert len(rows) == 1 and rows[0]['id_cliente'] == 1 and 'asistencias' not in rows[0]
+    assert 'asistencias' in http.get('/gym/matriculas').json()[0]
+    assert Resource.ASISTENCIA not in MatriculasHorarioQuery(incluir_asistencias=False).resources
+
+
+def test_matricula_confirmada_encola_envio_sin_esperar_al_correo():
+    service = SimpleNamespace(matricular_cliente_horario=lambda _: {'id_matricula': 42, '_email_notification_queued': True})
+    tasks = BackgroundTasks()
+    response = create_matricula(MatriculaHorarioInput(id_cliente=1, id_horario_servicio=10), tasks,
+                                gym_service=service, current_user=SimpleNamespace(role='admin', id_usuario='ADM001'))
+    assert response['email_notification']['status'] == 'queued'
+    assert len(tasks.tasks) == 1 and tasks.tasks[0].args[-1] == 42
 
 
 class _SupabaseWithoutScheduleRpc:

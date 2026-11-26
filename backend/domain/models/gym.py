@@ -286,14 +286,16 @@ class MovimientoInventarioInput(ValidatedInput):
     id_mov: int | None = None
     id_item: int
     id_usuario: str | int
-    tipo_movimiento: Literal["entrada", "salida", "ajuste"]
+    tipo_movimiento: Literal["entrada", "salida", "ajuste", "traslado"]
     fecha_movimiento: str = ""
     descripcion: str = Field(default="", max_length=INVENTORY_NOTE_LIMIT)
     cantidad: int = Field(default=1, ge=1)
     # Solo para salidas: "TIENDA" repone el stock del producto enlazado.
     destino: str | None = None
-    # Salidas de equipos con N° de activo por unidad: las unidades exactas que salen.
+    # Salidas y traslados de equipos con N° de activo: las unidades exactas que se mueven.
     unidades: list[int] | None = None
+    # Solo para traslados: la ubicación a la que van las unidades.
+    ubicacion_destino: str | None = Field(default=None, max_length=INVENTORY_TEXT_LIMIT)
 
 
 class InventarioUnidadUpdateInput(ValidatedInput):

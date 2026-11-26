@@ -66,40 +66,16 @@
       </form>
     </section>
 
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="-translate-y-2 opacity-0"
-      enter-to-class="translate-y-0 opacity-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div
-        v-if="feedback && !isPickerOpen"
-        class="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm"
-        :class="feedbackClass"
-        role="status"
-        aria-live="polite"
-      >
-        <div class="flex items-center gap-2">
-          <CheckCircle2 v-if="feedbackTone === 'success'" class="h-4 w-4 shrink-0" />
-          <AlertCircle v-else class="h-4 w-4 shrink-0" />
-          <p>{{ feedback }}</p>
-        </div>
-        <button type="button" aria-label="Cerrar mensaje" @click="feedback = ''">
-          <X class="h-4 w-4" />
-        </button>
-      </div>
-    </Transition>
+    <FloatingNotice v-if="!isPickerOpen" :message="feedback" :tone="feedbackTone" @dismiss="feedback = ''" />
 
     <main aria-label="Horario actual">
-      <ExcelScheduleGrid
-        :date="selectedDate"
-        @range-change="changeWeek"
+      <ExcelScheduleGrid v-memo="[selectedDate, ownCalendarTitle, enrichedEnrollments, currentClientId]"
+        v-model:date="selectedDate"
         :title="ownCalendarTitle"
         subtitle="Cada matrícula corresponde a una fecha. Usa “Cambiar horario” para gestionar las clases de esta semana."
         :items="enrichedEnrollments"
         file-name="mi-horario-personal.xlsx"
+        modal-feedback @notification="showCalendarNotice"
         :empty-message="currentClientId
           ? 'Este horario está vacío. Pulsa “Elegir horario” para agregar la primera clase.'
           : 'Selecciona un cliente para mostrar su horario.'"
@@ -117,7 +93,7 @@
       >
         <div
           v-if="isPickerOpen"
-          class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/85 p-2 backdrop-blur-sm sm:p-4"
+          class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/85 p-2 sm:p-4"
           @click.self="closeSchedulePicker"
         >
           <section
@@ -147,23 +123,6 @@
             </header>
 
             <div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-              <div
-                v-if="feedback"
-                class="mb-4 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm"
-                :class="feedbackClass"
-                role="status"
-                aria-live="polite"
-              >
-                <div class="flex items-center gap-2">
-                  <CheckCircle2 v-if="feedbackTone === 'success'" class="h-4 w-4 shrink-0" />
-                  <AlertCircle v-else class="h-4 w-4 shrink-0" />
-                  <p>{{ feedback }}</p>
-                </div>
-                <button type="button" aria-label="Cerrar mensaje" @click="feedback = ''">
-                  <X class="h-4 w-4" />
-                </button>
-              </div>
-
               <div class="mb-4 grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_200px_auto]">
                 <label class="space-y-1.5">
                   <span class="text-xs font-bold text-slate-400">Buscar</span>
@@ -195,12 +154,12 @@
 
               <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <ExcelScheduleGrid
-                  :date="selectedDate"
-                  @range-change="changeWeek"
+                  v-model:date="selectedDate"
                   title="Horarios disponibles"
                   :subtitle="`${filteredSchedules.length} clases visibles. Las que ya pertenecen al horario están marcadas.`"
                   :items="enrichedFilteredSchedules"
                   file-name="horarios-disponibles.xlsx"
+                  modal-feedback @notification="showCalendarNotice"
                   empty-message="No hay clases que coincidan con los filtros."
                   interactive
                   :selected-item-id="selectedScheduleId"
@@ -273,6 +232,7 @@
                 </aside>
               </div>
             </div>
+            <FloatingNotice in-dialog :message="feedback" :tone="feedbackTone" @dismiss="feedback = ''" />
           </section>
         </div>
       </Transition>
@@ -282,8 +242,8 @@
 
 <script setup>
 import SearchInput from '../components/SearchInput.vue';
+import FloatingNotice from '../components/FloatingNotice.vue';
 import {
-  AlertCircle,
   Calendar,
   CheckCircle2,
   Clock,
@@ -305,18 +265,20 @@ import { useEnrollmentWorkspace } from '../composables/enrollment/useEnrollmentW
 
 const {
   user, isAdmin, gymStore, route, selectedDate,
-  selectedOccurrenceDate, changeWeek, dniSearch, selectedClient, selectedScheduleId,
+  selectedOccurrenceDate, dniSearch, selectedClient, selectedScheduleId,
   selectedDayFilter, selectedServiceFilter, searchQuery, feedback, feedbackTone,
   actionBusy, isRefreshing, isSearchingClient, isPickerOpen, previousBodyOverflow,
   dayFilterOptions, serviceFilterOptions, isAdminUser, authUser, authClient,
   authClientId, currentClient, currentClientId, schedules, clientEnrollments,
   visibleEnrollments, enrichedEnrollments, manageableSchedules, normalizeText, enrolledIds,
   isEnrolledIn, filteredSchedules, enrichedFilteredSchedules, selectedSchedule, selectedIsEnrolled,
-  canEnrollSelected, selectedActionDisabled, selectedActionLabel, ownCalendarTitle, feedbackClass,
+  canEnrollSelected, selectedActionDisabled, selectedActionLabel, ownCalendarTitle,
   setFeedback, resetFilters, openSchedulePicker, closeSchedulePicker, selectAvailableSchedule,
   refreshAll, loadAdminClient, enrollSelected, cancelSelected, manageSelectedSchedule,
   handleEscape,
 } = useEnrollmentWorkspace();
+
+const showCalendarNotice = ({ message, tone }) => setFeedback(message, tone);
 </script>
 
 <style scoped>

@@ -1,6 +1,6 @@
-import { apiPost } from "./apiClient";
+import { apiPost, request } from "./apiClient";
 
-export const createAuthService = (http = { apiPost }) => {
+export const createAuthService = (http = { apiPost, request }) => {
   const { apiPost } = http;
   let googleScriptPromise = null;
 
@@ -88,12 +88,26 @@ export const createAuthService = (http = { apiPost }) => {
   const disableGoogleAutoSelect = () =>
     window.google?.accounts?.id?.disableAutoSelect();
 
+  const updateOwnProfile = (changes, token) => http.request('/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify(changes),
+  }, token);
+
+  const requestPasswordRecovery = (details) => apiPost('/auth/recuperar-contrasena', details);
+  const resetPassword = (token, password) => apiPost('/auth/restablecer-contrasena', {
+    token,
+    password_nueva: password,
+  });
+
   return {
     loadGoogleIdentityScript,
     getVerifiedGoogleProfile,
     authenticateWithGoogleCredential,
     authenticateWithPassword,
     disableGoogleAutoSelect,
+    updateOwnProfile,
+    requestPasswordRecovery,
+    resetPassword,
   };
 };
 

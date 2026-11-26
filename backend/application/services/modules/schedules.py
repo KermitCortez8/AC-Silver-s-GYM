@@ -35,8 +35,9 @@ class SchedulesOperations:
     def delete_horario_servicio(self, id_horario_servicio: int) -> None:
         return self.executor.execute(DeleteHorarioServicioCommand(id_horario_servicio))
 
-    def matriculas_horario(self, id_cliente: int | None=None, dni: str | None=None, solo_activas: bool=False) -> list[dict[str, Any]]:
-        return self.executor.query(MatriculasHorarioQuery(id_cliente, dni, solo_activas))
+    def matriculas_horario(self, id_cliente: int | None=None, dni: str | None=None, solo_activas: bool=False,
+                          incluir_asistencias: bool=True) -> list[dict[str, Any]]:
+        return self.executor.query(MatriculasHorarioQuery(id_cliente, dni, solo_activas, incluir_asistencias))
 
     def get_matricula_horario(self, id_matricula: int) -> dict[str, Any] | None:
         return self.executor.query(GetMatriculaHorarioQuery(id_matricula))

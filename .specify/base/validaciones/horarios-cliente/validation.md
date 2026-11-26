@@ -53,3 +53,51 @@ el script con Playwright instalado fuera del repositorio en
 No se necesita una migración adicional para esta corrección. La caché del backend
 mantiene su TTL de cinco segundos; no se certifican datos ni despliegues remotos.
 El servidor Vite utilizado para revisar se detuvo al terminar.
+
+## Rendimiento de Horarios y Matrículas · 2026-11-26
+
+El panel exterior podía sincronizar todos los módulos al volver a «Mis horarios».
+Matrículas también descargaba el directorio para buscar por DNI y pedía el
+historial de asistencia al consultar reservas. El selector de escritorio
+cambiaba las opciones de FullCalendar al seleccionar cada clase. La confirmación
+de matrícula administrativa podía esperar al proveedor de correo.
+
+Chromium con sesión y API simuladas verificó las consultas de datos, aparte de
+la autenticación. Horarios e inscripción administrativa hicieron una lectura
+inicial cada uno. El editor pidió dos recursos adicionales al abrirse (rutinas y
+parámetros) y el guardado emitió un POST. Buscar un DNI hizo dos lecturas, una
+para el cliente y otra para sus matrículas sin asistencias. El portal del cliente
+hizo dos lecturas y suspendió la actualización por foco y visibilidad con el
+selector abierto. La selección por teclado y ratón conservó los nodos del
+calendario. Ambos modales se revisaron visualmente a 1440 × 960 y se comprobó
+el guardado de horario y matrícula con datos ficticios.
+
+Frontend: 453 pruebas aprobadas y compilación correcta. Backend: 1123 aprobadas,
+68 omitidas. La regresión de rutas comprueba el filtro de asistencia, los permisos
+del DNI, la identidad de sesión y la entrega del aviso a la tarea de fondo.
+Flake8 crítico sin errores en el código del repositorio, excluyendo `.venv`.
+No se midieron tiempos contra Supabase o el proveedor de correo reales.
+
+## Semanas que cruzan de mes · 2026-11-26
+
+El calendario recortaba las sesiones y el conteo al mes seleccionado aunque
+la cuadrícula mostraba la semana completa. Ahora el selector, los conteos, la
+agenda, la lista y Excel usan el mismo rango inclusivo de lunes a domingo.
+El mes elegido se conserva al seleccionar su primera semana.
+
+Chromium con API simulada verificó del 30 de noviembre al 6 de diciembre en
+Horarios por servicio, Matrículas, Mis horarios, Asistencia y Mi asistencia.
+Se comprobó la consulta de matriculados para el 1 de diciembre, el conteo de
+dos visitas al cambiar de mes y las dos fechas en el Excel descargado.
+El frontend aprobó 454 pruebas y compiló correctamente. El endpoint de
+asistencia personal ya consulta los siete días, por lo que no requirió cambios.
+
+## Avisos superpuestos de Matrículas · 2026-11-26
+
+El directorio de matrícula y el selector reutilizan el aviso superpuesto de
+Clientes. El resultado aparece una sola vez en la superficie activa y se
+puede cerrar. La exportación de ambos calendarios usa el mismo aviso.
+
+Chromium con API simulada comprobó el aviso al buscar un cliente, el error de
+cupo, el alta y la cancelación dentro del selector, y la descarga de Excel con
+su aviso en móvil. Pasaron las 457 pruebas del frontend y la compilación.

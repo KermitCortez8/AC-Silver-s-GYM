@@ -30,6 +30,7 @@ const TrainerOverviewView = () => import('../views/TrainerOverviewView.vue');
 const TrainerRoutinesView = () => import('../views/TrainerRoutinesView.vue');
 const TrainerRoutineMonitorView = () => import('../views/TrainerRoutineMonitorView.vue');
 const AuthCallbackView = () => import('../views/AuthCallbackView.vue');
+const AccountSettingsView = () => import('../views/AccountSettingsView.vue');
 
 const routes = [
   {
@@ -78,6 +79,12 @@ const routes = [
     path: '/registro',
     name: 'Register',
     component: RegisterView,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/restablecer-contrasena',
+    name: 'PasswordReset',
+    component: () => import('../views/PasswordResetView.vue'),
     meta: { requiresAuth: false },
   },
   {
@@ -151,6 +158,11 @@ const routes = [
         redirect: '/admin/payments',
       },
       {
+        path: 'account',
+        name: 'AdminAccount',
+        component: AccountSettingsView,
+      },
+      {
         path: 'payments',
         name: 'MembershipPayments',
         component: MembershipPaymentsView,
@@ -190,6 +202,11 @@ const routes = [
         path: 'routine-monitor',
         name: 'TrainerRoutineMonitor',
         component: TrainerRoutineMonitorView,
+      },
+      {
+        path: 'account',
+        name: 'TrainerAccount',
+        component: AccountSettingsView,
       },
     ],
   },
@@ -232,6 +249,11 @@ const routes = [
         name: 'UserAttendance',
         component: UserAttendanceView,
       },
+      {
+        path: 'account',
+        name: 'UserAccount',
+        component: AccountSettingsView,
+      },
     ],
   },
 ];
@@ -240,7 +262,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(to) {
-    if (to.hash) {
+    if (to.hash && to.name !== 'PasswordReset') {
       return { el: to.hash, behavior: 'smooth' };
     }
     return { top: 0 };

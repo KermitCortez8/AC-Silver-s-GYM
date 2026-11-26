@@ -48,7 +48,7 @@
                 :aria-expanded="mode(unit) === 'borrar'"
                 @click="toggle(unit, 'borrar')"
               >
-                <Trash2 :size="15" aria-hidden="true" />
+                <Archive :size="15" aria-hidden="true" />
               </button>
             </template>
             <button
@@ -114,7 +114,7 @@
               <X :size="15" aria-hidden="true" />
             </button>
             <button type="submit" class="unit-icon unit-icon--danger is-active" :disabled="isSaving" :aria-label="`Confirmar baja de ${unit.codigo}`" title="Confirmar baja">
-              <Trash2 :size="15" aria-hidden="true" />
+              <Archive :size="15" aria-hidden="true" />
             </button>
           </div>
         </form>
@@ -141,7 +141,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
-import { Check, Eye, Pencil, RotateCcw, Trash2, X } from 'lucide-vue-next';
+import { Archive, Check, Eye, Pencil, RotateCcw, X } from 'lucide-vue-next';
 import ExtensibleSelect from '../common/ExtensibleSelect.vue';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { isActiveUnit, UNIT_STATUSES } from '../../../domain/utils/inventoryUnits.js';

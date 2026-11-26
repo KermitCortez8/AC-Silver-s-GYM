@@ -30,7 +30,7 @@
     </section>
 
     <section v-else-if="orderCreated" class="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-6" data-test="order-created">
-      <p class="text-sm uppercase tracking-[0.35em] text-emerald-100">Pago registrado</p>
+      <p class="text-sm uppercase tracking-[0.35em] text-emerald-100">{{ orderCreated.estado_pago === 'PENDIENTE' ? 'Pedido registrado' : 'Pago registrado' }}</p>
       <h2 class="mt-2 text-2xl font-black text-white">Pedido #{{ orderCreated.id_pedido }}</h2>
       <p class="mt-2 text-emerald-50">{{ orderCreatedMessage }}</p>
       <div class="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -79,11 +79,17 @@
               <option value="transferencia">Transferencia</option>
             </select>
           </label>
-          <!-- Con tarjeta, la referencia la genera Stripe. -->
+          <!-- Con tarjeta, la referencia la genera Stripe; con Yape el número de operación es opcional. -->
           <label v-if="!isCard" class="space-y-2">
-            <span class="text-sm text-slate-300">Referencia</span>
-            <input v-model="payment.reference" class="field-input" data-test="reference" required />
+            <span class="text-sm text-slate-300">{{ isYape ? 'N° de operación (opcional)' : 'Referencia' }}</span>
+            <input v-model="payment.reference" class="field-input" data-test="reference" :required="!isYape" :placeholder="isYape ? 'Ej. 12345678' : ''" />
           </label>
+        </div>
+
+        <div v-if="isYape" class="mt-5 flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 text-center" data-test="yape-qr">
+          <img src="/pagos/yape-qr.png" alt="Código QR de Yape de Silver Gym" class="w-56 max-w-full rounded-2xl" width="302" height="316" />
+          <p class="text-base font-black text-white">Confirma tu pago con el recepcionista</p>
+          <p class="text-sm text-slate-300">Escanea el QR con Yape y paga el total. Tu pedido queda pendiente hasta que recepción verifique el pago.</p>
         </div>
 
         <div class="app-notice app-notice--info mt-5 rounded-2xl border px-4 py-3 text-sm">
@@ -145,7 +151,7 @@
 <script setup>
 import { dniError, emailError, requiredTextError } from '../../domain/utils/formValidation.js';
 import { feedbackClass as noticeClassFor } from "../utils/feedback.js";
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../../application/composables/useAuth';
 import { useGymStore } from '../../application/stores/gymStore';
@@ -178,6 +184,12 @@ const payment = reactive({
 });
 
 const isCard = computed(() => payment.method === 'tarjeta');
+const isYape = computed(() => payment.method === 'yape');
+// Con Yape el número de operación lo escribe el cliente si lo tiene; no se rellena solo.
+watch(() => payment.method, (method, previous) => {
+  if (method === 'yape') payment.reference = '';
+  else if (previous === 'yape' && !payment.reference) payment.reference = `PAY-${Date.now()}`;
+});
 
 const feedbackClass = computed(() => noticeClassFor(feedbackTone.value));
 
@@ -186,20 +198,24 @@ const noticeClass = computed(() => noticeClassFor(returnNotice.value?.tone));
 const infoMessage = computed(() =>
   isCard.value
     ? 'Serás redirigido a Stripe para pagar con tarjeta de forma segura. Reservamos tus productos mientras pagas y tu pedido se registra cuando el pago se confirma.'
-    : 'Esta pasarela registra el pago en el sistema y descuenta stock del producto.',
+    : isYape.value
+      ? 'Reservamos tus productos y tu pedido queda pendiente hasta que el recepcionista confirme tu pago con Yape.'
+      : 'Esta pasarela registra el pago en el sistema y descuenta stock del producto.',
 );
 
 const submitLabel = computed(() => {
   if (isSubmitting.value) return isCard.value ? 'Redirigiendo a Stripe...' : 'Procesando...';
   const total = `S/. ${cartTotal.value.total.toFixed(2)}`;
+  if (isYape.value) return `Registrar pedido ${total}`;
   return isCard.value ? `Pagar con tarjeta ${total}` : `Pagar ${total}`;
 });
 
-const orderCreatedMessage = computed(() =>
-  orderCreated.value?.metodo_pago === 'tarjeta'
+const orderCreatedMessage = computed(() => {
+  if (orderCreated.value?.estado_pago === 'PENDIENTE') return 'Tu pedido quedó pendiente. Confirma tu pago con Yape con el recepcionista para que lo preparen.';
+  return orderCreated.value?.metodo_pago === 'tarjeta'
     ? 'Tu pago con tarjeta fue confirmado y tu compra ya aparece en pedidos del administrador.'
-    : 'Tu compra fue registrada y ya aparece en pedidos del administrador.',
-);
+    : 'Tu compra fue registrada y ya aparece en pedidos del administrador.';
+});
 
 /**
  * Sincroniza los datos disponibles.
@@ -226,7 +242,7 @@ const submitPayment = async () => {
       // Correo de contacto del pedido: basta un formato válido (la regla de dominio es solo para cuentas).
       || emailError(payment.customerEmail, { account: false })
       || dniError(payment.dni, false)
-      || (!isCard.value && requiredTextError(payment.reference, 'El código de referencia de pago'));
+      || (!isCard.value && !isYape.value && requiredTextError(payment.reference, 'El código de referencia de pago'));
     if (invalid) throw new Error(invalid);
     if (!cart.value.length) throw new Error('Agrega productos al carrito antes de pagar.');
     if (isCard.value) {
@@ -356,7 +372,7 @@ const handlePageShow = (event) => {
 onMounted(() => {
   window.addEventListener('pageshow', handlePageShow);
   syncCustomer();
-  gymStore.fetchFromBackend?.().catch(() => {});
+  gymStore.fetchFromBackend({ section: 'storeCheckout' }).catch(() => {});
   handleReturn();
 });
 

@@ -189,6 +189,9 @@ El comando transaccional evita crear otra membresía ante peticiones concurrente
 una renovación posterior pagada impide iniciar otro cobro desde el enlace anterior.
 
 Se reutiliza Stripe Checkout y la confirmación existente mediante webhook/retorno.
+En la página pública y el diálogo de caja se indica que Stripe cobra el total
+en un solo pago con tarjeta en soles. Las cuotas nativas de Stripe no están
+disponibles para este checkout en PEN.
 La referencia de la membresía pendiente conserva la sesión para retomarla; solo
 una sesión verificada como expirada permite otro intento. Cancelar vuelve al
 resumen. Una sesión completa pendiente de conciliación bloquea un nuevo pago.

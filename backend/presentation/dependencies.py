@@ -18,7 +18,7 @@ from application.services.auth_service import AuthService, ClientActivationRequi
 from application.services.clients_service import ClientsService
 from application.services.gym_service import GymService
 from application.errors import SchemaNotReady
-from app.bootstrap import create_gym_service, create_identity_service, create_store_images_service
+from app.bootstrap import create_gym_service, create_identity_service, create_password_recovery, create_store_images_service
 from application.services.users_service import UsersService
 from infrastructure.security import verify_session_token
 
@@ -60,6 +60,10 @@ def get_clients_service(gym_service: GymService = Depends(get_gym_service)) -> C
 # Obtiene los datos necesarios.
 def get_users_service(gym_service: GymService = Depends(get_gym_service)) -> UsersService:
     return UsersService(gym_service)
+
+
+def get_password_recovery(gym_service=Depends(get_gym_service), settings=Depends(get_settings)):
+    return create_password_recovery(gym_service, settings)
 
 
 # Obtiene los datos necesarios.

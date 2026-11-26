@@ -71,6 +71,11 @@ class SupabaseGymRepository:
         from infrastructure.repositories.attendance_history_repository import AttendanceHistoryRepository
         return AttendanceHistoryRepository(self.supabase).summary(day, client_id)
 
+    def enrollment_client_by_dni(self, dni):
+        rows = self.supabase.select_filtered("CLIENTES", {"DNI": f"eq.{dni}",
+            "select": "id_cliente,Nombres,Apellidos,DNI"}, order="id_cliente.asc")
+        return accounts._map_client(rows[0]) if rows else None
+
     def query(self, query, passwords=None):
         self.refresh(query.resources)
         return self.read(lambda state: query_operation(query, state, passwords), query.resources)

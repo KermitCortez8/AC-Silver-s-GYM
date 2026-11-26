@@ -131,6 +131,11 @@ envíos mientras está en curso. Tras activar, la ficha se actualiza con la resp
 del servidor y sustituye la acción de activar por la de notificar. Regresiones en
 [client-flow-control.test.js](../../../frontend/tests/clientes/interfaz/client-flow-control.test.js).
 
+Los avisos de operación del directorio aparecen superpuestos y se pueden cerrar
+sin mover la tabla. Si la acción ocurre en Detalles del cliente o Solicitudes
+de pago, el aviso aparece dentro del diálogo activo. La validación de campos
+y los errores que requieren corregir el formulario se muestran en el formulario.
+
 El correo de cuenta acepta cualquier dominio terminado en `.com`, con una sola
 `@` y formato válido. La misma regla reutilizable se aplica en el preregistro
 (incluido Google), formularios de cuentas y servidor; ya no se limita a Gmail/Hotmail.

@@ -18,9 +18,9 @@
     <nav ref="weekNav" class="weeks" aria-label="Semanas del mes">
       <button v-for="(week, index) in weeks" :key="week.start" type="button"
         :aria-pressed="week.start === selectedStart" :class="{ selected: week.start === selectedStart }"
-        @click="emit('update:modelValue', week.from)">
+        @click="selectWeek(week)">
         <span class="week-number">Semana {{ index + 1 }}</span>
-        <strong>{{ shortDate(week.from) }} – {{ shortDate(week.to) }}</strong>
+        <strong>{{ shortDate(week.start) }} – {{ shortDate(week.end) }}</strong>
       </button>
     </nav>
   </div>
@@ -39,6 +39,10 @@ const monthLabel = computed(() => dateLabel(`${month.value}-01`, { day: undefine
 const weeks = computed(() => monthWeeks(month.value));
 const selectedStart = computed(() => weekStart(props.modelValue));
 const shortDate = (date) => dateLabel(date, { year: undefined });
+const selectWeek = ({ start }) => {
+  const firstOfMonth = `${month.value}-01`;
+  emit('update:modelValue', start < firstOfMonth ? firstOfMonth : start);
+};
 const selectMonth = (value) => { if (monthWeeks(value).length) emit('update:modelValue', `${value}-01`); };
 const moveMonth = (delta) => {
   const date = new Date(`${month.value}-01T12:00:00Z`);

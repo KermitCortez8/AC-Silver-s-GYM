@@ -329,6 +329,7 @@ class InventoryRules:
                 # Se archiva: MOV_INV y TIENDA_PRODUCTOS lo referencian y su historial se conserva.
                 item["estado"] = ESTADO_DESCONTINUADO
                 item["archivado"] = True
+                item["fecha_baja"] = self.context.today()
                 for producto in state.get("productos_tienda", []):
                     if int(producto.get("id_item") or 0) == int(id_item):
                         producto["archivado"] = True
@@ -339,16 +340,26 @@ class InventoryRules:
 
         return self.context.change(_fn)
 
-    def _unidades_elegidas(self, state: dict[str, Any], item: dict[str, Any], ids: Any) -> list[dict[str, Any]]:
+    def _unidades_elegidas(self, state: dict[str, Any], item: dict[str, Any], ids: Any, accion: str = "salen") -> list[dict[str, Any]]:
         ids = [integer_quantity(i, minimum=1) for i in (ids or [])]
         if not ids:
-            raise ValueError("Elige las unidades que salen")
+            raise ValueError(f"Elige las unidades que {accion}")
         if len(set(ids)) != len(ids):
-            raise ValueError("Una unidad está repetida en la salida")
+            raise ValueError("Una unidad está repetida en el movimiento")
         activas = {int(u["id_unidad"]): u for u in self._unidades_de(state, item["id_item"])}
         if any(i not in activas for i in ids):
             raise ValueError("Alguna unidad elegida ya no está activa o no pertenece al artículo")
         return [activas[i] for i in ids]
+
+    def _trasladar_unidad(self, state, item, unidad, destino, id_usuario=None, fecha="", nota=""):
+        # Cambia la ubicación de la unidad y deja el traslado en MOV_INV; el stock no cambia.
+        origen = str(unidad.get("ubicacion") or "")
+        unidad["ubicacion"] = destino
+        descripcion = f"Traslado {unidad['codigo']}: {origen or 'Sin ubicación'} → {destino}"
+        return self._aplicar_movimiento(
+            state, item, TIPO_TRASLADO, 1, f"{descripcion} · {nota}" if nota else descripcion,
+            id_usuario=id_usuario, fecha=fecha, id_unidad=unidad["id_unidad"],
+        )
 
     def unidades_inventario(self) -> list[dict[str, Any]]:
         return self.context.state.get("inventario_unidades", [])
@@ -368,17 +379,14 @@ class InventoryRules:
                 raise ValueError("Estado de unidad inválido; para retirarla usa Dar de baja")
             unidad["estado"] = estado
             if payload.get("ubicacion") is not None:
-                origen = str(unidad.get("ubicacion") or "")
                 destino = required_text(payload["ubicacion"], "La ubicación", INVENTORY_TEXT_LIMIT)
-                unidad["ubicacion"] = destino
-                if item and destino != origen:
-                    # El traslado queda en MOV_INV con la unidad, el origen y el destino; el stock no cambia.
-                    self._aplicar_movimiento(
-                        state, item, TIPO_TRASLADO, 1,
-                        f"Traslado {unidad['codigo']}: {origen or 'Sin ubicación'} → {destino}",
+                if item and destino != str(unidad.get("ubicacion") or ""):
+                    self._trasladar_unidad(
+                        state, item, unidad, destino,
                         id_usuario=self.dependencies.normalize_usuario_id(payload.get("id_usuario")) if payload.get("id_usuario") else None,
-                        id_unidad=unidad["id_unidad"],
                     )
+                else:
+                    unidad["ubicacion"] = destino
             if payload.get("observaciones") is not None:
                 unidad["observaciones"] = str(payload["observaciones"]).strip()
             self._actualizar_estados_tienda(state)
@@ -444,7 +452,7 @@ class InventoryRules:
             raise ValueError("El artículo está archivado y no admite movimientos")
         if not self.dependencies.get_usuario(id_usuario):
             raise EntityNotFound("Usuario no encontrado")
-        if tipo not in {"entrada", "salida", "ajuste"}:
+        if tipo not in {"entrada", "salida", "ajuste", TIPO_TRASLADO}:
             raise ValueError("Tipo de movimiento inválido")
 
         # Procesa esta operación.
@@ -452,6 +460,8 @@ class InventoryRules:
             item = self._find_item_in_state(state, id_item)
             if not item:
                 raise EntityNotFound("Item de inventario no encontrado")
+            if tipo == TIPO_TRASLADO:
+                return self._registrar_traslado(state, item, payload, id_usuario)
             destino = self._normalizar_destino(tipo, payload.get("destino"))
             producto = self._producto_de_item(state, id_item) if destino == DESTINO_TIENDA else None
             if destino == DESTINO_TIENDA and not producto:
@@ -495,6 +505,25 @@ class InventoryRules:
             }
 
         return self.context.change(_fn)
+
+    def _registrar_traslado(self, state, item, payload, id_usuario) -> dict[str, Any]:
+        # Solo los equipos con N° de activo cambian de ubicación por unidad; Tienda sigue con destino Tienda.
+        if not self._usa_unidades(item):
+            raise ValueError("Solo los equipos y accesorios con N° de activo se trasladan entre ubicaciones")
+        unidades = self._unidades_elegidas(state, item, payload.get("unidades"), "se trasladan")
+        destino = required_text(payload.get("ubicacion_destino"), "La ubicación de destino", INVENTORY_TEXT_LIMIT)
+        repetidas = [u["codigo"] for u in unidades if str(u.get("ubicacion") or "") == destino]
+        if repetidas:
+            raise ValueError(f"{', '.join(repetidas)} ya está en {destino}")
+        nota = str(payload.get("descripcion") or "").strip()
+        fecha = str(payload.get("fecha_movimiento") or "")
+        movimientos = [
+            self._trasladar_unidad(state, item, unidad, destino, id_usuario=id_usuario, fecha=fecha, nota=nota)
+            for unidad in unidades
+        ]
+        self._actualizar_estados_tienda(state)
+        return {"movimiento": movimientos[0], "movimientos": movimientos,
+                "stock_actual": item["cantidad_stock"], "stock_tienda": None}
 
     def actualizar_movimiento_inventario(self, id_mov: int, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.

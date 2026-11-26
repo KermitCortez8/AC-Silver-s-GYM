@@ -176,16 +176,23 @@ def test_cancelar_pedido_pendiente_devuelve_stock_a_la_tienda() -> None:
     assert _stock_tienda(service, item["id_item"]) == 6
 
 
-def test_solo_se_cancelan_pedidos_pendientes_y_cancelado_es_final() -> None:
+def test_se_cancela_pendiente_o_confirmado_pero_no_entregado_y_cancelado_es_final() -> None:
     service = _service()
     item = _nuevo_item_tienda(service, stock=10)
     producto = _publicar(service, item["id_item"])
     _reponer(service, item["id_item"], 10)
-    confirmado = _vender(service, producto["id_producto"], 1)
-    service.actualizar_pedido_tienda(confirmado["id_pedido"], {"estado_pedido": "CONFIRMADO"})
+    entregado = _vender(service, producto["id_producto"], 1)
+    service.actualizar_pedido_tienda(entregado["id_pedido"], {"estado_pedido": "ENTREGADO"})
 
-    with pytest.raises(ValueError, match="PENDIENTE"):
-        service.actualizar_pedido_tienda(confirmado["id_pedido"], {"estado_pedido": "CANCELADO"})
+    with pytest.raises(ValueError, match="PENDIENTE o CONFIRMADO"):
+        service.actualizar_pedido_tienda(entregado["id_pedido"], {"estado_pedido": "CANCELADO"})
+    assert _stock_tienda(service, item["id_item"]) == 9
+
+    confirmado = _vender(service, producto["id_producto"], 2)
+    assert confirmado["estado_pedido"] == "CONFIRMADO"
+    service.actualizar_pedido_tienda(confirmado["id_pedido"], {"estado_pedido": "CANCELADO"})
+    assert _stock_tienda(service, item["id_item"]) == 9  # Devolvió las 2 unidades una sola vez.
+    service.actualizar_pedido_tienda(confirmado["id_pedido"], {"estado_pedido": "CANCELADO"})
     assert _stock_tienda(service, item["id_item"]) == 9
 
     cancelado = _vender(service, producto["id_producto"], 1)
@@ -723,3 +730,29 @@ def test_mapeo_remoto_de_papelera_y_eliminado() -> None:
     assert service._map_product({"id_producto": 1})["archivado"] is False
     assert service._map_inventory({"id_item": 1, "archivado": True})["archivado"] is True
     assert service._map_product({"id_producto": 1, "eliminado": True})["eliminado"] is True
+
+
+
+# ---- Batería P: pedidos pagados confirmados ---------------------------------------------------
+
+def test_p01_pedido_pagado_al_registrarse_nace_confirmado() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=5)
+    producto = _publicar(service, item["id_item"])
+    _reponer(service, item["id_item"], 5)
+    pedido = service.crear_pedido_tienda({"cliente_nombre": "Ana", "metodo_pago": "plin",
+                                          "items": [{"id_producto": producto["id_producto"], "cantidad": 1}]})
+    assert (pedido["estado_pago"], pedido["estado_pedido"]) == ("PAGADO", "CONFIRMADO")
+
+
+def test_p02_tarjeta_queda_pendiente_y_se_confirma_al_pagar() -> None:
+    service = _service()
+    item = _nuevo_item_tienda(service, stock=5)
+    producto = _publicar(service, item["id_item"], precio=10)
+    _reponer(service, item["id_item"], 5)
+    pedido = service.crear_pedido_tienda_pago_pendiente({"items": [{"id_producto": producto["id_producto"], "cantidad": 1}]})
+    assert (pedido["estado_pago"], pedido["estado_pedido"]) == ("PENDIENTE", "PENDIENTE")
+
+    service.registrar_sesion_pago_pedido(pedido["id_pedido"], "cs_test_1")
+    pagado = service.confirmar_pago_pedido_tienda(pedido["id_pedido"], {"monto_pago": pedido["total"], "referencia_pago": "cs_test_1"})
+    assert (pagado["estado_pago"], pagado["estado_pedido"]) == ("PAGADO", "CONFIRMADO")
