@@ -52,7 +52,7 @@ export const useAttendanceControl = ({
         error.value = result.reason?.message || 'No se pudo actualizar.';
     });
   };
-  let feedbackTimer;
+  let savedTimer;
   const mutate = async (key, action, message) => {
     if (busy.value) return;
     busy.value = key;
@@ -60,14 +60,13 @@ export const useAttendanceControl = ({
     feedback.value = '';
     feedbackWarning.value = false;
     savedKey.value = '';
-    clearTimeout(feedbackTimer);
+    clearTimeout(savedTimer);
     try {
       const result = await action();
       feedback.value = result?.aviso || message;
       feedbackWarning.value = Boolean(result?.aviso);
       savedKey.value = key;
-      feedbackTimer = setTimeout(() => {
-        feedback.value = '';
+      savedTimer = setTimeout(() => {
         savedKey.value = '';
       }, 4000);
       await refresh();
@@ -133,7 +132,7 @@ export const useAttendanceControl = ({
   });
   onScopeDispose(() => {
     clearInterval(timer);
-    clearTimeout(feedbackTimer);
+    clearTimeout(savedTimer);
     summaryNumber++;
   });
   return {

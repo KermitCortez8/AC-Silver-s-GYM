@@ -29,7 +29,7 @@ const normalizeStoredUser = (userData) => {
 };
 
 export const useAuthStore = defineStore('auth', () => {
-  const { saveAuthSession, getAuthSession, clearAuthStorage, disableGoogleAutoSelect } = useAuthentication();
+  const { saveAuthSession, getAuthSession, clearAuthStorage, disableGoogleAutoSelect, updateOwnProfile } = useAuthentication();
   const { APP_CONFIG } = useAppResources();
   const { apiGet } = createBackendGateway();
   // State
@@ -41,6 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isInitialized = ref(false);
   const sessionErrorCode = ref('');
   const sessionRevision = ref(0);
+  let profileRevision = 0;
   const session = useSessionStore();
   watch(() => [token.value, userRole.value, sessionRevision.value], () => session.invalidate(), { flush: 'sync' });
   const sessionValidator = createSessionValidator(async (storedToken) => {
@@ -68,6 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const initializeAuth = async ({ force = false } = {}) => {
     const revision = sessionRevision.value;
+    const checkedProfile = profileRevision;
     try {
       isLoading.value = true;
       const { token: storedToken } = getAuthSession();
@@ -80,6 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
           // Una respuesta anterior no debe restaurar una sesión cerrada o sustituida.
           if (revision !== sessionRevision.value) return;
           if (getAuthSession().token !== storedToken) return initializeAuth();
+          if (checkedProfile !== profileRevision) return;
 
           if (sessionUser && isValidUser(sessionUser)) {
             user.value = sessionUser;
@@ -150,6 +153,27 @@ export const useAuthStore = defineStore('auth', () => {
   // Conserva el contrato público de registro con la misma política de sesión.
   const signUp = signIn;
 
+  const updateProfile = async (changes) => {
+    const currentToken = token.value;
+    const revision = sessionRevision.value;
+    if (!currentToken || !user.value) throw new Error('Inicia sesión para actualizar tus datos.');
+
+    const updated = normalizeStoredUser(await updateOwnProfile(changes, currentToken));
+    if (revision !== sessionRevision.value || currentToken !== token.value || currentToken !== getAuthSession().token) {
+      throw new Error('La sesión ha cambiado.');
+    }
+    if (!updated || !isValidUser(updated) || updated.id !== user.value?.id) {
+      throw new Error('El servidor no devolvió el perfil actualizado.');
+    }
+
+    profileRevision += 1;
+    sessionValidator.clear();
+    user.value = updated;
+    userRole.value = updated.role;
+    saveAuthSession(updated, currentToken);
+    return updated;
+  };
+
   /**
    * Gestiona esta acción de la vista.
    */
@@ -192,5 +216,6 @@ export const useAuthStore = defineStore('auth', () => {
     signIn,
     signUp,
     signOut,
+    updateProfile,
   };
 });

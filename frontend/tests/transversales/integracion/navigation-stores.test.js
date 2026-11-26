@@ -503,6 +503,11 @@ test('admin registration sends the payment choice and keeps the saved membership
   assert.equal(gym.members[0].registrationOrigin, 'ADMIN');
 });
 
+test('la ruta de horarios del cliente usa la sección de matrículas', () => {
+  assert.equal(sectionForPath('/user/schedule'), 'enrollment');
+  assert.equal(sectionForPath('/admin/enrollment'), 'enrollment');
+});
+
 test('each admin section loads only its resources and shares them with the dashboard', async () => {
   auth.token = token;
   auth.userRole = 'admin';
@@ -809,9 +814,13 @@ test('admin store shares its resources with inventory and orders', async () => {
   expectRequests(['/api/inventario/unidades']);
 
   await loadTab('/admin/store', 'ventas');
-  expectRequests(['/api/clientes', '/api/tienda/pedidos']);
+  expectRequests(['/api/tienda/pedidos']);
+
+  await loadTab('/admin/store', 'papelera');
+  expectRequests([]);
 
   await loadTab('/admin/orders');
+  expectRequests(['/api/clientes']);
   await loadTab('/admin/store');
   expectRequests([]);
 });

@@ -1,11 +1,14 @@
 """Autentica cuentas existentes y emite sesiones firmadas del gimnasio."""
 from __future__ import annotations
 
-from domain.models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, UserProfile
+import time
+
+from domain.models.auth import AuthGoogleRequest, AuthPasswordRequest, AuthResponse, MembershipProfile, UpdateProfileRequest, UserProfile
 from application.services.gym_service import GymService
 from domain.services.gym_domain_service import _today_iso
 from domain.services.membership_lifecycle import membership_current, membership_expired
 from domain.services.accounts_rules import internal_account_active
+from application.operations.accounts import UpdateOwnProfileCommand
 
 
 class GoogleLinkRequired(ValueError):
@@ -58,10 +61,14 @@ class AuthService:
             telefono=str(account.get("telefono") or ""),
             dni=str(account.get("dni") or ""),
             role="user" if client else str(account.get("rol") or "staff"),
+            estado="ACTIVO" if internal_account_active(account) else "INACTIVO",
+            fecha_registro=str(account.get("fecha_registro") or "") if client else "",
+            google_vinculado=bool(account.get("google_sub")),
+            tiene_contrasena=bool(account.get("password_hash")),
         )
         return UserProfile(**profile)
 
-    def _require_active_client(self, client: dict | None) -> None:
+    def _require_active_client(self, client: dict | None) -> dict:
         self.gym_service.ensure_fresh(resources=("clientes", "membresia"))
         if client:
             client = self.gym_service.get_cliente(int(client["id_cliente"]))
@@ -71,19 +78,35 @@ class AuthService:
             if client and int(row.get("id_cliente") or 0) == int(client["id_cliente"])
         ]
         today = _today_iso()
-        current = any(membership_current(row, today) for row in memberships)
-        expired = any(membership_expired(row, today) for row in memberships)
-        if not current and (expired or (client and str(client.get("estado") or "").strip().upper() == "VENCIDA")):
+        current = max(
+            (row for row in memberships if membership_current(row, today)),
+            key=lambda row: (str(row["fecha_fin"]), int(row.get("id_membresia") or 0)),
+            default=None,
+        )
+        if current is None and (any(membership_expired(row, today) for row in memberships)
+                                or (client and str(client.get("estado") or "").strip().upper() == "VENCIDA")):
             raise ClientMembershipExpired()
         # CLIENTES.Estado se habilita en la activación administrativa, no al pagar.
         if not client or str(client.get("estado") or "").strip().upper() not in {"ACTIVO", "ACTIVA"}:
             raise ClientActivationRequired()
-        if not current:
+        if current is None:
             raise ClientMembershipRequired()
+        return current
+
+    @staticmethod
+    def _membership_profile(client: dict, current: dict) -> MembershipProfile:
+        return MembershipProfile(
+            plan=str(client.get("plan") or ""),
+            fecha_inicio=str(current["fecha_inicio"]),
+            fecha_fin=str(current["fecha_fin"]),
+            estado_pago=str(current["estado_pago"]).strip().upper(),
+        )
 
     def session_for_user(self, user: UserProfile) -> AuthResponse:
         if user.id_cliente is not None:
-            self._require_active_client(self.gym_service.get_cliente(user.id_cliente))
+            account = self.gym_service.get_cliente(user.id_cliente)
+            current = self._require_active_client(account)
+            user.membresia = self._membership_profile(account, current)
         else:
             self._require_active_internal(self.gym_service.get_usuario(user.id_usuario or user.id))
         return AuthResponse(user=user, token=self.sessions.issue(user.model_dump()), expiresIn=3600)
@@ -144,8 +167,37 @@ class AuthService:
         account = self.gym_service.account_for_session(payload.get("sub"), client=client)
         if not account:
             raise ValueError("La cuenta de esta sesión ya no existe. Inicia sesión nuevamente.")
+        membership = None
         if client:
-            self._require_active_client(account)
+            membership = self._membership_profile(account, self._require_active_client(account))
         else:
             self._require_active_internal(account)
-        return self._profile(account, client=client, google=payload)
+        profile = self._profile(account, client=client, google=payload)
+        profile.membresia = membership
+        return profile
+
+    def update_profile(self, user: UserProfile, payload: UpdateProfileRequest) -> UserProfile:
+        changes = payload.model_dump(exclude_unset=True, exclude={"password_actual", "google_credential"})
+        if "password_nueva" in changes:
+            changes["password_nueva"] = payload.password_nueva.get_secret_value()
+
+        sensitive = bool(changes.keys() & {"correo", "dni", "password_nueva"})
+        password_actual = payload.password_actual.get_secret_value()
+        credential = payload.google_credential.get_secret_value()
+
+        google_subject = ""
+        if sensitive and credential and user.google_vinculado and not user.tiene_contrasena:
+            claims = self.identity.verify(credential)
+            issued_at = claims.get("iat")
+            if not isinstance(issued_at, int) or not 0 <= time.time() - issued_at <= 300:
+                raise PermissionError("Vuelve a confirmar tu cuenta de Google para guardar los cambios.")
+            google_subject = str(claims["sub"])
+
+        account = self.gym_service.executor.execute(UpdateOwnProfileCommand(
+            user.id_usuario or user.id, user.id_cliente, changes,
+            verify_credentials=bool(password_actual or credential),
+            password_actual=password_actual, google_subject=google_subject,
+        ))
+        profile = self._profile(account, client=user.id_cliente is not None, google=user.model_dump())
+        profile.membresia = user.membresia
+        return profile

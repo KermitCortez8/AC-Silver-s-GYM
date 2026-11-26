@@ -71,9 +71,12 @@
     <p v-if="error" role="alert" class="att-message is-error">
       {{ error }} <button class="att-link" @click="load">Reintentar</button>
     </p>
-    <p v-if="notice" role="status" class="att-message is-success">
-      {{ notice }}
-    </p>
+    <FloatingNotice
+      v-if="visible && !selected"
+      :message="notice || refreshError"
+      :tone="notice ? noticeTone : 'error'"
+      @dismiss="dismissNotice"
+    />
     <div class="att-table-wrap" :aria-busy="loading">
       <table class="att-table">
         <caption class="att-sr-only">
@@ -204,11 +207,12 @@ import { useAuth } from '../../../application/composables/useAuth';
 import { useAttendance } from '../../../application/services/attendance.js';
 import { dateLabel, services, shortTime, states } from '../../utils/attendance';
 import AttendanceCorrectionDialog from './AttendanceCorrectionDialog.vue';
+import FloatingNotice from '../FloatingNotice.vue';
 
 const { attendanceGet } = useAttendance();
 
-const props = defineProps({ admin: Boolean });
-const emit = defineEmits(['changed']);
+const props = defineProps({ admin: Boolean, visible: { type: Boolean, default: true }, refreshError: String });
+const emit = defineEmits(['changed', 'dismiss-refresh-error']);
 const { token } = useAuth();
 const emptyFilters = () => ({
   dni: '',
@@ -226,9 +230,14 @@ const records = ref([]),
   loading = ref(false),
   exporting = ref(false),
   error = ref(''),
-  notice = ref('');
+  notice = ref(''),
+  noticeTone = ref('success');
 const selected = ref(null),
   annulling = ref(false);
+const dismissNotice = () => {
+  if (notice.value) notice.value = '';
+  else emit('dismiss-refresh-error');
+};
 const pages = computed(() => Math.max(1, Math.ceil(total.value / 15)));
 let requestNumber = 0;
 const load = async () => {
@@ -279,6 +288,7 @@ const edit = (record, annul) => {
   selected.value = record;
 };
 const saved = () => {
+  noticeTone.value = 'success';
   notice.value = annulling.value
     ? 'Asistencia anulada. El motivo quedó guardado.'
     : 'Corrección guardada.';
@@ -288,7 +298,7 @@ const saved = () => {
 const exportRecords = async () => {
   if (exporting.value) return;
   exporting.value = true;
-  error.value = '';
+  notice.value = '';
   try {
     const filters = { ...active.value };
     const [rows, XLSX] = await Promise.all([attendanceGet('/exportar', filters, token.value), import('xlsx')]);
@@ -312,9 +322,11 @@ const exportRecords = async () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, 'Asistencias');
     XLSX.writeFile(workbook, 'asistencias.xlsx');
+    noticeTone.value = 'success';
     notice.value = `Se exportaron ${rows.length} registros con los filtros aplicados.`;
   } catch (err) {
-    error.value = err.message;
+    noticeTone.value = 'error';
+    notice.value = err?.message || 'No se pudo exportar el historial.';
   } finally {
     exporting.value = false;
   }

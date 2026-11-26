@@ -126,7 +126,7 @@
               : "Notificar activación"
           }}
         </button>
-        <p v-if="paymentError" role="alert" class="text-sm ws-warning">
+        <p v-if="paymentError && paymentError !== noticeMessage" role="alert" class="text-sm ws-warning">
           {{ paymentError }}
         </p>
         <button
@@ -169,16 +169,18 @@
           Activar Membresía
         </button>
       </div>
+      <FloatingNotice in-dialog :message="noticeMessage" :tone="noticeTone" @dismiss="$emit('dismiss-notice')" />
     </template>
   </WorkspaceDialog>
 </template>
 
 <script setup>
 import WorkspaceDialog from "../WorkspaceDialog.vue";
+import FloatingNotice from '../FloatingNotice.vue';
 import ClientExternalPayment from './ClientExternalPayment.vue';
 import { esPagoExterno } from '../../../domain/utils/membershipPaymentMethods.js';
 import { Mail, RefreshCw } from "lucide-vue-next";
-defineEmits(['pago-confirmado']);
+defineEmits(['pago-confirmado', 'dismiss-notice']);
 defineProps([
   "canRenewClientMembership", "requestRenewal", "renewingClientId", "renewalLoading",
   "canPayClientWithStripe",
@@ -195,6 +197,8 @@ defineProps([
   "payWithStripe",
   "payingClientId",
   "paymentError",
+  'noticeMessage',
+  'noticeTone',
   "requestActivation",
   "retryActivationEmail",
   "viewingClient",

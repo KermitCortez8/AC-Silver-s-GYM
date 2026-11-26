@@ -15,7 +15,7 @@
 
   <ExternalPaymentRequestsDialog
     v-if="showPaymentRequests" :token="token"
-    @close="showPaymentRequests = false" @confirmado="$emit('pago-confirmado', $event)"
+    @close="showPaymentRequests = false" @confirmado="$emit('pago-confirmado', $event, true)"
   />
 </template>
 

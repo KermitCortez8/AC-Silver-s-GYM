@@ -104,17 +104,16 @@ class MatriculasHorarioQuery:
     id_cliente: int | None = None
     dni: str | None = None
     solo_activas: bool = False
-    resources: ClassVar[tuple[Resource, ...]] = (
-        Resource.ASISTENCIA,
-        Resource.CATALOGO_RUTINA,
-        Resource.CLIENTES,
-        Resource.HORARIOS_SERVICIO,
-        Resource.MATRICULAS_HORARIO,
-        Resource.MEMBRESIA,
-    )
+    incluir_asistencias: bool = True
+
+    @property
+    def resources(self) -> tuple[Resource, ...]:
+        resources = (Resource.CATALOGO_RUTINA, Resource.CLIENTES, Resource.HORARIOS_SERVICIO,
+                     Resource.MATRICULAS_HORARIO, Resource.MEMBRESIA)
+        return (*resources, Resource.ASISTENCIA) if self.incluir_asistencias else resources
 
     def run(self, rules: DomainComponents) -> list[Record]:
-        return rules.schedules.matriculas_horario(self.id_cliente, self.dni, self.solo_activas)
+        return rules.schedules.matriculas_horario(self.id_cliente, self.dni, self.solo_activas, self.incluir_asistencias)
 
 
 @dataclass(frozen=True)

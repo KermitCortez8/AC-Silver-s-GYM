@@ -172,3 +172,32 @@ La exportación personal se ofrece en el historial.
   de backend aprobó 114 pruebas de asistencia, fechas de clase y privacidad.
 
 Las capturas locales están en `.artifacts/mi-asistencia/`.
+
+## Modal de clientes matriculados · 2026-11-26
+
+La lista ocupaba un panel fijo debajo del calendario. Al seleccionar una clase
+ahora se abre un diálogo con su fecha, horario, lista y controles de asistencia.
+Cerrar con el botón o Escape limpia la selección y descarta una consulta pendiente.
+El cierre queda bloqueado durante un guardado. La confirmación y los errores de
+guardado se muestran en el diálogo.
+
+- Frontend: 453 pruebas aprobadas y compilación correcta.
+- [Chromium con API simulada](../matriculas-sesiones/evidence/browser-review.cjs):
+  apertura desde la cuadrícula y la agenda móvil, cambio de semana, cierre por
+  botón y Escape, error con reintento y lista vacía. Revisión visual a 1440 y 390 px.
+- La API y las reglas de asistencia conservan su contrato. No se repitió la suite
+  de backend para este cambio de presentación.
+
+## Avisos superpuestos en Asistencia · 2026-11-26
+
+Los resultados de registro y exportación aparecen en avisos que se pueden cerrar.
+Cuando está abierto el modal de matriculados, el aviso forma parte del diálogo.
+Los errores al guardar una corrección o anulación aparecen sobre su formulario.
+El historial confirma el cambio después de cerrar el diálogo, y el historial
+personal muestra avisos al exportar.
+
+- Chromium con API simulada verificó entrada correcta y fallida, salida con
+  advertencia, consulta de matriculados con reintento, exportación de semana,
+  error de exportación en ambos historiales y corrección fallida y exitosa.
+  Revisión en escritorio y móvil.
+- La suite de frontend aprobó 457 pruebas y la compilación concluyó correctamente.

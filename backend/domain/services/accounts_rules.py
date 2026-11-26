@@ -8,6 +8,7 @@ from domain.services.rule_context import RuleContext
 from domain.services.client_identifiers import parse_client_id
 from typing import Any
 from domain.form_limits import SHORT_TEXT_LIMIT
+from domain.errors import EntityNotFound
 from domain.validation import required_text, account_email, dni_number, phone_number
 from domain.services.membership_lifecycle import normalize_membership_status, project_memberships, membership_renewable
 
@@ -19,6 +20,16 @@ def user_role_prefix(role: str) -> str:
 def internal_account_active(account: dict | None) -> bool:
     state = account.get("estado") if account else None
     return state is True or str(state or "").strip().upper() in {"ACTIVO", "ACTIVA"}
+
+
+def password_recovery_state(account: dict) -> tuple[str, ...]:
+    return (
+        str(account.get("correo") or account.get("email") or "").strip().lower(),
+        str(account.get("dni") or "").strip(),
+        str(account.get("telefono") or "").strip(),
+        str(account.get("password_hash") or ""),
+        str(account.get("google_sub") or ""),
+    )
 
 
 
@@ -106,7 +117,7 @@ class AccountsRules:
             (
                 u
                 for u in self.context.state["usuario"]
-                if str(u.get("email") or u.get("correo") or "").strip().lower() == normalized_email
+                if str(u.get("correo") or u.get("email") or "").strip().lower() == normalized_email
             ),
             None,
         )
@@ -130,6 +141,70 @@ class AccountsRules:
 
     def _change_users(self, fn):
         return self.context.change(fn)
+
+    def update_own_profile(
+        self, account_id: str, client_id: int | None, changes: dict[str, Any],
+        *, verify_credentials: bool = False, password_actual: str = "", google_subject: str = "",
+    ) -> dict:
+        editable = {}
+        if "nombre" in changes:
+            editable["nombre"] = required_text(changes["nombre"], maximum=SHORT_TEXT_LIMIT)
+        if "telefono" in changes:
+            editable["telefono"] = phone_number(changes["telefono"])
+        if "correo" in changes:
+            editable["correo"] = account_email(changes["correo"])
+        if "dni" in changes:
+            editable["dni"] = dni_number(changes["dni"], required=client_id is not None)
+        if not editable and "password_nueva" not in changes:
+            raise ValueError("Indica los datos que deseas actualizar.")
+
+        account = self.get_usuario(account_id) if client_id is None else self.get_cliente(client_id)
+        if not account:
+            raise EntityNotFound("No se encontró tu cuenta.")
+        if not internal_account_active(account):
+            raise PermissionError("La cuenta está inactiva. Contacta con administración.")
+
+        if verify_credentials and changes.keys() & {"correo", "dni", "password_nueva"}:
+            password_hash = str(account.get("password_hash") or "")
+            if password_hash:
+                if not self.context.passwords.verify(password_actual, password_hash):
+                    raise PermissionError("Confirma tu contraseña actual para guardar los cambios.")
+            elif not google_subject or google_subject != account.get("google_sub"):
+                raise PermissionError("Confirma la cuenta de Google vinculada para guardar los cambios.")
+
+        contacts = {key: editable[key] for key in ("correo", "dni")
+                    if key in editable and editable[key] != str(account.get(key) or "").strip().lower()}
+        if contacts:
+            state = self.context.state
+            self._check_duplicate_contacts(
+                (row for table in ("usuario", "clientes") for row in state[table] if row is not account),
+                contacts,
+            )
+            if any(
+                row.get("estado") == "PENDIENTE"
+                and any(value and value == str(row.get(key) or "").strip().lower() for key, value in contacts.items())
+                for row in state["preregistros"]
+            ):
+                raise ValueError("Existe un preregistro pendiente con ese correo o DNI.")
+
+        if "password_nueva" in changes:
+            password = changes["password_nueva"]
+            if len(password.strip()) < 6:
+                raise ValueError("La contraseña nueva debe tener al menos 6 caracteres.")
+            editable["password_hash"] = self.context.passwords.hash(password)
+
+        account.update(editable)
+        return account
+
+    def reset_password(self, account_id: str, client_id: int | None, expected_state: tuple[str, ...], password: str) -> None:
+        account = self.get_usuario(account_id) if client_id is None else self.get_cliente(client_id)
+        if (not account or account.get("id_usuario") != account_id
+                or (client_id is None and not internal_account_active(account))
+                or password_recovery_state(account) != expected_state):
+            raise ValueError("El enlace de recuperación venció o ya fue utilizado. Solicita otro.")
+        if len(password.strip()) < 6:
+            raise ValueError("La contraseña nueva debe tener al menos 6 caracteres.")
+        account["password_hash"] = self.context.passwords.hash(password)
 
     def upsert_usuario(self, payload: dict[str, Any]) -> dict[str, Any]:
         # Procesa esta operación.
@@ -186,12 +261,17 @@ class AccountsRules:
 
     @staticmethod
     def _check_duplicate_accounts(accounts, item, identity):
+        AccountsRules._check_duplicate_contacts(
+            (account for account in accounts if account.get(identity) != item.get(identity)),
+            item,
+        )
+
+    @staticmethod
+    def _check_duplicate_contacts(accounts, contacts):
         for account in accounts:
-            if account.get(identity) == item.get(identity):
-                continue
-            if str(account.get("correo") or "").strip().lower() == item["correo"]:
+            if contacts.get("correo") and str(account.get("correo") or account.get("email") or "").strip().lower() == contacts["correo"]:
                 raise ValueError("Ya existe una cuenta con ese correo.")
-            if item["dni"] and str(account.get("dni") or "").strip() == item["dni"]:
+            if contacts.get("dni") and str(account.get("dni") or "").strip() == contacts["dni"]:
                 raise ValueError("Ya existe una cuenta con ese DNI.")
 
     def delete_usuario(self, id_usuario: Any) -> None:

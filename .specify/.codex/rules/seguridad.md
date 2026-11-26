@@ -10,6 +10,8 @@ dependencias HTTP; no debe inferirse autorización desde menús visibles.
 | --- | --- |
 | Consultar planes, promociones, catálogo de tienda/imágenes y horarios públicos | Público. |
 | Registro público, Google, contraseña y confirmación de retorno de pago | Endpoints públicos con validaciones propias de identidad/pago. |
+| Solicitar recuperación y guardar una contraseña nueva | Público. La solicitud está limitada por conexión. El guardado exige un enlace válido para la cuenta destinataria. |
+| Consultar y editar el perfil propio en `/api/auth/me` | `admin`, `staff`, `trainer`, `user`; la sesión vigente fija la cuenta. |
 | Clientes, pagos de membresía, planes editables, horarios editables, inventario, usuarios internos, resumen y configuración | `admin` o `staff`. |
 | Crear, editar o borrar promociones | Solo `admin`. |
 | Registrar/corregir/anular asistencia y consultar resumen/DNI, tabla de horarios o lista de matriculados de asistencia | Solo `admin`. |
@@ -28,6 +30,16 @@ Google se verifica en el servidor; una vinculación requerida se informa como
 conflicto. El cliente necesita activación inicial y membresía pagada/vigente para
 el acceso. Las renovaciones de una cuenta previamente activada se habilitan con
 el pago confirmado por el servidor. Los usuarios internos no requieren membresía.
+
+La edición de correo, DNI y contraseña desde Configuración usa la sesión
+firmada vigente. La API también valida la contraseña actual o Google
+vinculado en las solicitudes que incluyen esa credencial. La gestión del rol
+corresponde a los permisos de Usuarios.
+
+La recuperación recibe el correo y responde de forma genérica a la solicitud.
+El enlace se envía al correo registrado y viaja en un fragmento con una finalidad
+distinta a la sesión. La comprobación atómica en el guardado vincula el
+enlace con el hash y los datos vigentes de esa cuenta.
 
 Las claves privadas de Supabase, Stripe y Resend permanecen fuera del frontend.
 Los valores `VITE_*` se incluyen en la compilación pública; no colocar allí

@@ -9,6 +9,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { useGymStore } from '../../../application/stores/gymStore';
 import { sectionForPath } from '../../../application/services/moduleNavigation.js';
 
+const CLIENT_PAGE_SIZE = 9;
+
 /** Coordina el catálogo, las cantidades del carrito y la edición de productos. */
 export const useStoreCatalog = () => {
   const route = useRoute();
@@ -67,6 +69,10 @@ export const useStoreCatalog = () => {
     recomendados: (rows) => [...rows].sort((a, b) => Number(canBuy(b)) - Number(canBuy(a)) || Number(isFavorite(b.id_producto)) - Number(isFavorite(a.id_producto))),
   };
   const visibleProducts = computed(() => (CLIENT_SORTS[clientSort.value] || CLIENT_SORTS.recomendados)(filteredProducts.value));
+  const clientLimit = ref(CLIENT_PAGE_SIZE);
+  const displayedProducts = computed(() => visibleProducts.value.slice(0, clientLimit.value));
+  const showMoreProducts = () => { clientLimit.value += CLIENT_PAGE_SIZE; };
+  watch([productSearch, categoryFilter, onlyFavorites, clientSort], () => { clientLimit.value = CLIENT_PAGE_SIZE; }, { flush: 'sync' });
   const hasClientFilters = computed(() => Boolean(productSearch.value || categoryFilter.value || onlyFavorites.value || clientSort.value !== 'recomendados'));
   const clearClientFilters = () => {
     productSearch.value = '';
@@ -314,7 +320,7 @@ export const useStoreCatalog = () => {
   const storeSection = computed(() => sectionForPath(route.path, route.query.tab));
   const isLoadingEmptyTab = computed(() => {
     if (!gymStore.isSectionSyncing(storeSection.value)) return false;
-    if (storeSection.value === 'orders') return !gymStore.storeOrders.length;
+    if (storeSection.value === 'storeSales') return !gymStore.storeOrders.length;
     if (isAdmin.value && activeTab.value === 'papelera') return !gymStore.papelera_tienda.length;
     return !productos.value.length;
   });
@@ -332,6 +338,7 @@ export const useStoreCatalog = () => {
     categories, filteredProducts, authStore, favoriteOwner, favoriteIds,
     isFavorite, toggleFavorite, onlyFavorites, clientSort, canBuy,
     CLIENT_SORTS, visibleProducts, hasClientFilters, clearClientFilters, blockQuantityChars,
+    displayedProducts, showMoreProducts,
     inCart, availableFor, clampQuantity, stockWarning, warnStock,
     setQuantity, clientDetail, detailQuantity, openClientDetail, stepDetailQuantity,
     setDetailQuantity, addDetailToCart, inventario, cart, cartItemStock,

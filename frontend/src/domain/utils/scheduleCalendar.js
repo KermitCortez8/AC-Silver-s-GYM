@@ -6,6 +6,11 @@ export const weekStart = (date) => {
   return addDays(date, -((weekday + 6) % 7));
 };
 
+export const weekRange = (date) => {
+  const start = weekStart(date);
+  return { start, end: addDays(start, 6) };
+};
+
 export const monthWeeks = (month) => {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return [];
   const first = `${month}-01`;
@@ -14,8 +19,7 @@ export const monthWeeks = (month) => {
   const lastISO = last.toISOString().slice(0, 10);
   const weeks = [];
   for (let start = weekStart(first); start <= lastISO; start = addDays(start, 7)) {
-    const end = addDays(start, 6);
-    weeks.push({ start, end, from: start < first ? first : start, to: end > lastISO ? lastISO : end });
+    weeks.push({ start, end: addDays(start, 6) });
   }
   return weeks;
 };
@@ -27,13 +31,12 @@ export const calendarDate = (value) => {
 };
 
 // One occurrence per enrolled class and date; never reuse another week's attendance.
-export const scheduleOccurrences = (items, start, month = '') => {
+export const scheduleOccurrences = (items, start) => {
   const monday = weekStart(start);
   return items.flatMap((item) => {
     const index = DAY_ORDER.indexOf(normalizeScheduleDay(item.dia));
     if (index < 0) return [];
     const fecha = addDays(monday, index);
-    if (month && !fecha.startsWith(month)) return [];
     if (item.id_matricula && (enrollmentSessionDate(item) !== fecha || item.estado === 'CANCELADA')) return [];
     const attendance = (item.asistencias || []).find((entry) =>
       !entry.anulado && (entry.fecha || entry.date) === fecha &&

@@ -56,6 +56,15 @@
                 Acceso activo
               </span>
             </div>
+
+            <router-link
+              :to="accountLink.to"
+              class="theme-compact-button mt-4 flex min-h-10 items-center gap-2 text-sm font-semibold"
+              :class="{ 'account-link-active': isActive(accountLink.to) }"
+            >
+              <Settings :size="16" aria-hidden="true" />
+              {{ accountLink.label }}
+            </router-link>
           </div>
         </div>
 
@@ -156,6 +165,14 @@
                   }}
                 </p>
               </div>
+
+              <router-link
+                :to="accountLink.to"
+                class="theme-compact-button grid min-h-9 min-w-9 place-items-center"
+                aria-label="Configuración"
+              >
+                <Settings :size="17" aria-hidden="true" />
+              </router-link>
 
               <button
                 type="button"
@@ -271,6 +288,7 @@ import {
   Home,
   Package,
   CreditCard,
+  Settings,
   ShoppingBag,
   Tags,
   TicketCheck,
@@ -308,8 +326,15 @@ const {
   toggleTheme,
 } = useTheme();
 
+const panel = computed(() => {
+  if (props.mode === 'trainer' || isTrainer.value) return 'trainer';
+  if (props.mode === 'admin' || isAdmin.value) return 'admin';
+  return 'user';
+});
+const accountLink = computed(() => ({ label: 'Configuración', to: `/${panel.value}/account` }));
+
 const navigationLinks = computed(() => {
-  if (props.mode === 'trainer' || isTrainer.value) {
+  if (panel.value === 'trainer') {
     return [
       {
         label: 'Supervisión',
@@ -329,7 +354,7 @@ const navigationLinks = computed(() => {
     ];
   }
 
-  if (props.mode === 'admin' || isAdmin.value) {
+  if (panel.value === 'admin') {
     return [
       {
         label: 'Inicio',
@@ -423,7 +448,7 @@ const navigationLinks = computed(() => {
  * más específica con la ruta actual.
  */
 const activeLink = computed(() => {
-  const matches = navigationLinks.value.filter(
+  const matches = [...navigationLinks.value, accountLink.value].filter(
     (link) =>
       route.path === link.to ||
       route.path.startsWith(`${link.to}/`),
@@ -537,6 +562,8 @@ const handleVisibilityChange = () => {
     lastInactiveTimestamp = Date.now();
     return;
   }
+  // Matrículas controla su recarga. Configuración solo usa el perfil de la sesión.
+  if (['enrollment', 'account'].includes(activeSection.value)) return;
   // Volver a la pestaña actualiza los datos sin tapar una vista ya disponible.
   void loadActiveSection(Date.now() - lastInactiveTimestamp >= 5000).catch(() => {});
 };
@@ -545,7 +572,7 @@ onMounted(() => {
   revealActiveMobileLink();
   removeBeforeEach = router.beforeEach((to, from) => {
     if (from.path && to.path !== from.path) {
-      targetModuleName.value = moduleNamesMap[to.path] || 'Módulo Digital';
+      targetModuleName.value = moduleNamesMap[to.path] || (sectionForPath(to.path) === 'account' ? 'Configuración' : 'Módulo Digital');
       navigationTarget = to.fullPath;
       navigationRevision = moduleLoader.start();
     }
@@ -593,3 +620,10 @@ const handleLogout = async () => {
   router.push('/login');
 };
 </script>
+
+<style scoped>
+.account-link-active {
+  border-color: var(--app-border-strong);
+  background: var(--app-accent-soft);
+}
+</style>

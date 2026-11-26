@@ -90,3 +90,16 @@ test('TC-062: una clase llena deshabilita la acción y otra semana tiene cupo pr
   assert.equal(setup.selectedActionDisabled, false);
   assert.equal(setup.selectedActionLabel, 'Agregar a mi horario');
 });
+
+test('los avisos de matrícula se muestran una sola vez en el selector activo', async () => {
+  const { html, dialogs } = await setupView('EnrollmentView', '/user/schedule', (setup, gym) => {
+    setup.user = { role: 'user', id_cliente: 1 };
+    gym.members = [{ id_cliente: 1, name: 'Cliente QA' }];
+    setup.openSchedulePicker();
+    setup.setFeedback('Ya no queda cupo para esta clase.', 'error');
+  });
+  assert.doesNotMatch(html, /Ya no queda cupo/);
+  assert.match(dialogs, /role="dialog"[\s\S]*floating-notice[\s\S]*role="alert"[^>]*>Ya no queda cupo/);
+  assert.equal((dialogs.match(/Ya no queda cupo/g) || []).length, 1);
+  assert.match(dialogs, /Cerrar aviso/);
+});

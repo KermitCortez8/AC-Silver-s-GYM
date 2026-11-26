@@ -31,7 +31,7 @@
       </div>
     </section>
 
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Historial</p>
@@ -135,7 +135,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Activity, DollarSign, FileSpreadsheet, Info, ShoppingBag } from 'lucide-vue-next';
 import TablePager from '../common/TablePager.vue';
 import TableSearch from '../common/TableSearch.vue';
@@ -152,39 +152,58 @@ const currentMonth = limaDate().slice(0, 7);
 const monthFilter = ref(currentMonth);
 const orderFilter = ref('');
 const clientFilter = ref('');
+const paidOrders = computed(() => gymStore.storeOrders.filter((order) => String(order.estado_pago || 'PAGADO').toUpperCase() === 'PAGADO'));
+const savedClientName = (order) => order.cliente_nombre && order.cliente_nombre !== 'Cliente' ? order.cliente_nombre : '';
+const needsClientLookup = computed(() => paidOrders.value.some((order) =>
+  (order.id_cliente || order.cliente_dni) && (!savedClientName(order) || !order.cliente_dni)));
+watch(needsClientLookup, (needed) => {
+  if (needed) void gymStore.fetchFromBackend({ section: 'storeSalesClients' }).catch(() => {});
+}, { immediate: true });
+const memberIndex = computed(() => {
+  const byId = new Map();
+  const byDni = new Map();
+  for (const member of gymStore.members) {
+    if (member.id_cliente && !byId.has(Number(member.id_cliente))) byId.set(Number(member.id_cliente), member);
+    if (member.dni && !byDni.has(member.dni)) byDni.set(member.dni, member);
+  }
+  return { byId, byDni };
+});
 
 /**
  * Obtiene el cliente del pedido, completando sus datos con la lista de clientes.
  */
 const orderClient = (order) => {
   const dni = String(order.cliente_dni || '').trim();
-  const member = (gymStore.members || []).find((entry) =>
-    (order.id_cliente && Number(entry.id_cliente) === Number(order.id_cliente)) || (dni && entry.dni === dni));
-  const savedName = order.cliente_nombre && order.cliente_nombre !== 'Cliente' ? order.cliente_nombre : '';
-  return { name: member?.name || savedName, dni: dni || member?.dni || '' };
+  const savedName = savedClientName(order);
+  if ((savedName && dni) || (!order.id_cliente && !dni)) return { name: savedName, dni };
+  const { byId, byDni } = memberIndex.value;
+  const member = byId.get(Number(order.id_cliente)) || byDni.get(dni);
+  return { name: savedName || member?.name || '', dni: dni || member?.dni || '' };
 };
 
 // Mes civil del gimnasio (America/Lima) de una fecha de pedido, como "AAAA-MM".
 const monthKey = (value) => (value ? limaDate(new Date(value)).slice(0, 7) : '');
-const monthLabel = (key) => new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' })
-  .format(new Date(`${key}-15T12:00:00Z`));
+const monthFormatter = new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dateFormatter = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Lima' });
+const monthLabel = (key) => monthFormatter.format(new Date(`${key}-15T12:00:00Z`));
 
 // Solo es venta lo cobrado: un Yape por confirmar o una tarjeta sin pagar no cuentan.
 const movements = computed(() =>
-  (gymStore.storeOrders || [])
-    .filter((order) => String(order.estado_pago || 'PAGADO').toUpperCase() === 'PAGADO')
+  paidOrders.value
     .flatMap((order) => {
       const client = orderClient(order);
+      const month = monthKey(order.fecha_pedido);
+      const status = String(order.estado_pedido || 'PENDIENTE').toUpperCase();
       return (order.items || []).map((item, index) => ({
         key: `${order.id_pedido}-${item.id_producto}-${index}`,
         fecha: order.fecha_pedido,
-        mes: monthKey(order.fecha_pedido),
+        mes: month,
         producto: item.nombre_producto || `Producto #${item.id_producto}`,
         cantidad: Number(item.cantidad || 0),
         subtotal: Number(item.subtotal || 0),
         idPedido: order.id_pedido,
-        estado: String(order.estado_pedido || 'PENDIENTE').toUpperCase(),
-        isCancelled: String(order.estado_pedido || '').toUpperCase() === 'CANCELADO',
+        estado: status,
+        isCancelled: status === 'CANCELADO',
         cliente: client.name,
         clienteDni: client.dni,
       }));
@@ -207,11 +226,13 @@ const clientOptions = computed(() => [...new Set(movements.value.map((movement) 
   .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })));
 
 // El buscador solo mira el nombre del producto; mes, pedido y cliente se filtran con sus desplegables.
-const filteredMovements = computed(() => movements.value.filter((movement) =>
-  matchesSearch(search.value, [movement.producto])
-  && isInMonth(movement)
-  && (!orderFilter.value || String(movement.idPedido) === String(orderFilter.value))
-  && (!clientFilter.value || (movement.cliente || NO_CLIENT) === clientFilter.value)));
+const filteredMovements = computed(() => {
+  const query = search.value.trim();
+  return movements.value.filter((movement) => isInMonth(movement)
+    && (!orderFilter.value || String(movement.idPedido) === String(orderFilter.value))
+    && (!clientFilter.value || (movement.cliente || NO_CLIENT) === clientFilter.value)
+    && (!query || matchesSearch(query, [movement.producto])));
+});
 const filteredAmount = computed(() => filteredMovements.value
   .filter((movement) => !movement.isCancelled)
   .reduce((sum, movement) => sum + movement.subtotal, 0));
@@ -236,7 +257,8 @@ const paginatedMovements = computed(() => filteredMovements.value.slice((paginaA
  */
 const formatDate = (value) => {
   if (!value) return 'Sin fecha';
-  return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Lima' });
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Sin fecha' : dateFormatter.format(date);
 };
 
 /**

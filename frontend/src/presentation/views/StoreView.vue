@@ -4,7 +4,7 @@
     <!-- ═══════════════════════════════════════════════
          HEADER
     ════════════════════════════════════════════════ -->
-    <section class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <p class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
@@ -98,11 +98,11 @@
     </p>
     <p v-if="isLoadingEmptyTab" role="status" class="px-4 py-6 text-sm text-slate-400">Cargando tienda…</p>
 
-    <StoreMovementsPanel v-else-if="isAdmin && activeTab === 'ventas'" />
+    <StoreMovementsPanel v-if="isAdmin && activeTab === 'ventas'" v-show="!isLoadingEmptyTab" />
 
-    <StoreTrashPanel v-else-if="isAdmin && activeTab === 'papelera'" :product-code="productCode" />
+    <StoreTrashPanel v-else-if="isAdmin && activeTab === 'papelera'" v-show="!isLoadingEmptyTab" :product-code="productCode" />
 
-    <StoreProductTable v-else-if="isAdmin" v-model:busqueda="busqueda" v-model:categoria-activa="categoriaActiva"
+    <StoreProductTable v-else-if="isAdmin" v-show="!isLoadingEmptyTab" v-model:busqueda="busqueda" v-model:categoria-activa="categoriaActiva"
       v-model:filtro-estado="filtroEstado" v-model:pagina-actual="paginaActual" v-model:por-pagina="porPagina"
       :productos="productos" :categorias-unicas="categoriasUnicas" :categoria-dot-color="categoriaDotColor"
       :solo-stock-bajo="soloStockBajo" :sort-key="sortKey" :sort-dir="sortDir" :productos-filtrados="productosFiltrados"
@@ -113,12 +113,12 @@
     <!-- ═══════════════════════════════════════════════
          CLIENTE — VISTA DE TIENDA (CARRITO)
     ════════════════════════════════════════════════ -->
-    <StoreClientCatalog v-else :favorite-ids="favoriteIds" :is-favorite="isFavorite" :only-favorites="onlyFavorites"
-      :can-buy="canBuy" :visible-products="visibleProducts" :has-client-filters="hasClientFilters"
+    <StoreClientCatalog v-else v-show="!isLoadingEmptyTab" :favorite-ids="favoriteIds" :is-favorite="isFavorite" :only-favorites="onlyFavorites"
+      :can-buy="canBuy" :visible-products="displayedProducts" :total-products="visibleProducts.length" :has-client-filters="hasClientFilters"
       :available-for="availableFor" :stock-warning="stockWarning" :cart="cart" :cart-item-stock="cartItemStock"
       :cart-total="cartTotal" :cantidad-input="cantidadInput" @favorite="toggleFavorite" @detail="openClientDetail"
       @quantity-guard="blockQuantityChars" @quantity-change="setQuantity" @add="agregarAlCarrito"
-      @remove="gymStore.removeFromCart" @clear="gymStore.clearCart" @update-cart="updateCart" @checkout="goToCheckout" />
+      @remove="gymStore.removeFromCart" @clear="gymStore.clearCart" @update-cart="updateCart" @checkout="goToCheckout" @show-more="showMoreProducts" />
 
     <!-- ═══════════════════════════════════════════════
          MODAL — INGRESAR / EDITAR PRODUCTO
@@ -292,8 +292,6 @@
 
 <script setup>
 import { defineAsyncComponent, ref, watch } from 'vue';
-import StoreProductTable from '../components/store/StoreProductTable.vue';
-import StoreClientCatalog from '../components/store/StoreClientCatalog.vue';
 
 import {
   Eye,
@@ -304,11 +302,13 @@ import {
 import ResourceModal from '../components/ResourceModal.vue';
 
 import TableSearch from '../components/common/TableSearch.vue';
-import StoreTrashPanel from '../components/store/StoreTrashPanel.vue';
 import { useStoreCatalog } from '../composables/store/useStoreCatalog.js';
 
 const ProductEditorDialog = defineAsyncComponent(() => import('../components/store/ProductEditorDialog.vue'));
 const StoreMovementsPanel = defineAsyncComponent(() => import('../components/store/StoreMovementsPanel.vue'));
+const StoreProductTable = defineAsyncComponent(() => import('../components/store/StoreProductTable.vue'));
+const StoreClientCatalog = defineAsyncComponent(() => import('../components/store/StoreClientCatalog.vue'));
+const StoreTrashPanel = defineAsyncComponent(() => import('../components/store/StoreTrashPanel.vue'));
 
 const {
   route, router, gymStore, isAdmin, tabs,
@@ -316,6 +316,7 @@ const {
   categories, filteredProducts, authStore, favoriteOwner, favoriteIds,
   isFavorite, toggleFavorite, onlyFavorites, clientSort, canBuy,
   CLIENT_SORTS, visibleProducts, hasClientFilters, clearClientFilters, blockQuantityChars,
+  displayedProducts, showMoreProducts,
   inCart, availableFor, clampQuantity, stockWarning, warnStock,
   setQuantity, clientDetail, detailQuantity, openClientDetail, stepDetailQuantity,
   setDetailQuantity, addDetailToCart, inventario, cart, cartItemStock,

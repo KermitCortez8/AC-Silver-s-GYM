@@ -372,7 +372,7 @@ const handlePageShow = (event) => {
 onMounted(() => {
   window.addEventListener('pageshow', handlePageShow);
   syncCustomer();
-  gymStore.fetchFromBackend?.().catch(() => {});
+  gymStore.fetchFromBackend({ section: 'storeCheckout' }).catch(() => {});
   handleReturn();
 });
 

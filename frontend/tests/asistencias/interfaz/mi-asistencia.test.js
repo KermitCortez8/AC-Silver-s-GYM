@@ -85,3 +85,21 @@ test('cambiar de semana solo consulta la sesión propia y descarta la respuesta 
     harness.dispose();
   }
 });
+
+test('Mi asistencia cuenta las visitas del mes siguiente en la misma semana', async () => {
+  const harness = await view('UserAttendanceView', {
+    prepare(setup) {
+      setup.selectedDate = '2026-11-30';
+      setup.week = { inicio: '2026-11-30', fin: '2026-12-06', hoy: '2026-12-02', horarios: [], generales: [
+        { id_asistencia: 10, fecha: '2026-11-30', estado: 'completada', hora_entrada: '08:00' },
+        { id_asistencia: 11, fecha: '2026-12-01', estado: 'completada', hora_entrada: '08:00' },
+      ] };
+    },
+  });
+  try {
+    assert.match(harness.html, /2 visitas registradas/);
+    assert.deepEqual(harness.child('ExcelScheduleGrid').occurrences.map(({ fecha }) => fecha), ['2026-11-30', '2026-12-01']);
+  } finally {
+    harness.dispose();
+  }
+});

@@ -65,6 +65,15 @@ descuento de existencias y cancelar un pedido pendiente para recuperarlas.
   [StoreView.vue](../../../frontend/src/presentation/views/StoreView.vue),
   [OrdersView.vue](../../../frontend/src/presentation/views/OrdersView.vue),
   [StorePaymentView.vue](../../../frontend/src/presentation/views/StorePaymentView.vue).
+- El catálogo pide solo productos. La pantalla de pago consulta el perfil del
+  cliente y las transacciones refrescan el stock cuando corresponde. Los paneles
+  de productos, ventas y papelera cargan su código cuando se abren. El catálogo
+  del cliente muestra nueve tarjetas inicialmente y permite ver más. La búsqueda
+  y los filtros se aplican al catálogo completo.
+- Ventas consulta pedidos y usa los datos del comprador guardados en la venta.
+  Si hay ventas históricas con datos incompletos, consulta el directorio para
+  resolverlos. Papelera reutiliza la lectura de productos de la sesión y muestra
+  solo los archivados recuperables.
 
 ## 5. Guardrails
 
@@ -91,3 +100,5 @@ No aceptar SVG nuevos aunque se listen SVG históricos.
 Verificar stock, cancelación, privacidad, desglose e imágenes afectados. Los
 casos identificados solo por código requieren comprobación reproducible si se
 modifican; no suponer cobertura completa por la tabla. Cumplir el [DoD](../../docs/DoD.md).
+
+Evidencia de carga y renderizado en [validación de rendimiento](../validaciones/rendimiento-tienda/validation.md).

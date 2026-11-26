@@ -305,6 +305,7 @@ test('asistencia reutiliza el calendario de horarios y conserva matriculados y p
     assert.equal(calendar.calendarEvents[0].start, '2026-10-24T10:00:00');
     assert.equal(calendar.calendarEvents[0].extendedProps.cupos_usados, 1);
     assert.match(calendar.calendarOptions.eventContent({ event: { extendedProps: calendar.calendarEvents[0].extendedProps } }).html, /9 cupos libres/);
+    assert.match(harness.html, /<dialog[^>]*att-roster[^>]*aria-labelledby/);
     assert.match(harness.html, /Clientes matriculados/);
     assert.match(harness.html, /Ana matriculada/);
     assert.match(harness.html, /Registrar entrada/);
@@ -338,6 +339,9 @@ test('el calendario de asistencia filtra por día y selecciona la lista por id d
     await control.selectClass(control.visibleSchedules[0]);
     assert.equal(harness.setup.selectedSchedule, 2);
     assert.deepEqual(requests, ['/horarios/2/clientes']);
+    control.closeRoster();
+    assert.equal(harness.setup.selectedSchedule, null);
+    assert.equal(harness.setup.roster, null);
     control.dayFilter = 'domingo';
     assert.deepEqual(control.visibleSchedules, []);
   } finally {
@@ -356,6 +360,7 @@ test('el calendario de asistencia bloquea cambios de clase mientras guarda', asy
   try {
     assert.equal(harness.child('ExcelScheduleGrid').props.interactive, false);
     await harness.child('AttendanceScheduleRoster').selectClass({ id_horario_servicio: 2 });
+    harness.child('AttendanceScheduleRoster').closeRoster();
     assert.equal(harness.setup.selectedSchedule, 1);
   } finally {
     harness.dispose();

@@ -1,13 +1,14 @@
 """Punto de ensamblaje: conecta contratos con implementaciones externas."""
 from application.services.gym_service import GymService
 from application.services import membership_notifications, schedule_notifications
-from infrastructure.authentication import PasswordService, GoogleIdentityProvider, SignedSessionProvider
+from infrastructure.authentication import PasswordService, GoogleIdentityProvider, SignedPasswordRecoveryTokens, SignedSessionProvider
 from infrastructure.repositories.gym_repository import SupabaseGymRepository
 from infrastructure.repositories.membership_notifications import NotificationRepository
 from infrastructure.repositories.schedule_notifications import ScheduleNotificationRepository
 from infrastructure.services.email_service import ResendEmailService
 from infrastructure.services.stripe_service import StripeService
 from application.services.identity_service import IdentityService
+from application.services.password_recovery import PasswordRecoveryService
 from application.services.store_images_service import StoreImagesService
 from infrastructure.services.local_image_storage import LocalImageStorage
 from infrastructure.services.supabase_storage_service import SupabaseStorageService
@@ -23,6 +24,12 @@ def create_gym_service(url, key):
 
 def create_identity_service():
     return IdentityService(GoogleIdentityProvider(), SignedSessionProvider())
+
+
+def create_password_recovery(gym, settings):
+    return PasswordRecoveryService(
+        gym, settings, ResendEmailService(settings), SignedPasswordRecoveryTokens(settings.auth_secret_key),
+    )
 
 
 def create_payment_gateway(settings):

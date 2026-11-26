@@ -83,6 +83,7 @@
         {{ timeProblem }}
       </p>
       <p v-if="error" role="alert" class="att-message is-error">{{ error }}</p>
+      <FloatingNotice in-dialog :message="requestError" tone="error" @dismiss="requestError = ''" />
       <details v-if="record.auditoria?.length" class="att-audit">
         <summary>Historial de cambios ({{ record.auditoria.length }})</summary>
         <ol>
@@ -134,6 +135,7 @@
 </template>
 <script setup>
 import { FORM_LIMITS } from "../../../domain/utils/formLimits.js";
+import FloatingNotice from '../FloatingNotice.vue';
 
 import { computed, onMounted, reactive, ref } from 'vue';
 import { X } from 'lucide-vue-next';
@@ -157,7 +159,8 @@ const emit = defineEmits(['close', 'saved']);
 const { token } = useAuth();
 const dialog = ref(null),
   busy = ref(false),
-  error = ref('');
+  error = ref(''),
+  requestError = ref('');
 const today = limaDate();
 const actionLabels = {
   entrada: 'Entrada',
@@ -215,6 +218,8 @@ const save = async () => {
   if (busy.value) return;
   busy.value = true;
   error.value = '';
+  requestError.value = '';
+  let sending = false;
   try {
     if (form.motivo.trim().length < 5 || form.motivo.trim().length > 500) {
       throw new Error('Escribe un motivo de entre 5 y 500 caracteres.');
@@ -226,6 +231,7 @@ const save = async () => {
       if (timeProblem.value) throw new Error(timeProblem.value);
     }
     const base = { version: props.record.version, motivo: form.motivo.trim() };
+    sending = true;
     const saved = props.annulling
       ? await attendanceAnnul(props.record.id_asistencia, base, token.value)
       : await attendanceCorrect(
@@ -237,8 +243,9 @@ const save = async () => {
     dialog.value.close();
     emit('close');
   } catch (err) {
-    error.value =
-      err?.message || 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.';
+    const message = err?.message || 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.';
+    if (sending) requestError.value = message;
+    else error.value = message;
   } finally {
     busy.value = false;
   }

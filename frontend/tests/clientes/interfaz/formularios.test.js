@@ -40,6 +40,18 @@ test('extracted client dialogs render their real form and membership details', a
   assert.match(dialogs, /Activar Membresía/);
 });
 
+test('el aviso del directorio se renderiza superpuesto y se puede cerrar', async () => {
+  const { setup, html, dialogs } = await setupView('ClientsView', '/admin/clients', setup => {
+    setup.feedbackTone = 'error';
+    setup.feedbackMessage = 'No se pudo borrar al cliente.';
+  });
+  assert.doesNotMatch(html, /No se pudo borrar al cliente/);
+  assert.match(dialogs, /role="alert"[^>]*>No se pudo borrar al cliente/);
+  assert.match(dialogs, /Cerrar aviso/);
+  setup.dismissFeedback();
+  assert.equal(setup.feedbackMessage, '');
+});
+
 test('public registration rejects invalid email inline before sending a request', async () => {
   const { setup, gym, html } = await setupView('RegisterView', '/registro', setup => {
     Object.assign(setup.form, { nombre: 'Ana', correo: 'ana@gmail.com.otro.org', dni: '12345678', telefono: '987654321', password: 'secreto123' });

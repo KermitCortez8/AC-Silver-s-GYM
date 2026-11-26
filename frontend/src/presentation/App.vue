@@ -17,7 +17,7 @@
     <router-view />
     <AgentChat v-if="publicAgentPage" />
     <div
-      v-if="authStore.isAuthenticated && gymStore.syncError"
+      v-if="authStore.isAuthenticated && gymStore.syncError && sectionForPath(route.path) !== 'account'"
       role="alert"
       class="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-3xl rounded-2xl border border-red-300 bg-red-50 p-4 text-red-950 shadow-xl"
     >
@@ -45,6 +45,7 @@ import { computed, defineAsyncComponent, onMounted, onBeforeUnmount, watch } fro
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../application/stores/authStore';
 import { useGymStore } from '../application/stores/gymStore';
+import { sectionForPath } from '../application/services/moduleNavigation.js';
 
 const AgentChat = defineAsyncComponent(() => import('./components/AgentChat.vue'));
 
@@ -92,8 +93,12 @@ onBeforeUnmount(() => {
   window.removeEventListener('focus', revalidateClientSession);
   document.removeEventListener('visibilitychange', revalidateClientSession);
 });
-const retrySync = () =>
-  gymStore.fetchFromBackend({ force: true }).catch(() => {
+const retrySync = () => {
+  const activeSection = sectionForPath(route.path, route.query.tab);
+  const scoped = ['schedules', 'enrollment', 'store', 'storeCheckout'].includes(activeSection) || route.path === '/admin/store';
+  const section = scoped ? activeSection : 'all';
+  return gymStore.fetchFromBackend({ force: true, section }).catch(() => {
     // El store conserva el error para mostrarlo en el aviso.
   });
+};
 </script>

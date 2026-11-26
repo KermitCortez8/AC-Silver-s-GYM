@@ -54,10 +54,7 @@
         ><ShieldCheck :size="14" />Registro exclusivo del administrador</span
       >
     </div>
-    <p v-if="error" role="alert" class="att-message is-error">{{ error }}</p>
-    <p v-if="feedback" role="status" class="att-message" :class="feedbackWarning ? 'is-warning' : 'is-success'">
-      {{ feedback }}
-    </p>
+    <FloatingNotice v-if="tab !== 'history' && !selectedSchedule" :message="error || feedback" :tone="noticeTone" @dismiss="dismissNotice" />
     <div
       v-show="tab !== 'history'"
       id="control-panel"
@@ -69,6 +66,8 @@
         :schedule-data="scheduleData" :selected-schedule="selectedSchedule" :selected-session="selectedSession" :roster="roster"
         :schedules-loading="schedulesLoading" :roster-loading="rosterLoading"
         :schedules-error="schedulesError" :roster-error="rosterError" :busy="busy" :saved-key="savedKey"
+        :notice-message="error || feedback" :notice-tone="noticeTone"
+        @dismiss-notice="dismissNotice" @dismiss-roster-error="rosterError = ''" @notification="showCalendarNotice"
         @select="selectSchedule" @reload="loadSchedules" @retry="loadRoster" @entry="enter" @exit="exitRecord" />
       <AttendanceClientLookup
         v-if="isGeneral"
@@ -102,7 +101,7 @@
       role="tabpanel"
       aria-labelledby="history-tab"
     >
-      <AttendanceHistory admin @changed="refresh" />
+      <AttendanceHistory admin :refresh-error="error" @changed="refresh" @dismiss-refresh-error="error = ''" />
     </div>
   </div>
 </template>
@@ -125,6 +124,7 @@ import AttendanceSummary from '../components/attendance/AttendanceSummary.vue';
 import AttendanceClientLookup from '../components/attendance/AttendanceClientLookup.vue';
 import AttendancePendingVisits from '../components/attendance/AttendancePendingVisits.vue';
 import AttendanceScheduleRoster from '../components/attendance/AttendanceScheduleRoster.vue';
+import FloatingNotice from '../components/FloatingNotice.vue';
 import '../styles/attendance.css';
 import '../styles/attendance-control.css';
 const { token } = useAuth();
@@ -167,6 +167,19 @@ const attendanceTabs = [
 ];
 const tab = ref('today');
 const isGeneral = computed(() => tab.value === 'general');
+const noticeTone = computed(() => error.value ? 'error' : feedbackWarning.value ? 'warning' : 'success');
+const dismissNotice = () => {
+  if (error.value) error.value = '';
+  else feedback.value = '';
+};
+const showCalendarNotice = ({ message, tone }) => {
+  if (tone === 'error') error.value = message;
+  else {
+    error.value = '';
+    feedbackWarning.value = false;
+    feedback.value = message;
+  }
+};
 const handleTabKey = async (event) => {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
   event.preventDefault();

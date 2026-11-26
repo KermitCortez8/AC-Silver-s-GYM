@@ -48,10 +48,16 @@ cerrarla, reingresar y consultar su historial desde dos sesiones diferentes.
    asistencia. Una salida pendiente sigue permitida.
 8. **CA-08.** La pestaña por horarios reutiliza el calendario semanal del módulo
    de horarios, con agenda móvil, colores por servicio, cupos y filtro por día.
-   Seleccionar un bloque muestra solo sus matrículas activas, con cliente, DNI,
+   Seleccionar un bloque abre un modal con sus matrículas activas, con cliente, DNI,
    entrada, salida, estado y acciones individuales para la fecha seleccionada.
    Cada sesión consulta sus propios clientes; al cambiar de semana se limpia la
    selección. Las entradas siguen usando el día y reloj actual del servidor de Perú.
+   Al cerrar el modal se vuelve al calendario. Durante un guardado se bloquea
+   el cierre. Los resultados de entrada y salida y los errores de consulta se
+   muestran como avisos superpuestos dentro del modal, con cierre manual y
+   reintento cuando falla la consulta.
+   En administración y «Mi asistencia», la semana y los conteos incluyen sus
+   siete días aunque el calendario muestre fechas de dos meses.
 9. **CA-09.** La entrada se admite desde el inicio inclusive hasta el fin exclusivo
    de la clase en su día. Fuera del intervalo, se muestra el motivo y se rechaza
    cualquier intento en el servidor sin guardar asistencia. La matrícula debe
